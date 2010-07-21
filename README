@@ -1,0 +1,209 @@
+                           GLVis visualization tool
+                                 version 1.0
+
+                     _/_/_/  _/      _/      _/  _/
+                  _/        _/      _/      _/        _/_/_/
+                 _/  _/_/  _/      _/      _/  _/  _/_/
+                _/    _/  _/        _/  _/    _/      _/_/
+                 _/_/_/  _/_/_/_/    _/      _/  _/_/_/
+
+                        http://glvis.googlecode.com
+
+GLVis is an OpenGL tool for visualization of finite element meshes and
+functions.
+
+For building instructions, see the file INSTALL. Copyright information and
+licensing restrictions can be found in the file COPYRIGHT.
+
+When started without any options, glvis starts a server which waits for a socket
+connections (on port 19916 by default) and visualizes any received data. This
+way the results of simulations on a remote (parallel) machine can be visualized
+on the local user desktop. On Mac OS X, start the server with 'glvis -mac'.
+
+GLVis can also be used to visualize a mesh with or without a finite element
+function (solution), as in 'glvis -m cube.mesh3d'. It can run a batch sequence
+of commands (GLVis scripts), or display previously saved socket streams. For a
+complete list of command line options, type 'glvis -h'.
+
+Depending on the data type, variety of manipulations can be performed by using
+the mouse and by typing (case sensitive) keystrokes in the GLVis window. Here is
+a partial list of the available functionality. Some of these keys can also be
+provided as input, using the '-k' command-line option and the 'keys' script
+command.
+
+
+Mouse functions
+===============
+Left       - Rotate the viewpoint
+Middle     - Translate the viewpoint
+Right      - Zoom in (up) / Zoom out (down)
+Left+Shift - Start spinning the viewpoint (according to dragging vector)
+
+
+Basic key commands
+==================
+h - Prints a short help message in the terminal
+
+r - Reset the plot to 3D view
+R - Cycle through the six 2D projections (camera looking in +/- x/y/z
+    direction)
+j - Turn on/off perspective
+s - Turn on/off unit cube scaling
+
+c - Display/Hide the colorbar
+p - Cycle through color palettes (lots of options, use F6 for a menu)
+t - Cycle materials and lights (5 states)
+l - Turns on/off the light
+g - Toggle background color (white -> black)
+
+a - Toggle the bounding box axes
+    The options are: -> none
+                     -> bounding box with coordinates of the corners
+                     -> bounding box without coordinates
+m - Toggle the "mesh" state
+    The options are: -> no mesh or level lines
+                     -> draw the element edges (i.e. the mesh)
+                     -> draw the level lines (use F5 to modify the level lines)
+e - Toggle the "elements" state (see below for vector functions)
+    The options are: -> show surface elements (corresponding to the function)
+                     -> show no surface elements
+                     -> show surface elements corresponding to det(J)
+                     -> show surface elements corresponding to 1/det(J)
+
+S - Take an image snapshot (xwd format) or record a movie (in spinning mode)
+P - Print to a PostScript file (in non-texture mode)
+
+q - Exit
+
+
+Advanced key commands
+=====================
+f - Change the shading type (the way the elements and mesh are drawn)
+    The options are: -> one triangle / quad per element with a constant normal
+                     -> one triangle / quad per element with normals averaged
+                        at the vertices
+                     -> multiple triangles / quads per element, also allowing
+                        for the visualization of discontinuous functions and
+                        curvilinear elements (use i/I to control subdivisions)
+
+i/I - Control element subdivisions
+      there are two subdivision factors: -> element subdivision factor s1
+                                         -> boundary subdivision factor s2
+I - Cycle through the "subdivision functions", (prints a message in the
+    terminal when changed)
+    The options are: -> Increase subdivision factor:      s1 += s2
+                     -> Decrease subdivision factor:      s1 -= s2
+                     -> Increase bdr subdivision factor:  s2++
+                     -> Decrease bdr subdivision factor:  s2--
+i - perform the current "subdivision function"
+
+A - Turn on/off the use of thicker lines
+b - Display/Hide the boundary in 2D scalar mode
+L - Turn on/off logarithmic scale
+\ - Set light source position (see Right+Shift)
+* - Zoom in
+/ - Zoom out
+[ - Enlarge the bounding box (relative to the colorbar)
+] - Shrink the bounding box (relative to the colorbar)
+( - Shrink the visualization window
+) - Enlarge the visualization window
+. - Start/stop z-spinning (speed/direction can be controlled with '0'/'Enter')
+
+w - Toggle clipping (cutting) plane in 2D (see also 'i' in 3D)
+y/Y - Rotate clipping plane (theta) in 2D
+z/Z - Translate clipping plane in 2D
+
+` - Toggle a ruler, with initial origin at the center of the bounding box. The
+    origin can be later moved with '~'.
+    The options are: -> none
+                     -> coordinate axes lines
+                     -> coordinate axes planes
+~ - Enter new ruler origin
+
+k/K - Adjust the transparency level (works only when texture is off, see '!').
+      The balance of transparency can be further adjusted with ',' and '<'.
+
+! - Toggle the use of (1D) texture (smooth interpolation of colors)
+    The options are: -> use discrete texture, the number of colors used depends
+                        on the current palette
+                     -> use smooth texture (interpolated from current palette)
+                     -> do not use texture; colors are set at the vertices;
+                        color interpolation may be bad
+
+F3/F4 - Shrink/Zoom each element towards its center, to better visualize the
+        different element shapes
+F5 - Change the range and number of the level lines
+F6 - Palette menu
+F7 - Change the minimum and maximum values
+
+Middle+Ctrl - Object translation
+Right+Ctrl  - Object scaling (see also '[' and ']')
+Left+Alt    - Tilt
+Right+Shift - Change light source position (see '\')
+
+
+Vector data commands
+====================
+v - Toggle the "vector" state (uses vector subdivision factor, accept u/U)
+    The options are: -> do not show vectors
+                     -> show vectors as displacement
+                     -> show vector field; vectors are uniformly scaled;
+                        the color varies with the magnitude (or the current
+                        "vector-to-scalar function", see keys u/U)
+                     -> show vector field as above, but the vectors are scaled
+                        proportionally to their magnitude
+V - Change the scaling of the vectors relative to the default
+
+d - Toggle the "displaced mesh" state: (see also keys 'n'/'b')
+    The options are: -> do not show displaced mesh
+                     -> show displaced mesh
+                     -> assuming displacement field show deformation using
+                        Cartesian lines
+                     -> assuming displacement field show deformation using
+                        polar lines
+n - increase the displacement amount in 10% steps, wraps around from 100% to 0%
+b - decrease the displacement amount in 10% steps, wraps around from 0% to 100%
+
+e - Toggle the "elements" state (vector data version)
+    The options are: -> show surface elements corresponding to the current
+                        "vector-to-scalar function"
+                     -> do not show surface elements
+                     -> assuming a displacement field show det(J)/det(J_d)
+                     -> assuming a displacement field show det(J_d)/det(J)
+
+u/U - Change the "vector-to-scalar function" and the vector subdivision factor
+U - Toggle the functionality of 'u' (prints a message in the terminal when
+    changed).
+    The options are: -> Increase the vector subdivision factor
+                     -> Decrease the vector subdivision factor
+                     -> Cycle through "vector-to-scalar functions" choices:
+                        -> magnitude:                sqrt(vx^2+vy^2)
+                        -> direction form -pi to pi: atan2(vy,vx)
+                        -> x-component:              vx
+                        -> y-component:              vy
+                        -> divergence:               div(v)
+                        -> curl:                     curl(v)
+                        -> anisotropy in grad(v)
+
+3D data commands
+================
+i   - Toggle clipping (cutting) plane
+      The options are: -> none
+                       -> cut through the elements
+                       -> show only elements behind the clipping plane
+x/X - Rotate clipping plane (phi)
+y/Y - Rotate clipping plane (theta)
+z/Z - Translate clipping plane
+E   - Display/Hide the elements in the clipping plane
+M   - Display/Hide the mesh in the clipping plane
+
+o/O - Refine/de-refine elements (similar to 'i' in 2D)
+
+u/U - Move level surface value up/down
+v/V - Add/Delete a level surface value
+
+w/W - Move boundary elements up/down in direction of the normal (i.e. "plot"
+      the boundary values in normal direction)
+
+F3/F4   - Shrink/Zoom subdomain in a disjoint mesh
+F11/F12 - Shrink/Zoom elements in a disjoint mesh

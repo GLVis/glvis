@@ -1,0 +1,55 @@
+                           GLVis visualization tool
+                                 version 1.0
+
+                     _/_/_/  _/      _/      _/  _/
+                  _/        _/      _/      _/        _/_/_/
+                 _/  _/_/  _/      _/      _/  _/  _/_/
+                _/    _/  _/        _/  _/    _/      _/_/
+                 _/_/_/  _/_/_/_/    _/      _/  _/_/_/
+
+                        http://glvis.googlecode.com
+
+Besides a C++ compiler, GLVis depends on the following external packages:
+
+- the MFEM library
+  http://mfem.googlecode.com
+
+- the LAPACK and BLAS libraries, if MFEM was built to depend on them
+  http://www.netlib.org/lapack
+
+- the X11, GL and GLU libraries, which are standard on most Unix-type systems
+  http://www.x.org, http://www.opengl.org, http://www.mesa3d.org
+
+- the libtiff library, which can optionally be used for taking screenshots
+  http://www.libtiff.org
+
+Two build systems are supported, based on make and SCons, as described below.
+
+
+Building with 'make'
+====================
+GLVis comes with a standard makefile, which can be adjusted to specify the paths
+to the external libraries, the compiler flags, and if libtiff should be used for
+screenshots. Specific options for compiling on Mac OS X are also available.
+
+Some of the available 'make' targets are:
+
+make       -> Builds the glvis binary and the lib/libglvis.a library
+make lib   -> Builds only the lib/libglvis.a library
+make debug -> Builds a debug version
+make clean -> Cleans the build
+
+
+Building with 'SCons'
+====================
+SCons is a Python-based next generation build system from http://www.scons.org/,
+which combines the capabilities of make and configure. The included SConstruct
+file can be edited to adjust paths to libraries, but the platform-specific
+options and the availability of LAPACK, BLAS and libtiff are automatically
+detected.
+
+Some of the available 'SCons' targets are:
+
+scons         -> Builds the glvis binary and the lib/libglvis.a library
+scons debug=1 -> Builds a debug version
+scons -c      -> Cleans the build
