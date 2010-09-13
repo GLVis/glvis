@@ -23,8 +23,8 @@ protected:
    double xscale, yscale, zscale;
 
 public:
-   VisualizationScene ();
-   virtual ~VisualizationScene ();
+   VisualizationScene();
+   virtual ~VisualizationScene();
 
    int spinning, OrthogonalProjection, print, movie;
    double ViewAngle, ViewScale;
@@ -39,8 +39,8 @@ public:
    virtual void Prepare();
    virtual void CenterObject();
    virtual void CenterObject2D();
-   virtual void PrepareAxes ();
-   virtual void Draw ();
+   virtual void PrepareAxes();
+   virtual void Draw();
 
    void SetView(double theta, double phi);
    void Zoom(double factor);

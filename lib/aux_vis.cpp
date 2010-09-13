@@ -13,6 +13,8 @@
 #include <sstream>
 #include <math.h>
 
+#include "mfem.hpp"
+
 #include "palettes.hpp"
 #include "aux_vis.hpp"
 #include "gl2ps.h"
@@ -34,9 +36,8 @@ float MatAlphaCenter = 0.5;
 
 void MyExpose(GLsizei w, GLsizei h);
 
-void InitVisualization (const char name[], int x, int y, int w, int h)
+int InitVisualization (const char name[], int x, int y, int w, int h)
 {
-
    static int init = 0;
 
    if (!init)
@@ -49,9 +50,12 @@ void InitVisualization (const char name[], int x, int y, int w, int h)
    cout << "OpenGL Visualization" << endl;
 #endif
 
-   auxInitDisplayMode (GLenum(AUX_DOUBLE | AUX_RGBA | AUX_DEPTH ));
-   auxInitPosition (x, y, w, h);
-   auxInitWindow (name);
+   GLenum mode = AUX_DOUBLE | AUX_RGBA | AUX_DEPTH;
+   // mode |= (AUX_ALPHA | AUX_ACCUM);
+   auxInitDisplayMode(mode);
+   auxInitPosition(x, y, w, h);
+   if (auxInitWindow(name) == GL_FALSE)
+      return 1;
 
    Set_Texture_Image();
 
@@ -147,6 +151,8 @@ void InitVisualization (const char name[], int x, int y, int w, int h)
    auxKeyFunc(XK_parenright, EnlargeWindow);
 
    locscene = NULL;
+
+   return 0;
 }
 
 void SendKeyEvent (KeySym keysym, int Shift=0)
@@ -158,10 +164,13 @@ void SendKeyEvent (KeySym keysym, int Shift=0)
    xke.type    = KeyPress;
    xke.state   = 0;
 
-   if (!Shift) {
+   if (!Shift)
+   {
       xke.keycode = XKeysymToKeycode(xke.display, keysym);
       XSendEvent(auxXDisplay(), auxXWindow(), True, KeyPressMask, (XEvent*)&xke);
-   } else {
+   }
+   else
+   {
       xke.keycode = XKeysymToKeycode(xke.display, XK_Shift_L);
       XSendEvent(auxXDisplay(), auxXWindow(), True, KeyPressMask, (XEvent*)&xke);
       xke.state |= ShiftMask;
@@ -181,24 +190,28 @@ void SendKeySequence (char * seq)
 {
    char * key = seq;
 
-   for ( ; *key != '\0'; key++ ) { // see /usr/include/X11/keysymdef.h
-
-      if ( ((*key - '0') < 10) && ((*key - '0') >= 0) ) { // (keypad) number
+   for ( ; *key != '\0'; key++ ) // see /usr/include/X11/keysymdef.h
+   {
+      if ( ((*key - '0') < 10) && ((*key - '0') >= 0) ) // (keypad) number
+      {
          SendKeyEvent(XK_0 + (*key) -'0');
          continue;
       }
 
-      if ( ((*key - 'a') < 26) && ((*key - 'a') >= 0) ) { // lowercase letter
+      if ( ((*key - 'a') < 26) && ((*key - 'a') >= 0) ) // lowercase letter
+      {
          SendKeyEvent(XK_a + (*key) -'a');
          continue;
       }
 
-      if ( ((*key - 'A') < 26) && ((*key - 'A') >= 0) ) { // uppercase letter
+      if ( ((*key - 'A') < 26) && ((*key - 'A') >= 0) ) // uppercase letter
+      {
          SendKeyEvent(XK_A + (*key) -'A',1);
          continue;
       }
 
-      switch (*key) {
+      switch (*key)
+      {
       case '+':
          SendKeyEvent(XK_plus);
          continue;
@@ -231,7 +244,8 @@ void SendKeySequence (char * seq)
          continue;
       case '~': // special codes
          key++;
-         switch (*key) {
+         switch (*key)
+         {
          case 'e': // expose event
             SendExposeEvent();
             break;
@@ -271,7 +285,10 @@ void SendKeySequence (char * seq)
    }
 }
 
-void SetVisualizationScene (VisualizationScene * scene, int view, char * keys){
+void InitIdleFuncs();
+
+void SetVisualizationScene(VisualizationScene * scene, int view, char * keys)
+{
    locscene = scene;
 
    locscene -> view = view;
@@ -280,16 +297,16 @@ void SetVisualizationScene (VisualizationScene * scene, int view, char * keys){
    else
       scene -> CenterObject();
 
+   InitIdleFuncs();
    if (scene -> spinning)
-      auxIdleFunc(MainLoop);
-   else
-      auxIdleFunc((void (*)())0);
+      AddIdleFunc(MainLoop);
 
    if (keys)
       SendKeySequence(keys);
 
-   // auxMainLoop(MainLoop);
    auxMainLoop(NULL);
+
+   InitIdleFuncs();
 }
 
 void KillVisualization()
@@ -303,7 +320,8 @@ void KillVisualization()
    auxCloseWindow();
 }
 
-void SendExposeEvent(){
+void SendExposeEvent()
+{
    XExposeEvent ev;
    ev.type = Expose;
    ev.count = 0;
@@ -324,7 +342,7 @@ void MyReshape(GLsizei w, GLsizei h)
    double ViewCenterX = locscene->ViewCenterX;
    double ViewCenterY = locscene->ViewCenterY;
 
-   if ( locscene->OrthogonalProjection )
+   if (locscene->OrthogonalProjection)
    {
       double scale = locscene->ViewScale;
       if (w <= h)
@@ -351,7 +369,7 @@ void MyReshape(GLsizei w, GLsizei h)
 void MyExpose(GLsizei w, GLsizei h)
 {
    MyReshape (w, h);
-   locscene -> Draw ();
+   locscene -> Draw();
 }
 
 void MyExpose()
@@ -362,6 +380,38 @@ void MyExpose()
    MyExpose(wa.width, wa.height);
 }
 
+
+Array<void (*)()> IdleFuncs;
+int LastIdleFunc;
+
+void InitIdleFuncs()
+{
+   IdleFuncs.SetSize(0);
+   LastIdleFunc = 0;
+   auxIdleFunc(NULL);
+}
+
+void MainIdleFunc()
+{
+   LastIdleFunc = (LastIdleFunc + 1) % IdleFuncs.Size();
+   if (IdleFuncs[LastIdleFunc])
+      (*IdleFuncs[LastIdleFunc])();
+}
+
+void AddIdleFunc(void (*Func)(void))
+{
+   IdleFuncs.Union(Func);
+   auxIdleFunc(MainIdleFunc);
+}
+
+void RemoveIdleFunc(void (*Func)(void))
+{
+   IdleFuncs.DeleteFirst(Func);
+   if (IdleFuncs.Size() == 0)
+      auxIdleFunc(NULL);
+}
+
+
 double xang, yang;
 double srot[16], sph_t, sph_u;
 static GLint oldx, oldy, startx, starty;
@@ -369,14 +419,16 @@ static GLint oldx, oldy, startx, starty;
 int constrained_spinning = 0;
 
 
-void MainLoop(){
+void MainLoop()
+{
    static int p = 1;
    struct timespec req;
-   if (locscene -> spinning){
+   if (locscene -> spinning)
+   {
       if (!constrained_spinning)
       {
          glMatrixMode (GL_MODELVIEW);
-         glLoadIdentity ();
+         glLoadIdentity();
          glRotatef(xang, 0.0f, 1.0f, 0.0f);
          glRotatef(yang, 1.0f, 0.0f, 0.0f);
          glMultMatrixd (locscene -> rotmat);
@@ -395,7 +447,8 @@ void MainLoop(){
       req.tv_nsec = 10000000;
       nanosleep (&req, NULL);  // sleep for 0.01 seconds
    }
-   if (locscene -> movie) {
+   if (locscene -> movie)
+   {
       char fname[20];
       sprintf(fname, "GLVis_m%04d", p++);
       Screenshot(fname);
@@ -404,12 +457,14 @@ void MainLoop(){
 
 //== PRESSED MOUSE BUTTONS EVENTS ============================================
 
-inline double sqr(double t){
+inline double sqr(double t)
+{
    return t*t;
 }
 
 inline void ComputeSphereAngles(int &newx, int &newy,
-                                double &new_sph_u, double &new_sph_t){
+                                double &new_sph_u, double &new_sph_t)
+{
    GLint viewport[4];
    double r, x, y, rr;
    const double maxr = 0.996194698091745532295;
@@ -428,9 +483,10 @@ inline void ComputeSphereAngles(int &newx, int &newy,
    new_sph_t = atan2(y, x);
 }
 
-void LeftButtonDown (AUX_EVENTREC *event){
+void LeftButtonDown (AUX_EVENTREC *event)
+{
    locscene -> spinning = 0;
-   auxIdleFunc((void (*)())0);
+   RemoveIdleFunc(MainLoop);
 
    oldx = event->data[AUX_MOUSEX];
    oldy = event->data[AUX_MOUSEY];
@@ -444,7 +500,8 @@ void LeftButtonDown (AUX_EVENTREC *event){
    starty = oldy;
 }
 
-void LeftButtonLoc (AUX_EVENTREC *event){
+void LeftButtonLoc (AUX_EVENTREC *event)
+{
    GLint newx = event->data[AUX_MOUSEX];
    GLint newy = event->data[AUX_MOUSEY];
    int sendexpose = 1;
@@ -514,16 +571,18 @@ void LeftButtonLoc (AUX_EVENTREC *event){
       SendExposeEvent();
 }
 
-void LeftButtonUp (AUX_EVENTREC *event){
+void LeftButtonUp (AUX_EVENTREC *event)
+{
    GLint newx = event->data[AUX_MOUSEX];
    GLint newy = event->data[AUX_MOUSEY];
 
    xang = (newx-startx)/5.0;
    yang = (newy-starty)/5.0;
 
-   if ( (event->data[2] & ShiftMask) && (xang != 0.0 || yang != 0.0) ){
+   if ( (event->data[2] & ShiftMask) && (xang != 0.0 || yang != 0.0) )
+   {
       locscene -> spinning = 1;
-      auxIdleFunc(MainLoop);
+      AddIdleFunc(MainLoop);
       if (xang > 20) xang = 20; if (xang < -20) xang = -20;
       if (yang > 20) yang = 20; if (yang < -20) yang = -20;
 
@@ -534,12 +593,14 @@ void LeftButtonUp (AUX_EVENTREC *event){
    }
 }
 
-void MiddleButtonDown (AUX_EVENTREC *event){
+void MiddleButtonDown (AUX_EVENTREC *event)
+{
    startx = oldx = event->data[AUX_MOUSEX];
    starty = oldy = event->data[AUX_MOUSEY];
 }
 
-void MiddleButtonLoc (AUX_EVENTREC *event){
+void MiddleButtonLoc (AUX_EVENTREC *event)
+{
    GLint newx = event->data[AUX_MOUSEX];
    GLint newy = event->data[AUX_MOUSEY];
 
@@ -572,26 +633,21 @@ void MiddleButtonLoc (AUX_EVENTREC *event){
 }
 
 void MiddleButtonUp (AUX_EVENTREC *event)
+{}
+
+void RightButtonDown (AUX_EVENTREC *event)
 {
-/*
-  GLint newx = event->data[AUX_MOUSEX];
-  GLint newy = event->data[AUX_MOUSEY];
-
-  locscene -> Translate ((double)(newx-oldx)/200,(double)(newy-oldy)/200);
-  SendExposeEvent();
-*/
-}
-
-void RightButtonDown (AUX_EVENTREC *event){
    startx = oldx = event->data[AUX_MOUSEX];
    starty = oldy = event->data[AUX_MOUSEY];
 }
 
-void RightButtonLoc (AUX_EVENTREC *event){
+void RightButtonLoc (AUX_EVENTREC *event)
+{
    GLint newx = event->data[AUX_MOUSEX];
    GLint newy = event->data[AUX_MOUSEY];
 
-   if (event->data[2] & ShiftMask) {
+   if (event->data[2] & ShiftMask)
+   {
       glLoadIdentity();
       // GLfloat light[] = {newx,-newy, sqrt((float)(newx*newx+newy*newy)), 0.0 };
       newx -= startx;
@@ -629,23 +685,28 @@ void RightButtonLoc (AUX_EVENTREC *event){
 }
 
 void RightButtonUp (AUX_EVENTREC *event)
-{
-/*
-  GLint newx = event->data[AUX_MOUSEX];
-  GLint newy = event->data[AUX_MOUSEY];
-
-  if (!(event->data[2] & (ShiftMask|ControlMask)))
-  locscene -> Scale ( exp ( double (oldy-newy)/50 ) );
-  SendExposeEvent();
-*/
-}
+{}
 
 int Screenshot(const char *fname)
 {
+#ifdef GLVIS_DEBUG
+   cout << "Screenshot: glXWaitX() ... " << flush;
+#endif
+   glXWaitX();
+#ifdef GLVIS_DEBUG
+   cout << "done." << endl;
+#endif
+
+#ifdef GLVIS_DEBUG
+   cout << "Screenshot: glFinish() ... " << flush;
+#endif
    glFinish();
    // events in the X event queue may not be complete
    // in particular ExposeEvents generated by SendExposeEvent()
    // or keys sent by SendKeySequence
+#ifdef GLVIS_DEBUG
+   cout << "done." << endl;
+#endif
 
 #ifdef GLVIS_USE_LIBTIFF
    // Save a TIFF image. This requires the libtiff library, see www.libtiff.org
@@ -661,7 +722,7 @@ int Screenshot(const char *fname)
    XGetWindowAttributes(auxXDisplay(), auxXWindow(), &wa);
    int w = wa.width;
    int h = wa.height;
-   MyExpose(w,h);
+   // MyExpose(w,h);
    glReadBuffer(GL_FRONT);
 
    unsigned char** pixels = new unsigned char*[ h ];
@@ -704,18 +765,21 @@ int Screenshot(const char *fname)
 #endif
 }
 
-void KeyS ()
+void KeyS()
 {
    static int p = 1;
 
-   if (locscene -> spinning) {
+   if (locscene -> spinning)
+   {
       locscene -> movie = 1 - locscene -> movie;
       if (locscene -> movie)
          cout << "Recording a movie (series of snapshots)..." << endl;
       else
          cout << endl;
       // use (ImageMagik's) convert GLVis_m* GLVis.{gif,mpg}
-   } else {
+   }
+   else
+   {
       cout << "Taking snapshot number " << p << "... ";
       char fname[20];
       sprintf(fname, "GLVis_s%02d", p++);
@@ -724,7 +788,7 @@ void KeyS ()
    }
 }
 
-void KeyP ()
+void KeyP()
 {
    int state, buffsize;
    FILE * fp;
@@ -737,7 +801,7 @@ void KeyP ()
    state = GL2PS_OVERFLOW;
    locscene -> print = 1;
    glGetIntegerv(GL_VIEWPORT, viewport);
-   while( state == GL2PS_OVERFLOW )
+   while (state == GL2PS_OVERFLOW)
    {
       buffsize += 1024*1024;
       gl2psBeginPage ( "GLVis.eps", "GLVis", viewport,
@@ -767,30 +831,58 @@ void KeyP ()
    locscene -> Draw();
 }
 
-void KeyQPressed (){
+void KeyQPressed()
+{
    visualize = 0;
 }
 
-void Key0Pressed(){
-   xang--;
+void CheckSpin()
+{
+   if (fabs(xang) < 1.e-2)
+      xang = 0.;
+   if (xang != 0. || yang != 0.)
+   {
+      locscene->spinning = 1;
+      AddIdleFunc(MainLoop);
+   }
+   else
+   {
+      locscene->spinning = 0;
+      RemoveIdleFunc(MainLoop);
+   }
 }
 
-void KeyDeletePressed(){
+void Key0Pressed()
+{
+   xang--;
+   CheckSpin();
+}
+
+void KeyDeletePressed()
+{
    if (locscene -> spinning)
+   {
+      xang = yang = 0.;
       locscene -> spinning = 0;
-   else {
-      xang = 1;
+      RemoveIdleFunc(MainLoop);
+   }
+   else
+   {
+      xang = 1.;
       locscene -> spinning = 1;
-      auxIdleFunc(MainLoop);
+      AddIdleFunc(MainLoop);
       constrained_spinning = 1;
    }
 }
 
-void KeyEnterPressed(){
+void KeyEnterPressed()
+{
    xang++;
+   CheckSpin();
 }
 
-void Key7Pressed(){
+void Key7Pressed()
+{
    glMatrixMode (GL_MODELVIEW);
    glLoadMatrixd (locscene -> rotmat);
    glRotated ( 1.0, 0.0, -1.0, 0.0 );
@@ -798,12 +890,14 @@ void Key7Pressed(){
    SendExposeEvent();
 }
 
-void Key8Pressed(){
+void Key8Pressed()
+{
    locscene -> Rotate (0,-1);
    SendExposeEvent();
 }
 
-void Key9Pressed(){
+void Key9Pressed()
+{
    glMatrixMode (GL_MODELVIEW);
    glLoadMatrixd (locscene -> rotmat);
    glRotated ( -1.0, 1.0, 0.0, 0.0 );
@@ -811,7 +905,8 @@ void Key9Pressed(){
    SendExposeEvent();
 }
 
-void Key4Pressed(){
+void Key4Pressed()
+{
    glMatrixMode (GL_MODELVIEW);
    glLoadMatrixd (locscene -> rotmat);
    glRotated ( -1.0, 0.0, 0.0, 1.0 );
@@ -819,7 +914,8 @@ void Key4Pressed(){
    SendExposeEvent();
 }
 
-void Key5Pressed(){
+void Key5Pressed()
+{
    if (locscene -> view == 2)
       locscene -> CenterObject2D();
    else
@@ -827,7 +923,8 @@ void Key5Pressed(){
    SendExposeEvent();
 }
 
-void Key6Pressed(){
+void Key6Pressed()
+{
    glMatrixMode (GL_MODELVIEW);
    glLoadMatrixd (locscene -> rotmat);
    glRotated ( 1.0, 0.0, 0.0, 1.0 );
@@ -835,7 +932,8 @@ void Key6Pressed(){
    SendExposeEvent();
 }
 
-void Key1Pressed(){
+void Key1Pressed()
+{
    glMatrixMode (GL_MODELVIEW);
    glLoadMatrixd (locscene -> rotmat);
    glRotated ( 1.0, 1.0, 0.0, 0.0 );
@@ -843,12 +941,14 @@ void Key1Pressed(){
    SendExposeEvent();
 }
 
-void Key2Pressed(){
+void Key2Pressed()
+{
    locscene -> Rotate (0,1);
    SendExposeEvent();
 }
 
-void Key3Pressed(){
+void Key3Pressed()
+{
    glMatrixMode (GL_MODELVIEW);
    glLoadMatrixd (locscene -> rotmat);
    glRotated ( 1.0, 0.0, 1.0, 0.0 );
@@ -856,22 +956,26 @@ void Key3Pressed(){
    SendExposeEvent();
 }
 
-void KeyLeftPressed(){
+void KeyLeftPressed()
+{
    locscene -> Rotate (-5,0);
    SendExposeEvent();
 }
 
-void KeyRightPressed(){
+void KeyRightPressed()
+{
    locscene -> Rotate (5,0);
    SendExposeEvent();
 }
 
-void KeyUpPressed(){
+void KeyUpPressed()
+{
    locscene -> Rotate (0,-5);
    SendExposeEvent();
 }
 
-void KeyDownPressed(){
+void KeyDownPressed()
+{
    locscene -> Rotate (0,5);
    SendExposeEvent();
 }
@@ -965,7 +1069,8 @@ void MoveResizeWindow(int x, int y, int w, int h)
 
 
 // Draw a cone of radius 1 with base in the x-y plane and center at (0,0,2)
-void Cone(){
+void Cone()
+{
    const int n = 8;
    const double step = 2*M_PI/n;
    const double nz = (1.0/4.0);
@@ -978,7 +1083,8 @@ void Cone(){
    glVertex3d(0, 0, 0);
    glNormal3d(1.0, 0.0, nz);
    glVertex3d(1, 0, -4);
-   for(i=1; i<n; i++){
+   for (i = 1; i < n; i++)
+   {
       glNormal3d(cos(point), sin(point), nz);
       glVertex3d(cos(point), sin(point), -4);
       point += step;

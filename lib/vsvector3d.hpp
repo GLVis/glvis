@@ -54,14 +54,14 @@ public:
 
    virtual void PrepareCuttingPlane();
 
-   void ToggleDisplacements()  {drawdisp = (drawdisp+1)%2;};
+   void ToggleDisplacements() {drawdisp = (drawdisp+1)%2;};
 
    virtual void Draw();
 
-   virtual void EventUpdateColors ()
+   virtual void EventUpdateColors()
    { Prepare(); PrepareVectorField(); PrepareCuttingPlane(); };
 
-   void ToggleVectorFieldLevel (int v);
+   void ToggleVectorFieldLevel(int v);
    void AddVectorFieldLevel();
    void RemoveVectorFieldLevel();
 };

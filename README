@@ -1,5 +1,5 @@
                            GLVis visualization tool
-                                 version 1.0
+                                 version 1.1
 
                      _/_/_/  _/      _/      _/  _/
                   _/        _/      _/      _/        _/_/_/
@@ -205,5 +205,5 @@ v/V - Add/Delete a level surface value
 w/W - Move boundary elements up/down in direction of the normal (i.e. "plot"
       the boundary values in normal direction)
 
-F3/F4   - Shrink/Zoom subdomain in a disjoint mesh
-F11/F12 - Shrink/Zoom elements in a disjoint mesh
+F3/F4   - Shrink/Zoom boundary elements (to the centers of the attributes)
+F11/F12 - Shrink/Zoom materials subdomains (to the centers of the attributes)

@@ -13,10 +13,12 @@ CC = g++
 OPTS = -O3
 DEBUG_OPTS = -g -DGLVIS_DEBUG
 
+DEFINES = -DGLVIS_MULTISAMPLE=4
+
 # Take screenshots internally with libtiff or externally with xwd?
 USE_LIBTIFF = NO
 # Link with LAPACK? (needed if MFEM was compiled with LAPACK support)
-USE_LAPACK  = NO
+USE_LAPACK  = YES
 
 # GLVis requires the MFEM library
 MFEM_DIR   = ../mfem
@@ -49,21 +51,39 @@ TIFF_LIBS_NO  =
 TIFF_OPTS     = $(TIFF_OPTS_$(USE_LIBTIFF))
 TIFF_LIBS     = $(TIFF_LIBS_$(USE_LIBTIFF))
 
-# Targets
-
 COPTS = $(TIFF_OPTS) $(GL_OPTS) $(OPTS)
 LIBS  = $(MFEM_LIB) $(LAPACK_LIBS) $(X11_LIB) $(GL_LIBS) $(TIFF_LIBS)
+CCC   = $(CC) $(COPTS) $(DEFINES)
+
+# generated with 'echo lib/*.c*'
+SOURCE_FILES = lib/aux_gl.cpp lib/aux_vis.cpp lib/gl2ps.c lib/material.cpp\
+ lib/openglvis.cpp lib/tk.cpp lib/vsdata.cpp lib/vssolution3d.cpp\
+ lib/vssolution.cpp lib/vsvector3d.cpp lib/vsvector.cpp
+OBJECT_FILES1 = $(SOURCE_FILES:.cpp=.o)
+OBJECT_FILES = $(OBJECT_FILES1:.c=.o)
+# generated with 'echo lib/*.h*'
+HEADER_FILES = lib/aux_gl.hpp lib/aux_vis.hpp lib/gl2ps.h lib/material.hpp\
+ lib/openglvis.hpp lib/palettes.hpp lib/tk.h lib/visual.hpp lib/vsdata.hpp\
+ lib/vssolution3d.hpp lib/vssolution.hpp lib/vsvector3d.hpp lib/vsvector.hpp
+
+# Targets
+
+.SUFFIXES: .c .cpp .o
+.cpp.o:
+	cd $(<D); $(CCC) -I../$(MFEM_DIR) -c $(<F)
+.c.o:
+	cd $(<D); $(CCC) -I../$(MFEM_DIR) -c $(<F)
 
 glvis:	glvis.cpp lib/libglvis.a
-	$(CC) $(COPTS) -I$(MFEM_DIR) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
+	$(CCC) -I$(MFEM_DIR) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
 
 debug:
 	make "OPTS=$(DEBUG_OPTS)"
 
-lib/libglvis.a: lib/*.hpp lib/*.cpp lib/*.h lib/*.c
-	cd lib;	$(CC) $(COPTS) -c -I../$(MFEM_DIR) *.c *.cpp
+$(OBJECT_FILES): $(HEADER_FILES)
+
+lib/libglvis.a: $(OBJECT_FILES)
 	cd lib;	ar cruv libglvis.a *.o;	ranlib libglvis.a
 
 clean:
 	rm -f lib/*.o lib/*~ *~ glvis lib/libglvis.a GLVis_coloring.gf
-

@@ -11,7 +11,7 @@
 
 extern void Set_Material();
 
-extern void Set_Light ();
+extern void Set_Light();
 
 extern int Next_Material_And_Light();
 
@@ -19,14 +19,14 @@ extern void Set_Material_And_Light(int,int);
 
 extern void Set_Black_Material();
 
-extern void Set_Background ();
+extern void Set_Background();
 
-extern void Toggle_Background ();
+extern void Toggle_Background();
 
-extern void Set_Transparency ();
+extern void Set_Transparency();
 
-extern void Remove_Transparency ();
+extern void Remove_Transparency();
 
-extern void Set_AntiAliasing ();
+extern void Set_AntiAliasing();
 
-extern void Remove_AntiAliasing ();
+extern void Remove_AntiAliasing();

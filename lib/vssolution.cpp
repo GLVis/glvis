@@ -20,13 +20,13 @@
 #include "visual.hpp"
 
 
-VisualizationSceneSolution  *   vssol;
-extern VisualizationScene  * locscene;
-
+VisualizationSceneSolution *vssol;
+extern VisualizationScene  *locscene;
 
 // Definitions of some more keys
 
-static void SolutionKeyHPressed (){
+static void SolutionKeyHPressed()
+{
    cout << endl
         << "+------------------------------------+" << endl
         << "| Keys                               |" << endl
@@ -94,7 +94,7 @@ static void SolutionKeyHPressed (){
         << "+------------------------------------+" << endl;
 }
 
-static void KeyF8Pressed ()
+static void KeyF8Pressed()
 {
    int attr;
 
@@ -125,7 +125,7 @@ static void KeyF8Pressed ()
    SendExposeEvent();
 }
 
-static void KeyF9Pressed ()
+static void KeyF9Pressed()
 {
    int attr;
 
@@ -145,7 +145,7 @@ static void KeyF9Pressed ()
    SendExposeEvent();
 }
 
-static void KeyF10Pressed ()
+static void KeyF10Pressed()
 {
    int attr;
 
@@ -164,29 +164,33 @@ static void KeyF10Pressed ()
    SendExposeEvent();
 }
 
-static void KeyBPressed (){
+static void KeyBPressed()
+{
    vssol -> ToggleDrawBdr();
    SendExposeEvent();
 }
 
-static void KeyMPressed (){
+static void KeyMPressed()
+{
    vssol -> ToggleDrawMesh();
    SendExposeEvent();
 }
 
-static void KeyEPressed (){
+static void KeyEPressed()
+{
    vssol -> ToggleDrawElems();
    SendExposeEvent();
 }
 
-static void KeyFPressed (){
+static void KeyFPressed()
+{
    vssol -> ToggleShading();
    SendExposeEvent();
 }
 
 int refine_func = 0;
 
-void KeyiPressed ()
+void KeyiPressed()
 {
    int update = 1;
    switch (refine_func)
@@ -218,9 +222,9 @@ void KeyiPressed ()
    }
    if (update && vssol -> shading == 2)
    {
-      vssol -> FindNewBox ();
+      vssol -> FindNewBox();
       locscene -> PrepareAxes();
-      vssol -> PrepareLines ();
+      vssol -> PrepareLines();
       locscene -> Prepare();
       vssol -> DefaultLevelLines();
       vssol -> PrepareLevelCurves();
@@ -231,7 +235,7 @@ void KeyiPressed ()
         << ", " << vssol -> EdgeRefineFactor << endl;
 }
 
-void KeyIPressed ()
+void KeyIPressed()
 {
    refine_func = (refine_func+1)%4;
    cout << "Key 'i' will: ";
@@ -308,10 +312,10 @@ static void KeyF4Pressed()
    }
 }
 
-VisualizationSceneSolution::VisualizationSceneSolution(){}
+VisualizationSceneSolution::VisualizationSceneSolution()
+{}
 
-VisualizationSceneSolution
-::VisualizationSceneSolution(Mesh & m, Vector & s)
+VisualizationSceneSolution::VisualizationSceneSolution(Mesh &m, Vector &s)
 {
    mesh = &m;
    sol = &s;
@@ -340,7 +344,7 @@ void VisualizationSceneSolution::Init()
       el_attr_to_show[i] = 1;
    drawbdr = 0;
 
-   VisualizationSceneScalarData :: Init();  //  Calls FindNewBox() !!!
+   VisualizationSceneScalarData::Init();  //  Calls FindNewBox() !!!
 
    SetUseTexture(1);
 
@@ -393,7 +397,7 @@ void VisualizationSceneSolution::Init()
    PrepareBoundary();
 }
 
-VisualizationSceneSolution::~VisualizationSceneSolution ()
+VisualizationSceneSolution::~VisualizationSceneSolution()
 {
    glDeleteLists (displlist, 1);
    glDeleteLists (linelist, 1);
@@ -474,24 +478,42 @@ void VisualizationSceneSolution::GetRefinedValues(
       ShrinkPoints(tr);
 }
 
-void VisualizationSceneSolution::ShrinkPoints(DenseMatrix &pointmat)
+int VisualizationSceneSolution::GetRefinedValuesAndNormals(
+   int i, const IntegrationRule &ir, Vector &vals, DenseMatrix &tr,
+   DenseMatrix &normals)
 {
-   int k;
-   double cx=0.0, cy=0.0;
+   int have_normals = 0;
 
-   for (k = 0; k < pointmat.Width(); k++)
+   if (drawelems < 2)
    {
-      cx += pointmat(0,k);
-      cy += pointmat(1,k);
+      rsol->GetGradients(i, ir, tr);
+      normals.SetSize(3, tr.Width());
+      for (int j = 0; j < tr.Width(); j++)
+      {
+         normals(0, j) = -tr(0, j);
+         normals(1, j) = -tr(1, j);
+         normals(2, j) = 1.;
+      }
+      have_normals = 1;
+      rsol->GetValues(i, ir, vals, tr);
    }
-   cx /= pointmat.Width();
-   cy /= pointmat.Width();
+   else
+      GetRefinedDetJ(i, ir, vals, tr);
 
-   for (k = 0; k < pointmat.Width(); k++)
+   if (shrink != 1.0)
    {
-      pointmat(0,k) = shrink*pointmat(0,k) + (1-shrink)*cx;
-      pointmat(1,k) = shrink*pointmat(1,k) + (1-shrink)*cy;
+      ShrinkPoints(tr);
+      if (have_normals)
+      {
+         for (int j = 0; j < tr.Width(); j++)
+         {
+            normals(0, j) /= shrink;
+            normals(1, j) /= shrink;
+         }
+      }
    }
+
+   return have_normals;
 }
 
 void VisualizationSceneSolution::SetShading(int s)
@@ -698,59 +720,159 @@ void VisualizationSceneSolution::FindNewBox()
    SetNewScalingFromBox();
 }
 
-void VisualizationSceneSolution :: PrepareFlat (){
+void DrawTriangle(const double pts[][3], const double cv[],
+                  const double minv, const double maxv)
+{
+   double nor[3];
+   if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
+      return;
+   glBegin(GL_TRIANGLES);
+   glNormal3dv(nor);
+   for (int j = 0; j < 3; j++)
+   {
+      MySetColor(cv[j], minv, maxv);
+      glVertex3dv(pts[j]);
+   }
+   glEnd();
+}
+
+void DrawQuad(const double pts[][3], const double cv[],
+              const double minv, const double maxv)
+{
+   double nor[3];
+   if (Compute3DUnitNormal(pts[0], pts[1], pts[2], pts[3], nor))
+      return;
+   glBegin(GL_QUADS);
+   glNormal3dv(nor);
+   for (int j = 0; j < 4; j++)
+   {
+      MySetColor(cv[j], minv, maxv);
+      glVertex3dv(pts[j]);
+   }
+   glEnd();
+}
+
+void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
+               const int n, const Array<int> &ind, const double minv,
+               const double maxv, const int normals_opt)
+{
+   double na[3];
+
+   if (normals_opt == 1 || normals_opt == -2)
+   {
+      normals.SetSize(3, pts.Width());
+      normals = 0.;
+      for (int i = 0; i < ind.Size(); i += n)
+      {
+         int j;
+         if (n == 3)
+            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                    &pts(0, ind[i+2]), na);
+         else
+            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                    &pts(0, ind[i+2]), &pts(0, ind[i+3]), na);
+         if (j == 0)
+            for ( ; j < n; j++)
+               for (int k = 0; k < 3; k++)
+                  normals(k, ind[i+j]) += na[k];
+      }
+   }
+
+   if (n == 3)
+      glBegin(GL_TRIANGLES);
+   else
+      glBegin(GL_QUADS);
+   if (normals_opt != 0 && normals_opt != -1)
+   {
+      if (normals_opt > 0)
+      {
+         for (int i = 0; i < ind.Size(); i++)
+         {
+            glNormal3dv(&normals(0, ind[i]));
+            MySetColor(vals(ind[i]), minv, maxv);
+            glVertex3dv(&pts(0, ind[i]));
+         }
+      }
+      else
+      {
+         for (int i = ind.Size()-1; i >= 0; i--)
+         {
+            glNormal3dv(&normals(0, ind[i]));
+            MySetColor(vals(ind[i]), minv, maxv);
+            glVertex3dv(&pts(0, ind[i]));
+         }
+      }
+   }
+   else
+   {
+      for (int i = 0; i < ind.Size(); i += n)
+      {
+         int j;
+         if (n == 3)
+            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                    &pts(0, ind[i+2]), na);
+         else
+            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                    &pts(0, ind[i+2]), &pts(0, ind[i+3]), na);
+         if (j == 0)
+         {
+            if (normals_opt == 0)
+            {
+               glNormal3dv(na);
+               for ( ; j < n; j++)
+               {
+                  MySetColor(vals(ind[i+j]), minv, maxv);
+                  glVertex3dv(&pts(0, ind[i+j]));
+               }
+            }
+            else
+            {
+               glNormal3d(-na[0], -na[1], -na[2]);
+               for (j = n-1; j >= 0; j--)
+               {
+                  MySetColor(vals(ind[i+j]), minv, maxv);
+                  glVertex3dv(&pts(0, ind[i+j]));
+               }
+            }
+         }
+      }
+   }
+   glEnd();
+}
+
+void VisualizationSceneSolution::PrepareFlat()
+{
    int i, j;
 
    glNewList (displlist, GL_COMPILE);
 
-   Set_Material ();
+   Set_Material();
 
    int ne = mesh -> GetNE();
    DenseMatrix pointmat;
    Array<int> vertices;
+   double pts[4][3], col[4];
 
    for (i = 0; i < ne; i++)
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) continue;
 
-      switch (mesh->GetElementType(i))
-      {
-      case Element::TRIANGLE:
-         glBegin (GL_TRIANGLES);
-         break;
-
-      case Element::QUADRILATERAL:
-         glBegin (GL_QUADS);
-         break;
-      }
       mesh->GetPointMatrix (i, pointmat);
       mesh->GetElementVertices (i, vertices);
 
-      double v10[] = { pointmat(0,1)-pointmat(0,0),
-                       pointmat(1,1)-pointmat(1,0),
-                       (*sol)(vertices[1])-(*sol)(vertices[0]) };
-      double v21[] = { pointmat(0,2)-pointmat(0,1),
-                       pointmat(1,2)-pointmat(1,1),
-                       (*sol)(vertices[2])-(*sol)(vertices[1]) };
-
-      double norm[] = { v10[1]*v21[2]-v10[2]*v21[1],
-                        v10[2]*v21[0]-v10[0]*v21[2],
-                        v10[0]*v21[1]-v10[1]*v21[0] };
-      double rlen = 1.0/sqrt(norm[0]*norm[0]+norm[1]*norm[1]+norm[2]*norm[2]);
-
-      glNormal3d (norm[0]*rlen, norm[1]*rlen, norm[2]*rlen);
-
-      for (j = 0; j < pointmat.Size(); j++)
+      for (j = 0; j < pointmat.Width(); j++)
       {
-         MySetColor ( (*sol)(vertices[j]) , minv, maxv);
-         glVertex3d (pointmat.Elem(0, j),
-                     pointmat.Elem(1, j),
-                     (*sol)(vertices[j]));
+         pts[j][0] = pointmat(0, j);
+         pts[j][1] = pointmat(1, j);
+         pts[j][2] = col[j] = (*sol)(vertices[j]);
       }
-      glEnd ();
+      if (j == 3)
+         DrawTriangle(pts, col, minv, maxv);
+      else
+         DrawQuad(pts, col, minv, maxv);
    }
 
-   glEndList ();
+   glEndList();
 }
 
 // determines how quads and their level lines are drawn
@@ -760,65 +882,18 @@ void VisualizationSceneSolution :: PrepareFlat (){
 // 2 - draw 4 triangles (split using both diagonals)
 const int split_quads = 0;
 
-void DrawTriangle(const double x[], const double y[], const double z[],
-                  const double minv, const double maxv)
-{
-   double u[3] = { x[1]-x[0], y[1]-y[0], z[1]-z[0] };
-   double v[3] = { x[2]-x[0], y[2]-y[0], z[2]-z[0] };
-   double nor[3] = { u[1]*v[2]-u[2]*v[1],
-                     u[2]*v[0]-u[0]*v[2],
-                     u[0]*v[1]-u[1]*v[0] };
-   double l = sqrt(nor[0]*nor[0]+nor[1]*nor[1]+nor[2]*nor[2]);
-
-   if (l > 0.0)
-      l = 1./l;
-
-   glBegin(GL_TRIANGLES);
-   glNormal3d(nor[0]*l, nor[1]*l, nor[2]*l);
-   for (int j = 0; j < 3; j++)
-   {
-      MySetColor(z[j], minv, maxv);
-      glVertex3d(x[j], y[j], z[j]);
-   }
-   glEnd();
-}
-
-void DrawQuad(const double x[], const double y[], const double z[],
-              const double minv, const double maxv)
-{
-   double u[3] = { x[1]-x[0], y[1]-y[0], z[1]-z[0] };
-   double v[3] = { x[2]-x[0], y[2]-y[0], z[2]-z[0] };
-   double nor[3] = { u[1]*v[2]-u[2]*v[1],
-                     u[2]*v[0]-u[0]*v[2],
-                     u[0]*v[1]-u[1]*v[0] };
-   double l = sqrt(nor[0]*nor[0]+nor[1]*nor[1]+nor[2]*nor[2]);
-
-   if (l > 0.0)
-      l = 1./l;
-
-   glBegin(GL_QUADS);
-   glNormal3d(nor[0]*l, nor[1]*l, nor[2]*l);
-   for (int j = 0; j < 4; j++)
-   {
-      MySetColor(z[j], minv, maxv);
-      glVertex3d(x[j], y[j], z[j]);
-   }
-   glEnd();
-}
-
-void VisualizationSceneSolution :: PrepareFlat2 ()
+void VisualizationSceneSolution::PrepareFlat2()
 {
    int i, j, k;
 
    glNewList (displlist, GL_COMPILE);
 
-   Set_Material ();
+   Set_Material();
 
    int ne = mesh -> GetNE();
-   DenseMatrix pointmat;
+   DenseMatrix pointmat, pts3d, normals;
    Vector values;
    RefinedGeometry *RefG;
-   double x[4], y[4], z[4];
 
    for (i = 0; i < ne; i++)
    {
@@ -826,10 +901,22 @@ void VisualizationSceneSolution :: PrepareFlat2 ()
 
       RefG = GlobGeometryRefiner.Refine (mesh->GetElementBaseGeometry(i),
                                          TimesToRefine, EdgeRefineFactor);
-      GetRefinedValues (i, RefG->RefPts, values, pointmat);
+      j = GetRefinedValuesAndNormals(i, RefG->RefPts, values, pointmat,
+                                     normals);
       Array<int> &RG = RefG->RefGeoms;
       int sides = mesh->GetElement(i)->GetNVertices();
 
+#if 1
+      pts3d.SetSize(3, pointmat.Width());
+      for (k = 0; k < pointmat.Width(); k++)
+      {
+         pts3d(0, k) = pointmat(0, k);
+         pts3d(1, k) = pointmat(1, k);
+         pts3d(2, k) = values(k);
+      }
+      j = (j != 0) ? 2 : 0;
+      DrawPatch(pts3d, values, normals, sides, RG, minv, maxv, j);
+#else
       for (k = 0; k < RG.Size()/sides; k++)
       {
          int *ind = &RG[sides*k];
@@ -837,14 +924,14 @@ void VisualizationSceneSolution :: PrepareFlat2 ()
          {
             for (j = 0; j < sides; j++)
             {
-               x[j] = pointmat(0, ind[j]);
-               y[j] = pointmat(1, ind[j]);
-               z[j] = values(ind[j]);
+               pts[j][0] = pointmat(0, ind[j]);
+               pts[j][1] = pointmat(1, ind[j]);
+               pts[j][2] = col[j] = values(ind[j]);
             }
             if (sides == 3)
-               DrawTriangle(x, y, z, minv, maxv);
+               DrawTriangle(pts, col, minv, maxv);
             else
-               DrawQuad(x, y, z, minv, maxv);
+               DrawQuad(pts, col, minv, maxv);
          }
          else if (split_quads == 1)
          {
@@ -855,46 +942,48 @@ void VisualizationSceneSolution :: PrepareFlat2 ()
             {
                for (j = 0; j < 3; j++)
                {
-                  x[j] = pointmat(0, ind[vt[it][j]]);
-                  y[j] = pointmat(1, ind[vt[it][j]]);
-                  z[j] = values(ind[vt[it][j]]);
+                  pts[j][0] = pointmat(0, ind[vt[it][j]]);
+                  pts[j][1] = pointmat(1, ind[vt[it][j]]);
+                  pts[j][2] = col[j] = values(ind[vt[it][j]]);
                }
-               DrawTriangle(x, y, z, minv, maxv);
+               DrawTriangle(pts, col, minv, maxv);
             }
          }
          else
          {
             // draw 4 triangles for each quad
             // (split with both diagonals)
-            x[2] = y[2] = z[2] = 0.0;
+            pts[2][0] = pts[2][1] = pts[2][2] = 0.0;
             for (j = 0; j < 4; j++)
             {
-               x[2] += pointmat(0, ind[j]);
-               y[2] += pointmat(1, ind[j]);
-               z[2] += values(ind[j]);
+               pts[2][0] += pointmat(0, ind[j]);
+               pts[2][1] += pointmat(1, ind[j]);
+               pts[2][2] += values(ind[j]);
             }
-            x[2] *= 0.25;
-            y[2] *= 0.25;
-            z[2] *= 0.25;
+            pts[2][0] *= 0.25;
+            pts[2][1] *= 0.25;
+            pts[2][2] *= 0.25;
+            col[2] = pts[2][2];
             for (j = 0; j < 4; j++)
             {
-               x[0] = pointmat(0, ind[j]);
-               y[0] = pointmat(1, ind[j]);
-               z[0] = values(ind[j]);
+               pts[0][0] = pointmat(0, ind[j]);
+               pts[0][1] = pointmat(1, ind[j]);
+               pts[0][2] = col[0] = values(ind[j]);
                int l = (j+1)%4;
-               x[1] = pointmat(0, ind[l]);
-               y[1] = pointmat(1, ind[l]);
-               z[1] = values(ind[l]);
-               DrawTriangle(x, y, z, minv, maxv);
+               pts[1][0] = pointmat(0, ind[l]);
+               pts[1][1] = pointmat(1, ind[l]);
+               pts[1][2] = col[1] = values(ind[l]);
+               DrawTriangle(pts, col, minv, maxv);
             }
          }
       }
+#endif
    }
 
-   glEndList ();
+   glEndList();
 }
 
-void VisualizationSceneSolution :: Prepare ()
+void VisualizationSceneSolution::Prepare()
 {
    switch (shading)
    {
@@ -912,23 +1001,25 @@ void VisualizationSceneSolution :: Prepare ()
 
    glNewList (displlist, GL_COMPILE);
 
-   Set_Material ();
+   Set_Material();
 
    int ne = mesh -> GetNE();
    int nv = mesh -> GetNV();
    DenseMatrix pointmat;
    Array<int> vertices;
+   double p[4][3], nor[3];
 
    Vector nx(nv);
    Vector ny(nv);
    Vector nz(nv);
 
-   for (int d = 0; d < mesh -> attributes.Size(); d++){
+   for (int d = 0; d < mesh -> attributes.Size(); d++)
+   {
       if (!el_attr_to_show[mesh -> attributes[d]-1]) continue;
 
-      nx=0;
-      ny=0;
-      nz=0;
+      nx = 0.;
+      ny = 0.;
+      nz = 0.;
 
       for (i = 0; i < ne; i++)
          if (mesh -> GetAttribute(i) == mesh -> attributes[d])
@@ -936,24 +1027,25 @@ void VisualizationSceneSolution :: Prepare ()
             mesh->GetPointMatrix (i, pointmat);
             mesh->GetElementVertices (i, vertices);
 
-            double v10[] = { pointmat(0,1)-pointmat(0,0),
-                             pointmat(1,1)-pointmat(1,0),
-                             (*sol)(vertices[1])-(*sol)(vertices[0]) };
-            double v21[] = { pointmat(0,2)-pointmat(0,1),
-                             pointmat(1,2)-pointmat(1,1),
-                             (*sol)(vertices[2])-(*sol)(vertices[1]) };
-            double norm[] = { v10[1]*v21[2]-v10[2]*v21[1],
-                              v10[2]*v21[0]-v10[0]*v21[2],
-                              v10[0]*v21[1]-v10[1]*v21[0] };
-            double rlen = 1.0/sqrt(norm[0]*norm[0]+norm[1]*norm[1]+
-                                   norm[2]*norm[2]);
-
             for (j = 0; j < pointmat.Size(); j++)
             {
-               nx(vertices[j]) += norm[0]*rlen;
-               ny(vertices[j]) += norm[1]*rlen;
-               nz(vertices[j]) += norm[2]*rlen;
+               p[j][0] = pointmat(0, j);
+               p[j][1] = pointmat(1, j);
+               p[j][2] = (*sol)(vertices[j]);
             }
+
+            if (pointmat.Width() == 3)
+               j = Compute3DUnitNormal(p[0], p[1], p[2], nor);
+            else
+               j = Compute3DUnitNormal(p[0], p[1], p[2], p[3], nor);
+
+            if (j == 0)
+               for (j = 0; j < pointmat.Size(); j++)
+               {
+                  nx(vertices[j]) += nor[0];
+                  ny(vertices[j]) += nor[1];
+                  nz(vertices[j]) += nor[2];
+               }
          }
 
       for (i = 0; i < ne; i++)
@@ -974,17 +1066,15 @@ void VisualizationSceneSolution :: Prepare ()
 
             for (j = 0; j < pointmat.Size(); j++)
             {
-               MySetColor ( (*sol)(vertices[j]) , minv , maxv);
-               glNormal3d (nx(vertices[j]),ny(vertices[j]),nz(vertices[j]));
-               glVertex3d (pointmat(0, j),
-                           pointmat(1, j),
-                           (*sol)(vertices[j]));
+               MySetColor((*sol)(vertices[j]), minv, maxv);
+               glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
+               glVertex3d(pointmat(0, j), pointmat(1, j), (*sol)(vertices[j]));
             }
-            glEnd ();
+            glEnd();
          }
    }
 
-   glEndList ();
+   glEndList();
 }
 
 void VisualizationSceneSolution::PrepareLevelCurves()
@@ -1015,7 +1105,7 @@ void VisualizationSceneSolution::PrepareLevelCurves()
       DrawPolygonLevelLines (point[0], vertices.Size(), level);
    }
 
-   glEndList ();
+   glEndList();
 }
 
 void VisualizationSceneSolution::DrawLevelCurves(
@@ -1115,14 +1205,15 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
       DrawLevelCurves(RG, pointmat, values, sides, level);
    }
 
-   glEndList ();
+   glEndList();
 }
 
-void VisualizationSceneSolution::PrepareLines(){
+void VisualizationSceneSolution::PrepareLines()
+{
    if (shading == 2)
    {
-      // PrepareLines2 ();
-      PrepareLines3 ();
+      // PrepareLines2();
+      PrepareLines3();
       return;
    }
 
@@ -1132,7 +1223,7 @@ void VisualizationSceneSolution::PrepareLines(){
 
    glNewList(linelist, GL_COMPILE);
 
-   // Set_Black_Material ();
+   // Set_Black_Material();
    // glColor3f (0, 0, 0);
    glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
 
@@ -1155,10 +1246,10 @@ void VisualizationSceneSolution::PrepareLines(){
       for (j = 0; j < pointmat.Size(); j++)
          glVertex3d (pointmat(0, j), pointmat(1, j),
                      (*sol)(vertices[j]));
-      glEnd ();
+      glEnd();
    }
 
-   glEndList ();
+   glEndList();
 }
 
 void VisualizationSceneSolution::PrepareLines2()
@@ -1170,7 +1261,7 @@ void VisualizationSceneSolution::PrepareLines2()
 
    glNewList(linelist, GL_COMPILE);
 
-   // Set_Black_Material ();
+   // Set_Black_Material();
    // glColor3f (0, 0, 0);
    glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
 
@@ -1201,11 +1292,11 @@ void VisualizationSceneSolution::PrepareLines2()
             glVertex3d (pointmat(0, RG[sides*k+j]),
                         pointmat(1, RG[sides*k+j]),
                         values(RG[sides*k+j]));
-         glEnd ();
+         glEnd();
       }
    }
 
-   glEndList ();
+   glEndList();
 }
 
 void VisualizationSceneSolution::PrepareLines3()
@@ -1217,7 +1308,7 @@ void VisualizationSceneSolution::PrepareLines3()
 
    glNewList(linelist, GL_COMPILE);
 
-   // Set_Black_Material ();
+   // Set_Black_Material();
    // glColor3f (0, 0, 0);
    // glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
 
@@ -1239,10 +1330,10 @@ void VisualizationSceneSolution::PrepareLines3()
                      pointmat(1, RE[2*k+1]),
                      values(RE[2*k+1]));
       }
-      glEnd ();
+      glEnd();
    }
 
-   glEndList ();
+   glEndList();
 }
 
 void VisualizationSceneSolution::UpdateValueRange()
@@ -1269,10 +1360,10 @@ void VisualizationSceneSolution::PrepareBoundary()
       glBegin (GL_LINE_LOOP);
       for (j = 0; j < pointmat.Size(); j++)
          glVertex3d (pointmat(0, j), pointmat(1, j), (*sol)(vertices[j]));
-      glEnd ();
+      glEnd();
    }
 
-   glEndList ();
+   glEndList();
 }
 
 void VisualizationSceneSolution::PrepareCP()
@@ -1394,10 +1485,11 @@ void VisualizationSceneSolution::DrawCPLine(
    }
 }
 
-void VisualizationSceneSolution :: Draw (){
+void VisualizationSceneSolution::Draw()
+{
    glEnable(GL_DEPTH_TEST);
 
-   Set_Background ();
+   Set_Background();
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
    // model transformation
@@ -1422,10 +1514,11 @@ void VisualizationSceneSolution :: Draw (){
       else
          DrawColorBar(minv,maxv);
 
-   Set_Black_Material ();
+   Set_Black_Material();
 
    // draw axes
-   if (drawaxes){
+   if (drawaxes)
+   {
       glCallList(axeslist);
       DrawCoordinateCross();
    }
@@ -1444,10 +1537,11 @@ void VisualizationSceneSolution :: Draw (){
       glCallList(bdrlist);
 
    // draw lines
-   if ( drawmesh == 1 )
+   if (drawmesh == 1)
       glCallList(linelist);
    else
-      if (drawmesh == 2 ){
+      if (drawmesh == 2)
+      {
          // glLineWidth(1.0);
          glCallList(lcurvelist);
       }
@@ -1455,7 +1549,7 @@ void VisualizationSceneSolution :: Draw (){
       glEnable(GL_LIGHTING);
 
    if (MatAlpha < 1.0)
-      Set_Transparency ();
+      Set_Transparency();
 
    // draw elements
    glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
@@ -1472,7 +1566,7 @@ void VisualizationSceneSolution :: Draw (){
    }
 
    if (MatAlpha < 1.0)
-      Remove_Transparency ();
+      Remove_Transparency();
 
    glFlush();
    glXSwapBuffers (auxXDisplay(), auxXWindow());

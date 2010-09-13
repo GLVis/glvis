@@ -73,8 +73,8 @@ extern "C" {
 #define TK_HAS_ALPHA(x)		(((x) & TK_ALPHA) != 0)
 #define TK_HAS_DEPTH(x)		(((x) & TK_DEPTH) != 0)
 #define TK_HAS_STENCIL(x)	(((x) & TK_STENCIL) != 0)
-#define TK_IS_DIRECT(x)		(((x) & TK_INDIRECT) != 0)
-#define TK_IS_INDIRECT(x)	(((x) & TK_INDIRECT) == 0)
+#define TK_IS_DIRECT(x)		(((x) & TK_INDIRECT) == 0)
+#define TK_IS_INDIRECT(x)	(((x) & TK_INDIRECT) != 0)
 
 /*
 ** Event Status

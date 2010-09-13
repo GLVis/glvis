@@ -13,9 +13,11 @@
 // GLVis - an OpenGL visualization server based on the MFEM library
 
 
+#include <limits>
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
+#include <string.h>
 
 #include "mfem.hpp"
 #include "lib/visual.hpp"
@@ -47,6 +49,8 @@ const char *window_titles[2] ={ "GLVis [scalar data]",
                                 "GLVis [vector data]" };
 istream *script = NULL;
 int scr_sol_autoscale = 0;
+int scr_running = 0;
+int scr_level = 0;
 Vector *init_nodes = NULL;
 double scr_min_val, scr_max_val;
 
@@ -56,128 +60,165 @@ void ReadSerial();
 // read the mesh and the solution from multiple files
 void ReadParallel();
 
-void InitVis(int t)
+int InitVis(int t)
 {
-   InitVisualization(window_titles[t], window_x, window_y, window_w, window_h);
+   return InitVisualization(window_titles[t], window_x, window_y,
+                            window_w, window_h);
 }
 
 // Visualize the content of a string stream (e.g. from socket/file)
 void VisStream(istream * iss, char * data_type)
 {
+   int window_err = 0;
+
    if (strcmp(data_type,"fem2d_data") == 0)
    {
-      InitVis(0);
-      mesh = new Mesh(*iss, 0, 0);
-      sol.Load(*iss, mesh->GetNV());
+      window_err = InitVis(0);
+      if (!window_err)
+      {
+         mesh = new Mesh(*iss, 0, 0);
+         sol.Load(*iss, mesh->GetNV());
 
-      vs = new VisualizationSceneSolution(*mesh, sol);
+         vs = new VisualizationSceneSolution(*mesh, sol);
+      }
    }
    else if (strcmp(data_type,"vfem2d_data") == 0 ||
             strcmp(data_type,"vfem2d_data_keys") == 0 )
    {
-      InitVis(1);
-      mesh = new Mesh(*iss, 0, 0);
-      solu.Load(*iss, mesh->GetNV());
-      solv.Load(*iss, mesh->GetNV());
+      window_err = InitVis(1);
+      if (!window_err)
+      {
+         mesh = new Mesh(*iss, 0, 0);
+         solu.Load(*iss, mesh->GetNV());
+         solv.Load(*iss, mesh->GetNV());
 
-      vs = new VisualizationSceneVector(*mesh, solu, solv);
+         vs = new VisualizationSceneVector(*mesh, solu, solv);
 
-      if (strcmp(data_type,"vfem2d_data_keys") == 0)
-         *iss >> keys;
+         if (strcmp(data_type,"vfem2d_data_keys") == 0)
+            *iss >> keys;
+      }
    }
    else if (strcmp(data_type,"fem3d_data") == 0)
    {
-      InitVis(0);
-      mesh = new Mesh(*iss, 0, 0);
-      sol.Load(*iss, mesh->GetNV());
+      window_err = InitVis(0);
+      if (!window_err)
+      {
+         mesh = new Mesh(*iss, 0, 0);
+         sol.Load(*iss, mesh->GetNV());
 
-      vs = new VisualizationSceneSolution3d(*mesh, sol);
+         vs = new VisualizationSceneSolution3d(*mesh, sol);
+      }
    }
    else if (strcmp(data_type,"vfem3d_data") == 0 ||
             strcmp(data_type,"vfem3d_data_keys") == 0 )
    {
-      InitVis(1);
-      mesh = new Mesh(*iss, 0, 0);
-      solu.Load(*iss, mesh->GetNV());
-      solv.Load(*iss, mesh->GetNV());
-      solw.Load(*iss, mesh->GetNV());
+      window_err = InitVis(1);
+      if (!window_err)
+      {
+         mesh = new Mesh(*iss, 0, 0);
+         solu.Load(*iss, mesh->GetNV());
+         solv.Load(*iss, mesh->GetNV());
+         solw.Load(*iss, mesh->GetNV());
 
-      vs = new VisualizationSceneVector3d(*mesh, solu, solv, solw);
+         vs = new VisualizationSceneVector3d(*mesh, solu, solv, solw);
 
-      if (strcmp(data_type,"vfem3d_data_keys") == 0)
-         *iss >> keys;
+         if (strcmp(data_type,"vfem3d_data_keys") == 0)
+            *iss >> keys;
+      }
    }
    else if (strcmp(data_type,"fem3d_paragrid") == 0)
    {
-      InitVis(0);
-      vs = new VisualizationSceneSolution3d(*mesh, *data[0]);
+      window_err = InitVis(0);
+      if (!window_err)
+         vs = new VisualizationSceneSolution3d(*mesh, *data[0]);
    }
    else if (strcmp(data_type,"vfem3d_paragrid") == 0)
    {
-      InitVis(1);
-      vs = new VisualizationSceneVector3d(*mesh, *data[0],
-                                          *data[1], *data[2]);
+      window_err = InitVis(1);
+      if (!window_err)
+         vs = new VisualizationSceneVector3d(*mesh, *data[0],
+                                             *data[1], *data[2]);
    }
    else if (strcmp(data_type,"fem2d_gf_data") == 0 ||
             strcmp(data_type,"fem2d_gf_data_keys") == 0)
    {
-      InitVis(0);
-      mesh = new Mesh(*iss, 1, 0);
-      *iss >> ws;
-      grid_f = new GridFunction (mesh, *iss);
-      grid_f -> GetNodalValues (sol);
-      VisualizationSceneSolution *vss;
-      vs = vss = new VisualizationSceneSolution(*mesh, sol);
-      vss -> SetGridFunction (*grid_f);
-      if (strcmp(data_type,"fem2d_gf_data_keys") == 0)
-         *iss >> keys;
+      window_err = InitVis(0);
+      if (!window_err)
+      {
+         mesh = new Mesh(*iss, 1, 0);
+         *iss >> ws;
+         grid_f = new GridFunction (mesh, *iss);
+         grid_f -> GetNodalValues (sol);
+         VisualizationSceneSolution *vss;
+         vs = vss = new VisualizationSceneSolution(*mesh, sol);
+         vss -> SetGridFunction (*grid_f);
+         if (strcmp(data_type,"fem2d_gf_data_keys") == 0)
+            *iss >> keys;
+      }
    }
    else if (strcmp(data_type,"vfem2d_gf_data") == 0 ||
             strcmp(data_type,"vfem2d_gf_data_keys") == 0 )
    {
-      InitVis(1);
-      mesh = new Mesh(*iss, 1, 0);
-      *iss >> ws;
-      grid_f = new GridFunction (mesh, *iss);
-      vs = new VisualizationSceneVector (*grid_f);
-      if (strcmp(data_type,"vfem2d_gf_data_keys") == 0)
-         *iss >> keys;
+      window_err = InitVis(1);
+      if (!window_err)
+      {
+         mesh = new Mesh(*iss, 1, 0);
+         *iss >> ws;
+         grid_f = new GridFunction (mesh, *iss);
+         vs = new VisualizationSceneVector (*grid_f);
+         if (strcmp(data_type,"vfem2d_gf_data_keys") == 0)
+            *iss >> keys;
+      }
    }
    else if (strcmp(data_type,"fem3d_gf_data") == 0 ||
             strcmp(data_type,"fem3d_gf_data_keys") == 0)
    {
-      InitVis(0);
-      mesh = new Mesh(*iss, 1, 0);
-      *iss >> ws;
-      grid_f = new GridFunction (mesh, *iss);
-      grid_f -> GetNodalValues (sol);
-      VisualizationSceneSolution3d *vss;
-      vs = vss = new VisualizationSceneSolution3d(*mesh, sol);
-      vss -> SetGridFunction (grid_f);
-      if (strcmp(data_type,"fem3d_gf_data_keys") == 0)
-         *iss >> keys;
+      window_err = InitVis(0);
+      if (!window_err)
+      {
+         mesh = new Mesh(*iss, 1, 0);
+         *iss >> ws;
+         grid_f = new GridFunction (mesh, *iss);
+         grid_f -> GetNodalValues (sol);
+         VisualizationSceneSolution3d *vss;
+         vs = vss = new VisualizationSceneSolution3d(*mesh, sol);
+         vss -> SetGridFunction (grid_f);
+         if (strcmp(data_type,"fem3d_gf_data_keys") == 0)
+            *iss >> keys;
+      }
    }
    else if (strcmp(data_type,"vfem3d_gf_data") == 0 ||
-            strcmp(data_type,"vfem3d_gf_data_keys") == 0 )
+            strcmp(data_type,"vfem3d_gf_data_keys") == 0)
    {
-      InitVis(1);
-      mesh = new Mesh(*iss, 1, 0);
-      *iss >> ws;
-      grid_f = new GridFunction (mesh, *iss);
-      vs = new VisualizationSceneVector3d (*grid_f);
-      if (strcmp(data_type,"vfem3d_gf_data_keys") == 0)
-         *iss >> keys;
+      window_err = InitVis(1);
+      if (!window_err)
+      {
+         mesh = new Mesh(*iss, 1, 0);
+         *iss >> ws;
+         grid_f = new GridFunction (mesh, *iss);
+         vs = new VisualizationSceneVector3d (*grid_f);
+         if (strcmp(data_type,"vfem3d_gf_data_keys") == 0)
+            *iss >> keys;
+      }
    }
-   else{
+   else
+   {
       cerr << "Unknown data format" << endl;
       cerr << data_type << endl;
       return;
    }
-   SetVisualizationScene (vs, 3, keys);
-   KillVisualization(); // deletes vs
-   vs = NULL;
-   delete grid_f; grid_f = NULL;
-   delete mesh; mesh = NULL;
+   if (!window_err)
+   {
+      SetVisualizationScene (vs, 3, keys);
+      KillVisualization(); // deletes vs
+      vs = NULL;
+      delete grid_f; grid_f = NULL;
+      delete mesh; mesh = NULL;
+   }
+   else
+   {
+      cerr << "Initializing the visualization failed." << endl;
+   }
 }
 
 int ScriptReadSolution(istream &scr, Mesh **mp, GridFunction **sp)
@@ -289,13 +330,14 @@ void ExecuteScriptCommand()
 #endif
 
    string word;
-   int done_one_command = 0, running = 0;
-   while (running || !done_one_command)
+   int done_one_command = 0;
+   while (!done_one_command)
    {
       scr >> ws;
       if (!scr.good())
       {
          cout << "End of script." << endl;
+         scr_level = 0;
          return;
       }
       if (scr.peek() == '#')
@@ -306,12 +348,13 @@ void ExecuteScriptCommand()
       scr >> word;
       if (word == "{")
       {
-         running++;
-         continue;
+         scr_level++;
       }
       else if (word == "}")
       {
-         running--;
+         scr_level--;
+         if (scr_level < 0)
+            scr_level = 0;
       }
       else if (word == "solution" || word == "mesh")
       {
@@ -363,7 +406,18 @@ void ExecuteScriptCommand()
             }
             else
             {
-               // 3D ...
+               if (new_g->VectorDim() == 1)
+               {
+                  VisualizationSceneSolution3d *vss =
+                     dynamic_cast<VisualizationSceneSolution3d *>(vs);
+                  new_g->GetNodalValues(sol);
+                  vss->NewMeshAndSolution(new_m, &sol, new_g,
+                                          scr_sol_autoscale);
+               }
+               else
+               {
+                  // 3D vector field ...
+               }
             }
             delete grid_f; grid_f = new_g;
             delete mesh; mesh = new_m;
@@ -547,12 +601,44 @@ void ExecuteScriptCommand()
          SendKeySequence(keys);
          MyExpose();
       }
+      else if (word == "palette")
+      {
+         int pal;
+         scr >> pal;
+         cout << "Script: palette: " << pal << endl;
+         Set_Palette(pal);
+         vs->EventUpdateColors();
+         MyExpose();
+      }
       else
       {
          cout << "Unknown command in script: " << word << endl;
       }
 
       done_one_command = 1;
+   }
+}
+
+void ScriptControl();
+
+void ScriptIdleFunc()
+{
+   ExecuteScriptCommand();
+   if (scr_level == 0)
+      ScriptControl();
+}
+
+void ScriptControl()
+{
+   if (scr_running)
+   {
+      scr_running = 0;
+      RemoveIdleFunc(ScriptIdleFunc);
+   }
+   else
+   {
+      scr_running = 1;
+      AddIdleFunc(ScriptIdleFunc);
    }
 }
 
@@ -603,10 +689,16 @@ void PlayScript(istream &scr)
       }
    }
 
+   int window_err;
    if (grid_f->VectorDim() == 1)
-      InitVis(0);
+      window_err = InitVis(0);
    else
-      InitVis(1);
+      window_err = InitVis(1);
+   if (window_err)
+   {
+      cerr << "Initializing the visualization failed." << endl;
+      return;
+   }
 
    if (mesh->Dimension() == 2)
    {
@@ -624,10 +716,23 @@ void PlayScript(istream &scr)
    }
    else if (mesh->Dimension() == 3)
    {
+      if (grid_f->VectorDim() == 1)
+      {
+         grid_f->GetNodalValues(sol);
+         VisualizationSceneSolution3d *vss;
+         vs = vss = new VisualizationSceneSolution3d(*mesh, sol);
+         vss->SetGridFunction(grid_f);
+      }
+      else
+      {
+         // ...
+      }
    }
 
-   auxKeyFunc(XK_space, ExecuteScriptCommand);
+   scr_level = scr_running = 0;
+   auxKeyFunc(XK_space, ScriptControl);
    script = &scr;
+   scr_level = scr_running = 0;
 
    SetVisualizationScene (vs, 3);
    KillVisualization(); // deletes vs
@@ -708,11 +813,11 @@ int main (int argc, char *argv[])
    }
 
    cout << endl
-        << "       _/_/_/  _/      _/      _/  _/            " << endl
-        << "    _/        _/      _/      _/        _/_/_/   " << endl
-        << "   _/  _/_/  _/      _/      _/  _/  _/_/        " << endl
-        << "  _/    _/  _/        _/  _/    _/      _/_/     " << endl
-        << "   _/_/_/  _/_/_/_/    _/      _/  _/_/_/        " << endl
+        << "       _/_/_/  _/      _/      _/  _/"          << endl
+        << "    _/        _/      _/      _/        _/_/_/" << endl
+        << "   _/  _/_/  _/      _/      _/  _/  _/_/"      << endl
+        << "  _/    _/  _/        _/  _/    _/      _/_/"   << endl
+        << "   _/_/_/  _/_/_/_/    _/      _/  _/_/_/"      << endl
         << endl ;
 
    // get rid of zombies
@@ -879,43 +984,50 @@ int main (int argc, char *argv[])
       else
          ReadSerial();
 
+      int window_err;
       if (mesh->Dimension() == 2)
       {
          if ((input & 8) == 0)
          {
             VisualizationSceneSolution *vss;
-            InitVis(0);
-            if ((input & 4) == 0)
-               Set_Palette(4); // Set_Palette(11);
-            vs = vss = new VisualizationSceneSolution(*mesh, sol);
-            if (is_gf)
+            window_err = InitVis(0);
+            if (!window_err)
             {
-               vss->SetGridFunction(*grid_f);
-               vss->ToggleShading();
-            }
-            if ((input & 4) == 0)
-            {
-               vs->OrthogonalProjection = 1;
-               vs->light = 0;
-               vs->Zoom(1.8);
-               // increase the refinement factors if the mesh is "curved"
-               if (mesh->GetNodalFESpace())
+               if ((input & 4) == 0)
+                  Set_Palette(4); // Set_Palette(11);
+               vs = vss = new VisualizationSceneSolution(*mesh, sol);
+               if (is_gf)
                {
-                  cout << "Curvilinear mesh, subdivision factors = 4, 1"
-                       << endl;
-                  vs->SetRefineFactors(4, 1);
+                  vss->SetGridFunction(*grid_f);
+                  vss->ToggleShading();
                }
-               vs->SetValueRange(-1.0*(grid_f->Max()+1.0),
-                                 1.0*(grid_f->Max()+1.0));
+               if ((input & 4) == 0)
+               {
+                  vs->OrthogonalProjection = 1;
+                  vs->light = 0;
+                  vs->Zoom(1.8);
+                  // increase the refinement factors if the mesh is "curved"
+                  if (mesh->GetNodalFESpace())
+                  {
+                     cout << "Curvilinear mesh, subdivision factors = 4, 1"
+                          << endl;
+                     vs->SetRefineFactors(4, 1);
+                  }
+                  vs->SetValueRange(-1.0*(grid_f->Max()+1.0),
+                                    1.0*(grid_f->Max()+1.0));
+               }
             }
          }
          else
          {
-            InitVis(1);
-            if (is_gf)
-               vs = new VisualizationSceneVector (*grid_f);
-            else
-               vs = new VisualizationSceneVector(*mesh, solu, solv);
+            window_err = InitVis(1);
+            if (!window_err)
+            {
+               if (is_gf)
+                  vs = new VisualizationSceneVector(*grid_f);
+               else
+                  vs = new VisualizationSceneVector(*mesh, solu, solv);
+            }
          }
       }
       else // 3D
@@ -923,42 +1035,56 @@ int main (int argc, char *argv[])
          if ((input & 8) == 0 && (input & 512) == 0)
          {
             VisualizationSceneSolution3d *vss;
-            InitVis(0);
-            vs = vss = new VisualizationSceneSolution3d(*mesh, sol);
-            if (is_gf)
+            window_err = InitVis(0);
+            if (!window_err)
             {
-               vss->SetGridFunction (grid_f);
-               vss->ToggleShading();
-               vss->Prepare();
-               // vss -> Draw(); // ???
-            }
-            if ((input & 4) == 0)
-            {
-               // Set_Palette(4);
-               Set_Palette(11);
-               Set_Material_And_Light(4,3);
-               vss->ToggleDrawAxes();
-               vss->ToggleDrawMesh();
-               vs->SetValueRange(-1.0*(grid_f->Max()+1.0),
-                                 1.0*(grid_f->Max()+1.0));
+               vs = vss = new VisualizationSceneSolution3d(*mesh, sol);
+               if (is_gf)
+               {
+                  vss->SetGridFunction (grid_f);
+                  vss->ToggleShading();
+                  vss->Prepare();
+                  // vss -> Draw(); // ???
+               }
+               if ((input & 4) == 0)
+               {
+                  // Set_Palette(4);
+                  Set_Palette(11);
+                  Set_Material_And_Light(4,3);
+                  vss->ToggleDrawAxes();
+                  vss->ToggleDrawMesh();
+                  vs->SetValueRange(-1.0*(grid_f->Max()+1.0),
+                                    1.0*(grid_f->Max()+1.0));
+               }
             }
          }
          else
          {
-            InitVis(1);
-            if (is_gf)
-               vs = new VisualizationSceneVector (*grid_f);
-            else
-               vs = new VisualizationSceneVector3d(*mesh, solu, solv, solw);
+            window_err = InitVis(1);
+            if (!window_err)
+            {
+               if (is_gf)
+                  vs = new VisualizationSceneVector3d(*grid_f);
+               else
+                  vs = new VisualizationSceneVector3d(*mesh, solu, solv, solw);
+            }
          }
       }
-      if (mesh->Dimension() == 2 && (input & 12) == 0)
-         SetVisualizationScene(vs, 2, keys);
+      if (!window_err)
+      {
+         if (mesh->Dimension() == 2 && (input & 12) == 0)
+            SetVisualizationScene(vs, 2, keys);
+         else
+            SetVisualizationScene(vs, 3, keys);
+         KillVisualization(); // deletes vs
+         if (is_gf)  delete grid_f;
+         delete mesh;
+      }
       else
-         SetVisualizationScene(vs, 3, keys);
-      KillVisualization(); // deletes vs
-      if (is_gf)  delete grid_f;
-      delete mesh;
+      {
+         cerr << "Initializing the visualization failed." << endl;
+         return 1;
+      }
    }
 
    cout << "Thank you for using GLVis." << endl;
@@ -1071,10 +1197,12 @@ void ReadParallel()
    istream ** parin = new istream* [np];
 
    int * dim = new int[np];
-   for (i = 0; i < np; i++) {
+   for (i = 0; i < np; i++)
+   {
       sprintf(fname,"%s_%d",mesh_file,i);
       parin[i] = new ifstream(fname);
-      if (!(*parin[i])) {
+      if (!(*parin[i]))
+      {
          cerr << "Can not open mesh file " << fname << ". Exit. \n";
          exit(1);
       }
@@ -1087,22 +1215,26 @@ void ReadParallel()
    meshout.precision(12);
    mesh -> Print(meshout);
 
-   for (i = 0; i < np; i++) {
+   for (i = 0; i < np; i++)
+   {
       sprintf(fname,"%s_%d",sol_file,i);
       parin[i] = new ifstream(fname);
-      if (!(*parin[i])) {
+      if (!(*parin[i]))
+      {
          cerr << "Can not open solution file " << fname << ". Exit. \n";
          exit(1);
       }
    }
 
-   if (input & 128) {
+   if (input & 128)
+   {
       // get rid of NetGen's info line
       for (i = 0; i < np; i++)
          parin[i] -> getline(fname,128);
       sol.Load(parin,np,dim);
    }
-   else if (input & 512) {
+   else if (input & 512)
+   {
       solu.Load(parin, np, dim);
       solv.Load(parin, np, dim);
       solw.Load(parin, np, dim);

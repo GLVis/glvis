@@ -11,13 +11,15 @@
 
 #include <stdlib.h>
 #include <iostream>
+#include <limits>
 #include <math.h>
 
 #include "mfem.hpp"
 #include "visual.hpp"
 
 
-static void VectorKeyHPressed (){
+static void VectorKeyHPressed()
+{
    cout << endl
         << "+------------------------------------+" << endl
         << "| Keys                               |" << endl
@@ -204,24 +206,8 @@ void VisualizationSceneVector::ToggleVectorField()
    PrepareVectorField();
 }
 
-// VisualizationSceneVector::VisualizationSceneVector(istream & in)
-// {
-//   mesh = new DMesh<2>();
-//   solx = new Vector();
-//   soly = new Vector();
-//
-//   mesh -> Load (in);
-//   solx -> Load (in, mesh -> GetNV());
-//   soly -> Load (in, mesh -> GetNV());
-//
-//   sol  = new Vector(mesh -> GetNV());
-//
-//   Init();
-// }
-
-
-VisualizationSceneVector
-::VisualizationSceneVector(Mesh & m, Vector & sx, Vector & sy)
+VisualizationSceneVector::VisualizationSceneVector(Mesh & m,
+                                                   Vector & sx, Vector & sy)
 {
    mesh = &m;
    solx = &sx;
@@ -234,7 +220,7 @@ VisualizationSceneVector
    Init();
 }
 
-VisualizationSceneVector::VisualizationSceneVector (GridFunction &vgf)
+VisualizationSceneVector::VisualizationSceneVector(GridFunction &vgf)
 {
    FiniteElementSpace *fes = vgf.FESpace();
    if (fes == NULL || fes->GetVDim() != 2)
@@ -322,13 +308,13 @@ void VisualizationSceneVector::CycleVec2Scalar()
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
 
    // update scalar stuff
-   FindNewBox ();
-   PrepareAxes ();
-   PrepareLines ();
+   FindNewBox();
+   PrepareAxes();
+   PrepareLines();
    DefaultLevelLines();
-   PrepareLevelCurves ();
+   PrepareLevelCurves();
    PrepareCP();
-   Prepare ();
+   Prepare();
 
    if (i == 0)
       maxlen = maxv;
@@ -399,7 +385,7 @@ void VisualizationSceneVector::Init()
    vectorlist = glGenLists(1);
    displinelist = glGenLists(1);
 
-   VisualizationSceneSolution :: Init();
+   VisualizationSceneSolution::Init();
 
    PrepareVectorField();
    // PrepareDisplacedMesh(); // called by PrepareLines()
@@ -430,7 +416,7 @@ void VisualizationSceneVector::Init()
    maxlen = maxv;
 }
 
-VisualizationSceneVector::~VisualizationSceneVector ()
+VisualizationSceneVector::~VisualizationSceneVector()
 {
    glDeleteLists (displinelist, 1);
    glDeleteLists (vectorlist, 1);
@@ -528,6 +514,20 @@ void VisualizationSceneVector::GetRefinedValues(
          }
       }
    }
+
+   if (shrink != 1.0)
+      ShrinkPoints(tr);
+}
+
+int VisualizationSceneVector::GetRefinedValuesAndNormals(
+   int i, const IntegrationRule &ir, Vector &vals, DenseMatrix &tr,
+   DenseMatrix &normals)
+{
+   int have_normals = 0;
+
+   GetRefinedValues(i, ir, vals, tr);
+
+   return have_normals;
 }
 
 void VisualizationSceneVector::PrepareDisplacedMesh()
@@ -540,7 +540,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
    // prepare the displaced mesh
    glNewList(displinelist, GL_COMPILE);
 
-   // Set_Material ();
+   // Set_Material();
    // glColor3f (1, 0, 0);
    glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
 
@@ -567,7 +567,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
                         pointmat.Elem(1, j)+
                         (*soly)(vertices[j])*(ianim)/ianimmax,
                         zc);
-         glEnd ();
+         glEnd();
       }
    }
    else if (drawdisp < 2)
@@ -593,7 +593,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
             glVertex3d (pm(0, RE[k]) + sc * vvals(0, RE[k]),
                         pm(1, RE[k]) + sc * vvals(1, RE[k]), zc);
          }
-         glEnd ();
+         glEnd();
       }
    }
    else
@@ -722,13 +722,13 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
       }
    }
 
-   glEndList ();
+   glEndList();
 }
 
 double new_maxlen;
 
-void VisualizationSceneVector::DrawVector(
-   double px, double py, double vx, double vy, double cval)
+void VisualizationSceneVector::DrawVector(double px, double py, double vx,
+                                          double vy, double cval)
 {
    double zc = 0.5*(z[0]+z[1]);
 
@@ -828,10 +828,11 @@ void VisualizationSceneVector::PrepareVectorField()
    while(rerun);
 }
 
-void VisualizationSceneVector :: Draw (){
+void VisualizationSceneVector::Draw()
+{
    glEnable(GL_DEPTH_TEST);
 
-   Set_Background ();
+   Set_Background();
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
    // model transformation
@@ -857,7 +858,7 @@ void VisualizationSceneVector :: Draw (){
       else
          DrawColorBar(minv,maxv);
 
-   Set_Black_Material ();
+   Set_Black_Material();
 
    // draw axes
    if (drawaxes)
@@ -906,7 +907,7 @@ void VisualizationSceneVector :: Draw (){
       glCallList(vectorlist);
 
    if (MatAlpha < 1.0)
-      Set_Transparency ();
+      Set_Transparency();
 
    // draw elements
    glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
@@ -914,7 +915,7 @@ void VisualizationSceneVector :: Draw (){
       glCallList(displlist);
 
    if (MatAlpha < 1.0)
-      Remove_Transparency ();
+      Remove_Transparency();
 
    if (GetUseTexture())
       glDisable (GL_TEXTURE_1D);

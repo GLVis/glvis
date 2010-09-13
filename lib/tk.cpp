@@ -34,12 +34,12 @@
  *
  * OpenGL(TM) is a trademark of Silicon Graphics, Inc.
  */
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <iostream>
-#include <strings.h>
 #include <string.h>
 #include <X11/keysym.h>
+#include <string>
 #include "tk.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
@@ -244,6 +244,7 @@ void tkCloseWindow(void)
         glXDestroyContext(display, context);
         XFreeColormap(display, colorMap);
         XFree((char *)visualInfo);
+        XCloseDisplay(display);
         display = 0;
 
         ExposeFunc = 0;
@@ -579,31 +580,28 @@ static GLenum DoNextEvent(void)
 
 void tkExec(void)
 {
-    GLenum flag;
+   GLenum flag;
 
-    visualize = 1;
-    while (visualize) {
-        if (IdleFunc) {
-            if (IdleFunc) {
-                (*IdleFunc)();
-            }
-            flag = GL_FALSE;
-            while (XPending(display)) {
-                flag |= DoNextEvent();
-            }
-            if (flag == GL_TRUE) {
-                if (DisplayFunc) {
-                    (*DisplayFunc)();
-                }
-            }
-        } else {
-            if (DoNextEvent() == GL_TRUE) {
-                if (DisplayFunc) {
-                    (*DisplayFunc)();
-                }
-            }
-        }
-    }
+   visualize = 1;
+   while (visualize)
+   {
+      if (IdleFunc)
+      {
+         (*IdleFunc)();
+         flag = GL_FALSE;
+         while (XPending(display))
+            flag |= DoNextEvent();
+         if (flag == GL_TRUE)
+            if (DisplayFunc)
+               (*DisplayFunc)();
+      }
+      else
+      {
+         if (DoNextEvent() == GL_TRUE)
+            if (DisplayFunc)
+               (*DisplayFunc)();
+      }
+   }
 }
 
 void tkExposeFunc(void (*Func)(int, int))
@@ -692,7 +690,7 @@ Window tkGetXWindow(void)
 
 static XVisualInfo *FindVisual(GLenum type)
 {
-    GLenum list[20];
+    GLenum list[50];
     int i;
 
     i = 0;
@@ -738,6 +736,22 @@ static XVisualInfo *FindVisual(GLenum type)
         list[i++] = 1;
     }
 
+    // multisampling
+#ifdef GLVIS_MULTISAMPLE
+#ifdef GLX_SAMPLE_BUFFERS_ARB
+    std::string s = glXQueryExtensionsString(display, screen);
+    if (s.find("GLX_ARB_multisample") != std::string::npos)
+    {
+       list[i++] = GLX_SAMPLE_BUFFERS_ARB;
+       list[i++] = 1;
+       list[i++] = GLX_SAMPLES_ARB;
+       list[i++] = GLVIS_MULTISAMPLE;
+    }
+#else
+#error GLX_SAMPLE_BUFFERS_ARB is not defined!
+#endif
+#endif
+
     list[i] = (int)None;
 
     return glXChooseVisual(display, screen, (int *)list);
@@ -751,23 +765,49 @@ static int MakeVisualType(XVisualInfo *vi)
     mask = 0;
 
     glXGetConfig(display, vi, GLX_RGBA, &x);
+#ifdef GLVIS_DEBUG
+    printf("GLX_RGBA : %d\n", x);
+#endif
     if (x) {
         mask |= TK_RGB;
+#ifdef GLVIS_DEBUG
+        glXGetConfig(display, vi, GLX_RED_SIZE, &x);
+        glXGetConfig(display, vi, GLX_GREEN_SIZE, &y);
+        glXGetConfig(display, vi, GLX_BLUE_SIZE, &z);
+        printf("GLX_RED_SIZE   : %d\n", x);
+        printf("GLX_GREEN_SIZE : %d\n", y);
+        printf("GLX_BLUE_SIZE  : %d\n", z);
+#endif
         glXGetConfig(display, vi, GLX_ALPHA_SIZE, &x);
+#ifdef GLVIS_DEBUG
+        printf("GLX_ALPHA_SIZE : %d\n", x);
+#endif
         if (x > 0) {
             mask |= TK_ALPHA;
         }
         glXGetConfig(display, vi, GLX_ACCUM_RED_SIZE, &x);
         glXGetConfig(display, vi, GLX_ACCUM_GREEN_SIZE, &y);
         glXGetConfig(display, vi, GLX_ACCUM_BLUE_SIZE, &z);
+#ifdef GLVIS_DEBUG
+        printf("GLX_ACCUM_RED_SIZE   : %d\n", x);
+        printf("GLX_ACCUM_GREEN_SIZE : %d\n", y);
+        printf("GLX_ACCUM_BLUE_SIZE  : %d\n", z);
+#endif
         if (x > 0 && y > 0 && z > 0) {
             mask |= TK_ACCUM;
         }
+#ifdef GLVIS_DEBUG
+        glXGetConfig(display, vi, GLX_ACCUM_ALPHA_SIZE, &x);
+        printf("GLX_ACCUM_ALPHA_SIZE : %d\n", x);
+#endif
     } else {
         mask |= TK_INDEX;
     }
 
     glXGetConfig(display, vi, GLX_DOUBLEBUFFER, &x);
+#ifdef GLVIS_DEBUG
+    printf("GLX_DOUBLEBUFFER : %d\n", x);
+#endif
     if (x) {
         mask |= TK_DOUBLE;
     } else {
@@ -775,20 +815,40 @@ static int MakeVisualType(XVisualInfo *vi)
     }
 
     glXGetConfig(display, vi, GLX_DEPTH_SIZE, &x);
+#ifdef GLVIS_DEBUG
+    printf("GLX_DEPTH_SIZE : %d\n", x);
+#endif
     if (x > 0) {
         mask |= TK_DEPTH;
     }
 
     glXGetConfig(display, vi, GLX_STENCIL_SIZE, &x);
+#ifdef GLVIS_DEBUG
+    printf("GLX_STENCIL_SIZE : %d\n", x);
+#endif
     if (x > 0) {
         mask |= TK_STENCIL;
     }
+
+#ifdef GLVIS_MULTISAMPLE
+#ifdef GLVIS_DEBUG
+#ifdef GLX_SAMPLE_BUFFERS_ARB
+    glXGetConfig(display, vi, GLX_SAMPLE_BUFFERS_ARB, &x);
+    printf("GLX_SAMPLE_BUFFERS_ARB : %d\n", x);
+    glXGetConfig(display, vi, GLX_SAMPLES_ARB, &x);
+    printf("GLX_SAMPLES_ARB : %d\n", x);
+#endif
+#endif
+#endif
 
     if (glXIsDirect(display, context)) {
         mask |= TK_DIRECT;
     } else {
         mask |= TK_INDIRECT;
     }
+#ifdef GLVIS_DEBUG
+    printf("glXIsDirect : %d\n", glXIsDirect(display, context));
+#endif
 
     return mask;
 }
@@ -845,8 +905,8 @@ GLenum tkInitWindow(const char *title)
     }
 
     context = glXCreateContext(display, visualInfo, None,
-                               (TK_IS_DIRECT(windInfo.type)) ? GL_TRUE
-                                                             : GL_FALSE);
+                               (TK_IS_DIRECT(windInfo.type)) ? GL_TRUE :
+                               GL_FALSE);
     if (!context) {
         fprintf(stderr, "Can't create a context!\n");
         return GL_FALSE;

@@ -1,0 +1,43 @@
+                           GLVis visualization tool
+
+                     _/_/_/  _/      _/      _/  _/
+                  _/        _/      _/      _/        _/_/_/
+                 _/  _/_/  _/      _/      _/  _/  _/_/
+                _/    _/  _/        _/  _/    _/      _/_/
+                 _/_/_/  _/_/_/_/    _/      _/  _/_/_/
+
+                        http://glvis.googlecode.com
+
+
+Version 1.1, released on Sep 13, 2010
+=====================================
+
+- Anti-aliasing (key 'A') now uses the OpenGL ARB_multisample extension (when
+  available). By default, 4x multisampling is used. See file lib/tk.cpp. This
+  value can be changed by setting GLVIS_MULTISAMPLE during compilation.
+
+- When drawing subdivided elements, the real normals are now used (at least in
+  some cases) to smooth the appearance inside the element, i.e. the surface in
+  2D and the (curved) boundary in 3D.
+
+- Enabled the shrinking of elements (F3/F4) and material subdomains (F11/F12)
+  for 3D meshes saved using Mesh::PrintWithPartitioning(). This allows for
+  better visualization of the interior of the mesh.
+
+- Improved the hex-cutting algorithm to handle all cases of non-flat faces.
+
+- Scripts now work with scalar 3D mesh/solution.
+
+- Changed the makefile to recompile only files that have been changed and to
+  allow 'make -j'.
+
+- Various small fixes and styling updates.
+
+
+Version 1.0, released on Jul 21, 2010
+=====================================
+
+- Uploaded to http://glvis.googlecode.com.
+
+- Initial release.
+

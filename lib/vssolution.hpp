@@ -34,12 +34,12 @@ protected:
    void GetRefinedDetJ(int i, const IntegrationRule &ir,
                        Vector &vals, DenseMatrix &tr);
 
-   /// Shrink the set of points towards their center of gravity
-   void ShrinkPoints(DenseMatrix &pointmat);
-
    // redefined for vector solution
    virtual void GetRefinedValues(int i, const IntegrationRule &ir,
                                  Vector &vals, DenseMatrix &tr);
+   virtual int GetRefinedValuesAndNormals(int i, const IntegrationRule &ir,
+                                          Vector &vals, DenseMatrix &tr,
+                                          DenseMatrix &normals);
 
    void DrawLevelCurves(Array<int> &RG, DenseMatrix &pointmat,
                         Vector &values, int sides, Array<double> &lvl,
@@ -47,7 +47,6 @@ protected:
 
 public:
    int shading, TimesToRefine, EdgeRefineFactor;
-   double shrink;
 
    int attr_to_show;
    Array<int> el_attr_to_show;
@@ -86,10 +85,10 @@ public:
 
    virtual void Draw();
 
-   void ToggleDrawBdr ()
+   void ToggleDrawBdr()
    { drawbdr = !drawbdr; }
 
-   void ToggleDrawElems ()
+   void ToggleDrawElems()
    {
       drawelems = (drawelems+3)%4;
       if (drawelems != 0 && shading == 2)
@@ -104,8 +103,7 @@ public:
       }
    }
 
-   void ToggleDrawMesh ()
-   { drawmesh = (drawmesh+1)%3; }
+   void ToggleDrawMesh() { drawmesh = (drawmesh+1)%3; }
 
    virtual void SetShading(int);
    void ToggleShading();
@@ -115,5 +113,15 @@ public:
    virtual void SetRefineFactors(int, int);
 };
 
+
+void DrawTriangle(const double pts[][3], const double cv[],
+                  const double minv, const double maxv);
+
+void DrawQuad(const double pts[][3], const double cv[],
+              const double minv, const double maxv);
+
+void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
+               const int n, const Array<int> &ind, const double minv,
+               const double maxv, const int normals_opt = 0);
 
 #endif

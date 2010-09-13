@@ -28,7 +28,8 @@ using namespace std;
 void VisualizationSceneScalarData::Arrow3(double px, double py, double pz,
                                           double vx, double vy, double vz,
                                           double length,
-                                          double cone_scale){
+                                          double cone_scale)
+{
    glPushMatrix();
 
    double xc = 0.5*(x[0]+x[1]);
@@ -111,7 +112,8 @@ void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
 void VisualizationSceneScalarData::Arrow(double px, double py, double pz,
                                          double vx, double vy, double vz,
                                          double length,
-                                         double cone_scale){
+                                         double cone_scale)
+{
    double rhos = sqrt (vx*vx+vy*vy+vz*vz);
    if (rhos == 0.0)
       return;
@@ -213,11 +215,11 @@ void VisualizationSceneScalarData::Arrow(double px, double py, double pz,
    glEnd();
 }
 
-void VisualizationSceneScalarData
-::DrawColorBar (double minval, double maxval,
-                Array<double> *level, Array<double> *levels)
+void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
+                                                 Array<double> *level,
+                                                 Array<double> *levels)
 {
-   glMatrixMode (GL_MODELVIEW);
+   glMatrixMode(GL_MODELVIEW);
    glPushMatrix();
    glLoadIdentity();
 
@@ -249,7 +251,7 @@ void VisualizationSceneScalarData
    // glEnable (GL_COLOR_MATERIAL);
    glNormal3d (0, 0, 1);
 
-   Set_Material ();
+   Set_Material();
 
    double eps = 1e-24;
 
@@ -325,7 +327,6 @@ void VisualizationSceneScalarData
    double val;
    ostringstream * buf;
 
-
    if (!level)
    {
       for (i = 0; i <= 4; i++)
@@ -384,9 +385,10 @@ void VisualizationSceneScalarData
       }
    }
 
-   glPopAttrib ();
+   glPopAttrib();
 
-   if (print) {
+   if (print)
+   {
       if (!level)
       {
          for (i = 0; i <= 4; i++)
@@ -453,7 +455,7 @@ void VisualizationSceneScalarData
    glPopMatrix();
 }
 
-void VisualizationSceneScalarData::DrawCoordinateCross ()
+void VisualizationSceneScalarData::DrawCoordinateCross()
 {
    glMatrixMode (GL_PROJECTION);
    glPushMatrix();
@@ -500,7 +502,7 @@ void VisualizationSceneScalarData::DrawCoordinateCross ()
    if (print) gl2psText(a_labels[2],"Times",8);
    glCallLists (1, GL_UNSIGNED_BYTE, a_labels[2]);
 
-   glPopAttrib ();
+   glPopAttrib();
 
    glMatrixMode (GL_PROJECTION);
    glPopMatrix();
@@ -524,22 +526,26 @@ void VisualizationSceneScalarData::DrawCoordinateCross ()
 VisualizationSceneScalarData * vsdata;
 extern VisualizationScene  * locscene;
 
-void KeyCPressed (){
+void KeyCPressed()
+{
    vsdata -> ToggleDrawColorbar();
    SendExposeEvent();
 }
 
-void KeySPressed (){
+void KeySPressed()
+{
    vsdata -> ToggleScaling();
    SendExposeEvent();
 }
 
-void KeyaPressed (){
+void KeyaPressed()
+{
    vsdata -> ToggleDrawAxes();
    SendExposeEvent();
 }
 
-void KeylPressed (){
+void KeylPressed()
+{
    vsdata -> ToggleLight();
    if (! vsdata -> light)
       glDisable(GL_LIGHTING);
@@ -548,15 +554,17 @@ void KeylPressed (){
    SendExposeEvent();
 }
 
-void KeyLPressed (){
+void KeyLPressed()
+{
    MySetColorLogscale = !MySetColorLogscale;
-   vsdata -> EventUpdateColors ();
+   vsdata -> EventUpdateColors();
    SendExposeEvent();
 }
 
-void KeyrPressed (){
+void KeyrPressed()
+{
    locscene -> spinning = 0;
-   auxIdleFunc((void (*)())0);
+   RemoveIdleFunc(MainLoop);
    vsdata -> CenterObject();
 
    locscene -> ViewAngle = 45.0;
@@ -567,15 +575,17 @@ void KeyrPressed (){
    SendExposeEvent();
 }
 
-void KeyRPressed (){
+void KeyRPressed()
+{
    locscene -> spinning = 0;
-   auxIdleFunc((void (*)())0);
+   RemoveIdleFunc(MainLoop);
    glMatrixMode (GL_MODELVIEW);
-   glLoadIdentity ();
+   glLoadIdentity();
    glGetDoublev (GL_MODELVIEW_MATRIX,   locscene -> translmat);
    Set_Light();
 
-   switch (vsdata -> key_r_state) {
+   switch (vsdata -> key_r_state)
+   {
    case 0:
       break;
 
@@ -613,13 +623,14 @@ void KeyRPressed (){
 void Next_RGB_Palette();
 int Select_New_RGB_Palette();
 
-void KeyPPressed (){
+void KeyPPressed()
+{
    Next_RGB_Palette();
-   vsdata -> EventUpdateColors ();
+   vsdata -> EventUpdateColors();
    SendExposeEvent();
 }
 
-static void KeyF5Pressed ()
+static void KeyF5Pressed()
 {
    int n;
    double min, max;
@@ -652,7 +663,7 @@ void KeyF6Pressed()
 
    Select_New_RGB_Palette();
 
-   vsdata -> EventUpdateColors ();
+   vsdata -> EventUpdateColors();
    SendExposeEvent();
 }
 
@@ -692,18 +703,19 @@ void KeyBackslashPressed()
    SendExposeEvent();
 }
 
-void KeyTPressed ()
+void KeyTPressed()
 {
    int ml;
 
    ml = Next_Material_And_Light();
-   vsdata -> EventUpdateColors ();
+   vsdata -> EventUpdateColors();
    SendExposeEvent();
    cout << "New material/light : " << ml << endl;
 }
 
-void KeyGPressed (){
-   Toggle_Background ();
+void KeyGPressed()
+{
+   Toggle_Background();
    SendExposeEvent();
 }
 
@@ -712,7 +724,7 @@ void KeyF1Pressed()
    vsdata->PrintState();
 }
 
-void KeyF2Pressed ()
+void KeyF2Pressed()
 {
    vsdata -> EventUpdateColors();
    vsdata -> PrepareLines();
@@ -720,25 +732,26 @@ void KeyF2Pressed ()
    SendExposeEvent();
 }
 
-void KeykPressed ()
+void KeykPressed()
 {
    MatAlpha -= 0.05;
    if (MatAlpha < 0.0)
       MatAlpha = 0.0;
-   vsdata -> EventUpdateColors ();
+   vsdata -> EventUpdateColors();
    SendExposeEvent();
 }
 
-void KeyKPressed ()
+void KeyKPressed()
 {
    MatAlpha += 0.05;
    if (MatAlpha > 1.0)
       MatAlpha = 1.0;
-   vsdata -> EventUpdateColors ();
+   vsdata -> EventUpdateColors();
    SendExposeEvent();
 }
 
-void KeyAPressed (){
+void KeyAPressed()
+{
    static int a = 0;
 
    a = 1-a;
@@ -753,20 +766,20 @@ void KeyAPressed (){
 }
 
 
-void KeyCommaPressed ()
+void KeyCommaPressed()
 {
    MatAlphaCenter -= 0.25;
-   vsdata -> EventUpdateColors ();
+   vsdata -> EventUpdateColors();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
    cout << "MatAlphaCenter = " << MatAlphaCenter << endl;
 #endif
 }
 
-void KeyLessPressed ()
+void KeyLessPressed()
 {
    MatAlphaCenter += 0.25;
-   vsdata -> EventUpdateColors ();
+   vsdata -> EventUpdateColors();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
    cout << "MatAlphaCenter = " << MatAlphaCenter << endl;
@@ -894,15 +907,16 @@ void VisualizationSceneScalarData::ToggleTexture()
 }
 
 
-VisualizationSceneScalarData
-::VisualizationSceneScalarData(Mesh & m, Vector & s){
+VisualizationSceneScalarData::VisualizationSceneScalarData(
+   Mesh & m, Vector & s)
+{
    mesh = &m;
    sol  = &s;
 
    Init();
 }
 
-void VisualizationSceneScalarData :: Init()
+void VisualizationSceneScalarData::Init()
 {
    vsdata = this;
 
@@ -973,7 +987,11 @@ void VisualizationSceneScalarData :: Init()
    glEnable(GL_AUTO_NORMAL);
    glEnable(GL_NORMALIZE);
 
-   // add black fog
+#ifdef GLVIS_MULTISAMPLE
+   glDisable(GL_MULTISAMPLE);
+#endif
+
+// add black fog
    // glEnable(GL_FOG);
    // GLfloat fogcol[4] = {0,0,0,1};
    // glFogfv(GL_FOG_COLOR, fogcol);
@@ -988,13 +1006,13 @@ void VisualizationSceneScalarData :: Init()
    PrepareAxes();
 }
 
-VisualizationSceneScalarData::~VisualizationSceneScalarData ()
+VisualizationSceneScalarData::~VisualizationSceneScalarData()
 {
    glDeleteLists (axeslist, 1);
    delete CuttingPlane;
 }
 
-void VisualizationSceneScalarData::SetNewScalingFromBox ()
+void VisualizationSceneScalarData::SetNewScalingFromBox()
 {
    // double eps = 1e-12;
    double eps = 0.0;
@@ -1040,19 +1058,20 @@ void VisualizationSceneScalarData::SetValueRange(double min, double max)
 
 void VisualizationSceneScalarData::ResetScaling()
 {
-   SetNewScalingFromBox ();
+   SetNewScalingFromBox();
 }
 
-void VisualizationSceneScalarData::CenterObject() {
+void VisualizationSceneScalarData::CenterObject()
+{
    glMatrixMode (GL_MODELVIEW);
-   glLoadIdentity ();
+   glLoadIdentity();
    glGetDoublev (GL_MODELVIEW_MATRIX, translmat);
 
    Set_Light();
 
    //  scaling = 1;
 
-   //  SetNewScalingFromBox ();
+   //  SetNewScalingFromBox();
 
    glRotatef(-60.0, 1.0f, 0.0f, 0.0f);
    glRotatef(-40.0, 0.0f, 0.0f, 1.0f);
@@ -1062,17 +1081,17 @@ void VisualizationSceneScalarData::CenterObject() {
 void VisualizationSceneScalarData::CenterObject2D()
 {
    glMatrixMode (GL_MODELVIEW);
-   glLoadIdentity ();
+   glLoadIdentity();
    glGetDoublev (GL_MODELVIEW_MATRIX, translmat);
    Set_Light();
    glGetDoublev (GL_MODELVIEW_MATRIX, rotmat);
 }
 
-void VisualizationSceneScalarData::PrepareAxes(){
-
+void VisualizationSceneScalarData::PrepareAxes()
+{
    glNewList (axeslist, GL_COMPILE);
 
-   // Set_Black_Material ();
+   // Set_Black_Material();
 
    glBegin (GL_LINE_LOOP);
    glVertex3d(x[0], y[0], z[0]);
@@ -1123,7 +1142,7 @@ void VisualizationSceneScalarData::PrepareAxes(){
       glPopAttrib();
    }
 
-   glEndList ();
+   glEndList();
 }
 
 void VisualizationSceneScalarData::DrawPolygonLevelLines(
@@ -1205,6 +1224,26 @@ void VisualizationSceneScalarData::PrintState()
                          tan(M_PI / 8.) / tan(ViewAngle * (M_PI / 360.0)))
         << "\nvaluerange " << minv << ' ' << maxv
         << '\n' << endl;
+}
+
+void VisualizationSceneScalarData::ShrinkPoints(DenseMatrix &pointmat)
+{
+   int k;
+   double cx=0.0, cy=0.0;
+
+   for (k = 0; k < pointmat.Width(); k++)
+   {
+      cx += pointmat(0,k);
+      cy += pointmat(1,k);
+   }
+   cx /= pointmat.Width();
+   cy /= pointmat.Width();
+
+   for (k = 0; k < pointmat.Width(); k++)
+   {
+      pointmat(0,k) = shrink*pointmat(0,k) + (1-shrink)*cx;
+      pointmat(1,k) = shrink*pointmat(1,k) + (1-shrink)*cy;
+   }
 }
 
 

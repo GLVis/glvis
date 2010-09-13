@@ -70,6 +70,7 @@ public:
    Plane * CuttingPlane;
    int light;
    int key_r_state;
+   double shrink;
 
    VisualizationSceneScalarData() {}
    VisualizationSceneScalarData (Mesh & m, Vector & s);
@@ -145,6 +146,9 @@ public:
    void DrawRuler();
 
    void ToggleTexture();
+
+   /// Shrink the set of points towards their center of gravity
+   void ShrinkPoints(DenseMatrix &pointmat);
 };
 
 #endif

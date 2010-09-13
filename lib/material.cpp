@@ -12,6 +12,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glx.h>
+#include <string>
 
 int Num_Materials = 5;
 int Current_Material = 3;
@@ -105,7 +106,7 @@ void Set_Material()
    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, memis);
 }
 
-void Set_Light ()
+void Set_Light()
 {
    glLoadIdentity();
 
@@ -295,7 +296,7 @@ void Set_Black_Material()
    }
 }
 
-void Set_Background ()
+void Set_Background()
 {
    switch (Background)
    {
@@ -308,32 +309,42 @@ void Set_Background ()
    }
 }
 
-void Toggle_Background ()
+void Toggle_Background()
 {
    Background = 1 - Background;
 }
 
-void Set_Transparency ()
+void Set_Transparency()
 {
    glEnable (GL_BLEND);
    glDepthMask (GL_FALSE);
    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void Remove_Transparency ()
+void Remove_Transparency()
 {
    glDisable (GL_BLEND);
    glDepthMask (GL_TRUE);
 }
 
-void Set_AntiAliasing ()
+void Set_AntiAliasing()
 {
-   glEnable (GL_BLEND);
+#ifdef GLVIS_MULTISAMPLE
+   glEnable(GL_MULTISAMPLE);
+
+#ifdef GL_MULTISAMPLE_FILTER_HINT_NV
+   std::string s = (const char *)glGetString(GL_EXTENSIONS);
+   if (s.find("GL_NV_multisample_filter_hint") != std::string::npos)
+      glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
+#endif
+#endif
+
+   glEnable(GL_BLEND);
    // glDisable(GL_DEPTH_TEST);
-   // glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
    // glBlendFunc (GL_SRC_ALPHA_SATURATE, GL_ONE);
 
-   glLineWidth(1.5);
+   glLineWidth(1.4);
 
    glEnable(GL_POLYGON_SMOOTH);
    glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
@@ -358,15 +369,26 @@ void Set_AntiAliasing ()
    */
 }
 
-void Remove_AntiAliasing ()
+void Remove_AntiAliasing()
 {
    glDisable(GL_POLYGON_SMOOTH);
    glDisable(GL_LINE_SMOOTH);
    glDisable(GL_POINT_SMOOTH);
 
    glLineWidth(1.);
+
    // glEnable(GL_DEPTH_TEST);
    glDisable(GL_BLEND);
+
+#ifdef GLVIS_MULTISAMPLE
+#ifdef GL_MULTISAMPLE_FILTER_HINT_NV
+   std::string s = (const char *)glGetString(GL_EXTENSIONS);
+   if (s.find("GL_NV_multisample_filter_hint") != std::string::npos)
+      glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_FASTEST);
+#endif
+
+   glDisable(GL_MULTISAMPLE);
+#endif
 
    // glDisable(GL_FOG);
 }

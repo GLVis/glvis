@@ -16,7 +16,8 @@
 #include "mfem.hpp"
 #include "visual.hpp"
 
-static void VectorKeyHPressed (){
+static void VectorKeyHPressed()
+{
    cout << endl
         << "+------------------------------------+" << endl
         << "| Keys                               |" << endl
@@ -60,9 +61,10 @@ static void VectorKeyHPressed (){
         << "+------------------------------------+" << endl
         << "| F1 - X window info and keystrokes  |" << endl
         << "| F2 - Update colors, etc.           |" << endl
-        << "| F3/F4 - Shrink/Zoom subdomains     |" << endl
+        << "| F3/F4 - Shrink/Zoom bdr elements   |" << endl
         << "| F6 - Palete options                |" << endl
         << "| F7 - Manually set min/max value    |" << endl
+        << "| F11/F12 - Shrink/Zoom subdomains   |" << endl
         << "+------------------------------------+" << endl
         << "| Keypad                             |" << endl
         << "+------------------------------------+" << endl
@@ -89,14 +91,14 @@ static void VectorKeyHPressed (){
 
 VisualizationSceneVector3d  * vsvector3d;
 extern VisualizationScene * locscene;
-//extern VisualizationSceneVector3d * vssol3d;
 
-static void KeyDPressed(){
+static void KeyDPressed()
+{
    vsvector3d -> ToggleDisplacements();
    SendExposeEvent();
 }
 
-static void KeyNPressed ()
+static void KeyNPressed()
 {
    if (vsvector3d -> drawdisp)
       vsvector3d -> ianimd =( (vsvector3d ->ianimd + 1) %
@@ -107,7 +109,7 @@ static void KeyNPressed ()
    vsvector3d -> NPressed();
 }
 
-static void KeyBPressed ()
+static void KeyBPressed()
 {
    if (vsvector3d -> drawdisp)
       vsvector3d ->ianimd = ((vsvector3d ->ianimd +
@@ -120,9 +122,10 @@ static void KeyBPressed ()
    vsvector3d -> NPressed();
 }
 
-static void KeyrPressed (){
+static void KeyrPressed()
+{
    locscene -> spinning = 0;
-   auxIdleFunc((void (*)())0);
+   RemoveIdleFunc(MainLoop);
    vsvector3d -> CenterObject();
    locscene -> ViewAngle = 45.0;
    locscene -> ViewScale = 1.0;
@@ -136,14 +139,15 @@ static void KeyrPressed (){
    SendExposeEvent();
 }
 
-static void KeyRPressed (){
+static void KeyRPressed()
+{
    vsvector3d -> ianim = vsvector3d -> ianimd = 0;
    vsvector3d -> Prepare();
    vsvector3d -> PrepareLines();
    vsvector3d -> PrepareDisplacedMesh();
 }
 
-void VisualizationSceneVector3d::NPressed ()
+void VisualizationSceneVector3d::NPressed()
 {
    if (drawdisp)
       PrepareDisplacedMesh();
@@ -156,17 +160,19 @@ void VisualizationSceneVector3d::NPressed ()
    SendExposeEvent();
 }
 
-static void KeyuPressed(){
+static void KeyuPressed()
+{
    vsvector3d -> ToggleVectorFieldLevel(+1);
    SendExposeEvent();
 }
 
-static void KeyUPressed(){
+static void KeyUPressed()
+{
    vsvector3d -> ToggleVectorFieldLevel(-1);
    SendExposeEvent();
 }
 
-void VisualizationSceneVector3d::ToggleVectorFieldLevel (int v)
+void VisualizationSceneVector3d::ToggleVectorFieldLevel(int v)
 {
    int i;
    for (i = 0; i < vflevel.Size(); i++)
@@ -179,12 +185,14 @@ void VisualizationSceneVector3d::ToggleVectorFieldLevel (int v)
    vsvector3d -> PrepareVectorField();
 }
 
-static void KeywPressed(){
+static void KeywPressed()
+{
    vsvector3d -> AddVectorFieldLevel();
    SendExposeEvent();
 }
 
-static void KeyWPressed(){
+static void KeyWPressed()
+{
    vsvector3d -> RemoveVectorFieldLevel();
    SendExposeEvent();
 }
@@ -205,17 +213,20 @@ void VisualizationSceneVector3d::RemoveVectorFieldLevel()
    vsvector3d -> PrepareVectorField();
 }
 
-static void KeyvPressed(){
+static void KeyvPressed()
+{
    vsvector3d -> ToggleVectorField(1);
    SendExposeEvent();
 }
 
-static void KeyVPressed(){
+static void KeyVPressed()
+{
    vsvector3d -> ToggleVectorField(-1);
    SendExposeEvent();
 }
 
-void VisualizationSceneVector3d::ToggleVectorField(int i){
+void VisualizationSceneVector3d::ToggleVectorField(int i)
+{
    if (drawvector == 0 && i == -1)
       drawvector = 5;
    else
@@ -223,25 +234,8 @@ void VisualizationSceneVector3d::ToggleVectorField(int i){
    PrepareVectorField();
 }
 
-// VisualizationSceneVector3d::VisualizationSceneVector3d(istream & in)
-// {
-//   mesh = new DMesh<2>();
-//   solx = new Vector();
-//   soly = new Vector();
-//   solz = new Vector();
-//
-//   mesh -> Load (in);
-//   solx -> Load (in, mesh -> GetNV());
-//   soly -> Load (in, mesh -> GetNV());
-//   solz -> Load (in, mesh -> GetNV());
-//
-//   sol  = new Vector(mesh -> GetNV());
-//
-//   Init();
-// }
-
-VisualizationSceneVector3d
-::VisualizationSceneVector3d(Mesh & m, Vector & sx, Vector & sy, Vector & sz)
+VisualizationSceneVector3d::VisualizationSceneVector3d(Mesh & m, Vector & sx,
+                                                       Vector & sy, Vector & sz)
 {
    mesh = &m;
    solx = &sx;
@@ -256,7 +250,7 @@ VisualizationSceneVector3d
    Init();
 }
 
-VisualizationSceneVector3d::VisualizationSceneVector3d (GridFunction &vgf)
+VisualizationSceneVector3d::VisualizationSceneVector3d(GridFunction &vgf)
 {
    FiniteElementSpace *fes = vgf.FESpace();
    if (fes == NULL || fes->GetVDim() != 3)
@@ -320,7 +314,7 @@ void VisualizationSceneVector3d::Init()
    vectorlist = glGenLists(1);
    displinelist = glGenLists(1);
 
-   VisualizationSceneSolution3d :: Init();
+   VisualizationSceneSolution3d::Init();
 
    PrepareVectorField();
    PrepareDisplacedMesh();
@@ -361,7 +355,7 @@ void VisualizationSceneVector3d::Init()
    }
 }
 
-VisualizationSceneVector3d::~VisualizationSceneVector3d ()
+VisualizationSceneVector3d::~VisualizationSceneVector3d()
 {
    glDeleteLists (vectorlist, 1);
    glDeleteLists (displinelist, 1);
@@ -379,77 +373,61 @@ VisualizationSceneVector3d::~VisualizationSceneVector3d ()
 }
 
 
-void VisualizationSceneVector3d :: PrepareFlat (){
+void VisualizationSceneVector3d::PrepareFlat()
+{
    int i, j;
 
    glNewList (displlist, GL_COMPILE);
 
-   Set_Material ();
+   Set_Material();
    glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
    int nbe = mesh -> GetNBE();
    DenseMatrix pointmat;
    Array<int> vertices;
+   double p[4][3], c[4];
 
    for (i = 0; i < nbe; i++)
    {
       if (!bdr_attr_to_show[mesh->GetBdrAttribute(i)-1]) continue;
 
-      switch (mesh->GetBdrElementType(i))
+      mesh->GetBdrPointMatrix(i, pointmat);
+      mesh->GetBdrElementVertices(i, vertices);
+
+      for (j = 0; j < pointmat.Width(); j++)
       {
-      case Element::TRIANGLE:
-         glBegin (GL_TRIANGLES);
-         break;
-
-      case Element::QUADRILATERAL:
-         glBegin (GL_QUADS);
-         break;
-      }
-      mesh->GetBdrPointMatrix (i, pointmat);
-      mesh->GetBdrElementVertices (i, vertices);
-
-      for (j = 0; j < pointmat.Size(); j++) {
          pointmat(0, j) += (*solx)(vertices[j])*(ianim)/ianimmax;
          pointmat(1, j) += (*soly)(vertices[j])*(ianim)/ianimmax;
          pointmat(2, j) += (*solz)(vertices[j])*(ianim)/ianimmax;
       }
 
-      double v10[] = { pointmat(0,1)-pointmat(0,0),
-                       pointmat(1,1)-pointmat(1,0),
-                       pointmat(2,1)-pointmat(2,0) };
-      double v21[] = { pointmat(0,2)-pointmat(0,1),
-                       pointmat(1,2)-pointmat(1,1),
-                       pointmat(2,2)-pointmat(2,1) };
-
-      double norm[] = { v10[1]*v21[2]-v10[2]*v21[1],
-                        v10[2]*v21[0]-v10[0]*v21[2],
-                        v10[0]*v21[1]-v10[1]*v21[0] };
-      double rlen = 1.0/sqrt(norm[0]*norm[0]+norm[1]*norm[1]+norm[2]*norm[2]);
-
-      glNormal3d (norm[0]*rlen, norm[1]*rlen, norm[2]*rlen);
-
-      for (j = 0; j < pointmat.Size(); j++) {
-         MySetColor ( (*sol)(vertices[j]) , minv, maxv);
-         glVertex3d (pointmat(0, j),
-                     pointmat(1, j),
-                     pointmat(2, j));
+      for (j = 0; j < pointmat.Width(); j++)
+      {
+         p[j][0] = pointmat(0, j);
+         p[j][1] = pointmat(1, j);
+         p[j][2] = pointmat(2, j);
+         c[j] = (*sol)(vertices[j]);
       }
-      glEnd ();
+      if (j == 3)
+         DrawTriangle(p, c, minv, maxv);
+      else
+         DrawQuad(p, c, minv, maxv);
    }
-   glEndList ();
+   glEndList();
 }
 
 void VisualizationSceneVector3d::PrepareFlat2()
 {
-   int i, j, k, fn, fo, ft, di;
+   int i, j, k, fn, fo, ft, di, have_normals;
    double bbox_diam, vmin, vmax, mm;
    int nbe = mesh -> GetNBE();
 
-   DenseMatrix pointmat;
+   DenseMatrix pointmat, normals;
    DenseMatrix vec_vals;
    Vector values;
    RefinedGeometry * RefG;
    Array<int> vertices;
+   double norm[3];
 
    bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
                       (y[1]-y[0])*(y[1]-y[0]) +
@@ -459,7 +437,7 @@ void VisualizationSceneVector3d::PrepareFlat2()
    glNewList (displlist, GL_COMPILE);
    glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
-   Set_Material ();
+   Set_Material();
 
    ft = 1;
    for (i = 0; i < nbe; i++)
@@ -483,9 +461,19 @@ void VisualizationSceneVector3d::PrepareFlat2()
                                          TimesToRefine);
       // di = GridF -> GetFaceValues (fn, 2, RefG->RefPts, values, pointmat);
       di = fo % 2;
-      GridF -> GetFaceValues (fn, di, RefG->RefPts, values, pointmat);
-      VecGridF -> GetFaceVectorValues (fn, di, RefG->RefPts,
-                                       vec_vals, pointmat);
+      GridF->GetFaceValues(fn, di, RefG->RefPts, values, pointmat);
+      if (ianim > 0)
+      {
+         VecGridF->GetFaceVectorValues(fn, di, RefG->RefPts, vec_vals,
+                                       pointmat);
+         pointmat.Add(double(ianim)/ianimmax, vec_vals);
+         have_normals = 0;
+      }
+      else
+      {
+         GetFaceNormals(fn, di, RefG->RefPts, normals);
+         have_normals = 1;
+      }
       if (ft)
       {
          vmin = values.Min();
@@ -500,11 +488,10 @@ void VisualizationSceneVector3d::PrepareFlat2()
          if (mm > vmax)  vmax = mm;
       }
 
-      if (ianim > 0)
-         pointmat.Add (double(ianim)/ianimmax, vec_vals);
+      ShrinkPoints3D(pointmat, i, fn, fo);
 
       int sides;
-      switch (mesh -> GetBdrElementType (i))
+      switch (mesh->GetBdrElementType(i))
       {
       case Element::TRIANGLE:
          sides = 3;
@@ -514,81 +501,38 @@ void VisualizationSceneVector3d::PrepareFlat2()
          sides = 4;
          break;
       }
-      int *RG = &(RefG->RefGeoms[0]);
-      double pts[][3] = { { pointmat(0,RG[0]), pointmat(1,RG[0]),
-                            pointmat(2,RG[0]) },
-                          { pointmat(0,RG[1]), pointmat(1,RG[1]),
-                            pointmat(2,RG[1]) },
-                          { pointmat(0,RG[2]), pointmat(1,RG[2]),
-                            pointmat(2,RG[2]) } };
-      double norm[3];
-      Compute3DUnitNormal (pts[0], pts[1], pts[2], norm);
-      if (di != 0 && sc != 0.0)
+
+      if (sc != 0.0 && have_normals)
       {
-         norm[0] = -norm[0];
-         norm[1] = -norm[1];
-         norm[2] = -norm[2];
+         for (int i = 0; i < 3; i++)
+            norm[i] = 0.0;
+         Normalize(normals);
+         for (k = 0; k < normals.Width(); k++)
+            for (int j = 0; j < 3; j++)
+               norm[j] += normals(j, k);
+         Normalize(norm);
+         for (int i = 0; i < pointmat.Width(); i++)
+         {
+            double val = sc * (values(i) - minv) / (maxv - minv);
+            for (int j = 0; j < 3; j++)
+               pointmat(j, i) += val * norm[j];
+         }
+         have_normals = 0;
       }
 
-      for (k = 0; k < RefG->RefGeoms.Size()/sides; k++)
-      {
-         RG = &(RefG->RefGeoms[k*sides]);
-         switch (sides)
-         {
-         case 3:
-            glBegin (GL_TRIANGLES);
-            break;
-
-         case 4:
-            glBegin (GL_QUADS);
-            break;
-         }
-
-         if (sc == 0.0)
-         {
-            glNormal3dv (norm);
-            for (j = 0; j < sides; j++)
-            {
-               MySetColor ( values(RG[j]) , minv , maxv);
-               glVertex3d (pointmat(0, RG[j]), pointmat(1, RG[j]),
-                           pointmat(2, RG[j]));
-            }
-         }
-         else
-         {
-            double nnorm[3];
-            for (j = 0; j < 3; j++)
-            {
-               double val = sc * (values(RG[j]) - minv) / (maxv - minv);
-               for (int l = 0; l < 3; l++)
-                  pts[j][l] = pointmat(l, RG[j]) + val * norm[l];
-            }
-            Compute3DUnitNormal (pts[0], pts[1], pts[2], nnorm);
-            glNormal3dv (nnorm);
-            for (j = 0; j < 3; j++)
-            {
-               MySetColor ( values(RG[j]) , minv , maxv);
-               glVertex3dv (pts[j]);
-            }
-            for ( ; j < sides; j++)
-            {
-               double val = (values(RG[j]) - minv) / (maxv - minv);
-               MySetColor ( values(RG[j]) , minv , maxv );
-               val *= sc;
-               glVertex3d (pointmat(0, RG[j])+val*norm[0],
-                           pointmat(1, RG[j])+val*norm[1],
-                           pointmat(2, RG[j])+val*norm[2]);
-            }
-         }
-         glEnd ();
-      }
+      have_normals = have_normals ? 2 : 0;
+      if (di)
+         have_normals = -1 - have_normals;
+      DrawPatch(pointmat, values, normals, sides, RefG->RefGeoms,
+                minv, maxv, have_normals);
    }
-   glEndList ();
+   glEndList();
    cout << "VisualizationSceneVector3d::PrepareFlat2() : [min,max] = ["
         << vmin << "," << vmax << "]" << endl;
 }
 
-void VisualizationSceneVector3d :: Prepare (){
+void VisualizationSceneVector3d::Prepare()
+{
    int i,j;
 
    switch (shading){
@@ -603,13 +547,14 @@ void VisualizationSceneVector3d :: Prepare (){
    }
 
    glNewList (displlist, GL_COMPILE);
-   Set_Material ();
+   Set_Material();
    glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
    int ne = mesh -> GetNBE();
    int nv = mesh -> GetNV();
    DenseMatrix pointmat;
    Array<int> vertices;
+   double nor[3];
 
    Vector nx(nv);
    Vector ny(nv);
@@ -629,30 +574,26 @@ void VisualizationSceneVector3d :: Prepare (){
             mesh->GetBdrPointMatrix (i, pointmat);
             mesh->GetBdrElementVertices (i, vertices);
 
-            for (j = 0; j < pointmat.Size(); j++) {
+            for (j = 0; j < pointmat.Size(); j++)
+            {
                pointmat(0, j) += (*solx)(vertices[j])*(ianim)/ianimmax;
                pointmat(1, j) += (*soly)(vertices[j])*(ianim)/ianimmax;
                pointmat(2, j) += (*solz)(vertices[j])*(ianim)/ianimmax;
             }
 
-            double v10[] = { pointmat(0,1)-pointmat(0,0),
-                             pointmat(1,1)-pointmat(1,0),
-                             pointmat(2,1)-pointmat(2,0)};
-            double v21[] = { pointmat(0,2)-pointmat(0,1),
-                             pointmat(1,2)-pointmat(1,1),
-                             pointmat(2,2)-pointmat(2,1) };
-            double norm[] = { v10[1]*v21[2]-v10[2]*v21[1],
-                              v10[2]*v21[0]-v10[0]*v21[2],
-                              v10[0]*v21[1]-v10[1]*v21[0] };
-            double rlen = 1.0/sqrt(norm[0]*norm[0]+norm[1]*norm[1]+
-                                   norm[2]*norm[2]);
-
-            for (j = 0; j < pointmat.Size(); j++)
-            {
-               nx(vertices[j]) += norm[0]*rlen;
-               ny(vertices[j]) += norm[1]*rlen;
-               nz(vertices[j]) += norm[2]*rlen;
-            }
+            if (pointmat.Width() == 3)
+               j = Compute3DUnitNormal(&pointmat(0,0), &pointmat(0,1),
+                                       &pointmat(0,2), nor);
+            else
+               j = Compute3DUnitNormal(&pointmat(0,0), &pointmat(0,1),
+                                       &pointmat(0,2), &pointmat(0,3), nor);
+            if (j == 0)
+               for (j = 0; j < pointmat.Size(); j++)
+               {
+                  nx(vertices[j]) += nor[0];
+                  ny(vertices[j]) += nor[1];
+                  nz(vertices[j]) += nor[2];
+               }
          }
 
       for (i = 0; i < ne; i++)
@@ -670,25 +611,22 @@ void VisualizationSceneVector3d :: Prepare (){
             }
             mesh->GetBdrPointMatrix (i, pointmat);
             mesh->GetBdrElementVertices (i, vertices);
-
-            for (j = 0; j < pointmat.Size(); j++) {
+            for (j = 0; j < pointmat.Size(); j++)
+            {
                pointmat(0, j) += (*solx)(vertices[j])*(ianim)/ianimmax;
                pointmat(1, j) += (*soly)(vertices[j])*(ianim)/ianimmax;
                pointmat(2, j) += (*solz)(vertices[j])*(ianim)/ianimmax;
             }
-
             for (j = 0; j < pointmat.Size(); j++)
             {
-               MySetColor ( (*sol)(vertices[j]) , minv , maxv);
-               glNormal3d (nx(vertices[j]),ny(vertices[j]),nz(vertices[j]));
-               glVertex3d (pointmat(0, j),
-                           pointmat(1, j),
-                           pointmat(2, j));
+               MySetColor((*sol)(vertices[j]), minv, maxv);
+               glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
+               glVertex3dv(&pointmat(0, j));
             }
-            glEnd ();
+            glEnd();
          }
    }
-   glEndList ();
+   glEndList();
 }
 
 void VisualizationSceneVector3d::PrepareLines()
@@ -734,9 +672,9 @@ void VisualizationSceneVector3d::PrepareLines()
 
       for (j = 0; j < pointmat.Size(); j++)
          glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j) );
-      glEnd ();
+      glEnd();
    }
-   glEndList ();
+   glEndList();
 }
 
 void VisualizationSceneVector3d::PrepareLines2()
@@ -786,6 +724,8 @@ void VisualizationSceneVector3d::PrepareLines2()
       if (ianim > 0)
          pointmat.Add (double(ianim)/ianimmax, vec_vals);
 
+      ShrinkPoints3D(pointmat, i, fn, fo);
+
       int *RG = &(RefG->RefGeoms[0]);
       double pts[][3] = { { pointmat(0,RG[0]), pointmat(1,RG[0]),
                             pointmat(2,RG[0]) },
@@ -827,7 +767,7 @@ void VisualizationSceneVector3d::PrepareLines2()
                }
             }
          }
-         glEnd ();
+         glEnd();
       }
       else if (drawmesh == 2)
       {
@@ -871,10 +811,11 @@ void VisualizationSceneVector3d::PrepareLines2()
          }
       }
    }
-   glEndList ();
+   glEndList();
 }
 
-void VisualizationSceneVector3d::PrepareDisplacedMesh(){
+void VisualizationSceneVector3d::PrepareDisplacedMesh()
+{
    int i, j, ne = mesh -> GetNBE();
    DenseMatrix pointmat;
    Array<int> vertices;
@@ -882,7 +823,7 @@ void VisualizationSceneVector3d::PrepareDisplacedMesh(){
    // prepare the displaced mesh
    glNewList(displinelist, GL_COMPILE);
 
-   Set_Material ();
+   Set_Material();
    glColor3f (1, 0, 0);
    glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
 
@@ -908,12 +849,13 @@ void VisualizationSceneVector3d::PrepareDisplacedMesh(){
 
       for (j = 0; j < pointmat.Size(); j++)
          glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j) );
-      glEnd ();
+      glEnd();
    }
-   glEndList ();
+   glEndList();
 }
 
-void ArrowsDrawOrNot (Array<int> l[], int nv, Vector & sol, int nl, Array<double> & level)
+void ArrowsDrawOrNot (Array<int> l[], int nv, Vector & sol,
+                      int nl, Array<double> & level)
 {
    static int first_time = 1;
    static int nll = nl;
@@ -957,8 +899,9 @@ int ArrowDrawOrNot (double v, int nl, Array<double> & level)
    return 0;
 }
 
-void VisualizationSceneVector3d::DrawVector (int type, double v0, double v1, double v2,
-                                             double sx, double sy, double sz, double s)
+void VisualizationSceneVector3d::DrawVector (int type, double v0, double v1,
+                                             double v2, double sx, double sy,
+                                             double sz, double s)
 {
    static int nv = mesh -> GetNV();
    static double volume = (x[1]-x[0])*(y[1]-y[0])*(z[1]-z[0]);
@@ -1005,13 +948,14 @@ void VisualizationSceneVector3d::DrawVector (int type, double v0, double v1, dou
    }
 }
 
-void VisualizationSceneVector3d::PrepareVectorField(){
+void VisualizationSceneVector3d::PrepareVectorField()
+{
    int i, nv = mesh -> GetNV();
    double *vertex;
 
    glNewList(vectorlist, GL_COMPILE);
 
-   Set_Material ();
+   Set_Material();
 
    switch (drawvector)
    {
@@ -1059,11 +1003,6 @@ void VisualizationSceneVector3d::PrepareVectorField(){
       ArrowsDrawOrNot (l, nv, *sol, nl, level);
 
       int j,k;
-      /*
-        double volume = (x[1]-x[0])*(y[1]-y[0])*(z[1]-z[0])
-        * xscale * yscale * zscale;
-        double h = pow(volume, 0.333) / 10;
-      */
 
       for (k = 0; k < vflevel.Size(); k++) {
          i = vflevel[k];
@@ -1094,12 +1033,12 @@ void VisualizationSceneVector3d::PrepareVectorField(){
    }
       break;
    }
-   glEndList ();
+   glEndList();
 
 }
 
-void VisualizationSceneVector3d::PrepareCuttingPlane(){
-
+void VisualizationSceneVector3d::PrepareCuttingPlane()
+{
    if (cp_drawelems == 0) return;
    if (cplane == 0) return;
    if (cplane == 2)
@@ -1108,12 +1047,6 @@ void VisualizationSceneVector3d::PrepareCuttingPlane(){
       return;
    }
 
-   /*
-     double volume = (x[1]-x[0])*(y[1]-y[0])*(z[1]-z[0])
-     * xscale * yscale * zscale;
-     double h = pow(volume/nv, 0.333);
-   */
-
    int i, j, k, n = 0;
    int flag[4], ind[6][2]={{0,3},{0,2},{0,1},{1,2},{1,3},{2,3}};
    double t, point[4][4], val[4][3];
@@ -1121,7 +1054,7 @@ void VisualizationSceneVector3d::PrepareCuttingPlane(){
    glNewList(cplanelist, GL_COMPILE);
    glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
-   Set_Material ();
+   Set_Material();
 
    DenseMatrix pointmat(3,4);
    double * coord;
@@ -1129,7 +1062,7 @@ void VisualizationSceneVector3d::PrepareCuttingPlane(){
    Array<int> nodes;
    for(i=0; i < mesh -> GetNE(); i++)
    {
-      n = 0;             // n will be the number of intersection points
+      n = 0; // n will be the number of intersection points
       mesh -> GetElementVertices(i,nodes);
       mesh -> GetPointMatrix (i,pointmat);
       for(j=0; j<4; j++)
@@ -1177,7 +1110,8 @@ void VisualizationSceneVector3d::PrepareCuttingPlane(){
             n++;
          }
 
-      if (n > 2){
+      if (n > 2)
+      {
          double v10[] = { point[1][0]-point[0][0],
                           point[1][1]-point[0][1],
                           point[1][2]-point[0][2] };
@@ -1230,10 +1164,11 @@ void VisualizationSceneVector3d::PrepareCuttingPlane(){
    glEndList();
 }
 
-void VisualizationSceneVector3d :: Draw (){
+void VisualizationSceneVector3d::Draw()
+{
    glEnable(GL_DEPTH_TEST);
 
-   Set_Background ();
+   Set_Background();
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
    // draw colored faces
@@ -1263,7 +1198,7 @@ void VisualizationSceneVector3d :: Draw (){
    if (light)
       glEnable(GL_LIGHTING);
 
-   Set_Black_Material ();
+   Set_Black_Material();
    // draw axes
    if (drawaxes)
    {
@@ -1277,12 +1212,12 @@ void VisualizationSceneVector3d :: Draw (){
    {
       glClipPlane(GL_CLIP_PLANE0,CuttingPlane->Equation());
       glEnable(GL_CLIP_PLANE0);
-      Set_Black_Material ();
+      Set_Black_Material();
       if ( cp_drawmesh )
          glCallList(cplanelineslist);
    }
 
-   Set_Black_Material ();
+   Set_Black_Material();
 
    // draw lines
    if (drawmesh)
@@ -1291,11 +1226,21 @@ void VisualizationSceneVector3d :: Draw (){
    if (drawdisp)
       glCallList(displinelist);
 
+   if (drawvector == 1 || drawvector > 3)
+      glCallList(vectorlist);
+
    if (MatAlpha < 1.0)
-      Set_Transparency ();
+      Set_Transparency();
+
+   if (GetUseTexture())
+   {
+      glEnable (GL_TEXTURE_1D);
+      glColor4d(1, 1, 1, 1);
+   }
 
    // draw vector field
-   glCallList(vectorlist);
+   if (drawvector == 2 || drawvector == 3)
+      glCallList(vectorlist);
 
    // draw elements
    if (drawelems)
@@ -1304,8 +1249,11 @@ void VisualizationSceneVector3d :: Draw (){
    if (cplane && cp_drawelems)
       glCallList(cplanelist);
 
+   if (GetUseTexture())
+      glDisable (GL_TEXTURE_1D);
+
    if (MatAlpha < 1.0)
-      Remove_Transparency ();
+      Remove_Transparency();
 
    glFlush();
    glXSwapBuffers (auxXDisplay(), auxXWindow());

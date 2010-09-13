@@ -289,10 +289,13 @@ GLenum auxInitWindow(const char *title)
 {
     int useDoubleAsSingle = 0;
 
-    if (tkInitWindow(title) == GL_FALSE) {
-	if (AUX_WIND_IS_SINGLE(displayModeType)) {
+    if (tkInitWindow(title) == GL_FALSE)
+    {
+	if (AUX_WIND_IS_SINGLE(displayModeType))
+        {
 	    tkInitDisplayMode(displayModeType | AUX_DOUBLE);
-	    if (tkInitWindow(title) == GL_FALSE) {
+	    if (tkInitWindow(title) == GL_FALSE)
+            {
 		return GL_FALSE;    /*  curses, foiled again	*/
 	    }
 	    fprintf(stderr, "Can't initialize a single buffer visual.\n");
@@ -301,6 +304,10 @@ GLenum auxInitWindow(const char *title)
 	    displayModeType = displayModeType | AUX_DOUBLE;
 	    useDoubleAsSingle = 1;
 	}
+        else
+        {
+           return GL_FALSE;
+        }
     }
     tkReshapeFunc(DefaultHandleReshape);
     tkExposeFunc(DefaultHandleExpose);

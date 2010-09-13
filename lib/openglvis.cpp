@@ -13,10 +13,10 @@
 #include <math.h>
 #include "openglvis.hpp"
 
-VisualizationScene :: VisualizationScene ()
+VisualizationScene::VisualizationScene()
 {
    glMatrixMode (GL_MODELVIEW);
-   glLoadIdentity ();
+   glLoadIdentity();
    glGetDoublev (GL_MODELVIEW_MATRIX, translmat);
    glRotatef(-60.0, 1.0f, 0.0f, 0.0f);
    glRotatef(-40.0, 0.0f, 0.0f, 1.0f);
@@ -30,12 +30,12 @@ VisualizationScene :: VisualizationScene ()
    ViewCenterY = 0.0;
 }
 
-VisualizationScene :: ~VisualizationScene () {;}
+VisualizationScene::~VisualizationScene(){}
 
 void VisualizationScene::Rotate(double anglex, double angley)
 {
    glMatrixMode (GL_MODELVIEW);
-   glLoadIdentity ();
+   glLoadIdentity();
    glRotatef(anglex, 0.0f, 1.0f, 0.0f);
    glRotatef(angley, 1.0f, 0.0f, 0.0f);
    glMultMatrixd (rotmat);
@@ -45,7 +45,7 @@ void VisualizationScene::Rotate(double anglex, double angley)
 void VisualizationScene::Translate(double _x, double _y, double _z)
 {
    glMatrixMode (GL_MODELVIEW);
-   glLoadIdentity ();
+   glLoadIdentity();
    glTranslatef (_x, -_y, _z);
    glMultMatrixd (translmat);
    glGetDoublev (GL_MODELVIEW_MATRIX, translmat);
@@ -56,10 +56,11 @@ void VisualizationScene::Scale(double s)
    Scale (s, s, s);
 }
 
-void VisualizationScene::Scale(double s1, double s2, double s3){
+void VisualizationScene::Scale(double s1, double s2, double s3)
+{
    /*
      glMatrixMode (GL_MODELVIEW);
-     glLoadIdentity ();
+     glLoadIdentity();
      glScaled (s1, s2, s3);
      glMultMatrixd (rotmat);
      glGetDoublev (GL_MODELVIEW_MATRIX, rotmat);
@@ -82,7 +83,7 @@ void VisualizationScene::Draw(){}
 void VisualizationScene::SetView(double theta, double phi)
 {
    glMatrixMode (GL_MODELVIEW);
-   glLoadIdentity ();
+   glLoadIdentity();
    glGetDoublev (GL_MODELVIEW_MATRIX, translmat);
 
    glRotatef(-theta, 1.0f, 0.0f, 0.0f);

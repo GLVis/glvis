@@ -25,6 +25,9 @@ protected:
 
    virtual void GetRefinedValues(int i, const IntegrationRule &ir,
                                  Vector &vals, DenseMatrix &tr);
+   virtual int GetRefinedValuesAndNormals(int i, const IntegrationRule &ir,
+                                          Vector &vals, DenseMatrix &tr,
+                                          DenseMatrix &normals);
 
    double (*Vec2Scalar)(double, double);
 
