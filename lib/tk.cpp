@@ -591,16 +591,14 @@ void tkExec(void)
          flag = GL_FALSE;
          while (XPending(display))
             flag |= DoNextEvent();
-         if (flag == GL_TRUE)
-            if (DisplayFunc)
-               (*DisplayFunc)();
       }
       else
       {
-         if (DoNextEvent() == GL_TRUE)
-            if (DisplayFunc)
-               (*DisplayFunc)();
+         flag = DoNextEvent();
       }
+      if (flag == GL_TRUE)
+         if (DisplayFunc)
+            (*DisplayFunc)();
    }
 }
 
@@ -736,6 +734,8 @@ static XVisualInfo *FindVisual(GLenum type)
         list[i++] = 1;
     }
 
+    int have_multisample = 0;
+
     // multisampling
 #ifdef GLVIS_MULTISAMPLE
 #ifdef GLX_SAMPLE_BUFFERS_ARB
@@ -746,6 +746,7 @@ static XVisualInfo *FindVisual(GLenum type)
        list[i++] = 1;
        list[i++] = GLX_SAMPLES_ARB;
        list[i++] = GLVIS_MULTISAMPLE;
+       have_multisample = 1;
     }
 #else
 #error GLX_SAMPLE_BUFFERS_ARB is not defined!
@@ -754,7 +755,19 @@ static XVisualInfo *FindVisual(GLenum type)
 
     list[i] = (int)None;
 
-    return glXChooseVisual(display, screen, (int *)list);
+    XVisualInfo *visual = glXChooseVisual(display, screen, (int *)list);
+
+    if (!visual && have_multisample)
+    {
+       list[i-4] = (int)None;
+       visual = glXChooseVisual(display, screen, (int *)list);
+#ifdef GLVIS_DEBUG
+       printf("The requested multisample mode is not available."
+              "Multisampling disabled.\n");
+#endif
+    }
+
+    return visual;
 }
 
 static int MakeVisualType(XVisualInfo *vi)

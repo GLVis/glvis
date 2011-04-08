@@ -455,7 +455,7 @@ void MainLoop()
    }
 }
 
-//== PRESSED MOUSE BUTTONS EVENTS ============================================
+// Pressed mouse buttons events
 
 inline double sqr(double t)
 {
@@ -1040,8 +1040,8 @@ void ShrinkWindow()
 
    glGetIntegerv(GL_VIEWPORT, viewport);
    int w = viewport[2], h = viewport[3];
-   w = (int)round(w / window_scale_factor);
-   h = (int)round(h / window_scale_factor);
+   w = (int)ceil(w / window_scale_factor);
+   h = (int)ceil(h / window_scale_factor);
 
    cout << "New window size : " << w << " x " << h << endl;
 
@@ -1054,8 +1054,8 @@ void EnlargeWindow()
 
    glGetIntegerv(GL_VIEWPORT, viewport);
    int w = viewport[2], h = viewport[3];
-   w = (int)round(w * window_scale_factor);
-   h = (int)round(h * window_scale_factor);
+   w = (int)ceil(w * window_scale_factor);
+   h = (int)ceil(h * window_scale_factor);
 
    cout << "New window size : " << w << " x " << h << endl;
 

@@ -344,7 +344,11 @@ void Set_AntiAliasing()
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
    // glBlendFunc (GL_SRC_ALPHA_SATURATE, GL_ONE);
 
+#ifdef GLVIS_MS_LINEWIDTH
+   glLineWidth(GLVIS_MS_LINEWIDTH);
+#else
    glLineWidth(1.4);
+#endif
 
    glEnable(GL_POLYGON_SMOOTH);
    glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);

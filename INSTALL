@@ -1,5 +1,5 @@
                            GLVis visualization tool
-                                 version 1.1
+                                 version 1.2
 
                      _/_/_/  _/      _/      _/  _/
                   _/        _/      _/      _/        _/_/_/
@@ -39,6 +39,9 @@ make lib   -> Builds only the lib/libglvis.a library
 make debug -> Builds a debug version
 make clean -> Cleans the build
 
+If LibTIFF is available on your system, modify the makefile by setting
+'USE_LIBTIFF = YES'.
+
 
 Building with 'SCons'
 ====================
@@ -53,3 +56,21 @@ Some of the available 'SCons' targets are:
 scons         -> Builds the glvis binary and the lib/libglvis.a library
 scons debug=1 -> Builds a debug version
 scons -c      -> Cleans the build
+
+
+Some building considerations:
+
+- GLVis requires the serial version of MFEM (its default build option). If you
+  built the parallel version, you will need to re-build MFEM, e.g., using:
+
+     make clean; make
+
+- To adjust the anti-aliasing settings for your hardware:
+
+  1) Modify the value of the GLVIS_MULTISAMPLE variable (multisample mode) in
+     the makefile/SConstruct file. Supported values can be obtained from the
+     'glxinfo' command ('ms' columns) or a from a tool like 'nvidia-settings'.
+
+  2) Modify the value of the GLVIS_MS_LINEWIDTH variable (anti-aliased line
+     width) in the makefile/SConstruct file. Note that the same value can
+     produce different results depending on the OpenGL implementation.

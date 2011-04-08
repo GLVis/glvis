@@ -9,6 +9,33 @@
                         http://glvis.googlecode.com
 
 
+Version 1.2, released on Apr 08, 2011
+=====================================
+
+- If build with mfem version 1.2 (or later), glvis now supports unstructured
+  meshes in VTK format, including quadratic curvilinear meshes.
+
+- When viewing 3D vector field, 'F' will cycle the displayed scalar function
+  between magnitude, x-component, y-component and z-component.
+
+- Added a new command line option: '-gc' allowing visualization of a single
+  component of a GridFunction, e.g: glvis -m mesh -g sol -gc 0. This is useful
+  for grid functions describing tensors.
+
+- Ensured that the shrinking of elements (F3/F4) and material subdomains
+  (F11/F12) work in 2D/3D, with scalar/vector plots and on curved meshes. The
+  latter are useful, in particular, to visualize the subdomains corresponding to
+  different processors in a mfem parallel run.
+
+- The palette update (key 'p') when using texture is now instantaneous.
+
+- Added a new script command: toggle_attributes.
+
+- Added a new pallete: calewhite, from VisIt.
+
+- Various small fixes and styling updates.
+
+
 Version 1.1, released on Sep 13, 2010
 =====================================
 

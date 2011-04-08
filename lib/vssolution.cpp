@@ -70,6 +70,7 @@ static void SolutionKeyHPressed()
         << "| F7 - Manually set min/max value    |" << endl
         << "| F8 - List of subdomains to show    |" << endl
         << "| F9/F10 - Walk through subdomains   |" << endl
+        << "| F11/F12 - Shrink/Zoom subdomains   |" << endl
         << "+------------------------------------+" << endl
         << "| Keypad                             |" << endl
         << "+------------------------------------+" << endl
@@ -97,70 +98,55 @@ static void SolutionKeyHPressed()
 static void KeyF8Pressed()
 {
    int attr;
+   Array<int> attr_list(&attr, 1);
+   const Array<int> &all_attr = vssol->GetMesh()->attributes;
 
    cout << "El attributes ON: ";
-   for (attr = 0; attr < vssol -> el_attr_to_show.Size(); attr++)
-      if (vssol -> el_attr_to_show[attr])
-         cout << " " << attr;
+   for (int i = 0; i < all_attr.Size(); i++)
+      if (vssol->el_attr_to_show[all_attr[i]-1])
+         cout << " " << all_attr[i];
    cout << endl;
 
    cout << "El attribute to toggle : " << flush;
    cin >> attr;
-   if (attr == -1)
-   {
-      for (attr = 0; attr < vssol -> el_attr_to_show.Size(); attr++)
-         vssol -> el_attr_to_show[attr] = 0;
-   }
-   else if (attr >= vssol -> el_attr_to_show.Size() || attr < 0)
-   {
-      for (attr = 0; attr < vssol -> el_attr_to_show.Size(); attr++)
-         vssol -> el_attr_to_show[attr] = 1;
-   }
-   else
-   {
-      vssol -> el_attr_to_show[attr] = !vssol -> el_attr_to_show[attr];
-   }
-   vssol -> PrepareLines();
-   vssol -> Prepare();
+   vssol->ToggleAttributes(attr_list);
    SendExposeEvent();
 }
 
 static void KeyF9Pressed()
 {
-   int attr;
+   if (vssol->attr_to_show == -1)
+   {
+      vssol->el_attr_to_show = 0;
+      vssol->attr_to_show = 0;
+   }
+   else
+      vssol->el_attr_to_show[vssol->attr_to_show++] = 0;
 
-   if (vssol -> attr_to_show == -1) {
-      for (attr = 0; attr < vssol -> el_attr_to_show.Size(); attr++)
-         vssol -> el_attr_to_show[attr] = 0;
-      vssol -> attr_to_show = 0;
-   } else
-      vssol -> el_attr_to_show[vssol -> attr_to_show++] = 0;
-
-   if (vssol -> attr_to_show >= vssol -> el_attr_to_show.Size())
-      vssol -> attr_to_show = 0;
-   vssol -> el_attr_to_show[vssol -> attr_to_show] = 1;
-   cout << "Showing el attribute " << vssol -> attr_to_show << endl;
-   vssol -> PrepareLines();
-   vssol -> Prepare();
+   if (vssol->attr_to_show >= vssol->el_attr_to_show.Size())
+      vssol->attr_to_show = 0;
+   vssol->el_attr_to_show[vssol->attr_to_show] = 1;
+   cout << "Showing el attribute " << vssol->attr_to_show+1 << endl;
+   vssol->PrepareLines();
+   vssol->Prepare();
    SendExposeEvent();
 }
 
 static void KeyF10Pressed()
 {
-   int attr;
+   if (vssol->attr_to_show == -1)
+   {
+      vssol->el_attr_to_show = 0;
+   }
+   else
+      vssol->el_attr_to_show[vssol->attr_to_show--] = 0;
 
-   if (vssol -> attr_to_show == -1) {
-      for (attr = 0; attr < vssol -> el_attr_to_show.Size(); attr++)
-         vssol -> el_attr_to_show[attr] = 0;
-   } else
-      vssol -> el_attr_to_show[vssol -> attr_to_show--] = 0;
-
-   if (vssol -> attr_to_show < 0)
-      vssol -> attr_to_show = vssol -> el_attr_to_show.Size()-1;
-   vssol -> el_attr_to_show[vssol -> attr_to_show] = 1;
-   cout << "Showing el attribute " << vssol -> attr_to_show << endl;
-   vssol -> PrepareLines();
-   vssol -> Prepare();
+   if (vssol->attr_to_show < 0)
+      vssol->attr_to_show = vssol->el_attr_to_show.Size()-1;
+   vssol->el_attr_to_show[vssol->attr_to_show] = 1;
+   cout << "Showing el attribute " << vssol->attr_to_show+1 << endl;
+   vssol->PrepareLines();
+   vssol->Prepare();
    SendExposeEvent();
 }
 
@@ -297,6 +283,7 @@ static void KeyF3Pressed()
       vssol->shrink *= 0.9;
       vssol->Prepare();
       vssol->PrepareLines();
+      vssol->PrepareLevelCurves();
       SendExposeEvent();
    }
 }
@@ -308,6 +295,35 @@ static void KeyF4Pressed()
       vssol->shrink *= 1.11111111111111111111111;
       vssol->Prepare();
       vssol->PrepareLines();
+      vssol->PrepareLevelCurves();
+      SendExposeEvent();
+   }
+}
+
+static void KeyF11Pressed()
+{
+   if (vssol->shading == 2)
+   {
+      if (vssol->matc.Width() == 0)
+         vssol->ComputeElemAttrCenter();
+      vssol->shrinkmat *= 0.9;
+      vssol->Prepare();
+      vssol->PrepareLines();
+      vssol->PrepareLevelCurves();
+      SendExposeEvent();
+   }
+}
+
+static void KeyF12Pressed()
+{
+   if (vssol->shading == 2)
+   {
+      if (vssol->matc.Width() == 0)
+         vssol->ComputeElemAttrCenter();
+      vssol->shrinkmat *= 1.11111111111111111111111;
+      vssol->Prepare();
+      vssol->PrepareLines();
+      vssol->PrepareLevelCurves();
       SendExposeEvent();
    }
 }
@@ -335,26 +351,29 @@ void VisualizationSceneSolution::Init()
    drawmesh  = 0;
 
    shrink = 1.0;
+   shrinkmat = 1.0;
+   bdrc.SetSize(2,0);
+   matc.SetSize(2,0);
 
    TimesToRefine = EdgeRefineFactor = 1;
 
    attr_to_show = -1;
-   el_attr_to_show.SetSize (mesh->attributes.Max());
-   for (int i = 0; i < el_attr_to_show.Size(); i++)
-      el_attr_to_show[i] = 1;
+   el_attr_to_show.SetSize(mesh->attributes.Max());
+   el_attr_to_show = 1;
+
    drawbdr = 0;
 
-   VisualizationSceneScalarData::Init();  //  Calls FindNewBox() !!!
+   VisualizationSceneScalarData::Init();  // Calls FindNewBox() !!!
 
    SetUseTexture(1);
 
    CuttingPlane = new Plane(-1.0,0.0,0.0,0.5*(x[0]+x[1]));
    draw_cp = 0;
 
-   //  static int init = 0;
-   //  if (!init)
+   // static int init = 0;
+   // if (!init)
    {
-      //      init = 1;
+      // init = 1;
 
       auxKeyFunc (AUX_b, KeyBPressed);
       auxKeyFunc (AUX_B, KeyBPressed);
@@ -382,6 +401,8 @@ void VisualizationSceneSolution::Init()
       auxKeyFunc (XK_F8, KeyF8Pressed);
       auxKeyFunc (XK_F9, KeyF9Pressed);
       auxKeyFunc (XK_F10, KeyF10Pressed);
+      auxKeyFunc (XK_F11, KeyF11Pressed);
+      auxKeyFunc (XK_F12, KeyF12Pressed);
    }
 
    displlist  = glGenLists (1);
@@ -474,8 +495,8 @@ void VisualizationSceneSolution::GetRefinedValues(
    else
       GetRefinedDetJ(i, ir, vals, tr);
 
-   if (shrink != 1.0)
-      ShrinkPoints(tr);
+   if (shrink != 1.0 || shrinkmat != 1.0)
+      ShrinkPoints(tr, i, 0, 0);
 }
 
 int VisualizationSceneSolution::GetRefinedValuesAndNormals(
@@ -500,9 +521,9 @@ int VisualizationSceneSolution::GetRefinedValuesAndNormals(
    else
       GetRefinedDetJ(i, ir, vals, tr);
 
-   if (shrink != 1.0)
+   if (shrink != 1.0 || shrinkmat != 1.0)
    {
-      ShrinkPoints(tr);
+      ShrinkPoints(tr, i, 0, 0);
       if (have_normals)
       {
          for (int j = 0; j < tr.Width(); j++)
@@ -588,6 +609,32 @@ void VisualizationSceneSolution::SetRefineFactors(int tot, int bdr)
       PrepareLevelCurves();
       PrepareCP();
    }
+}
+
+void VisualizationSceneSolution::ToggleAttributes(Array<int> &attr_list)
+{
+   Array<int> &attr_marker = vssol->el_attr_to_show;
+
+   for (int i = 0; i < attr_list.Size(); i++)
+   {
+      int attr = attr_list[i];
+      if (attr < 1)
+      {
+         cout << "Hiding all attributes." << endl;
+         attr_marker = 0;
+      }
+      else if (attr > attr_marker.Size())
+      {
+         cout << "Showing all attributes." << endl;
+         attr_marker = 1;
+      }
+      else
+      {
+         attr_marker[attr-1] = !attr_marker[attr-1];
+      }
+   }
+   vssol->PrepareLines();
+   vssol->Prepare();
 }
 
 void VisualizationSceneSolution::NewZRange(double z1, double z2)
@@ -1338,10 +1385,11 @@ void VisualizationSceneSolution::PrepareLines3()
 
 void VisualizationSceneSolution::UpdateValueRange()
 {
-   SetLevelLines (minv, maxv, nl);
+   SetLevelLines(minv, maxv, nl);
    UpdateLevelLines();
    NewZRange(minv, maxv);
    PrepareAxes();
+   EventUpdateColors();
 }
 
 void VisualizationSceneSolution::PrepareBoundary()

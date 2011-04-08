@@ -24,7 +24,7 @@ CC_OPTS    = '-O3'
 DEBUG_OPTS = '-g -DGLVIS_DEBUG -Wall'
 
 # GLVis-specific options
-env.Append(CPPDEFINES = ['GLVIS_MULTISAMPLE=4'])
+env.Append(CPPDEFINES = ['GLVIS_MULTISAMPLE=4','GLVIS_MS_LINEWIDTH=1.4'])
 
 # Debug options
 debug = ARGUMENTS.get('debug', 0)

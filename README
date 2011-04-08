@@ -1,5 +1,5 @@
                            GLVis visualization tool
-                                 version 1.1
+                                 version 1.2
 
                      _/_/_/  _/      _/      _/  _/
                   _/        _/      _/      _/        _/_/_/
@@ -97,12 +97,14 @@ I - Cycle through the "subdivision functions", (prints a message in the
                      -> Decrease bdr subdivision factor:  s2--
 i - perform the current "subdivision function"
 
-A - Turn on/off the use of thicker lines
+A - Turn on/off the use of anti-aliasing/multi-sampling
 b - Display/Hide the boundary in 2D scalar mode
 L - Turn on/off logarithmic scale
 \ - Set light source position (see Right+Shift)
 * - Zoom in
 / - Zoom out
++ - Stretch in z-direction
+- - Compress in z-direction
 [ - Enlarge the bounding box (relative to the colorbar)
 ] - Shrink the bounding box (relative to the colorbar)
 ( - Shrink the visualization window
@@ -135,6 +137,7 @@ F3/F4 - Shrink/Zoom each element towards its center, to better visualize the
 F5 - Change the range and number of the level lines
 F6 - Palette menu
 F7 - Change the minimum and maximum values
+F11/F12 - Shrink/Zoom material subdomains (to the centers of the attributes)
 
 Middle+Ctrl - Object translation
 Right+Ctrl  - Object scaling (see also '[' and ']')
@@ -206,4 +209,36 @@ w/W - Move boundary elements up/down in direction of the normal (i.e. "plot"
       the boundary values in normal direction)
 
 F3/F4   - Shrink/Zoom boundary elements (to the centers of the attributes)
-F11/F12 - Shrink/Zoom materials subdomains (to the centers of the attributes)
+F11/F12 - Shrink/Zoom material subdomains (to the centers of the attributes)
+
+
+3D vector data commands
+=======================
+v - Toggle the "vector" state
+    The options are: -> do not show vectors
+                     -> show vectors as displacement
+                     -> show vector field; vectors are uniformly scaled;
+                        the color varies with the magnitude (or the current
+                        "vector-to-scalar function", see key F)
+                     -> show vector field as above, but the vectors are scaled
+                        proportionally to their magnitude
+                     -> show the subset of the vector field with scalar function
+                        around a given value (adjusted with keys u/U and w/W)
+                     -> show the vector field restricted to the boundary of the
+                        domain
+V - Cycle the "vector" state in the opposite direction of 'v'
+
+u/U - Move the level field vectors (in the appropriate "vector" state)
+w/W - Add/Delete level field vector (in the appropriate "vector" state)
+
+d - Toggle the "displaced mesh" state: (see also keys 'n'/'b')
+    The options are: -> do not show displaced mesh
+                     -> show displaced mesh
+n - increase the displacement amount in 10% steps, wraps around from 100% to 0%
+b - decrease the displacement amount in 10% steps, wraps around from 0% to 100%
+
+F - Change the "vector-to-scalar function"
+    The options are: -> magnitude:   sqrt(vx^2+vy^2+vz^2)
+                     -> x-component: vx
+                     -> y-component: vy
+                     -> z-component: vz

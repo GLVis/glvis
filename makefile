@@ -13,7 +13,7 @@ CC = g++
 OPTS = -O3
 DEBUG_OPTS = -g -DGLVIS_DEBUG
 
-DEFINES = -DGLVIS_MULTISAMPLE=4
+DEFINES = -DGLVIS_MULTISAMPLE=4 -DGLVIS_MS_LINEWIDTH=1.4
 
 # Take screenshots internally with libtiff or externally with xwd?
 USE_LIBTIFF = NO

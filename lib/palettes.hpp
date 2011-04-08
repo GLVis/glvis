@@ -2958,8 +2958,10 @@ double RGB_Palette_24[RGB_Palette_24_Size][3] =
    {0.133532, 0.122103, 0.125444}
 };
 
+const int RGB_Palette_25_Size = (4*16+1); // visit's calewhite
+double RGB_Palette_25[RGB_Palette_25_Size][3];
 
-const int Num_RGB_Palettes = 24;
+const int Num_RGB_Palettes = 25;
 const int RGB_Palettes_Sizes[Num_RGB_Palettes] =
 {
    RGB_Palette_1_Size, RGB_Palette_2_Size, RGB_Palette_3_Size,
@@ -2969,7 +2971,8 @@ const int RGB_Palettes_Sizes[Num_RGB_Palettes] =
    RGB_Palette_13_Size, RGB_Palette_14_Size, RGB_Palette_15_Size,
    RGB_Palette_16_Size, RGB_Palette_17_Size, RGB_Palette_18_Size,
    RGB_Palette_19_Size, RGB_Palette_20_Size, RGB_Palette_21_Size,
-   RGB_Palette_22_Size, RGB_Palette_23_Size, RGB_Palette_24_Size
+   RGB_Palette_22_Size, RGB_Palette_23_Size, RGB_Palette_24_Size,
+   RGB_Palette_25_Size
 };
 
 double *RGB_Palettes[Num_RGB_Palettes] =
@@ -2979,7 +2982,8 @@ double *RGB_Palettes[Num_RGB_Palettes] =
    *RGB_Palette_9, *RGB_Palette_10, *RGB_Palette_11, *RGB_Palette_12,
    *RGB_Palette_13, *RGB_Palette_14, *RGB_Palette_15, *RGB_Palette_16,
    *RGB_Palette_17, *RGB_Palette_18, *RGB_Palette_19, *RGB_Palette_20,
-   *RGB_Palette_21, *RGB_Palette_22, *RGB_Palette_23, *RGB_Palette_24
+   *RGB_Palette_21, *RGB_Palette_22, *RGB_Palette_23, *RGB_Palette_24,
+   *RGB_Palette_25
 };
 
 const char *RGB_Palettes_Names[Num_RGB_Palettes] =
@@ -2988,7 +2992,7 @@ const char *RGB_Palettes_Names[Num_RGB_Palettes] =
    "hot       ", "pink      ", "cool      ", "summer    ", "hsv       ",
    "copper    ", "white     ", "vivid     ", "aluminum  ", "sunrise   ",
    "horizon   ", "hilite    ", "deep sea  ", "pastel    ", "tropical  ",
-   "wood      ", "mars      ", "rainbow   ", "cmyk      "
+   "wood      ", "mars      ", "rainbow   ", "cmyk      ", "calewhite "
 };
 
 int Default_RGB_Palette = 2;
@@ -2999,6 +3003,35 @@ double corr(double a, double x)
 {
    return x / (1.0 + (a * a - 1.0) * (1.0 - x));
 //   return pow(x, a);
+}
+
+void Init_Visit_Calewhite_Palette()
+{
+   const int ns = 7;
+   const double ts[ns] = { 0., 1./6., 2./6., 3./6., 4./6., 5./6., 1. };
+
+   const double rs[ns] = { 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
+   const double gs[ns] = { 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0 };
+   const double bs[ns] = { 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0 };
+   const double rc[ns-1] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
+   const double gc[ns-1] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
+   const double bc[ns-1] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
+
+   for (int i = 0; i < RGB_Palette_25_Size; i++)
+   {
+      double t = double(i) / (RGB_Palette_25_Size-1), r, g, b;
+      int k;
+      for (k = 1; k < ns; k++)
+         if (t >= ts[k-1] && t <= ts[k])
+            break;
+      t = (t - ts[k-1]) / (ts[k] - ts[k-1]);
+      r = (1.0 - t) * corr(rc[k-1], rs[k-1]) + t * corr(rc[k-1], rs[k]);
+      g = (1.0 - t) * corr(gc[k-1], gs[k-1]) + t * corr(gc[k-1], gs[k]);
+      b = (1.0 - t) * corr(bc[k-1], bs[k-1]) + t * corr(bc[k-1], bs[k]);
+      RGB_Palette_25[i][0] = corr(1./rc[k-1], r);
+      RGB_Palette_25[i][1] = corr(1./gc[k-1], g);
+      RGB_Palette_25[i][2] = corr(1./bc[k-1], b);
+   }
 }
 
 void Init_Palettes()
@@ -3085,6 +3118,8 @@ void Init_Palettes()
       RGB_Palette_13[i][1] = corr(1./gc[k-1], g);
       RGB_Palette_13[i][2] = corr(1./bc[k-1], b);
    }
+
+   Init_Visit_Calewhite_Palette();
 }
 
 void Set_Texture_Image();

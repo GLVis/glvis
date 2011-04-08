@@ -111,6 +111,7 @@ public:
    void ToggleDrawCP() { draw_cp = !draw_cp; PrepareCP(); }
 
    virtual void SetRefineFactors(int, int);
+   virtual void ToggleAttributes(Array<int> &attr_list);
 };
 
 

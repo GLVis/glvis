@@ -16,9 +16,7 @@
 
 class VisualizationScene
 {
-
 protected:
-
    // How to scale the visualized object(s)
    double xscale, yscale, zscale;
 

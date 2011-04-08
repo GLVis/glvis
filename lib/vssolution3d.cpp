@@ -289,7 +289,7 @@ void ToggleMagicKey()
    magic_key_pressed = 1-magic_key_pressed;
 }
 
-void KeyF3Pressed()
+static void KeyF3Pressed()
 {
    if (vssol3d->GetShading() == 2)
    {
@@ -304,7 +304,7 @@ void KeyF3Pressed()
    }
 }
 
-void KeyF4Pressed()
+static void KeyF4Pressed()
 {
    if (vssol3d->GetShading() == 2)
    {
@@ -319,7 +319,7 @@ void KeyF4Pressed()
    }
 }
 
-void KeyF11Pressed()
+static void KeyF11Pressed()
 {
    if (vssol3d->GetShading() == 2)
    {
@@ -334,7 +334,7 @@ void KeyF11Pressed()
    }
 }
 
-void KeyF12Pressed()
+static void KeyF12Pressed()
 {
    if (vssol3d->GetShading() == 2)
    {
@@ -351,34 +351,20 @@ void KeyF12Pressed()
 
 static void KeyF8Pressed()
 {
-   const Array<int> &attr_list = vssol3d->GetMesh()->bdr_attributes;
+   const Array<int> &all_attr = vssol3d->GetMesh()->bdr_attributes;
    Array<int> &attr_marker = vssol3d->bdr_attr_to_show;
    int attr;
+   Array<int> attr_list(&attr, 1);
 
    cout << "Bdr attributes ON: ";
-   for (int i = 0; i < attr_list.Size(); i++)
-      if (attr_marker[attr_list[i]-1])
-         cout << " " << attr_list[i];
+   for (int i = 0; i < all_attr.Size(); i++)
+      if (attr_marker[all_attr[i]-1])
+         cout << " " << all_attr[i];
    cout << endl;
 
    cout << "Bdr attribute to toggle : " << flush;
    cin >> attr;
-   if (attr < 1)
-   {
-      cout << "Hiding all bdr attributes." << endl;
-      attr_marker = 0;
-   }
-   else if (attr > attr_marker.Size())
-   {
-      cout << "Showing all bdr attributes." << endl;
-      attr_marker = 1;
-   }
-   else
-   {
-      attr_marker[attr-1] = !attr_marker[attr-1];
-   }
-   vssol3d -> PrepareLines();
-   vssol3d -> Prepare();
+   vssol3d->ToggleAttributes(attr_list);
    SendExposeEvent();
 }
 
@@ -537,10 +523,18 @@ void VisualizationSceneSolution3d::Init()
    TimesToRefine = 1;
    FaceShiftScale = 0.0;
 
-   minv = sol->Min();
-   maxv = sol->Max();
+   if (GridF == NULL)
+   {
+      minv = sol->Min();
+      maxv = sol->Max();
+   }
+   else
+   {
+      minv = GridF->Min();
+      maxv = GridF->Max();
+   }
 
-   bdr_attr_to_show.SetSize (mesh->bdr_attributes.Max());
+   bdr_attr_to_show.SetSize(mesh->bdr_attributes.Max());
    bdr_attr_to_show = 1;
 
    VisualizationSceneScalarData::Init();
@@ -577,7 +571,7 @@ void VisualizationSceneSolution3d::Init()
       auxKeyFunc (AUX_E, KeyEPressed);
 
       auxKeyFunc (AUX_f, KeyFPressed);
-      auxKeyFunc (AUX_F, KeyFPressed);
+      // auxKeyFunc (AUX_F, KeyFPressed);
 
       auxKeyFunc (AUX_i, KeyIPressed);
       auxKeyFunc (AUX_I, KeyIPressed);
@@ -653,13 +647,11 @@ void VisualizationSceneSolution3d::NewMeshAndSolution(
    {
       FindNewBox();
       PrepareAxes();
-      minv = sol->Min();
-      maxv = sol->Max();
    }
-   else if (rescale == 2)
+   if (rescale > 0)
    {
-      minv = sol->Min();
-      maxv = sol->Max();
+      minv = GridF->Min();
+      maxv = GridF->Max();
    }
 
    Prepare();
@@ -712,6 +704,32 @@ void VisualizationSceneSolution3d::SetRefineFactors(int f, int ignored)
    }
 }
 
+void VisualizationSceneSolution3d::ToggleAttributes(Array<int> &attr_list)
+{
+   Array<int> &attr_marker = vssol3d->bdr_attr_to_show;
+
+   for (int i = 0; i < attr_list.Size(); i++)
+   {
+      int attr = attr_list[i];
+      if (attr < 1)
+      {
+         cout << "Hiding all bdr attributes." << endl;
+         attr_marker = 0;
+      }
+      else if (attr > attr_marker.Size())
+      {
+         cout << "Showing all bdr attributes." << endl;
+         attr_marker = 1;
+      }
+      else
+      {
+         attr_marker[attr-1] = !attr_marker[attr-1];
+      }
+   }
+   vssol3d->PrepareLines();
+   vssol3d->Prepare();
+}
+
 void VisualizationSceneSolution3d::FindNewBox()
 {
    int i;
@@ -759,6 +777,9 @@ void VisualizationSceneSolution3d::ToggleCuttingPlane()
       cp_drawmesh = 2;
 
    cplane = (cplane+1)%3;
+#ifdef MFEM_DEBUG
+   cout << "cplane = " << cplane << endl;
+#endif
    if (cplane)
       CPPrepare();
    if (cplane == 0 || cplane == 2)
@@ -1142,7 +1163,7 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       GridF -> GetFaceValues (fn, di, RefG->RefPts, values, pointmat);
       GetFaceNormals(fn, di, RefG->RefPts, normals);
       have_normals = 1;
-      ShrinkPoints3D(pointmat, i, fn, fo);
+      ShrinkPoints(pointmat, i, fn, fo);
       if (ft)
       {
          vmin = values.Min();
@@ -1191,6 +1212,9 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       have_normals = have_normals ? 2 : 0;
       if (di)
          have_normals = -1 - have_normals;
+      // Comment the above lines and use the below version in order to remove
+      // the 3D dark artifacts (indicating wrong boundary element orientation)
+      // have_normals = have_normals ? 1 : 0;
       DrawPatch(pointmat, values, normals, sides, RefG->RefGeoms,
                 minv, maxv, have_normals);
    }
@@ -1426,7 +1450,7 @@ void VisualizationSceneSolution3d::PrepareLines2()
       // di = GridF -> GetFaceValues (fn, 2, RefG->RefPts, values, pointmat);
       di = fo % 2;
       GridF -> GetFaceValues (fn, di, RefG->RefPts, values, pointmat);
-      ShrinkPoints3D(pointmat, i, fn, fo);
+      ShrinkPoints(pointmat, i, fn, fo);
 
       if (sc != 0.0)
       {
@@ -2044,79 +2068,6 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
    glEndList();
 }
 
-void VisualizationSceneSolution3d::ShrinkPoints3D(DenseMatrix &pointmat,
-                                                  int i, int fn, int fo)
-{
-   if (shrink != 1.0)
-   {
-      int attr = mesh->GetBdrAttribute(i);
-      for (int k = 0; k < pointmat.Width(); k++)
-         for (int d = 0; d < 3; d++)
-            pointmat(d,k) = shrink*pointmat(d,k) + (1-shrink)*bdrc(d,attr-1);
-   }
-
-   if (shrinkmat != 1.0)
-   {
-      int attr, elem1, elem2;
-      mesh->GetFaceElements(fn, &elem1, &elem2);
-      if (fo % 2 == 0)
-         attr = mesh->GetAttribute(elem1);
-      else
-         attr = mesh->GetAttribute(elem2);
-      for (int k = 0; k < pointmat.Width(); k++)
-         for (int d = 0; d < 3; d++)
-            pointmat(d,k) = shrinkmat*pointmat(d,k) + (1-shrinkmat)*matc(d,attr-1);
-   }
-}
-
-void VisualizationSceneSolution3d::ComputeBdrAttrCenter()
-{
-   DenseMatrix pointmat;
-   Vector nbdrc(mesh->bdr_attributes.Max());
-
-   bdrc.SetSize(3,mesh->bdr_attributes.Max());
-   bdrc = 0.0;
-   nbdrc = 0.0;
-
-   for (int i = 0; i < mesh -> GetNBE(); i++)
-   {
-      mesh->GetBdrPointMatrix(i, pointmat);
-      nbdrc(mesh->GetBdrAttribute(i)-1) += pointmat.Width();
-      for (int k = 0; k < pointmat.Width(); k++)
-         for (int d = 0; d < 3; d++)
-            bdrc(d,mesh->GetBdrAttribute(i)-1) += pointmat(d,k);
-   }
-
-   for (int i = 0; i < mesh->bdr_attributes.Max(); i++)
-      if (nbdrc(i) != 0)
-         for (int d = 0; d < 3; d++)
-            bdrc(d,i) /= nbdrc(i);
-}
-
-void VisualizationSceneSolution3d::ComputeElemAttrCenter()
-{
-   DenseMatrix pointmat;
-   Vector nmatc(mesh->attributes.Max());
-
-   matc.SetSize(3,mesh->attributes.Max());
-   matc = 0.0;
-   nmatc = 0.0;
-
-   for (int i = 0; i < mesh -> GetNE(); i++)
-   {
-      mesh->GetPointMatrix(i, pointmat);
-      nmatc(mesh->GetAttribute(i)-1) += pointmat.Width();
-      for (int k = 0; k < pointmat.Width(); k++)
-         for (int d = 0; d < 3; d++)
-            matc(d,mesh->GetAttribute(i)-1) += pointmat(d,k);
-   }
-
-   for (int i = 0; i < mesh->attributes.Max(); i++)
-      if (nmatc(i) != 0)
-         for (int d = 0; d < 3; d++)
-            matc(d,i) /= nmatc(i);
-}
-
 void VisualizationSceneSolution3d::Draw()
 {
    glEnable(GL_DEPTH_TEST);
@@ -2175,10 +2126,10 @@ void VisualizationSceneSolution3d::Draw()
       //  tr_eqn[3] = eqn[3];
       //  tr_eqn[3] = eqn[3] + 1e-2;
       //  glClipPlane(GL_CLIP_PLANE0,tr_eqn);
-      glClipPlane (GL_CLIP_PLANE0, CuttingPlane->Equation());
+      glClipPlane(GL_CLIP_PLANE0, CuttingPlane->Equation());
       Set_Black_Material();
       glDisable(GL_CLIP_PLANE0);
-      if ( cp_drawmesh )
+      if (cp_drawmesh)
          glCallList(cplanelineslist);
       glEnable(GL_CLIP_PLANE0);
    }

@@ -17,7 +17,7 @@ class VisualizationSceneVector3d : public VisualizationSceneSolution3d
 protected:
 
    Vector *solx, *soly, *solz;
-   int vectorlist, displinelist, drawvector;
+   int vectorlist, displinelist, drawvector, scal_func;
 
    GridFunction *VecGridF;
    FiniteElementSpace *sfes;
@@ -30,10 +30,7 @@ protected:
 public:
    int ianim, ianimd, ianimmax, drawdisp;
 
-
    VisualizationSceneVector3d(Mesh & m, Vector & sx, Vector & sy, Vector & sz);
-   // VisualizationSceneVector3d(istream & in);
-
    VisualizationSceneVector3d (GridFunction &vgf);
 
    virtual ~VisualizationSceneVector3d();
@@ -51,6 +48,9 @@ public:
    virtual void PrepareVectorField();
    void PrepareDisplacedMesh();
    void ToggleVectorField(int i);
+
+   void SetScalarFunction();
+   void ToggleScalarFunction();
 
    virtual void PrepareCuttingPlane();
 

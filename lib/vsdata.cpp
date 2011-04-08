@@ -108,7 +108,6 @@ void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
    glPopMatrix();
 }
 
-
 void VisualizationSceneScalarData::Arrow(double px, double py, double pz,
                                          double vx, double vy, double vz,
                                          double length,
@@ -626,7 +625,8 @@ int Select_New_RGB_Palette();
 void KeyPPressed()
 {
    Next_RGB_Palette();
-   vsdata -> EventUpdateColors();
+   if (!GetUseTexture())
+      vsdata->EventUpdateColors();
    SendExposeEvent();
 }
 
@@ -663,7 +663,8 @@ void KeyF6Pressed()
 
    Select_New_RGB_Palette();
 
-   vsdata -> EventUpdateColors();
+   if (!GetUseTexture())
+      vsdata->EventUpdateColors();
    SendExposeEvent();
 }
 
@@ -764,7 +765,6 @@ void KeyAPressed()
    vsdata -> EventUpdateColors();
    SendExposeEvent();
 }
-
 
 void KeyCommaPressed()
 {
@@ -903,9 +903,9 @@ void VisualizationSceneScalarData::DrawRuler()
 void VisualizationSceneScalarData::ToggleTexture()
 {
    SetUseTexture((GetUseTexture()+1)%3);
-   EventUpdateColors();
+   if (GetUseTexture() != 2)
+      EventUpdateColors();
 }
-
 
 VisualizationSceneScalarData::VisualizationSceneScalarData(
    Mesh & m, Vector & s)
@@ -991,7 +991,7 @@ void VisualizationSceneScalarData::Init()
    glDisable(GL_MULTISAMPLE);
 #endif
 
-// add black fog
+   // add black fog
    // glEnable(GL_FOG);
    // GLfloat fogcol[4] = {0,0,0,1};
    // glFogfv(GL_FOG_COLOR, fogcol);
@@ -1053,7 +1053,7 @@ void VisualizationSceneScalarData::SetValueRange(double min, double max)
    maxv = max;
 
    UpdateValueRange();
-   EventUpdateColors();
+   // EventUpdateColors();
 }
 
 void VisualizationSceneScalarData::ResetScaling()
@@ -1069,9 +1069,8 @@ void VisualizationSceneScalarData::CenterObject()
 
    Set_Light();
 
-   //  scaling = 1;
-
-   //  SetNewScalingFromBox();
+   // scaling = 1;
+   // SetNewScalingFromBox();
 
    glRotatef(-60.0, 1.0f, 0.0f, 0.0f);
    glRotatef(-40.0, 0.0f, 0.0f, 1.0f);
@@ -1119,7 +1118,7 @@ void VisualizationSceneScalarData::PrepareAxes()
    glEnd();
 
    // Write the coordinates of the lower left and upper right corner.
-   //  glEnable (GL_COLOR_MATERIAL);
+   //   glEnable (GL_COLOR_MATERIAL);
    //   GLfloat textcol[3] = { 0, 0, 0 };
    //   glColor3fv (textcol);
 
@@ -1226,24 +1225,109 @@ void VisualizationSceneScalarData::PrintState()
         << '\n' << endl;
 }
 
-void VisualizationSceneScalarData::ShrinkPoints(DenseMatrix &pointmat)
+void VisualizationSceneScalarData::ShrinkPoints(DenseMatrix &pointmat,
+                                                int i, int fn, int fo)
 {
-   int k;
-   double cx=0.0, cy=0.0;
+   int dim = mesh->Dimension();
 
-   for (k = 0; k < pointmat.Width(); k++)
+   if (shrink != 1.0)
    {
-      cx += pointmat(0,k);
-      cy += pointmat(1,k);
-   }
-   cx /= pointmat.Width();
-   cy /= pointmat.Width();
+      if (dim == 2)
+      {
+         int k;
+         double cx=0.0, cy=0.0;
 
-   for (k = 0; k < pointmat.Width(); k++)
-   {
-      pointmat(0,k) = shrink*pointmat(0,k) + (1-shrink)*cx;
-      pointmat(1,k) = shrink*pointmat(1,k) + (1-shrink)*cy;
+         for (k = 0; k < pointmat.Width(); k++)
+         {
+            cx += pointmat(0,k);
+            cy += pointmat(1,k);
+         }
+         cx /= pointmat.Width();
+         cy /= pointmat.Width();
+
+         for (k = 0; k < pointmat.Width(); k++)
+         {
+            pointmat(0,k) = shrink*pointmat(0,k) + (1-shrink)*cx;
+            pointmat(1,k) = shrink*pointmat(1,k) + (1-shrink)*cy;
+         }
+      }
+      else
+      {
+         int attr = mesh->GetBdrAttribute(i);
+         for (int k = 0; k < pointmat.Width(); k++)
+            for (int d = 0; d < dim; d++)
+               pointmat(d,k) = shrink*pointmat(d,k) + (1-shrink)*bdrc(d,attr-1);
+      }
    }
+
+   if (shrinkmat != 1.0)
+   {
+      int attr, elem1, elem2;
+      if (dim == 2)
+         attr = mesh->GetAttribute(i);
+      else
+      {
+         mesh->GetFaceElements(fn, &elem1, &elem2);
+         if (fo % 2 == 0)
+            attr = mesh->GetAttribute(elem1);
+         else
+            attr = mesh->GetAttribute(elem2);
+      }
+
+      for (int k = 0; k < pointmat.Width(); k++)
+         for (int d = 0; d < dim; d++)
+            pointmat(d,k) = shrinkmat*pointmat(d,k) + (1-shrinkmat)*matc(d,attr-1);
+   }
+}
+
+void VisualizationSceneScalarData::ComputeBdrAttrCenter()
+{
+   DenseMatrix pointmat;
+   Vector nbdrc(mesh->bdr_attributes.Max());
+   int dim = mesh->Dimension();
+
+   bdrc.SetSize(dim,mesh->bdr_attributes.Max());
+   bdrc = 0.0;
+   nbdrc = 0.0;
+
+   for (int i = 0; i < mesh -> GetNBE(); i++)
+   {
+      mesh->GetBdrPointMatrix(i, pointmat);
+      nbdrc(mesh->GetBdrAttribute(i)-1) += pointmat.Width();
+      for (int k = 0; k < pointmat.Width(); k++)
+         for (int d = 0; d < dim; d++)
+            bdrc(d,mesh->GetBdrAttribute(i)-1) += pointmat(d,k);
+   }
+
+   for (int i = 0; i < mesh->bdr_attributes.Max(); i++)
+      if (nbdrc(i) != 0)
+         for (int d = 0; d < dim; d++)
+            bdrc(d,i) /= nbdrc(i);
+}
+
+void VisualizationSceneScalarData::ComputeElemAttrCenter()
+{
+   DenseMatrix pointmat;
+   Vector nmatc(mesh->attributes.Max());
+   int dim = mesh->Dimension();
+
+   matc.SetSize(dim,mesh->attributes.Max());
+   matc = 0.0;
+   nmatc = 0.0;
+
+   for (int i = 0; i < mesh -> GetNE(); i++)
+   {
+      mesh->GetPointMatrix(i, pointmat);
+      nmatc(mesh->GetAttribute(i)-1) += pointmat.Width();
+      for (int k = 0; k < pointmat.Width(); k++)
+         for (int d = 0; d < dim; d++)
+            matc(d,mesh->GetAttribute(i)-1) += pointmat(d,k);
+   }
+
+   for (int i = 0; i < mesh->attributes.Max(); i++)
+      if (nmatc(i) != 0)
+         for (int d = 0; d < dim; d++)
+            matc(d,i) /= nmatc(i);
 }
 
 

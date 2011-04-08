@@ -51,10 +51,6 @@ public:
 
    Array<int> bdr_attr_to_show;
 
-   double shrinkmat;
-   // Centers of gravity based on the bounday/element attributes
-   DenseMatrix bdrc, matc;
-
    VisualizationSceneSolution3d();
    VisualizationSceneSolution3d(Mesh & m, Vector & s);
 
@@ -81,6 +77,7 @@ public:
    int GetShading() { return shading; };
    virtual void SetShading(int);
    virtual void SetRefineFactors(int, int);
+   virtual void ToggleAttributes(Array<int> &attr_list);
 
    void FindNodePos();
 
@@ -107,12 +104,8 @@ public:
    };
    virtual void UpdateLevelLines()
    { PrepareLines(); PrepareCuttingPlaneLines(); }
-   virtual void UpdateValueRange() { }
-
-   /// Shrink the set of points towards attributes center of gravity
-   void ShrinkPoints3D(DenseMatrix &pointmat, int i, int fn, int fo);
-   void ComputeBdrAttrCenter();
-   void ComputeElemAttrCenter();
+   virtual void UpdateValueRange()
+   { SetLevelLines(minv, maxv, nl); UpdateLevelLines(); EventUpdateColors(); }
 };
 
 inline double InnerProd(double a[], double b[])

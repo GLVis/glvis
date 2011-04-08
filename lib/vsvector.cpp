@@ -56,10 +56,13 @@ static void VectorKeyHPressed()
         << "+------------------------------------+" << endl
         << "| F1 - X window info and keystrokes  |" << endl
         << "| F2 - Update colors, etc.           |" << endl
-        << "| F3/F4 - Shrink/Zoom subdomains     |" << endl
+        << "| F3/F4 - Shrink/Zoom elements       |" << endl
         << "| F5 - Set level lines               |" << endl
         << "| F6 - Palete options                |" << endl
         << "| F7 - Manually set min/max value    |" << endl
+        << "| F8 - List of subdomains to show    |" << endl
+        << "| F9/F10 - Walk through subdomains   |" << endl
+        << "| F11/F12 - Shrink/Zoom subdomains   |" << endl
         << "+------------------------------------+" << endl
         << "| Keypad                             |" << endl
         << "+------------------------------------+" << endl
@@ -516,7 +519,7 @@ void VisualizationSceneVector::GetRefinedValues(
    }
 
    if (shrink != 1.0)
-      ShrinkPoints(tr);
+      ShrinkPoints(tr, i, 0, 0);
 }
 
 int VisualizationSceneVector::GetRefinedValuesAndNormals(
@@ -646,11 +649,11 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
             if ((x_max - x_min) < (y_max - y_min))
             {
                nx = n;
-               ny = (int)round(n * (y_max - y_min) / (x_max - x_min));
+               ny = (int)ceil(n * (y_max - y_min) / (x_max - x_min));
             }
             else
             {
-               nx = (int)round(n * (x_max - x_min) / (y_max - y_min));
+               nx = (int)ceil(n * (x_max - x_min) / (y_max - y_min));
                ny = n;
             }
          }

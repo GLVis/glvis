@@ -18,6 +18,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "mfem.hpp"
 #include "lib/visual.hpp"
@@ -35,7 +36,7 @@ int portnum = 19916, input = 1, np = 4;
 char mesh_file[128], sol_file[128], keys[1000];
 Mesh * mesh = NULL;
 Vector sol, solu, solv, solw, *data[3] = {NULL, NULL, NULL};
-int is_gf = 0;
+int is_gf = 0, gf_component = -1;
 GridFunction *grid_f = NULL;
 int mac = 0;
 int viscount = 0;
@@ -599,15 +600,33 @@ void ExecuteScriptCommand()
          scr >> keys;
          cout << "Script: keys: '" << keys << "'" << endl;
          SendKeySequence(keys);
-         MyExpose();
+         // MyExpose();
       }
       else if (word == "palette")
       {
          int pal;
          scr >> pal;
          cout << "Script: palette: " << pal << endl;
-         Set_Palette(pal);
+         Set_Palette(pal-1);
          vs->EventUpdateColors();
+         MyExpose();
+      }
+      else if (word == "toggle_attributes")
+      {
+         Array<int> attr_list;
+         cout << "Script: toggle_attributes:";
+         for (scr >> ws; scr.peek() != ';'; scr >> ws)
+         {
+            attr_list.Append(0);
+            scr >> attr_list.Last();
+            if (attr_list.Size() <= 256)
+               cout << ' ' << attr_list.Last();
+            else if (attr_list.Size() == 257)
+               cout << " ... " << flush;
+         }
+         scr.get(); // read the end symbol: ';'
+         cout << endl;
+         vs->ToggleAttributes(attr_list);
          MyExpose();
       }
       else
@@ -787,6 +806,8 @@ int main (int argc, char *argv[])
             mac = 1;
          else if (strcmp("-sc", argv[i])==0)
             save_coloring = 1;
+         else if (strcmp("-gc", argv[i])==0)
+            gf_component = atoi(argv[++i]);
          else if (strcmp("-run", argv[i])==0 && i == 1 && argc == 3)
          {
             ifstream scr(argv[2]);
@@ -836,7 +857,7 @@ int main (int argc, char *argv[])
            << "or" << endl
            << "  glvis -m <mesh_file> -v <vector_solution_file> [-k keys]\n"
            << "or" << endl
-           << "  glvis -m <mesh_file> -g <grid_function_solution_file> [-k keys]\n"
+           << "  glvis -m <mesh_file> -g <grid_function_solution_file> [-gc <component>] [-k keys]\n"
            << "or" << endl
            << "  glvis {-par3d|-vpar3d} -np <#domains> -m <mesh_prefix> -s <solution_prefix> [-k keys]" << endl
            << "or" << endl
@@ -956,8 +977,8 @@ int main (int argc, char *argv[])
             if (mac)
             {
                // exec ourself
-               char *args[3] = { argv[0], "-saved", tmp_file };
-               execve(args[0], args, environ);
+               const char *args[3] = { argv[0], "-saved", tmp_file };
+               execve(args[0], (char* const*)args, environ);
                exit(0);
             }
             else
@@ -974,8 +995,7 @@ int main (int argc, char *argv[])
          }
       }
 
-      delete in;
-
+      // delete in;
    }
    else
    {
@@ -1122,6 +1142,24 @@ void ReadSerial()
       if (is_gf)
       {
          grid_f = new GridFunction(mesh, solin);
+         if (gf_component != -1)
+         {
+            if (gf_component < 0 || gf_component >= grid_f->VectorDim())
+            {
+               cerr << "Invalid component " << gf_component << '.' << endl;
+               exit(1);
+            }
+            FiniteElementSpace *ofes = grid_f->FESpace();
+            FiniteElementCollection *fec =
+               FiniteElementCollection::New(ofes->FEColl()->Name());
+            FiniteElementSpace *fes = new FiniteElementSpace(mesh, fec);
+            GridFunction *new_gf = new GridFunction(fes);
+            new_gf->MakeOwner(fec);
+            for (int i = 0; i < new_gf->Size(); i++)
+               (*new_gf)(i) = (*grid_f)(ofes->DofToVDof(i, gf_component));
+            delete grid_f;
+            grid_f = new_gf;
+         }
          if (grid_f->VectorDim() == 1)
          {
             grid_f->GetNodalValues(sol);

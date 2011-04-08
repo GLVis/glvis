@@ -70,7 +70,11 @@ public:
    Plane * CuttingPlane;
    int light;
    int key_r_state;
+   /** Shrink factor with respect to the center of each element (2D) or the
+       center of each boundary attribute (3D) */
    double shrink;
+   /// Shrink factor with respect to the element (material) attributes centers
+   double shrinkmat;
 
    VisualizationSceneScalarData() {}
    VisualizationSceneScalarData (Mesh & m, Vector & s);
@@ -94,6 +98,7 @@ public:
 
    virtual void SetShading(int) = 0;
    virtual void SetRefineFactors(int, int) = 0;
+   virtual void ToggleAttributes(Array<int> &attr_list) = 0;
 
    virtual void PrintState();
 
@@ -147,8 +152,14 @@ public:
 
    void ToggleTexture();
 
-   /// Shrink the set of points towards their center of gravity
-   void ShrinkPoints(DenseMatrix &pointmat);
+   /// Shrink the set of points towards attributes centers of gravity
+   void ShrinkPoints(DenseMatrix &pointmat, int i, int fn, int fo);
+   // Centers of gravity based on the bounday/element attributes
+   DenseMatrix bdrc, matc;
+   /// Compute the center of gravity for each boundary attribute
+   void ComputeBdrAttrCenter();
+   /// Compute the center of gravity for each element attribute
+   void ComputeElemAttrCenter();
 };
 
 #endif
