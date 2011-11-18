@@ -12,23 +12,21 @@
 #include <iostream>
 #include <sstream>
 #include <math.h>
+#include <time.h>
+#include <X11/keysym.h>
 
 #include "mfem.hpp"
 
 #include "palettes.hpp"
-#include "aux_vis.hpp"
 #include "gl2ps.h"
-#include <X11/keysym.h>
-#include <time.h>
+#include "visual.hpp"
 
 #ifdef GLVIS_USE_LIBTIFF
 #include "tiffio.h"
 #endif
 
-extern Window window;
-
 int fontbase;
-int visualize;
+int visualize = 0;
 VisualizationScene * locscene;
 
 float MatAlpha = 1.0;
@@ -63,7 +61,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    cout << "Window should be up" << endl;
 #endif
 
-   const char fontname[] = "lucidasanstypewriter-18";
+   const char fontname[] = "lucidasanstypewriter-14";
    // "-adobe-times-medium-r-normal-*-*-*-*-p-54-*-*";
    // "-*-bitstream vera sans-medium-r-normal-*-30-*-*-*-*-*-*-*";
    // "8x13";
@@ -94,10 +92,10 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    auxKeyFunc (AUX_q, KeyQPressed);
    auxKeyFunc (AUX_Q, KeyQPressed);
 
-   auxKeyFunc (AUX_LEFT, KeyLeftPressed);
-   auxKeyFunc (AUX_RIGHT, KeyRightPressed);
-   auxKeyFunc (AUX_UP, KeyUpPressed);
-   auxKeyFunc (AUX_DOWN, KeyDownPressed);
+   auxModKeyFunc (AUX_LEFT, KeyLeftPressed);
+   auxModKeyFunc (AUX_RIGHT, KeyRightPressed);
+   auxModKeyFunc (AUX_UP, KeyUpPressed);
+   auxModKeyFunc (AUX_DOWN, KeyDownPressed);
 
    auxKeyFunc (XK_KP_0, Key0Pressed);
    auxKeyFunc (XK_KP_1, Key1Pressed);
@@ -412,7 +410,7 @@ void RemoveIdleFunc(void (*Func)(void))
 }
 
 
-double xang, yang;
+double xang = 0., yang = 0.;
 double srot[16], sph_t, sph_u;
 static GLint oldx, oldy, startx, starty;
 
@@ -758,7 +756,7 @@ int Screenshot(const char *fname)
    // Use the external X Window Dump (xwd) tool.
    // Note that xwd does not work on OS X!
    ostringstream cmd;
-   cmd << "xwd -silent -out " << fname << ".xwd -nobdrs -id " << window;
+   cmd << "xwd -silent -out " << fname << ".xwd -nobdrs -id " << auxXWindow();
    return system(cmd.str().c_str());
    // View with xwud -in GLVis_s*.xwd, or use convert GLVis_s*.xwd
    // GLVis_s*.{jpg,gif}
@@ -836,6 +834,16 @@ void KeyQPressed()
    visualize = 0;
 }
 
+void ToggleThreads()
+{
+   static const char *state[] = { "running", "stopped" };
+   if (visualize > 0 && visualize < 3)
+   {
+      visualize = 3 - visualize; //  1 <-> 2
+      cout << "Communication thread(s): " << state[visualize-1] << endl;
+   }
+}
+
 void CheckSpin()
 {
    if (fabs(xang) < 1.e-2)
@@ -854,6 +862,8 @@ void CheckSpin()
 
 void Key0Pressed()
 {
+   if (!locscene -> spinning)
+      xang = 0;
    xang--;
    CheckSpin();
 }
@@ -865,6 +875,7 @@ void KeyDeletePressed()
       xang = yang = 0.;
       locscene -> spinning = 0;
       RemoveIdleFunc(MainLoop);
+      constrained_spinning = 1;
    }
    else
    {
@@ -877,6 +888,8 @@ void KeyDeletePressed()
 
 void KeyEnterPressed()
 {
+   if (!locscene -> spinning)
+      xang = 0;
    xang++;
    CheckSpin();
 }
@@ -956,27 +969,66 @@ void Key3Pressed()
    SendExposeEvent();
 }
 
-void KeyLeftPressed()
+void ShiftView(double dx, double dy)
 {
-   locscene -> Rotate (-5,0);
+   double scale;
+   if (locscene->OrthogonalProjection)
+      scale = locscene->ViewScale;
+   else
+      scale = 0.4142135623730950488/tan(locscene->ViewAngle*(M_PI/360));
+   locscene->ViewCenterX += dx/scale;
+   locscene->ViewCenterY += dy/scale;
+}
+
+void KeyLeftPressed(GLenum state)
+{
+   if (state & ControlMask)
+   {
+      ShiftView(0.05, 0.);
+   }
+   else
+   {
+      locscene->Rotate(-5, 0);
+   }
    SendExposeEvent();
 }
 
-void KeyRightPressed()
+void KeyRightPressed(GLenum state)
 {
-   locscene -> Rotate (5,0);
+   if (state & ControlMask)
+   {
+      ShiftView(-0.05, 0.);
+   }
+   else
+   {
+      locscene->Rotate(5, 0);
+   }
    SendExposeEvent();
 }
 
-void KeyUpPressed()
+void KeyUpPressed(GLenum state)
 {
-   locscene -> Rotate (0,-5);
+   if (state & ControlMask)
+   {
+      ShiftView(0., -0.05);
+   }
+   else
+   {
+      locscene->Rotate(0, -5);
+   }
    SendExposeEvent();
 }
 
-void KeyDownPressed()
+void KeyDownPressed(GLenum state)
 {
-   locscene -> Rotate (0,5);
+   if (state & ControlMask)
+   {
+      ShiftView(0., 0.05);
+   }
+   else
+   {
+      locscene->Rotate(0, 5);
+   }
    SendExposeEvent();
 }
 
@@ -1136,11 +1188,12 @@ void MySetColor (double val)
    else
       malpha *= exp(-fabs(val-MatAlphaCenter));
 
-   val *= 0.999999999 * ( RGB_Palette_Size - 1 ) * RepeatPaletteTimes;
+   val *= 0.999999999 * ( RGB_Palette_Size - 1 ) * abs(RepeatPaletteTimes);
    i = (int) floor( val );
    t = val - i;
 
-   if ((i / (RGB_Palette_Size-1)) % 2 == 0)
+   if (((i / (RGB_Palette_Size-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
+       ((i / (RGB_Palette_Size-1)) % 2 == 1 && RepeatPaletteTimes < 0))
       pal = RGB_Palette + 3 * ( i % (RGB_Palette_Size-1) );
    else
    {
@@ -1173,11 +1226,12 @@ void Make_Texture_From_Palette()
    for (i = 0; i < Texture_Size; i++)
    {
       t = double(i) / (Texture_Size - 1);
-      t *= 0.999999999 * ( RGB_Palette_Size - 1 ) * RepeatPaletteTimes;
+      t *= 0.999999999 * ( RGB_Palette_Size - 1 ) * abs(RepeatPaletteTimes);
       j = (int) floor(t);
       t -= j;
 
-      if ((j / (RGB_Palette_Size-1)) % 2 == 0)
+      if (((j / (RGB_Palette_Size-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
+          ((j / (RGB_Palette_Size-1)) % 2 == 1 && RepeatPaletteTimes < 0))
          pal = RGB_Palette + 3 * ( j % (RGB_Palette_Size-1) );
       else
       {
@@ -1199,9 +1253,19 @@ void Make_Texture_From_Palette_2()
    else
       Texture_Size = RGB_Palette_Size;
 
-   for (int i = 0; i < 3*Texture_Size; i++)
+   if (RepeatPaletteTimes > 0)
    {
-      Texture_Image[i] = RGB_Palette[i];
+      for (int i = 0; i < 3*Texture_Size; i++)
+         Texture_Image[i] = RGB_Palette[i];
+   }
+   else
+   {
+      for (int i = 0; i < Texture_Size; i++)
+      {
+         Texture_Image[3*i+0] = RGB_Palette[3*(Texture_Size-1-i)+0];
+         Texture_Image[3*i+1] = RGB_Palette[3*(Texture_Size-1-i)+1];
+         Texture_Image[3*i+2] = RGB_Palette[3*(Texture_Size-1-i)+2];
+      }
    }
 }
 

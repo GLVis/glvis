@@ -136,7 +136,7 @@ public:
 
    void ToggleDrawAxes ()
    {
-      drawaxes = (drawaxes+1)%3;
+      drawaxes = (drawaxes+1)%4;
       if (drawaxes)
          PrepareAxes();
    }

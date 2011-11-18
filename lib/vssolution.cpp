@@ -211,6 +211,7 @@ void KeyiPressed()
       vssol -> FindNewBox();
       locscene -> PrepareAxes();
       vssol -> PrepareLines();
+      vssol -> PrepareBoundary();
       locscene -> Prepare();
       vssol -> DefaultLevelLines();
       vssol -> PrepareLevelCurves();
@@ -309,6 +310,7 @@ static void KeyF11Pressed()
       vssol->shrinkmat *= 0.9;
       vssol->Prepare();
       vssol->PrepareLines();
+      vssol->PrepareBoundary();
       vssol->PrepareLevelCurves();
       SendExposeEvent();
    }
@@ -323,6 +325,7 @@ static void KeyF12Pressed()
       vssol->shrinkmat *= 1.11111111111111111111111;
       vssol->Prepare();
       vssol->PrepareLines();
+      vssol->PrepareBoundary();
       vssol->PrepareLevelCurves();
       SendExposeEvent();
    }
@@ -551,6 +554,7 @@ void VisualizationSceneSolution::SetShading(int s)
       {
          shading = s;
          PrepareLines();
+         PrepareBoundary();
          PrepareLevelCurves();
          PrepareCP();
       }
@@ -577,6 +581,7 @@ void VisualizationSceneSolution::ToggleShading()
          FindNewBox();
          PrepareAxes();
          PrepareLines();
+         PrepareBoundary();
          PrepareLevelCurves();
          PrepareCP();
       }
@@ -605,6 +610,7 @@ void VisualizationSceneSolution::SetRefineFactors(int tot, int bdr)
    {
       PrepareAxes();
       PrepareLines();
+      PrepareBoundary();
       Prepare();
       PrepareLevelCurves();
       PrepareCP();
@@ -1394,21 +1400,60 @@ void VisualizationSceneSolution::UpdateValueRange()
 
 void VisualizationSceneSolution::PrepareBoundary()
 {
-   int i, j, ne = mesh -> GetNBE();
+   int i, j, ne = mesh->GetNBE();
+   Array<int> vertices;
    DenseMatrix pointmat;
 
    glNewList(bdrlist, GL_COMPILE);
-   glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
 
-   Array<int> vertices;
-
-   for (i = 0; i < ne; i++){
-      mesh -> GetBdrElementVertices (i, vertices);
-      mesh -> GetBdrPointMatrix (i, pointmat);
-      glBegin (GL_LINE_LOOP);
-      for (j = 0; j < pointmat.Size(); j++)
-         glVertex3d (pointmat(0, j), pointmat(1, j), (*sol)(vertices[j]));
+   if (shading != 2)
+   {
+      glBegin(GL_LINES);
+      for (i = 0; i < ne; i++)
+      {
+         mesh->GetBdrElementVertices(i, vertices);
+         mesh->GetBdrPointMatrix(i, pointmat);
+         for (j = 0; j < pointmat.Size(); j++)
+            glVertex3d(pointmat(0, j), pointmat(1, j), (*sol)(vertices[j]));
+      }
       glEnd();
+   }
+   else // shading == 2
+   {
+      int en;
+      FaceElementTransformations *T;
+      RefinedGeometry *RefG =
+         GlobGeometryRefiner.Refine(Geometry::SEGMENT, TimesToRefine,
+                                    EdgeRefineFactor);
+      IntegrationRule &ir = RefG->RefPts;
+      IntegrationRule eir(ir.GetNPoints());
+      Vector vals;
+      double shr = shrink;
+      shrink = 1.0;
+
+      for (i = 0; i < ne; i++)
+      {
+         en = mesh->GetBdrElementEdgeIndex(i);
+         T = mesh->GetFaceElementTransformations(en, 4);
+         T->Loc1.Transform(ir, eir);
+         GetRefinedValues(T->Elem1No, eir, vals, pointmat);
+         glBegin(GL_LINE_STRIP);
+         for (j = 0; j < vals.Size(); j++)
+            glVertex3d(pointmat(0, j), pointmat(1, j), vals(j));
+         glEnd();
+
+         if (T->Elem2No >= 0)
+         {
+            T = mesh->GetFaceElementTransformations(en, 8);
+            T->Loc2.Transform(ir, eir);
+            GetRefinedValues(T->Elem2No, eir, vals, pointmat);
+            glBegin(GL_LINE_STRIP);
+            for (j = 0; j < vals.Size(); j++)
+               glVertex3d(pointmat(0, j), pointmat(1, j), vals(j));
+            glEnd();
+         }
+      }
+      shrink = shr;
    }
 
    glEndList();
@@ -1557,10 +1602,12 @@ void VisualizationSceneSolution::Draw()
    // draw colorbar
    glDisable(GL_LIGHTING);
    if (colorbar)
+   {
       if (drawmesh == 2)
          DrawColorBar(minv,maxv,&level);
       else
          DrawColorBar(minv,maxv);
+   }
 
    Set_Black_Material();
 
@@ -1617,5 +1664,5 @@ void VisualizationSceneSolution::Draw()
       Remove_Transparency();
 
    glFlush();
-   glXSwapBuffers (auxXDisplay(), auxXWindow());
+   auxSwapBuffers();
 }

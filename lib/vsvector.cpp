@@ -160,7 +160,7 @@ void KeyuPressed()
       break;
 
    case 2:
-      vsvector->CycleVec2Scalar();
+      vsvector->CycleVec2Scalar(1);
       SendExposeEvent();
       break;
    }
@@ -226,7 +226,7 @@ VisualizationSceneVector::VisualizationSceneVector(Mesh & m,
 VisualizationSceneVector::VisualizationSceneVector(GridFunction &vgf)
 {
    FiniteElementSpace *fes = vgf.FESpace();
-   if (fes == NULL || fes->GetVDim() != 2)
+   if (fes == NULL || vgf.VectorDim() != 2)
    {
       cout << "VisualizationSceneVector::VisualizationSceneVector" << endl;
       exit(1);
@@ -296,14 +296,24 @@ double (*Vec2ScalarFunctions[7])(double, double) =
 { VecLength, VecDirection, VecDotNx, VecDotNy, VecDivSubst, VecCurlSubst,
   VecAnisotrSubst };
 
-void VisualizationSceneVector::CycleVec2Scalar()
+const char *Vec2ScalarNames[7] =
+{ "magnitude", "direction", "x-component", "y-component", "divergence",
+  "curl", "anisotropy" };
+
+void VisualizationSceneVector::CycleVec2Scalar(int print)
 {
    int i;
 
    for (i = 0; Vec2Scalar != Vec2ScalarFunctions[i]; i++)
       ;
 
-   i = (i + 1) % 7;
+   if (VecGridF->FESpace()->GetVDim() == 1)
+      i = (i + 1) % 5;
+   else
+      i = (i + 1) % 7;
+
+   if (print)
+      cout << "Vector-to-scalar function: " << Vec2ScalarNames[i] << endl;
 
    Vec2Scalar = Vec2ScalarFunctions[i];
 
@@ -361,6 +371,7 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf,
    VisualizationSceneSolution::NewMeshAndSolution(mesh, sol, &vgf, rescale);
 
    if (rescale)
+   {
       if (Vec2Scalar == VecLength)
       {
          maxlen = maxv;
@@ -370,6 +381,7 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf,
          cout << "VisualizationSceneVector::NewMeshAndSolution() : "
             " maxlen not updated!" << endl;
       }
+   }
 
    PrepareVectorField();
 }
@@ -441,7 +453,8 @@ void VisualizationSceneVector::GetRefinedValues(
       DenseMatrix vec_vals;
       ElementTransformation *T;
       DenseMatrix gv;
-      Vector ev;
+      double ev[2], evec[4];
+      int vdim = VecGridF->FESpace()->GetVDim();
 
       VecGridF->GetVectorValues(i, ir, vec_vals, tr);
       vals.SetSize(vec_vals.Width());
@@ -458,6 +471,11 @@ void VisualizationSceneVector::GetRefinedValues(
             }
             else
             {
+               if (vdim == 1)
+               {
+                  vals(j) = 0.0;
+                  continue;
+               }
                VecGridF->GetVectorGradient(*T, gv);
                if (Vec2Scalar == VecCurlSubst)
                {
@@ -466,11 +484,11 @@ void VisualizationSceneVector::GetRefinedValues(
                else
                {
                   gv.Symmetrize();
-                  gv.Eigenvalues(ev);
-                  vals(j) = ev(1) - ev(0);
-                  // vals(j) = ev(1);
-                  // vals(j) = (ev(0) <= 0.0) ? ev(0) : ev(1);
-                  // vals(j) = (fabs(ev(0)) >= fabs(ev(1))) ? ev(0) : ev(1);
+                  gv.CalcEigenvalues(ev, evec);
+                  vals(j) = ev[1] - ev[0];
+                  // vals(j) = ev[1];
+                  // vals(j) = (ev[0] <= 0.0) ? ev[0] : ev[1];
+                  // vals(j) = (fabs(ev[0]) >= fabs(ev[1])) ? ev[0] : ev[1];
                }
             }
          }
@@ -518,7 +536,7 @@ void VisualizationSceneVector::GetRefinedValues(
       }
    }
 
-   if (shrink != 1.0)
+   if (shrink != 1.0 || shrinkmat != 1.0)
       ShrinkPoints(tr, i, 0, 0);
 }
 
@@ -856,10 +874,12 @@ void VisualizationSceneVector::Draw()
    // draw colorbar
    glDisable(GL_LIGHTING);
    if (colorbar)
+   {
       if (drawmesh == 2)
          DrawColorBar(minv,maxv,&level);
       else
          DrawColorBar(minv,maxv);
+   }
 
    Set_Black_Material();
 
@@ -924,5 +944,5 @@ void VisualizationSceneVector::Draw()
       glDisable (GL_TEXTURE_1D);
 
    glFlush();
-   glXSwapBuffers (auxXDisplay(), auxXWindow());
+   auxSwapBuffers();
 }

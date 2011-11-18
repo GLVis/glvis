@@ -9,6 +9,63 @@
                         http://glvis.googlecode.com
 
 
+Version 2.0, released on Nov 18, 2011
+=====================================
+
+- Extended GLVis to allow visualization of parallel meshes and grid functions.
+  For data saved in separate files, the format is:
+
+        glvis -np <#proc> -m <mesh_prefix> [-g <grid_function_prefix>]
+
+  The file names are obtained from the prefix by appending '.' followed by a
+  6-digit processor/subdomain number padded with 0's. The related (obsolete)
+  option -par3d was removed.
+
+  For results send by separate socket connections from each processor, the
+  format just adds the prefix: "parallel <#proc> <myid>" (see the parallel
+  MFEM examples).
+
+  The corresponding GLVis script command is "psolution <num_proc> <mesh_prefix>
+  <attr_flag> <solution_prefix>", where <attr_flag> controls if the boundary
+  attributes should be replaced with the processor number or if they should be
+  kept unchanged (this option is also available from the command line as '-a').
+
+  In all cases, GLVis will stitch the parallel results to show the global mesh
+  and solution, but the subdomain data can still be examined through the F3/F4,
+  F8, F9/F10 and F11/F12 keystrokes.
+
+- Added the ability to directly visualize 3D VectorFiniteElement-based grid
+  functions (e.g. from a Nedelec or a Raviart-Thomas space), by an internal
+  projection onto the discontinuous piece-wise polynomial space of the
+  appropriate order.
+
+- Added new bounding box visualization mode (fourth state for the 'a' key) using
+  red, green, blue colored main axes and dashed box.
+
+- Added support for dynamic mesh and solution (grid function) update over
+  sockets based on MFEM's new socket communication classes socketserver and
+  socketstream. Both serial and parallel codes can use this capability.
+
+- Switched to GLX 1.3 compatible mode selection and window creation. The old GLX
+  calls are still available when GLVis is compiled with -DGLVIS_GLX10. The new
+  functions allow for multisampling on Macs with ATI cards, though the X11
+  server on OS X Snow Leopard gives a warning that "GLX 1.3 is not supported",
+  but works fine in practice.
+
+- Added functionality allowing GLVis to handle modifier+key input. As a first
+  application, control + arrow keys can be used now to translate the view.
+
+- Improved the handling of the boundary in 2D ('b' key) for curved meshes.
+
+- The palettes can now be flipped by specifying a negative value for the number
+  of times the palette is repeated (F6 key).
+
+- Provided workaround for a bug in the NVIDIA driver on some 64 bit systems,
+  where glX calls after a fork() close file descriptor 0.
+
+- Various small fixes and styling updates.
+
+
 Version 1.2, released on Apr 08, 2011
 =====================================
 

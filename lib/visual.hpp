@@ -22,5 +22,6 @@
 #include "vssolution3d.hpp"
 #include "vsvector.hpp"
 #include "vsvector3d.hpp"
+#include "threads.hpp"
 
 #endif

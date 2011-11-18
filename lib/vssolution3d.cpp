@@ -841,18 +841,19 @@ void VisualizationSceneSolution3d::GetFaceNormals(
    DenseMatrix JInv(aJInv, 3, 3);
    Vector lnor(alnor, 3), nr;
    IntegrationRule eir(ir.GetNPoints());
-   FaceElementTransformations *Tr =
-      mesh->GetFaceElementTransformations(FaceNo);
+   FaceElementTransformations *Tr;
    normals.SetSize(3, ir.GetNPoints());
    ElementTransformation *ETr;
    IntegrationPointTransformation *LTr;
    if (side == 0)
    {
+      Tr = mesh->GetFaceElementTransformations(FaceNo, 5);
       ETr = Tr->Elem1;
       LTr = &Tr->Loc1;
    }
    else
    {
+      Tr = mesh->GetFaceElementTransformations(FaceNo, 10);
       ETr = Tr->Elem2;
       LTr = &Tr->Loc2;
    }
@@ -1774,6 +1775,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
       int e1, e2;
       mesh -> GetFaceElements (i, &e1, &e2);
       if (e2 >= 0 && partition[e1] != partition[e2])
+      {
          if (shading != 2)
          {
             mesh -> GetFaceVertices (i, nodes);
@@ -1809,6 +1811,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
             DrawPatch(pointmat, values, normals, n, RefG->RefGeoms,
                       minv, maxv, di ? -3 : 2);
          } // end shading == 2
+      }
    }
    glEndList();
 }
@@ -2093,16 +2096,22 @@ void VisualizationSceneSolution3d::Draw()
    // draw colorbar
    glDisable(GL_LIGHTING);
    if (colorbar)
+   {
       if (drawmesh == 2 || cp_drawmesh >= 2)
+      {
          if (drawlsurf)
             DrawColorBar(minv,maxv,&level,&levels);
          else
             DrawColorBar(minv,maxv,&level);
+      }
       else
+      {
          if (drawlsurf)
             DrawColorBar(minv,maxv,NULL,&levels);
          else
             DrawColorBar(minv,maxv);
+      }
+   }
 
    Set_Black_Material();
    // draw axes
@@ -2180,5 +2189,5 @@ void VisualizationSceneSolution3d::Draw()
       Remove_Transparency();
 
    glFlush();
-   glXSwapBuffers (auxXDisplay(), auxXWindow());
+   auxSwapBuffers();
 }

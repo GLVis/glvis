@@ -18,7 +18,7 @@ Help("""
              'scons debug=1' to build the debug version.
        """)
 
-env = Environment()
+env = Environment(ENV=os.environ)
 
 CC_OPTS    = '-O3'
 DEBUG_OPTS = '-g -DGLVIS_DEBUG -Wall'
@@ -37,7 +37,8 @@ else:
 if (sys.platform == "darwin"):
    env.Append(LIBPATH = ["/sw/lib", "/usr/local/lib"])
    env.Append(CPPPATH = ["/sw/include", "/usr/local/include"])
-   env.Append(LINKFLAGS = """-Wl,-dylib_file,/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib:/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib""")
+   # the line below is only needed on OS X Leopard
+   # env.Append(LINKFLAGS = """-Wl,-dylib_file,/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib:/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib""")
 
 conf = Configure(env)
 
@@ -58,7 +59,7 @@ else:
 env = conf.Finish()
 
 env.Append(CPPPATH = ['../mfem','lib','/usr/X11R6/include'])
-env.Append(LIBS = ['glvis','mfem','X11','GL','GLU'])
+env.Append(LIBS = ['glvis','mfem','X11','GL','GLU','pthread'])
 env.Append(LIBPATH = ['lib','../mfem',os.environ['HOME']+'/lib','/usr/X11R6/lib'])
 
 # libglvis.a library

@@ -55,6 +55,7 @@ void RightButtonUp   (AUX_EVENTREC *event);
 void KeyP();
 void KeyS();
 void KeyQPressed();
+void ToggleThreads();
 
 void Key1Pressed();
 void Key2Pressed();
@@ -70,10 +71,10 @@ void Key0Pressed();
 void KeyDeletePressed();
 void KeyEnterPressed();
 
-void KeyLeftPressed();
-void KeyRightPressed();
-void KeyUpPressed();
-void KeyDownPressed();
+void KeyLeftPressed(GLenum);
+void KeyRightPressed(GLenum);
+void KeyUpPressed(GLenum);
+void KeyDownPressed(GLenum);
 void KeyJPressed();
 void KeyMinusPressed();
 void KeyPlusPressed();

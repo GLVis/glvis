@@ -222,6 +222,7 @@ extern int tkGetColorMapSize(void);
 extern void tkGetMouseLoc(int *, int *);
 extern Display *tkGetXDisplay(void);
 extern Window tkGetXWindow(void);
+extern GLXContext tkGetGLXContext();
 
 extern void tkSetOneColor(int, float, float, float);
 extern void tkSetFogRamp(int, int);

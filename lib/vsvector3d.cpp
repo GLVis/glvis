@@ -237,10 +237,7 @@ static void VectorKeyFPressed()
 
 void VisualizationSceneVector3d::ToggleVectorField(int i)
 {
-   if (drawvector == 0 && i == -1)
-      drawvector = 5;
-   else
-      drawvector = (drawvector+i)%6;
+   drawvector = (drawvector+i+6)%6;
    PrepareVectorField();
 }
 
@@ -432,6 +429,66 @@ VisualizationSceneVector3d::~VisualizationSceneVector3d()
       delete GridF;
       delete sfes;
    }
+}
+
+void VisualizationSceneVector3d::NewMeshAndSolution(
+   Mesh *new_m, GridFunction *new_v, int rescale)
+{
+   delete sol;
+   if (VecGridF)
+   {
+      delete solz;
+      delete soly;
+      delete solx;
+      delete GridF;
+      delete sfes;
+   }
+   if (mesh->GetNV() != new_m->GetNV())
+   {
+      delete [] node_pos;
+      node_pos = new double[new_m->GetNV()];
+   }
+
+   FiniteElementSpace *new_fes = new_v->FESpace();
+
+   VecGridF = new_v;
+   mesh = new_m;
+   FindNodePos();
+
+   sfes = new FiniteElementSpace(mesh, new_fes->FEColl(), 1,
+                                 new_fes->GetOrdering());
+   GridF = new GridFunction(sfes);
+
+   solx = new Vector(mesh->GetNV());
+   soly = new Vector(mesh->GetNV());
+   solz = new Vector(mesh->GetNV());
+
+   VecGridF->GetNodalValues(*solx, 1);
+   VecGridF->GetNodalValues(*soly, 2);
+   VecGridF->GetNodalValues(*solz, 3);
+
+   sol = new Vector(mesh->GetNV());
+
+   SetScalarFunction();
+
+   if (rescale == 1)
+   {
+      FindNewBox();
+      PrepareAxes();
+   }
+   if (rescale > 0)
+   {
+      minv = GridF->Min();
+      maxv = GridF->Max();
+   }
+
+   Prepare();
+   PrepareLines();
+   CPPrepare();
+   PrepareLevelSurf();
+
+   PrepareVectorField();
+   PrepareDisplacedMesh();
 }
 
 void VisualizationSceneVector3d::PrepareFlat()
@@ -701,7 +758,7 @@ void VisualizationSceneVector3d::PrepareLines()
       return;
    }
 
-   int i, j, ne = mesh -> GetNBE();
+   int i, j, ne = mesh->GetNBE();
    DenseMatrix pointmat;
    Array<int> vertices;
 
@@ -713,28 +770,55 @@ void VisualizationSceneVector3d::PrepareLines()
    {
       if (!bdr_attr_to_show[mesh->GetBdrAttribute(i)-1]) continue;
 
-      switch (mesh->GetBdrElementType(i))
+      mesh->GetBdrElementVertices(i, vertices);
+      if (cplane == 2)
       {
-      case Element::TRIANGLE:
-         glBegin (GL_TRIANGLES);
-         break;
-
-      case Element::QUADRILATERAL:
-         glBegin (GL_QUADS);
-         break;
+         int n = 0;
+         for (j = 0; j < vertices.Size(); j ++)
+            if (node_pos[vertices[j]] >= 0.0)
+               n++;
+         if (n < vertices.Size())
+            continue;  // with the next boundary element
       }
-      mesh->GetBdrPointMatrix (i, pointmat);
-      mesh->GetBdrElementVertices (i, vertices);
 
-      for (j = 0; j < pointmat.Size(); j++) {
+      double point[4][4];
+      mesh->GetBdrPointMatrix(i, pointmat);
+      for (j = 0; j < pointmat.Size(); j++)
+      {
          pointmat(0, j) += (*solx)(vertices[j])*(ianim)/ianimmax;
          pointmat(1, j) += (*soly)(vertices[j])*(ianim)/ianimmax;
          pointmat(2, j) += (*solz)(vertices[j])*(ianim)/ianimmax;
       }
 
-      for (j = 0; j < pointmat.Size(); j++)
-         glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j) );
-      glEnd();
+      switch (drawmesh)
+      {
+      case 1:
+         switch (mesh->GetBdrElementType(i))
+         {
+         case Element::TRIANGLE:
+            glBegin(GL_TRIANGLES);
+            break;
+
+         case Element::QUADRILATERAL:
+            glBegin(GL_QUADS);
+            break;
+         }
+
+         for (j = 0; j < pointmat.Size(); j++)
+            glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j));
+         glEnd();
+         break;
+
+      case 2:
+         for (j = 0; j < pointmat.Size(); j++)
+         {
+            for (int k = 0; k < 3; k++)
+               point[j][k] = pointmat(k,j);
+            point[j][3] = (*sol)(vertices[j]);
+         }
+         DrawPolygonLevelLines(point[0], pointmat.Size(), level);
+         break;
+      }
    }
    glEndList();
 }
@@ -999,7 +1083,8 @@ void VisualizationSceneVector3d::DrawVector(int type, double v0, double v1,
    {
       arrow_type = 1;
       arrow_scaling_type = 1;
-      MySetColor(s,maxv,minv);
+      // MySetColor(s,maxv,minv);
+      MySetColor(s, minv, maxv);
       Arrow(v0,v1,v2,sx,sy,sz,h*s/maxv,0.125);
    }
    break;
@@ -1273,12 +1358,14 @@ void VisualizationSceneVector3d::Draw()
    // draw colorbar
    glDisable(GL_LIGHTING);
    if (colorbar)
+   {
       if (drawvector == 4)
          DrawColorBar(minv,maxv,&dvflevel);
       else if (drawmesh == 2 || cp_drawmesh >= 2)
          DrawColorBar(minv,maxv,&level);
       else
          DrawColorBar(minv,maxv);
+   }
    if (light)
       glEnable(GL_LIGHTING);
 
@@ -1345,5 +1432,5 @@ void VisualizationSceneVector3d::Draw()
       Remove_Transparency();
 
    glFlush();
-   glXSwapBuffers (auxXDisplay(), auxXWindow());
+   auxSwapBuffers();
 }

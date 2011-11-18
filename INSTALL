@@ -1,5 +1,5 @@
                            GLVis visualization tool
-                                 version 1.2
+                                 version 2.0
 
                      _/_/_/  _/      _/      _/  _/
                   _/        _/      _/      _/        _/_/_/
@@ -11,7 +11,7 @@
 
 Besides a C++ compiler, GLVis depends on the following external packages:
 
-- the MFEM library
+- the MFEM library (use the latest release)
   http://mfem.googlecode.com
 
 - the LAPACK and BLAS libraries, if MFEM was built to depend on them
@@ -60,8 +60,9 @@ scons -c      -> Cleans the build
 
 Some building considerations:
 
-- GLVis requires the serial version of MFEM (its default build option). If you
-  built the parallel version, you will need to re-build MFEM, e.g., using:
+- GLVis requires the serial version of MFEM without MPI or OpenMP support (its
+  default build options). If you have built the parallel (MPI) and/or the OpenMP
+  version, you will need to re-build MFEM, e.g., using:
 
      make clean; make
 
@@ -74,3 +75,7 @@ Some building considerations:
   2) Modify the value of the GLVIS_MS_LINEWIDTH variable (anti-aliased line
      width) in the makefile/SConstruct file. Note that the same value can
      produce different results depending on the OpenGL implementation.
+
+- If your X11 server does not support GLX 1.3, you can build GLVis to only use
+  GLX 1.0 calls, by specifying the GLVIS_GLX10 define. Note that the X11.app in
+  OS X complains about GLX 1.3 support, but in practice works fine with GLVis.

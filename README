@@ -1,5 +1,5 @@
                            GLVis visualization tool
-                                 version 1.2
+                                 version 2.0
 
                      _/_/_/  _/      _/      _/  _/
                   _/        _/      _/      _/        _/_/_/
@@ -18,12 +18,17 @@ licensing restrictions can be found in the file COPYRIGHT.
 When started without any options, glvis starts a server which waits for a socket
 connections (on port 19916 by default) and visualizes any received data. This
 way the results of simulations on a remote (parallel) machine can be visualized
-on the local user desktop. On Mac OS X, start the server with 'glvis -mac'.
+on the local user desktop. On Mac OS X Leopard you should start the server with
+'glvis -mac'. Newer versions of OS X do not require the '-mac' option.
 
 GLVis can also be used to visualize a mesh with or without a finite element
-function (solution), as in 'glvis -m cube.mesh3d'. It can run a batch sequence
-of commands (GLVis scripts), or display previously saved socket streams. For a
-complete list of command line options, type 'glvis -h'.
+function (solution), as in 'glvis -m cube.mesh3d'. For parallel computations,
+GLVis supports input from several parallel socket connections as well as the
+visualization of parallel meshes and grid functions saved in separate files from
+the command line as in 'glvis -np 4 -m mesh -g solution'. In both cases, it will
+stitch the results to show the global mesh and solution. GLVis can also run a
+batch sequence of commands (GLVis scripts), or display previously saved socket
+streams. For a complete list of command line options, type 'glvis -h'.
 
 Depending on the data type, variety of manipulations can be performed by using
 the mouse and by typing (case sensitive) keystrokes in the GLVis window. Here is
@@ -60,6 +65,7 @@ a - Toggle the bounding box axes
     The options are: -> none
                      -> bounding box with coordinates of the corners
                      -> bounding box without coordinates
+                     -> red, green, blue colored main x, y, z axes; dashed box
 m - Toggle the "mesh" state
     The options are: -> no mesh or level lines
                      -> draw the element edges (i.e. the mesh)
@@ -70,7 +76,13 @@ e - Toggle the "elements" state (see below for vector functions)
                      -> show surface elements corresponding to det(J)
                      -> show surface elements corresponding to 1/det(J)
 
-S - Take an image snapshot (xwd format) or record a movie (in spinning mode)
+S - Take an image snapshot or record a movie (in spinning mode).
+    By default, the screenshots are taken using the (external) command 'xwd'
+    generating files with .xwd extension. When GLVis is compiled with libtiff
+    support (see INSTALL) then the screenshots are taken internally and saved
+    in TIFF format (.tif extension). In both cases, the generated image files
+    can be easily converted to a more suitable format using e.g. ImageMagick's
+    'convert' tool or the GIMP.
 P - Print to a PostScript file (in non-texture mode)
 
 q - Exit
@@ -132,13 +144,20 @@ k/K - Adjust the transparency level (works only when texture is off, see '!').
                      -> do not use texture; colors are set at the vertices;
                         color interpolation may be bad
 
+Ctrl+arrow keys - Translate the viewpoint
+
 F3/F4 - Shrink/Zoom each element towards its center, to better visualize the
         different element shapes
 F5 - Change the range and number of the level lines
-F6 - Palette menu
+F6 - Palette menu (negative repeat number flips the pallete)
 F7 - Change the minimum and maximum values
+F8      - List of material subdomains to show
+F9/F10  - Walk through material subdomains
 F11/F12 - Shrink/Zoom material subdomains (to the centers of the attributes)
 
+
+Advanced mouse functions
+========================
 Middle+Ctrl - Object translation
 Right+Ctrl  - Object scaling (see also '[' and ']')
 Left+Alt    - Tilt
@@ -180,13 +199,13 @@ U - Toggle the functionality of 'u' (prints a message in the terminal when
     The options are: -> Increase the vector subdivision factor
                      -> Decrease the vector subdivision factor
                      -> Cycle through "vector-to-scalar functions" choices:
-                        -> magnitude:                sqrt(vx^2+vy^2)
-                        -> direction form -pi to pi: atan2(vy,vx)
-                        -> x-component:              vx
-                        -> y-component:              vy
-                        -> divergence:               div(v)
-                        -> curl:                     curl(v)
-                        -> anisotropy in grad(v)
+                        -> magnitude:    sqrt(vx^2+vy^2)
+                        -> direction from -pi to pi: atan2(vy,vx)
+                        -> x-component:  vx
+                        -> y-component:  vy
+                        -> divergence:   div(v)
+                        -> curl:         curl(v)  [skipped for H(div) elements]
+                        -> anisotropy in grad(v)  [skipped for H(div) elements]
 
 3D data commands
 ================
@@ -209,6 +228,8 @@ w/W - Move boundary elements up/down in direction of the normal (i.e. "plot"
       the boundary values in normal direction)
 
 F3/F4   - Shrink/Zoom boundary elements (to the centers of the attributes)
+F8      - List of boundary subdomains to show
+F9/F10  - Walk through boundary subdomains
 F11/F12 - Shrink/Zoom material subdomains (to the centers of the attributes)
 
 

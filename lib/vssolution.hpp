@@ -96,6 +96,7 @@ public:
          FindNewBox();
          PrepareAxes();
          PrepareLines();
+         PrepareBoundary();
          Prepare();
          DefaultLevelLines();
          PrepareLevelCurves();

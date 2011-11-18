@@ -353,8 +353,12 @@ void Set_AntiAliasing()
    glEnable(GL_POLYGON_SMOOTH);
    glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
-   glEnable(GL_LINE_SMOOTH);
-   glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+   std::string vendor = (const char *)glGetString(GL_VENDOR);
+   if (vendor.find("ATI") == std::string::npos)
+   {
+      glEnable(GL_LINE_SMOOTH);
+      glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+   }
 
    glEnable(GL_POINT_SMOOTH);
    glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);

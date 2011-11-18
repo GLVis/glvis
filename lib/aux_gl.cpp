@@ -56,11 +56,17 @@ static struct {
 } keyTable[200];
 
 static struct {
+    int keyField;
+    void (*KeyFunc)(GLenum);
+} modkeyTable[200];
+
+static struct {
     unsigned int mouseField;
     void (*MouseFunc)(AUX_EVENTREC *);
 } mouseDownTable[20], mouseUpTable[20], mouseLocTable[20];
 
 static int keyTableCount = 0;
+static int modkeyTableCount = 0;
 static int mouseDownTableCount = 0;
 static int mouseUpTableCount = 0;
 static int mouseLocTableCount = 0;
@@ -218,6 +224,14 @@ static GLenum KeyDown(int key, GLenum status)
 	    }
 	}
     }
+    if (modkeyTableCount) {
+	for (i = 0; i < modkeyTableCount; i++) {
+	    if (key == modkeyTable[i].keyField) {
+		(*modkeyTable[i].KeyFunc)(status);
+		flag |= GL_TRUE;
+	    }
+	}
+    }
     return flag;
 }
 
@@ -241,6 +255,12 @@ void auxKeyFunc(int key, void (*Func)(void))
 {
     keyTable[keyTableCount].keyField = key;
     keyTable[keyTableCount++].KeyFunc = Func;
+}
+
+void auxModKeyFunc(int key, void (*Func)(GLenum))
+{
+   modkeyTable[modkeyTableCount].keyField = key;
+   modkeyTable[modkeyTableCount++].KeyFunc = Func;
 }
 
 void auxKeyFuncReplace(int key, void (*Func)(void))
@@ -328,6 +348,7 @@ void auxCloseWindow(void)
 {
     tkCloseWindow();
     keyTableCount = 0;
+    modkeyTableCount = 0;
     mouseDownTableCount = 0;
     mouseUpTableCount = 0;
     mouseLocTableCount = 0;

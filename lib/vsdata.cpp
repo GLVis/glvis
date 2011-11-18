@@ -13,6 +13,7 @@
 #include <math.h>
 #include <X11/keysym.h>
 
+#include <iomanip>
 #include <sstream>
 using namespace std;
 
@@ -339,7 +340,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
             val = minval + i * (maxval-minval) / 4;
 
          buf = new ostringstream;
-         (*buf) << val;
+         (*buf) << setprecision(4) << val;
          glCallLists (buf->str().size(), GL_UNSIGNED_BYTE, buf->str().c_str());
          delete buf;
       }
@@ -358,7 +359,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
          val = (*level)[i];
 
          buf = new ostringstream;
-         (*buf) << val;
+         (*buf) << setprecision(4) << val;
          glCallLists (buf->str().size(), GL_UNSIGNED_BYTE, buf->str().c_str());
          delete buf;
       }
@@ -378,7 +379,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
          val = (*levels)[i];
 
          buf = new ostringstream;
-         (*buf) << val;
+         (*buf) << setprecision(4) << val;
          glCallLists (buf->str().size(), GL_UNSIGNED_BYTE, buf->str().c_str());
          delete buf;
       }
@@ -401,7 +402,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
                val = minval + i * (maxval-minval) / 4;
 
             buf = new ostringstream;
-            (*buf) << val;
+            (*buf) << setprecision(4) << val;
             gl2psText(buf->str().c_str(),"Times",8);
             delete buf;
          }
@@ -421,7 +422,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
             val = (*level)[i];
 
             buf = new ostringstream;
-            (*buf) << val;
+            (*buf) << setprecision(4) << val;
             gl2psText(buf->str().c_str(),"Times",8);
             delete buf;
          }
@@ -441,7 +442,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
             val = (*levels)[i];
 
             buf = new ostringstream;
-            (*buf) << val;
+            (*buf) << setprecision(4) << val;
             gl2psText(buf->str().c_str(),"Times",8);
             delete buf;
          }
@@ -456,6 +457,9 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
 
 void VisualizationSceneScalarData::DrawCoordinateCross()
 {
+   if (drawaxes == 3)
+      return;
+
    glMatrixMode (GL_PROJECTION);
    glPushMatrix();
    glLoadIdentity();
@@ -511,12 +515,12 @@ void VisualizationSceneScalarData::DrawCoordinateCross()
    if (print)
    {
       ostringstream buf4;
-      buf4 << "(" << x[0] << "," << y[0] << ","  << z[0] << ")" ;
+      buf4 << setprecision(4) << "(" << x[0] << "," << y[0] << ","  << z[0] << ")" ;
       glRasterPos3d (x[0], y[0], z[0]);
       if (print) gl2psText(buf4.str().c_str(),"Times",8);
 
       ostringstream buf5;
-      buf5 << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
+      buf5 << setprecision(4) << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
       glRasterPos3d (x[1], y[1], z[1]);
       if (print) gl2psText(buf5.str().c_str(),"Times",8);
    }
@@ -652,12 +656,11 @@ extern int RepeatPaletteTimes;
 void KeyF6Pressed()
 {
    cout << "Palette is repeated " << RepeatPaletteTimes << " times.\n"
-        << "New value: " << flush;
+        << "(Negative value means the palette is flipped.)\n"
+        << "Enter new value : " << flush;
    cin >> RepeatPaletteTimes;
-   if (RepeatPaletteTimes < 1)
+   if (RepeatPaletteTimes == 0)
       RepeatPaletteTimes = 1;
-   else if (RepeatPaletteTimes > 32)
-      RepeatPaletteTimes = 32;
    cout << "Palette will be repeated " << RepeatPaletteTimes
         << " times now." << endl;
 
@@ -717,6 +720,7 @@ void KeyTPressed()
 void KeyGPressed()
 {
    Toggle_Background();
+   vsdata->PrepareAxes();
    SendExposeEvent();
 }
 
@@ -1088,27 +1092,67 @@ void VisualizationSceneScalarData::CenterObject2D()
 
 void VisualizationSceneScalarData::PrepareAxes()
 {
-   glNewList (axeslist, GL_COMPILE);
+   Set_Black_Material();
+   GLfloat blk[4];
+   glGetFloatv(GL_CURRENT_COLOR, blk);
 
-   // Set_Black_Material();
+   glNewList(axeslist, GL_COMPILE);
 
-   glBegin (GL_LINE_LOOP);
-   glVertex3d(x[0], y[0], z[0]);
-   glVertex3d(x[1], y[0], z[0]);
-   glVertex3d(x[1], y[1], z[0]);
-   glVertex3d(x[0], y[1], z[0]);
-   glEnd();
+   if (drawaxes == 3)
+   {
+      glLineStipple(1, 255);
+      glBegin(GL_LINES);
+      glColor3f(1., 0., 0.);
+      glVertex3d(x[0], y[0], z[0]);
+      glColor4fv(blk);
+      glVertex3d(x[1], y[0], z[0]);
+      glVertex3d(x[0], y[1], z[0]);
+      glColor3f(0., 1., 0.);
+      glVertex3d(x[0], y[0], z[0]);
+      glEnd();
+      glColor4fv(blk);
+      glEnable(GL_LINE_STIPPLE);
+      glBegin(GL_LINE_STRIP);
+      glVertex3d(x[1], y[0], z[0]);
+      glVertex3d(x[1], y[1], z[0]);
+      glVertex3d(x[0], y[1], z[0]);
+      glEnd();
+   }
+   else
+   {
+      glBegin(GL_LINE_LOOP);
+      glVertex3d(x[0], y[0], z[0]);
+      glVertex3d(x[1], y[0], z[0]);
+      glVertex3d(x[1], y[1], z[0]);
+      glVertex3d(x[0], y[1], z[0]);
+      glEnd();
+   }
 
-   glBegin (GL_LINE_LOOP);
+   glBegin(GL_LINE_LOOP);
    glVertex3d(x[0], y[0], z[1]);
    glVertex3d(x[1], y[0], z[1]);
    glVertex3d(x[1], y[1], z[1]);
    glVertex3d(x[0], y[1], z[1]);
    glEnd();
 
-   glBegin (GL_LINES);
-   glVertex3d(x[0], y[0], z[0]);
-   glVertex3d(x[0], y[0], z[1]);
+   if (drawaxes == 3)
+   {
+      glDisable(GL_LINE_STIPPLE);
+      glBegin(GL_LINES);
+      glVertex3d(x[0], y[0], z[1]);
+      glColor3f(0., 0., 1.);
+      glVertex3d(x[0], y[0], z[0]);
+      glEnd();
+      glEnable(GL_LINE_STIPPLE);
+      glColor4fv(blk);
+      glBegin(GL_LINES);
+   }
+   else
+   {
+      glBegin(GL_LINES);
+      glVertex3d(x[0], y[0], z[0]);
+      glVertex3d(x[0], y[0], z[1]);
+   }
    glVertex3d(x[1], y[0], z[0]);
    glVertex3d(x[1], y[0], z[1]);
    glVertex3d(x[1], y[1], z[0]);
@@ -1116,6 +1160,8 @@ void VisualizationSceneScalarData::PrepareAxes()
    glVertex3d(x[0], y[1], z[0]);
    glVertex3d(x[0], y[1], z[1]);
    glEnd();
+   if (drawaxes == 3)
+      glDisable(GL_LINE_STIPPLE);
 
    // Write the coordinates of the lower left and upper right corner.
    //   glEnable (GL_COLOR_MATERIAL);
@@ -1129,12 +1175,12 @@ void VisualizationSceneScalarData::PrepareAxes()
       glListBase (fontbase);
 
       ostringstream buf;
-      buf << "(" << x[0] << "," << y[0] << ","  << z[0] << ")" ;
+      buf << setprecision(4) << "(" << x[0] << "," << y[0] << ","  << z[0] << ")" ;
       glRasterPos3d (x[0], y[0], z[0]);
       glCallLists (buf.str().size(), GL_UNSIGNED_BYTE, buf.str().c_str());
 
       ostringstream buf1;
-      buf1 << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
+      buf1 << setprecision(4) << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
       glRasterPos3d (x[1], y[1], z[1]);
       glCallLists (buf1.str().size(), GL_UNSIGNED_BYTE, buf1.str().c_str());
 
@@ -1221,8 +1267,16 @@ void VisualizationSceneScalarData::PrintState()
         << "\nviewcenter " << ViewCenterX << ' ' << ViewCenterY
         << "\nzoom " << (OrthogonalProjection ? ViewScale :
                          tan(M_PI / 8.) / tan(ViewAngle * (M_PI / 360.0)))
-        << "\nvaluerange " << minv << ' ' << maxv
+        << "\nvaluerange " << minv << ' ' << maxv;
+   const double *r = rotmat;
+   ios::fmtflags fmt = cout.flags();
+   cout << fixed << showpos
+        << "\nrotmat " << r[ 0] << ' ' << r[ 1] << ' ' << r[ 2] << ' ' << r[ 3]
+        << "\n       " << r[ 4] << ' ' << r[ 5] << ' ' << r[ 6] << ' ' << r[ 7]
+        << "\n       " << r[ 8] << ' ' << r[ 9] << ' ' << r[10] << ' ' << r[11]
+        << "\n       " << r[12] << ' ' << r[13] << ' ' << r[14] << ' ' << r[15]
         << '\n' << endl;
+   cout.flags(fmt);
 }
 
 void VisualizationSceneScalarData::ShrinkPoints(DenseMatrix &pointmat,

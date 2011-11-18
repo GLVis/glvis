@@ -69,7 +69,7 @@ public:
 
    double ArrowScale;
 
-   void CycleVec2Scalar();
+   void CycleVec2Scalar(int print = 0);
 };
 
 #endif

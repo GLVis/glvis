@@ -18,7 +18,7 @@ DEFINES = -DGLVIS_MULTISAMPLE=4 -DGLVIS_MS_LINEWIDTH=1.4
 # Take screenshots internally with libtiff or externally with xwd?
 USE_LIBTIFF = NO
 # Link with LAPACK? (needed if MFEM was compiled with LAPACK support)
-USE_LAPACK  = YES
+USE_LAPACK  = NO
 
 # GLVis requires the MFEM library
 MFEM_DIR   = ../mfem
@@ -39,8 +39,10 @@ LAPACK_LIBS     = $(LAPACK_LIBS_$(USE_LAPACK))
 X11_LIB    = -lX11
 GL_DIR     = $(HOME)/mesa
 GL_OPTS    = -I/usr/X11R6/include
+# for servers not supporting GLX 1.3:
+# GL_OPTS    = -I/usr/X11R6/include -DGLVIS_GLX10
 GL_LIBS    = -L/usr/X11R6/lib -L$(GL_DIR) -lGL -lGLU
-# on a Mac:
+# on a Mac (with OS X Leopard):
 # GL_LIBS    = -L/usr/X11R6/lib -lGL -lGLU -Wl,-dylib_file,/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib:/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib
 
 # libtiff
@@ -52,19 +54,20 @@ TIFF_OPTS     = $(TIFF_OPTS_$(USE_LIBTIFF))
 TIFF_LIBS     = $(TIFF_LIBS_$(USE_LIBTIFF))
 
 COPTS = $(TIFF_OPTS) $(GL_OPTS) $(OPTS)
-LIBS  = $(MFEM_LIB) $(LAPACK_LIBS) $(X11_LIB) $(GL_LIBS) $(TIFF_LIBS)
+LIBS  = $(MFEM_LIB) $(LAPACK_LIBS) $(X11_LIB) $(GL_LIBS) $(TIFF_LIBS) -lpthread
 CCC   = $(CC) $(COPTS) $(DEFINES)
 
 # generated with 'echo lib/*.c*'
-SOURCE_FILES = lib/aux_gl.cpp lib/aux_vis.cpp lib/gl2ps.c lib/material.cpp\
- lib/openglvis.cpp lib/tk.cpp lib/vsdata.cpp lib/vssolution3d.cpp\
- lib/vssolution.cpp lib/vsvector3d.cpp lib/vsvector.cpp
+SOURCE_FILES = lib/aux_gl.cpp lib/aux_vis.cpp lib/gl2ps.c lib/material.cpp \
+ lib/openglvis.cpp lib/threads.cpp lib/tk.cpp lib/vsdata.cpp \
+ lib/vssolution3d.cpp lib/vssolution.cpp lib/vsvector3d.cpp lib/vsvector.cpp
 OBJECT_FILES1 = $(SOURCE_FILES:.cpp=.o)
 OBJECT_FILES = $(OBJECT_FILES1:.c=.o)
 # generated with 'echo lib/*.h*'
-HEADER_FILES = lib/aux_gl.hpp lib/aux_vis.hpp lib/gl2ps.h lib/material.hpp\
- lib/openglvis.hpp lib/palettes.hpp lib/tk.h lib/visual.hpp lib/vsdata.hpp\
- lib/vssolution3d.hpp lib/vssolution.hpp lib/vsvector3d.hpp lib/vsvector.hpp
+HEADER_FILES = lib/aux_gl.hpp lib/aux_vis.hpp lib/gl2ps.h lib/material.hpp \
+ lib/openglvis.hpp lib/palettes.hpp lib/threads.hpp lib/tk.h lib/visual.hpp \
+ lib/vsdata.hpp lib/vssolution3d.hpp lib/vssolution.hpp lib/vsvector3d.hpp \
+ lib/vsvector.hpp
 
 # Targets
 
@@ -74,7 +77,7 @@ HEADER_FILES = lib/aux_gl.hpp lib/aux_vis.hpp lib/gl2ps.h lib/material.hpp\
 .c.o:
 	cd $(<D); $(CCC) -I../$(MFEM_DIR) -c $(<F)
 
-glvis:	glvis.cpp lib/libglvis.a
+glvis:	glvis.cpp lib/libglvis.a $(MFEM_DIR)/libmfem.a
 	$(CCC) -I$(MFEM_DIR) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
 
 debug:
