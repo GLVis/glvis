@@ -34,9 +34,9 @@
  *
  * OpenGL(TM) is a trademark of Silicon Graphics, Inc.
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -399,7 +399,7 @@ void auxSetRGBMap(int size, float *rgb)
 GLint auxGetColorMapSize(void)
 {
 
-    return tkGetColorMapSize();;
+    return tkGetColorMapSize();
 }
 
 void auxGetMouseLoc(int *x, int *y)

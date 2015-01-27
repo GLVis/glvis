@@ -12,7 +12,7 @@
 #ifndef GLVIS_COLOR_PALETTES
 #define GLVIS_COLOR_PALETTES
 
-#include <stdio.h>
+#include <cstdio>
 #include <iostream>
 #include <iomanip>
 

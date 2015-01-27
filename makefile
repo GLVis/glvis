@@ -9,53 +9,105 @@
 # terms of the GNU Lesser General Public License (as published by the Free
 # Software Foundation) version 2.1 dated February 1999.
 
-CC = g++
-OPTS = -O3
-DEBUG_OPTS = -g -DGLVIS_DEBUG
+# Use the MFEM build directory
+MFEM_DIR = ../mfem
+CONFIG_MK = $(MFEM_DIR)/config/config.mk
+# Use the MFEM install directory
+# MFEM_DIR = ../mfem/mfem
+# CONFIG_MK = $(MFEM_DIR)/config.mk
 
-DEFINES = -DGLVIS_MULTISAMPLE=4 -DGLVIS_MS_LINEWIDTH=1.4
+# Use two relative paths to MFEM: first one for compilation in '.' and second
+# one for compilation in 'lib'.
+MFEM_DIR1 := $(MFEM_DIR)
+MFEM_DIR2 := ../$(MFEM_DIR)
 
-# Take screenshots internally with libtiff or externally with xwd?
-USE_LIBTIFF = NO
-# Link with LAPACK? (needed if MFEM was compiled with LAPACK support)
-USE_LAPACK  = NO
+# Use the compiler used by MFEM. Get the compiler and the options for compiling
+# and linking from MFEM's config.mk.
+ifneq (clean,$(MAKECMDGOALS))
+   -include $(CONFIG_MK)
+endif
 
-# GLVis requires the MFEM library
-MFEM_DIR   = ../mfem
-MFEM_LIB   = -L$(MFEM_DIR) -lmfem
+CXX = $(MFEM_CXX)
+CPPFLAGS = $(MFEM_CPPFLAGS)
+CXXFLAGS = $(MFEM_CXXFLAGS)
 
-# LAPACK and BLAS
-LAPACK_DIR = $(HOME)/lapack
-LAPACK_LIB = -L$(LAPACK_DIR) -llapack
-BLAS_DIR   = $(HOME)/lapack
-BLAS_LIB   = -L$(LAPACK_DIR) -lblas -lgfortran
-# on a Mac:
-# BLAS_LIB   = -L$(LAPACK_DIR) -lblas
-LAPACK_LIBS_NO  =
-LAPACK_LIBS_YES = $(LAPACK_LIB) $(BLAS_LIB)
-LAPACK_LIBS     = $(LAPACK_LIBS_$(USE_LAPACK))
+# MFEM config does not define C compiler
+CC     = gcc
+CFLAGS = -O3
 
-# X11 and OpenGL
-X11_LIB    = -lX11
-GL_DIR     = $(HOME)/mesa
-GL_OPTS    = -I/usr/X11R6/include
+# Optional link flags
+LDFLAGS =
+
+OPTIM_OPTS = -O3
+DEBUG_OPTS = -g -Wall
+GLVIS_DEBUG = $(MFEM_DEBUG)
+ifneq ($(GLVIS_DEBUG),$(MFEM_DEBUG))
+   ifeq ($(GLVIS_DEBUG),YES)
+      CXXFLAGS = $(DEBUG_OPTS)
+   else
+      CXXFLAGS = $(OPTIM_OPTS)
+   endif
+endif
+
+GLVIS_FLAGS = $(CPPFLAGS) $(CXXFLAGS) $(MFEM_INCFLAGS)
+GLVIS_LIBS = $(MFEM_LIBS)
+
+ifeq ($(GLVIS_DEBUG),YES)
+   GLVIS_FLAGS += -DGLVIS_DEBUG
+endif
+
+# Default multisampling mode and multisampling line-width
+GLVIS_MULTISAMPLE  = 4
+GLVIS_MS_LINEWIDTH = 1.4
+GLVIS_FLAGS += -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
+ -DGLVIS_MS_LINEWIDTH=$(GLVIS_MS_LINEWIDTH)
+
+# The X11 and OpenGL libraries
+GL_OPTS = -I/usr/X11R6/include
 # for servers not supporting GLX 1.3:
-# GL_OPTS    = -I/usr/X11R6/include -DGLVIS_GLX10
-GL_LIBS    = -L/usr/X11R6/lib -L$(GL_DIR) -lGL -lGLU
-# on a Mac (with OS X Leopard):
-# GL_LIBS    = -L/usr/X11R6/lib -lGL -lGLU -Wl,-dylib_file,/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib:/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib
+# GL_OPTS = -I/usr/X11R6/include -DGLVIS_GLX10
+GL_LIBS = -L/usr/X11R6/lib -lX11 -lGL -lGLU
+GLVIS_FLAGS += $(GL_OPTS)
+GLVIS_LIBS  += $(GL_LIBS)
 
-# libtiff
-TIFF_OPTS_YES = -DGLVIS_USE_LIBTIFF -I/sw/include
-TIFF_LIBS_YES = -L/sw/lib -ltiff
-TIFF_OPTS_NO  =
-TIFF_LIBS_NO  =
-TIFF_OPTS     = $(TIFF_OPTS_$(USE_LIBTIFF))
-TIFF_LIBS     = $(TIFF_LIBS_$(USE_LIBTIFF))
+# Take screenshots internally with libtiff, libpng, or externally with xwd?
+USE_LIBTIFF = NO
+USE_LIBPNG  = YES
+TIFF_OPTS = -DGLVIS_USE_LIBTIFF -I/sw/include
+TIFF_LIBS = -L/sw/lib -ltiff
+PNG_OPTS = -DGLVIS_USE_LIBPNG
+PNG_LIBS = -lpng
+ifeq ($(USE_LIBTIFF),YES)
+   GLVIS_FLAGS += $(TIFF_OPTS)
+   GLVIS_LIBS  += $(TIFF_LIBS)
+endif
+ifeq ($(USE_LIBPNG),YES)
+   GLVIS_FLAGS += $(PNG_OPTS)
+   GLVIS_LIBS  += $(PNG_LIBS)
+endif
 
-COPTS = $(TIFF_OPTS) $(GL_OPTS) $(OPTS)
-LIBS  = $(MFEM_LIB) $(LAPACK_LIBS) $(X11_LIB) $(GL_LIBS) $(TIFF_LIBS) -lpthread
-CCC   = $(CC) $(COPTS) $(DEFINES)
+# Render fonts using the freetype library and use the fontconfig library to
+# find font files.
+USE_FREETYPE = YES
+# libfreetype + libfontconfig
+# get cflags with: freetype-config --cflags  or  pkg-config freetype2 --cflags
+# get libs with:   freetype-config --libs    or  pkg-config freetype2 --libs
+# libfontconfig:   pkg-config fontconfig --cflags
+#                  pkg-config fontconfig --libs
+FT_OPTS = -DGLVIS_USE_FREETYPE -I/usr/X11R6/include/freetype2\
+ -I/usr/include/freetype2
+FT_LIBS = -lfreetype -lfontconfig
+ifeq ($(USE_FREETYPE),YES)
+   GLVIS_FLAGS += $(FT_OPTS)
+   GLVIS_LIBS  += $(FT_LIBS)
+endif
+
+PTHREAD_LIB = -lpthread
+GLVIS_LIBS += $(PTHREAD_LIB)
+
+LIBS = $(strip $(GLVIS_LIBS) $(LDFLAGS))
+CCC  = $(strip $(CXX) $(GLVIS_FLAGS))
+Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
 # generated with 'echo lib/*.c*'
 SOURCE_FILES = lib/aux_gl.cpp lib/aux_vis.cpp lib/gl2ps.c lib/material.cpp \
@@ -71,19 +123,30 @@ HEADER_FILES = lib/aux_gl.hpp lib/aux_vis.hpp lib/gl2ps.h lib/material.hpp \
 
 # Targets
 
+.PHONY: clean opt debug
+
 .SUFFIXES: .c .cpp .o
 .cpp.o:
-	cd $(<D); $(CCC) -I../$(MFEM_DIR) -c $(<F)
+	cd $(<D); $(CCC) -c $(<F)
 .c.o:
-	cd $(<D); $(CCC) -I../$(MFEM_DIR) -c $(<F)
+	cd $(<D); $(Ccc) -c $(<F)
 
-glvis:	glvis.cpp lib/libglvis.a $(MFEM_DIR)/libmfem.a
-	$(CCC) -I$(MFEM_DIR) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
+glvis: override MFEM_DIR = $(MFEM_DIR1)
+glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
+	$(CCC) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
+
+# Generate an error message if the MFEM library is not built and exit
+$(CONFIG_MK) $(MFEM_LIB_FILE):
+	$(error The MFEM library is not built)
+
+opt:
+	$(MAKE) "GLVIS_DEBUG=NO"
 
 debug:
-	make "OPTS=$(DEBUG_OPTS)"
+	$(MAKE) "GLVIS_DEBUG=YES"
 
-$(OBJECT_FILES): $(HEADER_FILES)
+$(OBJECT_FILES): override MFEM_DIR = $(MFEM_DIR2)
+$(OBJECT_FILES): $(HEADER_FILES) $(CONFIG_MK)
 
 lib/libglvis.a: $(OBJECT_FILES)
 	cd lib;	ar cruv libglvis.a *.o;	ranlib libglvis.a

@@ -1,5 +1,5 @@
                            GLVis visualization tool
-                                 version 2.0
+                                 version 3.0
 
                      _/_/_/  _/      _/      _/  _/
                   _/        _/      _/      _/        _/_/_/
@@ -18,8 +18,7 @@ licensing restrictions can be found in the file COPYRIGHT.
 When started without any options, glvis starts a server which waits for a socket
 connections (on port 19916 by default) and visualizes any received data. This
 way the results of simulations on a remote (parallel) machine can be visualized
-on the local user desktop. On Mac OS X Leopard you should start the server with
-'glvis -mac'. Newer versions of OS X do not require the '-mac' option.
+on the local user desktop.
 
 GLVis can also be used to visualize a mesh with or without a finite element
 function (solution), as in 'glvis -m cube.mesh3d'. For parallel computations,
@@ -158,10 +157,13 @@ F11/F12 - Shrink/Zoom material subdomains (to the centers of the attributes)
 
 Advanced mouse functions
 ========================
-Middle+Ctrl - Object translation
-Right+Ctrl  - Object scaling (see also '[' and ']')
-Left+Alt    - Tilt
-Right+Shift - Change light source position (see '\')
+Middle+Ctrl       - Object translation (moves the camera left/right/up/down)
+Middle+Ctrl+Shift - Object translation (turns the camera left/right/up/down)
+Middle+Ctrl+Alt   - Moves the camera forward/backward (vertical mouse motion)
+                    and tilts the camera left/right (horizontal mouse motion)
+Right+Ctrl        - Object scaling (see also '[' and ']')
+Left+Alt          - Tilt
+Right+Shift       - Change light source position (see '\')
 
 
 Vector data commands
@@ -185,6 +187,7 @@ d - Toggle the "displaced mesh" state: (see also keys 'n'/'b')
                         polar lines
 n - increase the displacement amount in 10% steps, wraps around from 100% to 0%
 b - decrease the displacement amount in 10% steps, wraps around from 0% to 100%
+B - Display/Hide the boundary in 2D vector mode
 
 e - Toggle the "elements" state (vector data version)
     The options are: -> show surface elements corresponding to the current

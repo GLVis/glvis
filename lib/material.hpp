@@ -27,6 +27,11 @@ extern void Set_Transparency();
 
 extern void Remove_Transparency();
 
+extern int  Get_AntiAliasing();
 extern void Set_AntiAliasing();
-
 extern void Remove_AntiAliasing();
+
+extern double Get_LineWidth();
+extern void Set_LineWidth(double);
+extern double Get_MS_LineWidth();
+extern void Set_MS_LineWidth(double);

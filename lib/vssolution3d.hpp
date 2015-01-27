@@ -12,6 +12,9 @@
 #ifndef GLVIS_VSSOLUTION_3D
 #define GLVIS_VSSOLUTION_3D
 
+#include "mfem.hpp"
+using namespace mfem;
+
 class VisualizationSceneSolution3d : public VisualizationSceneScalarData
 {
 protected:
@@ -44,6 +47,11 @@ protected:
                               int part = -1);
    void LiftRefinedSurf (int n, DenseMatrix &pointmat,
                          Vector &values, int *RG);
+   void DrawTetLevelSurf(const DenseMatrix &verts, const Vector &vals,
+                         const int *ind, const Array<double> &levels,
+                         const DenseMatrix *grad = NULL);
+
+   int GetAutoRefineFactor();
 
 public:
    int TimesToRefine;
@@ -57,11 +65,12 @@ public:
    void SetGridFunction (GridFunction *gf) { GridF = gf; };
 
    void NewMeshAndSolution(Mesh *new_m, Vector *new_sol,
-                           GridFunction *new_u = NULL, int rescale = 0);
+                           GridFunction *new_u = NULL);
 
    virtual ~VisualizationSceneSolution3d();
 
-   virtual void FindNewBox();
+   virtual void FindNewBox(bool prepare);
+   virtual void FindNewValueRange(bool prepare);
 
    virtual void PrepareFlat();
    virtual void PrepareLines();
@@ -69,14 +78,15 @@ public:
    virtual void Draw();
 
    void ToggleDrawElems()
-   { drawelems = !drawelems; }
+   { drawelems = !drawelems; Prepare(); }
 
    void ToggleDrawMesh();
 
    void ToggleShading();
    int GetShading() { return shading; };
-   virtual void SetShading(int);
+   virtual void SetShading(int, bool);
    virtual void SetRefineFactors(int, int);
+   virtual void AutoRefine();
    virtual void ToggleAttributes(Array<int> &attr_list);
 
    void FindNodePos();
@@ -96,41 +106,11 @@ public:
    void ToggleCPDrawMesh();
    void MoveLevelSurf(int);
    void NumberOfLevelSurf(int);
-   virtual void EventUpdateColors()
-   {
-      Prepare(); PrepareCuttingPlane(); PrepareLevelSurf();
-      if (shading == 2 && drawmesh != 0 && FaceShiftScale != 0.0)
-         PrepareLines();
-   };
+   virtual void EventUpdateColors();
    virtual void UpdateLevelLines()
    { PrepareLines(); PrepareCuttingPlaneLines(); }
-   virtual void UpdateValueRange()
-   { SetLevelLines(minv, maxv, nl); UpdateLevelLines(); EventUpdateColors(); }
+   virtual void UpdateValueRange(bool prepare);
 };
-
-inline double InnerProd(double a[], double b[])
-{
-   return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
-
-inline void CrossProd(double a[], double b[], double cp[])
-{
-   cp[0] = a[1] * b[2] - a[2] * b[1];
-   cp[1] = a[2] * b[0] - a[0] * b[2];
-   cp[2] = a[0] * b[1] - a[1] * b[0];
-}
-
-inline int Normalize(double v[])
-{
-   double len = sqrt(InnerProd(v, v));
-   if (len > 0.0)
-      len = 1.0 / len;
-   else
-      return 1;
-   for (int i = 0; i < 3; i++)
-      v[i] *= len;
-   return 0;
-}
 
 int Normalize(DenseMatrix &normals);
 

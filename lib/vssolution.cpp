@@ -9,19 +9,37 @@
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
 #include <limits>
-#include <math.h>
+#include <cmath>
 
 #include <X11/keysym.h>
 
 #include "mfem.hpp"
+using namespace mfem;
 #include "visual.hpp"
+
+using namespace std;
 
 
 VisualizationSceneSolution *vssol;
 extern VisualizationScene  *locscene;
+
+#ifdef GLVIS_ISFINITE
+/* This test for INFs or NaNs is the same as the one used in hypre's PCG and
+   should work on all IEEE-compliant compilers. Fro detail see "Lecture Notes on
+   the Status of IEEE 754" by W. Kahan, http://tinyurl.com/cfz5d88 */
+int isfinite(double x)
+{
+   double ieee_check = 1;
+
+   if (x != 0)
+      ieee_check = x/x; // INF -> NaN conversion
+
+   return (ieee_check == ieee_check);
+}
+#endif
 
 // Definitions of some more keys
 
@@ -208,12 +226,10 @@ void KeyiPressed()
    }
    if (update && vssol -> shading == 2)
    {
-      vssol -> FindNewBox();
-      locscene -> PrepareAxes();
+      vssol -> DoAutoscale(false);
       vssol -> PrepareLines();
       vssol -> PrepareBoundary();
-      locscene -> Prepare();
-      vssol -> DefaultLevelLines();
+      vssol -> Prepare();
       vssol -> PrepareLevelCurves();
       vssol -> PrepareCP();
       SendExposeEvent();
@@ -332,12 +348,16 @@ static void KeyF12Pressed()
 }
 
 VisualizationSceneSolution::VisualizationSceneSolution()
-{}
+{
+   v_normals = NULL;
+}
 
-VisualizationSceneSolution::VisualizationSceneSolution(Mesh &m, Vector &s)
+VisualizationSceneSolution::VisualizationSceneSolution(
+   Mesh &m, Vector &s, Vector *normals)
 {
    mesh = &m;
    sol = &s;
+   v_normals = normals;
 
    Init();
 
@@ -365,6 +385,7 @@ void VisualizationSceneSolution::Init()
    el_attr_to_show = 1;
 
    drawbdr = 0;
+   scaling_1d = 0;
 
    VisualizationSceneScalarData::Init();  // Calls FindNewBox() !!!
 
@@ -416,7 +437,6 @@ void VisualizationSceneSolution::Init()
 
    Prepare();
    PrepareLines();
-   DefaultLevelLines();
    PrepareLevelCurves();
    PrepareBoundary();
 }
@@ -430,29 +450,46 @@ VisualizationSceneSolution::~VisualizationSceneSolution()
    glDeleteLists (cp_list, 1);
 }
 
+void VisualizationSceneSolution::ToggleDrawElems()
+{
+   const char *modes[] =
+      { "none", "solution", "kappa + 1/kappa", "kappa", "1/det(J)", "det(J)" };
+
+   drawelems = (drawelems+5)%6;
+
+   cout << "Surface elements mode : " << modes[drawelems] << endl;
+
+   if (drawelems != 0 && shading == 2)
+   {
+      DoAutoscaleValue(false);
+      PrepareLines();
+      PrepareBoundary();
+      Prepare();
+      PrepareLevelCurves();
+      PrepareCP();
+   }
+}
 
 void VisualizationSceneSolution::NewMeshAndSolution(
-   Mesh *new_m, Vector *new_sol, GridFunction *new_u, int rescale)
+   Mesh *new_m, Vector *new_sol, GridFunction *new_u)
 {
+   // If the number of elements changes, recompute the refinement factor
+   if (mesh->GetNE() != new_m->GetNE())
+   {
+      mesh = new_m;
+      int ref = GetAutoRefineFactor();
+      if (TimesToRefine != ref || EdgeRefineFactor != 1)
+      {
+         TimesToRefine = ref;
+         EdgeRefineFactor = 1;
+         cout << "Subdivision factors = " << TimesToRefine << ", 1" << endl;
+      }
+   }
    mesh = new_m;
    sol = new_sol;
    rsol = new_u;
 
-   if (rescale == 1)
-   {
-      FindNewBox();
-      PrepareAxes();
-   }
-   else if (rescale == 2)
-   {
-      double rx[2], ry[2], rv[2];
-      FindNewBox(rx, ry, rv);
-      minv = rv[0];
-      maxv = rv[1];
-      FixValueRange();
-      NewZRange(minv, maxv);
-      PrepareAxes();
-   }
+   DoAutoscale(false);
 
    Prepare();
    PrepareLines();
@@ -465,7 +502,10 @@ void VisualizationSceneSolution::NewMeshAndSolution(
 void VisualizationSceneSolution::GetRefinedDetJ(
    int i, const IntegrationRule &ir, Vector &vals, DenseMatrix &tr)
 {
+   int geom = mesh->GetElementBaseGeometry(i);
    ElementTransformation *T = mesh->GetElementTransformation(i);
+   double Jd[4];
+   DenseMatrix J(Jd, 2, 2);
 
    T->Transform(ir, tr);
 
@@ -473,10 +513,24 @@ void VisualizationSceneSolution::GetRefinedDetJ(
    for (int j = 0; j < ir.GetNPoints(); j++)
    {
       T->SetIntPoint(&ir.IntPoint(j));
-      vals(j) = T->Weight();
+      Geometries.JacToPerfJac(geom, T->Jacobian(), J);
+      if (drawelems >= 4)
+      {
+         vals(j) = J.Det();
+         // if (vals(j) >= 0.0)
+         //    vals(j) = sqrt(vals(j));
+         // else
+         //    vals(j) = -sqrt(-vals(j));
+      }
+      else
+      {
+         vals(j) = J.CalcSingularvalue(0)/J.CalcSingularvalue(1);
+         if (drawelems == 2)
+            vals(j) = vals(j) + 1.0/vals(j);
+      }
    }
 
-   if (drawelems == 2)
+   if (drawelems == 4)
    {
       for (int j = 0; j < vals.Size(); j++)
       {
@@ -488,6 +542,8 @@ void VisualizationSceneSolution::GetRefinedDetJ(
          vals(j) = 1.0 / vals(j);
       }
    }
+
+   J.ClearExternalData();
 }
 
 void VisualizationSceneSolution::GetRefinedValues(
@@ -497,6 +553,10 @@ void VisualizationSceneSolution::GetRefinedValues(
       rsol->GetValues(i, ir, vals, tr);
    else
       GetRefinedDetJ(i, ir, vals, tr);
+
+   if (logscale)
+      for (int j = 0; j < vals.Size(); j++)
+         vals(j) = _LogVal(vals(j));
 
    if (shrink != 1.0 || shrinkmat != 1.0)
       ShrinkPoints(tr, i, 0, 0);
@@ -524,6 +584,19 @@ int VisualizationSceneSolution::GetRefinedValuesAndNormals(
    else
       GetRefinedDetJ(i, ir, vals, tr);
 
+   if (logscale)
+   {
+      if (have_normals)
+         for (int j = 0; j < normals.Width(); j++)
+            if (vals(j) >= minv && vals(j) <= maxv)
+            {
+               normals(0, j) *= log_a/vals(j);
+               normals(1, j) *= log_a/vals(j);
+            }
+      for (int j = 0; j < vals.Size(); j++)
+         vals(j) = _LogVal(vals(j));
+   }
+
    if (shrink != 1.0 || shrinkmat != 1.0)
    {
       ShrinkPoints(tr, i, 0, 0);
@@ -540,7 +613,7 @@ int VisualizationSceneSolution::GetRefinedValuesAndNormals(
    return have_normals;
 }
 
-void VisualizationSceneSolution::SetShading(int s)
+void VisualizationSceneSolution::SetShading(int s, bool print)
 {
    if (shading == s || s < 0)
       return;
@@ -553,6 +626,7 @@ void VisualizationSceneSolution::SetShading(int s)
       if (s == 2 || shading == 2)
       {
          shading = s;
+         DoAutoscale(false);
          PrepareLines();
          PrepareBoundary();
          PrepareLevelCurves();
@@ -567,32 +641,20 @@ void VisualizationSceneSolution::SetShading(int s)
          return;
       shading = s;
    }
-
    Prepare();
+
+   static const char *shading_type[3] =
+      {"flat", "smooth", "non-conforming (with subdivision)"};
+   if (print)
+      cout << "Shading type : " << shading_type[shading] << endl;
 }
 
 void VisualizationSceneSolution::ToggleShading()
 {
    if (rsol)
-   {
-      shading = (shading + 1) % 3;
-      if (shading != 1)
-      {
-         FindNewBox();
-         PrepareAxes();
-         PrepareLines();
-         PrepareBoundary();
-         PrepareLevelCurves();
-         PrepareCP();
-      }
-      Prepare();
-   }
+      SetShading((shading + 1) % 3, true);
    else
-      SetShading(1 - shading);
-
-   static const char *shading_type[3] =
-      {"flat", "smooth", "non-conforming (with subdivision)"};
-   cout << "Shading type : " << shading_type[shading] << endl;
+      SetShading(1 - shading, true);
 }
 
 void VisualizationSceneSolution::SetRefineFactors(int tot, int bdr)
@@ -608,7 +670,7 @@ void VisualizationSceneSolution::SetRefineFactors(int tot, int bdr)
 
    if (shading == 2)
    {
-      PrepareAxes();
+      DoAutoscale(false);
       PrepareLines();
       PrepareBoundary();
       Prepare();
@@ -617,9 +679,28 @@ void VisualizationSceneSolution::SetRefineFactors(int tot, int bdr)
    }
 }
 
+int VisualizationSceneSolution::GetAutoRefineFactor()
+{
+   int ne = mesh->GetNE(), ref = 1;
+
+   while (ref < auto_ref_max && ne*(ref+1)*(ref+1) <= auto_ref_max_surf_elem)
+      ref++;
+
+   return ref;
+}
+
+void VisualizationSceneSolution::AutoRefine()
+{
+   int ref = GetAutoRefineFactor();
+
+   cout << "Subdivision factors = " << ref << ", 1" << endl;
+
+   SetRefineFactors(ref, 1);
+}
+
 void VisualizationSceneSolution::ToggleAttributes(Array<int> &attr_list)
 {
-   Array<int> &attr_marker = vssol->el_attr_to_show;
+   Array<int> &attr_marker = el_attr_to_show;
 
    for (int i = 0; i < attr_list.Size(); i++)
    {
@@ -639,16 +720,8 @@ void VisualizationSceneSolution::ToggleAttributes(Array<int> &attr_list)
          attr_marker[attr-1] = !attr_marker[attr-1];
       }
    }
-   vssol->PrepareLines();
-   vssol->Prepare();
-}
-
-void VisualizationSceneSolution::NewZRange(double z1, double z2)
-{
-   // preserve the current box z-size
-   zscale *= (z[1]-z[0])/(z2-z1);
-   z[0] = z1;
-   z[1] = z2;
+   PrepareLines();
+   Prepare();
 }
 
 void VisualizationSceneSolution::SetNewScalingFromBox()
@@ -660,7 +733,12 @@ void VisualizationSceneSolution::SetNewScalingFromBox()
       xscale = x[1]-x[0];
       yscale = y[1]-y[0];
       zscale = z[1]-z[0];
-      if (xscale < yscale)
+      if (scaling_1d)
+      {
+         if (xscale > 0.0)
+            zscale /= xscale;
+      }
+      else if (xscale < yscale)
       {
          if (xscale > 0.0)
             zscale *= (yscale/xscale);
@@ -698,7 +776,7 @@ void VisualizationSceneSolution::FindNewBox(double rx[], double ry[],
       rx[0] = rx[1] = coord[0];
       ry[0] = ry[1] = coord[1];
 
-      for(i = 1; i < nv; i++)
+      for (i = 1; i < nv; i++)
       {
          coord = mesh->GetVertex(i);
          if (coord[0] < rx[0]) rx[0] = coord[0];
@@ -713,52 +791,40 @@ void VisualizationSceneSolution::FindNewBox(double rx[], double ry[],
       DenseMatrix pointmat;
       Vector values;
       RefinedGeometry *RefG;
+      bool log_scale = logscale;
 
+      logscale = false;
+      rx[0] = ry[0] = rval[0] = numeric_limits<double>::infinity();
+      rx[1] = ry[1] = rval[1] = -rx[0];
       for (i = 0; i < ne; i++)
       {
-         RefG = GlobGeometryRefiner.Refine (mesh->GetElementBaseGeometry(i),
-                                            TimesToRefine, EdgeRefineFactor);
-         GetRefinedValues (i, RefG->RefPts, values, pointmat);
-         if (i == 0)
-         {
-            rx[0] = rx[1] = pointmat(0,0);
-            ry[0] = ry[1] = pointmat(1,0);
-            rval[0] = rval[1] = values(0);
-         }
+         RefG = GlobGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
+                                           TimesToRefine, EdgeRefineFactor);
+         GetRefinedValues(i, RefG->RefPts, values, pointmat);
          for (j = 0; j < values.Size(); j++)
          {
-            if (pointmat(0,j) < rx[0]) rx[0] = pointmat(0,j);
-            if (pointmat(0,j) > rx[1]) rx[1] = pointmat(0,j);
-            if (pointmat(1,j) < ry[0]) ry[0] = pointmat(1,j);
-            if (pointmat(1,j) > ry[1]) ry[1] = pointmat(1,j);
-            if (values(j) < rval[0]) rval[0] = values(j);
-            if (values(j) > rval[1]) rval[1] = values(j);
+            if (isfinite(pointmat(0,j)))
+            {
+               if (pointmat(0,j) < rx[0]) rx[0] = pointmat(0,j);
+               if (pointmat(0,j) > rx[1]) rx[1] = pointmat(0,j);
+            }
+            if (isfinite(pointmat(1,j)))
+            {
+               if (pointmat(1,j) < ry[0]) ry[0] = pointmat(1,j);
+               if (pointmat(1,j) > ry[1]) ry[1] = pointmat(1,j);
+            }
+            if (isfinite(values(j)))
+            {
+               if (values(j) < rval[0]) rval[0] = values(j);
+               if (values(j) > rval[1]) rval[1] = values(j);
+            }
          }
       }
+      logscale = log_scale;
    }
 }
 
-void VisualizationSceneSolution::FixValueRange()
-{
-   double am = fabs(minv);
-   if (am < fabs(maxv)) am = fabs(maxv);
-   if (float(am) < 100*numeric_limits<float>::min()) am = 1e-3;
-   if ((maxv-minv) < 1e-5*am)
-   {
-      // Shading quality may be bad since OpenGL uses single precision.
-      // We should probably pre-scale the solution before feeding it
-      // to OpenGL
-      int old_prec = cout.precision(12);
-      cout << "[minv,maxv] = " << "[" << minv << "," << maxv
-           << "] (maxv-minv = " << maxv-minv << ")\n --> ";
-      minv -= 0.49999e-5*am;
-      maxv += 0.50001e-5*am;
-      cout << "[" << minv << "," << maxv << "]" << endl;
-      cout.precision(old_prec);
-   }
-}
-
-void VisualizationSceneSolution::FindNewBox()
+void VisualizationSceneSolution::FindNewBox(bool prepare)
 {
    FindNewBox(x, y, z);
 
@@ -770,7 +836,52 @@ void VisualizationSceneSolution::FindNewBox()
    z[0] = minv;
    z[1] = maxv;
 
-   SetNewScalingFromBox();
+   SetNewScalingFromBox(); // UpdateBoundingBox minus PrepareAxes
+   UpdateValueRange(prepare);
+}
+
+void VisualizationSceneSolution::FindNewValueRange(bool prepare)
+{
+   double rx[2], ry[2], rv[2];
+
+   FindNewBox(rx, ry, rv);
+   minv = rv[0];
+   maxv = rv[1];
+
+   FixValueRange();
+
+   UpdateValueRange(prepare);
+}
+
+void VisualizationSceneSolution::FindMeshBox(bool prepare)
+{
+   double rv[2];
+
+   FindNewBox(x, y, rv);
+
+   UpdateBoundingBox(); // SetNewScalingFromBox plus PrepareAxes
+}
+
+void VisualizationSceneSolution::ToggleLogscale(bool print)
+{
+   if (logscale || LogscaleRange())
+   {
+      // we do not change 'MySetColorLogscale' here. It is set to 0 in
+      // Prepare() since we apply logarithmic scaling to the values.
+      // In PrepareVectorField() we set 'MySetColorLogscale' to 'logscale'.
+      logscale = !logscale;
+      SetLogA();
+      SetLevelLines(minv, maxv, nl);
+      EventUpdateColors(); // Prepare() [+ PrepareVectorField() for vectors]
+      PrepareLines();
+      PrepareLevelCurves();
+      PrepareBoundary();
+      PrepareCP();
+      if (print)
+         PrintLogscale(false);
+   }
+   else if (print)
+      PrintLogscale(true);
 }
 
 void DrawTriangle(const double pts[][3], const double cv[],
@@ -803,6 +914,33 @@ void DrawQuad(const double pts[][3], const double cv[],
       glVertex3dv(pts[j]);
    }
    glEnd();
+}
+
+void RemoveFPErrors(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
+                    const int n, const Array<int> &ind, Array<int> &f_ind)
+{
+   int o = 0;
+
+   f_ind.SetSize(ind.Size());
+   for (int i = 0; i < ind.Size(); i += n)
+   {
+      bool good = true;
+      for (int j = 0; j < n; j++)
+      {
+         f_ind[o+j] = ind[i+j];
+
+         if (!isfinite(pts(0, ind[i+j])) || !isfinite(pts(1, ind[i+j])) ||
+             !isfinite(pts(2, ind[i+j])) || !isfinite(vals(ind[i+j])))
+            // check normals?
+         {
+            good = false;
+            break;
+         }
+      }
+      if (good)
+         o += n;
+   }
+   f_ind.SetSize(o);
 }
 
 void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
@@ -893,13 +1031,52 @@ void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
    glEnd();
 }
 
+void VisualizationSceneSolution::PrepareWithNormals()
+{
+   glNewList(displlist, GL_COMPILE);
+
+   Array<int> vertices;
+   double *vtx, *nor, val, s;
+
+   for (int i = 0; i < mesh->GetNE(); i++)
+   {
+      if (!el_attr_to_show[mesh->GetAttribute(i)-1]) continue;
+
+      mesh->GetElementVertices(i, vertices);
+
+      if (vertices.Size() == 3)
+         glBegin(GL_TRIANGLES);
+      else
+         glBegin(GL_QUADS);
+      for (int j = 0; j < vertices.Size(); j++)
+      {
+         vtx = mesh->GetVertex(vertices[j]);
+         nor = &(*v_normals)(3*vertices[j]);
+         val = (*sol)(vertices[j]);
+         if (logscale && val >= minv && val <= maxv)
+         {
+            s = log_a/val;
+            val = _LogVal_(val);
+            glNormal3d(s*nor[0], s*nor[1], nor[2]);
+         }
+         else
+         {
+            glNormal3dv(nor);
+         }
+         MySetColor(val, minv, maxv);
+         glVertex3d(vtx[0], vtx[1], val);
+      }
+      glEnd();
+   }
+
+   glEndList();
+}
+
 void VisualizationSceneSolution::PrepareFlat()
 {
    int i, j;
 
    glNewList (displlist, GL_COMPILE);
-
-   Set_Material();
 
    int ne = mesh -> GetNE();
    DenseMatrix pointmat;
@@ -917,7 +1094,7 @@ void VisualizationSceneSolution::PrepareFlat()
       {
          pts[j][0] = pointmat(0, j);
          pts[j][1] = pointmat(1, j);
-         pts[j][2] = col[j] = (*sol)(vertices[j]);
+         pts[j][2] = col[j] = LogVal((*sol)(vertices[j]));
       }
       if (j == 3)
          DrawTriangle(pts, col, minv, maxv);
@@ -933,7 +1110,7 @@ void VisualizationSceneSolution::PrepareFlat()
 // 0 - draw a quad
 // 1 - draw 2 triangles (split using the '0-2' diagonal)
 // 2 - draw 4 triangles (split using both diagonals)
-const int split_quads = 0;
+const int split_quads = 1;
 
 void VisualizationSceneSolution::PrepareFlat2()
 {
@@ -941,12 +1118,11 @@ void VisualizationSceneSolution::PrepareFlat2()
 
    glNewList (displlist, GL_COMPILE);
 
-   Set_Material();
-
    int ne = mesh -> GetNE();
    DenseMatrix pointmat, pts3d, normals;
    Vector values;
    RefinedGeometry *RefG;
+   Array<int> fRG;
 
    for (i = 0; i < ne; i++)
    {
@@ -968,7 +1144,8 @@ void VisualizationSceneSolution::PrepareFlat2()
          pts3d(2, k) = values(k);
       }
       j = (j != 0) ? 2 : 0;
-      DrawPatch(pts3d, values, normals, sides, RG, minv, maxv, j);
+      RemoveFPErrors(pts3d, values, normals, sides, RG, fRG);
+      DrawPatch(pts3d, values, normals, sides, fRG, minv, maxv, j);
 #else
       for (k = 0; k < RG.Size()/sides; k++)
       {
@@ -1038,6 +1215,8 @@ void VisualizationSceneSolution::PrepareFlat2()
 
 void VisualizationSceneSolution::Prepare()
 {
+   MySetColorLogscale = 0;
+
    switch (shading)
    {
    case 0:
@@ -1047,14 +1226,17 @@ void VisualizationSceneSolution::Prepare()
       PrepareFlat2();
       return;
    default:
+      if (v_normals)
+      {
+         PrepareWithNormals();
+         return;
+      }
       break;
    }
 
    int i, j;
 
    glNewList (displlist, GL_COMPILE);
-
-   Set_Material();
 
    int ne = mesh -> GetNE();
    int nv = mesh -> GetNV();
@@ -1084,7 +1266,7 @@ void VisualizationSceneSolution::Prepare()
             {
                p[j][0] = pointmat(0, j);
                p[j][1] = pointmat(1, j);
-               p[j][2] = (*sol)(vertices[j]);
+               p[j][2] = LogVal((*sol)(vertices[j]));
             }
 
             if (pointmat.Width() == 3)
@@ -1119,9 +1301,10 @@ void VisualizationSceneSolution::Prepare()
 
             for (j = 0; j < pointmat.Size(); j++)
             {
-               MySetColor((*sol)(vertices[j]), minv, maxv);
+               double z = LogVal((*sol)(vertices[j]));
+               MySetColor(z, minv, maxv);
                glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
-               glVertex3d(pointmat(0, j), pointmat(1, j), (*sol)(vertices[j]));
+               glVertex3d(pointmat(0, j), pointmat(1, j), z);
             }
             glEnd();
          }
@@ -1138,24 +1321,23 @@ void VisualizationSceneSolution::PrepareLevelCurves()
       return;
    }
 
-   int i, j, ne = mesh -> GetNE();
-   Array<int> vertices;
-   double point[4][4];
+   static int vt[4] = { 0, 1, 2, 3 };
+   Array<int> RG(vt, 4), vertices;
+   Vector values;
+   DenseMatrix pointmat;
 
    glNewList(lcurvelist, GL_COMPILE);
 
-   for (i = 0; i < ne; i++)
+   for (int i = 0; i < mesh->GetNE(); i++)
    {
-      mesh -> GetElementVertices (i, vertices);
-
-      for (j = 0; j < vertices.Size(); j++)
-      {
-         double *v = mesh -> GetVertex (vertices[j]);
-         point[j][0] = v[0];
-         point[j][1] = v[1];
-         point[j][2] = point[j][3] = (*sol)(vertices[j]);
-      }
-      DrawPolygonLevelLines (point[0], vertices.Size(), level);
+      mesh->GetElementVertices(i, vertices);
+      mesh->GetPointMatrix(i, pointmat);
+      sol->GetSubVector(vertices, values);
+      if (logscale)
+         for (int j = 0; j < vertices.Size(); j++)
+            values(j) = _LogVal(values(j));
+      RG.SetSize(vertices.Size());
+      DrawLevelCurves(RG, pointmat, values, vertices.Size(), level);
    }
 
    glEndList();
@@ -1181,7 +1363,7 @@ void VisualizationSceneSolution::DrawLevelCurves(
             point[j][3] = values(vv);
             point[j][2] = (flat) ? zc : point[j][3];
          }
-         DrawPolygonLevelLines(point[0], sides, lvl);
+         DrawPolygonLevelLines(point[0], sides, lvl, logscale);
       }
       else if (split_quads == 1)
       {
@@ -1198,7 +1380,7 @@ void VisualizationSceneSolution::DrawLevelCurves(
                point[j][3] = values(ind[vt[it][j]]);
                point[j][2] = (flat) ? zc : point[j][3];
             }
-            DrawPolygonLevelLines(point[0], 3, lvl);
+            DrawPolygonLevelLines(point[0], 3, lvl, logscale);
          }
       }
       else
@@ -1232,7 +1414,7 @@ void VisualizationSceneSolution::DrawLevelCurves(
             point[1][3] = values(ind[l]);
             point[1][2] = (flat) ? zc : point[1][3];
 
-            DrawPolygonLevelLines(point[0], 3, lvl);
+            DrawPolygonLevelLines(point[0], 3, lvl, logscale);
          }
       }
    }
@@ -1276,29 +1458,17 @@ void VisualizationSceneSolution::PrepareLines()
 
    glNewList(linelist, GL_COMPILE);
 
-   // Set_Black_Material();
-   // glColor3f (0, 0, 0);
-   glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
-
-   for (i = 0; i < ne; i++){
+   for (i = 0; i < ne; i++)
+   {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) continue;
 
-      switch (mesh->GetElementType(i))
-      {
-      case Element::TRIANGLE:
-         glBegin (GL_TRIANGLES);
-         break;
-
-      case Element::QUADRILATERAL:
-         glBegin (GL_QUADS);
-         break;
-      }
+      glBegin(GL_LINE_LOOP);
       mesh->GetPointMatrix (i, pointmat);
       mesh->GetElementVertices (i, vertices);
 
       for (j = 0; j < pointmat.Size(); j++)
-         glVertex3d (pointmat(0, j), pointmat(1, j),
-                     (*sol)(vertices[j]));
+         glVertex3d(pointmat(0, j), pointmat(1, j),
+                    LogVal((*sol)(vertices[j])));
       glEnd();
    }
 
@@ -1314,10 +1484,6 @@ void VisualizationSceneSolution::PrepareLines2()
 
    glNewList(linelist, GL_COMPILE);
 
-   // Set_Black_Material();
-   // glColor3f (0, 0, 0);
-   glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
-
    for (i = 0; i < ne; i++)
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) continue;
@@ -1330,21 +1496,12 @@ void VisualizationSceneSolution::PrepareLines2()
 
       for (k = 0; k < RG.Size()/sides; k++)
       {
-         switch (sides)
-         {
-         case 3:
-            glBegin (GL_TRIANGLES);
-            break;
-
-         case 4:
-            glBegin (GL_QUADS);
-            break;
-         }
+         glBegin(GL_LINE_LOOP);
 
          for (j = 0; j < sides; j++)
-            glVertex3d (pointmat(0, RG[sides*k+j]),
-                        pointmat(1, RG[sides*k+j]),
-                        values(RG[sides*k+j]));
+            glVertex3d(pointmat(0, RG[sides*k+j]),
+                       pointmat(1, RG[sides*k+j]),
+                       values(RG[sides*k+j]));
          glEnd();
       }
    }
@@ -1360,10 +1517,6 @@ void VisualizationSceneSolution::PrepareLines3()
    RefinedGeometry *RefG;
 
    glNewList(linelist, GL_COMPILE);
-
-   // Set_Black_Material();
-   // glColor3f (0, 0, 0);
-   // glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
 
    for (i = 0; i < ne; i++)
    {
@@ -1389,13 +1542,28 @@ void VisualizationSceneSolution::PrepareLines3()
    glEndList();
 }
 
-void VisualizationSceneSolution::UpdateValueRange()
+void VisualizationSceneSolution::UpdateValueRange(bool prepare)
 {
+   bool had_logscale = logscale;
+   logscale = logscale && LogscaleRange();
+   SetLogA();
    SetLevelLines(minv, maxv, nl);
-   UpdateLevelLines();
-   NewZRange(minv, maxv);
+   // preserve the current box z-size
+   zscale *= (z[1]-z[0])/(maxv-minv);
+   z[0] = minv;
+   z[1] = maxv;
    PrepareAxes();
-   EventUpdateColors();
+   if (prepare)
+   {
+      UpdateLevelLines();
+      EventUpdateColors();
+      if (had_logscale)
+      {
+         PrepareLines();
+         PrepareBoundary();
+         PrepareCP();
+      }
+   }
 }
 
 void VisualizationSceneSolution::PrepareBoundary()
@@ -1414,7 +1582,8 @@ void VisualizationSceneSolution::PrepareBoundary()
          mesh->GetBdrElementVertices(i, vertices);
          mesh->GetBdrPointMatrix(i, pointmat);
          for (j = 0; j < pointmat.Size(); j++)
-            glVertex3d(pointmat(0, j), pointmat(1, j), (*sol)(vertices[j]));
+            glVertex3d(pointmat(0, j), pointmat(1, j),
+                       LogVal((*sol)(vertices[j])));
       }
       glEnd();
    }
@@ -1495,7 +1664,7 @@ void VisualizationSceneSolution::PrepareCP()
          ind.SetSize(vertices.Size());
          for (int j = 0; j < values.Size(); j++)
          {
-            values(j) = (*sol)(vertices[j]);
+            values(j) = LogVal((*sol)(vertices[j]));
             ind[j] = j;
          }
 
@@ -1586,13 +1755,7 @@ void VisualizationSceneSolution::Draw()
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
    // model transformation
-   glMatrixMode (GL_MODELVIEW);
-   glLoadIdentity();
-
-   glMultMatrixd (translmat);
-   glMultMatrixd (rotmat);
-   glScaled(xscale, yscale, zscale);
-   glTranslated(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
+   ModelView();
 
    glPolygonOffset (1, 1);
    glEnable (GL_POLYGON_OFFSET_FILL);
@@ -1609,37 +1772,13 @@ void VisualizationSceneSolution::Draw()
          DrawColorBar(minv,maxv);
    }
 
-   Set_Black_Material();
-
-   // draw axes
-   if (drawaxes)
-   {
-      glCallList(axeslist);
-      DrawCoordinateCross();
-   }
-
-   DrawRuler();
-
    if (draw_cp)
    {
-      glClipPlane (GL_CLIP_PLANE0, CuttingPlane->Equation());
-      glDisable(GL_CLIP_PLANE0);
-      glCallList(cp_list);
+      glClipPlane(GL_CLIP_PLANE0, CuttingPlane->Equation());
       glEnable(GL_CLIP_PLANE0);
    }
 
-   if (drawbdr)
-      glCallList(bdrlist);
-
-   // draw lines
-   if (drawmesh == 1)
-      glCallList(linelist);
-   else
-      if (drawmesh == 2)
-      {
-         // glLineWidth(1.0);
-         glCallList(lcurvelist);
-      }
+   Set_Material();
    if (light)
       glEnable(GL_LIGHTING);
 
@@ -1647,7 +1786,6 @@ void VisualizationSceneSolution::Draw()
       Set_Transparency();
 
    // draw elements
-   glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
    if (drawelems)
    {
       if (GetUseTexture())
@@ -1662,6 +1800,40 @@ void VisualizationSceneSolution::Draw()
 
    if (MatAlpha < 1.0)
       Remove_Transparency();
+
+   if (light)
+      glDisable(GL_LIGHTING);
+   Set_Black_Material();
+
+   // ruler may have mixture of polygons and lines
+   if (draw_cp)
+   {
+      glDisable(GL_CLIP_PLANE0);
+      DrawRuler(logscale);
+      glCallList(cp_list);
+      glEnable(GL_CLIP_PLANE0);
+   }
+   else
+      DrawRuler(logscale);
+
+   if (drawbdr)
+      glCallList(bdrlist);
+
+   // draw lines
+   if (drawmesh == 1)
+      glCallList(linelist);
+   else if (drawmesh == 2)
+      glCallList(lcurvelist);
+
+   if (draw_cp)
+      glDisable(GL_CLIP_PLANE0);
+
+   // draw axes
+   if (drawaxes)
+   {
+      glCallList(axeslist);
+      DrawCoordinateCross();
+   }
 
    glFlush();
    auxSwapBuffers();

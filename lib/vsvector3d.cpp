@@ -9,12 +9,16 @@
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
-#include <math.h>
+#include <cmath>
+#include <limits>
 
 #include "mfem.hpp"
+using namespace mfem;
 #include "visual.hpp"
+
+using namespace std;
 
 static void VectorKeyHPressed()
 {
@@ -287,17 +291,6 @@ void VisualizationSceneVector3d::SetScalarFunction()
             (*GridF)(i) = (*VecGridF)(fes->DofToVDof(i, 2));
       break;
    }
-
-   if (GridF)
-   {
-      minv = GridF->Min();
-      maxv = GridF->Max();
-   }
-   else
-   {
-      minv = sol->Min();
-      maxv = sol->Max();
-   }
 }
 
 void VisualizationSceneVector3d::ToggleScalarFunction()
@@ -307,7 +300,7 @@ void VisualizationSceneVector3d::ToggleScalarFunction()
    scal_func = (scal_func + 1) % 4;
    cout << "Displaying " << scal_func_name[scal_func] << endl;
    SetScalarFunction();
-   UpdateValueRange();
+   FindNewValueRange(true);
 }
 
 VisualizationSceneVector3d::VisualizationSceneVector3d(Mesh &m, Vector &sx,
@@ -398,11 +391,11 @@ void VisualizationSceneVector3d::Init()
       auxKeyFunc (AUX_b, KeyBPressed);
       auxKeyFunc (AUX_B, KeyBPressed);
 
-      auxKeyFunc (AUX_r, KeyrPressed);
-      auxKeyFunc (AUX_R, KeyRPressed);
+      auxKeyFunc (AUX_r, KeyrPressed); // adds another function to 'r' and 'R'
+      auxKeyFunc (AUX_R, KeyRPressed); // the other function is in vsdata.cpp
 
-      auxKeyFunc (AUX_u, KeyuPressed);
-      auxKeyFunc (AUX_U, KeyUPressed);
+      auxKeyFuncReplace (AUX_u, KeyuPressed); // Keys u, U are also used in
+      auxKeyFuncReplace (AUX_U, KeyUPressed); // VisualizationSceneSolution3d
 
       auxKeyFuncReplace (AUX_w, KeywPressed); // Keys w, W are also used in
       auxKeyFuncReplace (AUX_W, KeyWPressed); // VisualizationSceneSolution3d
@@ -432,7 +425,7 @@ VisualizationSceneVector3d::~VisualizationSceneVector3d()
 }
 
 void VisualizationSceneVector3d::NewMeshAndSolution(
-   Mesh *new_m, GridFunction *new_v, int rescale)
+   Mesh *new_m, GridFunction *new_v)
 {
    delete sol;
    if (VecGridF)
@@ -447,6 +440,20 @@ void VisualizationSceneVector3d::NewMeshAndSolution(
    {
       delete [] node_pos;
       node_pos = new double[new_m->GetNV()];
+   }
+
+   // If the number of surface elements changes, recompute the refinement factor
+   if (mesh->Dimension() != new_m->Dimension() ||
+       (mesh->Dimension() == 2 && mesh->GetNE() != new_m->GetNE()) ||
+       (mesh->Dimension() == 3 && mesh->GetNBE() != new_m->GetNBE()))
+   {
+      mesh = new_m;
+      int ref = GetAutoRefineFactor();
+      if (TimesToRefine != ref)
+      {
+         TimesToRefine = ref;
+         cout << "Subdivision factor = " << TimesToRefine << endl;
+      }
    }
 
    FiniteElementSpace *new_fes = new_v->FESpace();
@@ -471,16 +478,7 @@ void VisualizationSceneVector3d::NewMeshAndSolution(
 
    SetScalarFunction();
 
-   if (rescale == 1)
-   {
-      FindNewBox();
-      PrepareAxes();
-   }
-   if (rescale > 0)
-   {
-      minv = GridF->Min();
-      maxv = GridF->Max();
-   }
+   DoAutoscale(false);
 
    Prepare();
    PrepareLines();
@@ -496,9 +494,6 @@ void VisualizationSceneVector3d::PrepareFlat()
    int i, j;
 
    glNewList (displlist, GL_COMPILE);
-
-   Set_Material();
-   glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
    int nbe = mesh -> GetNBE();
    DenseMatrix pointmat;
@@ -536,8 +531,8 @@ void VisualizationSceneVector3d::PrepareFlat()
 
 void VisualizationSceneVector3d::PrepareFlat2()
 {
-   int i, j, k, fn, fo, ft, di, have_normals;
-   double bbox_diam, vmin, vmax, mm;
+   int i, j, k, fn, fo, di, have_normals;
+   double bbox_diam, vmin, vmax;
    int nbe = mesh -> GetNBE();
 
    DenseMatrix pointmat, normals;
@@ -553,11 +548,9 @@ void VisualizationSceneVector3d::PrepareFlat2()
    double sc = FaceShiftScale * bbox_diam;
 
    glNewList (displlist, GL_COMPILE);
-   glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
-   Set_Material();
-
-   ft = 1;
+   vmin = numeric_limits<double>::infinity();
+   vmax = -vmin;
    for (i = 0; i < nbe; i++)
    {
       if (!bdr_attr_to_show[mesh->GetBdrAttribute(i)-1]) continue;
@@ -579,6 +572,8 @@ void VisualizationSceneVector3d::PrepareFlat2()
                                          TimesToRefine);
       // di = GridF -> GetFaceValues (fn, 2, RefG->RefPts, values, pointmat);
       di = fo % 2;
+      if (di == 1 && !mesh->FaceIsInterior(fn))
+         di = 0;
       GridF->GetFaceValues(fn, di, RefG->RefPts, values, pointmat);
       if (ianim > 0)
       {
@@ -592,21 +587,11 @@ void VisualizationSceneVector3d::PrepareFlat2()
          GetFaceNormals(fn, di, RefG->RefPts, normals);
          have_normals = 1;
       }
-      if (ft)
-      {
-         vmin = values.Min();
-         vmax = values.Max();
-         ft = 0;
-      }
-      else
-      {
-         mm = values.Min();
-         if (mm < vmin)  vmin = mm;
-         mm = values.Max();
-         if (mm > vmax)  vmax = mm;
-      }
 
-      ShrinkPoints(pointmat, i, fn, fo);
+      vmin = fmin(vmin, values.Min());
+      vmax = fmax(vmax, values.Max());
+
+      ShrinkPoints(pointmat, i, fn, di);
 
       int sides;
       switch (mesh->GetBdrElementType(i))
@@ -616,6 +601,7 @@ void VisualizationSceneVector3d::PrepareFlat2()
          break;
 
       case Element::QUADRILATERAL:
+      default:
          sides = 4;
          break;
       }
@@ -666,8 +652,6 @@ void VisualizationSceneVector3d::Prepare()
    }
 
    glNewList(displlist, GL_COMPILE);
-   Set_Material();
-   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
    int ne = mesh -> GetNBE();
    int nv = mesh -> GetNV();
@@ -764,8 +748,6 @@ void VisualizationSceneVector3d::PrepareLines()
 
    glNewList(linelist, GL_COMPILE);
 
-   glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
-
    for (i = 0; i < ne; i++)
    {
       if (!bdr_attr_to_show[mesh->GetBdrAttribute(i)-1]) continue;
@@ -793,16 +775,7 @@ void VisualizationSceneVector3d::PrepareLines()
       switch (drawmesh)
       {
       case 1:
-         switch (mesh->GetBdrElementType(i))
-         {
-         case Element::TRIANGLE:
-            glBegin(GL_TRIANGLES);
-            break;
-
-         case Element::QUADRILATERAL:
-            glBegin(GL_QUADS);
-            break;
-         }
+         glBegin(GL_LINE_LOOP);
 
          for (j = 0; j < pointmat.Size(); j++)
             glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j));
@@ -816,7 +789,7 @@ void VisualizationSceneVector3d::PrepareLines()
                point[j][k] = pointmat(k,j);
             point[j][3] = (*sol)(vertices[j]);
          }
-         DrawPolygonLevelLines(point[0], pointmat.Size(), level);
+         DrawPolygonLevelLines(point[0], pointmat.Size(), level, false);
          break;
       }
    }
@@ -863,6 +836,8 @@ void VisualizationSceneVector3d::PrepareLines2()
                                          TimesToRefine);
       // di = GridF -> GetFaceValues (fn, 2, RefG->RefPts, values, pointmat);
       di = fo % 2;
+      if (di == 1 && !mesh->FaceIsInterior(fn))
+         di = 0;
       GridF -> GetFaceValues (fn, di, RefG->RefPts, values, pointmat);
       VecGridF -> GetFaceVectorValues (fn, di, RefG->RefPts,
                                        vec_vals, pointmat);
@@ -870,7 +845,7 @@ void VisualizationSceneVector3d::PrepareLines2()
       if (ianim > 0)
          pointmat.Add (double(ianim)/ianimmax, vec_vals);
 
-      ShrinkPoints(pointmat, i, fn, fo);
+      ShrinkPoints(pointmat, i, fn, di);
 
       int *RG = &(RefG->RefGeoms[0]);
       double pts[][3] = { { pointmat(0,RG[0]), pointmat(1,RG[0]),
@@ -926,6 +901,7 @@ void VisualizationSceneVector3d::PrepareLines2()
             break;
 
          case Element::QUADRILATERAL:
+         default:
             sides = 4;
             break;
          }
@@ -953,7 +929,7 @@ void VisualizationSceneVector3d::PrepareLines2()
                   point[j][3] = values(RG[j]);
                }
             }
-            DrawPolygonLevelLines (point[0], sides, level);
+            DrawPolygonLevelLines(point[0], sides, level, false);
          }
       }
    }
@@ -969,22 +945,9 @@ void VisualizationSceneVector3d::PrepareDisplacedMesh()
    // prepare the displaced mesh
    glNewList(displinelist, GL_COMPILE);
 
-   Set_Material();
-   glColor3f (1, 0, 0);
-   glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
-
    for (i = 0; i < ne; i++)
    {
-      switch (mesh->GetBdrElementType(i))
-      {
-      case Element::TRIANGLE:
-         glBegin (GL_TRIANGLES);
-         break;
-
-      case Element::QUADRILATERAL:
-         glBegin (GL_QUADS);
-         break;
-      }
+      glBegin(GL_LINE_LOOP);
       mesh->GetBdrPointMatrix (i, pointmat);
       mesh->GetBdrElementVertices (i, vertices);
 
@@ -1065,7 +1028,7 @@ void VisualizationSceneVector3d::DrawVector(int type, double v0, double v1,
    {
       arrow_type = 0;
       arrow_scaling_type = 0;
-      glColor3f(0, 0, 0);
+      // glColor3f(0, 0, 0); // color is set in Draw()
       Arrow(v0,v1,v2,sx,sy,sz,s);
    }
    break;
@@ -1107,8 +1070,6 @@ void VisualizationSceneVector3d::PrepareVectorField()
    double *vertex;
 
    glNewList(vectorlist, GL_COMPILE);
-
-   Set_Material();
 
    switch (drawvector)
    {
@@ -1202,15 +1163,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
 
 void VisualizationSceneVector3d::PrepareCuttingPlane()
 {
-   if (cp_drawelems == 0) return;
-   if (cplane == 0) return;
-   if (cplane == 2)
-   {
-      PrepareCuttingPlane2();
-      return;
-   }
-
-   if (drawvector == 0)
+   if (cp_drawelems == 0 || cplane != 1 || drawvector == 0)
    {
       VisualizationSceneSolution3d::PrepareCuttingPlane();
       return;
@@ -1221,16 +1174,18 @@ void VisualizationSceneVector3d::PrepareCuttingPlane()
    double t, point[4][4], val[4][3];
 
    glNewList(cplanelist, GL_COMPILE);
-   glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
-
-   Set_Material();
 
    DenseMatrix pointmat(3,4);
    double * coord;
 
    Array<int> nodes;
-   for(i=0; i < mesh -> GetNE(); i++)
+   for (i = 0; i < mesh->GetNE(); i++)
    {
+      if (mesh->GetElementType(i) != Element::TETRAHEDRON)
+         continue;
+      // TODO: support for hex elements as in
+      // VisualizationSceneSolution3d::CuttingPlaneFunc
+
       n = 0; // n will be the number of intersection points
       mesh -> GetElementVertices(i,nodes);
       mesh -> GetPointMatrix (i,pointmat);
@@ -1346,13 +1301,7 @@ void VisualizationSceneVector3d::Draw()
    glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
    // model transformation
-   glMatrixMode (GL_MODELVIEW);
-   glLoadIdentity();
-
-   glMultMatrixd (rotmat);
-   glMultMatrixd (translmat);
-   glScaled(xscale, yscale, zscale);
-   glTranslated(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
+   ModelView();
 
    glDisable(GL_CLIP_PLANE0);
    // draw colorbar
@@ -1366,40 +1315,13 @@ void VisualizationSceneVector3d::Draw()
       else
          DrawColorBar(minv,maxv);
    }
-   if (light)
-      glEnable(GL_LIGHTING);
-
-   Set_Black_Material();
-   // draw axes
-   if (drawaxes)
-   {
-      glCallList(axeslist);
-      DrawCoordinateCross();
-   }
-   DrawRuler();
 
    // define and enable the clipping plane
    if (cplane)
    {
       glClipPlane(GL_CLIP_PLANE0, CuttingPlane->Equation());
-      Set_Black_Material();
-      glDisable(GL_CLIP_PLANE0);
-      if (cp_drawmesh)
-         glCallList(cplanelineslist);
       glEnable(GL_CLIP_PLANE0);
    }
-
-   Set_Black_Material();
-
-   // draw lines
-   if (drawmesh)
-      glCallList(linelist);
-
-   if (drawdisp)
-      glCallList(displinelist);
-
-   if (drawvector == 1 || drawvector > 3)
-      glCallList(vectorlist);
 
    if (MatAlpha < 1.0)
       Set_Transparency();
@@ -1409,6 +1331,10 @@ void VisualizationSceneVector3d::Draw()
       glEnable (GL_TEXTURE_1D);
       glColor4d(1, 1, 1, 1);
    }
+
+   Set_Material();
+   if (light)
+      glEnable(GL_LIGHTING);
 
    // draw vector field
    if (drawvector == 2 || drawvector == 3)
@@ -1426,10 +1352,55 @@ void VisualizationSceneVector3d::Draw()
    }
 
    if (GetUseTexture())
-      glDisable (GL_TEXTURE_1D);
+      glDisable(GL_TEXTURE_1D);
 
    if (MatAlpha < 1.0)
       Remove_Transparency();
+
+   if (light)
+      glDisable(GL_LIGHTING);
+
+   if (drawvector > 3)
+      glCallList(vectorlist);
+
+   Set_Black_Material();
+
+   if (drawvector == 1)
+      glCallList(vectorlist);
+
+   // ruler may have mixture of polygons and lines
+   if (cplane)
+   {
+      glDisable(GL_CLIP_PLANE0);
+      DrawRuler();
+      if (cp_drawmesh)
+         glCallList(cplanelineslist);
+      glEnable(GL_CLIP_PLANE0);
+   }
+   else
+      DrawRuler();
+
+   // draw lines
+   if (drawmesh)
+      glCallList(linelist);
+
+   // draw displacement
+   if (drawdisp)
+   {
+      glColor3f(1.0f, 0.0f, 0.0f);
+      glCallList(displinelist);
+      Set_Black_Material();
+   }
+
+   if (cplane)
+      glDisable(GL_CLIP_PLANE0);
+
+   // draw axes
+   if (drawaxes)
+   {
+      glCallList(axeslist);
+      DrawCoordinateCross();
+   }
 
    glFlush();
    auxSwapBuffers();

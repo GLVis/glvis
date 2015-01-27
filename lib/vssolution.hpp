@@ -12,22 +12,25 @@
 #ifndef GLVIS_VSSOLUTION
 #define GLVIS_VSSOLUTION
 
+#include "mfem.hpp"
+using namespace mfem;
+
 // Visualization header file
 
 class VisualizationSceneSolution : public VisualizationSceneScalarData
 {
 protected:
-   GridFunction * rsol;
+   Vector *v_normals;
+   GridFunction *rsol;
 
    int drawmesh, drawelems;
    int displlist, linelist, lcurvelist;
    int bdrlist, drawbdr, draw_cp, cp_list;
+   int scaling_1d;
 
    void Init();
 
    void FindNewBox(double rx[], double ry[], double rval[]);
-   void FixValueRange();
-   void NewZRange(double z1, double z2);
 
    void DrawCPLine(DenseMatrix &pointmat, Vector &values, Array<int> &ind);
 
@@ -45,6 +48,8 @@ protected:
                         Vector &values, int sides, Array<double> &lvl,
                         int flat = 0);
 
+   int GetAutoRefineFactor();
+
 public:
    int shading, TimesToRefine, EdgeRefineFactor;
 
@@ -52,21 +57,27 @@ public:
    Array<int> el_attr_to_show;
 
    VisualizationSceneSolution();
-   VisualizationSceneSolution (Mesh & m, Vector & s);
+   VisualizationSceneSolution(Mesh &m, Vector &s, Vector *normals = NULL);
 
    virtual ~VisualizationSceneSolution();
 
-   void SetGridFunction(GridFunction & u) { rsol = &u; };
+   void SetGridFunction(GridFunction & u) { rsol = &u; }
 
    void NewMeshAndSolution(Mesh *new_m, Vector *new_sol,
-                           GridFunction *new_u = NULL, int rescale = 0);
+                           GridFunction *new_u = NULL);
 
    virtual void SetNewScalingFromBox();
-   virtual void FindNewBox();
+   virtual void FindNewBox(bool prepare);
+   virtual void FindNewValueRange(bool prepare);
+   virtual void FindNewBoxAndValueRange(bool prepare)
+   { FindNewBox(prepare); }
+   virtual void FindMeshBox(bool prepare);
 
+   virtual void ToggleLogscale(bool print);
    virtual void UpdateLevelLines() { PrepareLevelCurves(); };
-   virtual void UpdateValueRange();
+   virtual void UpdateValueRange(bool prepare);
 
+   void PrepareWithNormals();
    void PrepareFlat();
    void PrepareFlat2();
 
@@ -77,7 +88,6 @@ public:
    virtual void Prepare();
    void PrepareLevelCurves();
    void PrepareLevelCurves2();
-   void DefaultLevelLines() { SetLevelLines (minv, maxv, 15); };
 
    void PrepareBoundary();
 
@@ -88,31 +98,20 @@ public:
    void ToggleDrawBdr()
    { drawbdr = !drawbdr; }
 
-   void ToggleDrawElems()
-   {
-      drawelems = (drawelems+3)%4;
-      if (drawelems != 0 && shading == 2)
-      {
-         FindNewBox();
-         PrepareAxes();
-         PrepareLines();
-         PrepareBoundary();
-         Prepare();
-         DefaultLevelLines();
-         PrepareLevelCurves();
-         PrepareCP();
-      }
-   }
+   virtual void ToggleDrawElems();
 
    void ToggleDrawMesh() { drawmesh = (drawmesh+1)%3; }
 
-   virtual void SetShading(int);
+   virtual void SetShading(int, bool);
    void ToggleShading();
 
    void ToggleDrawCP() { draw_cp = !draw_cp; PrepareCP(); }
 
    virtual void SetRefineFactors(int, int);
+   virtual void AutoRefine();
    virtual void ToggleAttributes(Array<int> &attr_list);
+
+   void Set1DScaling() { scaling_1d = 1; }
 };
 
 

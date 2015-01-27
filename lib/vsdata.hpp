@@ -14,6 +14,7 @@
 
 #include "openglvis.hpp"
 #include "mfem.hpp"
+using namespace mfem;
 
 
 class Plane
@@ -49,12 +50,13 @@ public:
 class VisualizationSceneScalarData : public VisualizationScene
 {
 protected:
-   Mesh * mesh;
-   Vector * sol;
+   Mesh   *mesh;
+   Vector *sol;
 
    double minv, maxv;
 
    int scaling, colorbar, drawaxes, axeslist;
+   int auto_ref_max, auto_ref_max_surf_elem;
 
    void Init();
 
@@ -66,8 +68,42 @@ protected:
    int ruler_on;
    double ruler_x, ruler_y, ruler_z;
 
+   // autoscale controls the behavior when the mesh/solution are updated:
+   // 0 - do not change the bounding box and the value range
+   // 1 - recompute both the bounding box and the value range (default)
+   // 2 - recompute only the value range
+   // 3 - recompute only the bounding box
+   int autoscale;
+
+   bool logscale;
+   bool LogscaleRange() { return (minv > 0.0 && maxv > minv); }
+   void PrintLogscale(bool warn);
+
+   double log_a, unit_a;
+   void SetLogA()
+   {
+      if (logscale)
+         unit_a = 1.0/log(maxv/minv), log_a = (maxv - minv)*unit_a;
+      else
+         unit_a = 1.0/(maxv - minv), log_a = 1.0;
+   }
+   double _ULogVal(const double &u) { return minv*pow(maxv/minv, u); }
+   double ULogVal(const double &u)
+   { return (logscale ? _ULogVal(u) : minv + (maxv - minv)*u); }
+   double LogUVal(const double &z)
+   { return ((logscale && z >= minv && z <= maxv) ?
+             (log(z/minv)*unit_a) : (z - minv)*unit_a); }
+   double _LogVal_(const double &z) { return (log(z/minv)*log_a + minv); }
+   double _LogVal(const double &z)
+   { return ((z >= minv && z <= maxv) ? _LogVal_(z) : (z)); }
+   double LogVal(const double &z, const bool &log_val)
+   { return (log_val ? _LogVal(z) : z); }
+   double LogVal(const double &z) { return LogVal(z, logscale); }
+
+   void FixValueRange();
+
 public:
-   Plane * CuttingPlane;
+   Plane *CuttingPlane;
    int light;
    int key_r_state;
    /** Shrink factor with respect to the center of each element (2D) or the
@@ -81,38 +117,67 @@ public:
 
    virtual ~VisualizationSceneScalarData();
 
+   // Determine 'xscale', 'yscale', and 'zscale' using the current bounding
+   // box, depending on the value of 'scaling'.
    virtual void SetNewScalingFromBox();
-   virtual void CenterObject();
-   virtual void CenterObject2D();
-   virtual void ResetScaling();
 
-   virtual void FindNewBox() = 0;
+   // Compute the bounding box, call UpdateBoundingBox.
+   // In 2D the z range is the value range, so FixValueRange and
+   // UpdateValueRange are also called.
+   virtual void FindNewBox(bool prepare) = 0;
 
-   virtual void PrepareAxes();
+   // Compute the value range based on the current solution, adjust it by
+   // calling FixValueRange and then call UpdateValueRange.
+   virtual void FindNewValueRange(bool prepare) = 0;
+
+   // Redefined in 2D to call just FindNewBox
+   virtual void FindNewBoxAndValueRange(bool prepare)
+   { FindNewBox(prepare); FindNewValueRange(prepare); }
+
+   // Redefined in 2D to update only the x- and y-ranges.
+   virtual void FindMeshBox(bool prepare) { FindNewBox(prepare); }
+
+   // Perform autoscaling depending on the value of 'autoscale':
+   // 0 - do nothing
+   // 1 - call call FindNewBoxAndValueRange
+   // 2 - call FindNewValueRange
+   // 3 - call FindMeshBox
+   void DoAutoscale(bool prepare);
+   // Similar to the above but force recomputation of the value range
+   void DoAutoscaleValue(bool prepare);
+
+   virtual void Prepare() = 0;
    virtual void PrepareLines() = 0;
 
-   virtual void EventUpdateColors () { Prepare(); };
+   void UpdateBoundingBox() { SetNewScalingFromBox(); PrepareAxes(); }
+   virtual void EventUpdateColors() { Prepare(); }
    virtual void UpdateLevelLines() = 0;
-   virtual void UpdateValueRange() = 0;
+   virtual void UpdateValueRange(bool prepare) = 0;
    void SetValueRange(double, double);
 
-   virtual void SetShading(int) = 0;
+   virtual void SetShading(int, bool) = 0;
    virtual void SetRefineFactors(int, int) = 0;
+   void SetAutoRefineLimits(int max_ref, int max_surf_elem)
+   {
+      auto_ref_max = max_ref;
+      auto_ref_max_surf_elem = max_surf_elem;
+   }
+   virtual void AutoRefine() = 0;
    virtual void ToggleAttributes(Array<int> &attr_list) = 0;
 
    virtual void PrintState();
 
-   Mesh * GetMesh() { return mesh; }
+   Mesh *GetMesh() { return mesh; }
 
-   void DrawColorBar (double minval, double maxval,
-                      Array<double> * level = NULL,
-                      Array<double> * levels = NULL);
-   void DrawCoordinateCross ();
+   void DrawColorBar(double minval, double maxval,
+                     Array<double> * level = NULL,
+                     Array<double> * levels = NULL);
+   void DrawCoordinateCross();
 
    double &GetMinV() { return minv; };
    double &GetMaxV() { return maxv; };
 
-   void SetLevelLines (double min, double max, int n, int adj = 1);
+   void SetLevelLines(double min, double max, int n, int adj = 1);
 
    void Arrow(double px, double py, double pz,
               double vx, double vy, double vz, double length,
@@ -126,34 +191,37 @@ public:
                double length,
                double cone_scale = 0.075);
 
-   void DrawPolygonLevelLines(double * point, int n, Array<double> & level);
+   void DrawPolygonLevelLines(double *point, int n, Array<double> &level,
+                              bool log_vals);
 
-   void ToggleLight ()
-   { light = !light; }
+   void ToggleLight() { light = !light; }
 
-   void ToggleDrawColorbar ()
-   { colorbar = !colorbar; }
+   void ToggleDrawColorbar() { colorbar = !colorbar; }
 
-   void ToggleDrawAxes ()
+   void PrepareAxes();
+   void ToggleDrawAxes()
    {
       drawaxes = (drawaxes+1)%4;
       if (drawaxes)
          PrepareAxes();
    }
 
-   void ToggleScaling (){
-      scaling = !scaling;
-      ResetScaling();
-   }
+   void ToggleScaling()
+   { scaling = !scaling; SetNewScalingFromBox(); }
+
+   virtual void ToggleLogscale(bool print);
 
    void ToggleRuler();
    void RulerPosition();
-   void DrawRuler();
+   void DrawRuler(bool log_z = false);
 
    void ToggleTexture();
 
+   void SetAutoscale(int _autoscale);
+   int GetAutoscale() const { return autoscale; }
+
    /// Shrink the set of points towards attributes centers of gravity
-   void ShrinkPoints(DenseMatrix &pointmat, int i, int fn, int fo);
+   void ShrinkPoints(DenseMatrix &pointmat, int i, int fn, int di);
    // Centers of gravity based on the bounday/element attributes
    DenseMatrix bdrc, matc;
    /// Compute the center of gravity for each boundary attribute

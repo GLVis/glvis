@@ -12,6 +12,9 @@
 #ifndef GLVIS_VSVECTOR_3D
 #define GLVIS_VSVECTOR_3D
 
+#include "mfem.hpp"
+using namespace mfem;
+
 class VisualizationSceneVector3d : public VisualizationSceneSolution3d
 {
 protected:
@@ -33,7 +36,7 @@ public:
    VisualizationSceneVector3d(Mesh & m, Vector & sx, Vector & sy, Vector & sz);
    VisualizationSceneVector3d (GridFunction &vgf);
 
-   void NewMeshAndSolution(Mesh *new_m, GridFunction *new_v, int rescale = 0);
+   void NewMeshAndSolution(Mesh *new_m, GridFunction *new_v);
 
    virtual ~VisualizationSceneVector3d();
 

@@ -9,13 +9,16 @@
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
 #include <limits>
-#include <math.h>
+#include <cmath>
 
 #include "mfem.hpp"
+using namespace mfem;
 #include "visual.hpp"
+
+using namespace std;
 
 
 static void VectorKeyHPressed()
@@ -203,6 +206,26 @@ void KeyUPressed()
    }
 }
 
+void VisualizationSceneVector::ToggleDrawElems()
+{
+   const char *modes[] =
+      { "none", "vector->scalar function", "det(J0)/det(J)", "det(J)/det(J0)" };
+
+   drawelems = (drawelems+3)%4;
+
+   cout << "Surface elements mode : " << modes[drawelems] << endl;
+
+   if (drawelems != 0 && shading == 2)
+   {
+      DoAutoscaleValue(false);
+      PrepareLines();
+      PrepareBoundary();
+      Prepare();
+      PrepareLevelCurves();
+      PrepareCP();
+   }
+}
+
 void VisualizationSceneVector::ToggleVectorField()
 {
    drawvector = (drawvector+1)%4;
@@ -321,10 +344,9 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
 
    // update scalar stuff
-   FindNewBox();
-   PrepareAxes();
+   DoAutoscaleValue(false);
    PrepareLines();
-   DefaultLevelLines();
+   PrepareBoundary();
    PrepareLevelCurves();
    PrepareCP();
    Prepare();
@@ -337,8 +359,7 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
       PrepareVectorField();
 }
 
-void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf,
-                                                  int rescale)
+void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
 {
    delete sol;
 
@@ -350,7 +371,25 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf,
 
    VecGridF = &vgf;
 
-   mesh = vgf.FESpace()->GetMesh();
+   // If the number of elements changes, recompute the refinement factor
+   Mesh *new_mesh = vgf.FESpace()->GetMesh();
+   if (mesh->GetNE() != new_mesh->GetNE())
+   {
+      mesh = new_mesh;
+      int ref = GetAutoRefineFactor();
+      if (TimesToRefine != ref || EdgeRefineFactor != 1)
+      {
+         TimesToRefine = ref;
+         EdgeRefineFactor = 1;
+         cout << "Subdivision factors = " << TimesToRefine << ", 1" << endl;
+      }
+      if (RefineFactor != 1)
+      {
+         RefineFactor = 1;
+         cout << "Vector subdivision factor = 1" << endl;
+      }
+   }
+   mesh = new_mesh;
 
    solx = new Vector(mesh->GetNV());
    soly = new Vector(mesh->GetNV());
@@ -368,9 +407,9 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf,
    for (int i = 0; i < mesh->GetNV(); i++)
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
 
-   VisualizationSceneSolution::NewMeshAndSolution(mesh, sol, &vgf, rescale);
+   VisualizationSceneSolution::NewMeshAndSolution(mesh, sol, &vgf);
 
-   if (rescale)
+   if (autoscale)
    {
       if (Vec2Scalar == VecLength)
       {
@@ -419,8 +458,9 @@ void VisualizationSceneVector::Init()
       auxKeyFunc (AUX_D, KeyDPressed);
       auxKeyFunc (AUX_n, KeyNPressed);
       auxKeyFunc (AUX_N, KeyNPressed);
-      auxKeyFunc (AUX_b, KeyBPressed);
-      auxKeyFunc (AUX_B, KeyBPressed);
+      // auxKeyFunc (AUX_b, KeyBPressed);
+      auxKeyFuncReplace(AUX_b, KeyBPressed);
+      // auxKeyFunc (AUX_B, KeyBPressed);
       auxKeyFunc (AUX_v, KeyvPressed);
       auxKeyFunc (AUX_V, KeyVPressed);
       auxKeyFunc (AUX_u, KeyuPressed);
@@ -536,6 +576,10 @@ void VisualizationSceneVector::GetRefinedValues(
       }
    }
 
+   if (logscale)
+      for (int j = 0; j < vals.Size(); j++)
+         vals(j) = _LogVal(vals(j));
+
    if (shrink != 1.0 || shrinkmat != 1.0)
       ShrinkPoints(tr, i, 0, 0);
 }
@@ -561,24 +605,11 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
    // prepare the displaced mesh
    glNewList(displinelist, GL_COMPILE);
 
-   // Set_Material();
-   // glColor3f (1, 0, 0);
-   glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
-
    if (shading != 2)
    {
       for (i = 0; i < ne; i++)
       {
-         switch (mesh->GetElementType(i))
-         {
-         case Element::TRIANGLE:
-            glBegin (GL_TRIANGLES);
-            break;
-
-         case Element::QUADRILATERAL:
-            glBegin (GL_QUADS);
-            break;
-         }
+         glBegin(GL_LINE_LOOP);
          mesh->GetPointMatrix (i, pointmat);
          mesh->GetElementVertices (i, vertices);
 
@@ -795,6 +826,7 @@ void VisualizationSceneVector::PrepareVectorField()
       {
          int i;
 
+         MySetColorLogscale = logscale;
          if (drawvector == 3)
             new_maxlen = 0.0;
          for (i = 0; i < mesh->GetNV(); i++)
@@ -857,13 +889,7 @@ void VisualizationSceneVector::Draw()
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
    // model transformation
-   glMatrixMode (GL_MODELVIEW);
-   glLoadIdentity();
-
-   glMultMatrixd (translmat);
-   glMultMatrixd (rotmat);
-   glScaled(xscale, yscale, zscale);
-   glTranslated(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
+   ModelView();
 
    // draw colored faces
    glPolygonOffset (1, 1);
@@ -881,41 +907,13 @@ void VisualizationSceneVector::Draw()
          DrawColorBar(minv,maxv);
    }
 
-   Set_Black_Material();
-
-   // draw axes
-   if (drawaxes)
-   {
-      glCallList(axeslist);
-      DrawCoordinateCross();
-   }
-
-   DrawRuler();
-
    if (draw_cp)
    {
-      glClipPlane (GL_CLIP_PLANE0, CuttingPlane->Equation());
-      glDisable(GL_CLIP_PLANE0);
-      glCallList(cp_list);
+      glClipPlane(GL_CLIP_PLANE0, CuttingPlane->Equation());
       glEnable(GL_CLIP_PLANE0);
    }
 
-   // draw lines
-   if ( drawmesh == 1 )
-      glCallList(linelist);
-   else if (drawmesh == 2 )
-      glCallList(lcurvelist);
-
-   if (drawvector == 1)
-      glCallList(vectorlist);
-
-   if (drawdisp > 0)
-   {
-      if (drawmesh == 1)
-         glColor3d(1., 0., 0.);
-      glCallList(displinelist);
-   }
-
+   Set_Material();
    if (light)
       glEnable(GL_LIGHTING);
 
@@ -933,7 +931,6 @@ void VisualizationSceneVector::Draw()
       Set_Transparency();
 
    // draw elements
-   glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
    if (drawelems)
       glCallList(displlist);
 
@@ -942,6 +939,52 @@ void VisualizationSceneVector::Draw()
 
    if (GetUseTexture())
       glDisable (GL_TEXTURE_1D);
+
+   if (light)
+      glDisable(GL_LIGHTING);
+   Set_Black_Material();
+
+   // ruler may have mixture of polygons and lines
+   if (draw_cp)
+   {
+      glDisable(GL_CLIP_PLANE0);
+      DrawRuler(logscale);
+      glCallList(cp_list);
+      glEnable(GL_CLIP_PLANE0);
+   }
+   else
+      DrawRuler(logscale);
+
+   if (drawbdr)
+      glCallList(bdrlist);
+
+   // draw lines
+   if (drawmesh == 1)
+      glCallList(linelist);
+   else if (drawmesh == 2)
+      glCallList(lcurvelist);
+
+   if (drawvector == 1)
+      glCallList(vectorlist);
+
+   if (drawdisp > 0)
+   {
+      if (drawmesh == 1)
+         glColor3d(1., 0., 0.);
+      glCallList(displinelist);
+      if (drawmesh == 1)
+         Set_Black_Material();
+   }
+
+   if (draw_cp)
+      glDisable(GL_CLIP_PLANE0);
+
+   // draw axes
+   if (drawaxes)
+   {
+      glCallList(axeslist);
+      DrawCoordinateCross();
+   }
 
    glFlush();
    auxSwapBuffers();

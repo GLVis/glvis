@@ -14,10 +14,10 @@
 
 // Visualization header file
 
+#include "vsdata.hpp"
 #include "material.hpp"
 #include "aux_vis.hpp"
 #include "openglvis.hpp"
-#include "vsdata.hpp"
 #include "vssolution.hpp"
 #include "vssolution3d.hpp"
 #include "vsvector.hpp"

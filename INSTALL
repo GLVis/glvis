@@ -1,5 +1,5 @@
                            GLVis visualization tool
-                                 version 2.0
+                                 version 3.0
 
                      _/_/_/  _/      _/      _/  _/
                   _/        _/      _/      _/        _/_/_/
@@ -9,73 +9,63 @@
 
                         http://glvis.googlecode.com
 
+GLVis is an X11 application and can be built on Linux/Unix systems including
+Mac OS X using the X11/XQuarz app.
+
 Besides a C++ compiler, GLVis depends on the following external packages:
 
-- the MFEM library (use the latest release)
+- the MFEM library (use the latest release) plus any libraries that MFEM was
+  built to depend on
   http://mfem.googlecode.com
 
-- the LAPACK and BLAS libraries, if MFEM was built to depend on them
-  http://www.netlib.org/lapack
-
-- the X11, GL and GLU libraries, which are standard on most Unix-type systems
+- the X11, GL and GLU libraries
   http://www.x.org, http://www.opengl.org, http://www.mesa3d.org
 
-- the libtiff library, which can optionally be used for taking screenshots
-  http://www.libtiff.org
+- the libpng or libtiff library; used for taking screenshots (optional)
+  http://www.libpng.org, http://www.libtiff.org
 
-Two build systems are supported, based on make and SCons, as described below.
+- the FreeType 2 and Fontconfig libraries; used for font rendering (optional)
+  http://www.freetype.org, http://www.fontconfig.org
+
+The build system is based on GNU make, as described below.
 
 
-Building with 'make'
-====================
+Building with GNU make
+======================
 GLVis comes with a standard makefile, which can be adjusted to specify the paths
-to the external libraries, the compiler flags, and if libtiff should be used for
-screenshots. Specific options for compiling on Mac OS X are also available.
+to the external libraries, the compiler flags, etc.
 
 Some of the available 'make' targets are:
 
-make       -> Builds the glvis binary and the lib/libglvis.a library
-make lib   -> Builds only the lib/libglvis.a library
+make       -> Builds the glvis binary, using the MFEM compiler and options
+make opt   -> Builds an optimized version
 make debug -> Builds a debug version
 make clean -> Cleans the build
-
-If LibTIFF is available on your system, modify the makefile by setting
-'USE_LIBTIFF = YES'.
-
-
-Building with 'SCons'
-====================
-SCons is a Python-based next generation build system from http://www.scons.org/,
-which combines the capabilities of make and configure. The included SConstruct
-file can be edited to adjust paths to libraries, but the platform-specific
-options and the availability of LAPACK, BLAS and libtiff are automatically
-detected.
-
-Some of the available 'SCons' targets are:
-
-scons         -> Builds the glvis binary and the lib/libglvis.a library
-scons debug=1 -> Builds a debug version
-scons -c      -> Cleans the build
 
 
 Some building considerations:
 
-- GLVis requires the serial version of MFEM without MPI or OpenMP support (its
-  default build options). If you have built the parallel (MPI) and/or the OpenMP
-  version, you will need to re-build MFEM, e.g., using:
-
-     make clean; make
+- On most Linux distributions, the required dependencies (except MFEM) can be
+  installed via a package manager. Usually it is sufficient to install the
+  packages: libGLU-dev, libpng-dev, and fontconfig-dev with their dependencies
+  (actual packages names may vary).
 
 - To adjust the anti-aliasing settings for your hardware:
 
   1) Modify the value of the GLVIS_MULTISAMPLE variable (multisample mode) in
-     the makefile/SConstruct file. Supported values can be obtained from the
-     'glxinfo' command ('ms' columns) or a from a tool like 'nvidia-settings'.
+     the makefile. Supported values can be obtained from the 'glxinfo' command
+     ('ms' columns) or a from a tool like 'nvidia-settings'.
 
   2) Modify the value of the GLVIS_MS_LINEWIDTH variable (anti-aliased line
-     width) in the makefile/SConstruct file. Note that the same value can
-     produce different results depending on the OpenGL implementation.
+     width) in the makefile. Note that the same value can produce different
+     results depending on the OpenGL implementation.
+
+  3) The above options and some other built-in defaults can be overwritten with
+     command line options, see glvis -h for short help.
 
 - If your X11 server does not support GLX 1.3, you can build GLVis to only use
   GLX 1.0 calls, by specifying the GLVIS_GLX10 define. Note that the X11.app in
   OS X complains about GLX 1.3 support, but in practice works fine with GLVis.
+
+- GLVis can be built without libpng/libtiff/FreeType 2/Fontconfig by setting
+  the makefile variables USE_LIBPNG/USE_LIBTIFF/USE_FREETYPE to NO.

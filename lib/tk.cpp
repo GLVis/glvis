@@ -35,15 +35,15 @@
  * OpenGL(TM) is a trademark of Silicon Graphics, Inc.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <X11/keysym.h>
 #include <string>
 
 #define GLVIS_USE_POLL
 
-#include <errno.h>      // errno, EINTR
+#include <cerrno>      // errno, EINTR
 #ifndef GLVIS_USE_POLL
 #if 1
 /* According to POSIX.1-2001 */
@@ -287,7 +287,10 @@ static GLenum DoNextEvent(void)
 {
     XEvent current, ahead;
     char buf[1000];
-    static char hist[1000]; static int hist_ptr=0;
+    const char *ks_ptr;
+    int ks_len;
+    const int hist_size = 1000;
+    static char hist[hist_size]; static int hist_ptr=0;
     KeySym ks;
     int key;
 
@@ -434,37 +437,46 @@ static GLenum DoNextEvent(void)
          printf("XEvent: KeyPress\n"); fflush(stdout);
 #endif
         lastEventType = KeyPress;
+        // leaks memory according to valgrind
         XLookupString(&current.xkey, buf, sizeof(buf), &ks, 0);
 
         // save the keystrokes
-        switch (ks) {
+        switch (ks)
+        {
         case XK_Left:
-          sprintf(hist+hist_ptr,"%s","~l"); hist_ptr+=2;
-          break;
+           ks_ptr = "~l";
+           break;
         case XK_Right:
-          sprintf(hist+hist_ptr,"%s","~r"); hist_ptr+=2;
-          break;
+           ks_ptr = "~r";
+           break;
         case XK_Up:
-          sprintf(hist+hist_ptr,"%s","~u"); hist_ptr+=2;
-          break;
+           ks_ptr = "~u";
+           break;
         case XK_Down:
-          sprintf(hist+hist_ptr,"%s","~d"); hist_ptr+=2;
-          break;
+           ks_ptr = "~d";
+           break;
         case XK_KP_Decimal:
         case XK_period:
-          sprintf(hist+hist_ptr,"%s","~."); hist_ptr+=2;
-          break;
+           ks_ptr = "~.";
+           break;
         case XK_KP_Enter:
         case TK_RETURN:
-          sprintf(hist+hist_ptr,"%s","~E"); hist_ptr+=2;
-          break;
+           ks_ptr = "~E";
+           break;
         default:
            // if ( (((int)ks - XK_KP_0) < 10) && (((int)ks - XK_KP_9) >= 0) ) {
            //    sprintf(hist+hist_ptr,"%d",(int)ks - XK_KP_0); hist_ptr+=1;
            // } else {
            //    sprintf(hist+hist_ptr,"%s",buf); hist_ptr+=strlen(buf);
            // }
-           sprintf(hist+hist_ptr,"%s",buf); hist_ptr+=strlen(buf);
+           // sprintf(hist+hist_ptr,"%s",buf); hist_ptr+=strlen(buf);
+           ks_ptr = buf;
+        }
+        ks_len = strlen(ks_ptr);
+        if (ks_len > 0 && hist_ptr + ks_len < hist_size)
+        {
+           strcpy(hist + hist_ptr, ks_ptr);
+           hist_ptr += ks_len;
         }
 
         switch (ks) {
@@ -834,6 +846,12 @@ GLXContext tkGetGLXContext()
    return context;
 }
 
+Screen *tkGetXScreen()
+{
+   return ScreenOfDisplay(display, screen);
+}
+
+
 /******************************************************************************/
 
 #ifdef GLVIS_GLX10
@@ -889,21 +907,20 @@ static XVisualInfo *FindVisual(GLenum type)
     int have_multisample = 0;
 
     // multisampling
-#ifdef GLVIS_MULTISAMPLE
-#ifdef GLX_SAMPLE_BUFFERS_ARB
-    std::string s = glXQueryExtensionsString(display, screen);
-    if (s.find("GLX_ARB_multisample") != std::string::npos)
+    if (GetMultisample() > 0)
     {
-       list[i++] = GLX_SAMPLE_BUFFERS_ARB;
-       list[i++] = 1;
-       list[i++] = GLX_SAMPLES_ARB;
-       list[i++] = GLVIS_MULTISAMPLE;
-       have_multisample = 1;
+#ifdef GLX_SAMPLE_BUFFERS_ARB
+       std::string s = glXQueryExtensionsString(display, screen);
+       if (s.find("GLX_ARB_multisample") != std::string::npos)
+       {
+          list[i++] = GLX_SAMPLE_BUFFERS_ARB;
+          list[i++] = 1;
+          list[i++] = GLX_SAMPLES_ARB;
+          list[i++] = GetMultisample();
+          have_multisample = 1;
+       }
+#endif
     }
-#else
-#error GLX_SAMPLE_BUFFERS_ARB is not defined!
-#endif
-#endif
 
     list[i] = (int)None;
 
@@ -917,6 +934,7 @@ static XVisualInfo *FindVisual(GLenum type)
        printf("\nThe requested multisample mode is not available."
               " Multisampling disabled.\n\n");
 // #endif
+       SetMultisample(-2);
     }
 
     return visual;
@@ -980,21 +998,20 @@ static XVisualInfo *FindVisual(GLenum type)
     int have_multisample = 0;
 
     // multisampling
-#ifdef GLVIS_MULTISAMPLE
-#ifdef GLX_SAMPLE_BUFFERS_ARB
-    std::string s = glXQueryExtensionsString(display, screen);
-    if (s.find("GLX_ARB_multisample") != std::string::npos)
+    if (GetMultisample() > 0)
     {
-       list[i++] = GLX_SAMPLE_BUFFERS_ARB;
-       list[i++] = 1;
-       list[i++] = GLX_SAMPLES_ARB;
-       list[i++] = GLVIS_MULTISAMPLE;
-       have_multisample = 1;
+#ifdef GLX_SAMPLE_BUFFERS_ARB
+       std::string s = glXQueryExtensionsString(display, screen);
+       if (s.find("GLX_ARB_multisample") != std::string::npos)
+       {
+          list[i++] = GLX_SAMPLE_BUFFERS_ARB;
+          list[i++] = 1;
+          list[i++] = GLX_SAMPLES_ARB;
+          list[i++] = GetMultisample();
+          have_multisample = 1;
+       }
+#endif
     }
-#else
-#error GLX_SAMPLE_BUFFERS_ARB is not defined!
-#endif
-#endif
 
     list[i] = (int)None;
 
@@ -1009,12 +1026,30 @@ static XVisualInfo *FindVisual(GLenum type)
                                      list, &numFBConfigs);
        printf("\nThe requested multisample mode is not available."
               " Multisampling disabled.\n\n");
+       SetMultisample(-2);
     }
 
-    fbConfig = fbConfigs[0];
-    XFree(fbConfigs);
+#ifdef GLVIS_DEBUG
+    printf("numFBConfigs = %i\n", numFBConfigs);
+    printf("IDs:");
+    for (int j = 0; j < numFBConfigs; j++)
+    {
+       int id;
+       glXGetFBConfigAttrib(display, fbConfigs[j], GLX_FBCONFIG_ID, &id);
+       printf(" 0x%03x", id);
+    }
+    printf("\n");
+#endif
 
-    XVisualInfo *visual = glXGetVisualFromFBConfig(display, fbConfig);
+    XVisualInfo *visual;
+    if (fbConfigs)
+    {
+       fbConfig = fbConfigs[0];
+       XFree(fbConfigs);
+       visual = glXGetVisualFromFBConfig(display, fbConfig);
+    }
+    else
+       visual = NULL;
 
     return visual;
 }
@@ -1033,6 +1068,7 @@ static int MakeVisualType(XVisualInfo *vi)
 
     glXGetConfig(display, vi, GLX_RGBA, &x);
 #ifdef GLVIS_DEBUG
+    printf("VisualID : 0x%03x\n", (int)vi->visualid);
     printf("GLX_RGBA : %d\n", x);
 #endif
     if (x) {
@@ -1097,14 +1133,12 @@ static int MakeVisualType(XVisualInfo *vi)
         mask |= TK_STENCIL;
     }
 
-#ifdef GLVIS_MULTISAMPLE
 #ifdef GLVIS_DEBUG
 #ifdef GLX_SAMPLE_BUFFERS_ARB
     glXGetConfig(display, vi, GLX_SAMPLE_BUFFERS_ARB, &x);
     printf("GLX_SAMPLE_BUFFERS_ARB : %d\n", x);
     glXGetConfig(display, vi, GLX_SAMPLES_ARB, &x);
     printf("GLX_SAMPLES_ARB : %d\n", x);
-#endif
 #endif
 #endif
 
@@ -1132,9 +1166,11 @@ static int MakeVisualType(XVisualInfo *vi)
 #ifdef GLVIS_DEBUG
     glXQueryVersion(display, &x, &y);
     printf("GLX Version : %d.%d\n", x, y);
+    glXGetFBConfigAttrib(display, fbConfig, GLX_FBCONFIG_ID, &x);
+    printf("GLX_FBCONFIG_ID : 0x%03x\n", x);
 #endif
 
-    glXGetFBConfigAttrib(display, fbConfig, GLX_RGBA, &x);
+    glXGetConfig(display, vi, GLX_RGBA, &x);
 #ifdef GLVIS_DEBUG
     printf("GLX_RGBA : %d\n", x);
 #endif
@@ -1200,14 +1236,12 @@ static int MakeVisualType(XVisualInfo *vi)
         mask |= TK_STENCIL;
     }
 
-#ifdef GLVIS_MULTISAMPLE
 #ifdef GLVIS_DEBUG
 #ifdef GLX_SAMPLE_BUFFERS_ARB
     glXGetFBConfigAttrib(display, fbConfig, GLX_SAMPLE_BUFFERS_ARB, &x);
     printf("GLX_SAMPLE_BUFFERS_ARB : %d\n", x);
     glXGetFBConfigAttrib(display, fbConfig, GLX_SAMPLES_ARB, &x);
     printf("GLX_SAMPLES_ARB : %d\n", x);
-#endif
 #endif
 #endif
 

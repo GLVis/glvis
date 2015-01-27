@@ -22,7 +22,8 @@ private:
    Mesh          **mesh;
    GridFunction  **grid_f;
    Vector         *sol;
-   int            *autoscale, *keep_attr;
+   bool           *keep_attr;
+   bool           *fix_elem_orient;
 
    pthread_mutex_t glvis_mutex;
    pthread_cond_t  glvis_cond;
@@ -30,7 +31,26 @@ private:
    bool terminating;
    int pfd[2];  // pfd[0] -- reading, pfd[1] -- writing
 
-   enum { NO_COMMAND = 0, NEW_MESH_AND_SOLUTION = 1 };
+   enum
+   {
+      NO_COMMAND = 0,
+      NEW_MESH_AND_SOLUTION = 1,
+      SCREENSHOT = 2,
+      KEY_COMMANDS = 3,
+      WINDOW_SIZE = 4,
+      WINDOW_TITLE = 5,
+      PAUSE = 6,
+      VIEW_ANGLES = 7,
+      ZOOM = 8,
+      SUBDIVISIONS = 9,
+      VALUE_RANGE = 10,
+      SHADING = 11,
+      VIEW_CENTER = 12,
+      AUTOSCALE = 13,
+      PALETTE = 14,
+      CAMERA = 15,
+      AUTOPAUSE = 16
+   };
 
    // command to be executed
    int command;
@@ -38,6 +58,23 @@ private:
    // command arguments
    Mesh         *new_m;
    GridFunction *new_g;
+   std::string   screenshot_filename;
+   std::string   key_commands;
+   int           window_w, window_h;
+   std::string   window_title;
+   double        view_ang_theta, view_ang_phi;
+   double        zoom_factor;
+   int           subdiv_tot, subdiv_bdr;
+   double        val_min, val_max;
+   std::string   shading;
+   double        view_center_x, view_center_y;
+   std::string   autoscale_mode;
+   int           palette;
+   double        camera[9];
+   std::string   autopause_mode;
+
+   // internal variables
+   int autopause;
 
    int lock();
    int signal();
@@ -46,23 +83,41 @@ private:
 public:
    // called by the main execution thread
    GLVisCommand(VisualizationSceneScalarData **_vs, Mesh **_mesh,
-                GridFunction **_grid_f, Vector *_sol, int *_autoscale,
-                int *_keep_attr);
+                GridFunction **_grid_f, Vector *_sol, bool *_keep_attr,
+                bool *_fix_elem_orient);
 
    // to be used by the main execution (visualization) thread
    int ReadFD() { return pfd[0]; }
 
    // to be used worker threads
-   int KeepAttrib() { return *keep_attr; } // may need to sync this
+   bool KeepAttrib() { return *keep_attr; } // may need to sync this
+   bool FixElementOrientations() { return *fix_elem_orient; }
 
    // called by worker threads
    int NewMeshAndSolution(Mesh *_new_m, GridFunction *_new_g);
+   int Screenshot(const char *filename);
+   int KeyCommands(const char *keys);
+   int WindowSize(int w, int h);
+   int WindowTitle(const char *title);
+   int Pause();
+   int ViewAngles(double theta, double phi);
+   int Zoom(double factor);
+   int Subdivisions(int tot, int bdr);
+   int ValueRange(double minv, double maxv);
+   int SetShading(const char *shd);
+   int ViewCenter(double x, double y);
+   int Autoscale(const char *mode);
+   int Palette(int pal);
+   int Camera(const double cam[]);
+   int Autopause(const char *mode);
 
    // called by the main execution thread
    int Execute();
 
    // called by the main execution thread
    void Terminate();
+
+   void ToggleAutopause();
 
    // called by the main execution thread
    ~GLVisCommand();
@@ -74,12 +129,12 @@ class communication_thread
 {
 private:
    // streams to read data from
-   Array<istream *> &is;
+   Array<std::istream *> &is;
 
    // data that may be dynamically allocated by the thread
    Mesh *new_m;
    GridFunction *new_g;
-   string ident;
+   std::string ident;
 
    // thread id
    pthread_t tid;
@@ -97,7 +152,7 @@ private:
    static void *execute(void *);
 
 public:
-   communication_thread(Array<istream *> &_is);
+   communication_thread(Array<std::istream *> &_is);
 
    ~communication_thread();
 };

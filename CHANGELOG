@@ -9,6 +9,53 @@
                         http://glvis.googlecode.com
 
 
+Version 3.0, released on Jan 26, 2015
+=====================================
+
+- Updated the makefile to use the new build system in MFEM, so GLVis can now be
+  built from any (serial or parallel) MFEM build.
+
+- Support for saving screenshots directly in png format using libpng. Enabled
+  by default with "USE_LIBPNG = YES" in the makefile.
+
+- Support for antialiased fonts using the freetype library.  Enabled by default
+  with "USE_FREETYPE = YES" in the makefile (the options "FT_OPTS_YES" and
+  "FT_LIBS_YES" may need to be adjusted). The font is determined at runtime from
+  a list of fontconfig patterns: fc_font_patterns in lib/aux_vis.cpp. It can
+  also be specified on the command line, e.g. "-fn Ubuntu-15".
+
+- Improved level surfaces to support hexahedral elements and to better represent
+  high-order grid-functions and curved meshes using element subdivision.
+
+- Added support for 1D meshes + solutions, visualized in 2D via extrusion in
+  y-direction. The z-axis is scaled relative to the x-axis.
+
+- Added support for surface meshes (2D meshes in 3 space dimensions).
+
+- Added new (input stream) command, "autopause <int value>" that will stop (when
+  turned on) the interpretation of the input stream after every mesh + solution
+  update. Autopause can also be toggled using the "Control+Space" key.
+
+- When visualizing a GridFunction from a socket, script, or the command line
+  GLVis will now enable the subdivision mode ("f" key) and select subdivision
+  factor (using the new AutoRefine method) depending on the number of elements
+  (2D) or number of boundary elements (3D) in the mesh.
+
+- Additional stream command support. Most of the script commands are supported
+  including taking screenshots.
+
+- New camera manipulation using Ctrl, the middle mouse button, and optionally
+  Shift and Alt.
+
+- Significantly improved logarithmic scaling mode (key "L").
+
+- Improved visualization of smoothed (antialiased) lines without multisampling.
+
+- Switched to MFEM's OptionParser class for command line arguments parsing.
+
+- Various small fixes and styling updates.
+
+
 Version 2.0, released on Nov 18, 2011
 =====================================
 

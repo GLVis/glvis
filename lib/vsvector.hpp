@@ -12,6 +12,9 @@
 #ifndef GLVIS_VSVECTOR
 #define GLVIS_VSVECTOR
 
+#include "mfem.hpp"
+using namespace mfem;
+
 class VisualizationSceneVector : public VisualizationSceneSolution
 {
 protected:
@@ -42,7 +45,7 @@ public:
    VisualizationSceneVector(Mesh &m, Vector &sx, Vector &sy);
    VisualizationSceneVector(GridFunction &vgf);
 
-   void NewMeshAndSolution(GridFunction &vgf, int rescale = 0);
+   void NewMeshAndSolution(GridFunction &vgf);
 
    virtual ~VisualizationSceneVector();
 
@@ -50,6 +53,8 @@ public:
    void PrepareDisplacedMesh();
    virtual void PrepareLines()
    { VisualizationSceneSolution::PrepareLines(); PrepareDisplacedMesh(); }
+
+   virtual void ToggleDrawElems();
 
    virtual void PrepareVectorField();
    void ToggleVectorField();
@@ -65,6 +70,7 @@ public:
 
    virtual void EventUpdateColors() { Prepare(); PrepareVectorField(); }
 
+   // refinement factor for the vectors
    int RefineFactor;
 
    double ArrowScale;

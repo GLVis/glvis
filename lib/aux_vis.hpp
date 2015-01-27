@@ -29,7 +29,7 @@ int InitVisualization(const char name[], int x, int y, int w, int h);
 
 /// Start the infinite visualization loop.
 void SetVisualizationScene(VisualizationScene * scene,
-                           int view = 3, char * keys = NULL);
+                           int view = 3, const char *keys = NULL);
 
 void KillVisualization();
 
@@ -56,6 +56,9 @@ void KeyP();
 void KeyS();
 void KeyQPressed();
 void ToggleThreads();
+void ThreadsPauseFunc(GLenum);
+void ThreadsStop();
+void ThreadsRun();
 
 void Key1Pressed();
 void Key2Pressed();
@@ -87,12 +90,14 @@ void LookAt();
 void ShrinkWindow();
 void EnlargeWindow();
 void MoveResizeWindow(int x, int y, int w, int h);
+void ResizeWindow(int w, int h);
+void SetWindowTitle(const char *title);
 
-/// Take a screenshot using libtiff or xwd
-int Screenshot(const char *fname);
+/// Take a screenshot using libtiff, libpng or xwd
+int Screenshot(const char *fname, bool convert = false);
 
 /// Send a sequence of keystrokes to the visualization window
-void SendKeySequence(char * seq);
+void SendKeySequence(const char *seq);
 
 void Cone();
 
@@ -101,5 +106,15 @@ void MySetColor(double val, double min, double max);
 void MySetColor(double val);
 void SetUseTexture(int ut);
 int GetUseTexture();
+int GetMultisample();
+void SetMultisample(int m);
+
+#ifdef GLVIS_USE_FREETYPE
+void DrawBitmapText(const char *text);
+int SetFontFile(const char *font_file, int height);
+int SetFont(const char *font_patterns[], int num_patterns, int height);
+#endif
+
+void SetFont(const char *fn);
 
 #endif

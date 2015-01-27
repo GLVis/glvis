@@ -13,9 +13,23 @@
 #include <GL/glu.h>
 #include <GL/glx.h>
 #include <string>
+#ifdef GLVIS_DEBUG
+#include <iostream>
+#endif
+
+extern int visualize;
+extern int GetMultisample();
 
 int Num_Materials = 5;
 int Current_Material = 3;
+int AntiAliasing = 0;
+double NM_LineWidth = 1.0;
+#ifdef GLVIS_MS_LINEWIDTH
+double MS_LineWidth = GLVIS_MS_LINEWIDTH;
+#else
+double MS_LineWidth = 1.4;
+#endif
+
 
 void Set_Material()
 {
@@ -316,48 +330,69 @@ void Toggle_Background()
 
 void Set_Transparency()
 {
-   glEnable (GL_BLEND);
-   glDepthMask (GL_FALSE);
-   glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+   if (AntiAliasing == 0)
+   {
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+   }
+   glDepthMask(GL_FALSE);
 }
 
 void Remove_Transparency()
 {
-   glDisable (GL_BLEND);
-   glDepthMask (GL_TRUE);
+   if (AntiAliasing == 0)
+      glDisable(GL_BLEND);
+   glDepthMask(GL_TRUE);
+}
+
+int Get_AntiAliasing()
+{
+   return AntiAliasing;
 }
 
 void Set_AntiAliasing()
 {
-#ifdef GLVIS_MULTISAMPLE
-   glEnable(GL_MULTISAMPLE);
+   if (GetMultisample() > 0)
+   {
+      glEnable(GL_MULTISAMPLE);
 
 #ifdef GL_MULTISAMPLE_FILTER_HINT_NV
-   std::string s = (const char *)glGetString(GL_EXTENSIONS);
-   if (s.find("GL_NV_multisample_filter_hint") != std::string::npos)
-      glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
+      std::string s = (const char *)glGetString(GL_EXTENSIONS);
+      if (s.find("GL_NV_multisample_filter_hint") != std::string::npos)
+         glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
 #endif
-#endif
+   }
 
    glEnable(GL_BLEND);
    // glDisable(GL_DEPTH_TEST);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
    // glBlendFunc (GL_SRC_ALPHA_SATURATE, GL_ONE);
 
-#ifdef GLVIS_MS_LINEWIDTH
-   glLineWidth(GLVIS_MS_LINEWIDTH);
-#else
-   glLineWidth(1.4);
-#endif
+   glLineWidth(MS_LineWidth);
 
-   glEnable(GL_POLYGON_SMOOTH);
-   glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+   // In order for polygon smoothing to work nicely, the polygons need to be
+   // sorted by depth. Therefore we leave polygon smoothing to multisampling.
+   if (0)
+   {
+      glEnable(GL_POLYGON_SMOOTH);
+      glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+   }
 
    std::string vendor = (const char *)glGetString(GL_VENDOR);
-   if (vendor.find("ATI") == std::string::npos)
+   if (vendor.find("ATI") == std::string::npos || GetMultisample() <= 0)
    {
+      // In order for line smoothing to blend nicely with polygons, we draw
+      // the lines after the polygons.
       glEnable(GL_LINE_SMOOTH);
       glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+   }
+   else
+   {
+#ifdef GLVIS_DEBUG
+      std::cout <<
+         "Found 'ATI' in the GL vendor string:"
+         " using line smoothing via multisampling." << std::endl;
+#endif
    }
 
    glEnable(GL_POINT_SMOOTH);
@@ -375,6 +410,8 @@ void Set_AntiAliasing()
       glFogf (GL_FOG_DENSITY, 2.0);
       glHint (GL_FOG_HINT, GL_NICEST);
    */
+
+   AntiAliasing = 1;
 }
 
 void Remove_AntiAliasing()
@@ -383,20 +420,53 @@ void Remove_AntiAliasing()
    glDisable(GL_LINE_SMOOTH);
    glDisable(GL_POINT_SMOOTH);
 
-   glLineWidth(1.);
+   glLineWidth(NM_LineWidth);
 
    // glEnable(GL_DEPTH_TEST);
    glDisable(GL_BLEND);
 
-#ifdef GLVIS_MULTISAMPLE
+   if (GetMultisample() > 0)
+   {
 #ifdef GL_MULTISAMPLE_FILTER_HINT_NV
-   std::string s = (const char *)glGetString(GL_EXTENSIONS);
-   if (s.find("GL_NV_multisample_filter_hint") != std::string::npos)
-      glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_FASTEST);
+      std::string s = (const char *)glGetString(GL_EXTENSIONS);
+      if (s.find("GL_NV_multisample_filter_hint") != std::string::npos)
+         glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_FASTEST);
 #endif
 
-   glDisable(GL_MULTISAMPLE);
-#endif
+      glDisable(GL_MULTISAMPLE);
+   }
 
    // glDisable(GL_FOG);
+
+   AntiAliasing = 0;
+}
+
+double Get_LineWidth()
+{
+   return NM_LineWidth;
+}
+
+void Set_LineWidth(double lw)
+{
+   NM_LineWidth = lw;
+#ifdef GLVIS_DEBUG
+   std::cout << "Normal LineWidth set to " << NM_LineWidth << std::endl;
+#endif
+   if (AntiAliasing == 0 && visualize)
+      glLineWidth(NM_LineWidth);
+}
+
+double Get_MS_LineWidth()
+{
+   return MS_LineWidth;
+}
+
+void Set_MS_LineWidth(double lw)
+{
+   MS_LineWidth = lw;
+#ifdef GLVIS_DEBUG
+   std::cout << "Multisample LineWidth set to " << MS_LineWidth << std::endl;
+#endif
+   if (AntiAliasing == 1 && visualize)
+      glLineWidth(MS_LineWidth);
 }
