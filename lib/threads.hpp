@@ -3,7 +3,7 @@
 // reserved. See file COPYRIGHT for details.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.googlecode.com.
+// information and source code availability see http://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
 // terms of the GNU Lesser General Public License (as published by the Free
@@ -49,7 +49,8 @@ private:
       AUTOSCALE = 13,
       PALETTE = 14,
       CAMERA = 15,
-      AUTOPAUSE = 16
+      AUTOPAUSE = 16,
+      WINDOW_GEOMETRY = 17
    };
 
    // command to be executed
@@ -60,6 +61,7 @@ private:
    GridFunction *new_g;
    std::string   screenshot_filename;
    std::string   key_commands;
+   int           window_x, window_y;
    int           window_w, window_h;
    std::string   window_title;
    double        view_ang_theta, view_ang_phi;
@@ -98,6 +100,7 @@ public:
    int Screenshot(const char *filename);
    int KeyCommands(const char *keys);
    int WindowSize(int w, int h);
+   int WindowGeometry(int x, int y, int w, int h);
    int WindowTitle(const char *title);
    int Pause();
    int ViewAngles(double theta, double phi);

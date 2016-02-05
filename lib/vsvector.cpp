@@ -3,7 +3,7 @@
 // reserved. See file COPYRIGHT for details.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.googlecode.com.
+// information and source code availability see http://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
 // terms of the GNU Lesser General Public License (as published by the Free
@@ -44,7 +44,7 @@ static void VectorKeyHPressed()
         << "| m -  Displays/Hides the mesh       |" << endl
         << "| n -  Displacements step forward    |" << endl
         << "| p -  Cycle through color palettes  |" << endl
-        << "| P -  Print to PostScript file      |" << endl
+        << "| P -  Print to a PDF file           |" << endl
         << "| q -  Quits                         |" << endl
         << "| r -  Reset the plot to 3D view     |" << endl
         << "| R -  Reset the plot to 2D view     |" << endl
@@ -93,6 +93,7 @@ static void VectorKeyHPressed()
 VisualizationSceneVector  * vsvector;
 extern VisualizationScene * locscene;
 extern VisualizationSceneSolution * vssol;
+extern GeometryRefiner GLVisGeometryRefiner;
 
 static int ianim = 0;
 static int ianimmax = 10;
@@ -151,38 +152,42 @@ void KeyuPressed()
 
    switch (key_u_func)
    {
-   case 0:
-      vsvector->RefineFactor++;
-      break;
+      case 0:
+         vsvector->RefineFactor++;
+         break;
 
-   case 1:
-      if (vsvector->RefineFactor > 1)
-         vsvector->RefineFactor--;
-      else
-         update = 0;
-      break;
+      case 1:
+         if (vsvector->RefineFactor > 1)
+         {
+            vsvector->RefineFactor--;
+         }
+         else
+         {
+            update = 0;
+         }
+         break;
 
-   case 2:
-      vsvector->CycleVec2Scalar(1);
-      SendExposeEvent();
-      break;
+      case 2:
+         vsvector->CycleVec2Scalar(1);
+         SendExposeEvent();
+         break;
    }
 
    switch (key_u_func)
    {
-   case 0:
-   case 1:
-      if (update && vsvector->shading == 2)
-      {
-         vsvector->PrepareVectorField();
-         SendExposeEvent();
-      }
-      cout << "Vector subdivision factor = "
-           << vsvector->RefineFactor << endl;
-      break;
+      case 0:
+      case 1:
+         if (update && vsvector->shading == 2)
+         {
+            vsvector->PrepareVectorField();
+            SendExposeEvent();
+         }
+         cout << "Vector subdivision factor = "
+              << vsvector->RefineFactor << endl;
+         break;
 
-   case 2:
-      break;
+      case 2:
+         break;
    }
 }
 
@@ -190,26 +195,26 @@ void KeyUPressed()
 {
    key_u_func = (key_u_func+1)%3;
    cout << "Key 'u' will: ";
-   switch(key_u_func)
+   switch (key_u_func)
    {
-   case 0:
-      cout << "Increase vector subdivision factor" << endl;
-      break;
+      case 0:
+         cout << "Increase vector subdivision factor" << endl;
+         break;
 
-   case 1:
-      cout << "Decrease vector subdivision factor" << endl;
-      break;
+      case 1:
+         cout << "Decrease vector subdivision factor" << endl;
+         break;
 
-   case 2:
-      cout << "Cycle through vector-to-scalar functions" << endl;
-      break;
+      case 2:
+         cout << "Cycle through vector-to-scalar functions" << endl;
+         break;
    }
 }
 
 void VisualizationSceneVector::ToggleDrawElems()
 {
    const char *modes[] =
-      { "none", "vector->scalar function", "det(J0)/det(J)", "det(J)/det(J0)" };
+   { "none", "vector->scalar function", "det(J0)/det(J)", "det(J)/det(J0)" };
 
    drawelems = (drawelems+3)%4;
 
@@ -275,9 +280,13 @@ VisualizationSceneVector::VisualizationSceneVector(GridFunction &vgf)
 
    mesh->GetNodes(vc0);
    if (vc0.Size() != vgf.Size())
+   {
       vc0.Destroy();
+   }
    else
+   {
       vc0 += vgf;
+   }
 }
 
 double VecLength(double x, double y)
@@ -316,12 +325,16 @@ double VecAnisotrSubst(double x, double y)
 }
 
 double (*Vec2ScalarFunctions[7])(double, double) =
-{ VecLength, VecDirection, VecDotNx, VecDotNy, VecDivSubst, VecCurlSubst,
-  VecAnisotrSubst };
+{
+   VecLength, VecDirection, VecDotNx, VecDotNy, VecDivSubst, VecCurlSubst,
+   VecAnisotrSubst
+};
 
 const char *Vec2ScalarNames[7] =
-{ "magnitude", "direction", "x-component", "y-component", "divergence",
-  "curl", "anisotropy" };
+{
+   "magnitude", "direction", "x-component", "y-component", "divergence",
+   "curl", "anisotropy"
+};
 
 void VisualizationSceneVector::CycleVec2Scalar(int print)
 {
@@ -331,17 +344,34 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
       ;
 
    if (VecGridF->FESpace()->GetVDim() == 1)
-      i = (i + 1) % 5;
+   {
+      if (dynamic_cast<const ND_FECollection*>(VecGridF->FESpace()->FEColl()))
+      {
+         if (i == 5) { i = 0; }
+         else if (i == 3) { i = 5; }
+         else { i = (i + 1) % 5; }
+      }
+      else
+      {
+         i = (i + 1) % 5;
+      }
+   }
    else
+   {
       i = (i + 1) % 7;
+   }
 
    if (print)
+   {
       cout << "Vector-to-scalar function: " << Vec2ScalarNames[i] << endl;
+   }
 
    Vec2Scalar = Vec2ScalarFunctions[i];
 
    for (i = 0; i < mesh->GetNV(); i++)
+   {
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
+   }
 
    // update scalar stuff
    DoAutoscaleValue(false);
@@ -352,11 +382,15 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
    Prepare();
 
    if (i == 0)
+   {
       maxlen = maxv;
+   }
 
    // update the colors of the vectors
    if (drawvector > 1)
+   {
       PrepareVectorField();
+   }
 }
 
 void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
@@ -399,13 +433,19 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
 
    mesh->GetNodes(vc0);
    if (vc0.Size() != vgf.Size())
+   {
       vc0.Destroy();
+   }
    else
+   {
       vc0 += vgf;
+   }
 
    sol = new Vector(mesh->GetNV());
    for (int i = 0; i < mesh->GetNV(); i++)
+   {
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
+   }
 
    VisualizationSceneSolution::NewMeshAndSolution(mesh, sol, &vgf);
 
@@ -418,7 +458,7 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
       else
       {
          cout << "VisualizationSceneVector::NewMeshAndSolution() : "
-            " maxlen not updated!" << endl;
+              " maxlen not updated!" << endl;
       }
    }
 
@@ -434,7 +474,9 @@ void VisualizationSceneVector::Init()
    Vec2Scalar = VecLength;
 
    for (int i = 0; i < mesh->GetNV(); i++)
+   {
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
+   }
 
    vectorlist = glGenLists(1);
    displinelist = glGenLists(1);
@@ -495,6 +537,8 @@ void VisualizationSceneVector::GetRefinedValues(
       DenseMatrix gv;
       double ev[2], evec[4];
       int vdim = VecGridF->FESpace()->GetVDim();
+      double curl_v[1];
+      Vector curl(curl_v, 1);
 
       VecGridF->GetVectorValues(i, ir, vec_vals, tr);
       vals.SetSize(vec_vals.Width());
@@ -508,6 +552,11 @@ void VisualizationSceneVector::GetRefinedValues(
             if (Vec2Scalar == VecDivSubst)
             {
                vals(j) = VecGridF->GetDivergence(*T);
+            }
+            else if (Vec2Scalar == VecCurlSubst)
+            {
+               VecGridF->GetCurl(*T, curl);
+               vals(j) = curl(0);
             }
             else
             {
@@ -533,7 +582,9 @@ void VisualizationSceneVector::GetRefinedValues(
             }
          }
          else
+         {
             vals(j) = Vec2Scalar(vec_vals(0, j), vec_vals(1, j));
+         }
       }
    }
    else
@@ -578,10 +629,14 @@ void VisualizationSceneVector::GetRefinedValues(
 
    if (logscale)
       for (int j = 0; j < vals.Size(); j++)
+      {
          vals(j) = _LogVal(vals(j));
+      }
 
    if (shrink != 1.0 || shrinkmat != 1.0)
+   {
       ShrinkPoints(tr, i, 0, 0);
+   }
 }
 
 int VisualizationSceneVector::GetRefinedValuesAndNormals(
@@ -630,7 +685,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
       for (i = 0; i < ne; i++)
       {
          RefinedGeometry *RefG =
-            GlobGeometryRefiner.Refine (mesh->GetElementBaseGeometry(i),
+            GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
                                         TimesToRefine, EdgeRefineFactor);
          VecGridF->GetVectorValues(i, RefG->RefPts, vvals, pm);
 
@@ -662,7 +717,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
       for (i = 0; i < ne; i++)
       {
          RefinedGeometry *RefG =
-            GlobGeometryRefiner.Refine (mesh->GetElementBaseGeometry(i),
+            GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
                                         TimesToRefine, EdgeRefineFactor);
          VecGridF->GetVectorValues(i, RefG->RefPts, vvals, pm);
 
@@ -682,10 +737,10 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
                y = rho;
             }
 
-            if (x_min > x)  x_min = x;
-            if (x_max < x)  x_max = x;
-            if (y_min > y)  y_min = y;
-            if (y_max < y)  y_max = y;
+            if (x_min > x) { x_min = x; }
+            if (x_max < x) { x_max = x; }
+            if (y_min > y) { y_min = y; }
+            if (y_max < y) { y_max = y; }
          }
       }
 
@@ -733,7 +788,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
       for (i = 0; i < ne; i++)
       {
          RefinedGeometry *RefG =
-            GlobGeometryRefiner.Refine (mesh->GetElementBaseGeometry(i),
+            GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
                                         TimesToRefine, EdgeRefineFactor);
          VecGridF->GetVectorValues(i, RefG->RefPts, vvals, pm);
 
@@ -766,10 +821,14 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
 
          vals.SetSize(vvals.Width());
          for (int j = 0; j < vvals.Width(); j++)
+         {
             vals(j) = vvals(0, j);
+         }
          DrawLevelCurves(RG, pm, vals, sides, levels_x, 1);
          for (int j = 0; j < vvals.Width(); j++)
+         {
             vals(j) = vvals(1, j);
+         }
          DrawLevelCurves(RG, pm, vals, sides, levels_y, 1);
       }
    }
@@ -801,14 +860,18 @@ void VisualizationSceneVector::DrawVector(double px, double py, double vx,
       MySetColor(cval, minv, maxv);
 
       if (drawvector == 2)
+      {
          Arrow(px, py, zc, vx, vy, 0.0, h, 0.125);
+      }
       else
       {
          double len = VecLength(vx, vy);
          Arrow(px, py, zc, vx, vy, 0.0,
                h*max(0.01, len/maxlen), 0.125);
          if (len > new_maxlen)
+         {
             new_maxlen = len;
+         }
       }
    }
 }
@@ -828,7 +891,9 @@ void VisualizationSceneVector::PrepareVectorField()
 
          MySetColorLogscale = logscale;
          if (drawvector == 3)
+         {
             new_maxlen = 0.0;
+         }
          for (i = 0; i < mesh->GetNV(); i++)
          {
             double *v = mesh->GetVertex(i);
@@ -841,10 +906,12 @@ void VisualizationSceneVector::PrepareVectorField()
             for (i = 0; i < mesh->GetNE(); i++)
             {
                const IntegrationRule *ir =
-                  GlobGeometryRefiner.RefineInterior(
+                  GLVisGeometryRefiner.RefineInterior(
                      mesh->GetElementBaseGeometry(i), RefineFactor);
                if (ir == NULL)
+               {
                   continue;
+               }
                VecGridF->GetVectorValues(i, *ir, vvals, pm);
                for (int j = 0; j < vvals.Width(); j++)
                {
@@ -855,10 +922,12 @@ void VisualizationSceneVector::PrepareVectorField()
             for (i = 0; i < mesh->GetNEdges(); i++)
             {
                const IntegrationRule *ir =
-                  GlobGeometryRefiner.RefineInterior(
+                  GLVisGeometryRefiner.RefineInterior(
                      mesh->GetFaceBaseGeometry(i), RefineFactor);
                if (ir == NULL)
+               {
                   continue;
+               }
                VecGridF->GetFaceVectorValues(i, 0, *ir, vvals, pm);
                for (int j = 0; j < vvals.Width(); j++)
                {
@@ -878,7 +947,7 @@ void VisualizationSceneVector::PrepareVectorField()
       glEndList();
 
    }
-   while(rerun);
+   while (rerun);
 }
 
 void VisualizationSceneVector::Draw()
@@ -902,9 +971,13 @@ void VisualizationSceneVector::Draw()
    if (colorbar)
    {
       if (drawmesh == 2)
+      {
          DrawColorBar(minv,maxv,&level);
+      }
       else
+      {
          DrawColorBar(minv,maxv);
+      }
    }
 
    if (draw_cp)
@@ -915,7 +988,9 @@ void VisualizationSceneVector::Draw()
 
    Set_Material();
    if (light)
+   {
       glEnable(GL_LIGHTING);
+   }
 
    if (GetUseTexture())
    {
@@ -925,23 +1000,35 @@ void VisualizationSceneVector::Draw()
 
    // draw vector field
    if (drawvector > 1)
+   {
       glCallList(vectorlist);
+   }
 
    if (MatAlpha < 1.0)
+   {
       Set_Transparency();
+   }
 
    // draw elements
    if (drawelems)
+   {
       glCallList(displlist);
+   }
 
    if (MatAlpha < 1.0)
+   {
       Remove_Transparency();
+   }
 
    if (GetUseTexture())
+   {
       glDisable (GL_TEXTURE_1D);
+   }
 
    if (light)
+   {
       glDisable(GL_LIGHTING);
+   }
    Set_Black_Material();
 
    // ruler may have mixture of polygons and lines
@@ -953,31 +1040,47 @@ void VisualizationSceneVector::Draw()
       glEnable(GL_CLIP_PLANE0);
    }
    else
+   {
       DrawRuler(logscale);
+   }
 
    if (drawbdr)
+   {
       glCallList(bdrlist);
+   }
 
    // draw lines
    if (drawmesh == 1)
+   {
       glCallList(linelist);
+   }
    else if (drawmesh == 2)
+   {
       glCallList(lcurvelist);
+   }
 
    if (drawvector == 1)
+   {
       glCallList(vectorlist);
+   }
 
    if (drawdisp > 0)
    {
       if (drawmesh == 1)
+      {
          glColor3d(1., 0., 0.);
+      }
       glCallList(displinelist);
       if (drawmesh == 1)
+      {
          Set_Black_Material();
+      }
    }
 
    if (draw_cp)
+   {
       glDisable(GL_CLIP_PLANE0);
+   }
 
    // draw axes
    if (drawaxes)

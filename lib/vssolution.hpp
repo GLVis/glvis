@@ -3,7 +3,7 @@
 // reserved. See file COPYRIGHT for details.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.googlecode.com.
+// information and source code availability see http://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
 // terms of the GNU Lesser General Public License (as published by the Free
@@ -26,7 +26,6 @@ protected:
    int drawmesh, drawelems;
    int displlist, linelist, lcurvelist;
    int bdrlist, drawbdr, draw_cp, cp_list;
-   int scaling_1d;
 
    void Init();
 
@@ -53,8 +52,8 @@ protected:
 public:
    int shading, TimesToRefine, EdgeRefineFactor;
 
-   int attr_to_show;
-   Array<int> el_attr_to_show;
+   int attr_to_show, bdr_attr_to_show;
+   Array<int> el_attr_to_show, bdr_el_attr_to_show;
 
    VisualizationSceneSolution();
    VisualizationSceneSolution(Mesh &m, Vector &s, Vector *normals = NULL);
@@ -74,7 +73,7 @@ public:
    virtual void FindMeshBox(bool prepare);
 
    virtual void ToggleLogscale(bool print);
-   virtual void UpdateLevelLines() { PrepareLevelCurves(); };
+   virtual void UpdateLevelLines() { PrepareLevelCurves(); }
    virtual void UpdateValueRange(bool prepare);
 
    void PrepareWithNormals();
@@ -110,8 +109,6 @@ public:
    virtual void SetRefineFactors(int, int);
    virtual void AutoRefine();
    virtual void ToggleAttributes(Array<int> &attr_list);
-
-   void Set1DScaling() { scaling_1d = 1; }
 };
 
 

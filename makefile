@@ -3,11 +3,48 @@
 # See file COPYRIGHT for details.
 #
 # This file is part of the GLVis visualization tool and library. For more
-# information and source code availability see http://glvis.googlecode.com.
+# information and source code availability see http://glvis.org.
 #
 # GLVis is free software; you can redistribute it and/or modify it under the
 # terms of the GNU Lesser General Public License (as published by the Free
 # Software Foundation) version 2.1 dated February 1999.
+
+define GLVIS_HELP_MSG
+
+GLVis makefile targets:
+
+   make
+   make status/info
+   make install
+   make clean
+   make distclean
+   make style
+
+Examples:
+
+make -j 4
+   Build GLVis using the current configuration options from MFEM.
+   (GLVis requires the MFEM finite element library, and uses its compiler and
+    linker options in its build process.)
+make status
+   Display information about the current configuration.
+make install PREFIX=<dir>
+   Install the glvis executable in <dir>.
+make clean
+   Clean the glvis executable, library and object files.
+make distclean
+   In addition to "make clean", remove the local installation directory and some
+   run-time generated files.
+make style
+   Format the GLVis C++ source files using the Artistic Style (astyle) settings
+   from MFEM.
+
+endef
+
+# Default installation location
+PREFIX ?= ./bin
+INSTALL ?= /usr/bin/install
+GLVIS_PREFIX ?= $(PREFIX)
 
 # Use the MFEM build directory
 MFEM_DIR = ../mfem
@@ -22,9 +59,20 @@ MFEM_DIR1 := $(MFEM_DIR)
 MFEM_DIR2 := ../$(MFEM_DIR)
 
 # Use the compiler used by MFEM. Get the compiler and the options for compiling
-# and linking from MFEM's config.mk.
+# and linking from MFEM's config.mk. (Skip this if the target does not require
+# building.)
+ifneq (help,$(MAKECMDGOALS))
+ifneq (status,$(MAKECMDGOALS))
+ifneq (info,$(MAKECMDGOALS))
 ifneq (clean,$(MAKECMDGOALS))
+ifneq (distclean,$(MAKECMDGOALS))
+ifneq (style,$(MAKECMDGOALS))
    -include $(CONFIG_MK)
+endif
+endif
+endif
+endif
+endif
 endif
 
 CXX = $(MFEM_CXX)
@@ -123,7 +171,7 @@ HEADER_FILES = lib/aux_gl.hpp lib/aux_vis.hpp lib/gl2ps.h lib/material.hpp \
 
 # Targets
 
-.PHONY: clean opt debug
+.PHONY: clean distclean install status info opt debug style
 
 .SUFFIXES: .c .cpp .o
 .cpp.o:
@@ -152,4 +200,34 @@ lib/libglvis.a: $(OBJECT_FILES)
 	cd lib;	ar cruv libglvis.a *.o;	ranlib libglvis.a
 
 clean:
-	rm -f lib/*.o lib/*~ *~ glvis lib/libglvis.a GLVis_coloring.gf
+	rm -rf lib/*.o lib/*~ *~ glvis lib/libglvis.a *.dSYM
+
+distclean: clean
+	rm -rf bin/
+	rm -f GLVis_coloring.gf
+
+install: glvis
+	mkdir -p $(GLVIS_PREFIX)
+	$(INSTALL) -m 750 glvis $(GLVIS_PREFIX)
+
+help:
+	$(info $(value GLVIS_HELP_MSG))
+	@true
+
+status info:
+	$(info MFEM_DIR     = $(MFEM_DIR))
+	$(info GLVIS_FLAGS  = $(GLVIS_FLAGS))
+	$(info GLVIS_LIBS   = $(value GLVIS_LIBS))
+	$(info GLVIS_PREFIX = $(GLVIS_PREFIX))
+	@true
+
+ASTYLE = astyle --options=$(MFEM_DIR1)/config/mfem.astylerc
+ALL_FILES = ./glvis.cpp $(SOURCE_FILES) $(HEADER_FILES)
+EXT_FILES = lib/aux_gl.cpp lib/aux_gl.hpp lib/gl2ps.c lib/gl2ps.h \
+  lib/tk.cpp lib/tk.h
+FORMAT_FILES := $(filter-out $(EXT_FILES), $(ALL_FILES))
+
+style:
+	@if ! $(ASTYLE) $(FORMAT_FILES) | grep Formatted; then\
+	   echo "No source files were changed.";\
+	fi

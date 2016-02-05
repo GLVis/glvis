@@ -3,7 +3,7 @@
 // reserved. See file COPYRIGHT for details.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.googlecode.com.
+// information and source code availability see http://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
 // terms of the GNU Lesser General Public License (as published by the Free
@@ -53,6 +53,16 @@ protected:
 
    int GetAutoRefineFactor();
 
+   bool CheckPositions(Array<int> &vertices) const
+   {
+      int n = 0;
+      for (int j = 0; j < vertices.Size(); j++)
+      {
+         if (node_pos[vertices[j]] >= 0.0) { n++; }
+      }
+      return (n < vertices.Size());
+   }
+
 public:
    int TimesToRefine;
    double FaceShiftScale;
@@ -62,7 +72,7 @@ public:
    VisualizationSceneSolution3d();
    VisualizationSceneSolution3d(Mesh & m, Vector & s);
 
-   void SetGridFunction (GridFunction *gf) { GridF = gf; };
+   void SetGridFunction (GridFunction *gf) { GridF = gf; }
 
    void NewMeshAndSolution(Mesh *new_m, Vector *new_sol,
                            GridFunction *new_u = NULL);

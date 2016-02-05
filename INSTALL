@@ -1,5 +1,4 @@
                            GLVis visualization tool
-                                 version 3.0
 
                      _/_/_/  _/      _/      _/  _/
                   _/        _/      _/      _/        _/_/_/
@@ -7,7 +6,7 @@
                 _/    _/  _/        _/  _/    _/      _/_/
                  _/_/_/  _/_/_/_/    _/      _/  _/_/_/
 
-                        http://glvis.googlecode.com
+                              http://glvis.org
 
 GLVis is an X11 application and can be built on Linux/Unix systems including
 Mac OS X using the X11/XQuarz app.
@@ -16,10 +15,13 @@ Besides a C++ compiler, GLVis depends on the following external packages:
 
 - the MFEM library (use the latest release) plus any libraries that MFEM was
   built to depend on
-  http://mfem.googlecode.com
+  http://mfem.org
 
 - the X11, GL and GLU libraries
   http://www.x.org, http://www.opengl.org, http://www.mesa3d.org
+
+- the XQuarz app (on Mac OS X)
+  http://www.xquartz.org/
 
 - the libpng or libtiff library; used for taking screenshots (optional)
   http://www.libpng.org, http://www.libtiff.org
@@ -41,7 +43,17 @@ make       -> Builds the glvis binary, using the MFEM compiler and options
 make opt   -> Builds an optimized version
 make debug -> Builds a debug version
 make clean -> Cleans the build
+make style -> Format the code with Artistic Style.
+make help  -> Prints a short help message
 
+Information about the current build configuration can be viewed using
+
+   make status
+   make info
+
+An optional installation of the glvis executable can be performed with
+
+   make install [PREFIX=<dir>]
 
 Some building considerations:
 
@@ -69,3 +81,6 @@ Some building considerations:
 
 - GLVis can be built without libpng/libtiff/FreeType 2/Fontconfig by setting
   the makefile variables USE_LIBPNG/USE_LIBTIFF/USE_FREETYPE to NO.
+
+- On Mac OS X, it is better to start manually the XQuarz app, before starting
+  GLVis, in order to avoid the wait for establishing the first X11 connection.

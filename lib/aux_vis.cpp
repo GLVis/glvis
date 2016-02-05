@@ -3,7 +3,7 @@
 // reserved. See file COPYRIGHT for details.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.googlecode.com.
+// information and source code availability see http://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
 // terms of the GNU Lesser General Public License (as published by the Free
@@ -71,7 +71,9 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    auxInitDisplayMode(mode);
    auxInitPosition(x, y, w, h);
    if (auxInitWindow(name) == GL_FALSE)
+   {
       return 1;
+   }
 
    Set_Texture_Image();
 
@@ -90,7 +92,9 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    }
    fontbase = tkLoadBitmapFont(fontname.c_str());
    if (fontbase == 0)
+   {
       cerr << "Error loading font '" << fontname << '\'' << endl;
+   }
 #endif
 
    SetUseTexture(0);
@@ -233,75 +237,75 @@ void SendKeySequence (const char *seq)
 
       switch (*key)
       {
-      case '+':
-         SendKeyEvent(XK_plus);
-         continue;
-      case '-':
-         SendKeyEvent(XK_minus);
-         continue;
-      case '*':
-         SendKeyEvent(XK_KP_Multiply);
-         continue;
-      case '/':
-         SendKeyEvent(XK_KP_Divide);
-         continue;
-      case '.':
-         SendKeyEvent(XK_period);
-         continue;
-      case '[':
-         SendKeyEvent(XK_bracketleft);
-         continue;
-      case ']':
-         SendKeyEvent(XK_bracketright);
-         continue;
-      case '(':
-         SendKeyEvent(XK_parenleft,1);
-         continue;
-      case ')':
-         SendKeyEvent(XK_parenright,1);
-         continue;
-      case '!':
-         SendKeyEvent(XK_exclam,1);
-         continue;
-      case '~': // special codes
-         key++;
-         switch (*key)
-         {
-         case 'e': // expose event
-            SendExposeEvent();
-            break;
-         case 'l': // left arrow
-            SendKeyEvent(XK_Left);
-            break;
-         case 'r': // right arrow
-            SendKeyEvent(XK_Right);
-            break;
-         case 'u': // up arrow
-            SendKeyEvent(XK_Up);
-            break;
-         case 'd': // down arrow
-            SendKeyEvent(XK_Down);
-            break;
-         case '3': // F3
-            SendKeyEvent(XK_F3);
-            break;
-         case '5': // F5
-            SendKeyEvent(XK_F5);
-            break;
-         case '6': // F6
-            SendKeyEvent(XK_F6);
-            break;
-         case '7': // F7
-            SendKeyEvent(XK_F7);
-            break;
-         case '.': // Keypad ./Del
+         case '+':
+            SendKeyEvent(XK_plus);
+            continue;
+         case '-':
+            SendKeyEvent(XK_minus);
+            continue;
+         case '*':
+            SendKeyEvent(XK_KP_Multiply);
+            continue;
+         case '/':
+            SendKeyEvent(XK_KP_Divide);
+            continue;
+         case '.':
             SendKeyEvent(XK_period);
-            break;
-         case 'E': // Keypad Enter
-            SendKeyEvent(XK_Return);
-            break;
-         }
-         continue;
+            continue;
+         case '[':
+            SendKeyEvent(XK_bracketleft);
+            continue;
+         case ']':
+            SendKeyEvent(XK_bracketright);
+            continue;
+         case '(':
+            SendKeyEvent(XK_parenleft,1);
+            continue;
+         case ')':
+            SendKeyEvent(XK_parenright,1);
+            continue;
+         case '!':
+            SendKeyEvent(XK_exclam,1);
+            continue;
+         case '~': // special codes
+            key++;
+            switch (*key)
+            {
+               case 'e': // expose event
+                  SendExposeEvent();
+                  break;
+               case 'l': // left arrow
+                  SendKeyEvent(XK_Left);
+                  break;
+               case 'r': // right arrow
+                  SendKeyEvent(XK_Right);
+                  break;
+               case 'u': // up arrow
+                  SendKeyEvent(XK_Up);
+                  break;
+               case 'd': // down arrow
+                  SendKeyEvent(XK_Down);
+                  break;
+               case '3': // F3
+                  SendKeyEvent(XK_F3);
+                  break;
+               case '5': // F5
+                  SendKeyEvent(XK_F5);
+                  break;
+               case '6': // F6
+                  SendKeyEvent(XK_F6);
+                  break;
+               case '7': // F7
+                  SendKeyEvent(XK_F7);
+                  break;
+               case '.': // Keypad ./Del
+                  SendKeyEvent(XK_period);
+                  break;
+               case 'E': // Keypad Enter
+                  SendKeyEvent(XK_Return);
+                  break;
+            }
+            continue;
       }
    }
 }
@@ -315,16 +319,24 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
 
    locscene -> view = view;
    if (view == 2)
+   {
       scene -> CenterObject2D();
+   }
    else
+   {
       scene -> CenterObject();
+   }
 
    InitIdleFuncs();
    if (scene -> spinning)
+   {
       AddIdleFunc(MainLoop);
+   }
 
    if (keys)
+   {
       SendKeySequence(keys);
+   }
 
    auxMainLoop(NULL);
 
@@ -370,9 +382,13 @@ void MyReshape(GLsizei w, GLsizei h)
    {
       double scale = locscene->ViewScale;
       if (w <= h)
+      {
          glOrtho (-1.0, 1.0, -double(h)/w, double(h)/w, -10, 10);
+      }
       else
+      {
          glOrtho (-double(w)/h, double(w)/h, -1, 1, -10, 10);
+      }
       glScaled(scale, scale, 1.0);
    }
    else
@@ -417,7 +433,9 @@ void MainIdleFunc()
 {
    LastIdleFunc = (LastIdleFunc + 1) % IdleFuncs.Size();
    if (IdleFuncs[LastIdleFunc])
+   {
       (*IdleFuncs[LastIdleFunc])();
+   }
 }
 
 void AddIdleFunc(void (*Func)(void))
@@ -430,7 +448,9 @@ void RemoveIdleFunc(void (*Func)(void))
 {
    IdleFuncs.DeleteFirst(Func);
    if (IdleFuncs.Size() == 0)
+   {
       auxIdleFunc(NULL);
+   }
 }
 
 
@@ -491,7 +511,9 @@ inline void ComputeSphereAngles(int &newx, int &newy,
 
    rr = sqrt(x*x+y*y);
    if (rr > maxr)
+   {
       x *= maxr/rr, y *= maxr/rr, rr = maxr;
+   }
 
    new_sph_u = 2.0 * acos(rr) - M_PI_2;
    new_sph_t = atan2(y, x);
@@ -571,7 +593,9 @@ void LeftButtonLoc (AUX_EVENTREC *event)
    oldy = newy;
 
    if (sendexpose)
+   {
       SendExposeEvent();
+   }
 }
 
 void LeftButtonUp (AUX_EVENTREC *event)
@@ -586,13 +610,17 @@ void LeftButtonUp (AUX_EVENTREC *event)
    {
       locscene -> spinning = 1;
       AddIdleFunc(MainLoop);
-      if (xang > 20) xang = 20; if (xang < -20) xang = -20;
-      if (yang > 20) yang = 20; if (yang < -20) yang = -20;
+      if (xang > 20) { xang = 20; } if (xang < -20) { xang = -20; }
+      if (yang > 20) { yang = 20; } if (yang < -20) { yang = -20; }
 
       if (event->data[2] & ControlMask)
+      {
          constrained_spinning = 1;
+      }
       else
+      {
          constrained_spinning = 0;
+      }
    }
 }
 
@@ -613,14 +641,22 @@ void MiddleButtonLoc (AUX_EVENTREC *event)
       double TrX, TrY, scale;
 
       if (locscene->OrthogonalProjection)
+      {
          scale = locscene->ViewScale;
+      }
       else
+      {
          scale = 0.4142135623730950488/tan(locscene->ViewAngle*(M_PI/360));
+      }
       glGetIntegerv(GL_VIEWPORT, vp);
       if (vp[2] < vp[3])
+      {
          scale *= vp[2];
+      }
       else
+      {
          scale *= vp[3];
+      }
       TrX = 2.0*double(oldx-newx)/scale;
       TrY = 2.0*double(newy-oldy)/scale;
       locscene->ViewCenterX += TrX;
@@ -687,7 +723,9 @@ void RightButtonLoc (AUX_EVENTREC *event)
       y = -(double)newy / 300;
       l = sqrt (x*x + y*y);
       if (l <= 1.)
+      {
          z = sqrt (1. - l*l);
+      }
       else if (l < 2.)
       {
          x *= (2./l-1);
@@ -704,9 +742,13 @@ void RightButtonLoc (AUX_EVENTREC *event)
       glLightfv(GL_LIGHT0, GL_POSITION, light);
    }
    else if ( !( event->data[2] & ControlMask ) )
+   {
       locscene -> Zoom (exp ( double (oldy-newy) / 100 ));
+   }
    else
+   {
       locscene -> Scale ( exp ( double (oldy-newy) / 50 ) );
+   }
 
    SendExposeEvent();
 
@@ -761,7 +803,9 @@ int Screenshot(const char *fname, bool convert)
       }
    }
    else // do not call convert
+   {
       filename += glvis_screenshot_ext;
+   }
 
 #if defined(GLVIS_USE_LIBTIFF)
    // Save a TIFF image. This requires the libtiff library, see www.libtiff.org
@@ -776,7 +820,9 @@ int Screenshot(const char *fname, bool convert)
 
    unsigned char *pixels = new unsigned char[3*w];
    if (!pixels)
+   {
       return 1;
+   }
 
    image = TIFFOpen(filename.c_str(), "w");
    if (!image)
@@ -820,7 +866,9 @@ int Screenshot(const char *fname, bool convert)
 
    png_byte *pixels = new png_byte[3*w];
    if (!pixels)
+   {
       return 1;
+   }
 
    png_structp png_ptr =
       png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -876,7 +924,9 @@ int Screenshot(const char *fname, bool convert)
    ostringstream cmd;
    cmd << "xwd -silent -out " << filename << " -nobdrs -id " << auxXWindow();
    if (system(cmd.str().c_str()))
+   {
       return 1;
+   }
    // View with xwud -in GLVis_s*.xwd, or use convert GLVis_s*.xwd
    // GLVis_s*.{jpg,gif}
 #endif
@@ -886,7 +936,9 @@ int Screenshot(const char *fname, bool convert)
       ostringstream cmd;
       cmd << "convert " << filename << ' ' << fname;
       if (system(cmd.str().c_str()))
+      {
          return 1;
+      }
       remove(filename.c_str());
    }
 
@@ -901,9 +953,13 @@ void KeyS()
    {
       locscene -> movie = 1 - locscene -> movie;
       if (locscene -> movie)
+      {
          cout << "Recording a movie (series of snapshots)..." << endl;
+      }
       else
+      {
          cout << endl;
+      }
       // use (ImageMagik's) convert GLVis_m* GLVis.{gif,mpg}
    }
    else
@@ -922,9 +978,9 @@ void KeyP()
    FILE * fp;
    GLint viewport[4];
 
-   cout << "Printing the figure to GLVis.eps... " << flush;
+   cout << "Printing the figure to GLVis.pdf... " << flush;
 
-   fp = fopen("GLVis.eps", "wb");
+   fp = fopen("GLVis.pdf", "wb");
    buffsize = 0;
    state = GL2PS_OVERFLOW;
    locscene -> print = 1;
@@ -932,20 +988,16 @@ void KeyP()
    while (state == GL2PS_OVERFLOW)
    {
       buffsize += 1024*1024;
-      gl2psBeginPage ( "GLVis.eps", "GLVis", viewport,
-                       /*
-                         GL2PS_EPS, // or GL2PS_PDF,
-                         GL2PS_BSP_SORT,
-                         GL2PS_SIMPLE_LINE_OFFSET  |
-                         GL2PS_NO_BLENDING |
-                         GL2PS_SILENT |
-                         GL2PS_OCCLUSION_CULL |
-                         GL2PS_BEST_ROOT,
-                         GL_RGBA, 0, NULL, 0, 0, 0, buffsize, fp, "a" );
-                       */
-                       GL2PS_EPS,
+      gl2psBeginPage ( "GLVis.pdf", "GLVis", viewport,
+                       GL2PS_PDF, // or GL2PS_SVG, or GL2PS_EPS
                        GL2PS_BSP_SORT,
-                       GL2PS_NO_PS3_SHADING | GL2PS_DRAW_BACKGROUND,
+                       GL2PS_SIMPLE_LINE_OFFSET |
+                       // GL2PS_NO_PS3_SHADING |
+                       // GL2PS_NO_BLENDING |
+                       // GL2PS_OCCLUSION_CULL |
+                       // GL2PS_BEST_ROOT |
+                       GL2PS_SILENT |
+                       GL2PS_DRAW_BACKGROUND,
                        GL_RGBA, 0, NULL, 16, 16, 16, buffsize, fp, "a" );
       gl2psPointSize(.4);
       gl2psLineWidth(.2);
@@ -989,19 +1041,25 @@ void ThreadsPauseFunc(GLenum state)
 void ThreadsStop()
 {
    if (visualize == 1)
+   {
       ToggleThreads();
+   }
 }
 
 void ThreadsRun()
 {
    if (visualize == 2)
+   {
       ToggleThreads();
+   }
 }
 
 void CheckSpin()
 {
    if (fabs(xang) < 1.e-2)
+   {
       xang = 0.;
+   }
    if (xang != 0. || yang != 0.)
    {
       locscene->spinning = 1;
@@ -1017,8 +1075,10 @@ void CheckSpin()
 void Key0Pressed()
 {
    if (!locscene -> spinning)
+   {
       xang = 0;
-   xang--;
+   }
+   xang -= 0.2;
    CheckSpin();
 }
 
@@ -1033,7 +1093,7 @@ void KeyDeletePressed()
    }
    else
    {
-      xang = 1.;
+      xang = 0.2;
       locscene -> spinning = 1;
       AddIdleFunc(MainLoop);
       constrained_spinning = 1;
@@ -1043,8 +1103,10 @@ void KeyDeletePressed()
 void KeyEnterPressed()
 {
    if (!locscene -> spinning)
+   {
       xang = 0;
-   xang++;
+   }
+   xang += 0.2;
    CheckSpin();
 }
 
@@ -1075,9 +1137,13 @@ void Key4Pressed()
 void Key5Pressed()
 {
    if (locscene->view == 2)
+   {
       locscene->CenterObject2D();
+   }
    else
+   {
       locscene->CenterObject();
+   }
    SendExposeEvent();
 }
 
@@ -1109,9 +1175,13 @@ void ShiftView(double dx, double dy)
 {
    double scale;
    if (locscene->OrthogonalProjection)
+   {
       scale = locscene->ViewScale;
+   }
    else
+   {
       scale = 0.4142135623730950488/tan(locscene->ViewAngle*(M_PI/360));
+   }
    locscene->ViewCenterX += dx/scale;
    locscene->ViewCenterY += dy/scale;
 }
@@ -1304,13 +1374,19 @@ void MySetColor (double val, double min, double max)
    if (MySetColorLogscale)
    {
       if (val < min)
+      {
          val = min;
+      }
       if (val > max)
+      {
          val = max;
+      }
       MySetColor (log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps));
    }
    else
+   {
       MySetColor ((val-min)/(max-min));
+   }
 }
 
 void MySetColor (double val)
@@ -1324,18 +1400,24 @@ void MySetColor (double val)
       return;
    }
 
-   if (val < 0.0) val = 0.0;
-   if (val > 1.0) val = 1.0;
+   if (val < 0.0) { val = 0.0; }
+   if (val > 1.0) { val = 1.0; }
 
    double malpha = MatAlpha;
    if (malpha < 1.0)
    {
       if (MatAlphaCenter > 1.0)
+      {
          malpha *= exp(-(MatAlphaCenter)*fabs(val-1.0));
+      }
       else if (MatAlphaCenter < 0.0)
+      {
          malpha *= exp((MatAlphaCenter-1.0)*fabs(val-0.0));
+      }
       else
+      {
          malpha *= exp(-fabs(val-MatAlphaCenter));
+      }
    }
 
    val *= 0.999999999 * ( RGB_Palette_Size - 1 ) * abs(RepeatPaletteTimes);
@@ -1344,7 +1426,9 @@ void MySetColor (double val)
 
    if (((i / (RGB_Palette_Size-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
        ((i / (RGB_Palette_Size-1)) % 2 == 1 && RepeatPaletteTimes < 0))
+   {
       pal = RGB_Palette + 3 * ( i % (RGB_Palette_Size-1) );
+   }
    else
    {
       pal = RGB_Palette + 3 * ( (RGB_Palette_Size-2) -
@@ -1357,9 +1441,13 @@ void MySetColor (double val)
    b = (1.0 - t) * pal[2] + t * pal[5];
 
    if (MatAlpha < 1.0)
+   {
       glColor4f ( r, g, b, malpha );
+   }
    else
+   {
       glColor3f ( r, g, b );
+   }
 }
 
 // const int Max_Texture_Size = 512;
@@ -1383,7 +1471,9 @@ void Make_Texture_From_Palette()
 
       if (((j / (RGB_Palette_Size-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
           ((j / (RGB_Palette_Size-1)) % 2 == 1 && RepeatPaletteTimes < 0))
+      {
          pal = RGB_Palette + 3 * ( j % (RGB_Palette_Size-1) );
+      }
       else
       {
          pal = RGB_Palette + 3 * ( (RGB_Palette_Size-2) -
@@ -1400,14 +1490,20 @@ void Make_Texture_From_Palette()
 void Make_Texture_From_Palette_2()
 {
    if (RGB_Palette_Size > Max_Texture_Size)
+   {
       Texture_Size = Max_Texture_Size;
+   }
    else
+   {
       Texture_Size = RGB_Palette_Size;
+   }
 
    if (RepeatPaletteTimes > 0)
    {
       for (int i = 0; i < 3*Texture_Size; i++)
+      {
          Texture_Image[i] = RGB_Palette[i];
+      }
    }
    else
    {
@@ -1428,7 +1524,9 @@ void Write_Texture_To_File()
    ppm_file << "P3\n" << Texture_Size << " 1\n255\n";
    for (int i = 0; i < Texture_Size; i++)
       for (int j = 0; j < 3; j++)
+      {
          ppm_file << ' ' << int(floor(255.*Texture_Image[3*i+j]+0.5));
+      }
    ppm_file << endl;
    cout << ppm_fname << endl;
 }
@@ -1436,9 +1534,13 @@ void Write_Texture_To_File()
 void Set_Texture_Image()
 {
    if (UseTexture == 1)
+   {
       Make_Texture_From_Palette_2();
+   }
    else
+   {
       Make_Texture_From_Palette();
+   }
 
    glTexImage1D(GL_TEXTURE_1D, // GLenum target,
                 0,             // GLint level,
@@ -1448,7 +1550,7 @@ void Set_Texture_Image()
                 GL_RGB,        // GLenum format,
                 GL_FLOAT,      // GLenum type,
                 Texture_Image  // const GLvoid *pixels
-      );
+               );
    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
    // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
@@ -1487,9 +1589,13 @@ int GetMultisample()
 void SetMultisample(int m)
 {
    if (glvis_multisample > -2)
+   {
       glvis_multisample = m;
+   }
    else
+   {
       cout << "Multisampling is disabled." << endl;
+   }
 }
 
 
@@ -1537,10 +1643,10 @@ private:
          }
 
          err = FT_Load_Glyph(face, glyph_idx, FT_LOAD_DEFAULT);
-         if (err) continue;
+         if (err) { continue; }
 
          err = FT_Get_Glyph(face->glyph, &glyph[i]);
-         if (err) continue;
+         if (err) { continue; }
 
          FT_Glyph_Transform(glyph[i], 0, &pen);
 
@@ -1569,23 +1675,35 @@ private:
          FT_Glyph_Get_CBox(glyph[i], FT_GLYPH_BBOX_PIXELS, &glyph_bbox);
 
          if (glyph_bbox.xMin < bbox.xMin)
+         {
             bbox.xMin = glyph_bbox.xMin;
+         }
          if (glyph_bbox.xMax > bbox.xMax)
+         {
             bbox.xMax = glyph_bbox.xMax;
+         }
          if (glyph_bbox.yMin < bbox.yMin)
+         {
             bbox.yMin = glyph_bbox.yMin;
+         }
          if (glyph_bbox.yMax > bbox.yMax)
+         {
             bbox.yMax = glyph_bbox.yMax;
+         }
       }
    }
 
    void FreeSeq()
    {
       if (alloc_glyphs <= 0)
+      {
          return;
+      }
 
       for (FT_UInt i = 0; i < num_glyphs; i++)
+      {
          FT_Done_Glyph(glyph[i]);
+      }
 
       delete [] glyph;
 
@@ -1607,10 +1725,14 @@ private:
       FcResult     res;
 
       if (num_patterns <= 0)
+      {
          return -2;
+      }
 
       if (!FcInit())
+      {
          return -1;
+      }
 
       os = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, (void *)(NULL));
 
@@ -1618,19 +1740,23 @@ private:
       {
          pat = FcNameParse((FcChar8 *)font_patterns[i]);
          if (!pat)
+         {
             continue;
+         }
 
          fs = FcFontList(0, pat, os);
          FcPatternDestroy(pat);
          if (!fs)
+         {
             continue;
+         }
 
 #ifdef GLVIS_DEBUG
          if (fs->nfont > 1)
          {
             cout <<
-               "Font pattern '" << font_patterns[i] << "' matched"
-               " multiple fonts:\n";
+                 "Font pattern '" << font_patterns[i] << "' matched"
+                 " multiple fonts:\n";
             for (int j = 0; j < fs->nfont; j++)
             {
                fnt = FcNameUnparse(fs->fonts[j]);
@@ -1660,7 +1786,9 @@ private:
       }
 
       if (os)
+      {
          FcObjectSetDestroy(os);
+      }
 
       FcFini();
 
@@ -1684,7 +1812,9 @@ public:
       if (FindFontFile(font_patterns, num_patterns, font_file))
       {
          if (!init)
+         {
             init = -4;
+         }
          return -4;
       }
 
@@ -1700,7 +1830,9 @@ public:
       int err;
 
       if (init == -1) // library init failed
+      {
          return -1;
+      }
 
       if (init <= 0)
       {
@@ -1775,7 +1907,9 @@ public:
       FT_Bitmap     *bitmap;
 
       if (init <= 0)
+      {
          return 1;
+      }
 
       delete [] image;
       image = NULL;
@@ -1783,7 +1917,9 @@ public:
       LoadSequence(text);
 
       if (num_glyphs <= 0)
+      {
          return 2;
+      }
 
       GetBBox();
 
@@ -1793,21 +1929,25 @@ public:
       image_height = (bbox.yMax - bbox.yMin) + 2*pad;
 
       if (image_width <= 0 || image_height <= 0)
+      {
          return 3;
+      }
 
       GLfloat col[4];
       glGetFloatv(GL_CURRENT_COLOR, col);
 
       image = new unsigned char[4*image_width*image_height];
       for (int i = 0; i < 4*image_width*image_height; i++)
+      {
          image[i] = 0;
+      }
 
       for (FT_UInt g = 0; g < num_glyphs; g++)
       {
          a_glyph = glyph[g];
 
          err = FT_Glyph_To_Bitmap(&a_glyph, FT_RENDER_MODE_NORMAL, 0, 0);
-         if (err) continue;
+         if (err) { continue; }
 
          bit_glyph = (FT_BitmapGlyph)a_glyph;
          bitmap = &bit_glyph->bitmap;
@@ -1815,42 +1955,42 @@ public:
          int off_i = bit_glyph->left - bbox.xMin + pad;
          int off_j = image_height - bit_glyph->top + bbox.yMin - pad;
 
-         for (int j = 0; j < bitmap->rows; j++)
+         for (int j = 0; j < (int) bitmap->rows; j++)
          {
             int im_j = image_height - 1 - (j + off_j);
             if (im_j < 0 || im_j >= image_height)
             {
 #ifdef GLVIS_DEBUG
                cout <<
-                  "GLVisFont::Render : outside 'y' range!\n"
-                  "   text            = " << text            << "\n"
-                  "   j               = " << j               << "\n"
-                  "   bitmap->width   = " << bitmap->width   << "\n"
-                  "   bitmap->rows    = " << bitmap->rows    << "\n"
-                  "   off_i           = " << off_i           << "\n"
-                  "   off_j           = " << off_j           << "\n"
-                  "   bit_glyph->left = " << bit_glyph->left << "\n"
-                  "   bit_glyph->top  = " << bit_glyph->top  << endl;
+                    "GLVisFont::Render : outside 'y' range!\n"
+                    "   text            = " << text            << "\n"
+                    "   j               = " << j               << "\n"
+                    "   bitmap->width   = " << bitmap->width   << "\n"
+                    "   bitmap->rows    = " << bitmap->rows    << "\n"
+                    "   off_i           = " << off_i           << "\n"
+                    "   off_j           = " << off_j           << "\n"
+                    "   bit_glyph->left = " << bit_glyph->left << "\n"
+                    "   bit_glyph->top  = " << bit_glyph->top  << endl;
 #endif
                continue;
             }
-            for (int i = 0; i < bitmap->width; i++)
+            for (int i = 0; i < (int) bitmap->width; i++)
             {
                int im_i = i + off_i;
                if (im_i < 0 || im_i >= image_width)
                {
 #ifdef GLVIS_DEBUG
                   cout <<
-                     "GLVisFont::Render : outside 'x' range!\n"
-                     "   text            = " << text            << "\n"
-                     "   i               = " << i               << "\n"
-                     "   j               = " << j               << "\n"
-                     "   bitmap->width   = " << bitmap->width   << "\n"
-                     "   bitmap->rows    = " << bitmap->rows    << "\n"
-                     "   off_i           = " << off_i           << "\n"
-                     "   off_j           = " << off_j           << "\n"
-                     "   bit_glyph->left = " << bit_glyph->left << "\n"
-                     "   bit_glyph->top  = " << bit_glyph->top  << endl;
+                       "GLVisFont::Render : outside 'x' range!\n"
+                       "   text            = " << text            << "\n"
+                       "   i               = " << i               << "\n"
+                       "   j               = " << j               << "\n"
+                       "   bitmap->width   = " << bitmap->width   << "\n"
+                       "   bitmap->rows    = " << bitmap->rows    << "\n"
+                       "   off_i           = " << off_i           << "\n"
+                       "   off_j           = " << off_j           << "\n"
+                       "   bit_glyph->left = " << bit_glyph->left << "\n"
+                       "   bit_glyph->top  = " << bit_glyph->top  << endl;
 #endif
                   continue;
                }
@@ -1878,7 +2018,9 @@ public:
    ~GLVisFont()
    {
       if (init <= 0)
+      {
          return;
+      }
 
       FreeSeq();
 
@@ -1917,7 +2059,9 @@ void DrawBitmapText(const char *text)
    if (!glvis_font.Initialized())
    {
       if (fontname.empty())
+      {
          glvis_font.Init(fc_font_patterns, num_font_patterns, font_size);
+      }
       else
       {
          const char *fc_pat[1];
@@ -1932,8 +2076,8 @@ void DrawBitmapText(const char *text)
 
       if (glvis_font.Initialized() == -4)
          cout <<
-            "GLVis: No fonts found! Use the -fn option or"
-            " edit 'fc_font_patterns' in lib/aux_vis.cpp" << endl;
+              "GLVis: No fonts found! Use the -fn option or"
+              " edit 'fc_font_patterns' in lib/aux_vis.cpp" << endl;
    }
 
    if (glvis_font.Render(text) == 0)
@@ -1973,10 +2117,14 @@ void SetFont(const char *fn)
    if (visualize)
    {
       if (fontbase)
+      {
          tkUnloadBitmapFont(fontbase);
+      }
       fontbase = tkLoadBitmapFont(fontname.c_str());
       if (fontbase == 0)
+      {
          cerr << "Error loading font '" << fontname << '\'' << endl;
+      }
    }
 #else
    size_t pos = fontname.rfind('-');
@@ -1994,7 +2142,9 @@ void SetFont(const char *fn)
       const char *fc_pat[1];
       fc_pat[0] = fontname.c_str();
       if (SetFont(fc_pat, 1, font_size) == -4)
+      {
          cout << "Font not found: " << fontname << endl;
+      }
    }
 #endif
 }

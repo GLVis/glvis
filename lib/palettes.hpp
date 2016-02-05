@@ -3,7 +3,7 @@
 // reserved. See file COPYRIGHT for details.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.googlecode.com.
+// information and source code availability see http://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
 // terms of the GNU Lesser General Public License (as published by the Free
@@ -2987,7 +2987,8 @@ double *RGB_Palettes[Num_RGB_Palettes] =
 };
 
 const char *RGB_Palettes_Names[Num_RGB_Palettes] =
-{ //  0123456789
+{
+   //  0123456789
    "5-color   ", "red       ", "jet-like  ", "golden    ", "bone      ",
    "hot       ", "pink      ", "cool      ", "summer    ", "hsv       ",
    "copper    ", "white     ", "vivid     ", "aluminum  ", "sunrise   ",
@@ -3002,7 +3003,7 @@ double *RGB_Palette = RGB_Palettes[Default_RGB_Palette];
 double corr(double a, double x)
 {
    return x / (1.0 + (a * a - 1.0) * (1.0 - x));
-//   return pow(x, a);
+   //   return pow(x, a);
 }
 
 void Init_Visit_Calewhite_Palette()
@@ -3023,7 +3024,9 @@ void Init_Visit_Calewhite_Palette()
       int k;
       for (k = 1; k < ns; k++)
          if (t >= ts[k-1] && t <= ts[k])
+         {
             break;
+         }
       t = (t - ts[k-1]) / (ts[k] - ts[k-1]);
       r = (1.0 - t) * corr(rc[k-1], rs[k-1]) + t * corr(rc[k-1], rs[k]);
       g = (1.0 - t) * corr(gc[k-1], gs[k-1]) + t * corr(gc[k-1], gs[k]);
@@ -3109,7 +3112,9 @@ void Init_Palettes()
       int k;
       for (k = 1; k < ns; k++)
          if (t >= ts[k-1] && t <= ts[k])
+         {
             break;
+         }
       t = (t - ts[k-1]) / (ts[k] - ts[k-1]);
       r = (1.0 - t) * corr(rc[k-1], rs[k-1]) + t * corr(rc[k-1], rs[k]);
       g = (1.0 - t) * corr(gc[k-1], gs[k-1]) + t * corr(gc[k-1], gs[k]);
@@ -3148,7 +3153,9 @@ int Select_New_RGB_Palette()
    {
       cout << setw(4) << pal+1 << ") " << RGB_Palettes_Names[pal];
       if ((pal+1)%5 == 0)
+      {
          cout << '\n';
+      }
    }
    cout << "\n ---> [" << Default_RGB_Palette+1 << "] " << flush;
 
@@ -3156,14 +3163,22 @@ int Select_New_RGB_Palette()
    cin.getline (buffer, buflen);
 
    if (buffer[0])
+   {
       sscanf(buffer, "%i", &pal);
+   }
    else
+   {
       pal = Default_RGB_Palette+1;
+   }
 
    if (pal < 1)
+   {
       pal = 1;
+   }
    else if (pal > Num_RGB_Palettes)
+   {
       pal = Num_RGB_Palettes;
+   }
 
    Set_Palette (pal-1);
 

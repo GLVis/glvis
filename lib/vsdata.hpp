@@ -3,7 +3,7 @@
 // reserved. See file COPYRIGHT for details.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.googlecode.com.
+// information and source code availability see http://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
 // terms of the GNU Lesser General Public License (as published by the Free
@@ -83,16 +83,22 @@ protected:
    void SetLogA()
    {
       if (logscale)
+      {
          unit_a = 1.0/log(maxv/minv), log_a = (maxv - minv)*unit_a;
+      }
       else
+      {
          unit_a = 1.0/(maxv - minv), log_a = 1.0;
+      }
    }
    double _ULogVal(const double &u) { return minv*pow(maxv/minv, u); }
    double ULogVal(const double &u)
    { return (logscale ? _ULogVal(u) : minv + (maxv - minv)*u); }
    double LogUVal(const double &z)
-   { return ((logscale && z >= minv && z <= maxv) ?
-             (log(z/minv)*unit_a) : (z - minv)*unit_a); }
+   {
+      return ((logscale && z >= minv && z <= maxv) ?
+              (log(z/minv)*unit_a) : (z - minv)*unit_a);
+   }
    double _LogVal_(const double &z) { return (log(z/minv)*log_a + minv); }
    double _LogVal(const double &z)
    { return ((z >= minv && z <= maxv) ? _LogVal_(z) : (z)); }
@@ -203,7 +209,9 @@ public:
    {
       drawaxes = (drawaxes+1)%4;
       if (drawaxes)
+      {
          PrepareAxes();
+      }
    }
 
    void ToggleScaling()

@@ -3,7 +3,7 @@
 // reserved. See file COPYRIGHT for details.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.googlecode.com.
+// information and source code availability see http://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
 // terms of the GNU Lesser General Public License (as published by the Free
@@ -18,9 +18,11 @@
 void Camera::Reset()
 {
    static const double cam[9] =
-      { 0.0, 0.0,  2.5,   // eye
-        0.0, 0.0, -1.0,   // dir
-        0.0, 1.0,  0.0 }; // up
+   {
+      0.0, 0.0,  2.5,   // eye
+      0.0, 0.0, -1.0,   // dir
+      0.0, 1.0,  0.0
+   }; // up
 
    Set(cam);
 }
@@ -62,10 +64,12 @@ void Camera::GLMultRotMatrix()
    GetLeft();
 
    double mat[16] =
-      { -left[0], up[0], -dir[0], 0.0,
-        -left[1], up[1], -dir[1], 0.0,
-        -left[2], up[2], -dir[2], 0.0,
-        0.0, 0.0, 0.0, 1.0 };
+   {
+      -left[0], up[0], -dir[0], 0.0,
+      -left[1], up[1], -dir[1], 0.0,
+      -left[2], up[2], -dir[2], 0.0,
+      0.0, 0.0, 0.0, 1.0
+   };
 
    glMultMatrixd(mat);
 }
@@ -76,18 +80,22 @@ void Camera::GLMultTransposeRotMatrix()
 
 #if GLVIS_GLX10
    double mat_t[16] =
-      { -left[0], -left[1], -left[2], 0.0,
-        up[0], up[1], up[2], 0.0,
-        -dir[0], -dir[1], -dir[2], 0.0,
-        0.0, 0.0, 0.0, 1.0 };
+   {
+      -left[0], -left[1], -left[2], 0.0,
+      up[0], up[1], up[2], 0.0,
+      -dir[0], -dir[1], -dir[2], 0.0,
+      0.0, 0.0, 0.0, 1.0
+   };
 
    glMultMatrixd(mat_t);
 #else
    double mat[16] =
-      { -left[0], up[0], -dir[0], 0.0,
-        -left[1], up[1], -dir[1], 0.0,
-        -left[2], up[2], -dir[2], 0.0,
-        0.0, 0.0, 0.0, 1.0 };
+   {
+      -left[0], up[0], -dir[0], 0.0,
+      -left[1], up[1], -dir[1], 0.0,
+      -left[2], up[2], -dir[2], 0.0,
+      0.0, 0.0, 0.0, 1.0
+   };
 
    glMultTransposeMatrixd(mat);
 #endif
@@ -102,10 +110,10 @@ void Camera::GLMultMatrix()
 void Camera::Print()
 {
    std::cout <<
-      "camera " << eye[0] << ' ' << eye[1] << ' ' << eye[2] << "\n"
-      "       " << dir[0] << ' ' << dir[1] << ' ' << dir[2] << "\n"
-      "       " <<  up[0] << ' ' <<  up[1] << ' ' <<  up[2] << '\n'
-                << std::endl;
+             "camera " << eye[0] << ' ' << eye[1] << ' ' << eye[2] << "\n"
+             "       " << dir[0] << ' ' << dir[1] << ' ' << dir[2] << "\n"
+             "       " <<  up[0] << ' ' <<  up[1] << ' ' <<  up[2] << '\n'
+             << std::endl;
 }
 
 
@@ -126,7 +134,7 @@ VisualizationScene::VisualizationScene()
    ViewCenterY = 0.0;
 }
 
-VisualizationScene::~VisualizationScene(){}
+VisualizationScene::~VisualizationScene() {}
 
 void VisualizationScene::Rotate(double angle, double x, double y, double z)
 {

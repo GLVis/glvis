@@ -3,7 +3,7 @@
 // reserved. See file COPYRIGHT for details.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.googlecode.com.
+// information and source code availability see http://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
 // terms of the GNU Lesser General Public License (as published by the Free
@@ -80,7 +80,9 @@ int GLVisCommand::signal()
 {
    char c = 's';
    if (write(pfd[1], &c, 1) != 1)
+   {
       return -1;
+   }
    return 0;
 }
 
@@ -89,189 +91,275 @@ void GLVisCommand::unlock()
    pthread_mutex_lock(&glvis_mutex);
    num_waiting--;
    if (num_waiting > 0)
+   {
       pthread_cond_broadcast(&glvis_cond);
+   }
    pthread_mutex_unlock(&glvis_mutex);
 }
 
 int GLVisCommand::NewMeshAndSolution(Mesh *_new_m, GridFunction *_new_g)
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = NEW_MESH_AND_SOLUTION;
    new_m = _new_m;
    new_g = _new_g;
    if (signal() < 0)
+   {
       return -2;
+   }
    return 0;
 }
 
 int GLVisCommand::Screenshot(const char *filename)
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = SCREENSHOT;
    screenshot_filename = filename;
    if (signal() < 0)
+   {
       return -2;
+   }
    return 0;
 }
 
 int GLVisCommand::KeyCommands(const char *keys)
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = KEY_COMMANDS;
    key_commands = keys;
    if (signal() < 0)
+   {
       return -2;
+   }
    return 0;
 }
 
 int GLVisCommand::WindowSize(int w, int h)
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = WINDOW_SIZE;
    window_w = w;
    window_h = h;
    if (signal() < 0)
+   {
       return -2;
+   }
+   return 0;
+}
+
+int GLVisCommand::WindowGeometry(int x, int y, int w, int h)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = WINDOW_GEOMETRY;
+   window_x = x;
+   window_y = y;
+   window_w = w;
+   window_h = h;
+   if (signal() < 0)
+   {
+      return -2;
+   }
    return 0;
 }
 
 int GLVisCommand::WindowTitle(const char *title)
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = WINDOW_TITLE;
    window_title = title;
    if (signal() < 0)
+   {
       return -2;
+   }
    return 0;
 }
 
 int GLVisCommand::Pause()
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = PAUSE;
    if (signal() < 0)
+   {
       return -2;
+   }
    return 0;
 }
 
 int GLVisCommand::ViewAngles(double theta, double phi)
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = VIEW_ANGLES;
    view_ang_theta = theta;
    view_ang_phi   = phi;
    if (signal() < 0)
+   {
       return -2;
+   }
    return 0;
 }
 
 int GLVisCommand::Zoom(double factor)
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = ZOOM;
    zoom_factor = factor;
    if (signal() < 0)
+   {
       return -2;
+   }
    return 0;
 }
 
 int GLVisCommand::Subdivisions(int tot, int bdr)
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = SUBDIVISIONS;
    subdiv_tot = tot;
    subdiv_bdr = bdr;
    if (signal() < 0)
+   {
       return -2;
+   }
    return 0;
 }
 
 int GLVisCommand::ValueRange(double minv, double maxv)
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = VALUE_RANGE;
    val_min = minv;
    val_max = maxv;
    if (signal() < 0)
+   {
       return -2;
+   }
    return 0;
 }
 
 int GLVisCommand::SetShading(const char *shd)
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = SHADING;
    shading = shd;
    if (signal() < 0)
+   {
       return -2;
+   }
    return 0;
 }
 
 int GLVisCommand::ViewCenter(double x, double y)
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = VIEW_CENTER;
    view_center_x = x;
    view_center_y = y;
    if (signal() < 0)
+   {
       return -2;
+   }
    return 0;
 }
 
 int GLVisCommand::Autoscale(const char *mode)
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = AUTOSCALE;
    autoscale_mode = mode;
    if (signal() < 0)
+   {
       return -2;
+   }
    return 0;
 }
 
 int GLVisCommand::Palette(int pal)
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = PALETTE;
    palette = pal;
    if (signal() < 0)
+   {
       return -2;
+   }
    return 0;
 }
 
 int GLVisCommand::Camera(const double cam[])
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = CAMERA;
    for (int i = 0; i < 9; i++)
+   {
       camera[i] = cam[i];
+   }
    if (signal() < 0)
+   {
       return -2;
+   }
    return 0;
 }
 
 int GLVisCommand::Autopause(const char *mode)
 {
    if (lock() < 0)
+   {
       return -1;
+   }
    command = AUTOPAUSE;
    autopause_mode = mode;
    if (signal() < 0)
+   {
       return -2;
+   }
    return 0;
 }
 
@@ -283,239 +371,286 @@ int GLVisCommand::Execute()
    int n = read(pfd[0], &c, 1);
 
    if (n == -1 && errno == EAGAIN)
+   {
       return 1;
+   }
    if (n != 1 || c != 's')
+   {
       return -1;
+   }
 
    switch (command)
    {
-   case NO_COMMAND:
-      break;
+      case NO_COMMAND:
+         break;
 
-   case NEW_MESH_AND_SOLUTION:
-   {
-      double mesh_range = -1.0;
-      if (new_g == NULL)
+      case NEW_MESH_AND_SOLUTION:
       {
-         SetMeshSolution(new_m, new_g, false);
-         mesh_range = new_g->Max() + 1.0;
-      }
-      if (new_m->SpaceDimension() == (*mesh)->SpaceDimension() &&
-          new_g->VectorDim() == (*grid_f)->VectorDim())
-      {
-         if (new_m->SpaceDimension() == 2)
+         double mesh_range = -1.0;
+         if (new_g == NULL)
          {
-            if (new_g->VectorDim() == 1)
+            SetMeshSolution(new_m, new_g, false);
+            mesh_range = new_g->Max() + 1.0;
+         }
+         if (new_m->SpaceDimension() == (*mesh)->SpaceDimension() &&
+             new_g->VectorDim() == (*grid_f)->VectorDim())
+         {
+            if (new_m->SpaceDimension() == 2)
             {
-               VisualizationSceneSolution *vss =
-                  dynamic_cast<VisualizationSceneSolution *>(*vs);
-               new_g->GetNodalValues(*sol);
-               vss->NewMeshAndSolution(new_m, sol, new_g);
+               if (new_g->VectorDim() == 1)
+               {
+                  VisualizationSceneSolution *vss =
+                     dynamic_cast<VisualizationSceneSolution *>(*vs);
+                  new_g->GetNodalValues(*sol);
+                  vss->NewMeshAndSolution(new_m, sol, new_g);
+               }
+               else
+               {
+                  VisualizationSceneVector *vsv =
+                     dynamic_cast<VisualizationSceneVector *>(*vs);
+                  vsv->NewMeshAndSolution(*new_g);
+               }
             }
             else
             {
-               VisualizationSceneVector *vsv =
-                  dynamic_cast<VisualizationSceneVector *>(*vs);
-               vsv->NewMeshAndSolution(*new_g);
+               if (new_g->VectorDim() == 1)
+               {
+                  VisualizationSceneSolution3d *vss =
+                     dynamic_cast<VisualizationSceneSolution3d *>(*vs);
+                  new_g->GetNodalValues(*sol);
+                  vss->NewMeshAndSolution(new_m, sol, new_g);
+               }
+               else
+               {
+                  new_g = ProjectVectorFEGridFunction(new_g);
+                  VisualizationSceneVector3d *vss =
+                     dynamic_cast<VisualizationSceneVector3d *>(*vs);
+                  vss->NewMeshAndSolution(new_m, new_g);
+               }
             }
+            if (mesh_range > 0.0)
+            {
+               (*vs)->SetValueRange(-mesh_range, mesh_range);
+            }
+            delete (*grid_f);
+            *grid_f = new_g;
+            delete (*mesh);
+            *mesh = new_m;
+
+            (*vs)->Draw();
          }
          else
          {
-            if (new_g->VectorDim() == 1)
-            {
-               VisualizationSceneSolution3d *vss =
-                  dynamic_cast<VisualizationSceneSolution3d *>(*vs);
-               new_g->GetNodalValues(*sol);
-               vss->NewMeshAndSolution(new_m, sol, new_g);
-            }
-            else
-            {
-               new_g = ProjectVectorFEGridFunction(new_g);
-               VisualizationSceneVector3d *vss =
-                  dynamic_cast<VisualizationSceneVector3d *>(*vs);
-               vss->NewMeshAndSolution(new_m, new_g);
-            }
+            cout << "Stream: field type does not match!" << endl;
+            delete new_g;
+            delete new_m;
          }
-         if (mesh_range > 0.0)
-            (*vs)->SetValueRange(-mesh_range, mesh_range);
-         delete (*grid_f);
-         *grid_f = new_g;
-         delete (*mesh);
-         *mesh = new_m;
-
-         (*vs)->Draw();
+         if (autopause)
+         {
+            cout << "Autopause ..." << endl;
+            ThreadsStop();
+         }
+         break;
       }
-      else
+
+      case SCREENSHOT:
       {
-         cout << "Stream: field type does not match!" << endl;
-         delete new_g;
-         delete new_m;
+         cout << "Command: screenshot: " << flush;
+         if (::Screenshot(screenshot_filename.c_str(), true))
+         {
+            cout << "Screenshot(" << screenshot_filename << ") failed." << endl;
+         }
+         else
+         {
+            cout << "-> " << screenshot_filename << endl;
+         }
+         break;
       }
-      if (autopause)
+
+      case KEY_COMMANDS:
       {
-         cout << "Autopause ..." << endl;
-         ThreadsStop();
+         cout << "Command: keys: '" << key_commands << "'" << endl;
+         SendKeySequence(key_commands.c_str());
+         break;
       }
-      break;
-   }
 
-   case SCREENSHOT:
-   {
-      cout << "Command: screenshot: " << flush;
-      if (::Screenshot(screenshot_filename.c_str(), true))
-         cout << "Screenshot(" << screenshot_filename << ") failed." << endl;
-      else
-         cout << "-> " << screenshot_filename << endl;
-      break;
-   }
-
-   case KEY_COMMANDS:
-   {
-      cout << "Command: keys: '" << key_commands << "'" << endl;
-      SendKeySequence(key_commands.c_str());
-      break;
-   }
-
-   case WINDOW_SIZE:
-   {
-      cout << "Command: window_size: " << window_w << " x " << window_h << endl;
-      ResizeWindow(window_w, window_h);
-      break;
-   }
-
-   case WINDOW_TITLE:
-   {
-      cout << "Command: window_title: " << window_title << endl;
-      SetWindowTitle(window_title.c_str());
-      break;
-   }
-
-   case PAUSE:
-   {
-      cout << "Command: pause: ";
-      ToggleThreads();
-      break;
-   }
-
-   case VIEW_ANGLES:
-   {
-      cout << "Command: view: " << view_ang_theta << ' ' << view_ang_phi
-           << endl;
-      (*vs)->SetView(view_ang_theta, view_ang_phi);
-      MyExpose();
-      break;
-   }
-
-   case ZOOM:
-   {
-      cout << "Command: zoom: " << zoom_factor << endl;
-      (*vs)->Zoom(zoom_factor);
-      MyExpose();
-      break;
-   }
-
-   case SUBDIVISIONS:
-   {
-      cout << "Command: subdivisions: " << flush;
-      (*vs)->SetRefineFactors(subdiv_tot, subdiv_bdr);
-      cout << subdiv_tot << ' ' << subdiv_bdr << endl;
-      MyExpose();
-      break;
-   }
-
-   case VALUE_RANGE:
-   {
-      cout << "Command: valuerange: " << flush;
-      (*vs)->SetValueRange(val_min, val_max);
-      cout << val_min << ' ' << val_max << endl;
-      MyExpose();
-      break;
-   }
-
-   case SHADING:
-   {
-      cout << "Command: shading: " << flush;
-      int s = -1;
-      if (shading == "flat")
-         s = 0;
-      else if (shading == "smooth")
-         s = 1;
-      else if (shading == "cool")
-         s = 2;
-      if (s != -1)
+      case WINDOW_SIZE:
       {
-         (*vs)->SetShading(s, false);
-         cout << shading << endl;
+         cout << "Command: window_size: " << window_w << " x " << window_h << endl;
+         ResizeWindow(window_w, window_h);
+         break;
+      }
+
+      case WINDOW_GEOMETRY:
+      {
+         cout << "Command: window_geometry: "
+              << "@(" << window_x << "," << window_y << ") "
+              << window_w << " x " << window_h << endl;
+         MoveResizeWindow(window_x, window_y, window_w, window_h);
+         break;
+      }
+
+      case WINDOW_TITLE:
+      {
+         cout << "Command: window_title: " << window_title << endl;
+         SetWindowTitle(window_title.c_str());
+         break;
+      }
+
+      case PAUSE:
+      {
+         cout << "Command: pause: ";
+         ToggleThreads();
+         break;
+      }
+
+      case VIEW_ANGLES:
+      {
+         cout << "Command: view: " << view_ang_theta << ' ' << view_ang_phi
+              << endl;
+         (*vs)->SetView(view_ang_theta, view_ang_phi);
          MyExpose();
+         break;
       }
-      else
+
+      case ZOOM:
       {
-         cout << shading << " ?" << endl;
+         cout << "Command: zoom: " << zoom_factor << endl;
+         (*vs)->Zoom(zoom_factor);
+         MyExpose();
+         break;
       }
-      break;
-   }
 
-   case VIEW_CENTER:
-   {
-      cout << "Command: viewcenter: "
-           << view_center_x << ' ' << view_center_y << endl;
-      (*vs)->ViewCenterX = view_center_x;
-      (*vs)->ViewCenterY = view_center_y;
-      MyExpose();
-      break;
-   }
+      case SUBDIVISIONS:
+      {
+         cout << "Command: subdivisions: " << flush;
+         (*vs)->SetRefineFactors(subdiv_tot, subdiv_bdr);
+         cout << subdiv_tot << ' ' << subdiv_bdr << endl;
+         MyExpose();
+         break;
+      }
 
-   case AUTOSCALE:
-   {
-      cout << "Command: autoscale: " << autoscale_mode;
-      if (autoscale_mode == "off")
-         (*vs)->SetAutoscale(0);
-      else if (autoscale_mode == "on")
-         (*vs)->SetAutoscale(1);
-      else if (autoscale_mode == "value")
-         (*vs)->SetAutoscale(2);
-      else if (autoscale_mode == "mesh")
-         (*vs)->SetAutoscale(3);
-      else
-         cout << '?';
-      cout << endl;
-      break;
-   }
+      case VALUE_RANGE:
+      {
+         cout << "Command: valuerange: " << flush;
+         (*vs)->SetValueRange(val_min, val_max);
+         cout << val_min << ' ' << val_max << endl;
+         MyExpose();
+         break;
+      }
 
-   case PALETTE:
-   {
-      cout << "Command: palette: " << palette << endl;
-      Set_Palette(palette-1);
-      if (!GetUseTexture())
-         (*vs)->EventUpdateColors();
-      MyExpose();
-      break;
-   }
+      case SHADING:
+      {
+         cout << "Command: shading: " << flush;
+         int s = -1;
+         if (shading == "flat")
+         {
+            s = 0;
+         }
+         else if (shading == "smooth")
+         {
+            s = 1;
+         }
+         else if (shading == "cool")
+         {
+            s = 2;
+         }
+         if (s != -1)
+         {
+            (*vs)->SetShading(s, false);
+            cout << shading << endl;
+            MyExpose();
+         }
+         else
+         {
+            cout << shading << " ?" << endl;
+         }
+         break;
+      }
 
-   case CAMERA:
-   {
-      cout << "Command: camera: ";
-      for (int i = 0; i < 9; i++)
-         cout << ' ' << camera[i];
-      cout << endl;
-      (*vs)->cam.Set(camera);
-      MyExpose();
-      break;
-   }
+      case VIEW_CENTER:
+      {
+         cout << "Command: viewcenter: "
+              << view_center_x << ' ' << view_center_y << endl;
+         (*vs)->ViewCenterX = view_center_x;
+         (*vs)->ViewCenterY = view_center_y;
+         MyExpose();
+         break;
+      }
 
-   case AUTOPAUSE:
-   {
-      if (autopause_mode == "off" || autopause_mode == "0")
-         autopause = 0;
-      else
-         autopause = 1;
-      cout << "Command: autopause: " << strings_off_on[autopause] << endl;
-      if (autopause)
-         ThreadsStop();
-      else
-         ThreadsRun(); // probably not needed
-      break;
-   }
+      case AUTOSCALE:
+      {
+         cout << "Command: autoscale: " << autoscale_mode;
+         if (autoscale_mode == "off")
+         {
+            (*vs)->SetAutoscale(0);
+         }
+         else if (autoscale_mode == "on")
+         {
+            (*vs)->SetAutoscale(1);
+         }
+         else if (autoscale_mode == "value")
+         {
+            (*vs)->SetAutoscale(2);
+         }
+         else if (autoscale_mode == "mesh")
+         {
+            (*vs)->SetAutoscale(3);
+         }
+         else
+         {
+            cout << '?';
+         }
+         cout << endl;
+         break;
+      }
+
+      case PALETTE:
+      {
+         cout << "Command: palette: " << palette << endl;
+         Set_Palette(palette-1);
+         if (!GetUseTexture())
+         {
+            (*vs)->EventUpdateColors();
+         }
+         MyExpose();
+         break;
+      }
+
+      case CAMERA:
+      {
+         cout << "Command: camera: ";
+         for (int i = 0; i < 9; i++)
+         {
+            cout << ' ' << camera[i];
+         }
+         cout << endl;
+         (*vs)->cam.Set(camera);
+         MyExpose();
+         break;
+      }
+
+      case AUTOPAUSE:
+      {
+         if (autopause_mode == "off" || autopause_mode == "0")
+         {
+            autopause = 0;
+         }
+         else
+         {
+            autopause = 1;
+         }
+         cout << "Command: autopause: " << strings_off_on[autopause] << endl;
+         if (autopause)
+         {
+            ThreadsStop();
+         }
+         else
+         {
+            ThreadsRun();   // probably not needed
+         }
+         break;
+      }
 
    }
 
@@ -536,16 +671,18 @@ void GLVisCommand::Terminate()
    {
       switch (command)
       {
-      case NEW_MESH_AND_SOLUTION:
-         delete new_g;
-         delete new_m;
-         break;
+         case NEW_MESH_AND_SOLUTION:
+            delete new_g;
+            delete new_m;
+            break;
       }
       unlock();
    }
    pthread_mutex_lock(&glvis_mutex);
    if (num_waiting > 0)
+   {
       pthread_cond_broadcast(&glvis_cond);
+   }
    pthread_mutex_unlock(&glvis_mutex);
 }
 
@@ -554,9 +691,13 @@ void GLVisCommand::ToggleAutopause()
    autopause = autopause ? 0 : 1;
    cout << "Autopause: " << strings_off_on[autopause] << endl;
    if (autopause)
+   {
       ThreadsStop();
+   }
    else
+   {
       ThreadsRun();
+   }
 }
 
 GLVisCommand::~GLVisCommand()
@@ -577,7 +718,9 @@ communication_thread::communication_thread(Array<istream *> &_is)
    new_g = NULL;
 
    if (is.Size() > 0)
+   {
       pthread_create(&tid, NULL, communication_thread::execute, this);
+   }
 }
 
 communication_thread::~communication_thread()
@@ -607,7 +750,9 @@ void *communication_thread::execute(void *p)
 
       *_this->is[0] >> _this->ident;
       if (!(*_this->is[0]))
+      {
          break;
+      }
 
       if (_this->ident == "mesh" || _this->ident == "solution" ||
           _this->ident == "parallel")
@@ -617,17 +762,23 @@ void *communication_thread::execute(void *p)
          {
             _this->new_m = new Mesh(*_this->is[0], 1, 0, fix_elem_orient);
             if (!(*_this->is[0]))
+            {
                break;
+            }
             _this->new_g = NULL;
          }
          else if (_this->ident == "solution")
          {
             _this->new_m = new Mesh(*_this->is[0], 1, 0, fix_elem_orient);
             if (!(*_this->is[0]))
+            {
                break;
+            }
             _this->new_g = new GridFunction(_this->new_m, *_this->is[0]);
             if (!(*_this->is[0]))
+            {
                break;
+            }
          }
          else if (_this->ident == "parallel")
          {
@@ -651,14 +802,20 @@ void *communication_thread::execute(void *p)
                {
                   // set element and boundary attributes to proc+1
                   for (int i = 0; i < mesh_array[proc]->GetNE(); i++)
+                  {
                      mesh_array[proc]->GetElement(i)->SetAttribute(proc+1);
+                  }
                   for (int i = 0; i < mesh_array[proc]->GetNBE(); i++)
+                  {
                      mesh_array[proc]->GetBdrElement(i)->SetAttribute(proc+1);
+                  }
                }
                gf_array[proc] = new GridFunction(mesh_array[proc], isock);
                np++;
                if (np == nproc)
+               {
                   break;
+               }
                *_this->is[np] >> _this->ident >> ws; // "parallel"
             }
             while (1);
@@ -679,7 +836,9 @@ void *communication_thread::execute(void *p)
          Extrude1DMeshAndSolution(&_this->new_m, &_this->new_g, NULL);
 
          if (glvis_command->NewMeshAndSolution(_this->new_m, _this->new_g))
+         {
             goto comm_terminate;
+         }
 
          _this->new_m = NULL;
          _this->new_g = NULL;
@@ -698,7 +857,9 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->Screenshot(filename.c_str()))
+         {
             goto comm_terminate;
+         }
       }
       else if (_this->ident == "keys")
       {
@@ -714,7 +875,9 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->KeyCommands(keys.c_str()))
+         {
             goto comm_terminate;
+         }
       }
       else if (_this->ident == "window_size")
       {
@@ -730,7 +893,27 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->WindowSize(w, h))
+         {
             goto comm_terminate;
+         }
+      }
+      else if (_this->ident == "window_geometry")
+      {
+         int x, y, w, h, t;
+
+         *_this->is[0] >> x >> y >> w >> h;
+
+         // all processors sent the command
+         for (int i = 1; i < _this->is.Size(); i++)
+         {
+            *_this->is[i] >> ws >> _this->ident; // 'window_geometry'
+            *_this->is[i] >> t >> t >> t >> t;
+         }
+
+         if (glvis_command->WindowGeometry(x, y, w, h))
+         {
+            goto comm_terminate;
+         }
       }
       else if (_this->ident == "window_title")
       {
@@ -750,7 +933,9 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->WindowTitle(title.c_str()))
+         {
             goto comm_terminate;
+         }
       }
       else if (_this->ident == "pause")
       {
@@ -761,7 +946,9 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->Pause())
+         {
             goto comm_terminate;
+         }
       }
       else if (_this->ident == "view")
       {
@@ -777,7 +964,9 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->ViewAngles(theta, phi))
+         {
             goto comm_terminate;
+         }
       }
       else if (_this->ident == "zoom")
       {
@@ -793,7 +982,9 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->Zoom(factor))
+         {
             goto comm_terminate;
+         }
       }
       else if (_this->ident == "subdivisions")
       {
@@ -809,7 +1000,9 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->Subdivisions(tot, bdr))
+         {
             goto comm_terminate;
+         }
       }
       else if (_this->ident == "valuerange")
       {
@@ -825,7 +1018,9 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->ValueRange(minv, maxv))
+         {
             goto comm_terminate;
+         }
       }
       else if (_this->ident == "shading")
       {
@@ -841,7 +1036,9 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->SetShading(shd.c_str()))
+         {
             goto comm_terminate;
+         }
       }
       else if (_this->ident == "viewcenter")
       {
@@ -857,7 +1054,9 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->ViewCenter(x, y))
+         {
             goto comm_terminate;
+         }
       }
       else if (_this->ident == "autoscale")
       {
@@ -873,7 +1072,9 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->Autoscale(mode.c_str()))
+         {
             goto comm_terminate;
+         }
       }
       else if (_this->ident == "palette")
       {
@@ -889,25 +1090,33 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->Palette(pal))
+         {
             goto comm_terminate;
+         }
       }
       else if (_this->ident == "camera")
       {
          double cam[9], a;
 
          for (int i = 0; i < 9; i++)
+         {
             *_this->is[0] >> cam[i];
+         }
 
          // all processors sent the command
          for (int i = 1; i < _this->is.Size(); i++)
          {
             *_this->is[i] >> ws >> _this->ident; // 'camera'
             for (int j = 0; j < 9; j++)
+            {
                *_this->is[i] >> a;
+            }
          }
 
          if (glvis_command->Camera(cam))
+         {
             goto comm_terminate;
+         }
       }
       else if (_this->ident == "autopause")
       {
@@ -923,7 +1132,9 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->Autopause(mode.c_str()))
+         {
             goto comm_terminate;
+         }
       }
       else
       {
@@ -940,7 +1151,9 @@ comm_terminate:
    {
       socketstream *isock = dynamic_cast<socketstream *>(_this->is[i]);
       if (isock)
+      {
          isock->close();
+      }
    }
    _this->cancel_on();
 

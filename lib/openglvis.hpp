@@ -3,7 +3,7 @@
 // reserved. See file COPYRIGHT for details.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.googlecode.com.
+// information and source code availability see http://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
 // terms of the GNU Lesser General Public License (as published by the Free
@@ -42,11 +42,17 @@ inline int Normalize(double v[])
 {
    double len = sqrt(InnerProd(v, v));
    if (len > 0.0)
+   {
       len = 1.0 / len;
+   }
    else
+   {
       return 1;
+   }
    for (int i = 0; i < 3; i++)
+   {
       v[i] *= len;
+   }
    return 0;
 }
 

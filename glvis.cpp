@@ -3,7 +3,7 @@
 // reserved. See file COPYRIGHT for details.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.googlecode.com.
+// information and source code availability see http://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
 // terms of the GNU Lesser General Public License (as published by the Free
@@ -40,6 +40,7 @@ const char *vec_sol_file    = string_none;
 const char *gfunc_file      = string_none;
 const char *arg_keys        = string_none;
 int         np              = 0;
+int         pad_digits      = 6;
 int         gf_component    = -1;
 bool        fix_elem_orient = false;
 bool        save_coloring   = false;
@@ -55,12 +56,15 @@ int input = 1;
 Mesh *mesh = NULL;
 Vector sol, solu, solv, solw, normals;
 GridFunction *grid_f = NULL;
-int is_gf = 0, is_1d = 0;
+int is_gf = 0;
 string keys;
 VisualizationSceneScalarData *vs = NULL;
 
-const char *window_titles[] ={ "GLVis [scalar data]",
-                               "GLVis [vector data]", "GLVis [mesh]" };
+GeometryRefiner GLVisGeometryRefiner;
+
+const char *window_titles[] = { "GLVis [scalar data]",
+                                "GLVis [vector data]", "GLVis [mesh]"
+                              };
 istream *script = NULL;
 int scr_running = 0;
 int scr_level = 0;
@@ -121,7 +125,9 @@ int ReadStream(istream &is, const string &data_type)
       solu.Load(is, mesh->GetNV());
       solv.Load(is, mesh->GetNV());
       if (data_type == "vfem2d_data_keys")
+      {
          is >> keys;
+      }
    }
    else if (data_type == "fem3d_data")
    {
@@ -136,14 +142,18 @@ int ReadStream(istream &is, const string &data_type)
       solv.Load(is, mesh->GetNV());
       solw.Load(is, mesh->GetNV());
       if (data_type == "vfem3d_data_keys")
+      {
          is >> keys;
+      }
    }
    else if (data_type == "fem2d_gf_data" || data_type == "fem2d_gf_data_keys")
    {
       mesh = new Mesh(is, 1, 0, fix_elem_orient);
       grid_f = new GridFunction(mesh, is);
       if (data_type == "fem2d_gf_data_keys")
+      {
          is >> keys;
+      }
    }
    else if (data_type == "vfem2d_gf_data" || data_type == "vfem2d_gf_data_keys")
    {
@@ -151,14 +161,18 @@ int ReadStream(istream &is, const string &data_type)
       mesh = new Mesh(is, 1, 0, fix_elem_orient);
       grid_f = new GridFunction(mesh, is);
       if (data_type == "vfem2d_gf_data_keys")
+      {
          is >> keys;
+      }
    }
    else if (data_type == "fem3d_gf_data" || data_type == "fem3d_gf_data_keys")
    {
       mesh = new Mesh(is, 1, 0, fix_elem_orient);
       grid_f = new GridFunction(mesh, is);
       if (data_type == "fem3d_gf_data_keys")
+      {
          is >> keys;
+      }
    }
    else if (data_type == "vfem3d_gf_data" || data_type == "vfem3d_gf_data_keys")
    {
@@ -166,7 +180,9 @@ int ReadStream(istream &is, const string &data_type)
       mesh = new Mesh(is, 1, 0, fix_elem_orient);
       grid_f = new GridFunction(mesh, is);
       if (data_type == "vfem3d_gf_data_keys")
+      {
          is >> keys;
+      }
    }
    else if (data_type == "solution")
    {
@@ -208,13 +224,19 @@ int ReadStream(istream &is, const string &data_type)
          vertices[i] = new Array<double>(6*num_vert);
          Array<double> &verts = *vertices[i];
          for (int j = 0; j < verts.Size(); j++)
+         {
             is >> verts[j];
+         }
 
          is >> ws >> ident; // 'triangles' or 'quads'
          if (ident == "triangles")
+         {
             n = 3, mesh_type |= 1;
+         }
          else
+         {
             n = 4, mesh_type |= 2;
+         }
          elem_types[i] = n;
          is >> num_elem;
          // cout << ident << ' ' << num_elem << endl;
@@ -255,18 +277,28 @@ int ReadStream(istream &is, const string &data_type)
          int attr = i + 1;
          if (n == 3)
             for (int j = 0; j < num_elem; j++)
+            {
                mesh->AddTriangle(&elems[3*j], attr);
+            }
          else
             for (int j = 0; j < num_elem; j++)
+            {
                mesh->AddQuad(&elems[4*j], attr);
+            }
       }
 
       if (mesh_type == 1)
+      {
          mesh->FinalizeTriMesh(1, 0, fix_elem_orient);
+      }
       else if (mesh_type == 2)
+      {
          mesh->FinalizeQuadMesh(1, 0, fix_elem_orient);
+      }
       else
+      {
          mfem_error("Input data contains mixture of triangles and quads!");
+      }
 
       mesh->GenerateBoundaryElements();
 
@@ -289,9 +321,13 @@ int ReadStream(istream &is, const string &data_type)
    if (field_type >= 0 && field_type <= 2)
    {
       if (grid_f)
+      {
          Extrude1DMeshAndSolution(&mesh, &grid_f, NULL);
+      }
       else
+      {
          Extrude1DMeshAndSolution(&mesh, NULL, &sol);
+      }
    }
 
    return field_type;
@@ -310,7 +346,9 @@ int InitVis(int t)
 void StartVisualization(int field_type)
 {
    if (field_type < 0 && field_type > 2)
+   {
       return;
+   }
 
    if (InitVis(field_type))
    {
@@ -332,33 +370,43 @@ void StartVisualization(int field_type)
    if (field_type == 0 || field_type == 2)
    {
       if (grid_f)
+      {
          grid_f->GetNodalValues(sol);
+      }
       if (mesh->SpaceDimension() == 2)
       {
          VisualizationSceneSolution *vss;
          if (field_type == 2)
+         {
             Set_Palette(4);
+         }
          if (normals.Size() > 0)
+         {
             vs = vss = new VisualizationSceneSolution(*mesh, sol, &normals);
+         }
          else
+         {
             vs = vss = new VisualizationSceneSolution(*mesh, sol);
+         }
          if (grid_f)
+         {
             vss->SetGridFunction(*grid_f);
+         }
          if (field_type == 2)
          {
             vs->OrthogonalProjection = 1;
             vs->light = 0;
             vs->Zoom(1.8);
          }
-         if (is_1d)
-            vss->Set1DScaling();
       }
       else if (mesh->SpaceDimension() == 3)
       {
          VisualizationSceneSolution3d *vss;
          vs = vss = new VisualizationSceneSolution3d(*mesh, sol);
          if (grid_f)
+         {
             vss->SetGridFunction(grid_f);
+         }
          if (field_type == 2)
          {
             if (mesh->Dimension() == 3)
@@ -378,9 +426,13 @@ void StartVisualization(int field_type)
       if (field_type == 2)
       {
          if (grid_f)
+         {
             mesh_range = grid_f->Max() + 1.0;
+         }
          else
+         {
             mesh_range = sol.Max() + 1.0;
+         }
       }
    }
    else if (field_type == 1)
@@ -388,9 +440,13 @@ void StartVisualization(int field_type)
       if (mesh->SpaceDimension() == 2)
       {
          if (grid_f)
+         {
             vs = new VisualizationSceneVector(*grid_f);
+         }
          else
+         {
             vs = new VisualizationSceneVector(*mesh, solu, solv);
+         }
       }
       else if (mesh->SpaceDimension() == 3)
       {
@@ -400,7 +456,9 @@ void StartVisualization(int field_type)
             vs = new VisualizationSceneVector3d(*grid_f);
          }
          else
+         {
             vs = new VisualizationSceneVector3d(*mesh, solu, solv, solw);
+         }
       }
    }
 
@@ -418,9 +476,13 @@ void StartVisualization(int field_type)
          vs->SetAutoscale(0);
       }
       if (mesh->SpaceDimension() == 2 && field_type == 2)
+      {
          SetVisualizationScene(vs, 2, keys.c_str());
+      }
       else
+      {
          SetVisualizationScene(vs, 3, keys.c_str());
+      }
    }
 
    KillVisualization(); // deletes vs
@@ -488,9 +550,13 @@ int ScriptReadParSolution(istream &scr, Mesh **mp, GridFunction **sp)
    cout << "mesh prefix: " << mesh_prefix << "; " << flush;
    scr >> ws >> keep_attr;
    if (keep_attr)
+   {
       cout << "(real attributes); " << flush;
+   }
    else
+   {
       cout << "(processor attributes); " << flush;
+   }
    // read the solution prefix
    scr >> ws >> sol_prefix;
    cout << "solution prefix: " << sol_prefix << endl;
@@ -498,7 +564,9 @@ int ScriptReadParSolution(istream &scr, Mesh **mp, GridFunction **sp)
    err = ReadParMeshAndGridFunction(np, mesh_prefix.c_str(),
                                     sol_prefix.c_str(), mp, sp, keep_attr);
    if (!err)
+   {
       Extrude1DMeshAndSolution(mp, sp, NULL);
+   }
    return err;
 }
 
@@ -542,7 +610,9 @@ int ScriptReadDisplMesh(istream &scr, Mesh **mp, GridFunction **sp)
 
       g = new GridFunction(vfes);
       if (vfec)
+      {
          g->MakeOwner(vfec);
+      }
       m->GetNodes(*g);
       if (g->Size() == init_nodes->Size())
       {
@@ -594,7 +664,9 @@ void ExecuteScriptCommand()
       {
          scr_level--;
          if (scr_level < 0)
+         {
             scr_level = 0;
+         }
       }
       else if (word == "solution" || word == "mesh" || word == "psolution")
       {
@@ -695,9 +767,13 @@ void ExecuteScriptCommand()
          cout << "-> " << word << endl;
 
          if (scr_min_val > vs->GetMinV())
+         {
             scr_min_val = vs->GetMinV();
+         }
          if (scr_max_val < vs->GetMaxV())
+         {
             scr_max_val = vs->GetMaxV();
+         }
       }
       else if (word == "viewcenter")
       {
@@ -766,11 +842,17 @@ void ExecuteScriptCommand()
          cout << "Script: shading: " << flush;
          int s = -1;
          if (word == "flat")
+         {
             s = 0;
+         }
          else if (word == "smooth")
+         {
             s = 1;
+         }
          else if (word == "cool")
+         {
             s = 2;
+         }
          if (s != -1)
          {
             vs->SetShading(s, false);
@@ -848,7 +930,9 @@ void ExecuteScriptCommand()
          cout << "Script: palette: " << pal << endl;
          Set_Palette(pal-1);
          if (!GetUseTexture())
+         {
             vs->EventUpdateColors();
+         }
          MyExpose();
       }
       else if (word == "toggle_attributes")
@@ -860,9 +944,13 @@ void ExecuteScriptCommand()
             attr_list.Append(0);
             scr >> attr_list.Last();
             if (attr_list.Size() <= 256)
+            {
                cout << ' ' << attr_list.Last();
+            }
             else if (attr_list.Size() == 257)
+            {
                cout << " ... " << flush;
+            }
          }
          scr.get(); // read the end symbol: ';'
          cout << endl;
@@ -908,7 +996,9 @@ void ScriptIdleFunc()
 {
    ExecuteScriptCommand();
    if (scr_level == 0)
+   {
       ScriptControl();
+   }
 }
 
 void ScriptControl()
@@ -954,7 +1044,9 @@ void PlayScript(istream &scr)
       else if (word == "solution")
       {
          if (ScriptReadSolution(scr, &mesh, &grid_f))
+         {
             return;
+         }
 
          // start the visualization
          break;
@@ -962,7 +1054,9 @@ void PlayScript(istream &scr)
       else if (word == "psolution")
       {
          if (ScriptReadParSolution(scr, &mesh, &grid_f))
+         {
             return;
+         }
 
          // start the visualization
          break;
@@ -970,9 +1064,13 @@ void PlayScript(istream &scr)
       else if (word == "mesh")
       {
          if (ScriptReadDisplMesh(scr, &mesh, &grid_f))
+         {
             return;
+         }
          if (mesh)
+         {
             break;
+         }
       }
       else
       {
@@ -1008,6 +1106,7 @@ int main (int argc, char *argv[])
    int         multisample   = GetMultisample();
    double      line_width    = Get_LineWidth();
    double      ms_line_width = Get_MS_LineWidth();
+   int         geom_ref_type = 0;
 
    OptionsParser args(argc, argv);
 
@@ -1024,6 +1123,8 @@ int main (int argc, char *argv[])
                   "Vector solution (vertex values) file to visualize.");
    args.AddOption(&np, "-np", "--num-proc",
                   "Load mesh/solution from multiple processors.");
+   args.AddOption(&pad_digits, "-d", "--pad-digits",
+                  "Number of digits used for processor ranks in file names.");
    args.AddOption(&script_file, "-run", "--run-script",
                   "Run a GLVis script file.");
    args.AddOption(&arg_keys, "-k", "--keys",
@@ -1035,6 +1136,9 @@ int main (int argc, char *argv[])
                   "-ap", "--processor-attributes",
                   "When opening a parallel mesh, use the real mesh attributes"
                   " or replace them with the processor rank.");
+   args.AddOption(&geom_ref_type, "-grt", "--geometry-refiner-type",
+                  "Set of points to use when refining geometry:"
+                  " 0 = uniform, 1 = Gauss-Lobatto.");
    args.AddOption(&save_coloring, "-sc", "--save-coloring",
                   "-no-sc", "--dont-save-coloring",
                   "Save the mesh coloring generated when opening only a mesh.");
@@ -1084,9 +1188,13 @@ int main (int argc, char *argv[])
 
    // set options
    if (mesh_file != string_none)
+   {
       input |= 2;
+   }
    if (sol_file != string_none)
+   {
       input |= 4;
+   }
    if (vec_sol_file != string_none)
    {
       sol_file = vec_sol_file;
@@ -1098,17 +1206,31 @@ int main (int argc, char *argv[])
       is_gf = 255;
    }
    if (np > 0)
+   {
       input |= 256;
+   }
    if (arg_keys != string_none)
+   {
       keys = arg_keys;
+   }
    if (font_name != string_default)
+   {
       SetFont(font_name);
+   }
    if (multisample != GetMultisample())
+   {
       SetMultisample(multisample);
+   }
    if (line_width != Get_LineWidth())
+   {
       Set_LineWidth(line_width);
+   }
    if (ms_line_width != Get_MS_LineWidth())
+   {
       Set_MS_LineWidth(ms_line_width);
+   }
+
+   GLVisGeometryRefiner.SetType(geom_ref_type);
 
    string data_type;
 
@@ -1158,11 +1280,15 @@ int main (int argc, char *argv[])
    {
       // get rid of zombies
       if (multi_session)
+      {
          signal(SIGCHLD, SIG_IGN);
+      }
 
       socketserver server(portnum);
       if (server.good())
+      {
          cout << "Waiting for data on port " << portnum << " ..." << endl;
+      }
       else
       {
          cout << "Server already running on port " << portnum << ".\n" << endl;
@@ -1177,7 +1303,9 @@ int main (int argc, char *argv[])
          *isock >> data_type >> ws;
 
          if (mac)
+         {
             viscount++;
+         }
 
          int par_data = 0;
          if (data_type == "parallel")
@@ -1196,7 +1324,9 @@ int main (int argc, char *argv[])
                isock = new socketstream;
                np++;
                if (np == nproc)
+               {
                   break;
+               }
                // read next available socket stream
                while (server.accept(*isock) < 0);
                *isock >> data_type >> ws; // "parallel"
@@ -1240,54 +1370,64 @@ int main (int argc, char *argv[])
 
          switch (childPID)
          {
-         case -1:
-            cout << "The process couldn't fork. Exit." << endl;
-            exit(1);
+            case -1:
+               cout << "The process couldn't fork. Exit." << endl;
+               exit(1);
 
-         case 0:                       // This is the child process
-            server.close();
-            if (mac)
-            {
-               // exec ourself
-               const char *args[4] = { argv[0], "-saved", tmp_file, NULL };
-               execve(args[0], (char* const*)args, environ);
-               exit(0);
-            }
-            else
-            {
-               if (multi_session)
-                  signal(SIGINT, SIG_IGN);
-               int ft;
-               if (!par_data)
+            case 0:                       // This is the child process
+               server.close();
+               if (mac)
                {
-                  ft = ReadStream(*isock, data_type);
-                  input_streams.Append(isock);
+                  // exec ourself
+                  const char *args[4] = { argv[0], "-saved", tmp_file, NULL };
+                  execve(args[0], (char* const*)args, environ);
+                  exit(0);
                }
                else
                {
-                  delete isock;
-                  ReadInputStreams();
-                  ft = (grid_f->VectorDim() == 1) ? 0 : 1;
+                  if (multi_session)
+                  {
+                     signal(SIGINT, SIG_IGN);
+                  }
+                  int ft;
+                  if (!par_data)
+                  {
+                     ft = ReadStream(*isock, data_type);
+                     input_streams.Append(isock);
+                  }
+                  else
+                  {
+                     delete isock;
+                     ReadInputStreams();
+                     ft = (grid_f->VectorDim() == 1) ? 0 : 1;
+                  }
+                  StartVisualization(ft);
+                  CloseInputStreams();
+                  exit(0);
                }
-               StartVisualization(ft);
-               CloseInputStreams();
-               exit(0);
-            }
 
-         default :                     // This is the parent process
-            if (!par_data)
-               isock->close();
-            else
-               CloseInputStreams();
+            default :                     // This is the parent process
+               if (!par_data)
+               {
+                  isock->close();
+               }
+               else
+               {
+                  CloseInputStreams();
+               }
          }
       }
    }
    else  // input != 1, non-server mode
    {
       if (input & 256)
+      {
          ReadParallel();
+      }
       else
+      {
          ReadSerial();
+      }
 
       int window_err;
       double mesh_range = -1.0;
@@ -1300,22 +1440,28 @@ int main (int argc, char *argv[])
             if (!window_err)
             {
                if ((input & 4) == 0)
-                  Set_Palette(4); // Set_Palette(11);
+               {
+                  Set_Palette(4);   // Set_Palette(11);
+               }
                vs = vss = new VisualizationSceneSolution(*mesh, sol);
                if (is_gf)
+               {
                   vss->SetGridFunction(*grid_f);
+               }
                if ((input & 4) == 0)
                {
                   vs->OrthogonalProjection = 1;
                   vs->light = 0;
                   vs->Zoom(1.8);
                   if (grid_f)
+                  {
                      mesh_range = grid_f->Max() + 1.0;
+                  }
                   else
+                  {
                      mesh_range = sol.Max() + 1.0;
+                  }
                }
-               if (is_1d)
-                  vss->Set1DScaling();
             }
          }
          else
@@ -1324,9 +1470,13 @@ int main (int argc, char *argv[])
             if (!window_err)
             {
                if (is_gf)
+               {
                   vs = new VisualizationSceneVector(*grid_f);
+               }
                else
+               {
                   vs = new VisualizationSceneVector(*mesh, solu, solv);
+               }
             }
          }
       }
@@ -1340,7 +1490,9 @@ int main (int argc, char *argv[])
             {
                vs = vss = new VisualizationSceneSolution3d(*mesh, sol);
                if (is_gf)
+               {
                   vss->SetGridFunction(grid_f);
+               }
                if ((input & 4) == 0)
                {
                   if (mesh->Dimension() == 3)
@@ -1356,9 +1508,13 @@ int main (int argc, char *argv[])
                   vss->ToggleDrawAxes();
                   vss->ToggleDrawMesh();
                   if (grid_f)
+                  {
                      mesh_range = grid_f->Max() + 1.0;
+                  }
                   else
+                  {
                      mesh_range = sol.Max() + 1.0;
+                  }
                }
             }
          }
@@ -1373,7 +1529,9 @@ int main (int argc, char *argv[])
                   vs = new VisualizationSceneVector3d(*grid_f);
                }
                else
+               {
                   vs = new VisualizationSceneVector3d(*mesh, solu, solv, solw);
+               }
             }
          }
       }
@@ -1391,11 +1549,15 @@ int main (int argc, char *argv[])
             vs->SetAutoscale(0);
          }
          if (mesh->SpaceDimension() == 2 && (input & 12) == 0)
+         {
             SetVisualizationScene(vs, 2, keys.c_str());
+         }
          else
+         {
             SetVisualizationScene(vs, 3, keys.c_str());
+         }
          KillVisualization(); // deletes vs
-         if (is_gf)  delete grid_f;
+         if (is_gf) { delete grid_f; }
          delete mesh;
       }
       else
@@ -1414,15 +1576,15 @@ int main (int argc, char *argv[])
 void PrintSampleUsage(ostream &out)
 {
    out <<
-      "Start a GLVis server:\n"
-      "   glvis\n"
-      "Visualize a mesh:\n"
-      "   glvis -m <mesh_file>\n"
-      "Visualize mesh and solution (grid function):\n"
-      "   glvis -m <mesh_file> -g <grid_function_file> [-gc <component>]\n"
-      "Visualize parallel mesh and solution (grid function):\n"
-      "   glvis -np <#proc> -m <mesh_prefix> [-g <grid_function_prefix>]\n\n"
-      "All Options:\n";
+       "Start a GLVis server:\n"
+       "   glvis\n"
+       "Visualize a mesh:\n"
+       "   glvis -m <mesh_file>\n"
+       "Visualize mesh and solution (grid function):\n"
+       "   glvis -m <mesh_file> -g <grid_function_file> [-gc <component>]\n"
+       "Visualize parallel mesh and solution (grid function):\n"
+       "   glvis -np <#proc> -m <mesh_prefix> [-g <grid_function_prefix>]\n\n"
+       "All Options:\n";
 }
 
 
@@ -1469,11 +1631,15 @@ void ReadSerial()
          solu.Load(solin, mesh->GetNV());
          solv.Load(solin, mesh->GetNV());
          if (mesh->SpaceDimension() == 3)
+         {
             solw.Load(solin, mesh->GetNV());
+         }
       }
    }
    else
+   {
       SetMeshSolution(mesh, grid_f, save_coloring);
+   }
 
    Extrude1DMeshAndSolution(&mesh, &grid_f, &sol);
 }
@@ -1495,7 +1661,9 @@ void SetGridFunction()
       GridFunction *new_gf = new GridFunction(fes);
       new_gf->MakeOwner(fec);
       for (int i = 0; i < new_gf->Size(); i++)
+      {
          (*new_gf)(i) = (*grid_f)(ofes->DofToVDof(i, gf_component));
+      }
       delete grid_f;
       grid_f = new_gf;
    }
@@ -1517,11 +1685,17 @@ void SetMeshSolution(Mesh *mesh, GridFunction *&grid_f, bool save_coloring)
    {
       FiniteElementCollection *cfec;
       if (mesh->Dimension() == 1)
+      {
          cfec = new L2_FECollection(0, 1);
+      }
       else if (mesh->Dimension() == 2)
+      {
          cfec = new Const2DFECollection;
+      }
       else
+      {
          cfec = new Const3DFECollection;
+      }
       FiniteElementSpace *cfes = new FiniteElementSpace(mesh, cfec);
       grid_f = new GridFunction(cfes);
       grid_f->MakeOwner(cfec);
@@ -1534,7 +1708,9 @@ void SetMeshSolution(Mesh *mesh, GridFunction *&grid_f, bool save_coloring)
               << " / " << mesh->GetNE() << endl;
          mesh->GetElementColoring(coloring, el0);
          for (int i = 0; i < coloring.Size(); i++)
+         {
             (*grid_f)(i) = coloring[i];
+         }
          cout << "Number of colors: " << grid_f->Max() + 1 << endl;
       }
       grid_f->GetNodalValues(sol);
@@ -1565,18 +1741,24 @@ void ReadParallel()
       err = ReadParMeshAndGridFunction(np, mesh_file, sol_file,
                                        &mesh, &grid_f, keep_attr);
       if (!err)
+      {
          SetGridFunction();
+      }
    }
    else
    {
       err = ReadParMeshAndGridFunction(np, mesh_file, NULL,
                                        &mesh, NULL, keep_attr);
       if (!err)
+      {
          SetMeshSolution(mesh, grid_f, save_coloring);
+      }
    }
 
    if (err)
+   {
       exit(1);
+   }
 
    Extrude1DMeshAndSolution(&mesh, &grid_f, &sol);
 }
@@ -1592,14 +1774,16 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    for (int p = 0; p < np; p++)
    {
       ostringstream fname;
-      fname << mesh_prefix << '.' << setfill('0') << setw(6) << p;
+      fname << mesh_prefix << '.' << setfill('0') << setw(pad_digits) << p;
       meshfile.open(fname.str().c_str());
       if (!meshfile)
       {
          cerr << "Can not open mesh file: " << fname.str().c_str()
               << '!' << endl;
          for (p--; p >= 0; p--)
+         {
             delete mesh_array[p];
+         }
          return 1;
       }
       mesh_array[p] = new Mesh(meshfile, 1, 0, fix_elem_orient);
@@ -1607,9 +1791,13 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
       {
          // set element and boundary attributes to be the processor number + 1
          for (int i = 0; i < mesh_array[p]->GetNE(); i++)
+         {
             mesh_array[p]->GetElement(i)->SetAttribute(p+1);
+         }
          for (int i = 0; i < mesh_array[p]->GetNBE(); i++)
+         {
             mesh_array[p]->GetBdrElement(i)->SetAttribute(p+1);
+         }
       }
       meshfile.close();
    }
@@ -1622,18 +1810,22 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
       for (int p = 0; p < np; p++)
       {
          ostringstream fname;
-         fname << sol_prefix << '.' << setfill('0') << setw(6) << p;
+         fname << sol_prefix << '.' << setfill('0') << setw(pad_digits) << p;
          solfile.open(fname.str().c_str());
          if (!solfile)
          {
             cerr << "Can not open solution file " << fname.str().c_str()
                  << '!' << endl;
             for (p--; p >= 0; p--)
+            {
                delete gf_array[p];
+            }
             delete *mesh_p;
             *mesh_p = NULL;
             for (p = 0; p < np; p++)
+            {
                delete mesh_array[np-1-p];
+            }
             return 2;
          }
          gf_array[p] = new GridFunction(mesh_array[p], solfile);
@@ -1642,11 +1834,15 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
       *sol_p = new GridFunction(*mesh_p, gf_array, np);
 
       for (int p = 0; p < np; p++)
+      {
          delete gf_array[np-1-p];
+      }
    }
 
    for (int p = 0; p < np; p++)
+   {
       delete mesh_array[np-1-p];
+   }
 
    return 0;
 }
@@ -1671,9 +1867,13 @@ void ReadInputStreams()
       {
          // set element and boundary attributes to proc+1
          for (int i = 0; i < mesh_array[p]->GetNE(); i++)
+         {
             mesh_array[p]->GetElement(i)->SetAttribute(p+1);
+         }
          for (int i = 0; i < mesh_array[p]->GetNBE(); i++)
+         {
             mesh_array[p]->GetBdrElement(i)->SetAttribute(p+1);
+         }
       }
       gf_array[p] = new GridFunction(mesh_array[p], isock);
 #ifdef GLVIS_DEBUG
@@ -1696,7 +1896,9 @@ void ReadInputStreams()
 void CloseInputStreams()
 {
    for (int i = 0; i < input_streams.Size(); i++)
+   {
       delete input_streams[i];
+   }
    input_streams.DeleteAll();
 }
 
@@ -1710,7 +1912,8 @@ GridFunction *ProjectVectorFEGridFunction(GridFunction *gf)
       int p = gf->FESpace()->GetOrder(0);
       cout << "Switching to order " << p
            << " discontinuous vector grid function..." << endl;
-      FiniteElementCollection *d_fec = new L2_FECollection(p, 3);
+      int dim = gf->FESpace()->GetMesh()->Dimension();
+      FiniteElementCollection *d_fec = new L2_FECollection(p, dim, 1);
       FiniteElementSpace *d_fespace =
          new FiniteElementSpace(gf->FESpace()->GetMesh(), d_fec, 3);
       GridFunction *d_gf = new GridFunction(d_fespace);
@@ -1728,7 +1931,9 @@ void Extrude1DMeshAndSolution(Mesh **mesh_p, GridFunction **grid_f_p,
    Mesh *mesh = *mesh_p;
 
    if (mesh->Dimension() != 1 || mesh->SpaceDimension() != 1)
+   {
       return;
+   }
 
    // find xmin and xmax over the vertices of the 1D mesh
    double xmin = numeric_limits<double>::infinity();
@@ -1737,9 +1942,13 @@ void Extrude1DMeshAndSolution(Mesh **mesh_p, GridFunction **grid_f_p,
    {
       const double x = mesh->GetVertex(i)[0];
       if (x < xmin)
+      {
          xmin = x;
+      }
       if (x > xmax)
+      {
          xmax = x;
+      }
    }
 
    Mesh *mesh2d = Extrude1D(mesh, 1, 0.1*(xmax - xmin));
@@ -1756,11 +1965,12 @@ void Extrude1DMeshAndSolution(Mesh **mesh_p, GridFunction **grid_f_p,
    {
       Vector sol2d(mesh2d->GetNV());
       for (int i = 0; i < mesh->GetNV(); i++)
+      {
          sol2d(2*i+0) = sol2d(2*i+1) = (*sol)(i);
+      }
       *sol = sol2d;
    }
 
    delete mesh;
    *mesh_p = mesh2d;
-   is_1d = 1;
 }

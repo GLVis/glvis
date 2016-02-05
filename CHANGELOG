@@ -6,7 +6,44 @@
                 _/    _/  _/        _/  _/    _/      _/_/
                  _/_/_/  _/_/_/_/    _/      _/  _/_/_/
 
-                        http://glvis.googlecode.com
+                              http://glvis.org
+
+
+Version 3.1, released on Feb 5, 2016
+====================================
+
+- Moved GLVis from Google Code to GitHub. New website: http://glvis.org.
+
+- Formatted the code with Artistic Style, see the "make style" target.
+
+- Added 'help', 'distclean', 'install' and 'status'/'info' targets to the GLVis
+  makefile. The default install directory is ./bin. That can be overwritten with
+  "make install PREFIX=<dir>".
+
+- With the corresponding version of MFEM, GLVis now supports the visualization
+  of non-conforming meshes and grid functions.
+
+- Added support for visualizing vector fields on surface meshes, and for element
+  shrinking (F3/F4) of surface meshes.
+
+- The 'P' key now prints in PDF instead of EPS format. The output still has
+  some deficiencies, so 'P' is recommended only if vector format is necessary.
+  For quick screenshots (e.g. for a talk), the 'S' key is preferable.
+
+- Added a command-line option (-d | --pad-digits), to set the number of digits
+  used for processor ranks in file names.
+
+- Added a command-line option (-grt | -geom_ref_type) to refine the geometry
+  using the Gauss-Lobatto instead of uniform points.
+
+- In 2D, added keys that in addition to 'b', can cycle through the boundary
+  attributes: shift+f9 (forward) and shift-f10 (backward); added visualization
+  of element attributes as another state of the 'e' key.
+
+- New socket command, window_geometry, can be used to arrange the visualization
+  window on the screen
+
+- Various other small fixes and styling updates.
 
 
 Version 3.0, released on Jan 26, 2015
@@ -113,8 +150,8 @@ Version 2.0, released on Nov 18, 2011
 - Various small fixes and styling updates.
 
 
-Version 1.2, released on Apr 08, 2011
-=====================================
+Version 1.2, released on Apr 8, 2011
+====================================
 
 - If build with mfem version 1.2 (or later), glvis now supports unstructured
   meshes in VTK format, including quadratic curvilinear meshes.
@@ -135,7 +172,7 @@ Version 1.2, released on Apr 08, 2011
 
 - Added a new script command: toggle_attributes.
 
-- Added a new pallete: calewhite, from VisIt.
+- Added a new palette: calewhite, from VisIt.
 
 - Various small fixes and styling updates.
 
@@ -171,4 +208,3 @@ Version 1.0, released on Jul 21, 2010
 - Uploaded to http://glvis.googlecode.com.
 
 - Initial release.
-
