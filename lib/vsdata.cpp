@@ -413,6 +413,8 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
    double val;
    ostringstream * buf;
 
+   if (colorbar == 1) { DrawCaption(); }
+
    if (!level)
    {
       for (i = 0; i <= 4; i++)
@@ -529,6 +531,70 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
    glPopMatrix();
 }
 
+// Draw a centered caption at the top (visible with the colorbar)
+void VisualizationSceneScalarData::DrawCaption()
+{
+   if (plot_caption.empty())
+   {
+      colorbar = 2; // no caption -> switch to "colorbar without caption" mode
+      return;
+   }
+
+   string caption(plot_caption);
+   if (!extra_caption.empty())
+   {
+      caption += " (" + extra_caption + ")";
+   }
+
+   int width = 0, height = 0;
+#ifdef GLVIS_USE_FREETYPE
+   RenderBitmapText(caption.c_str(), width, height);
+#endif
+
+   glMatrixMode(GL_PROJECTION);
+   glPushMatrix();
+   glLoadIdentity();
+
+   glMatrixMode(GL_MODELVIEW);
+   glPushMatrix();
+   glLoadIdentity();
+
+   GLint viewport[4];
+   glGetIntegerv(GL_VIEWPORT, viewport);
+
+#ifndef GLVIS_USE_FREETYPE
+   int len = caption.length();
+   double width_in_chars = 44*viewport[2]/400.0;
+   if (len > width_in_chars)
+   {
+      glTranslatef(-1.0, 0.8, 0.0);
+   }
+   else
+   {
+      glTranslatef(-len/width_in_chars, 0.8, 0.0);
+   }
+#else
+   glTranslatef(-(double)width/viewport[2],
+                1.0-5*(double)height/viewport[3], 0.0);
+#endif
+
+   cam.GLMultRotMatrix();
+   glMultMatrixd(rotmat);
+
+   glRasterPos3f(0.0f, 0.0f, 0.0f);
+   if (print) { gl2psText(caption.c_str(),"Times",8); }
+#ifndef GLVIS_USE_FREETYPE
+   glCallLists(len, GL_UNSIGNED_BYTE, caption.c_str());
+#else
+   DrawBitmapText();
+#endif
+
+   glMatrixMode(GL_PROJECTION);
+   glPopMatrix();
+   glMatrixMode(GL_MODELVIEW);
+   glPopMatrix();
+}
+
 void VisualizationSceneScalarData::DrawCoordinateCross()
 {
    if (drawaxes == 3)
@@ -621,9 +687,17 @@ void VisualizationSceneScalarData::DrawCoordinateCross()
 VisualizationSceneScalarData * vsdata;
 extern VisualizationScene  * locscene;
 
+void KeycPressed()
+{
+   vsdata->ToggleDrawColorbar();
+   SendExposeEvent();
+}
+
 void KeyCPressed()
 {
-   vsdata -> ToggleDrawColorbar();
+   cout << "Enter new caption: " << flush;
+   std::getline(cin, plot_caption);
+   vsdata->UpdateCaption(); // turn on or off the caption
    SendExposeEvent();
 }
 
@@ -1130,6 +1204,7 @@ void VisualizationSceneScalarData::Init()
    logscale = false;
    MySetColorLogscale = 0;
    SetLogA();
+   UpdateCaption(); // turn on or off the caption
 
    CuttingPlane = NULL;
 
@@ -1165,7 +1240,7 @@ void VisualizationSceneScalarData::Init()
       auxKeyFunc (AUX_g, KeyGPressed);
       auxKeyFunc (AUX_G, KeyGPressed);
 
-      auxKeyFunc (AUX_c, KeyCPressed);
+      auxKeyFunc (AUX_c, KeycPressed);
       auxKeyFunc (AUX_C, KeyCPressed);
 
       auxKeyFunc (AUX_k, KeykPressed);

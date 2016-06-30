@@ -1,0 +1,46 @@
+#summary Detailed description of GLVis's features
+#labels Featured
+
+= GLVis Features =
+
+The goal of GLVis is to enable research and development of general finite element discretization algorithms through accurate OpenGL visualization, and tight integration with the [http://mfem.googlecode.com MFEM] library.
+
+Though depending on MFEM for its finite element dictionary, GLVis can be used independently for parallel and serial visualization. For example, the _[http://www.llnl.gov/casc/hypre hypre]_ library includes scripts for displaying the numerical results from its parallel example codes through GLVis.
+
+==Accurate Visualization==
+
+GLVis uses OpenGL with interactive refinement to accurately represent curved high-order [http://code.google.com/p/glvis/wiki/OptionsAndUse#Visualizing_meshes meshes] and a wide variety of finite element [http://code.google.com/p/glvis/wiki/OptionsAndUse#Visualizing_functions grid functions] defined on them. GLVis is based on the modular finite element methods library [http://mfem.googlecode.com MFEM], which supports in particular:
+
+  * 1D, 2D, 3D volume and surface meshes,
+  * triangular, quadrilateral, tetrahedral and hexahedral meshes,
+  * general [http://code.google.com/p/glvis/wiki/MeshFormats curvilinear] and [http://code.google.com/p/glvis/wiki/NURBS NURBS] meshes,
+  * input in unstructured [http://code.google.com/p/glvis/wiki/CurvilinearVTKMeshes VTK mesh format],
+  * arbitrary high-order, scalar and vector finite element and NURBS solutions,
+  * accurate cutting planes and level lines/surfaces,
+  * visualization of parallel meshes and solutions.
+
+==Lightweight and Convenient==
+
+GLVis has a fast [http://glvis.googlecode.com/hg/README keystroke-based] interface and uses standard OpenGL that takes advantage of hardware acceleration in modern GPUs. It has a number of convenient features, including:
+
+  * unlimited number of refinement and de-refinement levels,
+  * interactive rotation, translation and scaling with the mouse,
+  * support for different perspectives, materials, lighting, color schemes and transparency
+  * processor and element shrinking for better visualization of the interior of 3D meshes
+  * antialiased meshes and fonts,
+  * screenshots in PNG or TIFF format,
+
+==Flexible Server and Scripting Support==
+
+When started without any options, GLVis [http://code.google.com/p/glvis/wiki/OptionsAndUse#Server_mode establishes a server], which waits for socket connections and visualizes any received data in a separate interactive window. This enables:
+
+  * simultaneous visualization of [http://doxygen.mfem.googlecode.com/hg/examples/README_files/index.html?darcy multiple fields/meshes] in separate GLVis windows,
+  * [http://doxygen.mfem.googlecode.com/hg/examples/README_files/index.html?rk persistent] visualization of time-evolving fields,
+  * local visualization of [https://code.google.com/p/glvis/wiki/ParallelVisualization parallel] meshes and solutions sent to the server by separate socket connections from each core of a remote parallel machine,
+  * saving and displaying of [http://code.google.com/p/glvis/wiki/OptionsAndUse#Server_mode socket stream data].
+
+GLVis can also run a [http://code.google.com/p/glvis/wiki/OptionsAndUse#GLVis_scripts batch sequence] of commands (GLVis scripts), which enable precise control of particular visualization scenes, and can be useful for making animations.
+
+== Open Source  ==
+
+GLVis is an open-source software, and can be freely used under the terms of the [https://www.gnu.org/licenses/lgpl-2.1.html LGPL 2.1] license.

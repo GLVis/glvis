@@ -99,6 +99,13 @@ int Screenshot(const char *fname, bool convert = false);
 /// Send a sequence of keystrokes to the visualization window
 void SendKeySequence(const char *seq);
 
+// Directly call the functions assigned to the given keys. Unlike the above
+// function, SendKeySequence(), this function does not send X events and
+// actually disables the function SendExposeEvent() used by many of the
+// functions assigned to keys. Call MyExpose() after calling this function to
+// update the visualization window.
+void CallKeySequence(const char *seq);
+
 void Cone();
 
 extern int MySetColorLogscale;
@@ -110,6 +117,8 @@ int GetMultisample();
 void SetMultisample(int m);
 
 #ifdef GLVIS_USE_FREETYPE
+int RenderBitmapText(const char *text, int &width, int &heigth);
+void DrawBitmapText(); // Draws the last rendered bitmap text
 void DrawBitmapText(const char *text);
 int SetFontFile(const char *font_file, int height);
 int SetFont(const char *font_patterns[], int num_patterns, int height);

@@ -29,7 +29,8 @@ static void VectorKeyHPressed()
         << "| a -  Displays/Hides the axes       |" << endl
         << "| A -  Turns antialiasing on/off     |" << endl
         << "| b -  Displacements step back       |" << endl
-        << "| c -  Displays/Hides the colorbar   |" << endl
+        << "| c -  Toggle colorbar and caption   |" << endl
+        << "| C -  Change the main plot caption  |" << endl
         << "| d -  Displays/Hides displacements  |" << endl
         << "| e -  Displays/Hides the elements   |" << endl
         << "| E -  Toggle the elements in the CP |" << endl
@@ -254,6 +255,9 @@ void VisualizationSceneVector3d::ToggleVectorField(int i)
    PrepareVectorField();
 }
 
+static const char *scal_func_name[] =
+{"magnitude", "x-component", "y-component", "z-component"};
+
 void VisualizationSceneVector3d::SetScalarFunction()
 {
    FiniteElementSpace *fes = (VecGridF) ? VecGridF->FESpace() : NULL;
@@ -306,12 +310,11 @@ void VisualizationSceneVector3d::SetScalarFunction()
             }
          break;
    }
+   extra_caption = scal_func_name[scal_func];
 }
 
 void VisualizationSceneVector3d::ToggleScalarFunction()
 {
-   static const char *scal_func_name[] =
-   {"magnitude", "x-component", "y-component", "z-component"};
    scal_func = (scal_func + 1) % 4;
    cout << "Displaying " << scal_func_name[scal_func] << endl;
    SetScalarFunction();

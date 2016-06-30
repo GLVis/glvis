@@ -192,6 +192,21 @@ int GLVisCommand::WindowTitle(const char *title)
    return 0;
 }
 
+int GLVisCommand::PlotCaption(const char *caption)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = PLOT_CAPTION;
+   plot_caption = caption;
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
+
 int GLVisCommand::Pause()
 {
    if (lock() < 0)
@@ -470,7 +485,9 @@ int GLVisCommand::Execute()
       case KEY_COMMANDS:
       {
          cout << "Command: keys: '" << key_commands << "'" << endl;
-         SendKeySequence(key_commands.c_str());
+         // SendKeySequence(key_commands.c_str());
+         CallKeySequence(key_commands.c_str());
+         MyExpose();
          break;
       }
 
@@ -494,6 +511,15 @@ int GLVisCommand::Execute()
       {
          cout << "Command: window_title: " << window_title << endl;
          SetWindowTitle(window_title.c_str());
+         break;
+      }
+
+      case PLOT_CAPTION:
+      {
+         cout << "Command: plot_caption: " << plot_caption << endl;
+         ::plot_caption = plot_caption;
+         (*vs)->UpdateCaption(); // turn on or off the caption
+         MyExpose();
          break;
       }
 
@@ -744,7 +770,7 @@ void *communication_thread::execute(void *p)
 
    while (1)
    {
-      *_this->is[0] >> ws;
+      *_this->is[0] >> ws; // thread cancellation point
 
       _this->cancel_off();
 
@@ -933,6 +959,28 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->WindowTitle(title.c_str()))
+         {
+            goto comm_terminate;
+         }
+      }
+      else if (_this->ident == "plot_caption")
+      {
+         char c;
+         string caption;
+
+         *_this->is[0] >> ws >> c; // read the opening char
+         // use the opening char as termination as well
+         getline(*_this->is[0], caption, c);
+
+         // all processors sent the command
+         for (int i = 1; i < _this->is.Size(); i++)
+         {
+            *_this->is[i] >> ws >> _this->ident; // 'plot_caption'
+            *_this->is[i] >> ws >> c;
+            getline(*_this->is[i], _this->ident, c);
+         }
+
+         if (glvis_command->PlotCaption(caption.c_str()))
          {
             goto comm_terminate;
          }

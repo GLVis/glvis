@@ -310,6 +310,59 @@ void SendKeySequence (const char *seq)
    }
 }
 
+static bool disableSendExposeEvent = false;
+
+void CallKeySequence(const char *seq)
+{
+   const char *key = seq;
+
+   disableSendExposeEvent = true;
+   for ( ; *key != '\0'; key++ ) // see /usr/include/X11/keysymdef.h
+   {
+      if (*key != '~')
+      {
+         auxCallKeyFunc(*key, 0);
+      }
+      else
+      {
+         switch (*key)
+         {
+            case 'l': // left arrow
+               auxCallKeyFunc(XK_Left, 0);
+               break;
+            case 'r': // right arrow
+               auxCallKeyFunc(XK_Right, 0);
+               break;
+            case 'u': // up arrow
+               auxCallKeyFunc(XK_Up, 0);
+               break;
+            case 'd': // down arrow
+               auxCallKeyFunc(XK_Down, 0);
+               break;
+            case '3': // F3
+               auxCallKeyFunc(XK_F3, 0);
+               break;
+            case '5': // F5
+               auxCallKeyFunc(XK_F5, 0);
+               break;
+            case '6': // F6
+               auxCallKeyFunc(XK_F6, 0);
+               break;
+            case '7': // F7
+               auxCallKeyFunc(XK_F7, 0);
+               break;
+            case '.': // Keypad ./Del
+               auxCallKeyFunc(XK_period, 0);
+               break;
+            case 'E': // Keypad Enter
+               auxCallKeyFunc(XK_Return, 0);
+               break;
+         }
+      }
+   }
+   disableSendExposeEvent = false;
+}
+
 void InitIdleFuncs();
 
 void SetVisualizationScene(VisualizationScene * scene, int view,
@@ -358,6 +411,7 @@ void KillVisualization()
 
 void SendExposeEvent()
 {
+   if (disableSendExposeEvent) { return; }
    XExposeEvent ev;
    ev.type = Expose;
    ev.count = 0;
@@ -2054,7 +2108,7 @@ int font_size = 12;
 
 GLVisFont glvis_font;
 
-void DrawBitmapText(const char *text)
+int RenderBitmapText(const char *text, int &width, int &height)
 {
    if (!glvis_font.Initialized())
    {
@@ -2080,7 +2134,24 @@ void DrawBitmapText(const char *text)
               " edit 'fc_font_patterns' in lib/aux_vis.cpp" << endl;
    }
 
-   if (glvis_font.Render(text) == 0)
+   int fail = glvis_font.Render(text);
+
+   if (!fail)
+   {
+      width = glvis_font.GetImageWidth();
+      height = glvis_font.GetImageHeight();
+   }
+   else
+   {
+      width = height = 0;
+   }
+
+   return !fail;
+}
+
+void DrawBitmapText()
+{
+   if (glvis_font.Initialized() > 0 && glvis_font.GetImage())
    {
       glPushAttrib(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       glEnable(GL_BLEND);
@@ -2095,6 +2166,16 @@ void DrawBitmapText(const char *text)
          glvis_font.GetImage());
 
       glPopAttrib();
+   }
+}
+
+void DrawBitmapText(const char *text)
+{
+   int width, height;
+
+   if (RenderBitmapText(text, width, height))
+   {
+      DrawBitmapText();
    }
 }
 

@@ -50,6 +50,9 @@ int         window_y        = 0; // not a command line option
 int         window_w        = 400;
 int         window_h        = 350;
 const char *window_title    = string_default;
+const char *c_plot_caption  = string_none;
+string      plot_caption;
+string      extra_caption;
 
 // Global variables
 int input = 1;
@@ -97,7 +100,7 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
 
 void ReadInputStreams();
 
-void CloseInputStreams();
+void CloseInputStreams(bool);
 
 GridFunction *ProjectVectorFEGridFunction(GridFunction*);
 
@@ -345,7 +348,7 @@ int InitVis(int t)
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 void StartVisualization(int field_type)
 {
-   if (field_type < 0 && field_type > 2)
+   if (field_type < 0 || field_type > 2)
    {
       return;
    }
@@ -920,8 +923,9 @@ void ExecuteScriptCommand()
       {
          scr >> keys;
          cout << "Script: keys: '" << keys << "'" << endl;
-         SendKeySequence(keys.c_str());
-         // MyExpose();
+         // SendKeySequence(keys.c_str());
+         CallKeySequence(keys.c_str());
+         MyExpose();
       }
       else if (word == "palette")
       {
@@ -979,6 +983,34 @@ void ExecuteScriptCommand()
          }
          cout << endl;
          vs->cam.Set(cam);
+         MyExpose();
+      }
+      else if (word == "scale")
+      {
+         double scale;
+         cout << "Script: scale:";
+         scr >> scale;
+         cout << ' ' << scale;
+         cout << endl;
+         vs->Scale(scale);
+         MyExpose();
+      }
+      else if (word == "translate")
+      {
+         double x, y, z;
+         cout << "Script: translate:";
+         scr >> x >> y >> z;
+         cout << ' ' << x << ' ' << y << ' ' << z;
+         cout << endl;
+         vs->Translate(x, y, z);
+         MyExpose();
+      }
+      else if (word == "plot_caption")
+      {
+         char delim;
+         scr >> ws >> delim;
+         getline(scr, plot_caption, delim);
+         vs->UpdateCaption(); // turn on or off the caption
          MyExpose();
       }
       else
@@ -1103,6 +1135,7 @@ int main (int argc, char *argv[])
    const char *script_file   = string_none;
    const char *font_name     = string_default;
    int         portnum       = 19916;
+   bool        secure        = socketstream::secure_default;
    int         multisample   = GetMultisample();
    double      line_width    = Get_LineWidth();
    double      ms_line_width = Get_MS_LineWidth();
@@ -1144,9 +1177,12 @@ int main (int argc, char *argv[])
                   "Save the mesh coloring generated when opening only a mesh.");
    args.AddOption(&portnum, "-p", "--listen-port",
                   "Specify the port number on which to accept connections.");
+   args.AddOption(&secure, "-sec", "--secure-sockets",
+                  "-no-sec", "--standard-sockets",
+                  "Enable or disable GnuTLS secure sockets.");
    args.AddOption(&mac, "-mac", "--save-stream",
                   "-no-mac", "--dont-save-stream",
-                  "In server mode, save incomming data to a file before"
+                  "In server mode, save incoming data to a file before"
                   " visualization.");
    args.AddOption(&stream_file, "-saved", "--saved-stream",
                   "Load a GLVis stream saved to a file.");
@@ -1156,6 +1192,8 @@ int main (int argc, char *argv[])
                   "Set the window height.");
    args.AddOption(&window_title, "-wt", "--window-title",
                   "Set the window title.");
+   args.AddOption(&c_plot_caption, "-c", "--plot-caption",
+                  "Set the plot caption (visible when colorbar is visible).");
    args.AddOption(&font_name, "-fn", "--font",
                   "Set the font: <font-name>[-<font-size>].");
    args.AddOption(&multisample, "-ms", "--multisample",
@@ -1229,6 +1267,10 @@ int main (int argc, char *argv[])
    {
       Set_MS_LineWidth(ms_line_width);
    }
+   if (c_plot_caption != string_none)
+   {
+      plot_caption = c_plot_caption;
+   }
 
    GLVisGeometryRefiner.SetType(geom_ref_type);
 
@@ -1273,6 +1315,15 @@ int main (int argc, char *argv[])
       return 1;
    }
 
+#ifndef MFEM_USE_GNUTLS
+   if (secure)
+   {
+      cout << "The secure option can only be used when MFEM is compiled with"
+           " GnuTLS support." << endl;
+      return 1;
+   }
+#endif
+
    int childPID, viscount = 0, nproc = 1, proc = 0;
 
    // server mode, read the mesh and the solution from a socket
@@ -1284,6 +1335,36 @@ int main (int argc, char *argv[])
          signal(SIGCHLD, SIG_IGN);
       }
 
+#ifdef MFEM_USE_GNUTLS
+      GnuTLS_global_state *state = NULL;
+      // state->set_log_level(1000);
+      GnuTLS_session_params *params = NULL;
+      if (secure)
+      {
+         state = new GnuTLS_global_state;
+         string home_dir(getenv("HOME"));
+         string server_dir = home_dir + "/.config/glvis/server/";
+         string pubkey  = server_dir + "pubring.gpg";
+         string privkey = server_dir + "secring.gpg";
+         string trustedkeys = server_dir + "trusted-clients.gpg";
+         params = new GnuTLS_session_params(
+            *state, pubkey.c_str(), privkey.c_str(),
+            trustedkeys.c_str(), GNUTLS_SERVER);
+         if (!params->status.good())
+         {
+            cout << "  public key   = " << pubkey << '\n'
+                 << "  private key  = " << privkey << '\n'
+                 << "  trusted keys = " << trustedkeys << endl;
+            cout << "Error setting GLVis server parameters.\n"
+                 "Generate your GLVis keys with:"
+                 " bash glvis-keygen.sh [\"Your Name\"] [\"Your Email\"]"
+                 << endl;
+            delete params; delete state;
+            return 3;
+         }
+      }
+#endif
+
       socketserver server(portnum);
       if (server.good())
       {
@@ -1292,10 +1373,18 @@ int main (int argc, char *argv[])
       else
       {
          cout << "Server already running on port " << portnum << ".\n" << endl;
+#ifdef MFEM_USE_GNUTLS
+         delete params; delete state;
+#endif
          return 2;
       }
 
-      socketstream *isock = new socketstream;
+      socketstream *isock;
+#ifndef MFEM_USE_GNUTLS
+      isock = new socketstream;
+#else
+      isock = secure ? new socketstream(*params) : new socketstream(false);
+#endif
       while (1)
       {
          while (server.accept(*isock) < 0);
@@ -1321,7 +1410,12 @@ int main (int argc, char *argv[])
 #endif
                input_streams.SetSize(nproc);
                input_streams[proc] = isock;
+#ifndef MFEM_USE_GNUTLS
                isock = new socketstream;
+#else
+               isock = secure ? new socketstream(*params) :
+                       new socketstream(false);
+#endif
                np++;
                if (np == nproc)
                {
@@ -1350,7 +1444,7 @@ int main (int argc, char *argv[])
                else
                {
                   ReadInputStreams();
-                  CloseInputStreams();
+                  CloseInputStreams(false);
                   ofs.precision(8);
                   ofs << "solution\n";
                   mesh->Print(ofs);
@@ -1402,21 +1496,24 @@ int main (int argc, char *argv[])
                      ft = (grid_f->VectorDim() == 1) ? 0 : 1;
                   }
                   StartVisualization(ft);
-                  CloseInputStreams();
+                  CloseInputStreams(false);
                   exit(0);
                }
 
             default :                     // This is the parent process
                if (!par_data)
                {
-                  isock->close();
+                  isock->rdbuf()->socketbuf::close();
                }
                else
                {
-                  CloseInputStreams();
+                  CloseInputStreams(true);
                }
          }
       }
+#ifdef MFEM_USE_GNUTLS
+      delete params; delete state;
+#endif
    }
    else  // input != 1, non-server mode
    {
@@ -1600,7 +1697,7 @@ void ReadSerial()
       }
 
       // mesh = new Mesh(meshin, is_gf?1:0, 0);
-      mesh = new Mesh(meshin, 1, 0, fix_elem_orient);
+      mesh = new Mesh(mesh_file, 1, 0, fix_elem_orient);
    }
 
    if (is_gf || (input & 4) || (input & 8))
@@ -1893,10 +1990,15 @@ void ReadInputStreams()
    Extrude1DMeshAndSolution(&mesh, &grid_f, NULL);
 }
 
-void CloseInputStreams()
+void CloseInputStreams(bool parent)
 {
    for (int i = 0; i < input_streams.Size(); i++)
    {
+      if (parent)
+      {
+         socketstream *sock = dynamic_cast<socketstream*>(input_streams[i]);
+         if (sock) { sock->rdbuf()->socketbuf::close(); }
+      }
       delete input_streams[i];
    }
    input_streams.DeleteAll();

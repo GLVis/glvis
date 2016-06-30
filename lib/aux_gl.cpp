@@ -274,6 +274,11 @@ void auxKeyFuncReplace(int key, void (*Func)(void))
       printf("auxKeyFuncReplace : A key is assigned multiple functions!\n");
 }
 
+void auxCallKeyFunc(int key, GLenum status)
+{
+   KeyDown(key, status);
+}
+
 void auxMouseFunc(int mouse, int mode, void (*Func)(AUX_EVENTREC *))
 {
     if (mode == AUX_MOUSEDOWN) {

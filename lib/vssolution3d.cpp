@@ -36,7 +36,8 @@ static void Solution3dKeyHPressed()
         << "+------------------------------------+" << endl
         << "| a -  Displays/Hides the axes       |" << endl
         << "| A -  Turns antialiasing on/off     |" << endl
-        << "| c -  Displays/Hides the colorbar   |" << endl
+        << "| c -  Toggle colorbar and caption   |" << endl
+        << "| C -  Change the main plot caption  |" << endl
         << "| e -  Displays/Hides the elements   |" << endl
         << "| E -  Toggle the elements in the CP |" << endl
         << "| f -  Smooth/Flat/discont. shading  |" << endl

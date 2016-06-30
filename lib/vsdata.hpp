@@ -16,6 +16,8 @@
 #include "mfem.hpp"
 using namespace mfem;
 
+extern std::string plot_caption; // defined in glvis.cpp
+extern std::string extra_caption; // defined in glvis.cpp
 
 class Plane
 {
@@ -178,10 +180,11 @@ public:
    void DrawColorBar(double minval, double maxval,
                      Array<double> * level = NULL,
                      Array<double> * levels = NULL);
+   void DrawCaption();
    void DrawCoordinateCross();
 
-   double &GetMinV() { return minv; };
-   double &GetMaxV() { return maxv; };
+   double &GetMinV() { return minv; }
+   double &GetMaxV() { return maxv; }
 
    void SetLevelLines(double min, double max, int n, int adj = 1);
 
@@ -202,7 +205,20 @@ public:
 
    void ToggleLight() { light = !light; }
 
-   void ToggleDrawColorbar() { colorbar = !colorbar; }
+   void ToggleDrawColorbar()
+   {
+      // colorbar states are: 0) no colorbar, no caption; 1) colorbar with
+      // caption; 2) colorbar without caption.
+      static const int next[2][3] = { { 1, 2, 0 }, { 2, 0, 0 } };
+      colorbar = next[plot_caption.empty()][colorbar];
+   }
+
+   // Turn on or off the caption
+   void UpdateCaption()
+   {
+      bool empty = plot_caption.empty();
+      colorbar = (colorbar ? empty+1 : !empty);
+   }
 
    void PrepareAxes();
    void ToggleDrawAxes()
@@ -230,7 +246,7 @@ public:
 
    /// Shrink the set of points towards attributes centers of gravity
    void ShrinkPoints(DenseMatrix &pointmat, int i, int fn, int di);
-   // Centers of gravity based on the bounday/element attributes
+   // Centers of gravity based on the boundary/element attributes
    DenseMatrix bdrc, matc;
    /// Compute the center of gravity for each boundary attribute
    void ComputeBdrAttrCenter();

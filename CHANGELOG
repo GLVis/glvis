@@ -9,6 +9,33 @@
                               http://glvis.org
 
 
+Version 3.2, released on June 30, 2016
+======================================
+
+- Added support for secure socket connections based on the GnuTLS library
+  through MFEM. This option may be useful in multi-user environment to prevent
+  users from sending/receiving visualization data to/from other users. See
+  INSTALL for setup instructions.
+
+- Added an optional caption at the top of the GLVis window. This can be set in
+  several different ways: through a command-line parameter (-c|--plot-caption),
+  a socket command (plot_caption), a GLVis script command (plot_caption) or the
+  'C' keystroke.
+
+  The caption is displayed as one of the states of the colorbar (key 'c') which
+  now has 3 modes: no colorbar & no caption; colorbar & caption; colorbar & no
+  caption. With empty caption, 'c' works the same as before.
+
+  For vector fields, the current vector-to-scalar function is added to the
+  caption in parenthesis.  Similarly, for 2D scalar fields, the "surface
+  elements mode" (attached to the 'e' key) is added to the caption.
+
+- Improved the handling of the "keys" command in GLVis scripts and socket
+  connections.
+
+- Added "scale" and "translate" script commands.
+
+
 Version 3.1, released on Feb 5, 2016
 ====================================
 

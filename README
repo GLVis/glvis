@@ -58,7 +58,8 @@ R - Cycle through the six 2D projections (camera looking in +/- x/y/z
 j - Turn on/off perspective
 s - Turn on/off unit cube scaling
 
-c - Display/Hide the colorbar
+c - Toggle the colorbar and caption display state
+C - Change the main plot caption
 p - Cycle through color palettes (lots of options, use F6 for a menu)
 t - Cycle materials and lights (5 states)
 l - Turns on/off the light

@@ -260,6 +260,7 @@ extern void auxIdleFunc(void (*)(void));
 extern void auxKeyFunc(int, void (*)(void));
 extern void auxModKeyFunc(int, void (*)(GLenum));
 extern void auxKeyFuncReplace(int, void (*)(void));
+extern void auxCallKeyFunc(int key, GLenum status);
 extern void auxMouseFunc(int, int, void (*)(AUX_EVENTREC *));
 
 extern int auxGetColorMapSize(void);

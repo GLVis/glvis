@@ -20,7 +20,6 @@ using namespace mfem;
 
 using namespace std;
 
-
 static void VectorKeyHPressed()
 {
    cout << endl
@@ -30,7 +29,8 @@ static void VectorKeyHPressed()
         << "| a -  Displays/Hides the axes       |" << endl
         << "| A -  Turns antialiasing on/off     |" << endl
         << "| b -  Displacements step back       |" << endl
-        << "| c -  Displays/Hides the colorbar   |" << endl
+        << "| c -  Toggle colorbar and caption   |" << endl
+        << "| C -  Change the main plot caption  |" << endl
         << "| d -  Displays/Hides displacements  |" << endl
         << "| e -  Displays/Hides the elements   |" << endl
         << "| f -  Smooth/Flat shading           |" << endl
@@ -237,6 +237,12 @@ void VisualizationSceneVector::ToggleVectorField()
    PrepareVectorField();
 }
 
+const char *Vec2ScalarNames[7] =
+{
+   "magnitude", "direction", "x-component", "y-component", "divergence",
+   "curl", "anisotropy"
+};
+
 VisualizationSceneVector::VisualizationSceneVector(Mesh & m,
                                                    Vector & sx, Vector & sy)
 {
@@ -330,12 +336,6 @@ double (*Vec2ScalarFunctions[7])(double, double) =
    VecAnisotrSubst
 };
 
-const char *Vec2ScalarNames[7] =
-{
-   "magnitude", "direction", "x-component", "y-component", "divergence",
-   "curl", "anisotropy"
-};
-
 void VisualizationSceneVector::CycleVec2Scalar(int print)
 {
    int i;
@@ -367,6 +367,7 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
    }
 
    Vec2Scalar = Vec2ScalarFunctions[i];
+   extra_caption = Vec2ScalarNames[i];
 
    for (i = 0; i < mesh->GetNV(); i++)
    {
@@ -472,6 +473,7 @@ void VisualizationSceneVector::Init()
    ArrowScale = 1.0;
    RefineFactor = 1;
    Vec2Scalar = VecLength;
+   extra_caption = Vec2ScalarNames[0];
 
    for (int i = 0; i < mesh->GetNV(); i++)
    {

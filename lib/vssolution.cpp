@@ -55,7 +55,8 @@ static void SolutionKeyHPressed()
         << "| a -  Displays/Hides the axes       |" << endl
         << "| A -  Turns antialiasing on/off     |" << endl
         << "| b -  Displays/Hides the boundary   |" << endl
-        << "| c -  Displays/Hides the colorbar   |" << endl
+        << "| c -  Toggle colorbar and caption   |" << endl
+        << "| C -  Change the main plot caption  |" << endl
         << "| e -  Displays/Hides the elements   |" << endl
         << "| f -  Smooth/Nonconf/Flat shading   |" << endl
         << "| g -  Toggle background             |" << endl
@@ -516,6 +517,14 @@ void VisualizationSceneSolution::ToggleDrawElems()
    drawelems = (drawelems + 6) % 7;
 
    cout << "Surface elements mode : " << modes[drawelems] << endl;
+   if (drawelems < 2)
+   {
+      extra_caption.clear();
+   }
+   else
+   {
+      extra_caption = modes[drawelems];
+   }
 
    if (drawelems != 0 && shading == 2)
    {
@@ -1899,8 +1908,13 @@ void VisualizationSceneSolution::Draw()
    glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
    glDisable(GL_CLIP_PLANE0);
-   // draw colorbar
    glDisable(GL_LIGHTING);
+
+#if 0
+   // Testing: moved the drawing of the colorbar at the end. If there are no
+   // undesired effects we can delete this disabled code. See also below.
+
+   // draw colorbar
    if (colorbar)
    {
       if (drawmesh == 2)
@@ -1912,6 +1926,7 @@ void VisualizationSceneSolution::Draw()
          DrawColorBar(minv,maxv);
       }
    }
+#endif
 
    if (draw_cp)
    {
@@ -1995,6 +2010,25 @@ void VisualizationSceneSolution::Draw()
       glCallList(axeslist);
       DrawCoordinateCross();
    }
+
+#if 1
+   // Testing: moved the drawing of the colorbar from the beginning. If there
+   // are no undesired effects we can remove this comment and "#if 1". We can
+   // also do the same in vector, 3D, and vector 3D modes.
+
+   // draw colorbar
+   if (colorbar)
+   {
+      if (drawmesh == 2)
+      {
+         DrawColorBar(minv,maxv,&level);
+      }
+      else
+      {
+         DrawColorBar(minv,maxv);
+      }
+   }
+#endif
 
    glFlush();
    auxSwapBuffers();

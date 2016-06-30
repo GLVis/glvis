@@ -42,9 +42,8 @@ make style
 endef
 
 # Default installation location
-PREFIX ?= ./bin
-INSTALL ?= /usr/bin/install
-GLVIS_PREFIX ?= $(PREFIX)
+PREFIX = ./bin
+INSTALL = /usr/bin/install
 
 # Use the MFEM build directory
 MFEM_DIR = ../mfem
@@ -56,23 +55,13 @@ CONFIG_MK = $(MFEM_DIR)/config/config.mk
 # Use two relative paths to MFEM: first one for compilation in '.' and second
 # one for compilation in 'lib'.
 MFEM_DIR1 := $(MFEM_DIR)
-MFEM_DIR2 := ../$(MFEM_DIR)
+MFEM_DIR2 := $(realpath $(MFEM_DIR))
 
 # Use the compiler used by MFEM. Get the compiler and the options for compiling
 # and linking from MFEM's config.mk. (Skip this if the target does not require
 # building.)
-ifneq (help,$(MAKECMDGOALS))
-ifneq (status,$(MAKECMDGOALS))
-ifneq (info,$(MAKECMDGOALS))
-ifneq (clean,$(MAKECMDGOALS))
-ifneq (distclean,$(MAKECMDGOALS))
-ifneq (style,$(MAKECMDGOALS))
+ifeq (,$(filter help clean distclean style,$(MAKECMDGOALS)))
    -include $(CONFIG_MK)
-endif
-endif
-endif
-endif
-endif
 endif
 
 CXX = $(MFEM_CXX)
@@ -207,18 +196,21 @@ distclean: clean
 	rm -f GLVis_coloring.gf
 
 install: glvis
-	mkdir -p $(GLVIS_PREFIX)
-	$(INSTALL) -m 750 glvis $(GLVIS_PREFIX)
+	mkdir -p $(PREFIX)
+	$(INSTALL) -m 750 glvis $(PREFIX)
+ifeq ($(MFEM_USE_GNUTLS),YES)
+	$(INSTALL) -m 750 glvis-keygen.sh $(PREFIX)
+endif
 
 help:
 	$(info $(value GLVIS_HELP_MSG))
 	@true
 
 status info:
-	$(info MFEM_DIR     = $(MFEM_DIR))
-	$(info GLVIS_FLAGS  = $(GLVIS_FLAGS))
-	$(info GLVIS_LIBS   = $(value GLVIS_LIBS))
-	$(info GLVIS_PREFIX = $(GLVIS_PREFIX))
+	$(info MFEM_DIR    = $(MFEM_DIR))
+	$(info GLVIS_FLAGS = $(GLVIS_FLAGS))
+	$(info GLVIS_LIBS  = $(value GLVIS_LIBS))
+	$(info PREFIX      = $(PREFIX))
 	@true
 
 ASTYLE = astyle --options=$(MFEM_DIR1)/config/mfem.astylerc

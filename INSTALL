@@ -84,3 +84,11 @@ Some building considerations:
 
 - On Mac OS X, it is better to start manually the XQuarz app, before starting
   GLVis, in order to avoid the wait for establishing the first X11 connection.
+
+- Support for secure sockets using the GnuTLS library through MFEM can be
+  enabled by configuring and compiling MFEM with the option MFEM_USE_GNUTLS=YES,
+  see MFEM's INSTALL for more details. In addition, in order for this to work,
+  one needs to generate GLVis server/client key pairs (in ~/.config/glvis),
+  similar to ssh keys. The script 'glvis-keygen.sh' can be used to do that:
+
+     bash glvis-keygen.sh ["Your Name"] ["Your Email"]
