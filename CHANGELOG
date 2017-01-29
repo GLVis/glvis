@@ -9,8 +9,18 @@
                               http://glvis.org
 
 
-Version 3.2, released on June 30, 2016
-======================================
+Version 3.3, released on Jan 28, 2017
+=====================================
+
+- Added the ability to change the axis labels displayed with the coordinate
+  cross in the lower left corner. They can be set with the new 'axis_labels'
+  socket command, for example: sol_sock << "axis_labels 'u' 'v' 'w'\n";
+
+- With the corresponding version of MFEM, GLVis now supports gz-compressed
+  files and socket streams.
+
+Version 3.2, released on Jun 30, 2016
+=====================================
 
 - Added support for secure socket connections based on the GnuTLS library
   through MFEM. This option may be useful in multi-user environment to prevent

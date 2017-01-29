@@ -510,7 +510,7 @@ int ScriptReadSolution(istream &scr, Mesh **mp, GridFunction **sp)
    // read the mesh
    scr >> ws >> word; // mesh filename (can't contain spaces)
    {
-      ifstream imesh(word.c_str());
+      named_ifgzstream imesh(word.c_str());
       if (!imesh)
       {
          cout << "Can not open mesh file: " << word << endl;
@@ -523,7 +523,7 @@ int ScriptReadSolution(istream &scr, Mesh **mp, GridFunction **sp)
    // read the solution (GridFunction)
    scr >> ws >> word;
    {
-      ifstream isol(word.c_str());
+      ifgzstream isol(word.c_str());
       if (!isol)
       {
          cout << "Can not open solution file: " << word << endl;
@@ -581,7 +581,7 @@ int ScriptReadDisplMesh(istream &scr, Mesh **mp, GridFunction **sp)
    cout << "Script: mesh: " << flush;
    scr >> ws >> word;
    {
-      ifstream imesh(word.c_str());
+      named_ifgzstream imesh(word.c_str());
       if (!imesh)
       {
          cout << "Can not open mesh file: " << word << endl;
@@ -1387,7 +1387,12 @@ int main (int argc, char *argv[])
 #endif
       while (1)
       {
-         while (server.accept(*isock) < 0);
+         while (server.accept(*isock) < 0)
+         {
+#ifdef GLVIS_DEBUG
+            cout << "GLVis: server.accept(...) failed." << endl;
+#endif
+         }
 
          *isock >> data_type >> ws;
 
@@ -1408,7 +1413,38 @@ int main (int argc, char *argv[])
                cout << "new connection: parallel " << nproc << ' ' << proc
                     << endl;
 #endif
-               input_streams.SetSize(nproc);
+               if (np == 0)
+               {
+                  if (nproc <= 0)
+                  {
+                     cout << "Invalid number of processors: " << nproc << endl;
+                     mfem_error();
+                  }
+                  input_streams.SetSize(nproc);
+                  input_streams = NULL;
+               }
+               else
+               {
+                  if (nproc != input_streams.Size())
+                  {
+                     cout << "Unexpected number of processors: " << nproc
+                          << ", expected: " << input_streams.Size() << endl;
+                     mfem_error();
+                  }
+               }
+               if (0 > proc || proc >= nproc)
+               {
+                  cout << "Invalid processor rank: " << proc
+                       << ", number of processors: " << nproc << endl;
+                  mfem_error();
+               }
+               if (input_streams[proc])
+               {
+                  cout << "Second connection attempt from processor rank: "
+                       << proc << endl;
+                  mfem_error();
+               }
+
                input_streams[proc] = isock;
 #ifndef MFEM_USE_GNUTLS
                isock = new socketstream;
@@ -1422,8 +1458,19 @@ int main (int argc, char *argv[])
                   break;
                }
                // read next available socket stream
-               while (server.accept(*isock) < 0);
+               while (server.accept(*isock) < 0)
+               {
+#ifdef GLVIS_DEBUG
+                  cout << "GLVis: server.accept(...) failed." << endl;
+#endif
+               }
                *isock >> data_type >> ws; // "parallel"
+               if (data_type != "parallel")
+               {
+                  cout << "Expected keyword \"parallel\", got \"" << data_type
+                       << '"' << endl;
+                  mfem_error();
+               }
             }
             while (1);
          }
@@ -1702,9 +1749,8 @@ void ReadSerial()
 
    if (is_gf || (input & 4) || (input & 8))
    {
-      ifstream solin;
       // get the solution from file
-      solin.open(sol_file);
+      ifgzstream solin(sol_file);
       if (!solin)
       {
          cerr << "Can not open solution file " << sol_file << ". Exit.\n";
@@ -1867,12 +1913,11 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    Array<Mesh *> mesh_array;
 
    mesh_array.SetSize(np);
-   ifstream meshfile;
    for (int p = 0; p < np; p++)
    {
       ostringstream fname;
       fname << mesh_prefix << '.' << setfill('0') << setw(pad_digits) << p;
-      meshfile.open(fname.str().c_str());
+      named_ifgzstream meshfile(fname.str().c_str());
       if (!meshfile)
       {
          cerr << "Can not open mesh file: " << fname.str().c_str()
@@ -1896,19 +1941,17 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
             mesh_array[p]->GetBdrElement(i)->SetAttribute(p+1);
          }
       }
-      meshfile.close();
    }
    *mesh_p = new Mesh(mesh_array, np);
 
    if (sol_prefix && sol_p)
    {
       Array<GridFunction *> gf_array(np);
-      ifstream solfile;
       for (int p = 0; p < np; p++)
       {
          ostringstream fname;
          fname << sol_prefix << '.' << setfill('0') << setw(pad_digits) << p;
-         solfile.open(fname.str().c_str());
+         ifgzstream solfile(fname.str().c_str());
          if (!solfile)
          {
             cerr << "Can not open solution file " << fname.str().c_str()
@@ -1926,7 +1969,6 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
             return 2;
          }
          gf_array[p] = new GridFunction(mesh_array[p], solfile);
-         solfile.close();
       }
       *sol_p = new GridFunction(*mesh_p, gf_array, np);
 

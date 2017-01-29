@@ -57,6 +57,8 @@ protected:
 
    double minv, maxv;
 
+   std::string a_label_x, a_label_y, a_label_z;
+
    int scaling, colorbar, drawaxes, axeslist;
    int auto_ref_max, auto_ref_max_surf_elem;
 
@@ -120,7 +122,8 @@ public:
    /// Shrink factor with respect to the element (material) attributes centers
    double shrinkmat;
 
-   VisualizationSceneScalarData() {}
+   VisualizationSceneScalarData()
+      : a_label_x("x"), a_label_y("y"), a_label_z("z") {}
    VisualizationSceneScalarData (Mesh & m, Vector & s);
 
    virtual ~VisualizationSceneScalarData();
@@ -219,6 +222,8 @@ public:
       bool empty = plot_caption.empty();
       colorbar = (colorbar ? empty+1 : !empty);
    }
+
+   void SetAxisLabels(const char * a_x, const char * a_y, const char * a_z);
 
    void PrepareAxes();
    void ToggleDrawAxes()

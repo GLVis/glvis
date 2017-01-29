@@ -564,7 +564,7 @@ void VisualizationSceneVector3d::PrepareFlat()
 
 void VisualizationSceneVector3d::PrepareFlat2()
 {
-   int i, k, fn, fo, di, have_normals;
+   int i, k, fn, fo, di = 0, have_normals;
    double bbox_diam, vmin, vmax;
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -929,7 +929,7 @@ void VisualizationSceneVector3d::PrepareLines()
 
 void VisualizationSceneVector3d::PrepareLines2()
 {
-   int i, j, k, fn, fo, di;
+   int i, j, k, fn, fo, di = 0;
    double bbox_diam;
 
    glNewList (linelist, GL_COMPILE);

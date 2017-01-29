@@ -51,7 +51,8 @@ private:
       CAMERA = 15,
       AUTOPAUSE = 16,
       WINDOW_GEOMETRY = 17,
-      PLOT_CAPTION = 18
+      PLOT_CAPTION = 18,
+      AXIS_LABELS = 19
    };
 
    // command to be executed
@@ -66,6 +67,9 @@ private:
    int           window_w, window_h;
    std::string   window_title;
    std::string   plot_caption;
+   std::string   axis_label_x;
+   std::string   axis_label_y;
+   std::string   axis_label_z;
    double        view_ang_theta, view_ang_phi;
    double        zoom_factor;
    int           subdiv_tot, subdiv_bdr;
@@ -105,6 +109,7 @@ public:
    int WindowGeometry(int x, int y, int w, int h);
    int WindowTitle(const char *title);
    int PlotCaption(const char *caption);
+   int AxisLabels(const char *a_x, const char *a_y, const char *a_z);
    int Pause();
    int ViewAngles(double theta, double phi);
    int Zoom(double factor);

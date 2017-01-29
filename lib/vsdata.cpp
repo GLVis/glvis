@@ -636,29 +636,28 @@ void VisualizationSceneScalarData::DrawCoordinateCross()
    glListBase (fontbase);
 #endif
 
-   const char *a_labels[] = {"x", "y", "z"};
    glRasterPos3d (lenx, 0.0f, 0.0f);
-   if (print) { gl2psText(a_labels[0],"Times",8); }
+   if (print) { gl2psText(a_label_x.c_str(),"Times",8); }
 #ifndef GLVIS_USE_FREETYPE
-   glCallLists(1, GL_UNSIGNED_BYTE, a_labels[0]);
+   glCallLists(a_label_x.length(), GL_UNSIGNED_BYTE, a_label_x.c_str());
 #else
-   DrawBitmapText(a_labels[0]);
+   DrawBitmapText(a_label_x.c_str());
 #endif
 
    glRasterPos3d (0.0f, leny, 0.0f);
-   if (print) { gl2psText(a_labels[1],"Times",8); }
+   if (print) { gl2psText(a_label_y.c_str(),"Times",8); }
 #ifndef GLVIS_USE_FREETYPE
-   glCallLists(1, GL_UNSIGNED_BYTE, a_labels[1]);
+   glCallLists(a_label_y.length(), GL_UNSIGNED_BYTE, a_label_y.c_str());
 #else
-   DrawBitmapText(a_labels[1]);
+   DrawBitmapText(a_label_y.c_str());
 #endif
 
    glRasterPos3d (0.0f, 0.0f, lenz);
-   if (print) { gl2psText(a_labels[2],"Times",8); }
+   if (print) { gl2psText(a_label_z.c_str(),"Times",8); }
 #ifndef GLVIS_USE_FREETYPE
-   glCallLists(1, GL_UNSIGNED_BYTE, a_labels[2]);
+   glCallLists(a_label_z.length(), GL_UNSIGNED_BYTE, a_label_z.c_str());
 #else
-   DrawBitmapText(a_labels[2]);
+   DrawBitmapText(a_label_z.c_str());
 #endif
 
 #ifndef GLVIS_USE_FREETYPE
@@ -1182,6 +1181,7 @@ void VisualizationSceneScalarData::SetAutoscale(int _autoscale)
 
 VisualizationSceneScalarData::VisualizationSceneScalarData(
    Mesh & m, Vector & s)
+   : a_label_x("x"), a_label_y("y"), a_label_z("z")
 {
    mesh = &m;
    sol  = &s;
@@ -1342,6 +1342,15 @@ void VisualizationSceneScalarData::SetValueRange(double min, double max)
    maxv = max;
 
    UpdateValueRange(true);
+}
+
+void VisualizationSceneScalarData::SetAxisLabels(const char * a_x,
+                                                 const char * a_y,
+                                                 const char * a_z)
+{
+   a_label_x = a_x;
+   a_label_y = a_y;
+   a_label_z = a_z;
 }
 
 void VisualizationSceneScalarData::PrepareAxes()

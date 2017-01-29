@@ -1783,7 +1783,7 @@ void VisualizationSceneSolution3d::PrepareLines()
 
 void VisualizationSceneSolution3d::PrepareLines2()
 {
-   int i, j, k, fn, fo, di;
+   int i, j, k, fn, fo, di = 0;
    double bbox_diam;
 
    glNewList (linelist, GL_COMPILE);

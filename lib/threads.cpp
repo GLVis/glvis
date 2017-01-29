@@ -207,6 +207,23 @@ int GLVisCommand::PlotCaption(const char *caption)
    return 0;
 }
 
+int GLVisCommand::AxisLabels(const char *a_x, const char *a_y, const char *a_z)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = AXIS_LABELS;
+   axis_label_x = a_x;
+   axis_label_y = a_y;
+   axis_label_z = a_z;
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
+
 int GLVisCommand::Pause()
 {
    if (lock() < 0)
@@ -519,6 +536,16 @@ int GLVisCommand::Execute()
          cout << "Command: plot_caption: " << plot_caption << endl;
          ::plot_caption = plot_caption;
          (*vs)->UpdateCaption(); // turn on or off the caption
+         MyExpose();
+         break;
+      }
+
+      case AXIS_LABELS:
+      {
+         cout << "Command: axis_labels: '" << axis_label_x << "' '"
+              << axis_label_y << "' '" << axis_label_z << "'" << endl;
+         (*vs)->SetAxisLabels(axis_label_x.c_str(), axis_label_y.c_str(),
+                              axis_label_z.c_str());
          MyExpose();
          break;
       }
@@ -981,6 +1008,38 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->PlotCaption(caption.c_str()))
+         {
+            goto comm_terminate;
+         }
+      }
+      else if (_this->ident == "axis_labels")
+      {
+         char c;
+         string label_x, label_y, label_z;
+
+         *_this->is[0] >> ws >> c; // read the opening char
+         // use the opening char as termination as well
+         getline(*_this->is[0], label_x, c);
+         *_this->is[0] >> ws >> c;
+         getline(*_this->is[0], label_y, c);
+         *_this->is[0] >> ws >> c;
+         getline(*_this->is[0], label_z, c);
+
+         // all processors sent the command
+         for (int i = 1; i < _this->is.Size(); i++)
+         {
+            *_this->is[i] >> ws >> _this->ident; // 'axis_label'
+            *_this->is[i] >> ws >> c;
+            getline(*_this->is[i], _this->ident, c);
+            *_this->is[i] >> ws >> c;
+            getline(*_this->is[i], _this->ident, c);
+            *_this->is[i] >> ws >> c;
+            getline(*_this->is[i], _this->ident, c);
+         }
+
+         if (glvis_command->AxisLabels(label_x.c_str(),
+                                       label_y.c_str(),
+                                       label_z.c_str()))
          {
             goto comm_terminate;
          }
