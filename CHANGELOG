@@ -9,6 +9,15 @@
                               http://glvis.org
 
 
+Development version, not released yet
+=====================================
+
+- Added a number of new color palettes which can now be switched both forwards
+  and backwards with the 'p' and 'P' keys respectively.
+
+- Printing to PDF is now done with 'Ctrl+P' (replacing 'P').
+
+
 Version 3.3, released on Jan 28, 2017
 =====================================
 
@@ -18,6 +27,7 @@ Version 3.3, released on Jan 28, 2017
 
 - With the corresponding version of MFEM, GLVis now supports gz-compressed
   files and socket streams.
+
 
 Version 3.2, released on Jun 30, 2016
 =====================================

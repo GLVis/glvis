@@ -52,7 +52,7 @@ void RightButtonDown (AUX_EVENTREC *event);
 void RightButtonLoc  (AUX_EVENTREC *event);
 void RightButtonUp   (AUX_EVENTREC *event);
 
-void KeyP();
+void KeyCtrlP();
 void KeyS();
 void KeyQPressed();
 void ToggleThreads();

@@ -812,11 +812,29 @@ void KeyRPressed()
 }
 
 void Next_RGB_Palette();
+void Prev_RGB_Palette();
 int Select_New_RGB_Palette();
+
+void KeypPressed(GLenum state)
+{
+   if (state & ControlMask)
+   {
+      KeyCtrlP();
+   }
+   else
+   {
+      Next_RGB_Palette();
+      if (!GetUseTexture())
+      {
+         vsdata->EventUpdateColors();
+      }
+      SendExposeEvent();
+   }
+}
 
 void KeyPPressed()
 {
-   Next_RGB_Palette();
+   Prev_RGB_Palette();
    if (!GetUseTexture())
    {
       vsdata->EventUpdateColors();
@@ -1227,7 +1245,8 @@ void VisualizationSceneScalarData::Init()
       auxKeyFunc (AUX_r, KeyrPressed);
       auxKeyFunc (AUX_R, KeyRPressed);
 
-      auxKeyFunc (AUX_p, KeyPPressed);
+      auxModKeyFunc (AUX_p, KeypPressed);
+      auxKeyFunc (AUX_P, KeyPPressed);
 
       auxKeyFunc (XK_F5, KeyF5Pressed);
       auxKeyFunc (XK_F6, KeyF6Pressed);

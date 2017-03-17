@@ -43,8 +43,7 @@ static void VectorKeyHPressed()
         << "| L -  Toggle logarithmic scale      |" << endl
         << "| m -  Displays/Hides the mesh       |" << endl
         << "| n -  Displacements step forward    |" << endl
-        << "| p -  Cycle through color palettes  |" << endl
-        << "| P -  Print to a PDF file           |" << endl
+        << "| p/P  Cycle through color palettes  |" << endl
         << "| q -  Quits                         |" << endl
         << "| r -  Reset the plot to 3D view     |" << endl
         << "| R -  Reset the plot to 2D view     |" << endl
@@ -54,6 +53,7 @@ static void VectorKeyHPressed()
         << "| \\ -  Set light source position     |" << endl
         << "| v -  Cycle through vector fields   |" << endl
         << "| V -  Change the arrows scaling     |" << endl
+        << "| Ctrl+p - Print to a PDF file       |" << endl
         << "+------------------------------------+" << endl
         << "| Function keys                      |" << endl
         << "+------------------------------------+" << endl
