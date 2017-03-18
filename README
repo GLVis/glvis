@@ -60,7 +60,8 @@ s - Turn on/off unit cube scaling
 
 c - Toggle the colorbar and caption display state
 C - Change the main plot caption
-p - Cycle through color palettes (lots of options, use F6 for a menu)
+p/P Cycle forward/backwards through color palettes (lots of options, use F6 for
+    a menu)
 t - Cycle materials and lights (5 states)
 l - Turns on/off the light
 g - Toggle background color (white -> black)
@@ -91,9 +92,10 @@ S - Take an image snapshot or record a movie (in spinning mode).
     files with .xwd extension. In all cases, the generated image files can be
     easily converted to a other image formats using e.g. ImageMagick's 'convert'
     tool or the GIMP.
-P - Print to a PDF file using gl2ps. Other vector formats (SVG, EPS) are also
-    possible, but keep in mind that the printing takes a while and the generated
-    files are big. Requires non-texture mode, see key '!'.
+
+Ctrl+p - Print to a PDF file using gl2ps. Other vector formats (SVG, EPS) are
+    also possible, but keep in mind that the printing takes a while and the
+    generated files are big. Requires non-texture mode, see key '!'.
 
 q - Exit
 

@@ -52,8 +52,7 @@ static void Solution3dKeyHPressed()
         << "| m -  Displays/Hides the mesh       |" << endl
         << "| M -  Toggle the mesh in the CP     |" << endl
         << "| o/O  (De)refine elem, disc shading |" << endl
-        << "| p -  Cycle through color palettes  |" << endl
-        << "| P -  Print to a PDF file           |" << endl
+        << "| p/P  Cycle through color palettes  |" << endl
         << "| q -  Quits                         |" << endl
         << "| r -  Reset the plot to 3D view     |" << endl
         << "| R -  Reset the plot to 2D view     |" << endl
@@ -67,6 +66,7 @@ static void Solution3dKeyHPressed()
         << "| x/X  Rotate clipping plane (phi)   |" << endl
         << "| y/Y  Rotate clipping plane (theta) |" << endl
         << "| z/Z  Translate clipping plane      |" << endl
+        << "| Ctrl+p - Print to a PDF file       |" << endl
         << "+------------------------------------+" << endl
         << "| Function keys                      |" << endl
         << "+------------------------------------+" << endl

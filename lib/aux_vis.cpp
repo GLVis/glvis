@@ -113,7 +113,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    auxMouseFunc (AUX_RIGHTBUTTON, AUX_MOUSEUP, RightButtonUp);
    auxMouseFunc (AUX_RIGHTBUTTON, AUX_MOUSELOC, RightButtonLoc);
 
-   auxKeyFunc (AUX_P, KeyP);
+   // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
    auxKeyFunc (AUX_S, KeyS);
 
    auxKeyFunc (AUX_q, KeyQPressed);
@@ -1026,7 +1026,7 @@ void KeyS()
    }
 }
 
-void KeyP()
+void KeyCtrlP()
 {
    int state, buffsize;
    FILE * fp;

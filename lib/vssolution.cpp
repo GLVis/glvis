@@ -69,8 +69,7 @@ static void SolutionKeyHPressed()
         << "| l -  Turns on/off the light        |" << endl
         << "| L -  Toggle logarithmic scale      |" << endl
         << "| m -  Displays/Hides the mesh       |" << endl
-        << "| p -  Cycle through color palettes  |" << endl
-        << "| P -  Print to a PDF file           |" << endl
+        << "| p/P  Cycle through color palettes  |" << endl
         << "| q -  Quits                         |" << endl
         << "| r -  Reset the plot to 3D view     |" << endl
         << "| R -  Reset the plot to 2D view     |" << endl
@@ -81,6 +80,7 @@ static void SolutionKeyHPressed()
         << "| y/Y  Rotate the clipping plane     |" << endl
         << "| z/Z  Move the clipping plane       |" << endl
         << "| \\ -  Set light source position     |" << endl
+        << "| Ctrl+p - Print to a PDF file       |" << endl
         << "+------------------------------------+" << endl
         << "| Function keys                      |" << endl
         << "+------------------------------------+" << endl
