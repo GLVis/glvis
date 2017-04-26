@@ -78,6 +78,7 @@ static struct _WINDOWINFO {
     -1, -1, 100, 100, 0
 };
 static Window window = 0;
+static Atom wm_delete_window = 0;
 static GLXWindow glxwin = 0;
 Display *display = 0;
 static GLXFBConfig fbConfig;
@@ -296,6 +297,15 @@ static GLenum DoNextEvent(void)
 
     XNextEvent(display, &current);
     switch (current.type) {
+      case ClientMessage:
+#ifdef GLVIS_DEBUG_XEVENTS
+        printf("XEvent: ClientMessage\n"); fflush(stdout);
+#endif
+        lastEventType = ClientMessage;
+        if ((Atom)current.xclient.data.l[0] == wm_delete_window) {
+          visualize = 0;
+        }
+        return GL_FALSE;
       case MappingNotify:
 #ifdef GLVIS_DEBUG_XEVENTS
          printf("XEvent: MappingNotify\n"); fflush(stdout);
@@ -1396,6 +1406,9 @@ GLenum tkInitWindow(const char *title)
 
     XMapWindow(display, window);
     XIfEvent(display, &e, WaitForMapNotify, 0);
+
+    wm_delete_window = XInternAtom(display, "WM_DELETE_WINDOW", False);
+    XSetWMProtocols(display, window, &wm_delete_window, 1);
 
     XSetWMColormapWindows(display, window, &window, 1);
 
