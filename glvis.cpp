@@ -98,7 +98,7 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                                const char *sol_prefix, Mesh **mesh_p,
                                GridFunction **sol_p, int keep_attr);
 
-void ReadInputStreams();
+int ReadInputStreams();
 
 void CloseInputStreams(bool);
 
@@ -1539,8 +1539,7 @@ int main (int argc, char *argv[])
                   else
                   {
                      delete isock;
-                     ReadInputStreams();
-                     ft = (grid_f->VectorDim() == 1) ? 0 : 1;
+                     ft = ReadInputStreams();
                   }
                   StartVisualization(ft);
                   CloseInputStreams(false);
@@ -1986,12 +1985,15 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    return 0;
 }
 
-void ReadInputStreams()
+int ReadInputStreams()
 {
    int nproc = input_streams.Size();
    Array<Mesh *> mesh_array(nproc);
    Array<GridFunction *> gf_array(nproc);
    string data_type;
+
+   int gf_count = 0;
+   int field_type = 0;
 
    for (int p = 0; p < nproc; p++)
    {
@@ -2000,7 +2002,7 @@ void ReadInputStreams()
 #endif
       istream &isock = *input_streams[p];
       // assuming the "parallel nproc p" part of the stream has been read
-      isock >> ws >> data_type >> ws; // "*_data" / "solution"
+      isock >> ws >> data_type >> ws; // "*_data" / "mesh" / "solution"
       mesh_array[p] = new Mesh(isock, 1, 0, fix_elem_orient);
       if (!keep_attr)
       {
@@ -2014,22 +2016,42 @@ void ReadInputStreams()
             mesh_array[p]->GetBdrElement(i)->SetAttribute(p+1);
          }
       }
-      gf_array[p] = new GridFunction(mesh_array[p], isock);
+      if (data_type != "mesh")
+      {
+         gf_array[p] = new GridFunction(mesh_array[p], isock);
+         gf_count++;
+      }
 #ifdef GLVIS_DEBUG
       cout << "done." << endl;
 #endif
    }
 
+   if (gf_count > 0 && gf_count != nproc)
+   {
+      mfem_error("Input streams contain a mixture of data types!");
+   }
+
    mesh = new Mesh(mesh_array, nproc);
-   grid_f = new GridFunction(mesh, gf_array, nproc);
+   if (gf_count == 0)
+   {
+      SetMeshSolution(mesh, grid_f, save_coloring);
+      field_type = 2;
+   }
+   else
+   {
+      grid_f = new GridFunction(mesh, gf_array, nproc);
+      field_type = (grid_f->VectorDim() == 1) ? 0 : 1;
+   }
 
    for (int p = 0; p < nproc; p++)
    {
-      delete gf_array[nproc-1-p];
       delete mesh_array[nproc-1-p];
+      delete gf_array[nproc-1-p];
    }
 
    Extrude1DMeshAndSolution(&mesh, &grid_f, NULL);
+
+   return field_type;
 }
 
 void CloseInputStreams(bool parent)
