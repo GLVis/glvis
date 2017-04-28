@@ -2018,8 +2018,8 @@ int ReadInputStreams()
       }
       if (data_type != "mesh")
       {
-        gf_array[p] = new GridFunction(mesh_array[p], isock);
-        gf_count++;
+         gf_array[p] = new GridFunction(mesh_array[p], isock);
+         gf_count++;
       }
 #ifdef GLVIS_DEBUG
       cout << "done." << endl;
@@ -2028,19 +2028,19 @@ int ReadInputStreams()
 
    if (gf_count > 0 && gf_count != nproc)
    {
-     mfem_error("Input streams contain a mixture of data types!");
+      mfem_error("Input streams contain a mixture of data types!");
    }
 
    mesh = new Mesh(mesh_array, nproc);
    if (gf_count == 0)
    {
-     SetMeshSolution(mesh, grid_f, save_coloring);
-     field_type = 2;
+      SetMeshSolution(mesh, grid_f, save_coloring);
+      field_type = 2;
    }
    else
    {
-     grid_f = new GridFunction(mesh, gf_array, nproc);
-     field_type = (grid_f->VectorDim() == 1) ? 0 : 1;
+      grid_f = new GridFunction(mesh, gf_array, nproc);
+      field_type = (grid_f->VectorDim() == 1) ? 0 : 1;
    }
 
    for (int p = 0; p < nproc; p++)
