@@ -1365,7 +1365,8 @@ int main (int argc, char *argv[])
       }
 #endif
 
-      socketserver server(portnum);
+      const int backlog = 128;
+      socketserver server(portnum, backlog);
       if (server.good())
       {
          cout << "Waiting for data on port " << portnum << " ..." << endl;
