@@ -2004,6 +2004,9 @@ int ReadInputStreams()
       istream &isock = *input_streams[p];
       // assuming the "parallel nproc p" part of the stream has been read
       isock >> ws >> data_type >> ws; // "*_data" / "mesh" / "solution"
+#ifdef GLVIS_DEBUG
+      cout << " type " << data_type << " ... " << flush;
+#endif
       mesh_array[p] = new Mesh(isock, 1, 0, fix_elem_orient);
       if (!keep_attr)
       {
@@ -2017,6 +2020,7 @@ int ReadInputStreams()
             mesh_array[p]->GetBdrElement(i)->SetAttribute(p+1);
          }
       }
+      gf_array[p] = NULL;
       if (data_type != "mesh")
       {
          gf_array[p] = new GridFunction(mesh_array[p], isock);
