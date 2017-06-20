@@ -1,4 +1,4 @@
-list(APPEND SRCS
+list(APPEND SOURCES
   aux_gl.cpp
   aux_vis.cpp
   gl2ps.c
@@ -28,8 +28,9 @@ list(APPEND HDRS
   vsvector3d.hpp
   vsvector.hpp)
 
-convert_filenames_to_full_paths(SRCS)
-convert_filenames_to_full_paths(HDRS)
-
-set(SOURCES ${SOURCES} ${SRCS} PARENT_SCOPE)
-set(HEADERS ${HEADERS} ${HDRS} PARENT_SCOPE)
+# Allegedly adding the headers is helpful for IDEs.
+add_library(glvis ${SOURCES} ${HEADERS})
+target_compile_definitions(glvis PUBLIC "${_glvis_compiler_defs}")
+target_compile_options(glvis PUBLIC "${_glvis_compiler_opts}")
+target_include_directories(glvis SYSTEM PUBLIC "${_glvis_include_dirs}")
+target_link_libraries(glvis PUBLIC "${_glvis_libraries}")
