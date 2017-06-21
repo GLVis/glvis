@@ -95,12 +95,22 @@ if (GLVIS_USE_FREETYPE)
 
   find_package(Freetype)
 
+  if (NOT FREETYPE_FOUND)
+    message(WARNING "freetype not found. Cannot use freetype!")
+  endif (NOT FREETYPE_FOUND)
+  
   # Find FontConfig
   find_library(FONTCONFIG_LIBRARY fontconfig
     HINTS ${FONTCONFIG_DIR} $ENV{FONTCONFIG_DIR}
     DOC "The fontconfig library for use with Freetype."
     NO_DEFAULT_PATH)
   find_library(FONTCONFIG_LIBRARY fontconfig)
+
+  if (FONTCONFIG_LIBRARY)
+    message(STATUS "Found Fontconfig: ${FONTCONFIG_LIBRARY}")
+  else()
+    message(WARNING "fontconfig not found. Cannot use freetype!")
+  endif (FONTCONFIG_LIBRARY)
   
   if (FREETYPE_FOUND AND FONTCONFIG_LIBRARY)
 
@@ -112,11 +122,7 @@ if (GLVIS_USE_FREETYPE)
     list(APPEND _glvis_library_dirs "${FONTCONFIG_LIBRARY}")
 
   else()
-
-    message(WARNING
-      "freetype and/or fontconfig not found. Cannot use freetype!")
     set(GLVIS_USE_FREETYPE OFF)
-
   endif (FREETYPE_FOUND AND FONTCONFIG_LIBRARY)
 endif (GLVIS_USE_FREETYPE)
 
