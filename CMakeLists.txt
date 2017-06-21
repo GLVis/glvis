@@ -19,6 +19,10 @@ option(GLVIS_USE_FREETYPE
   "Use freetype and fontconfig for rendinering and finding fonts."
   ON)
 
+option(GLVIS_USE_GLX10
+  "Use GLX 1.0 calls. Use if X server doesn't support GLX 1.3."
+  OFF)
+
 #
 # Handle a few other definitions
 #
@@ -41,6 +45,10 @@ set(_glvis_compile_defs)
 set(_glvis_compile_opts)
 set(_glvis_include_dirs)
 set(_glvis_libraries)
+
+if (GLVIS_USE_GLX10)
+  list(APPEND _glvis_compile_defs "-DGLVIS_GLX10")
+endif (GLVIS_USE_GLX10)
 
 list(APPEND _glvis_compile_defs "-DGLVIS_MULTISAMPLE=${GLVIS_MULTISAMPLE}")
 list(APPEND _glvis_compile_defs "-DGLVIS_MS_LINEWIDTH=${GLVIS_MS_LINEWIDTH}")
