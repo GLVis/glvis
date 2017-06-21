@@ -189,3 +189,13 @@ add_executable(glvis-exe glvis.cpp)
 set_target_properties(glvis-exe PROPERTIES OUTPUT_NAME glvis)
 
 target_link_libraries(glvis-exe PRIVATE glvis)
+
+# Install the executable
+install(TARGETS glvis-exe RUNTIME DESTINATION bin)
+
+# Install the gnutls helper script
+if (MFEM_USE_GNUTLS)
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/glvis-keygen.sh
+    DESTINATION bin)
+endif (MFEM_USE_GNUTLS)
+
