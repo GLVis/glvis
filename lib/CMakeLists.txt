@@ -12,7 +12,7 @@ list(APPEND SOURCES
   vsvector3d.cpp
   vsvector.cpp)
 
-list(APPEND HDRS
+list(APPEND HEADERS
   aux_gl.hpp
   aux_vis.hpp
   gl2ps.h
