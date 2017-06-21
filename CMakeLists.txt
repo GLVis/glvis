@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.0)
 
 project(glvis)
 
@@ -20,6 +20,20 @@ option(GLVIS_USE_FREETYPE
   ON)
 
 #
+# Handle a few other definitions
+#
+
+# Default multisampling mode
+if (NOT GLVIS_MULTISAMPLE)
+  set(GLVIS_MULTISAMPLE 4)
+endif (NOT GLVIS_MULTISAMPLE)
+
+# Default multisampling line-width
+if (NOT GLVIS_MS_LINEWIDTH)
+  set(GLVIS_MS_LINEWIDTH 1.4)
+endif (NOT GLVIS_MS_LINEWIDTH)
+
+#
 # Start finding everything
 #
 
@@ -27,6 +41,9 @@ set(_glvis_compile_defs)
 set(_glvis_compile_opts)
 set(_glvis_include_dirs)
 set(_glvis_libraries)
+
+list(APPEND _glvis_compile_defs "-DGLVIS_MULTISAMPLE=${GLVIS_MULTISAMPLE}")
+list(APPEND _glvis_compile_defs "-DGLVIS_MS_LINEWIDTH=${GLVIS_MS_LINEWIDTH}")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   list(APPEND _glvis_compile_defs "-DGLVIS_DEBUG")
@@ -73,45 +90,34 @@ if (GLVIS_USE_LIBPNG)
   endif (PNG_FOUND)
 endif (GLVIS_USE_LIBPNG)
 
-# Find fontconfig and freetype. Depends on finding pkg-config
+# Find fontconfig and freetype.
 if (GLVIS_USE_FREETYPE)
 
   find_package(Freetype)
-  if (FREETYPE_FOUND)
 
-    find_package(PkgConfig)
+  # Find FontConfig
+  find_library(FONTCONFIG_LIBRARY fontconfig
+    HINTS ${FONTCONFIG_DIR} $ENV{FONTCONFIG_DIR}
+    DOC "The fontconfig library for use with Freetype."
+    NO_DEFAULT_PATH)
+  find_library(FONTCONFIG_LIBRARY fontconfig)
+  
+  if (FREETYPE_FOUND AND FONTCONFIG_LIBRARY)
 
-    if (PKG_CONFIG_FOUND)
-
-      pkg_check_modules(FONTCONFIG QUIET fontconfig)
-
-      if (NOT FONTCONFIG_FOUND)
-        message(WARNING "fontconfig not found. Cannot use freetype!")
-        set(GLVIS_USE_FREETYPE OFF)
-      endif (NOT FONTCONFIG_FOUND)
-
-    else ()
-      message(WARNING "pkg-config not found. Cannot use freetype!")
-      set(GLVIS_USE_FREETYPE OFF)
-    endif (PKG_CONFIG_FOUND)
-
-  else()
-
-    message(WARNING "freetype not found. Cannot use freetype!")
-    set(GLVIS_USE_FREETYPE OFF)
-
-  endif (FREETYPE_FOUND)
-
-  # If we found everything, add dirs and libs
-  if (GLVIS_USE_FREETYPE)
     list(APPEND _glvis_compile_defs "-DGLVIS_USE_FREETYPE")
 
     list(APPEND _glvis_include_dirs "${FREETYPE_INCLUDE_DIRS}")
-    list(APPEND _glvis_include_dirs "${FONTCONFIG_INCLUDE_DIRS}")
     
     list(APPEND _glvis_library_dirs "${FREETYPE_LIBRARIES}")
-    list(APPEND _glvis_library_dirs "${FONTCONFIG_LIBRARIES}")
-  endif (GLVIS_USE_FREETYPE)
+    list(APPEND _glvis_library_dirs "${FONTCONFIG_LIBRARY}")
+
+  else()
+
+    message(WARNING
+      "freetype and/or fontconfig not found. Cannot use freetype!")
+    set(GLVIS_USE_FREETYPE OFF)
+
+  endif (FREETYPE_FOUND AND FONTCONFIG_LIBRARY)
 endif (GLVIS_USE_FREETYPE)
 
 # FIXME: MFEM exports the MPI include directory in its
@@ -163,21 +169,6 @@ if (GLVIS_USE_THREADS)
   endif (NOT THREADS_FOUND)
 endif (GLVIS_USE_THREADS)
 
-#
-# Handle a few other definitions
-#
-
-# Default multisampling mode
-if (NOT GLVIS_MULTISAMPLE)
-  set(GLVIS_MULTISAMPLE 4)
-endif (NOT GLVIS_MULTISAMPLE)
-list(APPEND _glvis_compile_defs "-DGLVIS_MULTISAMPLE=${GLVIS_MULTISAMPLE}")
-
-# Default multisampling line-width
-if (NOT GLVIS_MS_LINEWIDTH)
-  set(GLVIS_MS_LINEWIDTH 1.4)
-endif (NOT GLVIS_MS_LINEWIDTH)
-list(APPEND _glvis_compile_defs "-DGLVIS_MS_LINEWIDTH=${GLVIS_MS_LINEWIDTH}")
 
 #
 # Setup the GLVis library target
