@@ -68,7 +68,38 @@ list(APPEND _glvis_include_dirs "${X11_X11_INCLUDE_PATH}")
 list(APPEND _glvis_libraries "${X11_X11_LIB}")
 
 # Find OpenGL
-find_package(OpenGL REQUIRED)
+if (NOT APPLE)
+  find_package(OpenGL REQUIRED)
+else()
+
+  find_path(OPENGL_INCLUDE_DIR GL/gl.h
+    HINTS ${X11_X11_INCLUDE_PATH} ${OPENGL_DIR} $ENV{OPENGL_DIR}
+    DOC "OpenGL include path"
+    NO_DEFAULT_PATH)
+  find_path(OPENGL_INCLUDE_DIR GL/gl.h)
+  
+  if (NOT OPENGL_LIBRARIES)
+    # I know this is ugly, but the internet suggests manually editing
+    # the CMakeCache.txt file. That seems worse.
+    get_filename_component(_x11_base_dir "${X11_X11_LIB}" DIRECTORY)
+
+    find_library(_gl_library GL
+      HINTS ${_x11_base_dir} ${OPENGL_DIR} $ENV{OPENGL_DIR}
+      DOC "OpenGL GL library."
+      NO_DEFAULT_PATH)
+    find_library(_gl_library GL)
+
+    find_library(_glu_library GLU
+      HINTS ${_x11_base_dir} ${OPENGL_DIR} $ENV{OPENGL_DIR}
+      DOC "OpenGL GLU library."
+      NO_DEFAULT_PATH)
+    find_library(_glu_library GLU)
+
+    set(OPENGL_LIBRARIES "${_gl_library}" "${_glu_library}")
+    message(STATUS "Found OpenGL: ${OPENGL_LIBRARIES}")
+  endif (NOT OPENGL_LIBRARIES)
+endif (NOT APPLE)
+
 list(APPEND _glvis_include_dirs "${OPENGL_INCLUDE_DIR}")
 list(APPEND _glvis_libraries "${OPENGL_LIBRARIES}")
 
