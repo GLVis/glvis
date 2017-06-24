@@ -8,9 +8,9 @@ endif ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 project(glvis)
 
 # Default options match the Makefile
-option(GLVIS_USE_THREADS
-  "Whether to enable threads in GLVis"
-  ON)
+if (NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release")
+endif()
 
 option(GLVIS_USE_LIBTIFF
   "Use libtiff for taking screenshots internally"
@@ -39,7 +39,12 @@ endif (NOT GLVIS_MULTISAMPLE)
 
 # Default multisampling line-width
 if (NOT GLVIS_MS_LINEWIDTH)
-  set(GLVIS_MS_LINEWIDTH 1.4)
+  if (NOT APPLE)
+    set(GLVIS_MS_LINEWIDTH 1.4)
+  else()
+    # This value seems to work better on Macs
+    set(GLVIS_MS_LINEWIDTH 0.01)
+  endif()
 endif (NOT GLVIS_MS_LINEWIDTH)
 
 #
@@ -52,14 +57,14 @@ set(_glvis_include_dirs)
 set(_glvis_libraries)
 
 if (GLVIS_USE_GLX10)
-  list(APPEND _glvis_compile_defs "-DGLVIS_GLX10")
+  list(APPEND _glvis_compile_defs "GLVIS_GLX10")
 endif (GLVIS_USE_GLX10)
 
-list(APPEND _glvis_compile_defs "-DGLVIS_MULTISAMPLE=${GLVIS_MULTISAMPLE}")
-list(APPEND _glvis_compile_defs "-DGLVIS_MS_LINEWIDTH=${GLVIS_MS_LINEWIDTH}")
+list(APPEND _glvis_compile_defs "GLVIS_MULTISAMPLE=${GLVIS_MULTISAMPLE}")
+list(APPEND _glvis_compile_defs "GLVIS_MS_LINEWIDTH=${GLVIS_MS_LINEWIDTH}")
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  list(APPEND _glvis_compile_defs "-DGLVIS_DEBUG")
+if (CMAKE_BUILD_TYPE MATCHES "Debug|debug|DEBUG")
+  list(APPEND _glvis_compile_defs "GLVIS_DEBUG")
 endif()
 
 # Base everything on MFEM
@@ -67,7 +72,7 @@ find_package(MFEM REQUIRED)
 list(APPEND _glvis_include_dirs "${MFEM_INCLUDE_DIRS}")
 list(APPEND _glvis_libraries "${MFEM_LIBRARIES}")
 
-# Find X11. Only appear to need libX11.
+# Find X11. Only need libX11.
 find_package(X11 REQUIRED)
 list(APPEND _glvis_include_dirs "${X11_X11_INCLUDE_PATH}")
 list(APPEND _glvis_libraries "${X11_X11_LIB}")
@@ -93,12 +98,18 @@ else()
       DOC "OpenGL GL library."
       NO_DEFAULT_PATH)
     find_library(_gl_library GL)
+    if (NOT _gl_library)
+      message(FATAL_ERROR "OpenGL not found. Please set OPENGL_DIR.")
+    endif()
 
     find_library(_glu_library GLU
       HINTS ${_x11_base_dir} ${OPENGL_DIR} $ENV{OPENGL_DIR}
       DOC "OpenGL GLU library."
       NO_DEFAULT_PATH)
     find_library(_glu_library GLU)
+    if (NOT _glu_library)
+      message(FATAL_ERROR "GLU library not found. Please set OPENGL_DIR.")
+    endif()
 
     set(OPENGL_LIBRARIES "${_gl_library}" "${_glu_library}")
     message(STATUS "Found OpenGL: ${OPENGL_LIBRARIES}")
@@ -112,7 +123,7 @@ list(APPEND _glvis_libraries "${OPENGL_LIBRARIES}")
 if (GLVIS_USE_LIBTIFF)
   find_package(TIFF)
   if (TIFF_FOUND)
-    list(APPEND _glvis_compile_defs "-DGLVIS_USE_LIBTIFF")
+    list(APPEND _glvis_compile_defs "GLVIS_USE_LIBTIFF")
     list(APPEND _glvis_include_dirs "${TIFF_INCLUDE_DIRS}")
     list(APPEND _glvis_libraries "${TIFF_LIBRARIES}")
   else()
@@ -125,7 +136,7 @@ endif (GLVIS_USE_LIBTIFF)
 if (GLVIS_USE_LIBPNG)
   find_package(PNG)
   if (PNG_FOUND)
-    list(APPEND _glvis_compile_defs "-DGLVIS_USE_PNG")
+    list(APPEND _glvis_compile_defs "GLVIS_USE_PNG")
     list(APPEND _glvis_include_dirs "${PNG_INCLUDE_DIRS}")
     list(APPEND _glvis_libraries "${PNG_LIBRARIES}")
   else()
@@ -134,90 +145,47 @@ if (GLVIS_USE_LIBPNG)
   endif (PNG_FOUND)
 endif (GLVIS_USE_LIBPNG)
 
-# Find fontconfig and freetype.
+# Find FreeType and Fontconfig.
 if (GLVIS_USE_FREETYPE)
-
   find_package(Freetype)
-
   if (NOT FREETYPE_FOUND)
-    message(WARNING "freetype not found. Cannot use freetype!")
+    message(WARNING "FreeType not found. Disabling FreeType support.")
+  else()
+    # Find FontConfig
+    find_library(FONTCONFIG_LIBRARY fontconfig
+      HINTS ${FONTCONFIG_DIR} $ENV{FONTCONFIG_DIR}
+      DOC "The fontconfig library for use with FreeType."
+      NO_DEFAULT_PATH)
+    find_library(FONTCONFIG_LIBRARY fontconfig)
+    if (FONTCONFIG_LIBRARY)
+      list(APPEND _glvis_compile_defs "GLVIS_USE_FREETYPE")
+      list(APPEND _glvis_include_dirs "${FREETYPE_INCLUDE_DIRS}")
+      list(APPEND _glvis_libraries "${FREETYPE_LIBRARIES}")
+      # Need FONTCONFIG_INCLUDE_DIRS?
+      list(APPEND _glvis_libraries "${FONTCONFIG_LIBRARY}")
+      message(STATUS "Found Fontconfig: ${FONTCONFIG_LIBRARY}")
+    else()
+      message(STATUS "Fontconfig not found. Please set FONTCONFIG_DIR.")
+      message(WARNING "Fontconfig not found. Disabling FreeType support.")
+    endif (FONTCONFIG_LIBRARY)
   endif (NOT FREETYPE_FOUND)
-  
-  # Find FontConfig
-  find_library(FONTCONFIG_LIBRARY fontconfig
-    HINTS ${FONTCONFIG_DIR} $ENV{FONTCONFIG_DIR}
-    DOC "The fontconfig library for use with Freetype."
-    NO_DEFAULT_PATH)
-  find_library(FONTCONFIG_LIBRARY fontconfig)
-
-  if (FONTCONFIG_LIBRARY)
-    message(STATUS "Found Fontconfig: ${FONTCONFIG_LIBRARY}")
-  else()
-    message(WARNING "fontconfig not found. Cannot use freetype!")
-  endif (FONTCONFIG_LIBRARY)
-  
-  if (FREETYPE_FOUND AND FONTCONFIG_LIBRARY)
-
-    list(APPEND _glvis_compile_defs "-DGLVIS_USE_FREETYPE")
-
-    list(APPEND _glvis_include_dirs "${FREETYPE_INCLUDE_DIRS}")
-    
-    list(APPEND _glvis_library_dirs "${FREETYPE_LIBRARIES}")
-    list(APPEND _glvis_library_dirs "${FONTCONFIG_LIBRARY}")
-
-  else()
-    set(GLVIS_USE_FREETYPE OFF)
-  endif (FREETYPE_FOUND AND FONTCONFIG_LIBRARY)
 endif (GLVIS_USE_FREETYPE)
 
-# FIXME: MFEM exports the MPI include directory in its
-# MFEM_INCLUDE_DIRS variable. However, I don't see it exporting the
-# MPI libraries, so we need to go find them. For now, I use the
-# include path to verify that the MPI library matches.
-if (MFEM_USE_MPI)
-  find_package(MPI REQUIRED)
-  find_package(LAPACK REQUIRED)
-  
-  list(FIND MFEM_INCLUDE_DIRS ${MPI_INCLUDE_PATH} _found_correct_mpi)
-  if (_found_correct_mpi EQUAL -1)
-    message(FATAL_ERROR
-      "Found a different version of MPI than used to build MFEM.")
-  endif (_found_correct_mpi EQUAL -1)
-
-  # Sometimes these cause problems...
-  set(_mpi_compile_flags)
-  set(_mpi_link_flags)
-  if (UNIX)
-    separate_arguments(
-      _mpi_compile_flags UNIX_COMMAND "${MPI_CXX_COMPILE_FLAGS}")
-    separate_arguments(
-      _mpi_link_flags UNIX_COMMAND "${MPI_CXX_LINK_FLAGS}")
-  else()
-    separate_arguments(
-      _mpi_compile_flags WINDOWS_COMMAND "${MPI_CXX_COMPILE_FLAGS}")
-    separate_arguments(
-      _mpi_link_flags WINDOWS_COMMAND "${MPI_CXX_LINK_FLAGS}")
-  endif (UNIX)
-  
-  list(APPEND _glvis_compiler_opts "${_mpi_compile_flags}")
-  list(APPEND _glvis_libraries "${_mpi_link_flags}")
-  list(APPEND _glvis_libraries "${MPI_CXX_LIBRARIES}")
-  list(APPEND _glvis_include_dirs "${MPI_CXX_INCLUDE_PATH}")
-
-  list(APPEND _glvis_libraries "${LAPACK_LINKER_FLAGS}")
-  list(APPEND _glvis_libraries "${LAPACK_LIBRARIES}")
-endif (MFEM_USE_MPI)
-
 # Find threading library
-if (GLVIS_USE_THREADS)
-  find_package(Threads)
-  if (NOT THREADS_FOUND)
-    message(WARNING "No threading model found. Threads disabled.")
-    set(GLVIS_USE_THREADS OFF)
-  else()
-    list(APPEND _glvis_libraries "${CMAKE_THREAD_LIBS_INIT}")
-  endif (NOT THREADS_FOUND)
-endif (GLVIS_USE_THREADS)
+set(CMAKE_THREAD_PREFER_PTHREAD ON)
+find_package(Threads REQUIRED)
+if (NOT CMAKE_USE_PTHREADS_INIT)
+  message(FATAL_ERROR "The required pthreads library was not found.")
+else()
+  list(APPEND _glvis_libraries "${CMAKE_THREAD_LIBS_INIT}")
+endif()
+
+message(STATUS "GLVis build type: CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
+message(STATUS "GLVis defines: ${_glvis_compile_defs}")
+# message(STATUS "GLVis opts: ${_glvis_compile_opts}")
+# message(STATUS "GLVis include dirs: ${_glvis_include_dirs}")
+# message(STATUS "GLVis libraries: ${_glvis_libraries}")
+message(STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
 
 
 #
