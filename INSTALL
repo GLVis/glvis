@@ -75,7 +75,6 @@ cmake \
     -D GLVIS_USE_LIBTIFF=OFF \
     -D GLVIS_USE_LIBPNG=ON \
     -D GLVIS_USE_FREETYPE=ON \
-    -D GLVIS_USE_THREADS=ON \
     \
     -D MFEM_DIR=/path/to/directory/with/MFEMConfig.cmake \
     \
@@ -98,8 +97,6 @@ Some important variables for CMake are:
 - GLVIS_USE_LIBTIFF: Use libtiff for creating screenshots. Default is "OFF".
 
 - GLVIS_USE_FREETYPE: Use freetype for font rendering. Default is "ON".
-
-- GLVIS_USE_THREADS: Link GLVis to a threading library. Default is "ON".
 
 - GLVIS_MULTISAMPLE and GLVIS_MS_LINEWIDTH: See building considerations below
      for more information on these variables.
@@ -128,7 +125,7 @@ Some building considerations:
 
 - If your X11 server does not support GLX 1.3, you can build GLVis to only use
   GLX 1.0 calls, by specifying the GLVIS_GLX10 define. Note that the X11.app
-  in OS X complains about GLX 1.3 support, but in practice works fine with
+  in OS X may complain about GLX 1.3 support, but in practice works fine with
   GLVis. To define this in CMake, pass "-D GLVIS_USE_GLX10=ON" to cmake.
 
 - GLVis can be built without libpng/libtiff/FreeType 2/Fontconfig by setting
