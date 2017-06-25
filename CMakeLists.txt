@@ -5,6 +5,14 @@ if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(FATAL_ERROR "In-source builds are prohibited.")
 endif ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 
+# Import MFEM
+find_package(mfem REQUIRED NAMES MFEM)
+# Use the same C++ compiler as MFEM. This is needed when MFEM was built using
+# an MPI wrapper and we do not have explicitly the MPI compile and link flags.
+if (NOT CMAKE_CXX_COMPILER AND MFEM_CXX_COMPILER)
+  set(CMAKE_CXX_COMPILER "${MFEM_CXX_COMPILER}")
+endif()
+
 project(glvis)
 
 # Default options match the Makefile
@@ -67,8 +75,8 @@ if (CMAKE_BUILD_TYPE MATCHES "Debug|debug|DEBUG")
   list(APPEND _glvis_compile_defs "GLVIS_DEBUG")
 endif()
 
-# Base everything on MFEM
-find_package(MFEM REQUIRED)
+# Include paths and libraries needed by MFEM
+list(APPEND CMAKE_CXX_FLAGS "${MFEM_CXX_FLAGS}")
 list(APPEND _glvis_include_dirs "${MFEM_INCLUDE_DIRS}")
 list(APPEND _glvis_libraries "${MFEM_LIBRARIES}")
 
@@ -87,7 +95,7 @@ else()
     DOC "OpenGL include path"
     NO_DEFAULT_PATH)
   find_path(OPENGL_INCLUDE_DIR GL/gl.h)
-  
+
   if (NOT OPENGL_LIBRARIES)
     # I know this is ugly, but the internet suggests manually editing
     # the CMakeCache.txt file. That seems worse.
@@ -212,4 +220,3 @@ if (MFEM_USE_GNUTLS)
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
       GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 endif (MFEM_USE_GNUTLS)
-
