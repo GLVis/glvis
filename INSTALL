@@ -66,7 +66,6 @@ NOTE: You must have built MFEM using CMake to build GLVis using CMake.
 
 An example invocation of CMake may be:
 
-
 cmake \
     -G Ninja \
     -D CMAKE_BUILD_TYPE:STRING=Release \
@@ -79,7 +78,6 @@ cmake \
     -D MFEM_DIR=/path/to/directory/with/MFEMConfig.cmake \
     \
     /path/to/glvis/source
-
 
 Some important variables for CMake are:
 
@@ -100,9 +98,10 @@ Some important variables for CMake are:
 
 - GLVIS_MULTISAMPLE and GLVIS_MS_LINEWIDTH: See building considerations below
      for more information on these variables.
-     
 
-Some building considerations:
+
+Some building considerations
+============================
 
 - On most Linux distributions, the required dependencies (except MFEM) can be
   installed via a package manager. Usually it is sufficient to install the
