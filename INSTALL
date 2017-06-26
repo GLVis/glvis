@@ -29,7 +29,9 @@ Besides a C++ compiler, GLVis depends on the following external packages:
 - the FreeType 2 and Fontconfig libraries; used for font rendering (optional)
   http://www.freetype.org, http://www.fontconfig.org
 
-The build system is based on GNU make, as described below.
+There are two build systems, one based on GNU make and one based on CMake, as
+described below. Choose the one that matches the build system you used to
+build MFEM.
 
 
 Building with GNU make
@@ -55,7 +57,51 @@ An optional installation of the glvis executable can be performed with
 
    make install [PREFIX=<dir>]
 
-Some building considerations:
+
+Building with CMake
+===================
+GLVis may also be configured using CMake to find dependencies.
+
+NOTE: You must have built MFEM using CMake to build GLVis using CMake.
+
+An example invocation of CMake may be:
+
+cmake \
+    -G Ninja \
+    -D CMAKE_BUILD_TYPE:STRING=Release \
+    -D CMAKE_INSTALL_PREFIX:STRING=/path/to/glvis/install \
+    \
+    -D GLVIS_USE_LIBTIFF=OFF \
+    -D GLVIS_USE_LIBPNG=ON \
+    -D GLVIS_USE_FREETYPE=ON \
+    \
+    -D MFEM_DIR=/path/to/directory/with/MFEMConfig.cmake \
+    \
+    /path/to/glvis/source
+
+Some important variables for CMake are:
+
+- MFEM_DIR: This is the location of MFEMConfig.cmake that is created during
+     the build and/or install of MFEM. You may use either the build
+     directory's config file or the install directory's config file.
+
+- CMAKE_BUILD_TYPE: Most common options are "Debug" and "Release" [default].
+
+- CMAKE_INSTALL_PREFIX: Top-level directory for the install. GLVis will be
+     installed to ${CMAKE_INSTALL_PREFIX}/bin. Default is "/usr/local".
+
+- GLVIS_USE_LIBPNG: Use libpng for creating screenshots. Default is "ON".
+
+- GLVIS_USE_LIBTIFF: Use libtiff for creating screenshots. Default is "OFF".
+
+- GLVIS_USE_FREETYPE: Use freetype for font rendering. Default is "ON".
+
+- GLVIS_MULTISAMPLE and GLVIS_MS_LINEWIDTH: See building considerations below
+     for more information on these variables.
+
+
+Some building considerations
+============================
 
 - On most Linux distributions, the required dependencies (except MFEM) can be
   installed via a package manager. Usually it is sufficient to install the
@@ -65,22 +111,25 @@ Some building considerations:
 - To adjust the anti-aliasing settings for your hardware:
 
   1) Modify the value of the GLVIS_MULTISAMPLE variable (multisample mode) in
-     the makefile. Supported values can be obtained from the 'glxinfo' command
-     ('ms' columns) or a from a tool like 'nvidia-settings'.
+     the makefile or CMake invocation. Supported values can be obtained from
+     the 'glxinfo' command ('ms' columns) or a from a tool like
+     'nvidia-settings'.
 
   2) Modify the value of the GLVIS_MS_LINEWIDTH variable (anti-aliased line
-     width) in the makefile. Note that the same value can produce different
-     results depending on the OpenGL implementation.
+     width) in the makefile or CMake invocation. Note that the same value can
+     produce different results depending on the OpenGL implementation.
 
   3) The above options and some other built-in defaults can be overwritten with
      command line options, see glvis -h for short help.
 
 - If your X11 server does not support GLX 1.3, you can build GLVis to only use
-  GLX 1.0 calls, by specifying the GLVIS_GLX10 define. Note that the X11.app in
-  OS X complains about GLX 1.3 support, but in practice works fine with GLVis.
+  GLX 1.0 calls, by specifying the GLVIS_GLX10 define. Note that the X11.app
+  in OS X may complain about GLX 1.3 support, but in practice works fine with
+  GLVis. To define this in CMake, pass "-D GLVIS_USE_GLX10=ON" to cmake.
 
 - GLVis can be built without libpng/libtiff/FreeType 2/Fontconfig by setting
-  the makefile variables USE_LIBPNG/USE_LIBTIFF/USE_FREETYPE to NO.
+  the makefile variables USE_LIBPNG/USE_LIBTIFF/USE_FREETYPE to NO or by
+  passing GLVIS_USE_LIBPNG/GLVIS_USE_LIBTIFF/GLVIS_USE_FREETYPE=OFF to cmake.
 
 - On Mac OS X, it is better to start manually the XQuarz app, before starting
   GLVis, in order to avoid the wait for establishing the first X11 connection.

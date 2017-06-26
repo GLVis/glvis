@@ -12,10 +12,15 @@
 Development version, not released yet
 =====================================
 
+- Added a CMake build system.
+
 - Added a number of new color palettes which can now be switched both forwards
   and backwards with the 'p' and 'P' keys respectively.
 
 - Printing to PDF is now done with 'Ctrl+p' (replacing 'P').
+
+- Default multisampling linewidth for Macs is now 0.01 (seems to work better).
+  On other platforms the default remains 1.4.
 
 
 Version 3.3, released on Jan 28, 2017
