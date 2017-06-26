@@ -76,7 +76,7 @@ if (CMAKE_BUILD_TYPE MATCHES "Debug|debug|DEBUG")
 endif()
 
 # Include paths and libraries needed by MFEM
-list(APPEND CMAKE_CXX_FLAGS "${MFEM_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MFEM_CXX_FLAGS}")
 list(APPEND _glvis_include_dirs "${MFEM_INCLUDE_DIRS}")
 list(APPEND _glvis_libraries "${MFEM_LIBRARIES}")
 
