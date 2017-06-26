@@ -5,8 +5,9 @@ if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(FATAL_ERROR "In-source builds are prohibited.")
 endif ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 
-# Import MFEM
-find_package(mfem REQUIRED NAMES MFEM)
+# Import MFEM. Both mfem_DIR and MFEM_DIR can used to specify search paths.
+find_package(mfem REQUIRED NAMES MFEM HINTS "${MFEM_DIR}")
+message(STATUS "Found mfem: in ${mfem_DIR} (version ${MFEM_VERSION})")
 # Use the same C++ compiler as MFEM. This is needed when MFEM was built using
 # an MPI wrapper and we do not have explicitly the MPI compile and link flags.
 if (NOT CMAKE_CXX_COMPILER AND MFEM_CXX_COMPILER)
