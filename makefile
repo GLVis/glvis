@@ -93,9 +93,11 @@ ifeq ($(GLVIS_DEBUG),YES)
    GLVIS_FLAGS += -DGLVIS_DEBUG
 endif
 
+NOTMAC := $(subst Darwin,,$(shell uname -s))
+
 # Default multisampling mode and multisampling line-width
 GLVIS_MULTISAMPLE  = 4
-GLVIS_MS_LINEWIDTH = 1.4
+GLVIS_MS_LINEWIDTH = $(if NOTMAC,1.4,0.01)
 GLVIS_FLAGS += -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
  -DGLVIS_MS_LINEWIDTH=$(GLVIS_MS_LINEWIDTH)
 
