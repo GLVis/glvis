@@ -1419,6 +1419,12 @@ GLenum tkInitWindow(const char *title)
     if (!glXMakeContextCurrent(display, glxwin, glxwin, context))
        return GL_FALSE;
 #endif
+    // If user used windInfo, force the window manager to refresh
+    // the position before flushing. Useful for multi-screen desktops 
+    if (windInfo.x != -1 && windInfo.y != -1)
+      XMoveResizeWindow(display, window,
+                        windInfo.x, windInfo.y,
+                        windInfo.width, windInfo.height);
     XFlush(display);
 
     return GL_TRUE;
