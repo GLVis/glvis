@@ -176,7 +176,9 @@ glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
 
 # Generate an error message if the MFEM library is not built and exit
 $(CONFIG_MK) $(MFEM_LIB_FILE):
+ifeq (,$(and $(findstring B,$(MAKEFLAGS)),$(wildcard $(CONFIG_MK))))
 	$(error The MFEM library is not built)
+endif
 
 opt:
 	$(MAKE) "GLVIS_DEBUG=NO"
