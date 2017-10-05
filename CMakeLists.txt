@@ -5,6 +5,8 @@ if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(FATAL_ERROR "In-source builds are prohibited.")
 endif ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 
+project(glvis NONE)
+
 # Import MFEM. Both mfem_DIR and MFEM_DIR can used to specify search paths.
 find_package(mfem REQUIRED NAMES MFEM HINTS "${MFEM_DIR}")
 message(STATUS "Found mfem: in ${mfem_DIR} (version ${MFEM_VERSION})")
@@ -14,7 +16,8 @@ if (NOT CMAKE_CXX_COMPILER AND MFEM_CXX_COMPILER)
   set(CMAKE_CXX_COMPILER "${MFEM_CXX_COMPILER}")
 endif()
 
-project(glvis)
+enable_language(C)
+enable_language(CXX)
 
 # Default options match the Makefile
 if (NOT CMAKE_BUILD_TYPE)
