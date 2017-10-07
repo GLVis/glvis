@@ -7,9 +7,17 @@ endif ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 
 project(glvis NONE)
 
-# Import MFEM. Both mfem_DIR and MFEM_DIR can used to specify search paths.
-find_package(mfem REQUIRED NAMES MFEM HINTS "${MFEM_DIR}")
-message(STATUS "Found mfem: in ${mfem_DIR} (version ${MFEM_VERSION})")
+# Import MFEM. The following variables can be used to help CMake find MFEM:
+#  * MFEM_DIR - absolute path to the MFEM build or install prefix.
+#  * mfem_DIR - absolute path to where MFEMConfig.cmake is.
+message(STATUS "Looking for mfem ...")
+if (MFEM_DIR)
+   find_package(mfem REQUIRED NAMES MFEM HINTS "${MFEM_DIR}"
+                "${MFEM_DIR}/lib/cmake/mfem" NO_DEFAULT_PATH)
+else()
+   find_package(mfem REQUIRED NAMES MFEM)
+endif()
+message(STATUS "Found mfem config in: ${mfem_DIR} (version ${MFEM_VERSION})")
 # Use the same C++ compiler as MFEM. This is needed when MFEM was built using
 # an MPI wrapper and we do not have explicitly the MPI compile and link flags.
 if (NOT CMAKE_CXX_COMPILER AND MFEM_CXX_COMPILER)
@@ -209,6 +217,8 @@ add_subdirectory(lib)
 #
 # Setup the GLVis executable
 
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
+set(CMAKE_INSTALL_RPATH "${MFEM_LIBRARY_DIR}")
 add_executable(glvis-exe glvis.cpp)
 set_target_properties(glvis-exe PROPERTIES OUTPUT_NAME glvis)
 
