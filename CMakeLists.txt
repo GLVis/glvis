@@ -11,6 +11,7 @@ project(glvis NONE)
 #  * MFEM_DIR - absolute path to the MFEM build or install prefix.
 #  * mfem_DIR - absolute path to where MFEMConfig.cmake is.
 message(STATUS "Looking for mfem ...")
+set(MFEM_DIR "" CACHE PATH "Path to the MFEM build or install prefix.")
 if (MFEM_DIR)
    find_package(mfem REQUIRED NAMES MFEM HINTS "${MFEM_DIR}"
                 "${MFEM_DIR}/lib/cmake/mfem" NO_DEFAULT_PATH)
@@ -217,12 +218,9 @@ add_subdirectory(lib)
 #
 # Setup the GLVis executable
 
-if (NOT DEFINED CMAKE_INSTALL_RPATH_USE_LINK_PATH)
-   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
-endif()
-if (NOT DEFINED CMAKE_INSTALL_RPATH)
-   set(CMAKE_INSTALL_RPATH "${MFEM_LIBRARY_DIR}")
-endif()
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "")
+set(CMAKE_INSTALL_RPATH "${MFEM_LIBRARY_DIR}" CACHE PATH "")
+
 add_executable(glvis-exe glvis.cpp)
 set_target_properties(glvis-exe PROPERTIES OUTPUT_NAME glvis)
 
