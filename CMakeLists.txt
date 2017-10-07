@@ -217,8 +217,12 @@ add_subdirectory(lib)
 #
 # Setup the GLVis executable
 
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
-set(CMAKE_INSTALL_RPATH "${MFEM_LIBRARY_DIR}")
+if (NOT DEFINED CMAKE_INSTALL_RPATH_USE_LINK_PATH)
+   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
+endif()
+if (NOT DEFINED CMAKE_INSTALL_RPATH)
+   set(CMAKE_INSTALL_RPATH "${MFEM_LIBRARY_DIR}")
+endif()
 add_executable(glvis-exe glvis.cpp)
 set_target_properties(glvis-exe PROPERTIES OUTPUT_NAME glvis)
 
