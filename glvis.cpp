@@ -1762,11 +1762,11 @@ void ReadSerial()
       {
          solin = new ifgzstream(sol_file);
          freesolin = true;
-      }
-      if (!solin)
-      {
-         cerr << "Can not open solution file " << sol_file << ". Exit.\n";
-         exit(1);
+         if (!(*solin))
+         {
+            cerr << "Can not open solution file " << sol_file << ". Exit.\n";
+            exit(1);
+         }
       }
 
       if (is_gf)
@@ -1936,7 +1936,7 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
       ostringstream fname;
       fname << mesh_prefix << '.' << setfill('0') << setw(pad_digits) << p;
       meshfiles[p] = new named_ifgzstream(fname.str().c_str());
-      if (!meshfiles[p])
+      if (!(*meshfiles[p]))
       {
          cerr << "Can not open mesh file: " << fname.str().c_str()
               << '!' << endl;
