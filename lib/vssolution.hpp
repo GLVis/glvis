@@ -129,8 +129,8 @@ public:
    virtual void ToggleAttributes(Array<int> &attr_list);
 };
 
-void DrawNumberMarker(const double x[3], double dx, int n);
-   
+void DrawNumberedMarker(const double x[3], double dx, int n);
+
 void DrawTriangle(const double pts[][3], const double cv[],
                   const double minv, const double maxv);
 
