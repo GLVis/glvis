@@ -18,6 +18,7 @@
 #include <fstream>
 #include <string>
 #include <cstdio>
+#include <cstring>
 #include <ctime>
 #include <csignal>
 
@@ -504,34 +505,38 @@ void StartVisualization(int field_type)
 
 int ScriptReadSolution(istream &scr, Mesh **mp, GridFunction **sp)
 {
-   string word;
+   string mword,sword;
 
    cout << "Script: solution: " << flush;
    // read the mesh
-   scr >> ws >> word; // mesh filename (can't contain spaces)
+   scr >> ws >> mword; // mesh filename (can't contain spaces)
+   cout << "mesh: " << mword << "; " << flush;
+   named_ifgzstream imesh(mword.c_str());
+   if (!imesh)
    {
-      named_ifgzstream imesh(word.c_str());
-      if (!imesh)
-      {
-         cout << "Can not open mesh file: " << word << endl;
-         return 1;
-      }
-      *mp = new Mesh(imesh, 1, 0, fix_elem_orient);
-      cout << "mesh: " << word << "; " << flush;
+      cout << "Can not open mesh file: " << mword << endl;
+      return 1;
    }
+   *mp = new Mesh(imesh, 1, 0, fix_elem_orient);
 
    // read the solution (GridFunction)
-   scr >> ws >> word;
+   scr >> ws >> sword;
+   if (sword == mword) // mesh and solution in the same file
    {
-      ifgzstream isol(word.c_str());
+      cout << "solution: " << mword << endl;
+      *sp = new GridFunction(*mp, imesh);
+   }
+   else
+   {
+      cout << "solution: " << sword << endl;
+      ifgzstream isol(sword.c_str());
       if (!isol)
       {
-         cout << "Can not open solution file: " << word << endl;
+         cout << "Can not open solution file: " << sword << endl;
          delete *mp; *mp = NULL;
          return 2;
       }
       *sp = new GridFunction(*mp, isol);
-      cout << "solution: " << word << endl;
    }
 
    Extrude1DMeshAndSolution(mp, sp, NULL);
@@ -1735,48 +1740,59 @@ void PrintSampleUsage(ostream &out)
 void ReadSerial()
 {
    // get the mesh from a file
+   ifgzstream meshin(mesh_file);
+   if (!meshin)
    {
-      ifstream meshin(mesh_file);
-      if (!meshin)
-      {
-         cerr << "Can not open mesh file " << mesh_file << ". Exit.\n";
-         exit(1);
-      }
-
-      // mesh = new Mesh(meshin, is_gf?1:0, 0);
-      mesh = new Mesh(mesh_file, 1, 0, fix_elem_orient);
+      cerr << "Can not open mesh file " << mesh_file << ". Exit.\n";
+      exit(1);
    }
+
+   mesh = new Mesh(meshin, 1, 0, fix_elem_orient);
 
    if (is_gf || (input & 4) || (input & 8))
    {
       // get the solution from file
-      ifgzstream solin(sol_file);
-      if (!solin)
+      bool freesolin = false;
+      ifgzstream *solin = NULL;
+      if (!strcmp(mesh_file,sol_file))
       {
-         cerr << "Can not open solution file " << sol_file << ". Exit.\n";
-         exit(1);
+         solin = &meshin;
+      }
+      else
+      {
+         solin = new ifgzstream(sol_file);
+         freesolin = true;
+         if (!(*solin))
+         {
+            cerr << "Can not open solution file " << sol_file << ". Exit.\n";
+            exit(1);
+         }
       }
 
       if (is_gf)
       {
-         grid_f = new GridFunction(mesh, solin);
+         grid_f = new GridFunction(mesh, *solin);
          SetGridFunction();
       }
       else if (input & 4)
       {
          // get rid of NetGen's info line
          char buff[128];
-         solin.getline(buff,128);
-         sol.Load(solin, mesh->GetNV());
+         solin->getline(buff,128);
+         sol.Load(*solin, mesh->GetNV());
       }
       else if (input & 8)
       {
-         solu.Load(solin, mesh->GetNV());
-         solv.Load(solin, mesh->GetNV());
+         solu.Load(*solin, mesh->GetNV());
+         solv.Load(*solin, mesh->GetNV());
          if (mesh->SpaceDimension() == 3)
          {
-            solw.Load(solin, mesh->GetNV());
+            solw.Load(*solin, mesh->GetNV());
          }
+      }
+      if (freesolin)
+      {
+         delete solin;
       }
    }
    else
@@ -1911,24 +1927,27 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                                GridFunction **sol_p, int keep_attr)
 {
    Array<Mesh *> mesh_array;
+   Array<named_ifgzstream *> meshfiles;
 
    mesh_array.SetSize(np);
+   meshfiles.SetSize(np);
    for (int p = 0; p < np; p++)
    {
       ostringstream fname;
       fname << mesh_prefix << '.' << setfill('0') << setw(pad_digits) << p;
-      named_ifgzstream meshfile(fname.str().c_str());
-      if (!meshfile)
+      meshfiles[p] = new named_ifgzstream(fname.str().c_str());
+      if (!(*meshfiles[p]))
       {
          cerr << "Can not open mesh file: " << fname.str().c_str()
               << '!' << endl;
          for (p--; p >= 0; p--)
          {
             delete mesh_array[p];
+            delete meshfiles[p];
          }
          return 1;
       }
-      mesh_array[p] = new Mesh(meshfile, 1, 0, fix_elem_orient);
+      mesh_array[p] = new Mesh(*meshfiles[p], 1, 0, fix_elem_orient);
       if (!keep_attr)
       {
          // set element and boundary attributes to be the processor number + 1
@@ -1947,28 +1966,37 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    if (sol_prefix && sol_p)
    {
       Array<GridFunction *> gf_array(np);
+      bool samefile = !strcmp(sol_prefix,mesh_prefix);
       for (int p = 0; p < np; p++)
       {
-         ostringstream fname;
-         fname << sol_prefix << '.' << setfill('0') << setw(pad_digits) << p;
-         ifgzstream solfile(fname.str().c_str());
-         if (!solfile)
+         if (!samefile)
          {
-            cerr << "Can not open solution file " << fname.str().c_str()
-                 << '!' << endl;
-            for (p--; p >= 0; p--)
+            ostringstream fname;
+            fname << sol_prefix << '.' << setfill('0') << setw(pad_digits) << p;
+            ifgzstream solfile(fname.str().c_str());
+            if (!solfile)
             {
-               delete gf_array[p];
+               cerr << "Can not open solution file " << fname.str().c_str()
+                    << '!' << endl;
+               for (p--; p >= 0; p--)
+               {
+                  delete gf_array[p];
+               }
+               delete *mesh_p;
+               *mesh_p = NULL;
+               for (p = 0; p < np; p++)
+               {
+                  delete mesh_array[np-1-p];
+                  delete meshfiles[np-1-p];
+               }
+               return 2;
             }
-            delete *mesh_p;
-            *mesh_p = NULL;
-            for (p = 0; p < np; p++)
-            {
-               delete mesh_array[np-1-p];
-            }
-            return 2;
+            gf_array[p] = new GridFunction(mesh_array[p], solfile);
          }
-         gf_array[p] = new GridFunction(mesh_array[p], solfile);
+         else  // mesh and solution in the same file
+         {
+            gf_array[p] = new GridFunction(mesh_array[p], *meshfiles[p]);
+         }
       }
       *sol_p = new GridFunction(*mesh_p, gf_array, np);
 
@@ -1981,6 +2009,7 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    for (int p = 0; p < np; p++)
    {
       delete mesh_array[np-1-p];
+      delete meshfiles[np-1-p];
    }
 
    return 0;
