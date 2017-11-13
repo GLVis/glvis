@@ -1144,7 +1144,7 @@ int main (int argc, char *argv[])
    int         multisample   = GetMultisample();
    double      line_width    = Get_LineWidth();
    double      ms_line_width = Get_MS_LineWidth();
-   int         geom_ref_type = 0;
+   int         geom_ref_type = Quadrature1D::ClosedUniform;
 
    OptionsParser args(argc, argv);
 
@@ -1176,7 +1176,7 @@ int main (int argc, char *argv[])
                   " or replace them with the processor rank.");
    args.AddOption(&geom_ref_type, "-grt", "--geometry-refiner-type",
                   "Set of points to use when refining geometry:"
-                  " 0 = uniform, 1 = Gauss-Lobatto.");
+                  " 3 = uniform, 1 = Gauss-Lobatto, (see mfem::Quadrature1D).");
    args.AddOption(&save_coloring, "-sc", "--save-coloring",
                   "-no-sc", "--dont-save-coloring",
                   "Save the mesh coloring generated when opening only a mesh.");
