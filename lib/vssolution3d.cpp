@@ -597,11 +597,21 @@ void VisualizationSceneSolution3d::Init()
 
    if (mesh->Dimension() == 3)
    {
-      bdr_attr_to_show.SetSize(mesh->bdr_attributes.Max());
+      if (!mesh->bdr_attributes.Size())
+      {
+         MFEM_WARNING("Missing boundary attributes!");
+      }
+      bdr_attr_to_show.SetSize(mesh->bdr_attributes.Size() > 0 ?
+                               mesh->bdr_attributes.Max() : 0);
    }
    else
    {
-      bdr_attr_to_show.SetSize(mesh->attributes.Max());
+      if (!mesh->attributes.Size())
+      {
+         MFEM_WARNING("Missing element attributes!");
+      }
+      bdr_attr_to_show.SetSize(mesh->attributes.Size() > 0 ?
+                               mesh->attributes.Max() : 0);
    }
    bdr_attr_to_show = 1;
 
