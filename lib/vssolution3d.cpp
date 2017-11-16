@@ -429,17 +429,26 @@ static void KeyF9Pressed()
       }
    if (n == 1)
    {
-      j = (j + 1) % attr_list.Size();
+      j = (j + 1) % (attr_list.Size() + 1);
    }
    else
    {
       j = 0;
    }
-   attr = attr_list[j];
-   attr_marker = 0;
-   attr_marker[attr-1] = 1;
-   cout << "Showing " << ((dim == 3) ? "bdr " : "") << "attribute "
-        << attr << endl;
+   if (j == attr_list.Size())
+   {
+      attr_marker = 1;
+      cout << "Showing all " << ((dim == 3) ? "bdr " : "") << "attributes "
+           << endl;
+   }
+   else
+   {
+      attr = attr_list[j];
+      attr_marker = 0;
+      attr_marker[attr-1] = 1;
+      cout << "Showing " << ((dim == 3) ? "bdr " : "") << "attribute "
+           << attr << endl;
+   }
    vssol3d -> PrepareLines();
    vssol3d -> Prepare();
    SendExposeEvent();
@@ -466,17 +475,26 @@ static void KeyF10Pressed()
       }
    if (n == 1)
    {
-      j = (j + attr_list.Size() - 1) % attr_list.Size();
+      j = (j + attr_list.Size()) % (attr_list.Size() + 1);
    }
    else
    {
       j = attr_list.Size() - 1;
    }
-   attr = attr_list[j];
-   attr_marker = 0;
-   attr_marker[attr-1] = 1;
-   cout << "Showing " << ((dim == 3) ? "bdr " : "") << "attribute "
-        << attr << endl;
+   if (j == attr_list.Size())
+   {
+      attr_marker = 1;
+      cout << "Showing all " << ((dim == 3) ? "bdr " : "") << "attributes "
+           << endl;
+   }
+   else
+   {
+      attr = attr_list[j];
+      attr_marker = 0;
+      attr_marker[attr-1] = 1;
+      cout << "Showing " << ((dim == 3) ? "bdr " : "") << "attribute "
+           << attr << endl;
+   }
    vssol3d -> PrepareLines();
    vssol3d -> Prepare();
    SendExposeEvent();
