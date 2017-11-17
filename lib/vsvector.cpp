@@ -1065,10 +1065,12 @@ void VisualizationSceneVector::Draw()
    // draw numberings
    if (drawnums)
    {
-      if (1 == drawnums) {
+      if (1 == drawnums)
+      {
          glCallList(e_nums_list);
       }
-      else if (2 == drawnums) {
+      else if (2 == drawnums)
+      {
          glCallList(v_nums_list);
       }
    }

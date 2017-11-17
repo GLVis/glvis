@@ -27,7 +27,7 @@ protected:
    int displlist, linelist, lcurvelist;
    int bdrlist, drawbdr, draw_cp, cp_list;
    int e_nums_list, v_nums_list;
-   
+
    void Init();
 
    void FindNewBox(double rx[], double ry[], double rval[]);
@@ -118,7 +118,7 @@ public:
    void ToggleDrawMesh() { drawmesh = (drawmesh+1)%3; }
 
    void ToggleDrawNumberings() { drawnums = (drawnums+1)%3; }
-   
+
    virtual void SetShading(int, bool);
    void ToggleShading();
 

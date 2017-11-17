@@ -440,7 +440,7 @@ void VisualizationSceneSolution::Init()
    drawelems = shading = 1;
    drawmesh  = 0;
    drawnums  = 0;
-   
+
    shrink = 1.0;
    shrinkmat = 1.0;
    bdrc.SetSize(2,0);
@@ -478,7 +478,7 @@ void VisualizationSceneSolution::Init()
 
       auxKeyFunc (AUX_n, KeyNPressed);
       auxKeyFunc (AUX_N, KeyNPressed);
-      
+
       auxKeyFunc (AUX_e, KeyEPressed);
       auxKeyFunc (AUX_E, KeyEPressed);
 
@@ -510,7 +510,7 @@ void VisualizationSceneSolution::Init()
    cp_list    = glGenLists (1);
    e_nums_list  = glGenLists (1);
    v_nums_list  = glGenLists (1);
-   
+
    Prepare();
    PrepareLines();
    PrepareLevelCurves();
@@ -532,7 +532,10 @@ VisualizationSceneSolution::~VisualizationSceneSolution()
 void VisualizationSceneSolution::ToggleDrawElems()
 {
    const char *modes[] =
-   { "none", "solution", "kappa + 1/kappa", "kappa", "1/det(J)", "det(J)", "attribute" };
+   {
+      "none", "solution", "kappa + 1/kappa", "kappa", "1/det(J)", "det(J)",
+      "attribute"
+   };
 
    drawelems = (drawelems + 6) % 7;
 
@@ -1011,22 +1014,22 @@ void DrawNumberedMarker(const double x[3], double dx, int n)
    glVertex3d(x[0]+dx, x[1]-dx, x[2]);
    glVertex3d(x[0]-dx, x[1]+dx, x[2]);
    glEnd();
-   
+
 #ifndef GLVIS_USE_FREETYPE
    glPushAttrib (GL_LIST_BIT);
    glListBase (fontbase);
 #endif
-   
+
    ostringstream buf;
    buf << n;
-   
+
    glRasterPos3d (x[0], x[1], x[2]);
 #ifndef GLVIS_USE_FREETYPE
    glCallLists(buf.str().size(), GL_UNSIGNED_BYTE, buf.str().c_str());
 #else
    DrawBitmapText(buf.str().c_str());
 #endif
-   
+
 #ifndef GLVIS_USE_FREETYPE
    glPopAttrib();
 #endif
@@ -1422,7 +1425,7 @@ void VisualizationSceneSolution::Prepare()
 
    for (int d = 0; d < mesh -> attributes.Size(); d++)
    {
-      
+
       if (!el_attr_to_show[mesh -> attributes[d]-1]) { continue; }
 
       nx = 0.;
@@ -1665,7 +1668,7 @@ double VisualizationSceneSolution::GetElementLengthScale(int k)
 
    mesh->GetPointMatrix(k, pointmat);
    mesh->GetElementVertices(k, vertices);
-   
+
    // Get length scale for x mark
    double xmax = -numeric_limits<double>::infinity();
    double ymax = -numeric_limits<double>::infinity();
@@ -1673,13 +1676,14 @@ double VisualizationSceneSolution::GetElementLengthScale(int k)
    double ymin = numeric_limits<double>::infinity();
 
    int nv = vertices.Size();
-   for (int j = 0; j < nv; j++) {
+   for (int j = 0; j < nv; j++)
+   {
       double x = pointmat(0,j);
       double y = pointmat(1,j);
-      if (x > xmax) xmax = x;
-      if (x < xmin) xmin = x;
-      if (y > ymax) ymax = y;
-      if (y < ymin) ymin = y;
+      if (x > xmax) { xmax = x; }
+      if (x < xmin) { xmin = x; }
+      if (y > ymax) { ymax = y; }
+      if (y < ymin) { ymin = y; }
    }
    double dx = xmax-xmin;
    double dy = ymax-ymin;
@@ -1692,17 +1696,20 @@ void VisualizationSceneSolution::PrepareElementNumbering()
 {
    int ne = mesh -> GetNE();
 
-   if (ne > MAX_RENDER_NUMBERING) {
+   if (ne > MAX_RENDER_NUMBERING)
+   {
       cout << "Element numbering disabled when #elements > "
            << MAX_RENDER_NUMBERING << endl;
       cout << "Rendering the text would be very slow." << endl;
       return;
    }
 
-   if (2 == shading) {
+   if (2 == shading)
+   {
       PrepareElementNumbering2();
    }
-   else {
+   else
+   {
       PrepareElementNumbering1();
    }
 }
@@ -1715,7 +1722,8 @@ void VisualizationSceneSolution::PrepareElementNumbering1()
    Array<int> vertices;
 
    int ne = mesh->GetNE();
-   for (int k = 0; k < ne; k++) {
+   for (int k = 0; k < ne; k++)
+   {
 
       mesh->GetPointMatrix (k, pointmat);
       mesh->GetElementVertices (k, vertices);
@@ -1726,7 +1734,8 @@ void VisualizationSceneSolution::PrepareElementNumbering1()
       double xs = 0.0;
       double ys = 0.0;
       double us = 0.0;
-      for (int j = 0; j < nv; j++) {
+      for (int j = 0; j < nv; j++)
+      {
          xs += pointmat(0,j);
          ys += pointmat(1,j);
          us += LogVal((*sol)(vertices[j]));
@@ -1752,7 +1761,7 @@ void VisualizationSceneSolution::PrepareElementNumbering2()
    Vector values;
 
    glNewList(e_nums_list, GL_COMPILE);
-   
+
    int ne = mesh->GetNE();
    for (int i = 0; i < ne; i++)
    {
@@ -1765,8 +1774,9 @@ void VisualizationSceneSolution::PrepareElementNumbering2()
       double xc = 0.0;
       double yc = 0.0;
       double uc = 0.0;
-      for (int j = 0; j < values.Size(); j++) {
-      
+      for (int j = 0; j < values.Size(); j++)
+      {
+
          double xv = pointmat(0, j);
          double yv = pointmat(1, j);
          double u = values[j];
@@ -1794,17 +1804,20 @@ void VisualizationSceneSolution::PrepareVertexNumbering()
 {
    int nv = mesh->GetNV();
 
-   if (nv > MAX_RENDER_NUMBERING) {
+   if (nv > MAX_RENDER_NUMBERING)
+   {
       cout << "Vertex numbering disabled when #vertices > "
            << MAX_RENDER_NUMBERING << endl;
       cout << "Rendering the text would be very slow." << endl;
       return;
    }
 
-   if (2 == shading) {
+   if (2 == shading)
+   {
       PrepareVertexNumbering2();
    }
-   else {
+   else
+   {
       PrepareVertexNumbering1();
    }
 }
@@ -1820,7 +1833,8 @@ void VisualizationSceneSolution::PrepareVertexNumbering1()
    // when the elements or domains are shrunk.
 
    int ne = mesh->GetNE();
-   for (int k = 0; k < ne; k++) {
+   for (int k = 0; k < ne; k++)
+   {
 
       mesh->GetPointMatrix (k, pointmat);
       mesh->GetElementVertices (k, vertices);
@@ -1830,12 +1844,13 @@ void VisualizationSceneSolution::PrepareVertexNumbering1()
 
       double ds = GetElementLengthScale(k);
       double xs = 0.05*ds;
-      
-      for (int j = 0; j < nv; j++) {
+
+      for (int j = 0; j < nv; j++)
+      {
          double x = pointmat(0,j);
          double y = pointmat(1,j);
          double u = LogVal((*sol)(vertices[j]));
-      
+
          double xx[3] = {x,y,u};
          DrawNumberedMarker(xx,xs,vertices[j]);
       }
@@ -1854,7 +1869,7 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
    glNewList(v_nums_list, GL_COMPILE);
 
    int j2v[4] = {0,1,3,2}; // transform numbering convention for vertices
-   
+
    int ne = mesh->GetNE();
    for (int i = 0; i < ne; i++)
    {
@@ -1865,7 +1880,7 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
       // We don't really need to refine here.  But we do want to pick
       // up the correct values for the different element drawing modes
       // from within GetRefinedValues.
-      
+
       int refine_count = 1;
       RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
                                          refine_count, EdgeRefineFactor);
@@ -1873,14 +1888,15 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
 
       double ds = GetElementLengthScale(i);
       double xs = 0.05*ds;
-      
-      for (int j = 0; j < values.Size(); j++) {
-      
+
+      for (int j = 0; j < values.Size(); j++)
+      {
+
          double xv = pointmat(0, j);
          double yv = pointmat(1, j);
 
          double u = values[j];
-         
+
          double xx[3] = {xv,yv,u};
          DrawNumberedMarker(xx,xs,vertices[j2v[j]]);
       }
@@ -2294,10 +2310,12 @@ void VisualizationSceneSolution::Draw()
    // draw numberings
    if (drawnums)
    {
-      if (1 == drawnums) {
+      if (1 == drawnums)
+      {
          glCallList(e_nums_list);
       }
-      else if (2 == drawnums) {
+      else if (2 == drawnums)
+      {
          glCallList(v_nums_list);
       }
    }
