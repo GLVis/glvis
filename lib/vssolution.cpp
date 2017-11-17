@@ -1756,7 +1756,7 @@ void VisualizationSceneSolution::PrepareElementNumbering1()
 
 void VisualizationSceneSolution::PrepareElementNumbering2()
 {
-   RefinedGeometry *RefG;
+   IntegrationRule center_ir(1);
    DenseMatrix pointmat;
    Vector values;
 
@@ -1767,28 +1767,13 @@ void VisualizationSceneSolution::PrepareElementNumbering2()
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
 
-      RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                         TimesToRefine, EdgeRefineFactor);
-      GetRefinedValues (i, RefG->RefPts, values, pointmat);
+      center_ir.IntPoint(0) =
+         Geometries.GetCenter(mesh->GetElementBaseGeometry(i));
+      GetRefinedValues (i, center_ir, values, pointmat);
 
-      double xc = 0.0;
-      double yc = 0.0;
-      double uc = 0.0;
-      for (int j = 0; j < values.Size(); j++)
-      {
-
-         double xv = pointmat(0, j);
-         double yv = pointmat(1, j);
-         double u = values[j];
-
-         xc += xv;
-         yc += yv;
-         uc += u;
-
-      }
-      xc /= values.Size();
-      yc /= values.Size();
-      uc /= values.Size();
+      double xc = pointmat(0,0);
+      double yc = pointmat(1,0);
+      double uc = values(0);
 
       double ds = GetElementLengthScale(i);
       double dx = 0.05*ds;
@@ -1832,10 +1817,9 @@ void VisualizationSceneSolution::PrepareVertexNumbering1()
    // Draw the vertices for each element.  This is redundant, except
    // when the elements or domains are shrunk.
 
-   int ne = mesh->GetNE();
+   const int ne = mesh->GetNE();
    for (int k = 0; k < ne; k++)
    {
-
       mesh->GetPointMatrix (k, pointmat);
       mesh->GetElementVertices (k, vertices);
       int nv = vertices.Size();
@@ -1861,44 +1845,36 @@ void VisualizationSceneSolution::PrepareVertexNumbering1()
 
 void VisualizationSceneSolution::PrepareVertexNumbering2()
 {
-   RefinedGeometry *RefG;
    DenseMatrix pointmat;
    Vector values;
    Array<int> vertices;
 
    glNewList(v_nums_list, GL_COMPILE);
 
-   int j2v[4] = {0,1,3,2}; // transform numbering convention for vertices
-
-   int ne = mesh->GetNE();
+   const int ne = mesh->GetNE();
    for (int i = 0; i < ne; i++)
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
 
       mesh->GetElementVertices (i, vertices);
 
-      // We don't really need to refine here.  But we do want to pick
-      // up the correct values for the different element drawing modes
-      // from within GetRefinedValues.
+      const IntegrationRule &vert_ir =
+         *Geometries.GetVertices(mesh->GetElementBaseGeometry(i));
 
-      int refine_count = 1;
-      RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                         refine_count, EdgeRefineFactor);
-      GetRefinedValues (i, RefG->RefPts, values, pointmat);
+      GetRefinedValues (i, vert_ir, values, pointmat);
 
       double ds = GetElementLengthScale(i);
       double xs = 0.05*ds;
 
       for (int j = 0; j < values.Size(); j++)
       {
-
          double xv = pointmat(0, j);
          double yv = pointmat(1, j);
 
          double u = values[j];
 
          double xx[3] = {xv,yv,u};
-         DrawNumberedMarker(xx,xs,vertices[j2v[j]]);
+         DrawNumberedMarker(xx,xs,vertices[j]);
       }
    }
 
