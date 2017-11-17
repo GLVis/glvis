@@ -15,10 +15,6 @@
 #include "mfem.hpp"
 using namespace mfem;
 
-// Rendering large numbers of text objects for element or vertex
-// numberings is slow.  Turn it off above some entity count.
-#define MAX_RENDER_NUMBERING 1000
-
 // Visualization header file
 
 class VisualizationSceneSolution : public VisualizationSceneScalarData
@@ -56,6 +52,10 @@ protected:
 
    // Used for drawing markers for element and vertex numberings
    double GetElementLengthScale(int k);
+
+   // Rendering large numbers of text objects for element or vertex
+   // numberings is slow.  Turn it off above some entity count.
+   static const int MAX_RENDER_NUMBERING = 1000;
 
 public:
    int shading, TimesToRefine, EdgeRefineFactor;

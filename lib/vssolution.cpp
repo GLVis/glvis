@@ -54,7 +54,7 @@ static void SolutionKeyHPressed()
         << "+------------------------------------+" << endl
         << "| a -  Displays/Hides the axes       |" << endl
         << "| A -  Turns antialiasing on/off     |" << endl
-        << "| b -  Displays/Hides the boundary   |" << endl
+        << "| b/B  Displays/Hides the boundary   |" << endl
         << "| c -  Toggle colorbar and caption   |" << endl
         << "| C -  Change the main plot caption  |" << endl
         << "| e -  Displays/Hides the elements   |" << endl
@@ -69,7 +69,7 @@ static void SolutionKeyHPressed()
         << "| l -  Turns on/off the light        |" << endl
         << "| L -  Toggle logarithmic scale      |" << endl
         << "| m -  Displays/Hides the mesh       |" << endl
-        << "| n -  Cycle through numberings      |" << endl
+        << "| n/N  Cycle through numberings      |" << endl
         << "| p/P  Cycle through color palettes  |" << endl
         << "| q -  Quits                         |" << endl
         << "| r -  Reset the plot to 3D view     |" << endl
@@ -1005,7 +1005,7 @@ void VisualizationSceneSolution::ToggleLogscale(bool print)
 void DrawNumberedMarker(const double x[3], double dx, int n)
 {
    glBegin(GL_LINES);
-   glColor4d(0, 0, 0, 0);
+   // glColor4d(0, 0, 0, 0);
    glVertex3d(x[0]-dx, x[1]-dx, x[2]);
    glVertex3d(x[0]+dx, x[1]+dx, x[2]);
    glVertex3d(x[0]+dx, x[1]-dx, x[2]);
@@ -2251,15 +2251,6 @@ void VisualizationSceneSolution::Draw()
          glDisable (GL_TEXTURE_1D);
       }
    }
-   if (drawnums)
-   {
-      if (1 == drawnums) {
-         glCallList(e_nums_list);
-      }
-      else if (2 == drawnums) {
-         glCallList(v_nums_list);
-      }
-   }
 
    if (MatAlpha < 1.0)
    {
@@ -2298,6 +2289,15 @@ void VisualizationSceneSolution::Draw()
    else if (drawmesh == 2)
    {
       glCallList(lcurvelist);
+   }
+   if (drawnums)
+   {
+      if (1 == drawnums) {
+         glCallList(e_nums_list);
+      }
+      else if (2 == drawnums) {
+         glCallList(v_nums_list);
+      }
    }
 
    if (draw_cp)
