@@ -1062,6 +1062,17 @@ void VisualizationSceneVector::Draw()
       glCallList(lcurvelist);
    }
 
+   // draw numberings
+   if (drawnums)
+   {
+      if (1 == drawnums) {
+         glCallList(e_nums_list);
+      }
+      else if (2 == drawnums) {
+         glCallList(v_nums_list);
+      }
+   }
+
    if (drawvector == 1)
    {
       glCallList(vectorlist);

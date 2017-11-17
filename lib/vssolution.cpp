@@ -2290,6 +2290,8 @@ void VisualizationSceneSolution::Draw()
    {
       glCallList(lcurvelist);
    }
+
+   // draw numberings
    if (drawnums)
    {
       if (1 == drawnums) {
