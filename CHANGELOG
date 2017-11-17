@@ -12,6 +12,8 @@
 Development version, not released yet
 =====================================
 
+- Added support for reading mesh and solution from the same file.
+
 - Added a CMake build system.
 
 - Added a number of new color palettes which can now be switched both forwards
