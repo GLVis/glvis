@@ -141,7 +141,7 @@ static void SwitchAttribute(int increment, int &attribute,
                             Array<int> &attribute_marker,
                             bool bdr)
 {
-   const char *attr_type = bdr ? "bdr" : "elememt";
+   const char *attr_type = bdr ? "bdr" : "element";
    if (attribute_marker.Size() == 0)
    {
       cout << "There are no " << attr_type << " attributes" << endl;
