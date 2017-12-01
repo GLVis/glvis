@@ -65,7 +65,7 @@ static void VectorKeyHPressed()
         << "| F2 - Update colors, etc.           |" << endl
         << "| F3/F4 - Shrink/Zoom elements       |" << endl
         << "| F5 - Set level lines               |" << endl
-        << "| F6 - Palete options                |" << endl
+        << "| F6 - Palette options               |" << endl
         << "| F7 - Manually set min/max value    |" << endl
         << "| F8 - List of subdomains to show    |" << endl
         << "| F9/F10 - Walk through subdomains   |" << endl

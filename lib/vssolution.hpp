@@ -50,11 +50,11 @@ protected:
 
    int GetAutoRefineFactor();
 
-   // Used for drawing markers for element and vertex numberings
+   // Used for drawing markers for element and vertex numbering
    double GetElementLengthScale(int k);
 
-   // Rendering large numbers of text objects for element or vertex
-   // numberings is slow.  Turn it off above some entity count.
+   // Rendering large numbers of text objects for element or vertex numbering is
+   // slow.  Turn it off above some entity count.
    static const int MAX_RENDER_NUMBERING = 1000;
 
 public:

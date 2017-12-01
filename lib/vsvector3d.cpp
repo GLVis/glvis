@@ -69,7 +69,7 @@ static void VectorKeyHPressed()
         << "| F1 - X window info and keystrokes  |" << endl
         << "| F2 - Update colors, etc.           |" << endl
         << "| F3/F4 - Shrink/Zoom bdr elements   |" << endl
-        << "| F6 - Palete options                |" << endl
+        << "| F6 - Palette options               |" << endl
         << "| F7 - Manually set min/max value    |" << endl
         << "| F8 - List of subdomains to show    |" << endl
         << "| F9/F10 - Walk through subdomains   |" << endl

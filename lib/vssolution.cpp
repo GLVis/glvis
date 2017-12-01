@@ -89,7 +89,7 @@ static void SolutionKeyHPressed()
         << "| F2 - Update colors, etc.           |" << endl
         << "| F3/F4 - Shrink/Zoom elements       |" << endl
         << "| F5 - Set level lines               |" << endl
-        << "| F6 - Palete options                |" << endl
+        << "| F6 - Palette options               |" << endl
         << "| F7 - Manually set min/max value    |" << endl
         << "| F8 - List of subdomains to show    |" << endl
         << "| F9/F10 - Walk through subdomains   |" << endl
@@ -1724,7 +1724,6 @@ void VisualizationSceneSolution::PrepareElementNumbering1()
    int ne = mesh->GetNE();
    for (int k = 0; k < ne; k++)
    {
-
       mesh->GetPointMatrix (k, pointmat);
       mesh->GetElementVertices (k, vertices);
       int nv = vertices.Size();
