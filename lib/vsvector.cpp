@@ -29,6 +29,7 @@ static void VectorKeyHPressed()
         << "| a -  Displays/Hides the axes       |" << endl
         << "| A -  Turns antialiasing on/off     |" << endl
         << "| b -  Displacements step back       |" << endl
+        << "| B -  Displays/Hides the boundary   |" << endl
         << "| c -  Toggle colorbar and caption   |" << endl
         << "| C -  Change the main plot caption  |" << endl
         << "| d -  Displays/Hides displacements  |" << endl
@@ -36,6 +37,8 @@ static void VectorKeyHPressed()
         << "| f -  Smooth/Flat shading           |" << endl
         << "| g -  Toggle background             |" << endl
         << "| h -  Displays help menu            |" << endl
+        << "| i -  (De)refine elem. (NC shading) |" << endl
+        << "| I -  Switch 'i' func. (NC shading) |" << endl
         << "| j -  Turn on/off perspective       |" << endl
         << "| k/K  Adjust the transparency level |" << endl
         << "| ,/<  Adjust color transparency     |" << endl
@@ -43,6 +46,7 @@ static void VectorKeyHPressed()
         << "| L -  Toggle logarithmic scale      |" << endl
         << "| m -  Displays/Hides the mesh       |" << endl
         << "| n -  Displacements step forward    |" << endl
+        << "| N -  Cycle through numberings      |" << endl
         << "| p/P  Cycle through color palettes  |" << endl
         << "| q -  Quits                         |" << endl
         << "| r -  Reset the plot to 3D view     |" << endl
@@ -61,7 +65,7 @@ static void VectorKeyHPressed()
         << "| F2 - Update colors, etc.           |" << endl
         << "| F3/F4 - Shrink/Zoom elements       |" << endl
         << "| F5 - Set level lines               |" << endl
-        << "| F6 - Palete options                |" << endl
+        << "| F6 - Palette options               |" << endl
         << "| F7 - Manually set min/max value    |" << endl
         << "| F8 - List of subdomains to show    |" << endl
         << "| F9/F10 - Walk through subdomains   |" << endl
@@ -500,11 +504,8 @@ void VisualizationSceneVector::Init()
 
       auxKeyFunc (AUX_d, KeyDPressed);
       auxKeyFunc (AUX_D, KeyDPressed);
-      auxKeyFunc (AUX_n, KeyNPressed);
-      auxKeyFunc (AUX_N, KeyNPressed);
-      // auxKeyFunc (AUX_b, KeyBPressed);
+      auxKeyFuncReplace(AUX_n, KeyNPressed);
       auxKeyFuncReplace(AUX_b, KeyBPressed);
-      // auxKeyFunc (AUX_B, KeyBPressed);
       auxKeyFunc (AUX_v, KeyvPressed);
       auxKeyFunc (AUX_V, KeyVPressed);
       auxKeyFunc (AUX_u, KeyuPressed);
@@ -1059,6 +1060,19 @@ void VisualizationSceneVector::Draw()
    else if (drawmesh == 2)
    {
       glCallList(lcurvelist);
+   }
+
+   // draw numberings
+   if (drawnums)
+   {
+      if (1 == drawnums)
+      {
+         glCallList(e_nums_list);
+      }
+      else if (2 == drawnums)
+      {
+         glCallList(v_nums_list);
+      }
    }
 
    if (drawvector == 1)
