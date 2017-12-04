@@ -11,8 +11,6 @@
 # terms of the GNU Lesser General Public License (as published by the Free
 # Software Foundation) version 2.1 dated February 1999.
 
-GPG2=gpg2
-
 GLVIS_KEYS_DIR="${HOME}"/.config/glvis
 NAME_COMMENT_SERVER="GLVis server key"
 NAME_COMMENT_CLIENT="GLVis client key"
@@ -26,6 +24,19 @@ function check_gpg2()
 {
    if ! have_command ${GPG2}; then
       printf "\nThe required command \"${GPG2}\" was not found. Stop.\n\n"
+      exit 1
+   fi
+}
+
+function check_certtool()
+{
+   if ! have_command ${CERTTOOL}; then
+      printf "\nThe required command \"${CERTTOOL}\" was not found. Stop.\n\n"
+      exit 1
+   fi
+   if ! { ${CERTTOOL} --help | head -1 | grep -q GnuTLS; }; then
+      printf "\nThe required command \"${CERTTOOL}\" is not GnuTLS certtool."
+      printf " Stop.\n\n"
       exit 1
    fi
 }
@@ -48,6 +59,125 @@ function gen_keys_gpg2()
    # printf "%s\n" "${IN}"
    local GPG2_ARGS=("--homedir" "${KEY_DIR}" "--batch" "--gen-key" "-")
    printf "%s\n" "${IN}" | ${GPG2} "${GPG2_ARGS[@]}"
+}
+
+function gen_keys_certtool()
+{
+   local CT="${CERTTOOL}" ROLE="$1" IN=""
+   cd "${KEY_DIR}" || return 1
+   # Generate user CA key
+   $CT --generate-privkey --outfile ca-key.pem || return 1
+   # Generate self-signed user CA certificate
+   IN="\n\n\n\n\n\n\n\n\n3651\ny\n\n\n\n\n\n\n\n\n\n\n\ny\n\n\ny\n"
+   printf "${NAME_REAL}'s GLVis ${ROLE} CA Certificate\n${IN}" | \
+      $CT --generate-self-signed --load-privkey ca-key.pem \
+          --outfile ca-cert.pem > /dev/null 2>&1 || return 1
+
+   # Generate user key
+   $CT --generate-privkey --outfile key.pem || return 1
+   # Generate user certificate signed with the CA key & certificate
+   if [ "${ROLE}" == "Client" ]; then
+      IN="\n\n\n\n\n\n\n\n\n3650\n\ny\n\n\n\n\n\n\n\n\n\n\n\ny\n"
+   else
+      IN="\n\n\n\n\n\n\n\n\n3650\n\n\n\ny\n\n\n\n\n\n\n\n\ny\n"
+   fi
+   printf "${NAME_REAL}'s GLVis ${ROLE} Certificate\n${IN}" | \
+      $CT --generate-certificate --load-privkey key.pem \
+          --outfile cert.pem --load-ca-certificate ca-cert.pem \
+          --load-ca-privkey ca-key.pem > /dev/null 2>&1 || return 1
+}
+
+function check_keys_gpg2()
+{
+   if [ -s "${GLVIS_KEYS_DIR}"/server/pubring.gpg ] && \
+      [ -s "${GLVIS_KEYS_DIR}"/server/secring.gpg ]; then
+      GEN_SERVER_KEY="NO"
+   fi
+   if [ -s "${GLVIS_KEYS_DIR}"/client/pubring.gpg ] && \
+      [ -s "${GLVIS_KEYS_DIR}"/client/secring.gpg ]; then
+      GEN_CLIENT_KEY="NO"
+   fi
+   if [ -s "${GLVIS_KEYS_DIR}"/client/trusted-servers.gpg ]; then
+      ADD_SERVER_KEY="NO"
+   fi
+   if [ -s "${GLVIS_KEYS_DIR}"/server/trusted-clients.gpg ]; then
+      ADD_CLIENT_KEY="NO"
+   fi
+}
+
+function check_keys_certtool()
+{
+   if [ -s "${GLVIS_KEYS_DIR}"/server/cert.pem ] && \
+      [ -s "${GLVIS_KEYS_DIR}"/server/key.pem ]; then
+      GEN_SERVER_KEY="NO"
+   fi
+   if [ -s "${GLVIS_KEYS_DIR}"/client/cert.pem ] && \
+      [ -s "${GLVIS_KEYS_DIR}"/client/key.pem ]; then
+      GEN_CLIENT_KEY="NO"
+   fi
+   if [ -s "${GLVIS_KEYS_DIR}"/client/trusted-servers.pem ]; then
+      ADD_SERVER_KEY="NO"
+   fi
+   if [ -s "${GLVIS_KEYS_DIR}"/server/trusted-clients.pem ]; then
+      ADD_CLIENT_KEY="NO"
+   fi
+}
+
+# $1 - scr dir, $2 - dest dir
+function add_keys_gpg2()
+{
+   cd "${GLVIS_KEYS_DIR}" && \
+   ${GPG2} --homedir "${GLVIS_KEYS_DIR}"/$1 --export --armor \
+           --output "$1.asc" && \
+   ${GPG2} --homedir "${GLVIS_KEYS_DIR}"/$2 --no-default-keyring \
+           --keyring "trusted-${1}s.gpg" --import "$1.asc"
+}
+
+# $1 - scr dir, $2 - dest dir
+add_keys_certtool()
+{
+   cd "${GLVIS_KEYS_DIR}" && \
+   cp -fp $1/ca-cert.pem $2/trusted-${1}s.pem
+}
+
+function list_keys_gpg2()
+{
+   # ${GPG2} --homedir "${GLVIS_KEYS_DIR}"/server --list-secret-keys
+   if [ -s "${GLVIS_KEYS_DIR}"/server/trusted-clients.gpg ]; then
+      ${GPG2} --homedir "${GLVIS_KEYS_DIR}"/server \
+              --keyring "trusted-clients.gpg" --list-public-keys
+   else
+      printf "Server/trusted-client keys not found.\n"
+   fi
+   # ${GPG2} --homedir "${GLVIS_KEYS_DIR}"/client --list-secret-keys
+   if [ -s "${GLVIS_KEYS_DIR}"/client/trusted-servers.gpg ]; then
+      ${GPG2} --homedir "${GLVIS_KEYS_DIR}"/client \
+              --keyring "trusted-servers.gpg" --list-public-keys
+   else
+      printf "Client/trusted-server keys not found.\n"
+   fi
+}
+
+function list_keys_certtool()
+{
+   local CT="${CERTTOOL}"
+   local sc="${GLVIS_KEYS_DIR}"/server/cert.pem sn="Server certificate"
+   local cc="${GLVIS_KEYS_DIR}"/client/cert.pem cn="Client certificate"
+   if [ -s "$sc" ]; then
+      echo "$sn:"
+      echo "-------------------"
+      $CT --certificate-info --infile "$sc"
+   else
+      printf "$sn not found.\n"
+   fi
+   echo
+   if [ -s "$cc" ]; then
+      echo "$cn:"
+      echo "-------------------"
+      $CT --certificate-info --infile "$cc"
+   else
+      printf "$cn not found.\n"
+   fi
 }
 
 function read_name_email()
@@ -92,59 +222,90 @@ function read_name_email()
 
 function print_usage()
 {
-   printf "usage:\n"
-   printf "   $0 [-h|--help]\n"
-   printf "   $0 [-l|--list]\n"
-   printf "   $0 [\"Your Name\"] [\"Your Email\"]\n"
+   printf "Usage:\n"
+   printf "   $0 {-h|--help}\n"
+   printf "   $0 [<var>=<value>]... {-l|--list}\n"
+   printf "   $0 [<var>=<value>]... [\"Your Name\"] [\"Your Email\"]\n"
+   printf "Valid variables:\n"
+   printf "    keytype={x509|gpg}      (current value: ${KEYTYPE})\n"
+   printf "   certtool=<certtool-prog> (current value: ${CERTTOOL}"
+   printf ", keytype: x509)\n"
+   printf "       gpg2=<gpg2-prog>     (current value: ${GPG2}"
+   printf ", keytype: gpg)\n"
 }
 
-case "$1" in
-   -h|--help)
-      print_usage
-      exit 0
-      ;;
-   -l|--list)
-      check_gpg2
-      echo
-      # ${GPG2} --homedir "${GLVIS_KEYS_DIR}"/server --list-secret-keys
-      ${GPG2} --homedir "${GLVIS_KEYS_DIR}"/server \
-         --keyring "trusted-clients.gpg" --list-public-keys
-      # ${GPG2} --homedir "${GLVIS_KEYS_DIR}"/client --list-secret-keys
-      ${GPG2} --homedir "${GLVIS_KEYS_DIR}"/client \
-         --keyring "trusted-servers.gpg" --list-public-keys
-      exit 0
-      ;;
-   *)
-      ;;
-esac
+function select_params()
+{
+   # Key generation programs: gpg2, certtool
+   GPG2=${gpg2:-gpg2}
+   case "$OSTYPE" in
+      darwin*)
+         CERTTOOL=${certtool:-gnutls-certtool}
+         ;;
+      *)
+         CERTTOOL=${certtool:-certtool}
+         ;;
+   esac
+   # Key type to generate: gpg or x509
+   KEYTYPE=${keytype:-x509}
+   case "$KEYTYPE" in
+      gpg)
+         keytype_prog=gpg2
+         ;;
+      x509)
+         keytype_prog=certtool
+         ;;
+      *)
+         printf "\nInvalid keytype: '${KEYTYPE}'. Stop.\n\n"
+         exit 1
+         ;;
+   esac
+}
+
+while [ $# -gt 0 ]; do
+   case "$1" in
+      -h|--help)
+         select_params
+         print_usage
+         exit 0
+         ;;
+      -l|--list)
+         select_params
+         check_$keytype_prog
+         echo
+         list_keys_$keytype_prog
+         exit 0
+         ;;
+      -*)
+         printf "Unknown option: '$1'. Stop.\n\n"
+         exit 1
+         ;;
+      *=*)
+         eval $1
+         shift
+         ;;
+      *)
+         break
+         ;;
+   esac
+done
+
+select_params
 
 GEN_SERVER_KEY="YES"
-if [ -s "${GLVIS_KEYS_DIR}"/server/pubring.gpg ] && \
-   [ -s "${GLVIS_KEYS_DIR}"/server/secring.gpg ]; then
-   GEN_SERVER_KEY="NO"
-fi
 GEN_CLIENT_KEY="YES"
-if [ -s "${GLVIS_KEYS_DIR}"/client/pubring.gpg ] && \
-   [ -s "${GLVIS_KEYS_DIR}"/client/secring.gpg ]; then
-   GEN_CLIENT_KEY="NO"
-fi
 ADD_SERVER_KEY="YES"
-if [ -s "${GLVIS_KEYS_DIR}"/client/trusted-servers.gpg ]; then
-   ADD_SERVER_KEY="NO"
-fi
 ADD_CLIENT_KEY="YES"
-if [ -s "${GLVIS_KEYS_DIR}"/server/trusted-clients.gpg ]; then
-   ADD_CLIENT_KEY="NO"
-fi
+check_keys_$keytype_prog
 
 if [ "${GEN_SERVER_KEY}" == "YES" ] || [ "${GEN_CLIENT_KEY}" == "YES" ]; then
-   check_gpg2
+   check_$keytype_prog
    if ! read_name_email "$@"; then
       print_usage
       exit 1
    fi
 elif [ "${ADD_SERVER_KEY}" == "YES" ] || [ "${ADD_CLIENT_KEY}" == "YES" ]; then
-   check_gpg2
+   check_$keytype_prog
 fi
 
 echo
@@ -158,7 +319,7 @@ else
    KEY_DIR="${GLVIS_KEYS_DIR}"/server
    echo mkdir -p "${KEY_DIR}"
    mkdir -p "${KEY_DIR}"
-   if ! gen_keys_gpg2; then
+   if ! gen_keys_$keytype_prog "Server"; then
       printf "\nGeneration failed. Stop.\n\n"
       exit 1
    fi
@@ -175,14 +336,12 @@ else
    KEY_DIR="${GLVIS_KEYS_DIR}"/client
    echo mkdir -p "${KEY_DIR}"
    mkdir -p "${KEY_DIR}"
-   if ! gen_keys_gpg2; then
+   if ! gen_keys_$keytype_prog "Client"; then
       printf "\nGeneration failed. Stop.\n\n"
       exit 1
    fi
    printf "\r---------------------------\n\n"
 fi
-
-cd "${GLVIS_KEYS_DIR}"
 
 if [ "${ADD_SERVER_KEY}" == "NO" ]; then
    printf "Client's trusted-servers keyring exists.\n\n"
@@ -190,11 +349,7 @@ else
    printf "\r-------------------------------------------------------\n"
    printf " Adding the server key to the client's trusted-servers\n"
    printf "\r-------------------------------------------------------\n"
-   ${GPG2} --homedir "${GLVIS_KEYS_DIR}"/server --export --armor\
-      --output "server.asc" && \
-   ${GPG2} --homedir "${GLVIS_KEYS_DIR}"/client --no-default-keyring\
-      --keyring "trusted-servers.gpg" --import "server.asc"
-   if [ $? -ne 0 ]; then
+   if ! add_keys_$keytype_prog "server" "client"; then
       printf "\nOperation failed. Stop.\n\n"
       exit 1
    fi
@@ -207,11 +362,7 @@ else
    printf "\r-------------------------------------------------------\n"
    printf " Adding the client key to the server's trusted-clients\n"
    printf "\r-------------------------------------------------------\n"
-   ${GPG2} --homedir "${GLVIS_KEYS_DIR}"/client --export --armor\
-      --output "client.asc" && \
-   ${GPG2} --homedir "${GLVIS_KEYS_DIR}"/server --no-default-keyring\
-      --keyring "trusted-clients.gpg" --import "client.asc"
-   if [ $? -ne 0 ]; then
+   if ! add_keys_$keytype_prog "client" "server"; then
       printf "\nOperation failed. Stop.\n\n"
       exit 1
    fi
