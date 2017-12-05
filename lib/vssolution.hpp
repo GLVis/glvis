@@ -23,9 +23,10 @@ protected:
    Vector *v_normals;
    GridFunction *rsol;
 
-   int drawmesh, drawelems;
+   int drawmesh, drawelems, drawnums;
    int displlist, linelist, lcurvelist;
    int bdrlist, drawbdr, draw_cp, cp_list;
+   int e_nums_list, v_nums_list;
 
    void Init();
 
@@ -48,6 +49,13 @@ protected:
                         int flat = 0);
 
    int GetAutoRefineFactor();
+
+   // Used for drawing markers for element and vertex numbering
+   double GetElementLengthScale(int k);
+
+   // Rendering large numbers of text objects for element or vertex numbering is
+   // slow.  Turn it off above some entity count.
+   static const int MAX_RENDER_NUMBERING = 1000;
 
 public:
    int shading, TimesToRefine, EdgeRefineFactor;
@@ -90,6 +98,14 @@ public:
 
    void PrepareBoundary();
 
+   void PrepareNumbering();
+   void PrepareElementNumbering();
+   void PrepareElementNumbering1();
+   void PrepareElementNumbering2();
+   void PrepareVertexNumbering();
+   void PrepareVertexNumbering1();
+   void PrepareVertexNumbering2();
+
    void PrepareCP();
 
    virtual void Draw();
@@ -101,6 +117,8 @@ public:
 
    void ToggleDrawMesh() { drawmesh = (drawmesh+1)%3; }
 
+   void ToggleDrawNumberings() { drawnums = (drawnums+1)%3; }
+
    virtual void SetShading(int, bool);
    void ToggleShading();
 
@@ -111,6 +129,7 @@ public:
    virtual void ToggleAttributes(Array<int> &attr_list);
 };
 
+void DrawNumberedMarker(const double x[3], double dx, int n);
 
 void DrawTriangle(const double pts[][3], const double cv[],
                   const double minv, const double maxv);

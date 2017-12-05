@@ -54,7 +54,7 @@ static void SolutionKeyHPressed()
         << "+------------------------------------+" << endl
         << "| a -  Displays/Hides the axes       |" << endl
         << "| A -  Turns antialiasing on/off     |" << endl
-        << "| b -  Displays/Hides the boundary   |" << endl
+        << "| b/B  Displays/Hides the boundary   |" << endl
         << "| c -  Toggle colorbar and caption   |" << endl
         << "| C -  Change the main plot caption  |" << endl
         << "| e -  Displays/Hides the elements   |" << endl
@@ -69,6 +69,7 @@ static void SolutionKeyHPressed()
         << "| l -  Turns on/off the light        |" << endl
         << "| L -  Toggle logarithmic scale      |" << endl
         << "| m -  Displays/Hides the mesh       |" << endl
+        << "| n/N  Cycle through numberings      |" << endl
         << "| p/P  Cycle through color palettes  |" << endl
         << "| q -  Quits                         |" << endl
         << "| r -  Reset the plot to 3D view     |" << endl
@@ -88,7 +89,7 @@ static void SolutionKeyHPressed()
         << "| F2 - Update colors, etc.           |" << endl
         << "| F3/F4 - Shrink/Zoom elements       |" << endl
         << "| F5 - Set level lines               |" << endl
-        << "| F6 - Palete options                |" << endl
+        << "| F6 - Palette options               |" << endl
         << "| F7 - Manually set min/max value    |" << endl
         << "| F8 - List of subdomains to show    |" << endl
         << "| F9/F10 - Walk through subdomains   |" << endl
@@ -226,6 +227,12 @@ static void KeyMPressed()
    SendExposeEvent();
 }
 
+static void KeyNPressed()
+{
+   vssol -> ToggleDrawNumberings();
+   SendExposeEvent();
+}
+
 static void KeyEPressed()
 {
    vssol -> ToggleDrawElems();
@@ -353,6 +360,7 @@ static void KeyF3Pressed()
       vssol->Prepare();
       vssol->PrepareLines();
       vssol->PrepareLevelCurves();
+      vssol->PrepareNumbering();
       SendExposeEvent();
    }
 }
@@ -365,6 +373,7 @@ static void KeyF4Pressed()
       vssol->Prepare();
       vssol->PrepareLines();
       vssol->PrepareLevelCurves();
+      vssol->PrepareNumbering();
       SendExposeEvent();
    }
 }
@@ -382,6 +391,7 @@ static void KeyF11Pressed()
       vssol->PrepareLines();
       vssol->PrepareBoundary();
       vssol->PrepareLevelCurves();
+      vssol->PrepareNumbering();
       SendExposeEvent();
    }
 }
@@ -399,6 +409,7 @@ static void KeyF12Pressed()
       vssol->PrepareLines();
       vssol->PrepareBoundary();
       vssol->PrepareLevelCurves();
+      vssol->PrepareNumbering();
       SendExposeEvent();
    }
 }
@@ -428,6 +439,7 @@ void VisualizationSceneSolution::Init()
 
    drawelems = shading = 1;
    drawmesh  = 0;
+   drawnums  = 0;
 
    shrink = 1.0;
    shrinkmat = 1.0;
@@ -464,6 +476,9 @@ void VisualizationSceneSolution::Init()
       auxKeyFunc (AUX_m, KeyMPressed);
       auxKeyFunc (AUX_M, KeyMPressed);
 
+      auxKeyFunc (AUX_n, KeyNPressed);
+      auxKeyFunc (AUX_N, KeyNPressed);
+
       auxKeyFunc (AUX_e, KeyEPressed);
       auxKeyFunc (AUX_E, KeyEPressed);
 
@@ -493,11 +508,14 @@ void VisualizationSceneSolution::Init()
    lcurvelist = glGenLists (1);
    bdrlist    = glGenLists (1);
    cp_list    = glGenLists (1);
+   e_nums_list  = glGenLists (1);
+   v_nums_list  = glGenLists (1);
 
    Prepare();
    PrepareLines();
    PrepareLevelCurves();
    PrepareBoundary();
+   PrepareNumbering();
 }
 
 VisualizationSceneSolution::~VisualizationSceneSolution()
@@ -507,12 +525,17 @@ VisualizationSceneSolution::~VisualizationSceneSolution()
    glDeleteLists (lcurvelist, 1);
    glDeleteLists (bdrlist, 1);
    glDeleteLists (cp_list, 1);
+   glDeleteLists (e_nums_list, 1);
+   glDeleteLists (v_nums_list, 1);
 }
 
 void VisualizationSceneSolution::ToggleDrawElems()
 {
    const char *modes[] =
-   { "none", "solution", "kappa + 1/kappa", "kappa", "1/det(J)", "det(J)", "attribute" };
+   {
+      "none", "solution", "kappa + 1/kappa", "kappa", "1/det(J)", "det(J)",
+      "attribute"
+   };
 
    drawelems = (drawelems + 6) % 7;
 
@@ -534,6 +557,7 @@ void VisualizationSceneSolution::ToggleDrawElems()
       Prepare();
       PrepareLevelCurves();
       PrepareCP();
+      PrepareNumbering();
    }
 }
 
@@ -720,6 +744,7 @@ void VisualizationSceneSolution::SetShading(int s, bool print)
          PrepareBoundary();
          PrepareLevelCurves();
          PrepareCP();
+         PrepareNumbering();
       }
       else
       {
@@ -978,6 +1003,36 @@ void VisualizationSceneSolution::ToggleLogscale(bool print)
    {
       PrintLogscale(true);
    }
+}
+
+void DrawNumberedMarker(const double x[3], double dx, int n)
+{
+   glBegin(GL_LINES);
+   // glColor4d(0, 0, 0, 0);
+   glVertex3d(x[0]-dx, x[1]-dx, x[2]);
+   glVertex3d(x[0]+dx, x[1]+dx, x[2]);
+   glVertex3d(x[0]+dx, x[1]-dx, x[2]);
+   glVertex3d(x[0]-dx, x[1]+dx, x[2]);
+   glEnd();
+
+#ifndef GLVIS_USE_FREETYPE
+   glPushAttrib (GL_LIST_BIT);
+   glListBase (fontbase);
+#endif
+
+   ostringstream buf;
+   buf << n;
+
+   glRasterPos3d (x[0], x[1], x[2]);
+#ifndef GLVIS_USE_FREETYPE
+   glCallLists(buf.str().size(), GL_UNSIGNED_BYTE, buf.str().c_str());
+#else
+   DrawBitmapText(buf.str().c_str());
+#endif
+
+#ifndef GLVIS_USE_FREETYPE
+   glPopAttrib();
+#endif
 }
 
 void DrawTriangle(const double pts[][3], const double cv[],
@@ -1370,6 +1425,7 @@ void VisualizationSceneSolution::Prepare()
 
    for (int d = 0; d < mesh -> attributes.Size(); d++)
    {
+
       if (!el_attr_to_show[mesh -> attributes[d]-1]) { continue; }
 
       nx = 0.;
@@ -1408,6 +1464,7 @@ void VisualizationSceneSolution::Prepare()
          }
 
       for (i = 0; i < ne; i++)
+      {
          if (mesh -> GetAttribute(i) == mesh -> attributes[d])
          {
             switch (mesh->GetElementType(i))
@@ -1432,6 +1489,7 @@ void VisualizationSceneSolution::Prepare()
             }
             glEnd();
          }
+      }
    }
 
    glEndList();
@@ -1601,6 +1659,231 @@ void VisualizationSceneSolution::PrepareLines()
    }
 
    glEndList();
+}
+
+double VisualizationSceneSolution::GetElementLengthScale(int k)
+{
+   DenseMatrix pointmat;
+   Array<int> vertices;
+
+   mesh->GetPointMatrix(k, pointmat);
+   mesh->GetElementVertices(k, vertices);
+
+   // Get length scale for x mark
+   double xmax = -numeric_limits<double>::infinity();
+   double ymax = -numeric_limits<double>::infinity();
+   double xmin = numeric_limits<double>::infinity();
+   double ymin = numeric_limits<double>::infinity();
+
+   int nv = vertices.Size();
+   for (int j = 0; j < nv; j++)
+   {
+      double x = pointmat(0,j);
+      double y = pointmat(1,j);
+      if (x > xmax) { xmax = x; }
+      if (x < xmin) { xmin = x; }
+      if (y > ymax) { ymax = y; }
+      if (y < ymin) { ymin = y; }
+   }
+   double dx = xmax-xmin;
+   double dy = ymax-ymin;
+   double ds = std::min<double>(dx,dy);
+
+   return ds;
+}
+
+void VisualizationSceneSolution::PrepareElementNumbering()
+{
+   int ne = mesh -> GetNE();
+
+   if (ne > MAX_RENDER_NUMBERING)
+   {
+      cout << "Element numbering disabled when #elements > "
+           << MAX_RENDER_NUMBERING << endl;
+      cout << "Rendering the text would be very slow." << endl;
+      return;
+   }
+
+   if (2 == shading)
+   {
+      PrepareElementNumbering2();
+   }
+   else
+   {
+      PrepareElementNumbering1();
+   }
+}
+
+void VisualizationSceneSolution::PrepareElementNumbering1()
+{
+   glNewList(e_nums_list, GL_COMPILE);
+
+   DenseMatrix pointmat;
+   Array<int> vertices;
+
+   int ne = mesh->GetNE();
+   for (int k = 0; k < ne; k++)
+   {
+      mesh->GetPointMatrix (k, pointmat);
+      mesh->GetElementVertices (k, vertices);
+      int nv = vertices.Size();
+
+      ShrinkPoints(pointmat, k, 0, 0);
+
+      double xs = 0.0;
+      double ys = 0.0;
+      double us = 0.0;
+      for (int j = 0; j < nv; j++)
+      {
+         xs += pointmat(0,j);
+         ys += pointmat(1,j);
+         us += LogVal((*sol)(vertices[j]));
+      }
+      xs /= nv;
+      ys /= nv;
+      us /= nv;
+
+      double ds = GetElementLengthScale(k);
+      double dx = 0.05*ds;
+
+      double xx[3] = {xs,ys,us};
+      DrawNumberedMarker(xx,dx,k);
+   }
+
+   glEndList();
+}
+
+void VisualizationSceneSolution::PrepareElementNumbering2()
+{
+   IntegrationRule center_ir(1);
+   DenseMatrix pointmat;
+   Vector values;
+
+   glNewList(e_nums_list, GL_COMPILE);
+
+   int ne = mesh->GetNE();
+   for (int i = 0; i < ne; i++)
+   {
+      if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
+
+      center_ir.IntPoint(0) =
+         Geometries.GetCenter(mesh->GetElementBaseGeometry(i));
+      GetRefinedValues (i, center_ir, values, pointmat);
+
+      double xc = pointmat(0,0);
+      double yc = pointmat(1,0);
+      double uc = values(0);
+
+      double ds = GetElementLengthScale(i);
+      double dx = 0.05*ds;
+
+      double xx[3] = {xc,yc,uc};
+      DrawNumberedMarker(xx,dx,i);
+   }
+
+   glEndList();
+}
+
+void VisualizationSceneSolution::PrepareVertexNumbering()
+{
+   int nv = mesh->GetNV();
+
+   if (nv > MAX_RENDER_NUMBERING)
+   {
+      cout << "Vertex numbering disabled when #vertices > "
+           << MAX_RENDER_NUMBERING << endl;
+      cout << "Rendering the text would be very slow." << endl;
+      return;
+   }
+
+   if (2 == shading)
+   {
+      PrepareVertexNumbering2();
+   }
+   else
+   {
+      PrepareVertexNumbering1();
+   }
+}
+
+void VisualizationSceneSolution::PrepareVertexNumbering1()
+{
+   glNewList(v_nums_list, GL_COMPILE);
+
+   DenseMatrix pointmat;
+   Array<int> vertices;
+
+   // Draw the vertices for each element.  This is redundant, except
+   // when the elements or domains are shrunk.
+
+   const int ne = mesh->GetNE();
+   for (int k = 0; k < ne; k++)
+   {
+      mesh->GetPointMatrix (k, pointmat);
+      mesh->GetElementVertices (k, vertices);
+      int nv = vertices.Size();
+
+      ShrinkPoints(pointmat, k, 0, 0);
+
+      double ds = GetElementLengthScale(k);
+      double xs = 0.05*ds;
+
+      for (int j = 0; j < nv; j++)
+      {
+         double x = pointmat(0,j);
+         double y = pointmat(1,j);
+         double u = LogVal((*sol)(vertices[j]));
+
+         double xx[3] = {x,y,u};
+         DrawNumberedMarker(xx,xs,vertices[j]);
+      }
+   }
+
+   glEndList();
+}
+
+void VisualizationSceneSolution::PrepareVertexNumbering2()
+{
+   DenseMatrix pointmat;
+   Vector values;
+   Array<int> vertices;
+
+   glNewList(v_nums_list, GL_COMPILE);
+
+   const int ne = mesh->GetNE();
+   for (int i = 0; i < ne; i++)
+   {
+      if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
+
+      mesh->GetElementVertices (i, vertices);
+
+      const IntegrationRule &vert_ir =
+         *Geometries.GetVertices(mesh->GetElementBaseGeometry(i));
+
+      GetRefinedValues (i, vert_ir, values, pointmat);
+
+      double ds = GetElementLengthScale(i);
+      double xs = 0.05*ds;
+
+      for (int j = 0; j < values.Size(); j++)
+      {
+         double xv = pointmat(0, j);
+         double yv = pointmat(1, j);
+
+         double u = values[j];
+
+         double xx[3] = {xv,yv,u};
+         DrawNumberedMarker(xx,xs,vertices[j]);
+      }
+   }
+
+   glEndList();
+}
+
+void VisualizationSceneSolution::PrepareNumbering()
+{
+   PrepareElementNumbering();
+   PrepareVertexNumbering();
 }
 
 void VisualizationSceneSolution::PrepareLines2()
@@ -1997,6 +2280,19 @@ void VisualizationSceneSolution::Draw()
    else if (drawmesh == 2)
    {
       glCallList(lcurvelist);
+   }
+
+   // draw numberings
+   if (drawnums)
+   {
+      if (1 == drawnums)
+      {
+         glCallList(e_nums_list);
+      }
+      else if (2 == drawnums)
+      {
+         glCallList(v_nums_list);
+      }
    }
 
    if (draw_cp)
