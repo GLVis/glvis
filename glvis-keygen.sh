@@ -34,7 +34,13 @@ function check_certtool()
       printf "\nThe required command \"${CERTTOOL}\" was not found. Stop.\n\n"
       exit 1
    fi
-   if ! { ${CERTTOOL} --help | head -1 | grep -q GnuTLS; }; then
+   if { ${CERTTOOL} --help | head -1 | grep -q GnuTLS; }; then
+      # newer versions of GnuTLS certtool
+      return 0
+   elif { ${CERTTOOL} --version | head -1 | grep -q GnuTLS; }; then
+      # older versions of GnuTLS certtool
+      return 0
+   else
       printf "\nThe required command \"${CERTTOOL}\" is not GnuTLS certtool."
       printf " Stop.\n\n"
       exit 1
@@ -68,23 +74,36 @@ function gen_keys_certtool()
    # Generate user CA key
    $CT --generate-privkey --outfile ca-key.pem || return 1
    # Generate self-signed user CA certificate
-   IN="\n\n\n\n\n\n\n\n\n3651\ny\n\n\n\n\n\n\n\n\n\n\n\ny\n\n\ny\n"
-   printf "${NAME_REAL}'s GLVis ${ROLE} CA Certificate\n${IN}" | \
-      $CT --generate-self-signed --load-privkey ca-key.pem \
-          --outfile ca-cert.pem > /dev/null 2>&1 || return 1
+   IN="cn = \"${NAME_REAL}'s GLVis ${ROLE} CA Certificate\"\n"
+   IN="${IN}email = \"${NAME_EMAIL}\"\n"
+   IN="${IN}expiration_days = 3651\n"
+   IN="${IN}ca\n"
+   IN="${IN}cert_signing_key\n"
+   printf "$IN" > ca-cert.cfg
+   $CT --generate-self-signed --load-privkey ca-key.pem \
+       --outfile ca-cert.pem --template ca-cert.cfg \
+       > ca-cert.txt 2>&1 || return 1
+   rm -f ca-cert.cfg ca-cert.txt
 
    # Generate user key
    $CT --generate-privkey --outfile key.pem || return 1
    # Generate user certificate signed with the CA key & certificate
+   IN="cn = \"${NAME_REAL}'s GLVis ${ROLE} Certificate\"\n"
+   IN="${IN}email = \"${NAME_EMAIL}\"\n"
+   IN="${IN}expiration_days = 3650\n"
+   IN="${IN}signing_key\n"
+   IN="${IN}encryption_key\n"
    if [ "${ROLE}" == "Client" ]; then
-      IN="\n\n\n\n\n\n\n\n\n3650\n\ny\n\n\n\n\n\n\n\n\n\n\n\ny\n"
+      IN="${IN}tls_www_client\n"
    else
-      IN="\n\n\n\n\n\n\n\n\n3650\n\n\n\ny\n\n\n\n\n\n\n\n\ny\n"
+      IN="${IN}tls_www_server\n"
    fi
-   printf "${NAME_REAL}'s GLVis ${ROLE} Certificate\n${IN}" | \
-      $CT --generate-certificate --load-privkey key.pem \
-          --outfile cert.pem --load-ca-certificate ca-cert.pem \
-          --load-ca-privkey ca-key.pem > /dev/null 2>&1 || return 1
+   printf "$IN" > cert.cfg
+   $CT --generate-certificate --load-privkey key.pem \
+       --outfile cert.pem --load-ca-certificate ca-cert.pem \
+       --load-ca-privkey ca-key.pem --template cert.cfg \
+       > cert.txt 2>&1 || return 1
+   rm -f cert.cfg cert.txt
 }
 
 function check_keys_gpg2()
