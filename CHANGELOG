@@ -11,6 +11,9 @@
 
 Development version, not released yet
 =====================================
+- When enabled, secure sockets (based on GnuTLS) now use authentication based on
+  X.509 certificates. A new set of X.509 client/server keys can be generated
+  with the updated version of the script 'glvis-keygen.sh'.
 
 - Added capability to show element and vertex numbering in 2D (key 'n').
 
