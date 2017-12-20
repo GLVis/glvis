@@ -9,7 +9,7 @@
                               http://glvis.org
 
 GLVis is an X11 application and can be built on Linux/Unix systems including
-Mac OS X using the X11/XQuarz app.
+Mac OS X using the X11/XQuarz app and under Windows using Cygwin/X.
 
 Besides a C++ compiler, GLVis depends on the following external packages:
 
@@ -28,6 +28,10 @@ Besides a C++ compiler, GLVis depends on the following external packages:
 
 - the FreeType 2 and Fontconfig libraries; used for font rendering (optional)
   http://www.freetype.org, http://www.fontconfig.org
+
+- Cygwin/X (on Windows); install the packages xinit, libpng-devel,
+  fontconfig-devel, libGLU-devel.
+  https://cygwin.com, https://x.cygwin.com
 
 There are two build systems, one based on GNU make and one based on CMake, as
 described below. Choose the one that matches the build system you used to
@@ -81,9 +85,13 @@ cmake \
 
 Some important variables for CMake are:
 
-- MFEM_DIR: This is the location of MFEMConfig.cmake that is created during
-     the build and/or install of MFEM. You may use either the build
-     directory's config file or the install directory's config file.
+- MFEM_DIR: This is the MFEM build or install prefix. Can be used if the MFEM
+     location is not auto-detected correctly.
+
+- mfem_DIR: (alternative to MFEM_DIR) This is the location of the configuration
+     file MFEMConfig.cmake that is created during the build and/or install of
+     MFEM. You may use either the build directory's config file or the install
+     directory's config file.
 
 - CMAKE_BUILD_TYPE: Most common options are "Debug" and "Release" [default].
 

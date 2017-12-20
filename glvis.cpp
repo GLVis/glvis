@@ -1342,16 +1342,22 @@ int main (int argc, char *argv[])
 
 #ifdef MFEM_USE_GNUTLS
       GnuTLS_global_state *state = NULL;
-      // state->set_log_level(1000);
       GnuTLS_session_params *params = NULL;
       if (secure)
       {
          state = new GnuTLS_global_state;
+         // state->set_log_level(1000);
          string home_dir(getenv("HOME"));
          string server_dir = home_dir + "/.config/glvis/server/";
+#ifndef MFEM_USE_GNUTLS_X509
          string pubkey  = server_dir + "pubring.gpg";
          string privkey = server_dir + "secring.gpg";
          string trustedkeys = server_dir + "trusted-clients.gpg";
+#else
+         string pubkey  = server_dir + "cert.pem";
+         string privkey = server_dir + "key.pem";
+         string trustedkeys = server_dir + "trusted-clients.pem";
+#endif
          params = new GnuTLS_session_params(
             *state, pubkey.c_str(), privkey.c_str(),
             trustedkeys.c_str(), GNUTLS_SERVER);
