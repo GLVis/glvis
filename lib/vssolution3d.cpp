@@ -1695,6 +1695,9 @@ void VisualizationSceneSolution3d::Prepare()
             case Element::QUADRILATERAL:
                glBegin (GL_QUADS);
                break;
+            default:
+               MFEM_ABORT("Invalid boundary element type");
+               break;
          }
          if (dim == 3)
          {
@@ -1980,6 +1983,17 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
    int i, j, k, m, n, n2;
    int flag[8], oedges[6];
    static const int tet_edges[12]= {0,3, 0,2, 0,1, 1,2, 1,3, 2,3};
+   static const int pri_edges[18] =
+   {0,1, 1,2, 2,0, 3,4, 4,5, 5,3, 0,3, 1,4, 2,5};
+   static const int pri_cutting[18][3] =
+   {
+      { 3, -1,  5}, {13,  7, 14}, { 5, -1,  1}, {15,  9, 16},
+      { 1, -1,  3}, {17, 11, 12},
+      {14,  0, 13}, {10, -1,  8}, {16,  2, 15}, { 6, -1, 10},
+      {12,  4, 17}, { 8, -1,  6},
+      { 7, 14,  0}, { 4, 17, 11}, { 9, 16,  2}, { 0, 13,  7},
+      {11, 12,  4}, { 2, 15,  9}
+   };
    static const int hex_edges[24] =
    { 0,1, 1,2, 3,2, 0,3, 4,5, 5,6, 7,6, 4,7, 0,4, 1,5, 2,6, 3,7 };
    static const int hex_cutting[24][3] =
@@ -2023,7 +2037,65 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
                }
             ev = tet_edges;
             break;
+         case Element::PRISM:
+         {
+            int emark[9];
+            ev = pri_edges;
+            for (j = 0; j < 9; j++, ev += 2)
+            {
+               emark[j] = flag[ev[1]] - flag[ev[0]];
+            }
+            do
+            {
+               for (j = 0; j < 9; j++)
+               {
+                  if (emark[j]) { break; }
+               }
+               if (j == 9)
+               {
+                  break;
+               }
+               k = 2 * j;
+               if (emark[j] > 0)
+               {
+                  k++;
+               }
+               do
+               {
+                  for (j = 0; j < 3; j++)
+                  {
+                     m = pri_cutting[k][j];
+                     if (m >= 0)
+                     {
+                        ev = pri_edges + 2 * (m / 2);
+                        if ((m % 2 == 0 && flag[ev[0]] > flag[ev[1]]) ||
+                            (m % 2 == 1 && flag[ev[1]] > flag[ev[0]]))
+                        {
+                           break;
+                        }
+                     }
+                  }
+                  oedges[n2++] = k/2;
+                  emark[k/2] = 0;
+                  k = m;
+               }
+               while (k/2 != oedges[n]);
+               if (n == 0)
+               {
+                  n = n2;
+               }
+               else
+               {
+                  break;
+               }
+            }
+            while (1);
+            n2 -= n;
+            ev = pri_edges;
+         }
+         break;
          case Element::HEXAHEDRON:
+         {
             int emark[12];
             ev = hex_edges;
             for (j = 0; j < 12; j++, ev += 2)
@@ -2074,7 +2146,8 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
             while (1);
             n2 -= n;
             ev = hex_edges;
-            break;
+         }
+         break;
          default:
             break;
       }
@@ -2285,6 +2358,9 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
             {
                case Geometry::TRIANGLE:  n = 3; break;
                case Geometry::SQUARE:    n = 4; break;
+               default:
+                  MFEM_ABORT("Invalid element type");
+                  break;
             }
             // DrawRefinedSurf (n, pointmat, values, RefG->RefGeoms);
             DrawPatch(pointmat, values, normals, n, RefG->RefGeoms,
@@ -2386,6 +2462,9 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines2()
             {
                case Geometry::TRIANGLE:  n = 3; break;
                case Geometry::SQUARE:    n = 4; break;
+               default:
+                  MFEM_ABORT("Invalid element type");
+                  break;
             }
             switch (cp_drawmesh)
             {
@@ -2570,6 +2649,10 @@ void VisualizationSceneSolution3d::DrawTetLevelSurf(
 void VisualizationSceneSolution3d::PrepareLevelSurf()
 {
    static const int tet_id[4] = { 0, 1, 2, 3 };
+   static const int pri_tets[3][4] =
+   {
+      { 0, 1, 2, 5 }, { 0, 1, 5, 3 }, { 1, 5, 3, 4 }
+   };
    static const int hex_tets[6][4] =
    {
       { 0, 1, 2, 6 }, { 0, 5, 1, 6 }, { 0, 4, 5, 6 },
@@ -2611,16 +2694,30 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
             vals(j) = (*sol)(vertices[j]);
          }
 
-         if (mesh->GetElementType(ie) == Element::TETRAHEDRON)
+         switch (mesh->GetElementType(ie))
          {
-            DrawTetLevelSurf(pointmat, vals, tet_id, levels);
-         }
-         else if (mesh->GetElementType(ie) == Element::HEXAHEDRON)
-         {
-            for (int k = 0; k < 6; k++)
+            case Element::TETRAHEDRON:
+               DrawTetLevelSurf(pointmat, vals, tet_id, levels);
+               break;
+            case Element::PRISM:
             {
-               DrawTetLevelSurf(pointmat, vals, hex_tets[k], levels);
+               for (int k = 0; k < 3; k++)
+               {
+                  DrawTetLevelSurf(pointmat, vals, pri_tets[k], levels);
+               }
             }
+            break;
+            case Element::HEXAHEDRON:
+            {
+               for (int k = 0; k < 6; k++)
+               {
+                  DrawTetLevelSurf(pointmat, vals, hex_tets[k], levels);
+               }
+            }
+            break;
+            default:
+               MFEM_ABORT("Unrecognized 3D element type \""
+                          << mesh->GetElementType(ie) << "\"");
          }
       }
    }
@@ -2650,6 +2747,22 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
 #else
                DrawTetLevelSurf(pointmat, vals, &RG[nv*k], levels, &grad);
 #endif
+            }
+            else if (nv == 6)
+            {
+               int m_ind[4];
+               for (int j = 0; j < 3; j++)
+               {
+                  for (int i = 0; i < 4; i++)
+                  {
+                     m_ind[i] = RG[nv*k+pri_tets[j][i]];
+                  }
+#ifndef GLVIS_SMOOTH_LEVELSURF_NORMALS
+                  DrawTetLevelSurf(pointmat, vals, m_ind, levels);
+#else
+                  DrawTetLevelSurf(pointmat, vals, m_ind, levels, &grad);
+#endif
+               }
             }
             else if (nv == 8)
             {

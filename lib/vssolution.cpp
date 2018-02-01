@@ -1476,6 +1476,9 @@ void VisualizationSceneSolution::Prepare()
                case Element::QUADRILATERAL:
                   glBegin (GL_QUADS);
                   break;
+               default:
+                  MFEM_ABORT("Invalid 2D element type");
+		  break;
             }
             mesh->GetPointMatrix (i, pointmat);
             mesh->GetElementVertices (i, vertices);
