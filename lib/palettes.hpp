@@ -12,6 +12,10 @@
 #ifndef GLVIS_COLOR_PALETTES
 #define GLVIS_COLOR_PALETTES
 
+#ifdef GLVIS_USE_CET_COLOR
+#include "cet_palettes.hpp"
+#endif
+
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
@@ -4449,7 +4453,12 @@ double RGB_Palette_35[RGB_Palette_35_Size][3] =
    {0.625000, 0.207031, 0.000000}
 };
 
+#ifdef GLVIS_USE_CET_COLOR
+const int Num_RGB_Palettes = 35 + CET_Palette_Count;
+#else
 const int Num_RGB_Palettes = 35;
+#endif
+
 const int RGB_Palettes_Sizes[Num_RGB_Palettes] =
 {
    RGB_Palette_1_Size, RGB_Palette_2_Size, RGB_Palette_3_Size,
@@ -4463,7 +4472,22 @@ const int RGB_Palettes_Sizes[Num_RGB_Palettes] =
    RGB_Palette_25_Size, RGB_Palette_26_Size, RGB_Palette_27_Size,
    RGB_Palette_28_Size, RGB_Palette_29_Size, RGB_Palette_30_Size,
    RGB_Palette_31_Size, RGB_Palette_32_Size, RGB_Palette_33_Size,
-   RGB_Palette_34_Size, RGB_Palette_35_Size
+   RGB_Palette_34_Size, RGB_Palette_35_Size,
+#ifdef GLVIS_USE_CET_COLOR
+   CET_Palette_Size, CET_Palette_Size, CET_Palette_Size, CET_Palette_Size,
+   CET_Palette_Size, CET_Palette_Size, CET_Palette_Size, CET_Palette_Size,
+   CET_Palette_Size, CET_Palette_Size, CET_Palette_Size, CET_Palette_Size,
+   CET_Palette_Size, CET_Palette_Size, CET_Palette_Size, CET_Palette_Size,
+   CET_Palette_Size, CET_Palette_Size, CET_Palette_Size, CET_Palette_Size,
+   CET_Palette_Size, CET_Palette_Size, CET_Palette_Size, CET_Palette_Size,
+   CET_Palette_Size, CET_Palette_Size, CET_Palette_Size, CET_Palette_Size,
+   CET_Palette_Size, CET_Palette_Size, CET_Palette_Size, CET_Palette_Size,
+   CET_Palette_Size, CET_Palette_Size, CET_Palette_Size, CET_Palette_Size,
+   CET_Palette_Size, CET_Palette_Size, CET_Palette_Size, CET_Palette_Size,
+   CET_Palette_Size, CET_Palette_Size, CET_Palette_Size, CET_Palette_Size,
+   CET_Palette_Size, CET_Palette_Size, CET_Palette_Size, CET_Palette_Size,
+   CET_Palette_Size, CET_Palette_Size,
+#endif
 };
 
 double *RGB_Palettes[Num_RGB_Palettes] =
@@ -4476,7 +4500,22 @@ double *RGB_Palettes[Num_RGB_Palettes] =
    *RGB_Palette_21, *RGB_Palette_22, *RGB_Palette_23, *RGB_Palette_24,
    *RGB_Palette_25, *RGB_Palette_26, *RGB_Palette_27, *RGB_Palette_28,
    *RGB_Palette_29, *RGB_Palette_30, *RGB_Palette_31, *RGB_Palette_32,
-   *RGB_Palette_33, *RGB_Palette_34, *RGB_Palette_35
+   *RGB_Palette_33, *RGB_Palette_34, *RGB_Palette_35,
+#ifdef GLVIS_USE_CET_COLOR
+   *CET_Palette_1, *CET_Palette_2, *CET_Palette_3, *CET_Palette_4, 
+   *CET_Palette_5, *CET_Palette_6, *CET_Palette_7, *CET_Palette_8, 
+   *CET_Palette_9, *CET_Palette_10, *CET_Palette_11, *CET_Palette_12, 
+   *CET_Palette_13, *CET_Palette_14, *CET_Palette_15, *CET_Palette_16, 
+   *CET_Palette_17, *CET_Palette_18, *CET_Palette_19, *CET_Palette_20, 
+   *CET_Palette_21, *CET_Palette_22, *CET_Palette_23, *CET_Palette_24, 
+   *CET_Palette_25, *CET_Palette_26, *CET_Palette_27, *CET_Palette_28, 
+   *CET_Palette_29, *CET_Palette_30, *CET_Palette_31, *CET_Palette_32, 
+   *CET_Palette_33, *CET_Palette_34, *CET_Palette_35, *CET_Palette_36, 
+   *CET_Palette_37, *CET_Palette_38, *CET_Palette_39, *CET_Palette_40, 
+   *CET_Palette_41, *CET_Palette_42, *CET_Palette_43, *CET_Palette_44, 
+   *CET_Palette_45, *CET_Palette_46, *CET_Palette_47, *CET_Palette_48, 
+   *CET_Palette_49, *CET_Palette_50,
+#endif
 };
 
 const char *RGB_Palettes_Names[Num_RGB_Palettes] =
@@ -4489,6 +4528,18 @@ const char *RGB_Palettes_Names[Num_RGB_Palettes] =
    "wood      ", "mars      ", "rainbow   ", "cmyk      ", "calewhite ",
    "haxby     ", "manga     ", "drywet    ", "gfdl      ", "wbgyr     ",
    "seq25     ", "terrain   ", "bwor      ", "19-lev    ", "lithology ",
+#ifdef GLVIS_USE_CET_COLOR
+   "cet-c1    ", "cet-c1s   ", "cet-c2    ", "cet-c2s   ", "cet-c4    ",
+   "cet-c4s   ", "cet-c5    ", "cet-c5s   ", "cet-cbc1  ", "cet-cbc2  ",
+   "cet-cbd1  ", "cet-cbl1  ", "cet-cbl2  ", "cet-cbtc1 ", "cet-cbtc2 ",
+   "cet-cbtd1 ", "cet-cbtl1 ", "cet-cbtl2 ", "cet-d1    ", "cet-d2    ",
+   "cet-d3    ", "cet-d4    ", "cet-d6    ", "cet-d7    ", "cet-d8    ",
+   "cet-d9    ", "cet-d10   ", "cet-d11   ", "cet-d12   ", "cet-i1    ",
+   "cet-i2    ", "cet-i3    ", "cet-l1    ", "cet-l2    ", "cet-l3    ",
+   "cet-l4    ", "cet-l5    ", "cet-l6    ", "cet-l7    ", "cet-l8    ",
+   "cet-l9    ", "cet-l10   ", "cet-l11   ", "cet-l12   ", "cet-l13   ",
+   "cet-l14   ", "cet-l15   ", "cet-r1    ", "cet-r2    ", "cet-r3    ",
+#endif
 };
 
 int Default_RGB_Palette = 2;

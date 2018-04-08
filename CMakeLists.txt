@@ -49,6 +49,10 @@ option(GLVIS_USE_GLX10
   "Use GLX 1.0 calls. Use if X server doesn't support GLX 1.3."
   OFF)
 
+option(GLVIS_USE_CET_COLOR
+    "Use additional perceptually uniform color maps."
+  OFF)
+
 #
 # Handle a few other definitions
 #
@@ -80,6 +84,10 @@ set(_glvis_libraries)
 if (GLVIS_USE_GLX10)
   list(APPEND _glvis_compile_defs "GLVIS_GLX10")
 endif (GLVIS_USE_GLX10)
+
+if (GLVIS_USE_CET_COLOR)
+    list(APPEND _glvis_compile_defs "GLVIS_USE_CET_COLOR")
+endif (GLVIS_USE_CET_COLOR)
 
 list(APPEND _glvis_compile_defs "GLVIS_MULTISAMPLE=${GLVIS_MULTISAMPLE}")
 list(APPEND _glvis_compile_defs "GLVIS_MS_LINEWIDTH=${GLVIS_MS_LINEWIDTH}")
