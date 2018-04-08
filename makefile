@@ -112,12 +112,10 @@ GLVIS_LIBS  += $(GL_LIBS)
 # Take screenshots internally with libtiff, libpng, or externally with xwd?
 USE_LIBTIFF = NO
 USE_LIBPNG  = YES
-USE_CET_COLOR  = NO
 TIFF_OPTS = -DGLVIS_USE_LIBTIFF -I/sw/include
 TIFF_LIBS = -L/sw/lib -ltiff
 PNG_OPTS = -DGLVIS_USE_LIBPNG
 PNG_LIBS = -lpng
-CET_COLOR_OPTS = -DGLVIS_USE_CET_COLOR
 ifeq ($(USE_LIBTIFF),YES)
    GLVIS_FLAGS += $(TIFF_OPTS)
    GLVIS_LIBS  += $(TIFF_LIBS)
@@ -126,6 +124,10 @@ ifeq ($(USE_LIBPNG),YES)
    GLVIS_FLAGS += $(PNG_OPTS)
    GLVIS_LIBS  += $(PNG_LIBS)
 endif
+
+# Enable additional perceptially uniform color maps
+USE_CET_COLOR  = NO
+CET_COLOR_OPTS = -DGLVIS_USE_CET_COLOR
 ifeq ($(USE_CET_COLOR),YES)
    GLVIS_FLAGS += $(CET_COLOR_OPTS)
 endif
