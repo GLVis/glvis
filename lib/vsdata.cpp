@@ -24,8 +24,6 @@ using namespace std;
 
 #include "gl2ps.h"
 
-extern GLuint fontbase;
-
 const char *strings_off_on[] = { "off", "on" };
 
 void VisualizationSceneScalarData::FixValueRange()
