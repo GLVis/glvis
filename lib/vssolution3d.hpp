@@ -13,6 +13,8 @@
 #define GLVIS_VSSOLUTION_3D
 
 #include "mfem.hpp"
+#include "aux_gl3.hpp"
+#include <map>
 using namespace mfem;
 
 class VisualizationSceneSolution3d : public VisualizationSceneScalarData
@@ -23,6 +25,14 @@ protected:
    int displlist, linelist;
    int cplane, cplanelist, cplanelineslist, lsurflist;
    int cp_drawmesh, cp_drawelems, drawlsurf;
+
+   //Our VBO indices + sizes
+   std::map<GLenum, gl3::VertexBuffer> disp_buf;
+   std::map<GLenum, gl3::VertexBuffer> line_buf;
+   std::map<GLenum, gl3::VertexBuffer> cplane_buf;
+   std::map<GLenum, gl3::VertexBuffer> cplines_buf;
+   std::map<GLenum, gl3::VertexBuffer> lsurf_buf;
+   std::map<GLenum, gl3::VertexBuffer> other_buf;
 
    double *node_pos;
 

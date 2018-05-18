@@ -14,6 +14,9 @@
 
 #include "openglvis.hpp"
 #include "mfem.hpp"
+#define GL_GLEXT_PROTOTYPES
+#include <GL/glew.h>
+#include <GL/glext.h>
 using namespace mfem;
 
 extern std::string plot_caption; // defined in glvis.cpp

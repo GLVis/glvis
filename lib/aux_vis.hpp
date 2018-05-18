@@ -12,7 +12,7 @@
 #ifndef GLVIS_AUX_VIS
 #define GLVIS_AUX_VIS
 
-#include <GL/gl.h>
+#include <GL/glew.h>
 #include <GL/glu.h>
 #include <GL/glx.h>
 
@@ -111,6 +111,8 @@ void Cone();
 
 extern int MySetColorLogscale;
 void MySetColor(double val, double min, double max);
+void MySetColor (double val, double min, double max, float (&argb)[4]);
+void MySetColor (double val, float (&argb)[4]);
 void MySetColor(double val);
 void SetUseTexture(int ut);
 int GetUseTexture();

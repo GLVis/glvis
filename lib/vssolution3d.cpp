@@ -712,7 +712,9 @@ void VisualizationSceneSolution3d::Init()
 
 VisualizationSceneSolution3d::~VisualizationSceneSolution3d()
 {
+#ifndef GLVIS_OGL3
    glDeleteLists (displlist, 1);
+#endif
    glDeleteLists (linelist, 1);
    glDeleteLists (cplanelist, 1);
    glDeleteLists (cplanelineslist, 1);
@@ -1332,9 +1334,12 @@ void VisualizationSceneSolution3d::DrawRefinedSurfLevelLines(
 void VisualizationSceneSolution3d::PrepareFlat()
 {
    int i, j;
-
+#ifdef GLVIS_OGL3
+   std::vector<gl3::Vertex> flat_data_tri;
+   std::vector<gl3::Vertex> flat_data_quad;
+#else
    glNewList(displlist, GL_COMPILE);
-
+#endif
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
    DenseMatrix pointmat;
@@ -1387,14 +1392,19 @@ void VisualizationSceneSolution3d::PrepareFlat()
       }
       if (j == 3)
       {
-         DrawTriangle(p, c, minv, maxv);
+          DrawTriangle(p, c, minv, maxv, flat_data_tri);
       }
       else
       {
-         DrawQuad(p, c, minv, maxv);
+          DrawQuad(p, c, minv, maxv, flat_data_quad);
       }
    }
+#ifdef GLVIS_OGL3
+   disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES, flat_data_tri);
+   disp_buf[GL_QUADS].BufferData(GL_QUADS, flat_data_quad);
+#else
    glEndList();
+#endif
 }
 
 void VisualizationSceneSolution3d::PrepareFlat2()
@@ -1402,7 +1412,12 @@ void VisualizationSceneSolution3d::PrepareFlat2()
    int i, k, fn, fo, di, have_normals;
    double bbox_diam, vmin, vmax;
 
+#ifdef GLVIS_OGL3
+   std::vector<gl3::Vertex> flat_data_tri;
+   std::vector<gl3::Vertex> flat_data_quad;
+#else
    glNewList(displlist, GL_COMPILE);
+#endif
 
    int dim = mesh->Dimension();
    int nbe = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -1420,36 +1435,25 @@ void VisualizationSceneSolution3d::PrepareFlat2()
 
    vmin = numeric_limits<double>::infinity();
    vmax = -vmin;
-   for (i = 0; i < nbe; i++)
-   {
-      if (dim == 3)
-      {
+   for (i = 0; i < nbe; i++) {
+      if (dim == 3) {
          if (!bdr_attr_to_show[mesh->GetBdrAttribute(i)-1]) { continue; }
 
-         if (cplane == 2)
-         {
+         if (cplane == 2) {
             // for cplane == 2, get vertices of the volume element, not bdr
             int f, o, e1, e2;
             mesh->GetBdrElementFace(i, &f, &o);
             mesh->GetFaceElements(f, &e1, &e2);
             mesh->GetElementVertices(e1, vertices);
-         }
-         else
-         {
+         } else {
             mesh->GetBdrElementVertices(i, vertices);
          }
-      }
-      else
-      {
+      } else {
          if (!bdr_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
-
          mesh->GetElementVertices(i, vertices);
       }
-
       if (cplane == 2 && CheckPositions(vertices)) { continue; }
-
-      if (dim == 3)
-      {
+      if (dim == 3) {
          mesh -> GetBdrElementFace (i, &fn, &fo);
          RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceBaseGeometry (fn),
                                             TimesToRefine);
@@ -1457,25 +1461,21 @@ void VisualizationSceneSolution3d::PrepareFlat2()
 
          // this assumes the interior boundary faces are properly oriented ...
          di = fo % 2;
-         if (di == 1 && !mesh->FaceIsInterior(fn))
-         {
+         if (di == 1 && !mesh->FaceIsInterior(fn)) {
             di = 0;
          }
          GridF -> GetFaceValues (fn, di, RefG->RefPts, values, pointmat);
          GetFaceNormals(fn, di, RefG->RefPts, normals);
          have_normals = 1;
          ShrinkPoints(pointmat, i, fn, di);
-      }
-      else
-      {
+      } else {
          RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
                                             TimesToRefine);
          const IntegrationRule &ir = RefG->RefPts;
          GridF->GetValues(i, ir, values, pointmat);
          normals.SetSize(3, values.Size());
          mesh->GetElementTransformation(i, &T);
-         for (int j = 0; j < values.Size(); j++)
-         {
+         for (int j = 0; j < values.Size(); j++) {
             T.SetIntPoint(&ir.IntPoint(j));
             const DenseMatrix &J = T.Jacobian();
             normals.GetColumnReference(j, normal);
@@ -1536,10 +1536,16 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       // Comment the above lines and use the below version in order to remove
       // the 3D dark artifacts (indicating wrong boundary element orientation)
       // have_normals = have_normals ? 1 : 0;
-      DrawPatch(pointmat, values, normals, sides, RefG->RefGeoms,
-                minv, maxv, have_normals);
+      DrawPatch(sides == 3 ? flat_data_tri : flat_data_quad, pointmat, values,
+                normals, sides, RefG->RefGeoms, minv, maxv, have_normals);
    }
+#ifdef GLVIS_OGL3
+   disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES, flat_data_tri);
+   disp_buf[GL_QUADS].BufferData(GL_QUADS, flat_data_quad);
+#else
    glEndList();
+#endif
+
    cout << "VisualizationSceneSolution3d::PrepareFlat2() : [min,max] = ["
         << vmin << "," << vmax << "]" << endl;
 }
@@ -1550,8 +1556,10 @@ void VisualizationSceneSolution3d::Prepare()
 
    if (!drawelems)
    {
+#ifndef GLVIS_OGL3
       glNewList(displlist, GL_COMPILE);
       glEndList();
+#endif
       return;
    }
 
@@ -1567,7 +1575,13 @@ void VisualizationSceneSolution3d::Prepare()
          break;
    }
 
+#ifdef GLVIS_OGL3
+   std::vector<gl3::Vertex> flat_data_tri;
+   std::vector<gl3::Vertex> flat_data_quad;
+#else
    glNewList(displlist, GL_COMPILE);
+#endif
+
 
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -1685,17 +1699,22 @@ void VisualizationSceneSolution3d::Prepare()
          {
             mesh->GetElementVertices(elem[i], vertices);
          }
+         
+         GLEnum elemType;
          switch ((dim == 3) ? mesh->GetBdrElementType(elem[i]) :
                  mesh->GetElementType(elem[i]))
          {
             case Element::TRIANGLE:
-               glBegin (GL_TRIANGLES);
+               elemType = GL_TRIANGLES;
                break;
 
             case Element::QUADRILATERAL:
-               glBegin (GL_QUADS);
+               elemType = GL_QUADS;
                break;
          }
+#ifndef GLVIS_OGL3
+         glBegin(elemType);
+#endif
          if (dim == 3)
          {
             mesh->GetBdrPointMatrix(elem[i], pointmat);
@@ -1707,15 +1726,34 @@ void VisualizationSceneSolution3d::Prepare()
 
          for (j = 0; j < pointmat.Size(); j++)
          {
+#ifdef GLVIS_OGL3
+             gl3::Vertex v(&pointmat(0,j));
+            v.norm[0] = nx(vertices[j]);
+            v.norm[1] = ny(vertices[j]);
+            v.norm[2] = nz(vertices[j]);
+            MySetColor((*sol)(vertices[j]), minv, maxv, v.rgba);
+            if (elemType == GL_TRIANGLES) {
+                flat_data_tri.push_back(v);
+            } else {
+                flat_data_quad.push_back(v);
+            }
+#else
             MySetColor((*sol)(vertices[j]), minv ,maxv);
             glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
             glVertex3dv(&pointmat(0, j));
+#endif
          }
+#ifndef GLVIS_OGL3
          glEnd();
+#endif
       }
-
    }
+#ifdef GLVIS_OGL3
+   disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES, flat_data_tri);
+   disp_buf[GL_QUADS].BufferData(GL_QUADS, flat_data_quad);
+#else
    glEndList();
+#endif
 }
 
 void VisualizationSceneSolution3d::PrepareLines()
@@ -2207,8 +2245,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
 
 void VisualizationSceneSolution3d::PrepareCuttingPlane()
 {
-   glNewList(cplanelist, GL_COMPILE);
-
+    glNewList(cplanelist, GL_COMPILE);
    if (cp_drawelems && cplane && mesh->Dimension() == 3)
    {
       if (cplane == 2)
@@ -2220,7 +2257,6 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane()
          CuttingPlaneFunc(1);
       }
    }
-
    glEndList();
 }
 
@@ -2234,6 +2270,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
 
    Array<int> nodes;
    Array<int> partition (mesh -> GetNE());
+
    for (i = 0; i < mesh -> GetNE(); i++)
    {
       n = 0; // n will be the number of nodes behind the cutting plane
@@ -2768,7 +2805,13 @@ void VisualizationSceneSolution3d::Draw()
    // draw elements
    if (drawelems)
    {
+#ifdef GLVIS_OGL3
+        for (auto& it : disp_buf) {
+            it.second.DrawObject();
+        }
+#else
       glCallList(displlist);
+#endif
    }
 
    if (cplane && cp_drawelems)

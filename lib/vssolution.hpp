@@ -15,6 +15,10 @@
 #include "mfem.hpp"
 using namespace mfem;
 
+#include "aux_gl3.hpp"
+
+#include <vector>
+
 // Visualization header file
 
 class VisualizationSceneSolution : public VisualizationSceneScalarData
@@ -134,10 +138,21 @@ void DrawNumberedMarker(const double x[3], double dx, int n);
 void DrawTriangle(const double pts[][3], const double cv[],
                   const double minv, const double maxv);
 
+//we only need 3 points, but the array is 4x3
+void DrawTriangle(const double (&pts)[4][3], const double (&cv)[3],
+                  const double minv, const double maxv, std::vector<gl3::Vertex>& buff);
+
 void DrawQuad(const double pts[][3], const double cv[],
               const double minv, const double maxv);
 
+void DrawQuad(const double (&pts)[4][3], const double (&cv)[3],
+              const double minv, const double maxv, std::vector<gl3::Vertex>& buff);
+
 void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
+               const int n, const Array<int> &ind, const double minv,
+               const double maxv, const int normals_opt = 0);
+
+void DrawPatch(std::vector<gl3::Vertex>& buff, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
                const double maxv, const int normals_opt = 0);
 

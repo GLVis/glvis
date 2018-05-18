@@ -1421,7 +1421,7 @@ int MySetColorLogscale = 0;
 int RepeatPaletteTimes = 1;
 int UseTexture         = 0;
 
-void MySetColor (double val, double min, double max)
+void MySetColor (double val, double min, double max, float (&rgba)[4])
 {
    // static double eps = 1e-24;
    static const double eps = 0.0;
@@ -1435,15 +1435,35 @@ void MySetColor (double val, double min, double max)
       {
          val = max;
       }
-      MySetColor (log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps));
+      MySetColor (log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps), rgb);
    }
    else
    {
-      MySetColor ((val-min)/(max-min));
+      MySetColor ((val-min)/(max-min), rgb);
    }
 }
 
-void MySetColor (double val)
+void MySetColor (double val, double min, double max) {
+  static const double eps = 0.0;
+  if (MySetColorLogscale)
+  {
+     if (val < min)
+     {
+        val = min;
+     }
+     if (val > max)
+     {
+        val = max;
+     }
+     MySetColor (log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps));
+  }
+  else
+  {
+     MySetColor ((val-min)/(max-min));
+  }
+}
+
+void MySetColor (double val, float (&rgb)[4])
 {
    int i;
    double t, r, g, b, *pal;
@@ -1490,18 +1510,26 @@ void MySetColor (double val)
       t = 1.0 - t;
    }
 
-   r = (1.0 - t) * pal[0] + t * pal[3];
-   g = (1.0 - t) * pal[1] + t * pal[4];
-   b = (1.0 - t) * pal[2] + t * pal[5];
+   rgb[0] = (1.0 - t) * pal[0] + t * pal[3];
+   rgb[1] = (1.0 - t) * pal[1] + t * pal[4];
+   rgb[2] = (1.0 - t) * pal[2] + t * pal[5];
+   rgb[3] = MatAlpha < 1.0 ? malpha : 1.0;
+}
 
+void MySetColor (double val) {
+   float[4] rgb;
+   MySetColor(val, rgb);
+   /*
    if (MatAlpha < 1.0)
    {
-      glColor4f ( r, g, b, malpha );
+      glColor4f ( rgb[0], rgb[1], rgb[2], malpha );
    }
    else
    {
-      glColor3f ( r, g, b );
+      glColor3f ( rgb[0], rgb[1], rgb[2] );
    }
+   */
+   glColor4f ( rgb[0], rgb[1], rgb[2], rgb[3]);
 }
 
 // const int Max_Texture_Size = 512;

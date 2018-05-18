@@ -13,6 +13,7 @@
 #include <iostream>
 #include <limits>
 #include <cmath>
+#include <vector>
 
 #include <X11/keysym.h>
 
@@ -1053,7 +1054,47 @@ void DrawTriangle(const double pts[][3], const double cv[],
    glEnd();
 }
 
-void DrawQuad(const double pts[][3], const double cv[],
+void DrawTriangle(const double (&pts)[4][3], const double (&cv)[3],
+                  const double minv, const double maxv, std::vector<gl3::Vertex>& buff)
+{
+#ifndef GLVIS_OGL3
+    DrawTriangle(pts, cv, minv, maxv);
+#else
+   double nor[3];
+   if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
+   {
+      return;
+   }
+   //layout: | VNC | VNC | VNC | ...
+   for (int i = 0; i < 3; i++) {
+       gl3::Vertex v (pos[i], nor);
+       MySetColor(cv[i], minv, maxv, v.rgba);
+       buff.push_back(v);
+   }
+#endif
+}
+
+void DrawQuad(const double (&pts)[4][3], const double (&cv)[3],
+              const double minv, const double maxv, std::vector<gl3::Vertex>& buff)
+{
+#ifndef GLVIS_OGL3
+    DrawQuad(pts, cv, minv, maxv);
+#else
+   double nor[3];
+   if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
+   {
+      return;
+   }
+   //layout: | VNC | VNC | VNC | ...
+   for (int i = 0; i < 4; i++) {
+       gl3::Vertex v (pos[i], nor);
+       MySetColor(cv[i], minv, maxv, v.rgba);
+       buff.push_back(v);
+   }
+#endif
+}
+
+void DrawQuad(const double pts[][3], const double cv[3],
               const double minv, const double maxv)
 {
    double nor[3];
@@ -1194,6 +1235,122 @@ void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
    glEnd();
 }
 
+void DrawPatch(std::vector<gl3::Vertex>& buff, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
+               const int n, const Array<int> &ind, const double minv,
+               const double maxv, const int normals_opt = 0)
+{
+#ifndef GLVIS_OGL3
+    DrawPatch(pts, vals, normals, n, ind, minv, maxv, have_normals);
+#else
+   double na[3];
+
+   if (normals_opt == 1 || normals_opt == -2)
+   {
+      normals.SetSize(3, pts.Width());
+      normals = 0.;
+      for (int i = 0; i < ind.Size(); i += n)
+      {
+         int j;
+         if (n == 3)
+            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                    &pts(0, ind[i+2]), na);
+         else
+            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                    &pts(0, ind[i+2]), &pts(0, ind[i+3]), na);
+         if (j == 0)
+            for ( ; j < n; j++)
+               for (int k = 0; k < 3; k++)
+               {
+                  normals(k, ind[i+j]) += na[k];
+               }
+      }
+   }
+
+   if (normals_opt != 0 && normals_opt != -1)
+   {
+      if (normals_opt > 0)
+      {
+         for (int i = 0; i < ind.Size(); i++)
+         {
+            /*
+            glNormal3dv(&normals(0, ind[i]));
+            MySetColor(vals(ind[i]), minv, maxv);
+            glVertex3dv(&pts(0, ind[i]));
+            */
+             gl3::Vertex v (&pts(0, ind[i]), &normals(0, ind[i]));
+             MySetColor(vals(ind[i]), minv, maxv, v.rgba);
+             buff.push_back(v);
+         }
+      }
+      else
+      {
+         for (int i = ind.Size()-1; i >= 0; i--)
+         {
+            /*
+            glNormal3dv(&normals(0, ind[i]));
+            MySetColor(vals(ind[i]), minv, maxv);
+            glVertex3dv(&pts(0, ind[i]));
+            */
+             gl3::Vertex v (&pts(0, ind[i]), &normals(0, ind[i]));
+             MySetColor(vals(ind[i]), minv, maxv, v.rgba);
+             buff.push_back(v);
+  
+         }
+      }
+   }
+   else
+   {
+      for (int i = 0; i < ind.Size(); i += n)
+      {
+         int j;
+         if (n == 3)
+            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                    &pts(0, ind[i+2]), na);
+         else
+            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                    &pts(0, ind[i+2]), &pts(0, ind[i+3]), na);
+         if (j == 0)
+         {
+            if (normals_opt == 0)
+            {
+               //glNormal3dv(na);
+               for ( ; j < n; j++)
+               {
+                  /*
+                  MySetColor(vals(ind[i+j]), minv, maxv);
+                  glVertex3dv(&pts(0, ind[i+j]));
+                  */
+                   gl3::Vertex v (&pts(0, ind[i+j]), na);
+                  MySetColor(vals(ind[i+j]), minv, maxv, v.rgba);
+                  buff.push_back(v);
+               }
+            }
+            else
+            {
+               //glNormal3d(-na[0], -na[1], -na[2]);
+               for (j = n-1; j >= 0; j--)
+               {
+                /*
+                  MySetColor(vals(ind[i+j]), minv, maxv);
+                  glVertex3dv(&pts(0, ind[i+j]));
+                  */
+                   gl3::Vertex v (&pts(0, ind[i+j]));
+                  v.norm[0] = -na[0];
+                  v.norm[1] = -na[1];
+                  v.norm[2] = -na[2];
+                  MySetColor(vals(ind[i+j]), minv, maxv, v.rgba);
+                  buff.push_back(v);
+               }
+            }
+         }
+      }
+   }
+   //glEnd();
+#endif
+}
+
+
+
 void VisualizationSceneSolution::PrepareWithNormals()
 {
    glNewList(displlist, GL_COMPILE);
@@ -1266,10 +1423,42 @@ void VisualizationSceneSolution::PrepareFlat()
       if (j == 3)
       {
          DrawTriangle(pts, col, minv, maxv);
+         /*
+         double nor[3];
+         if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
+         {
+            return;
+         }
+         glBegin(GL_TRIANGLES);
+         glNormal3dv(nor);
+         for (int j = 0; j < 3; j++)
+         {
+            MySetColor(cv[j], minv, maxv);
+            glVertex3dv(pts[j]);
+         }
+         glEnd();
+         */
       }
       else
       {
+
          DrawQuad(pts, col, minv, maxv);
+         /*
+         double nor[3];
+         if (Compute3DUnitNormal(pts[0], pts[1], pts[2], pts[3], nor))
+         {
+            return;
+         }
+         glBegin(GL_QUADS);
+         glNormal3dv(nor);
+         for (int j = 0; j < 4; j++)
+         {
+            MySetColor(cv[j], minv, maxv);
+            glVertex3dv(pts[j]);
+         }
+         glEnd();
+         */
+
       }
    }
 
@@ -1470,6 +1659,7 @@ void VisualizationSceneSolution::Prepare()
             switch (mesh->GetElementType(i))
             {
                case Element::TRIANGLE:
+
                   glBegin (GL_TRIANGLES);
                   break;
 
