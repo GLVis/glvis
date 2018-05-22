@@ -1293,6 +1293,11 @@ void VisualizationSceneScalarData::Init()
       glDisable(GL_MULTISAMPLE);
    }
 
+   if (glewInit() != GLEW_OK) {
+       //can't use glew
+       cout << "SEVERE: Initializing GLEW failed. Certain OpenGL functionality may fail." << endl;
+   }
+
    // add black fog
    // glEnable(GL_FOG);
    // GLfloat fogcol[4] = {0,0,0,1};

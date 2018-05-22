@@ -17,7 +17,7 @@ using namespace mfem;
 
 #include "aux_gl3.hpp"
 
-#include <vector>
+#include <map>
 
 // Visualization header file
 
@@ -31,6 +31,15 @@ protected:
    int displlist, linelist, lcurvelist;
    int bdrlist, drawbdr, draw_cp, cp_list;
    int e_nums_list, v_nums_list;
+
+
+   std::map<GLenum, gl3::VertexBuffer> disp_buf;
+   std::map<GLenum, gl3::VertexBuffer> line_buf;
+   std::map<GLenum, gl3::VertexBuffer> lcurve_buf;
+   std::map<GLenum, gl3::VertexBuffer> bdr_buf;
+   std::map<GLenum, gl3::VertexBuffer> cp_list_buf;
+   std::map<GLenum, gl3::VertexBuffer> e_nums_buf;
+   std::map<GLenum, gl3::VertexBuffer> v_nums_buf;
 
    void Init();
 
@@ -139,20 +148,20 @@ void DrawTriangle(const double pts[][3], const double cv[],
                   const double minv, const double maxv);
 
 //we only need 3 points, but the array is 4x3
-void DrawTriangle(const double (&pts)[4][3], const double (&cv)[3],
-                  const double minv, const double maxv, std::vector<gl3::Vertex>& buff);
+void DrawTriangle(const double (&pts)[4][3], const double (&cv)[4],
+                  const double minv, const double maxv, gl3::VertexBuffer& buff);
 
 void DrawQuad(const double pts[][3], const double cv[],
               const double minv, const double maxv);
 
-void DrawQuad(const double (&pts)[4][3], const double (&cv)[3],
-              const double minv, const double maxv, std::vector<gl3::Vertex>& buff);
+void DrawQuad(const double (&pts)[4][3], const double (&cv)[4],
+              const double minv, const double maxv, gl3::VertexBuffer& buff);
 
 void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
                const double maxv, const int normals_opt = 0);
 
-void DrawPatch(std::vector<gl3::Vertex>& buff, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
+void DrawPatch(gl3::VertexBuffer& buff, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
                const double maxv, const int normals_opt = 0);
 

@@ -2,23 +2,41 @@
 
 using namespace gl3;
 
-void VertexBuffer::BufferData(GLenum renderAs, std::vector<Vertex>& vertex_data) {
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_handle);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertex_data.size(), vertex_data.data(), GL_STATIC_DRAW);
+
+void VertexBuffer::BufferData(GLenum renderAs) {
+    if (!handles_created) { init(); }
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GlVertex) * pt_data.size(), pt_data.data(), GL_STATIC_DRAW);
+    glVertexPointer(3, GL_FLOAT, sizeof(GlVertex), 0);
+    glNormalPointer(GL_FLOAT, sizeof(GlVertex), (void*) offsetof(GlVertex, norm));
     this->render_type = renderAs;
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(3, GL_FLOAT, sizeof(Vertex), 0);
-    glNormalPointer(GL_FLOAT, sizeof(Vertex), sizeof(float) * 3);
-    //TODO: this ""should"" assume that color is in RGBA format, is there a more robust method?
-    glColorPointer(4, GL_FLOAT, sizeof(Vertex), sizeof(float) * 6);
-    /*
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
-    */
+    if (this->is_textured) {
+        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[1]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * texcoord_data.size(), texcoord_data.data(), GL_STATIC_DRAW);
+        glTexCoordPointer(1, GL_FLOAT, 0, 0);
+    } else {
+        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[1]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * color_data.size(), color_data.data(), GL_STATIC_DRAW);
+        glColorPointer(4, GL_FLOAT, 0, 0);
+    }
 }
 
-void VertexBuffer::DrawObject() {
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_handle);
+
+void VertexBuffer::DrawObject(bool drawNow) {
+    if (!handles_created) { init(); }
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[0]);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    if (this->is_textured) {
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    } else {
+        glEnableClientState(GL_COLOR_ARRAY);
+    }
     glDrawArrays(render_type, 0, size);
+    if (this->is_textured) {
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    } else {
+        glDisableClientState(GL_COLOR_ARRAY);
+    }
+    if (drawNow) { glFlush(); }
 }

@@ -12,21 +12,23 @@
 #ifndef GLVIS_AUX_GL3
 #define GLVIS_AUX_GL3
 #include <GL/glew.h>
-
+#include <vector>
 namespace gl3 {
 
-struct Vertex {
+struct GlVertex
+{
     float pos[3];
     float norm[3];
-    float rgba[4];
-    
-    Vertex(const double pos[]) {
+
+    GlVertex() {}
+
+    GlVertex(const double pos[]) {
         for (int i = 0; i < 3; i++) {
             this->pos[i] = pos[i];
         }
    }
 
-    Vertex(const double pos[], const double norm[]) {
+    GlVertex(const double pos[], const double norm[]) {
         for (int i = 0; i < 3; i++) {
             this->pos[i] = pos[i];
             this->norm[i] = norm[i];
@@ -37,36 +39,65 @@ struct Vertex {
 /* *
  * Class to manage vertex buffers
  */
-class VertexBuffer {
+class VertexBuffer
+{
 private:
     GLenum render_type;
-    GLuint vbo_handle;
+
+    bool handles_created;
+    GLuint vbo_handles[2];
+    bool is_textured;
     size_t size;
+
+    std::vector<GlVertex> pt_data;
+    std::vector<float> color_data;
+    std::vector<float> texcoord_data;
+    
+    void init() {
+        glGenBuffers(2, vbo_handles);
+        handles_created = true;
+    }
 public:
     /**
      * Constructs a new Vertex buffer object.
-     * Prior to creating any VBOs a Vertex Array Object must be binded.
      */
     VertexBuffer()
-        : size(0) {
-        glGenBuffers(1, &vbo_handle);
+        : size(0), handles_created(false) {
     }
 
     ~VertexBuffer() {
-        glDeleteBuffers(1, &vbo_handle);
+        glDeleteBuffers(2, vbo_handles);
     }
-    /**
-     * Buffers vertex data onto the VBO.
-     * The VAO associated with this VBO must be binded before calling this.
-     */
-    void BufferData(GLenum renderAs, std::vector<Vertex>& vertex_data);
+
+    void clear() {
+        pt_data.clear();
+        color_data.clear();
+        texcoord_data.clear();
+        size = 0;
+    }
+
+    void addVertex(GlVertex gv, float texCoord) {
+        is_textured = true;
+        pt_data.push_back(gv);
+        texcoord_data.push_back(texCoord);
+        size++;
+    }
+    
+    void addVertex(GlVertex gv, float (&rgba)[4]) {
+        is_textured = false;
+        pt_data.push_back(gv); 
+        color_data.insert(color_data.end(), rgba, rgba+4);
+        size++;
+    }
+
+    void BufferData(GLenum renderAs);
+
     /**
      * Draws the VBO.
      */
-    void DrawObject();
+    void DrawObject(bool drawNow = true);
 
     GLenum getRenderType() { return render_type; }
-    GLuint getGlHandle() { return vbo_handle; }
     size_t getNumVertices() { return size; } 
 };
 

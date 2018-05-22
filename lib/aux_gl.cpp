@@ -40,8 +40,8 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
-#include <GL/glx.h>
 #include <GL/glew.h>
+#include <GL/glx.h>
 #include "tk.h"
 #include "aux_gl.hpp"
 

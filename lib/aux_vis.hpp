@@ -111,8 +111,9 @@ void Cone();
 
 extern int MySetColorLogscale;
 void MySetColor(double val, double min, double max);
-void MySetColor (double val, double min, double max, float (&argb)[4]);
-void MySetColor (double val, float (&argb)[4]);
+//TODO: find a better way to return either texcoord or rgb
+float MySetColor (double val, double min, double max, float (&argb)[4]);
+float MySetColor (double val, float (&argb)[4]);
 void MySetColor(double val);
 void SetUseTexture(int ut);
 int GetUseTexture();

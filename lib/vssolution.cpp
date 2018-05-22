@@ -1054,8 +1054,8 @@ void DrawTriangle(const double pts[][3], const double cv[],
    glEnd();
 }
 
-void DrawTriangle(const double (&pts)[4][3], const double (&cv)[3],
-                  const double minv, const double maxv, std::vector<gl3::Vertex>& buff)
+void DrawTriangle(const double (&pts)[4][3], const double (&cv)[4],
+                  const double minv, const double maxv, gl3::VertexBuffer& buff)
 {
 #ifndef GLVIS_OGL3
     DrawTriangle(pts, cv, minv, maxv);
@@ -1067,15 +1067,19 @@ void DrawTriangle(const double (&pts)[4][3], const double (&cv)[3],
    }
    //layout: | VNC | VNC | VNC | ...
    for (int i = 0; i < 3; i++) {
-       gl3::Vertex v (pos[i], nor);
-       MySetColor(cv[i], minv, maxv, v.rgba);
-       buff.push_back(v);
+       float rgba[4];
+       float texCoord = MySetColor(cv[i], minv, maxv, rgba);
+       if (GetUseTexture()) {
+           buff.addVertex((gl3::GlVertex(pts[i], nor)), texCoord);
+       } else {
+           buff.addVertex((gl3::GlVertex(pts[i], nor)), rgba);
+       }
    }
 #endif
 }
 
-void DrawQuad(const double (&pts)[4][3], const double (&cv)[3],
-              const double minv, const double maxv, std::vector<gl3::Vertex>& buff)
+void DrawQuad(const double (&pts)[4][3], const double (&cv)[4],
+              const double minv, const double maxv, gl3::VertexBuffer& buff)
 {
 #ifndef GLVIS_OGL3
     DrawQuad(pts, cv, minv, maxv);
@@ -1087,14 +1091,18 @@ void DrawQuad(const double (&pts)[4][3], const double (&cv)[3],
    }
    //layout: | VNC | VNC | VNC | ...
    for (int i = 0; i < 4; i++) {
-       gl3::Vertex v (pos[i], nor);
-       MySetColor(cv[i], minv, maxv, v.rgba);
-       buff.push_back(v);
+       float rgba[4];
+       float texCoord = MySetColor(cv[i], minv, maxv, rgba);
+       if (GetUseTexture()) {
+           buff.addVertex((gl3::GlVertex(pts[i], nor)), texCoord);
+       } else {
+           buff.addVertex((gl3::GlVertex(pts[i], nor)), rgba);
+       }
    }
 #endif
 }
 
-void DrawQuad(const double pts[][3], const double cv[3],
+void DrawQuad(const double pts[][3], const double cv[],
               const double minv, const double maxv)
 {
    double nor[3];
@@ -1235,12 +1243,12 @@ void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
    glEnd();
 }
 
-void DrawPatch(std::vector<gl3::Vertex>& buff, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
+void DrawPatch(gl3::VertexBuffer& buff, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
-               const double maxv, const int normals_opt = 0)
+               const double maxv, const int normals_opt)
 {
 #ifndef GLVIS_OGL3
-    DrawPatch(pts, vals, normals, n, ind, minv, maxv, have_normals);
+    DrawPatch(pts, vals, normals, n, ind, minv, maxv, normals_opt);
 #else
    double na[3];
 
@@ -1277,9 +1285,14 @@ void DrawPatch(std::vector<gl3::Vertex>& buff, const DenseMatrix &pts, Vector &v
             MySetColor(vals(ind[i]), minv, maxv);
             glVertex3dv(&pts(0, ind[i]));
             */
-             gl3::Vertex v (&pts(0, ind[i]), &normals(0, ind[i]));
-             MySetColor(vals(ind[i]), minv, maxv, v.rgba);
-             buff.push_back(v);
+             gl3::GlVertex v(&pts(0, ind[i]), &normals(0, ind[i]));
+             float rgba[4];
+             float texCoord = MySetColor(vals(ind[i]), minv, maxv, rgba);
+             if (GetUseTexture()) {
+                 buff.addVertex(v, texCoord);
+             } else {
+                 buff.addVertex(v, rgba);
+             }
          }
       }
       else
@@ -1291,10 +1304,14 @@ void DrawPatch(std::vector<gl3::Vertex>& buff, const DenseMatrix &pts, Vector &v
             MySetColor(vals(ind[i]), minv, maxv);
             glVertex3dv(&pts(0, ind[i]));
             */
-             gl3::Vertex v (&pts(0, ind[i]), &normals(0, ind[i]));
-             MySetColor(vals(ind[i]), minv, maxv, v.rgba);
-             buff.push_back(v);
-  
+             gl3::GlVertex v(&pts(0, ind[i]), &normals(0, ind[i]));
+             float rgba[4];
+             float texCoord = MySetColor(vals(ind[i]), minv, maxv, rgba);
+             if (GetUseTexture()) {
+                 buff.addVertex(v, texCoord);
+             } else {
+                 buff.addVertex(v, rgba);
+             }
          }
       }
    }
@@ -1320,9 +1337,14 @@ void DrawPatch(std::vector<gl3::Vertex>& buff, const DenseMatrix &pts, Vector &v
                   MySetColor(vals(ind[i+j]), minv, maxv);
                   glVertex3dv(&pts(0, ind[i+j]));
                   */
-                   gl3::Vertex v (&pts(0, ind[i+j]), na);
-                  MySetColor(vals(ind[i+j]), minv, maxv, v.rgba);
-                  buff.push_back(v);
+                  gl3::GlVertex v (&pts(0, ind[i+j]), na);
+                  float rgba[4];
+                  float texCoord = MySetColor(vals(ind[i+j]), minv, maxv, rgba);
+                  if (GetUseTexture()) {
+                      buff.addVertex(v, texCoord);
+                  } else {
+                      buff.addVertex(v, rgba);
+                  }
                }
             }
             else
@@ -1334,12 +1356,17 @@ void DrawPatch(std::vector<gl3::Vertex>& buff, const DenseMatrix &pts, Vector &v
                   MySetColor(vals(ind[i+j]), minv, maxv);
                   glVertex3dv(&pts(0, ind[i+j]));
                   */
-                   gl3::Vertex v (&pts(0, ind[i+j]));
+                  gl3::GlVertex v (&pts(0, ind[i+j]));
                   v.norm[0] = -na[0];
                   v.norm[1] = -na[1];
                   v.norm[2] = -na[2];
-                  MySetColor(vals(ind[i+j]), minv, maxv, v.rgba);
-                  buff.push_back(v);
+                  float rgba[4];
+                  float texCoord = MySetColor(vals(ind[i+j]), minv, maxv, rgba);
+                  if (GetUseTexture()) {
+                      buff.addVertex(v, texCoord);
+                  } else {
+                      buff.addVertex(v, rgba);
+                  }
                }
             }
          }
@@ -1353,8 +1380,13 @@ void DrawPatch(std::vector<gl3::Vertex>& buff, const DenseMatrix &pts, Vector &v
 
 void VisualizationSceneSolution::PrepareWithNormals()
 {
+#ifdef GLVIS_OGL3
+    for (auto& it : disp_buf) {
+        it.second.clear();
+    }
+#else
    glNewList(displlist, GL_COMPILE);
-
+#endif
    Array<int> vertices;
    double *vtx, *nor, val, s;
 
@@ -1363,45 +1395,68 @@ void VisualizationSceneSolution::PrepareWithNormals()
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
 
       mesh->GetElementVertices(i, vertices);
-
+      GLenum shape;
       if (vertices.Size() == 3)
       {
-         glBegin(GL_TRIANGLES);
+         shape = GL_TRIANGLES;
       }
       else
       {
-         glBegin(GL_QUADS);
+         shape = GL_QUADS;
       }
+#ifndef GLVIS_OGL3
+      glBegin(shape);
+#endif
+      gl3::GlVertex v;
       for (int j = 0; j < vertices.Size(); j++)
       {
          vtx = mesh->GetVertex(vertices[j]);
          nor = &(*v_normals)(3*vertices[j]);
          val = (*sol)(vertices[j]);
+         v.pos[0] = vtx[0];  v.pos[1] = vtx[1];  v.pos[2] = val;
+         v.norm[0] = nor[0]; v.norm[1] = nor[1]; v.norm[2] = nor[2];
          if (logscale && val >= minv && val <= maxv)
          {
             s = log_a/val;
-            val = _LogVal_(val);
-            glNormal3d(s*nor[0], s*nor[1], nor[2]);
+            v.pos[2] = _LogVal_(val);
+            v.norm[0] *= s; v.norm[1] *= s;
          }
-         else
-         {
-            glNormal3dv(nor);
+#ifdef GLVIS_OGL3
+         float rgba[4];
+         float texCoord = MySetColor(v.pos[2], minv, maxv, rgba);
+         if (GetUseTexture()) {
+             disp_buf[shape].addVertex(v, texCoord);
+         } else {
+             disp_buf[shape].addVertex(v, rgba);
          }
-         MySetColor(val, minv, maxv);
-         glVertex3d(vtx[0], vtx[1], val);
+#else
+         MySetColor(v.pos[2], minv, maxv);
+         glNormal3dv(v.norm);
+         glVertex3dv(v.pos);
+#endif
       }
+#ifndef GLVIS_OGL3
       glEnd();
+#endif
    }
-
+#ifdef GLVIS_OGL3
+      disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES);
+      disp_buf[GL_QUADS].BufferData(GL_QUADS);
+#else
    glEndList();
+#endif
 }
 
 void VisualizationSceneSolution::PrepareFlat()
 {
    int i, j;
-
+#ifdef GLVIS_OGL3
+   for (auto& it: disp_buf) {
+       it.second.clear();
+   }
+#else
    glNewList (displlist, GL_COMPILE);
-
+#endif
    int ne = mesh -> GetNE();
    DenseMatrix pointmat;
    Array<int> vertices;
@@ -1422,47 +1477,19 @@ void VisualizationSceneSolution::PrepareFlat()
       }
       if (j == 3)
       {
-         DrawTriangle(pts, col, minv, maxv);
-         /*
-         double nor[3];
-         if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
-         {
-            return;
-         }
-         glBegin(GL_TRIANGLES);
-         glNormal3dv(nor);
-         for (int j = 0; j < 3; j++)
-         {
-            MySetColor(cv[j], minv, maxv);
-            glVertex3dv(pts[j]);
-         }
-         glEnd();
-         */
+         DrawTriangle(pts, col, minv, maxv, disp_buf[GL_TRIANGLES]);
       }
       else
       {
-
-         DrawQuad(pts, col, minv, maxv);
-         /*
-         double nor[3];
-         if (Compute3DUnitNormal(pts[0], pts[1], pts[2], pts[3], nor))
-         {
-            return;
-         }
-         glBegin(GL_QUADS);
-         glNormal3dv(nor);
-         for (int j = 0; j < 4; j++)
-         {
-            MySetColor(cv[j], minv, maxv);
-            glVertex3dv(pts[j]);
-         }
-         glEnd();
-         */
-
+         DrawQuad(pts, col, minv, maxv, disp_buf[GL_QUADS]);
       }
    }
-
+#ifdef GLVIS_OGL3
+      disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES);
+      disp_buf[GL_QUADS].BufferData(GL_QUADS);
+#else
    glEndList();
+#endif
 }
 
 // determines how quads and their level lines are drawn
@@ -1476,8 +1503,13 @@ void VisualizationSceneSolution::PrepareFlat2()
 {
    int i, j, k;
 
+#ifdef GLVIS_OGL3
+   for (auto& it: disp_buf) {
+       it.second.clear();
+   }
+#else
    glNewList (displlist, GL_COMPILE);
-
+#endif
    int ne = mesh -> GetNE();
    DenseMatrix pointmat, pts3d, normals;
    Vector values;
@@ -1505,7 +1537,8 @@ void VisualizationSceneSolution::PrepareFlat2()
       }
       j = (j != 0) ? 2 : 0;
       RemoveFPErrors(pts3d, values, normals, sides, RG, fRG);
-      DrawPatch(pts3d, values, normals, sides, fRG, minv, maxv, j);
+      DrawPatch(sides == 3 ? disp_buf[GL_TRIANGLES] : disp_buf[GL_QUADS],
+                pts3d, values, normals, sides, fRG, minv, maxv, j);
 #else
       for (k = 0; k < RG.Size()/sides; k++)
       {
@@ -1573,8 +1606,12 @@ void VisualizationSceneSolution::PrepareFlat2()
       }
 #endif
    }
-
+#ifdef GLVIS_OGL3
+      disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES);
+      disp_buf[GL_QUADS].BufferData(GL_QUADS);
+#else
    glEndList();
+#endif
 }
 
 void VisualizationSceneSolution::Prepare()
@@ -1600,8 +1637,13 @@ void VisualizationSceneSolution::Prepare()
 
    int i, j;
 
+#ifdef GLVIS_OGL3
+   for (auto& it: disp_buf) {
+       it.second.clear();
+   }
+#else
    glNewList (displlist, GL_COMPILE);
-
+#endif
    int ne = mesh -> GetNE();
    int nv = mesh -> GetNV();
    DenseMatrix pointmat;
@@ -1656,33 +1698,57 @@ void VisualizationSceneSolution::Prepare()
       {
          if (mesh -> GetAttribute(i) == mesh -> attributes[d])
          {
+            GLenum shape;
             switch (mesh->GetElementType(i))
             {
                case Element::TRIANGLE:
-
-                  glBegin (GL_TRIANGLES);
+                  shape = GL_TRIANGLES;
                   break;
 
                case Element::QUADRILATERAL:
-                  glBegin (GL_QUADS);
+                  shape = GL_QUADS;
                   break;
             }
+            glBegin(shape);
             mesh->GetPointMatrix (i, pointmat);
             mesh->GetElementVertices (i, vertices);
 
             for (j = 0; j < pointmat.Size(); j++)
             {
+               gl3::GlVertex v;
                double z = LogVal((*sol)(vertices[j]));
+               v.pos[0] = pointmat(0,j);
+               v.pos[1] = pointmat(1,j);
+               v.pos[2] = z;
+               v.norm[0] = nx(vertices[j]);
+               v.norm[1] = ny(vertices[j]);
+               v.norm[2] = nz(vertices[j]);
+#ifdef GLVIS_OGL3
+               float rgba[4];
+               float texCoord = MySetColor(z, minv, maxv, rgba);
+               if (GetUseTexture()) {
+                   disp_buf[shape].addVertex(v, texCoord);
+               } else {
+                   disp_buf[shape].addVertex(v, rgba);
+               }
+#else
                MySetColor(z, minv, maxv);
-               glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
-               glVertex3d(pointmat(0, j), pointmat(1, j), z);
+               glNormal3dv(v.norm);
+               glVertex3d(v.pos);
+#endif
             }
+#ifndef GLVIS_OGL3
             glEnd();
+#endif
          }
       }
    }
-
+#ifdef GLVIS_OGL3
+      disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES);
+      disp_buf[GL_QUADS].BufferData(GL_QUADS);
+#else
    glEndList();
+#endif
 }
 
 void VisualizationSceneSolution::PrepareLevelCurves()
@@ -2426,7 +2492,13 @@ void VisualizationSceneSolution::Draw()
          glEnable (GL_TEXTURE_1D);
          glColor4d(1, 1, 1, 1);
       }
+#ifdef GLVIS_OGL3
+      for (auto& it: disp_buf) {
+          it.second.DrawObject();
+      }
+#else
       glCallList(displlist);
+#endif
       if (GetUseTexture())
       {
          glDisable (GL_TEXTURE_1D);

@@ -1334,9 +1334,12 @@ void VisualizationSceneSolution3d::DrawRefinedSurfLevelLines(
 void VisualizationSceneSolution3d::PrepareFlat()
 {
    int i, j;
+   std::vector<gl3::GlVertex> flat_data_tri;
+   std::vector<gl3::GlVertex> flat_data_quad;
+
 #ifdef GLVIS_OGL3
-   std::vector<gl3::Vertex> flat_data_tri;
-   std::vector<gl3::Vertex> flat_data_quad;
+   disp_buf[GL_TRIANGLES].clear();
+   disp_buf[GL_QUADS].clear();
 #else
    glNewList(displlist, GL_COMPILE);
 #endif
@@ -1392,16 +1395,16 @@ void VisualizationSceneSolution3d::PrepareFlat()
       }
       if (j == 3)
       {
-          DrawTriangle(p, c, minv, maxv, flat_data_tri);
+          DrawTriangle(p, c, minv, maxv, disp_buf[GL_TRIANGLES]);
       }
       else
       {
-          DrawQuad(p, c, minv, maxv, flat_data_quad);
+          DrawQuad(p, c, minv, maxv, disp_buf[GL_QUADS]);
       }
    }
 #ifdef GLVIS_OGL3
-   disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES, flat_data_tri);
-   disp_buf[GL_QUADS].BufferData(GL_QUADS, flat_data_quad);
+   disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES);
+   disp_buf[GL_QUADS].BufferData(GL_QUADS);
 #else
    glEndList();
 #endif
@@ -1413,8 +1416,8 @@ void VisualizationSceneSolution3d::PrepareFlat2()
    double bbox_diam, vmin, vmax;
 
 #ifdef GLVIS_OGL3
-   std::vector<gl3::Vertex> flat_data_tri;
-   std::vector<gl3::Vertex> flat_data_quad;
+   disp_buf[GL_TRIANGLES].clear();
+   disp_buf[GL_QUADS].clear();
 #else
    glNewList(displlist, GL_COMPILE);
 #endif
@@ -1536,12 +1539,12 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       // Comment the above lines and use the below version in order to remove
       // the 3D dark artifacts (indicating wrong boundary element orientation)
       // have_normals = have_normals ? 1 : 0;
-      DrawPatch(sides == 3 ? flat_data_tri : flat_data_quad, pointmat, values,
+      DrawPatch(sides == 3 ? disp_buf[GL_TRIANGLES] : disp_buf[GL_QUADS], pointmat, values,
                 normals, sides, RefG->RefGeoms, minv, maxv, have_normals);
    }
 #ifdef GLVIS_OGL3
-   disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES, flat_data_tri);
-   disp_buf[GL_QUADS].BufferData(GL_QUADS, flat_data_quad);
+   disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES);
+   disp_buf[GL_QUADS].BufferData(GL_QUADS);
 #else
    glEndList();
 #endif
@@ -1575,13 +1578,15 @@ void VisualizationSceneSolution3d::Prepare()
          break;
    }
 
+   std::vector<gl3::GlVertex> flat_data_tri;
+   std::vector<gl3::GlVertex> flat_data_quad;
+
 #ifdef GLVIS_OGL3
-   std::vector<gl3::Vertex> flat_data_tri;
-   std::vector<gl3::Vertex> flat_data_quad;
+   disp_buf[GL_TRIANGLES].clear();
+   disp_buf[GL_QUADS].clear();
 #else
    glNewList(displlist, GL_COMPILE);
 #endif
-
 
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -1700,7 +1705,7 @@ void VisualizationSceneSolution3d::Prepare()
             mesh->GetElementVertices(elem[i], vertices);
          }
          
-         GLEnum elemType;
+         GLenum elemType;
          switch ((dim == 3) ? mesh->GetBdrElementType(elem[i]) :
                  mesh->GetElementType(elem[i]))
          {
@@ -1727,15 +1732,16 @@ void VisualizationSceneSolution3d::Prepare()
          for (j = 0; j < pointmat.Size(); j++)
          {
 #ifdef GLVIS_OGL3
-             gl3::Vertex v(&pointmat(0,j));
+            gl3::GlVertex v(&pointmat(0,j));
             v.norm[0] = nx(vertices[j]);
             v.norm[1] = ny(vertices[j]);
             v.norm[2] = nz(vertices[j]);
-            MySetColor((*sol)(vertices[j]), minv, maxv, v.rgba);
-            if (elemType == GL_TRIANGLES) {
-                flat_data_tri.push_back(v);
+            float rgba[4];
+            float texcoord = MySetColor((*sol)(vertices[j]), minv, maxv, rgba);
+            if (GetUseTexture()) {
+                disp_buf[elemType].addVertex(v, texcoord);
             } else {
-                flat_data_quad.push_back(v);
+                disp_buf[elemType].addVertex(v, rgba);
             }
 #else
             MySetColor((*sol)(vertices[j]), minv ,maxv);
@@ -1749,8 +1755,8 @@ void VisualizationSceneSolution3d::Prepare()
       }
    }
 #ifdef GLVIS_OGL3
-   disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES, flat_data_tri);
-   disp_buf[GL_QUADS].BufferData(GL_QUADS, flat_data_quad);
+   disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES);
+   disp_buf[GL_QUADS].BufferData(GL_QUADS);
 #else
    glEndList();
 #endif
