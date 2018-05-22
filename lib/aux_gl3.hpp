@@ -12,7 +12,9 @@
 #ifndef GLVIS_AUX_GL3
 #define GLVIS_AUX_GL3
 #include <GL/glew.h>
+#include <GL/glext.h>
 #include <vector>
+
 namespace gl3 {
 
 struct GlVertex
@@ -20,7 +22,7 @@ struct GlVertex
     float pos[3];
     float norm[3];
 
-    GlVertex() {}
+    GlVertex() = default;
 
     GlVertex(const double pos[]) {
         for (int i = 0; i < 3; i++) {
@@ -38,6 +40,7 @@ struct GlVertex
 
 /* *
  * Class to manage vertex buffers
+ * TODO: if we move off of X windows for apple, purge all the ARB stuff
  */
 class VertexBuffer
 {
@@ -54,7 +57,7 @@ private:
     std::vector<float> texcoord_data;
     
     void init() {
-        glGenBuffers(2, vbo_handles);
+        glGenBuffersARB(2, vbo_handles);
         handles_created = true;
     }
 public:
@@ -62,11 +65,11 @@ public:
      * Constructs a new Vertex buffer object.
      */
     VertexBuffer()
-        : size(0), handles_created(false) {
+        : handles_created(false), size(0) {
     }
 
     ~VertexBuffer() {
-        glDeleteBuffers(2, vbo_handles);
+        glDeleteBuffersARB(2, vbo_handles);
     }
 
     void clear() {

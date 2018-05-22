@@ -2,29 +2,27 @@
 
 using namespace gl3;
 
-
 void VertexBuffer::BufferData(GLenum renderAs) {
     if (!handles_created) { init(); }
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GlVertex) * pt_data.size(), pt_data.data(), GL_STATIC_DRAW);
+    glBindBufferARB(GL_ARRAY_BUFFER, vbo_handles[0]);
+    glBufferDataARB(GL_ARRAY_BUFFER, sizeof(GlVertex) * pt_data.size(), pt_data.data(), GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, sizeof(GlVertex), 0);
     glNormalPointer(GL_FLOAT, sizeof(GlVertex), (void*) offsetof(GlVertex, norm));
     this->render_type = renderAs;
     if (this->is_textured) {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[1]);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * texcoord_data.size(), texcoord_data.data(), GL_STATIC_DRAW);
+        glBindBufferARB(GL_ARRAY_BUFFER, vbo_handles[1]);
+        glBufferDataARB(GL_ARRAY_BUFFER, sizeof(float) * texcoord_data.size(), texcoord_data.data(), GL_STATIC_DRAW);
         glTexCoordPointer(1, GL_FLOAT, 0, 0);
     } else {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[1]);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * color_data.size(), color_data.data(), GL_STATIC_DRAW);
+        glBindBufferARB(GL_ARRAY_BUFFER, vbo_handles[1]);
+        glBufferDataARB(GL_ARRAY_BUFFER, sizeof(float) * color_data.size(), color_data.data(), GL_STATIC_DRAW);
         glColorPointer(4, GL_FLOAT, 0, 0);
     }
 }
 
-
 void VertexBuffer::DrawObject(bool drawNow) {
     if (!handles_created) { init(); }
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[0]);
+    glBindBufferARB(GL_ARRAY_BUFFER, vbo_handles[0]);
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
     if (this->is_textured) {

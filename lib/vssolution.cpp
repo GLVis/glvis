@@ -1431,8 +1431,8 @@ void VisualizationSceneSolution::PrepareWithNormals()
          }
 #else
          MySetColor(v.pos[2], minv, maxv);
-         glNormal3dv(v.norm);
-         glVertex3dv(v.pos);
+         glNormal3dv((const double*) v.norm);
+         glVertex3dv((const double*) v.pos);
 #endif
       }
 #ifndef GLVIS_OGL3
@@ -1733,8 +1733,8 @@ void VisualizationSceneSolution::Prepare()
                }
 #else
                MySetColor(z, minv, maxv);
-               glNormal3dv(v.norm);
-               glVertex3d(v.pos);
+               glNormal3dv((const double*) v.norm);
+               glVertex3dv((const double*) v.pos);
 #endif
             }
 #ifndef GLVIS_OGL3
