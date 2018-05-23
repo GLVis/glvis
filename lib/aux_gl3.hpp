@@ -12,8 +12,11 @@
 #ifndef GLVIS_AUX_GL3
 #define GLVIS_AUX_GL3
 #include <GL/glew.h>
-#include <GL/glext.h>
 #include <vector>
+#include <map>
+#include <iostream>
+
+using namespace std;
 
 namespace gl3 {
 
@@ -44,8 +47,7 @@ struct GlVertex
  */
 class VertexBuffer
 {
-private:
-    GLenum render_type;
+protected:
 
     bool handles_created;
     GLuint vbo_handles[2];
@@ -57,8 +59,13 @@ private:
     std::vector<float> texcoord_data;
     
     void init() {
+        glewInit(); //just in case
         glGenBuffersARB(2, vbo_handles);
-        handles_created = true;
+        if (vbo_handles[0] != 0 && vbo_handles[1] != 0) {
+            cout << "Handles created" << endl;
+            handles_created = true;
+        }
+        cout << "Unable to create handles" << endl;
     }
 public:
     /**
@@ -69,6 +76,7 @@ public:
     }
 
     ~VertexBuffer() {
+        cout << "Handles destroyed" << endl;
         glDeleteBuffersARB(2, vbo_handles);
     }
 
@@ -93,15 +101,57 @@ public:
         size++;
     }
 
-    void BufferData(GLenum renderAs);
+    virtual void BufferData();
 
     /**
      * Draws the VBO.
      */
-    void DrawObject(bool drawNow = true);
+    virtual void DrawObject(GLenum renderAs, bool drawNow = true);
 
-    GLenum getRenderType() { return render_type; }
-    size_t getNumVertices() { return size; } 
+    bool isEmpty() { return size == 0; }
+};
+
+class LineLoopBuffer : public VertexBuffer {
+private:
+    std::vector<float> pt_data;
+    std::vector<size_t> loop_strides;
+    size_t curr_count;
+    
+public:
+    LineLoopBuffer()
+        : curr_count(0){
+    }
+
+    ~LineLoopBuffer() {
+    }
+
+    void clear() {
+        pt_data.clear();
+        loop_strides.clear();
+        size = 0;
+    }
+
+    void addVertex(float x, float y, float z) {
+        pt_data.push_back(x);
+        pt_data.push_back(y);
+        pt_data.push_back(z);
+        curr_count++;
+    }
+
+    void endLoop() {
+        if (curr_count != 0) {
+            loop_strides.push_back(curr_count);
+            curr_count = 0;
+        }
+        size++;
+    }
+
+    virtual void BufferData();
+
+    /**
+     * Draws the VBO.
+     */
+    virtual void DrawObject(GLenum renderAs, bool drawNow = true);
 };
 
 }

@@ -661,23 +661,37 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
    double zc = 0.5*(z[0]+z[1]);
 
    // prepare the displaced mesh
-   glNewList(displinelist, GL_COMPILE);
-
+   callListBeginShim(displinelist, displine_buf);
+   displine_render_as = GL_LINE_LOOP;
    if (shading != 2)
    {
       for (i = 0; i < ne; i++)
       {
+#ifdef GLVIS_OGL3
+         displine_render_as = GL_LINE_LOOP;
+#else
          glBegin(GL_LINE_LOOP);
+#endif
          mesh->GetPointMatrix (i, pointmat);
          mesh->GetElementVertices (i, vertices);
 
-         for (j = 0; j < pointmat.Size(); j++)
-            glVertex3d (pointmat.Elem(0, j)+
+         for (j = 0; j < pointmat.Size(); j++) {
+#ifdef GLVIS_OGL3
+            displine_buf.addVertex(
+#else
+            glVertex3d (
+#endif
+                        pointmat.Elem(0, j)+
                         (*solx)(vertices[j])*(ianim)/ianimmax,
                         pointmat.Elem(1, j)+
                         (*soly)(vertices[j])*(ianim)/ianimmax,
                         zc);
-         glEnd();
+        }
+#ifdef GLVIS_OGL3
+        displine_buf.BufferData();
+#else
+        glEnd();
+#endif
       }
    }
    else if (drawdisp < 2)
@@ -693,18 +707,35 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
          VecGridF->GetVectorValues(i, RefG->RefPts, vvals, pm);
 
          Array<int> &RE = RefG->RefEdges;
-
+#ifdef GLVIS_OGL3
+         displine_render_as = GL_LINES;
+#else
          glBegin (GL_LINES);
+#endif
          for (int k = 0; k+1 < RE.Size(); k++)
          {
-            glVertex3d (pm(0, RE[k]) + sc * vvals(0, RE[k]),
+#ifdef GLVIS_OGL3
+            displine_buf.addVertex(
+#else
+            glVertex3d (
+#endif
+                        pm(0, RE[k]) + sc * vvals(0, RE[k]),
                         pm(1, RE[k]) + sc * vvals(1, RE[k]), zc);
             k++;
-            glVertex3d (pm(0, RE[k]) + sc * vvals(0, RE[k]),
+#ifdef GLVIS_OGL3
+            displine_buf.addVertex(
+#else
+            glVertex3d (
+#endif
+                        pm(0, RE[k]) + sc * vvals(0, RE[k]),
                         pm(1, RE[k]) + sc * vvals(1, RE[k]), zc);
          }
-         glEnd();
-      }
+#ifdef GLVIS_OGL3
+        displine_buf.BufferData();
+#else
+        glEnd();
+#endif
+        }
    }
    else
    {
@@ -827,16 +858,16 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
          {
             vals(j) = vvals(0, j);
          }
-         DrawLevelCurves(RG, pm, vals, sides, levels_x, 1);
+         DrawLevelCurves(displine_buf, RG, pm, vals, sides, levels_x, 1);
          for (int j = 0; j < vvals.Width(); j++)
          {
             vals(j) = vvals(1, j);
          }
-         DrawLevelCurves(RG, pm, vals, sides, levels_y, 1);
+         DrawLevelCurves(displine_buf, RG, pm, vals, sides, levels_y, 1);
       }
    }
 
-   glEndList();
+   callListEndShim(displine_buf);
 }
 
 double new_maxlen;
@@ -1086,7 +1117,7 @@ void VisualizationSceneVector::Draw()
       {
          glColor3d(1., 0., 0.);
       }
-      glCallList(displinelist);
+      callListDrawShim(displinelist, displine_buf, displine_render_as);
       if (drawmesh == 1)
       {
          Set_Black_Material();

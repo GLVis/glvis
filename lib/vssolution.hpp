@@ -32,14 +32,14 @@ protected:
    int bdrlist, drawbdr, draw_cp, cp_list;
    int e_nums_list, v_nums_list;
 
-
    std::map<GLenum, gl3::VertexBuffer> disp_buf;
    std::map<GLenum, gl3::VertexBuffer> line_buf;
-   std::map<GLenum, gl3::VertexBuffer> lcurve_buf;
    std::map<GLenum, gl3::VertexBuffer> bdr_buf;
    std::map<GLenum, gl3::VertexBuffer> cp_list_buf;
    std::map<GLenum, gl3::VertexBuffer> e_nums_buf;
    std::map<GLenum, gl3::VertexBuffer> v_nums_buf;
+
+   gl3::LineLoopBuffer lcurve_buf;
 
    void Init();
 
@@ -57,7 +57,7 @@ protected:
                                           Vector &vals, DenseMatrix &tr,
                                           DenseMatrix &normals);
 
-   void DrawLevelCurves(Array<int> &RG, DenseMatrix &pointmat,
+   void DrawLevelCurves(gl3::LineLoopBuffer& buf, Array<int> &RG, DenseMatrix &pointmat,
                         Vector &values, int sides, Array<double> &lvl,
                         int flat = 0);
 

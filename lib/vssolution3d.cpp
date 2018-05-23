@@ -1334,15 +1334,7 @@ void VisualizationSceneSolution3d::DrawRefinedSurfLevelLines(
 void VisualizationSceneSolution3d::PrepareFlat()
 {
    int i, j;
-   std::vector<gl3::GlVertex> flat_data_tri;
-   std::vector<gl3::GlVertex> flat_data_quad;
-
-#ifdef GLVIS_OGL3
-   disp_buf[GL_TRIANGLES].clear();
-   disp_buf[GL_QUADS].clear();
-#else
-   glNewList(displlist, GL_COMPILE);
-#endif
+   callListBeginShim(displlist, disp_buf);
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
    DenseMatrix pointmat;
@@ -1402,25 +1394,14 @@ void VisualizationSceneSolution3d::PrepareFlat()
           DrawQuad(p, c, minv, maxv, disp_buf[GL_QUADS]);
       }
    }
-#ifdef GLVIS_OGL3
-   disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES);
-   disp_buf[GL_QUADS].BufferData(GL_QUADS);
-#else
-   glEndList();
-#endif
+   callListEndShim(disp_buf);
 }
 
 void VisualizationSceneSolution3d::PrepareFlat2()
 {
    int i, k, fn, fo, di, have_normals;
    double bbox_diam, vmin, vmax;
-
-#ifdef GLVIS_OGL3
-   disp_buf[GL_TRIANGLES].clear();
-   disp_buf[GL_QUADS].clear();
-#else
-   glNewList(displlist, GL_COMPILE);
-#endif
+   callListBeginShim(displlist, disp_buf);
 
    int dim = mesh->Dimension();
    int nbe = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -1542,12 +1523,7 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       DrawPatch(sides == 3 ? disp_buf[GL_TRIANGLES] : disp_buf[GL_QUADS], pointmat, values,
                 normals, sides, RefG->RefGeoms, minv, maxv, have_normals);
    }
-#ifdef GLVIS_OGL3
-   disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES);
-   disp_buf[GL_QUADS].BufferData(GL_QUADS);
-#else
-   glEndList();
-#endif
+   callListEndShim(disp_buf);
 
    cout << "VisualizationSceneSolution3d::PrepareFlat2() : [min,max] = ["
         << vmin << "," << vmax << "]" << endl;
@@ -1578,16 +1554,9 @@ void VisualizationSceneSolution3d::Prepare()
          break;
    }
 
-   std::vector<gl3::GlVertex> flat_data_tri;
-   std::vector<gl3::GlVertex> flat_data_quad;
 
-#ifdef GLVIS_OGL3
-   disp_buf[GL_TRIANGLES].clear();
-   disp_buf[GL_QUADS].clear();
-#else
-   glNewList(displlist, GL_COMPILE);
-#endif
-
+   callListBeginShim(displlist, disp_buf);
+   
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
    int nv = mesh -> GetNV();
@@ -1754,12 +1723,7 @@ void VisualizationSceneSolution3d::Prepare()
 #endif
       }
    }
-#ifdef GLVIS_OGL3
-   disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES);
-   disp_buf[GL_QUADS].BufferData(GL_QUADS);
-#else
-   glEndList();
-#endif
+   callListEndShim(disp_buf);
 }
 
 void VisualizationSceneSolution3d::PrepareLines()
@@ -2811,13 +2775,7 @@ void VisualizationSceneSolution3d::Draw()
    // draw elements
    if (drawelems)
    {
-#ifdef GLVIS_OGL3
-        for (auto& it : disp_buf) {
-            it.second.DrawObject();
-        }
-#else
-      glCallList(displlist);
-#endif
+       callListDrawShim(displlist, disp_buf);
    }
 
    if (cplane && cp_drawelems)

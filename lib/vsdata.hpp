@@ -14,6 +14,7 @@
 
 #include "openglvis.hpp"
 #include "mfem.hpp"
+#include "aux_gl3.hpp"
 #define GL_GLEXT_PROTOTYPES
 #include <GL/glew.h>
 using namespace mfem;
@@ -114,6 +115,60 @@ protected:
    double LogVal(const double &z) { return LogVal(z, logscale); }
 
    void FixValueRange();
+   //our hacky shims for replacing call lists
+    inline void callListBeginShim(int call_list, std::map<GLenum, gl3::VertexBuffer>& buf) {
+#ifdef GLVIS_OGL3
+        for (auto& it : buf) {
+            it.second.clear();
+        }
+#else
+       glNewList(call_list, GL_COMPILE);
+#endif
+    }
+
+    inline void callListBeginShim(int call_list, gl3::LineLoopBuffer& buf) {
+#ifdef GLVIS_OGL3
+       buf.clear();
+#else
+       glNewList(call_list, GL_COMPILE);
+#endif
+    }
+
+    inline void callListEndShim(std::map<GLenum, gl3::VertexBuffer>& buf) {
+#ifdef GLVIS_OGL3
+        for (auto& it : buf) {
+            it.second.BufferData();
+        }
+#else
+       glEndList();
+#endif
+    }
+
+    inline void callListEndShim(gl3::LineLoopBuffer& buf) {
+#ifdef GLVIS_OGL3
+        buf.BufferData();
+#else
+       glEndList();
+#endif
+    }
+
+    inline void callListDrawShim(int call_list, std::map<GLenum, gl3::VertexBuffer>& buf) {
+#ifdef GLVIS_OGL3
+        for (auto& it : buf) {
+            it.second.DrawObject(it.first);
+        }
+#else
+        glCallList(call_list);
+#endif
+    }
+
+    inline void callListDrawShim(int call_list, gl3::LineLoopBuffer& buf, GLenum renderAs) {
+#ifdef GLVIS_OGL3
+        buf.DrawObject(renderAs);
+#else
+        glCallList(call_list);
+#endif
+    }
 
 public:
    Plane *CuttingPlane;
@@ -205,6 +260,9 @@ public:
                double vx, double vy, double vz,
                double length,
                double cone_scale = 0.075);
+
+   void DrawPolygonLevelLines(double *point, int n, Array<double> &level,
+                              bool log_vals, gl3::LineLoopBuffer& buf);
 
    void DrawPolygonLevelLines(double *point, int n, Array<double> &level,
                               bool log_vals);

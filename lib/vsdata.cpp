@@ -1292,12 +1292,6 @@ void VisualizationSceneScalarData::Init()
    {
       glDisable(GL_MULTISAMPLE);
    }
-
-   if (glewInit() != GLEW_OK) {
-       //can't use glew
-       cout << "SEVERE: Initializing GLEW failed. Certain OpenGL functionality may fail." << endl;
-   }
-
    // add black fog
    // glEnable(GL_FOG);
    // GLfloat fogcol[4] = {0,0,0,1};
@@ -1503,7 +1497,6 @@ void VisualizationSceneScalarData::DrawPolygonLevelLines(
       // should produce the same result, however visually the level lines
       // have discontinuities. Using GL_LINE_LOOP does not have that problem.
       glBegin(GL_LINE_LOOP);
-
       curve = LogVal(level[l], log_vals);
       for (k = 0; k < n; k++)
       {
@@ -1530,6 +1523,58 @@ void VisualizationSceneScalarData::DrawPolygonLevelLines(
          }
       }
       glEnd();
+   }
+}
+
+void VisualizationSceneScalarData::DrawPolygonLevelLines(
+   double * point, int n, Array<double> &level, bool log_vals, gl3::LineLoopBuffer& buf)
+{
+   int l, k, k1;
+   double curve, t;
+   double p[3];
+
+   for (l = 0; l < level.Size(); l++)
+   {
+      // Using GL_LINE_STRIP (explicitly closed for more than 2 points)
+      // should produce the same result, however visually the level lines
+      // have discontinuities. Using GL_LINE_LOOP does not have that problem.
+#ifndef GLVIS_OGL3
+      glBegin(GL_LINE_LOOP);
+#endif
+      curve = LogVal(level[l], log_vals);
+      for (k = 0; k < n; k++)
+      {
+         k1 = (k+1)%n;
+         if ( (curve <=point[4*k+3] && curve >= point[4*k1+3]) ||
+              (curve >=point[4*k+3] && curve <= point[4*k1+3]) )
+         {
+            if ((curve - point[4*k1+3]) == 0.)
+            {
+               t = 1.;
+            }
+            else if ((curve - point[4*k+3]) == 0.)
+            {
+               t = 0.;
+            }
+            else
+            {
+               t = (curve - point[4*k+3]) / (point[4*k1+3]-point[4*k+3]);
+            }
+            p[0] = (1.0-t)*point[4*k+0]+t*point[4*k1+0];
+            p[1] = (1.0-t)*point[4*k+1]+t*point[4*k1+1];
+            p[2] = (1.0-t)*point[4*k+2]+t*point[4*k1+2];
+#ifdef GLVIS_OGL3
+            buf.addVertex(p[0], p[1], p[2]);
+#else
+            glVertex3dv(p);
+#endif
+         }
+      }
+#ifdef GLVIS_OGL3
+      buf.endLoop();
+#else
+      glEnd();
+#endif
    }
 }
 

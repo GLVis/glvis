@@ -13,6 +13,7 @@
 #define GLVIS_VSVECTOR
 
 #include "mfem.hpp"
+#include "aux_gl3.hpp"
 using namespace mfem;
 
 class VisualizationSceneVector : public VisualizationSceneSolution
@@ -22,6 +23,8 @@ protected:
    Vector *solx, *soly;
    int vectorlist, displinelist, drawdisp, drawvector;
 
+   gl3::LineLoopBuffer displine_buf;
+   GLenum displine_render_as;
    GridFunction *VecGridF;
 
    void Init();

@@ -18,7 +18,7 @@
 
 #include "mfem.hpp"
 using namespace mfem;
-
+#include <GL/glew.h>
 #include "palettes.hpp"
 #include "visual.hpp"
 #include "gl2ps.h"
@@ -76,7 +76,14 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    }
 
    Set_Texture_Image();
-
+   if (glewInit() != GLEW_OK) {
+       //can't use glew
+       cout << "SEVERE: Initializing GLEW failed. Certain OpenGL functionality may fail." << endl;
+   }
+   cout << "GLEW initialized." << endl;
+   if (!GLEW_ARB_vertex_buffer_object) {
+       cout << "VBOs not supported" << endl;
+   }
 #ifdef GLVIS_DEBUG
    cout << "Window should be up" << endl;
 #endif

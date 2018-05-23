@@ -1380,13 +1380,7 @@ void DrawPatch(gl3::VertexBuffer& buff, const DenseMatrix &pts, Vector &vals, De
 
 void VisualizationSceneSolution::PrepareWithNormals()
 {
-#ifdef GLVIS_OGL3
-    for (auto& it : disp_buf) {
-        it.second.clear();
-    }
-#else
-   glNewList(displlist, GL_COMPILE);
-#endif
+   callListBeginShim(displlist, disp_buf);
    Array<int> vertices;
    double *vtx, *nor, val, s;
 
@@ -1439,24 +1433,13 @@ void VisualizationSceneSolution::PrepareWithNormals()
       glEnd();
 #endif
    }
-#ifdef GLVIS_OGL3
-      disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES);
-      disp_buf[GL_QUADS].BufferData(GL_QUADS);
-#else
-   glEndList();
-#endif
+   callListEndShim(disp_buf);
 }
 
 void VisualizationSceneSolution::PrepareFlat()
 {
    int i, j;
-#ifdef GLVIS_OGL3
-   for (auto& it: disp_buf) {
-       it.second.clear();
-   }
-#else
-   glNewList (displlist, GL_COMPILE);
-#endif
+   callListBeginShim(displlist, disp_buf);
    int ne = mesh -> GetNE();
    DenseMatrix pointmat;
    Array<int> vertices;
@@ -1484,12 +1467,7 @@ void VisualizationSceneSolution::PrepareFlat()
          DrawQuad(pts, col, minv, maxv, disp_buf[GL_QUADS]);
       }
    }
-#ifdef GLVIS_OGL3
-      disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES);
-      disp_buf[GL_QUADS].BufferData(GL_QUADS);
-#else
-   glEndList();
-#endif
+   callListEndShim(disp_buf);
 }
 
 // determines how quads and their level lines are drawn
@@ -1502,14 +1480,7 @@ const int split_quads = 1;
 void VisualizationSceneSolution::PrepareFlat2()
 {
    int i, j, k;
-
-#ifdef GLVIS_OGL3
-   for (auto& it: disp_buf) {
-       it.second.clear();
-   }
-#else
-   glNewList (displlist, GL_COMPILE);
-#endif
+   callListBeginShim(displlist, disp_buf);
    int ne = mesh -> GetNE();
    DenseMatrix pointmat, pts3d, normals;
    Vector values;
@@ -1606,12 +1577,7 @@ void VisualizationSceneSolution::PrepareFlat2()
       }
 #endif
    }
-#ifdef GLVIS_OGL3
-      disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES);
-      disp_buf[GL_QUADS].BufferData(GL_QUADS);
-#else
-   glEndList();
-#endif
+   callListEndShim(disp_buf);
 }
 
 void VisualizationSceneSolution::Prepare()
@@ -1637,13 +1603,7 @@ void VisualizationSceneSolution::Prepare()
 
    int i, j;
 
-#ifdef GLVIS_OGL3
-   for (auto& it: disp_buf) {
-       it.second.clear();
-   }
-#else
-   glNewList (displlist, GL_COMPILE);
-#endif
+   callListBeginShim(displlist, disp_buf);
    int ne = mesh -> GetNE();
    int nv = mesh -> GetNV();
    DenseMatrix pointmat;
@@ -1743,12 +1703,7 @@ void VisualizationSceneSolution::Prepare()
          }
       }
    }
-#ifdef GLVIS_OGL3
-      disp_buf[GL_TRIANGLES].BufferData(GL_TRIANGLES);
-      disp_buf[GL_QUADS].BufferData(GL_QUADS);
-#else
-   glEndList();
-#endif
+   callListEndShim(disp_buf);
 }
 
 void VisualizationSceneSolution::PrepareLevelCurves()
@@ -1764,7 +1719,7 @@ void VisualizationSceneSolution::PrepareLevelCurves()
    Vector values;
    DenseMatrix pointmat;
 
-   glNewList(lcurvelist, GL_COMPILE);
+   callListBeginShim(lcurvelist, lcurve_buf);
 
    for (int i = 0; i < mesh->GetNE(); i++)
    {
@@ -1777,14 +1732,14 @@ void VisualizationSceneSolution::PrepareLevelCurves()
             values(j) = _LogVal(values(j));
          }
       RG.SetSize(vertices.Size());
-      DrawLevelCurves(RG, pointmat, values, vertices.Size(), level);
+      DrawLevelCurves(lcurve_buf, RG, pointmat, values, vertices.Size(), level);
    }
 
    glEndList();
 }
 
 void VisualizationSceneSolution::DrawLevelCurves(
-   Array<int> &RG, DenseMatrix &pointmat, Vector &values,
+   gl3::LineLoopBuffer& buf, Array<int> &RG, DenseMatrix &pointmat, Vector &values,
    int sides, Array<double> &lvl, int flat)
 {
    double point[4][4];
@@ -1803,7 +1758,7 @@ void VisualizationSceneSolution::DrawLevelCurves(
             point[j][3] = values(vv);
             point[j][2] = (flat) ? zc : point[j][3];
          }
-         DrawPolygonLevelLines(point[0], sides, lvl, logscale);
+         DrawPolygonLevelLines(point[0], sides, lvl, logscale, buf);
       }
       else if (split_quads == 1)
       {
@@ -1820,7 +1775,7 @@ void VisualizationSceneSolution::DrawLevelCurves(
                point[j][3] = values(ind[vt[it][j]]);
                point[j][2] = (flat) ? zc : point[j][3];
             }
-            DrawPolygonLevelLines(point[0], 3, lvl, logscale);
+            DrawPolygonLevelLines(point[0], 3, lvl, logscale, buf);
          }
       }
       else
@@ -1856,7 +1811,7 @@ void VisualizationSceneSolution::DrawLevelCurves(
             point[1][3] = values(ind[l]);
             point[1][2] = (flat) ? zc : point[1][3];
 
-            DrawPolygonLevelLines(point[0], 3, lvl, logscale);
+            DrawPolygonLevelLines(point[0], 3, lvl, logscale, buf);
          }
       }
    }
@@ -1869,7 +1824,7 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
    DenseMatrix pointmat;
    RefinedGeometry *RefG;
 
-   glNewList(lcurvelist, GL_COMPILE);
+   callListBeginShim(lcurvelist, lcurve_buf);
 
    for (i = 0; i < ne; i++)
    {
@@ -1879,10 +1834,10 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
       Array<int> &RG = RefG->RefGeoms;
       int sides = mesh->GetElement(i)->GetNVertices();
 
-      DrawLevelCurves(RG, pointmat, values, sides, level);
+      DrawLevelCurves(lcurve_buf, RG, pointmat, values, sides, level);
    }
 
-   glEndList();
+   callListEndShim(lcurve_buf);
 }
 
 void VisualizationSceneSolution::PrepareLines()
@@ -2492,13 +2447,7 @@ void VisualizationSceneSolution::Draw()
          glEnable (GL_TEXTURE_1D);
          glColor4d(1, 1, 1, 1);
       }
-#ifdef GLVIS_OGL3
-      for (auto& it: disp_buf) {
-          it.second.DrawObject();
-      }
-#else
-      glCallList(displlist);
-#endif
+      callListDrawShim(displlist, disp_buf);
       if (GetUseTexture())
       {
          glDisable (GL_TEXTURE_1D);
@@ -2541,7 +2490,7 @@ void VisualizationSceneSolution::Draw()
    }
    else if (drawmesh == 2)
    {
-      glCallList(lcurvelist);
+      callListDrawShim(lcurvelist, lcurve_buf, GL_LINE_LOOP);
    }
 
    // draw numberings
