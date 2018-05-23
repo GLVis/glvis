@@ -316,23 +316,32 @@ GLenum auxInitWindow(const char *title)
 
     if (tkInitWindow(title) == GL_FALSE)
     {
-	if (AUX_WIND_IS_SINGLE(displayModeType))
+        if (AUX_WIND_IS_SINGLE(displayModeType))
         {
-	    tkInitDisplayMode(displayModeType | AUX_DOUBLE);
-	    if (tkInitWindow(title) == GL_FALSE)
+            tkInitDisplayMode(displayModeType | AUX_DOUBLE);
+            if (tkInitWindow(title) == GL_FALSE)
             {
-		return GL_FALSE;    /*  curses, foiled again	*/
-	    }
-	    fprintf(stderr, "Can't initialize a single buffer visual.\n");
-	    fprintf(stderr, "Will use a double buffer visual instead,");
-	    fprintf(stderr, "only drawing into the front buffer.\n");
-	    displayModeType = displayModeType | AUX_DOUBLE;
-	    useDoubleAsSingle = 1;
-	}
+                return GL_FALSE;    /*  curses, foiled again	*/
+            }
+            fprintf(stderr, "Can't initialize a single buffer visual.\n");
+            fprintf(stderr, "Will use a double buffer visual instead,");
+            fprintf(stderr, "only drawing into the front buffer.\n");
+            displayModeType = displayModeType | AUX_DOUBLE;
+            useDoubleAsSingle = 1;
+        }
         else
         {
            return GL_FALSE;
         }
+    }
+
+    if (glewInit() != GLEW_OK) {
+       //can't use glew
+       fprintf(stderr, "SEVERE: Initializing GLEW failed. Certain OpenGL functionality may fail.\n");
+    }
+    printf("GLEW initialized.\n");
+    if (!GLEW_ARB_vertex_buffer_object) {
+       fprintf(stderr, "VBOs not supported\n");
     }
     tkReshapeFunc(DefaultHandleReshape);
     tkExposeFunc(DefaultHandleExpose);

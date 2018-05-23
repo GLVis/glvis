@@ -1425,8 +1425,8 @@ void VisualizationSceneSolution::PrepareWithNormals()
          }
 #else
          MySetColor(v.pos[2], minv, maxv);
-         glNormal3dv((const double*) v.norm);
-         glVertex3dv((const double*) v.pos);
+         glNormal3fv((const float*) v.norm);
+         glVertex3fv((const float*) v.pos);
 #endif
       }
 #ifndef GLVIS_OGL3
@@ -1669,7 +1669,9 @@ void VisualizationSceneSolution::Prepare()
                   shape = GL_QUADS;
                   break;
             }
+#ifndef GLVIS_OGL3
             glBegin(shape);
+#endif
             mesh->GetPointMatrix (i, pointmat);
             mesh->GetElementVertices (i, vertices);
 
@@ -1693,8 +1695,8 @@ void VisualizationSceneSolution::Prepare()
                }
 #else
                MySetColor(z, minv, maxv);
-               glNormal3dv((const double*) v.norm);
-               glVertex3dv((const double*) v.pos);
+               glNormal3fv((const float*) v.norm);
+               glVertex3fv((const float*) v.pos);
 #endif
             }
 #ifndef GLVIS_OGL3
@@ -1734,8 +1736,7 @@ void VisualizationSceneSolution::PrepareLevelCurves()
       RG.SetSize(vertices.Size());
       DrawLevelCurves(lcurve_buf, RG, pointmat, values, vertices.Size(), level);
    }
-
-   glEndList();
+   callListEndShim(lcurve_buf);
 }
 
 void VisualizationSceneSolution::DrawLevelCurves(

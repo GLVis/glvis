@@ -688,7 +688,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
                         zc);
         }
 #ifdef GLVIS_OGL3
-        displine_buf.BufferData();
+        displine_buf.endLoop();
 #else
         glEnd();
 #endif
@@ -731,7 +731,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
                         pm(1, RE[k]) + sc * vvals(1, RE[k]), zc);
          }
 #ifdef GLVIS_OGL3
-        displine_buf.BufferData();
+        displine_buf.endLoop();
 #else
         glEnd();
 #endif

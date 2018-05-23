@@ -64,8 +64,10 @@ protected:
         if (vbo_handles[0] != 0 && vbo_handles[1] != 0) {
             cout << "Handles created" << endl;
             handles_created = true;
+        } else {
+            const GLubyte* string = gluErrorString(glGetError());
+            cout << string << endl;
         }
-        cout << "Unable to create handles" << endl;
     }
 public:
     /**

@@ -101,7 +101,7 @@ GLVIS_MULTISAMPLE  = 4
 GLVIS_MS_LINEWIDTH = $(if $(NOTMAC),1.4,0.01)
 GLVIS_FLAGS += -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
  -DGLVIS_MS_LINEWIDTH=$(GLVIS_MS_LINEWIDTH)\
-# -DGLVIS_OGL3
+ -DGLVIS_OGL3
 
 # Macro that searches for a file in a list of directories returning the first
 # directory that contains the file.

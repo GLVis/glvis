@@ -15,7 +15,6 @@
 #include "openglvis.hpp"
 #include "mfem.hpp"
 #include "aux_gl3.hpp"
-#define GL_GLEXT_PROTOTYPES
 #include <GL/glew.h>
 using namespace mfem;
 
