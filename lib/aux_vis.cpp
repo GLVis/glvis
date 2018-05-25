@@ -50,6 +50,9 @@ static int glvis_multisample = GLVIS_MULTISAMPLE;
 static int glvis_multisample = -1;
 #endif
 
+//this smells
+SdlWindow * wnd;
+
 void MyExpose(GLsizei w, GLsizei h);
 
 int InitVisualization (const char name[], int x, int y, int w, int h)
@@ -65,14 +68,16 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 #ifdef GLVIS_DEBUG
    cout << "OpenGL Visualization" << endl;
 #endif
-
-   GLenum mode = AUX_DOUBLE | AUX_RGBA | AUX_DEPTH;
+   std::string title(name);
+   wnd = new SdlWindow(title, w, h);
+   // GLenum mode = AUX_DOUBLE | AUX_RGBA | AUX_DEPTH;
    // mode |= (AUX_ALPHA | AUX_ACCUM);
-   auxInitDisplayMode(mode);
-   auxInitPosition(x, y, w, h);
-   if (auxInitWindow(name) == GL_FALSE)
-   {
+   if (wnd->isWindowInitialized()) {
       return 1;
+   }
+   wnd->createGlContext();
+   if (wnd->isGlInitialized()) {
+       return 1;
    }
 
    Set_Texture_Image();
@@ -99,84 +104,97 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    SetUseTexture(0);
 
    // auxReshapeFunc (MyReshape); // not needed, MyExpose calls it
-   auxReshapeFunc (NULL);
-   auxExposeFunc (MyExpose);
+   // auxReshapeFunc (NULL);
+   wnd->setOnExpose(MyExpose);
 
-   auxMouseFunc (AUX_LEFTBUTTON, AUX_MOUSEDOWN, LeftButtonDown);
-   auxMouseFunc (AUX_LEFTBUTTON, AUX_MOUSEUP, LeftButtonUp);
-   auxMouseFunc (AUX_LEFTBUTTON, AUX_MOUSELOC, LeftButtonLoc);
-   auxMouseFunc (AUX_MIDDLEBUTTON, AUX_MOUSEDOWN, MiddleButtonDown);
-   auxMouseFunc (AUX_MIDDLEBUTTON, AUX_MOUSEUP, MiddleButtonUp);
-   auxMouseFunc (AUX_MIDDLEBUTTON, AUX_MOUSELOC, MiddleButtonLoc);
-   auxMouseFunc (AUX_RIGHTBUTTON, AUX_MOUSEDOWN, RightButtonDown);
-   auxMouseFunc (AUX_RIGHTBUTTON, AUX_MOUSEUP, RightButtonUp);
-   auxMouseFunc (AUX_RIGHTBUTTON, AUX_MOUSELOC, RightButtonLoc);
+   wnd->setOnMouseDown(SDL_BUTTON_LEFT, LeftButtonDown);
+   wnd->setOnMouseUp(SDL_BUTTON_LEFT, LeftButtonUp);
+   wnd->setOnMouseMove(SDL_BUTTON_LEFT, LeftButtonLoc);
+   wnd->setOnMouseDown(SDL_BUTTON_MIDDLE, MiddleButtonDown);
+   wnd->setOnMouseUp(SDL_BUTTON_MIDDLE, MiddleButtonUp);
+   wnd->setOnMouseMove(SDL_BUTTON_MIDDLE, MiddleButtonLoc);
+   wnd->setOnMouseDown(SDL_BUTTON_RIGHT, RightButtonDown);
+   wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
+   wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
 
    // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
-   auxKeyFunc (AUX_S, KeyS);
+   wnd->setOnKeyDown (SDLK_S, KeyS);
 
-   auxKeyFunc (AUX_q, KeyQPressed);
-   auxKeyFunc (AUX_Q, KeyQPressed);
+   wnd->setOnKeyDown (SDLK_q, KeyQPressed);
+   //wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
 
-   auxModKeyFunc (AUX_LEFT, KeyLeftPressed);
-   auxModKeyFunc (AUX_RIGHT, KeyRightPressed);
-   auxModKeyFunc (AUX_UP, KeyUpPressed);
-   auxModKeyFunc (AUX_DOWN, KeyDownPressed);
+   wnd->setOnKeyDown (SDLK_LEFT, KeyLeftPressed);
+   wnd->setOnKeyDown (SDLK_RIGHT, KeyRightPressed);
+   wnd->setOnKeyDown (SDLK_UP, KeyUpPressed);
+   wnd->setOnKeyDown (SDLK_DOWN, KeyDownPressed);
 
-   auxKeyFunc (XK_KP_0, Key0Pressed);
-   auxKeyFunc (XK_KP_1, Key1Pressed);
-   auxKeyFunc (XK_KP_2, Key2Pressed);
-   auxKeyFunc (XK_KP_3, Key3Pressed);
-   auxKeyFunc (XK_KP_4, Key4Pressed);
-   auxKeyFunc (XK_KP_5, Key5Pressed);
-   auxKeyFunc (XK_KP_6, Key6Pressed);
-   auxKeyFunc (XK_KP_7, Key7Pressed);
-   auxKeyFunc (XK_KP_8, Key8Pressed);
-   auxKeyFunc (XK_KP_9, Key9Pressed);
+   wnd->setOnKeyDown (SDLK_KP_0, Key0Pressed);
+   wnd->setOnKeyDown (SDLK_KP_1, Key1Pressed);
+   wnd->setOnKeyDown (SDLK_KP_2, Key2Pressed);
+   wnd->setOnKeyDown (SDLK_KP_3, Key3Pressed);
+   wnd->setOnKeyDown (SDLK_KP_4, Key4Pressed);
+   wnd->setOnKeyDown (SDLK_KP_5, Key5Pressed);
+   wnd->setOnKeyDown (SDLK_KP_6, Key6Pressed);
+   wnd->setOnKeyDown (SDLK_KP_7, Key7Pressed);
+   wnd->setOnKeyDown (SDLK_KP_8, Key8Pressed);
+   wnd->setOnKeyDown (SDLK_KP_9, Key9Pressed);
 
-   auxKeyFunc (XK_KP_Subtract, KeyMinusPressed);
-   auxKeyFunc (XK_KP_Add, KeyPlusPressed);
+   wnd->setOnKeyDown (SDLK_KP_SUBTRACT, KeyMinusPressed);
+   wnd->setOnKeyDown (SDLK_KP_ADD, KeyPlusPressed);
 
-   auxKeyFunc (XK_KP_Decimal, KeyDeletePressed);
-   auxKeyFunc (XK_KP_Enter, KeyEnterPressed);
+   wnd->setOnKeyDown (SDLK_KP_DECIMAL, KeyDeletePressed);
+   wnd->setOnKeyDown (SDLK_KP_ENTER, KeyEnterPressed);
 
-   auxKeyFunc (XK_period, KeyDeletePressed);
-   auxKeyFunc (TK_RETURN, KeyEnterPressed);
+   wnd->setOnKeyDown (SDLK_PERIOD, KeyDeletePressed);
+   wnd->setOnKeyDown (SDLK_RETURN, KeyEnterPressed);
 
-   auxKeyFunc (XK_0, Key0Pressed);
-   auxKeyFunc (XK_1, Key1Pressed);
-   auxKeyFunc (XK_2, Key2Pressed);
-   auxKeyFunc (XK_3, Key3Pressed);
-   auxKeyFunc (XK_4, Key4Pressed);
-   auxKeyFunc (XK_5, Key5Pressed);
-   auxKeyFunc (XK_6, Key6Pressed);
-   auxKeyFunc (XK_7, Key7Pressed);
-   auxKeyFunc (XK_8, Key8Pressed);
-   auxKeyFunc (XK_9, Key9Pressed);
+   wnd->setOnKeyDown (SDLK_0, Key0Pressed);
+   wnd->setOnKeyDown (SDLK_1, Key1Pressed);
+   wnd->setOnKeyDown (SDLK_2, Key2Pressed);
+   wnd->setOnKeyDown (SDLK_3, Key3Pressed);
+   wnd->setOnKeyDown (SDLK_4, Key4Pressed);
+   wnd->setOnKeyDown (SDLK_5, Key5Pressed);
+   wnd->setOnKeyDown (SDLK_6, Key6Pressed);
+   wnd->setOnKeyDown (SDLK_7, Key7Pressed);
+   wnd->setOnKeyDown (SDLK_8, Key8Pressed);
+   wnd->setOnKeyDown (SDLK_9, Key9Pressed);
 
-   auxKeyFunc (XK_minus, KeyMinusPressed);
-   auxKeyFunc (XK_plus, KeyPlusPressed);
-   auxKeyFunc (XK_equal, KeyPlusPressed);
+   wnd->setOnKeyDown (SDLK_MINUS, KeyMinusPressed);
+   wnd->setOnKeyDown (SDLK_PLUS, KeyPlusPressed);
+   wnd->setOnKeyDown (SDLK_EQUAL, KeyPlusPressed);
 
-   auxKeyFunc (AUX_j, KeyJPressed);
-   auxKeyFunc (AUX_J, KeyJPressed);
+   wnd->setOnKeyDown (SDLK_J, KeyJPressed);
+   //wnd->setOnKeyDown (AUX_J, KeyJPressed);
 
-   auxKeyFunc (XK_KP_Multiply, ZoomIn);
-   auxKeyFunc (XK_KP_Divide, ZoomOut);
+   wnd->setOnKeyDown (SDLK_KP_MULTIPLY, ZoomIn);
+   wnd->setOnKeyDown (SDLK_KP_DIVIDE, ZoomOut);
 
-   auxKeyFunc (XK_asterisk, ZoomIn);
-   auxKeyFunc (XK_slash, ZoomOut);
+   wnd->setOnKeyDown (SDLK_ASTERISK, ZoomIn);
+   wnd->setOnKeyDown (SDLK_SLASH, ZoomOut);
 
-   auxKeyFunc (XK_bracketleft, ScaleDown);
-   auxKeyFunc (XK_bracketright, ScaleUp);
-   auxKeyFunc (XK_at, LookAt);
+   wnd->setOnKeyDown (SDLK_BRACKETLEFT, ScaleDown);
+   wnd->setOnKeyDown (SDLK_BRACKETRIGHT, ScaleUp);
+   wnd->setOnKeyDown (SDLK_AT, LookAt);
 
-   auxKeyFunc(XK_parenleft, ShrinkWindow);
-   auxKeyFunc(XK_parenright, EnlargeWindow);
+   wnd->setOnKeyDown(SDLK_PARENLEFT, ShrinkWindow);
+   wnd->setOnKeyDown(SDLK_PARENRIGHT, EnlargeWindow);
 
    locscene = NULL;
 
    return 0;
+}
+
+void SendKeyEvent(char c) {
+    SDL_Event event;
+    event.type = SDL_KEYDOWN;
+    event.key.keysym.sym = tolower(c);
+
+}
+
+void SendKeySequence(const char *seq) {
+    for (char* key = seq; *key != '\0'; key++) {
+        :
+    }
 }
 
 void SendKeyEvent (KeySym keysym, int Shift=0)
@@ -195,7 +213,7 @@ void SendKeyEvent (KeySym keysym, int Shift=0)
    }
    else
    {
-      xke.keycode = XKeysymToKeycode(xke.display, XK_Shift_L);
+      xke.keycode = XKeysymToKeycode(xke.display, SDLK_Shift_L);
       XSendEvent(auxXDisplay(), auxXWindow(), True, KeyPressMask, (XEvent*)&xke);
       xke.state |= ShiftMask;
 
@@ -205,68 +223,16 @@ void SendKeyEvent (KeySym keysym, int Shift=0)
       xke.type = KeyRelease;
       XSendEvent(auxXDisplay(), auxXWindow(), True, KeyPressMask, (XEvent*)&xke);
 
-      xke.keycode = XKeysymToKeycode(xke.display, XK_Shift_L);
+      xke.keycode = XKeysymToKeycode(xke.display, SDLK_Shift_L);
       XSendEvent(auxXDisplay(), auxXWindow(), True, KeyPressMask, (XEvent*)&xke);
    }
 }
 
-void SendKeySequence (const char *seq)
-{
-   const char *key = seq;
-
-   for ( ; *key != '\0'; key++ ) // see /usr/include/X11/keysymdef.h
-   {
-      if ( ((*key - '0') < 10) && ((*key - '0') >= 0) ) // (keypad) number
-      {
-         SendKeyEvent(XK_0 + (*key) -'0');
-         continue;
-      }
-
-      if ( ((*key - 'a') < 26) && ((*key - 'a') >= 0) ) // lowercase letter
-      {
-         SendKeyEvent(XK_a + (*key) -'a');
-         continue;
-      }
-
-      if ( ((*key - 'A') < 26) && ((*key - 'A') >= 0) ) // uppercase letter
-      {
-         SendKeyEvent(XK_A + (*key) -'A',1);
-         continue;
-      }
-
-      switch (*key)
-      {
-         case '+':
-            SendKeyEvent(XK_plus);
-            continue;
-         case '-':
-            SendKeyEvent(XK_minus);
-            continue;
-         case '*':
-            SendKeyEvent(XK_KP_Multiply);
-            continue;
-         case '/':
-            SendKeyEvent(XK_KP_Divide);
-            continue;
-         case '.':
-            SendKeyEvent(XK_period);
-            continue;
-         case '[':
-            SendKeyEvent(XK_bracketleft);
-            continue;
-         case ']':
-            SendKeyEvent(XK_bracketright);
-            continue;
-         case '(':
-            SendKeyEvent(XK_parenleft,1);
-            continue;
-         case ')':
-            SendKeyEvent(XK_parenright,1);
-            continue;
-         case '!':
-            SendKeyEvent(XK_exclam,1);
-            continue;
-         case '~': // special codes
+void SendKeySequence(const char *seq) {
+    for (char* key = seq; *key != '\0'; key++) {
+        SDL_Event event;
+        event.type = SDL_KEYDOWN;
+        if (*key == '~') {
             key++;
             switch (*key)
             {
@@ -274,40 +240,54 @@ void SendKeySequence (const char *seq)
                   SendExposeEvent();
                   break;
                case 'l': // left arrow
-                  SendKeyEvent(XK_Left);
+                  event.key.keysym.sym = SDLK_LEFT;
                   break;
                case 'r': // right arrow
-                  SendKeyEvent(XK_Right);
+                  event.key.keysym.sym = SDLK_RIGHT;
                   break;
                case 'u': // up arrow
-                  SendKeyEvent(XK_Up);
+                  event.key.keysym.sym = SDLK_UP;
                   break;
                case 'd': // down arrow
-                  SendKeyEvent(XK_Down);
+                  event.key.keysym.sym = SDLK_DOWN;
                   break;
                case '3': // F3
-                  SendKeyEvent(XK_F3);
+                  event.key.keysym.sym = SDLK_F3;
                   break;
                case '5': // F5
-                  SendKeyEvent(XK_F5);
+                  event.key.keysym.sym = SDLK_F5;
                   break;
                case '6': // F6
-                  SendKeyEvent(XK_F6);
+                  event.key.keysym.sym = SDLK_F6;
                   break;
                case '7': // F7
-                  SendKeyEvent(XK_F7);
+                  event.key.keysym.sym = SDLK_F7;
                   break;
                case '.': // Keypad ./Del
-                  SendKeyEvent(XK_period);
+                  event.key.keysym.sym = SDLK_PERIOD;
                   break;
                case 'E': // Keypad Enter
-                  SendKeyEvent(XK_Return);
+                  event.key.keysym.sym = SDLK_RETURN;
                   break;
             }
             continue;
-      }
-   }
+        } else if (*key == '*') {
+            event.key.keysym.sym = SDLK_KP_MULTIPLY;
+        } else if (*key == '/') {
+            event.key.keysym.sym = SDLK_KP_DIVIDE;
+        } else {
+            if (*key == '('
+                || *key == ')'
+                || *key == '!'
+                || isupper(*key)) {
+                event.key.keysym.mod = KMOD_LSHIFT;
+            }
+            event.key.keysym.sym = *key;
+        }
+        SDL_PushEvent(&event);
+    }
 }
+
 
 static bool disableSendExposeEvent = false;
 
@@ -320,41 +300,41 @@ void CallKeySequence(const char *seq)
    {
       if (*key != '~')
       {
-         auxCallKeyFunc(*key, 0);
+         wnd->callKeyDown(*key);
       }
       else
       {
          switch (*key)
          {
             case 'l': // left arrow
-               auxCallKeyFunc(XK_Left, 0);
+               wnd->callKeyDown(SDLK_LEFT);
                break;
             case 'r': // right arrow
-               auxCallKeyFunc(XK_Right, 0);
+               wnd->callKeyDown(SDLK_RIGHT);
                break;
             case 'u': // up arrow
-               auxCallKeyFunc(XK_Up, 0);
+               wnd->callKeyDown(SDLK_UP);
                break;
             case 'd': // down arrow
-               auxCallKeyFunc(XK_Down, 0);
+               wnd->callKeyDown(SDLK_DOWN);
                break;
             case '3': // F3
-               auxCallKeyFunc(XK_F3, 0);
+               wnd->callKeyDown(SDLK_F3);
                break;
             case '5': // F5
-               auxCallKeyFunc(XK_F5, 0);
+               wnd->callKeyDown(SDLK_F5);
                break;
             case '6': // F6
-               auxCallKeyFunc(XK_F6, 0);
+               wnd->callKeyDown(SDLK_F6);
                break;
             case '7': // F7
-               auxCallKeyFunc(XK_F7, 0);
+               wnd->callKeyDown(SDLK_F7);
                break;
             case '.': // Keypad ./Del
-               auxCallKeyFunc(XK_period, 0);
+               wnd->callKeyDown(SDLK_PERIOD);
                break;
             case 'E': // Keypad Enter
-               auxCallKeyFunc(XK_Return, 0);
+               wnd->callKeyDown(SDLK_RETURN);
                break;
          }
       }
