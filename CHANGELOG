@@ -9,7 +9,7 @@
                               http://glvis.org
 
 
-Development version, not released yet
+Version 3.4, released on May 29, 2018
 =====================================
 - When enabled, secure sockets (based on GnuTLS) now use authentication based on
   X.509 certificates. A new set of X.509 client/server keys can be generated
