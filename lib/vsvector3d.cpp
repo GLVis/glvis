@@ -397,20 +397,20 @@ void VisualizationSceneVector3d::Init()
    {
       // init = 1;
 
-      auxKeyFunc (AUX_h, VectorKeyHPressed);
-      auxKeyFunc (AUX_H, VectorKeyHPressed);
+      wnd->setOnKeyDown(AUX_h, VectorKeyHPressed);
+      wnd->setOnKeyDown(AUX_H, VectorKeyHPressed);
 
-      auxKeyFunc (AUX_d, KeyDPressed);
-      auxKeyFunc (AUX_D, KeyDPressed);
+      wnd->setOnKeyDown(AUX_d, KeyDPressed);
+      wnd->setOnKeyDown(AUX_D, KeyDPressed);
 
-      auxKeyFunc (AUX_n, KeyNPressed);
-      auxKeyFunc (AUX_N, KeyNPressed);
+      wnd->setOnKeyDown(AUX_n, KeyNPressed);
+      wnd->setOnKeyDown(AUX_N, KeyNPressed);
 
-      auxKeyFunc (AUX_b, KeyBPressed);
-      auxKeyFunc (AUX_B, KeyBPressed);
+      wnd->setOnKeyDown(AUX_b, KeyBPressed);
+      wnd->setOnKeyDown(AUX_B, KeyBPressed);
 
-      auxKeyFunc (AUX_r, KeyrPressed); // adds another function to 'r' and 'R'
-      auxKeyFunc (AUX_R, KeyRPressed); // the other function is in vsdata.cpp
+      wnd->setOnKeyDown(AUX_r, KeyrPressed); // adds another function to 'r' and 'R'
+      wnd->setOnKeyDown(AUX_R, KeyRPressed); // the other function is in vsdata.cpp
 
       auxKeyFuncReplace (AUX_u, KeyuPressed); // Keys u, U are also used in
       auxKeyFuncReplace (AUX_U, KeyUPressed); // VisualizationSceneSolution3d
@@ -421,7 +421,7 @@ void VisualizationSceneVector3d::Init()
       auxKeyFuncReplace (AUX_v, KeyvPressed); // Keys v, V are also used in
       auxKeyFuncReplace (AUX_V, KeyVPressed); // VisualizationSceneSolution3d
 
-      auxKeyFunc(AUX_F, VectorKeyFPressed);
+      wnd->setOnKeyDown(AUX_F, VectorKeyFPressed);
    }
 }
 

@@ -19,6 +19,9 @@ public:
     typedef std::function<void(int, int)> WindowDelegate;
     typedef std::function<void()> Delegate;
 
+    static KeyDelegate toKeyFn(Delegate func) {
+        return [func](GLenum e) { func(); }
+    }
 private:
     struct _SdlHandle;
     //Use shared_ptr to manage handle lifetimes
@@ -47,16 +50,24 @@ public:
     void setOnIdle(Delegate func) { onIdle = func; }
     void setOnExpose(WindowDelegate func) { onExpose = func; }
     void setOnReshape(WindowDelegate func) { onReshape = func; }
+    
     void setOnKeyDown(SDL_Keycode key, Delegate func) {
         onKeyDown[key] = [func](GLenum e) { func(); }
     }
+    void setOnKeyDown(SDL_Keycode key, KeyDelegate upper, KeyDelegate lower) {
+        onKeyDown[key] = [upper, lower](GLenum e) {
+            if ((e & KMOD_SHIFT) && upper) { upper(e); }
+            else { if (lower) lower(e); }
+        }
+    }
     void setOnKeyDown(SDL_Keycode key, Delegate upper, Delegate lower) {
         onKeyDown[key] = [upper, lower](GLenum e) {
-            if ((e | KMOD_SHIFT) && upper) { upper(); }
+            if ((e & KMOD_SHIFT) && upper) { upper(); }
             else { if (lower) lower(); }
         }
     }
     void setOnKeyDown(SDL_Keycode key, KeyDelegate func) { onKeyDown[key] = func; }
+    
     void setOnMouseDown(int btn, MouseDelegate func) { onMouseDown[btn] = func; }
     void setOnMouseUp(int btn, MouseDelegate func) { onMouseUp[btn] = func; }
     void setOnMouseMove(int btn, MouseDelegate func) { onMouseMove[btn] = func; }

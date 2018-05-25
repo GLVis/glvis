@@ -184,50 +184,6 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    return 0;
 }
 
-void SendKeyEvent(char c) {
-    SDL_Event event;
-    event.type = SDL_KEYDOWN;
-    event.key.keysym.sym = tolower(c);
-
-}
-
-void SendKeySequence(const char *seq) {
-    for (char* key = seq; *key != '\0'; key++) {
-        :
-    }
-}
-
-void SendKeyEvent (KeySym keysym, int Shift=0)
-{
-   XKeyEvent  xke;
-
-   xke.display = auxXDisplay();
-   xke.window  = auxXWindow();
-   xke.type    = KeyPress;
-   xke.state   = 0;
-
-   if (!Shift)
-   {
-      xke.keycode = XKeysymToKeycode(xke.display, keysym);
-      XSendEvent(auxXDisplay(), auxXWindow(), True, KeyPressMask, (XEvent*)&xke);
-   }
-   else
-   {
-      xke.keycode = XKeysymToKeycode(xke.display, SDLK_Shift_L);
-      XSendEvent(auxXDisplay(), auxXWindow(), True, KeyPressMask, (XEvent*)&xke);
-      xke.state |= ShiftMask;
-
-      xke.keycode = XKeysymToKeycode(xke.display, keysym);
-      XSendEvent(auxXDisplay(), auxXWindow(), True, KeyPressMask, (XEvent*)&xke);
-
-      xke.type = KeyRelease;
-      XSendEvent(auxXDisplay(), auxXWindow(), True, KeyPressMask, (XEvent*)&xke);
-
-      xke.keycode = XKeysymToKeycode(xke.display, SDLK_Shift_L);
-      XSendEvent(auxXDisplay(), auxXWindow(), True, KeyPressMask, (XEvent*)&xke);
-   }
-}
-
 void SendKeySequence(const char *seq) {
     for (char* key = seq; *key != '\0'; key++) {
         SDL_Event event;
@@ -385,20 +341,16 @@ void KillVisualization()
       fontbase = 0;
    }
 #endif
-   auxCloseWindow();
+   delete wnd;
 }
 
 void SendExposeEvent()
 {
    if (disableSendExposeEvent) { return; }
-   XExposeEvent ev;
-   ev.type = Expose;
-   ev.count = 0;
-   ev.x = 0;
-   ev.y = 0;
-   ev.width = 100;
-   ev.height = 100;
-   XSendEvent (auxXDisplay(), auxXWindow(), 1, Expose, (XEvent*)&ev);
+   SDL_Event event;
+   event.type = SDL_WINDOWEVENT;
+   event.window.event = SDL_WINDOWEVENT_EXPOSED;
+   SDL_PushEvent(&event);
 }
 
 void MyReshape(GLsizei w, GLsizei h)
@@ -579,9 +531,9 @@ void LeftButtonLoc (AUX_EVENTREC *event)
    GLint newy = event->data[AUX_MOUSEY];
    int sendexpose = 1;
 
-   if (event->data[2] & ControlMask)
+   if (event->data[2] & KMOD_CTRL)
    {
-      if (event->data[2] & ShiftMask)
+      if (event->data[2] & KMOD_SHIFT)
       {
          locscene->PreRotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
       }
@@ -608,11 +560,11 @@ void LeftButtonLoc (AUX_EVENTREC *event)
          glGetDoublev(GL_MODELVIEW_MATRIX, locscene->rotmat);
       }
    }
-   else if (event->data[2] & Mod1Mask)
+   else if (event->data[2] & KMOD_ALT)
    {
       locscene->Rotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
    }
-   else if (event->data[2] & ShiftMask)
+   else if (event->data[2] & KMOD_SHIFT)
    {
       locscene->Rotate(double(newx-oldx)/2, double(newy-oldy)/2);
    }
@@ -639,14 +591,14 @@ void LeftButtonUp (AUX_EVENTREC *event)
    xang = (newx-startx)/5.0;
    yang = (newy-starty)/5.0;
 
-   if ( (event->data[2] & ShiftMask) && (xang != 0.0 || yang != 0.0) )
+   if ( (event->data[2] & KMOD_SHIFT) && (xang != 0.0 || yang != 0.0) )
    {
       locscene -> spinning = 1;
       AddIdleFunc(MainLoop);
       if (xang > 20) { xang = 20; } if (xang < -20) { xang = -20; }
       if (yang > 20) { yang = 20; } if (yang < -20) { yang = -20; }
 
-      if (event->data[2] & ControlMask)
+      if (event->data[2] & KMOD_CTRL)
       {
          constrained_spinning = 1;
       }
@@ -668,7 +620,7 @@ void MiddleButtonLoc (AUX_EVENTREC *event)
    GLint newx = event->data[AUX_MOUSEX];
    GLint newy = event->data[AUX_MOUSEY];
 
-   if ( !( event->data[2] & ControlMask ) )
+   if ( !( event->data[2] & KMOD_CTRL ) )
    {
       GLint vp[4];
       double TrX, TrY, scale;
@@ -702,7 +654,7 @@ void MiddleButtonLoc (AUX_EVENTREC *event)
       double dx = double(newx-oldx)/400;
       double dy = double(oldy-newy)/400;
 
-      if (event->data[2] & ShiftMask)  // ctrl + shift
+      if (event->data[2] & KMOD_SHIFT)  // ctrl + shift
       {
          double sx = double(newx-startx)/400;
          double sy = double(starty-newy)/400;
@@ -713,7 +665,7 @@ void MiddleButtonLoc (AUX_EVENTREC *event)
          locscene->cam.TurnUpDown(-sy);
          locscene->cam.TurnLeftRight(sx);
       }
-      else if (event->data[2] & Mod1Mask) // ctrl + alt
+      else if (event->data[2] & KMOD_ALT) // ctrl + alt
       {
          locscene->cam.MoveForwardBackward(dy);
          locscene->cam.TiltLeftRight(-dx);
@@ -745,7 +697,7 @@ void RightButtonLoc (AUX_EVENTREC *event)
    GLint newx = event->data[AUX_MOUSEX];
    GLint newy = event->data[AUX_MOUSEY];
 
-   if (event->data[2] & ShiftMask)
+   if (event->data[2] & KMOD_SHIFT)
    {
       glLoadIdentity();
       // GLfloat light[] = {newx,-newy, sqrt((float)(newx*newx+newy*newy)), 0.0 };
@@ -774,7 +726,7 @@ void RightButtonLoc (AUX_EVENTREC *event)
       GLfloat light[] = { float(x), float(y), float(z), 0.0f };
       glLightfv(GL_LIGHT0, GL_POSITION, light);
    }
-   else if ( !( event->data[2] & ControlMask ) )
+   else if ( !( event->data[2] & KMOD_CTRL ) )
    {
       locscene -> Zoom (exp ( double (oldy-newy) / 100 ));
    }
@@ -1061,7 +1013,7 @@ void ToggleThreads()
 
 void ThreadsPauseFunc(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       glvis_command->ToggleAutopause();
    }
@@ -1221,7 +1173,7 @@ void ShiftView(double dx, double dy)
 
 void KeyLeftPressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       ShiftView(0.05, 0.);
    }
@@ -1234,7 +1186,7 @@ void KeyLeftPressed(GLenum state)
 
 void KeyRightPressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       ShiftView(-0.05, 0.);
    }
@@ -1247,7 +1199,7 @@ void KeyRightPressed(GLenum state)
 
 void KeyUpPressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       ShiftView(0., -0.05);
    }
@@ -1260,7 +1212,7 @@ void KeyUpPressed(GLenum state)
 
 void KeyDownPressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       ShiftView(0., 0.05);
    }

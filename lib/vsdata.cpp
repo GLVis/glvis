@@ -11,7 +11,6 @@
 
 #include <cstdlib>
 #include <cmath>
-#include <X11/keysym.h>
 
 #include <iomanip>
 #include <sstream>
@@ -712,7 +711,7 @@ void KeyaPressed()
 
 void Key_Mod_a_Pressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       static const char *autoscale_modes[] = { "off", "on", "value", "mesh" };
       int autoscale = vsdata->GetAutoscale();
@@ -815,7 +814,7 @@ int Select_New_RGB_Palette();
 
 void KeypPressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       KeyCtrlP();
    }
@@ -1231,47 +1230,35 @@ void VisualizationSceneScalarData::Init()
    {
       // init = 1;
 
-      auxKeyFunc (AUX_l, KeylPressed);
-      auxKeyFunc (AUX_L, KeyLPressed);
-
-      auxKeyFunc (AUX_s, KeySPressed);
-
-      // auxKeyFunc (AUX_a, KeyaPressed);
+      // wnd->setOnKeyDown(AUX_a, KeyaPressed);
       auxModKeyFunc(AUX_a, Key_Mod_a_Pressed);
-      auxKeyFunc (AUX_A, KeyAPressed);
-
-      auxKeyFunc (AUX_r, KeyrPressed);
-      auxKeyFunc (AUX_R, KeyRPressed);
+      wnd->setOnKeyDown(AUX_A, KeyAPressed);
 
       auxModKeyFunc (AUX_p, KeypPressed);
-      auxKeyFunc (AUX_P, KeyPPressed);
+      wnd->setOnKeyDown(AUX_P, KeyPPressed);
 
-      auxKeyFunc (XK_F5, KeyF5Pressed);
-      auxKeyFunc (XK_F6, KeyF6Pressed);
-      auxKeyFunc (XK_F7, KeyF7Pressed);
+      wnd->setOnKeyDown(SDLK_F1, KeyF1Pressed);
+      wnd->setOnKeyDown(SDLK_F2, KeyF2Pressed);
+      wnd->setOnKeyDown(SDLK_F5, KeyF5Pressed);
+      wnd->setOnKeyDown(SDLK_F6, KeyF6Pressed);
+      wnd->setOnKeyDown(SDLK_F7, KeyF7Pressed);
 
-      auxKeyFunc (XK_backslash, KeyBackslashPressed);
-      auxKeyFunc (AUX_t, KeyTPressed);
-      auxKeyFunc (AUX_T, KeyTPressed);
+      wnd->setOnKeyDown(XK_backslash, KeyBackslashPressed);
 
-      auxKeyFunc (AUX_g, KeyGPressed);
-      auxKeyFunc (AUX_G, KeyGPressed);
+      wnd->setOnKeyDown(SDLK_g, KeyGPressed);
+      wnd->setOnKeyDown(SDLK_s, KeySPressed);
+      wnd->setOnKeyDown(SDLK_t, KeyTPressed);
+      wnd->setOnKeyDown(SDLK_c, KeyCPressed, KeycPressed);
+      wnd->setOnKeyDown(SDLK_k, KeyKPressed, KeykPressed);
+      wnd->setOnKeyDown(SDLK_l, KeyLPressed, KeylPressed);
+      wnd->setOnKeyDown(SDLK_r, KeyRPressed, KeyrPressed);
 
-      auxKeyFunc (AUX_c, KeycPressed);
-      auxKeyFunc (AUX_C, KeyCPressed);
+      wnd->setOnKeyDown(XK_comma, KeyCommaPressed);
+      wnd->setOnKeyDown(XK_less, KeyLessPressed);
+      wnd->setOnKeyDown(XK_grave, KeyGravePressed);
+      wnd->setOnKeyDown(XK_asciitilde, KeyTildePressed);
 
-      auxKeyFunc (AUX_k, KeykPressed);
-      auxKeyFunc (AUX_K, KeyKPressed);
-
-      auxKeyFunc (XK_F1, KeyF1Pressed);
-      auxKeyFunc (XK_F2, KeyF2Pressed);
-
-      auxKeyFunc (XK_comma, KeyCommaPressed);
-      auxKeyFunc (XK_less, KeyLessPressed);
-      auxKeyFunc (XK_grave, KeyGravePressed);
-      auxKeyFunc (XK_asciitilde, KeyTildePressed);
-
-      auxKeyFunc (XK_exclam, KeyToggleTexture);
+      wnd->setOnKeyDown(XK_exclam, KeyToggleTexture);
    }
 
    Set_Light();

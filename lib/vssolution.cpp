@@ -15,8 +15,6 @@
 #include <cmath>
 #include <vector>
 
-#include <X11/keysym.h>
-
 #include "mfem.hpp"
 using namespace mfem;
 #include "visual.hpp"
@@ -192,7 +190,7 @@ static void SwitchAttribute(int increment, int &attribute,
 
 static void KeyF9Pressed(GLenum state)
 {
-   if (!(state & ShiftMask))
+   if (!(state & KMOD_SHIFT))
    {
       SwitchAttribute(+1, vssol->attr_to_show, vssol->el_attr_to_show, false);
    }
@@ -205,7 +203,7 @@ static void KeyF9Pressed(GLenum state)
 
 static void KeyF10Pressed(GLenum state)
 {
-   if (!(state & ShiftMask))
+   if (!(state & KMOD_SHIFT))
    {
       SwitchAttribute(-1, vssol->attr_to_show, vssol->el_attr_to_show, false);
    }
@@ -429,8 +427,8 @@ VisualizationSceneSolution::VisualizationSceneSolution(
 
    Init();
 
-   auxKeyFunc (AUX_h, SolutionKeyHPressed);
-   auxKeyFunc (AUX_H, SolutionKeyHPressed);
+   wnd->setOnKeyDown(AUX_h, SolutionKeyHPressed);
+   wnd->setOnKeyDown(AUX_H, SolutionKeyHPressed);
 }
 
 void VisualizationSceneSolution::Init()
@@ -471,37 +469,37 @@ void VisualizationSceneSolution::Init()
    {
       // init = 1;
 
-      auxKeyFunc (AUX_b, KeyBPressed);
-      auxKeyFunc (AUX_B, KeyBPressed);
+      wnd->setOnKeyDown(AUX_b, KeyBPressed);
+      wnd->setOnKeyDown(AUX_B, KeyBPressed);
 
-      auxKeyFunc (AUX_m, KeyMPressed);
-      auxKeyFunc (AUX_M, KeyMPressed);
+      wnd->setOnKeyDown(AUX_m, KeyMPressed);
+      wnd->setOnKeyDown(AUX_M, KeyMPressed);
 
-      auxKeyFunc (AUX_n, KeyNPressed);
-      auxKeyFunc (AUX_N, KeyNPressed);
+      wnd->setOnKeyDown(AUX_n, KeyNPressed);
+      wnd->setOnKeyDown(AUX_N, KeyNPressed);
 
-      auxKeyFunc (AUX_e, KeyEPressed);
-      auxKeyFunc (AUX_E, KeyEPressed);
+      wnd->setOnKeyDown(AUX_e, KeyEPressed);
+      wnd->setOnKeyDown(AUX_E, KeyEPressed);
 
-      auxKeyFunc (AUX_f, KeyFPressed);
-      auxKeyFunc (AUX_F, KeyFPressed);
+      wnd->setOnKeyDown(AUX_f, KeyFPressed);
+      wnd->setOnKeyDown(AUX_F, KeyFPressed);
 
-      auxKeyFunc (AUX_i, KeyiPressed);
-      auxKeyFunc (AUX_I, KeyIPressed);
+      wnd->setOnKeyDown(AUX_i, KeyiPressed);
+      wnd->setOnKeyDown(AUX_I, KeyIPressed);
 
-      auxKeyFunc (AUX_w, KeywPressed);
-      auxKeyFunc (AUX_y, KeyyPressed);
-      auxKeyFunc (AUX_Y, KeyYPressed);
-      auxKeyFunc (AUX_z, KeyzPressed);
-      auxKeyFunc (AUX_Z, KeyZPressed);
+      wnd->setOnKeyDown(AUX_w, KeywPressed);
+      wnd->setOnKeyDown(AUX_y, KeyyPressed);
+      wnd->setOnKeyDown(AUX_Y, KeyYPressed);
+      wnd->setOnKeyDown(AUX_z, KeyzPressed);
+      wnd->setOnKeyDown(AUX_Z, KeyZPressed);
 
-      auxKeyFunc (XK_F3, KeyF3Pressed);
-      auxKeyFunc (XK_F4, KeyF4Pressed);
-      auxKeyFunc (XK_F8, KeyF8Pressed);
+      wnd->setOnKeyDown(XK_F3, KeyF3Pressed);
+      wnd->setOnKeyDown(XK_F4, KeyF4Pressed);
+      wnd->setOnKeyDown(XK_F8, KeyF8Pressed);
       auxModKeyFunc(XK_F9,  KeyF9Pressed);
       auxModKeyFunc(XK_F10, KeyF10Pressed);
-      auxKeyFunc (XK_F11, KeyF11Pressed);
-      auxKeyFunc (XK_F12, KeyF12Pressed);
+      wnd->setOnKeyDown(XK_F11, KeyF11Pressed);
+      wnd->setOnKeyDown(XK_F12, KeyF12Pressed);
    }
 
    displlist  = glGenLists (1);

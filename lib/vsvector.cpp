@@ -499,17 +499,17 @@ void VisualizationSceneVector::Init()
    {
       // init = 1;
 
-      auxKeyFunc (AUX_h, VectorKeyHPressed);
-      auxKeyFunc (AUX_H, VectorKeyHPressed);
+      wnd->setOnKeyDown(AUX_h, VectorKeyHPressed);
+      wnd->setOnKeyDown(AUX_H, VectorKeyHPressed);
 
-      auxKeyFunc (AUX_d, KeyDPressed);
-      auxKeyFunc (AUX_D, KeyDPressed);
+      wnd->setOnKeyDown(AUX_d, KeyDPressed);
+      wnd->setOnKeyDown(AUX_D, KeyDPressed);
       auxKeyFuncReplace(AUX_n, KeyNPressed);
       auxKeyFuncReplace(AUX_b, KeyBPressed);
-      auxKeyFunc (AUX_v, KeyvPressed);
-      auxKeyFunc (AUX_V, KeyVPressed);
-      auxKeyFunc (AUX_u, KeyuPressed);
-      auxKeyFunc (AUX_U, KeyUPressed);
+      wnd->setOnKeyDown(AUX_v, KeyvPressed);
+      wnd->setOnKeyDown(AUX_V, KeyVPressed);
+      wnd->setOnKeyDown(AUX_u, KeyuPressed);
+      wnd->setOnKeyDown(AUX_U, KeyUPressed);
    }
 
    // Vec2Scalar is VecLength
