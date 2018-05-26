@@ -50,8 +50,13 @@ static int glvis_multisample = GLVIS_MULTISAMPLE;
 static int glvis_multisample = -1;
 #endif
 
-//this smells
+//TODO: anything but this
 SdlWindow * wnd;
+
+SdlWindow * GetAppWindow()
+{
+    return wnd;
+}
 
 void MyExpose(GLsizei w, GLsizei h);
 
@@ -186,8 +191,6 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 
 void SendKeySequence(const char *seq) {
     for (char* key = seq; *key != '\0'; key++) {
-        SDL_Event event;
-        event.type = SDL_KEYDOWN;
         if (*key == '~') {
             key++;
             switch (*key)
@@ -196,51 +199,50 @@ void SendKeySequence(const char *seq) {
                   SendExposeEvent();
                   break;
                case 'l': // left arrow
-                  event.key.keysym.sym = SDLK_LEFT;
+                  wnd->signalKeyDown(SDLK_LEFT);
                   break;
                case 'r': // right arrow
-                  event.key.keysym.sym = SDLK_RIGHT;
+                  wnd->signalKeyDown(SDLK_RIGHT);
                   break;
                case 'u': // up arrow
-                  event.key.keysym.sym = SDLK_UP;
+                  wnd->signalKeyDown(SDLK_UP);
                   break;
                case 'd': // down arrow
-                  event.key.keysym.sym = SDLK_DOWN;
+                  wnd->signalKeyDown(SDLK_DOWN);
                   break;
                case '3': // F3
-                  event.key.keysym.sym = SDLK_F3;
+                  wnd->signalKeyDown(SDLK_F3);
                   break;
                case '5': // F5
-                  event.key.keysym.sym = SDLK_F5;
+                  wnd->signalKeyDown(SDLK_F5);
                   break;
                case '6': // F6
-                  event.key.keysym.sym = SDLK_F6;
+                  wnd->signalKeyDown(SDLK_F6);
                   break;
                case '7': // F7
-                  event.key.keysym.sym = SDLK_F7;
+                  wnd->signalKeyDown(SDLK_F7);
                   break;
                case '.': // Keypad ./Del
-                  event.key.keysym.sym = SDLK_PERIOD;
+                  wnd->signalKeyDown(SDLK_PERIOD);
                   break;
                case 'E': // Keypad Enter
-                  event.key.keysym.sym = SDLK_RETURN;
+                  wnd->signalKeyDown(SDLK_RETURN);
                   break;
             }
             continue;
         } else if (*key == '*') {
-            event.key.keysym.sym = SDLK_KP_MULTIPLY;
+            wnd->signalKeyDown(SDLK_KP_MULTIPLY);
         } else if (*key == '/') {
-            event.key.keysym.sym = SDLK_KP_DIVIDE;
+            wnd->signalKeyDown(SDLK_KP_DIVIDE);
         } else {
             if (*key == '('
                 || *key == ')'
                 || *key == '!'
                 || isupper(*key)) {
-                event.key.keysym.mod = KMOD_LSHIFT;
+                wnd->signalKeyDown(*key, KMOD_LSHIFT);
             }
-            event.key.keysym.sym = *key;
+            wnd->signalKeyDown(*key, KMOD_LSHIFT);
         }
-        SDL_PushEvent(&event);
     }
 }
 
@@ -304,7 +306,6 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
                            const char *keys)
 {
    locscene = scene;
-
    locscene -> view = view;
    if (view == 2)
    {
@@ -326,7 +327,7 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
       SendKeySequence(keys);
    }
 
-   auxMainLoop(NULL);
+   //auxMainLoop(NULL);
 
    InitIdleFuncs();
 }
@@ -347,10 +348,7 @@ void KillVisualization()
 void SendExposeEvent()
 {
    if (disableSendExposeEvent) { return; }
-   SDL_Event event;
-   event.type = SDL_WINDOWEVENT;
-   event.window.event = SDL_WINDOWEVENT_EXPOSED;
-   SDL_PushEvent(&event);
+   wnd->signalExpose();
 }
 
 void MyReshape(GLsizei w, GLsizei h)
@@ -397,10 +395,9 @@ void MyExpose(GLsizei w, GLsizei h)
 
 void MyExpose()
 {
-   XWindowAttributes wa;
-
-   XGetWindowAttributes(auxXDisplay(), auxXWindow(), &wa);
-   MyExpose(wa.width, wa.height);
+   int w, int h;
+   wnd->getWindowSize(w, h);
+   MyExpose(w, h);
 }
 
 
@@ -411,7 +408,7 @@ void InitIdleFuncs()
 {
    IdleFuncs.SetSize(0);
    LastIdleFunc = 0;
-   auxIdleFunc(NULL);
+   wnd->setOnIdle(NULL);
 }
 
 void MainIdleFunc()
@@ -426,7 +423,7 @@ void MainIdleFunc()
 void AddIdleFunc(void (*Func)(void))
 {
    IdleFuncs.Union(Func);
-   auxIdleFunc(MainIdleFunc);
+   wnd->setOnIdle(MainIdleFunc);
 }
 
 void RemoveIdleFunc(void (*Func)(void))
@@ -434,7 +431,7 @@ void RemoveIdleFunc(void (*Func)(void))
    IdleFuncs.DeleteFirst(Func);
    if (IdleFuncs.Size() == 0)
    {
-      auxIdleFunc(NULL);
+      wnd->setOnIdle(NULL);
    }
 }
 
@@ -504,7 +501,7 @@ inline void ComputeSphereAngles(int &newx, int &newy,
    new_sph_t = atan2(y, x);
 }
 
-void LeftButtonDown (AUX_EVENTREC *event)
+void LeftButtonDown (EventInfo *event)
 {
    locscene -> spinning = 0;
    RemoveIdleFunc(MainLoop);
@@ -525,7 +522,7 @@ void LeftButtonDown (AUX_EVENTREC *event)
    starty = oldy;
 }
 
-void LeftButtonLoc (AUX_EVENTREC *event)
+void LeftButtonLoc (EventInfo *event)
 {
    GLint newx = event->data[AUX_MOUSEX];
    GLint newy = event->data[AUX_MOUSEY];
@@ -583,7 +580,7 @@ void LeftButtonLoc (AUX_EVENTREC *event)
    }
 }
 
-void LeftButtonUp (AUX_EVENTREC *event)
+void LeftButtonUp (EventInfo *event)
 {
    GLint newx = event->data[AUX_MOUSEX];
    GLint newy = event->data[AUX_MOUSEY];
@@ -609,13 +606,13 @@ void LeftButtonUp (AUX_EVENTREC *event)
    }
 }
 
-void MiddleButtonDown (AUX_EVENTREC *event)
+void MiddleButtonDown (EventInfo *event)
 {
    startx = oldx = event->data[AUX_MOUSEX];
    starty = oldy = event->data[AUX_MOUSEY];
 }
 
-void MiddleButtonLoc (AUX_EVENTREC *event)
+void MiddleButtonLoc (EventInfo *event)
 {
    GLint newx = event->data[AUX_MOUSEX];
    GLint newy = event->data[AUX_MOUSEY];
@@ -683,16 +680,16 @@ void MiddleButtonLoc (AUX_EVENTREC *event)
    oldy = newy;
 }
 
-void MiddleButtonUp (AUX_EVENTREC *event)
+void MiddleButtonUp (EventInfo *event)
 {}
 
-void RightButtonDown (AUX_EVENTREC *event)
+void RightButtonDown (EventInfo *event)
 {
    startx = oldx = event->data[AUX_MOUSEX];
    starty = oldy = event->data[AUX_MOUSEY];
 }
 
-void RightButtonLoc (AUX_EVENTREC *event)
+void RightButtonLoc (EventInfo *event)
 {
    GLint newx = event->data[AUX_MOUSEX];
    GLint newy = event->data[AUX_MOUSEY];
@@ -741,7 +738,7 @@ void RightButtonLoc (AUX_EVENTREC *event)
    oldy = newy;
 }
 
-void RightButtonUp (AUX_EVENTREC *event)
+void RightButtonUp (EventInfo *event)
 {}
 
 #if defined(GLVIS_USE_LIBTIFF)
@@ -1288,7 +1285,7 @@ void ShrinkWindow()
 
    cout << "New window size : " << w << " x " << h << endl;
 
-   XResizeWindow(auxXDisplay(), auxXWindow(), w, h);
+   ResizeWindow(w, h);
 }
 
 void EnlargeWindow()
@@ -1302,23 +1299,23 @@ void EnlargeWindow()
 
    cout << "New window size : " << w << " x " << h << endl;
 
-   XResizeWindow(auxXDisplay(), auxXWindow(), w, h);
+   ResizeWindow(w, h);
 }
 
 void MoveResizeWindow(int x, int y, int w, int h)
 {
-   XMoveResizeWindow(auxXDisplay(), auxXWindow(), x, y, w, h);
+    wnd->setWindowSize(w, h);
+    wnd->setWindowPos(x, y);
 }
 
 void ResizeWindow(int w, int h)
 {
-   XResizeWindow(auxXDisplay(), auxXWindow(), w, h);
+    wnd->setWindowSize(w, h);
 }
 
 void SetWindowTitle(const char *title)
 {
-   XSetStandardProperties(auxXDisplay(), auxXWindow(),
-                          title, NULL, None, NULL, 0, NULL);
+    wnd->setWindowTitle(title);
 }
 
 

@@ -11,17 +11,17 @@ struct EventInfo {
     GLint data[4];
 };
 
-class SdlWindow {
+typedef std::function<void(EventInfo*)> MouseDelegate;
+typedef std::function<void(GLenum)> KeyDelegate;
+typedef std::function<void(int, int)> WindowDelegate;
+typedef std::function<void()> Delegate;
 
-public:
-    typedef std::function<void(EventInfo*)> MouseDelegate;
-    typedef std::function<void(GLenum)> KeyDelegate;
-    typedef std::function<void(int, int)> WindowDelegate;
-    typedef std::function<void()> Delegate;
+KeyDelegate toKeyFn(Delegate func) {
+    return [func](GLenum e) { func(); }
+}
 
-    static KeyDelegate toKeyFn(Delegate func) {
-        return [func](GLenum e) { func(); }
-    }
+class SdlWindow
+{
 private:
     struct _SdlHandle;
     //Use shared_ptr to manage handle lifetimes
@@ -47,26 +47,15 @@ public:
      * Runs the window loop.
      */
     void mainLoop();
+
     void setOnIdle(Delegate func) { onIdle = func; }
     void setOnExpose(WindowDelegate func) { onExpose = func; }
     void setOnReshape(WindowDelegate func) { onReshape = func; }
     
-    void setOnKeyDown(SDL_Keycode key, Delegate func) {
+    void setOnKeyDown(int key, Delegate func) {
         onKeyDown[key] = [func](GLenum e) { func(); }
     }
-    void setOnKeyDown(SDL_Keycode key, KeyDelegate upper, KeyDelegate lower) {
-        onKeyDown[key] = [upper, lower](GLenum e) {
-            if ((e & KMOD_SHIFT) && upper) { upper(e); }
-            else { if (lower) lower(e); }
-        }
-    }
-    void setOnKeyDown(SDL_Keycode key, Delegate upper, Delegate lower) {
-        onKeyDown[key] = [upper, lower](GLenum e) {
-            if ((e & KMOD_SHIFT) && upper) { upper(); }
-            else { if (lower) lower(); }
-        }
-    }
-    void setOnKeyDown(SDL_Keycode key, KeyDelegate func) { onKeyDown[key] = func; }
+    void setOnKeyDown(int key, KeyDelegate func) { onKeyDown[key] = func; }
     
     void setOnMouseDown(int btn, MouseDelegate func) { onMouseDown[btn] = func; }
     void setOnMouseUp(int btn, MouseDelegate func) { onMouseUp[btn] = func; }
@@ -74,9 +63,15 @@ public:
     
     void callKeyDown(SDL_Keycode k) { onKeyDown[k](0); } 
 
+    void getWindowSize(int& w, int& h);
+
     void setWindowTitle(std::string& title);
+    void setWindowTitle(const char* title);
     void setWindowSize(int w, int h);
     void setWindowPos(int x, int y);
+
+    void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE);
+    void signalExpose();
 
     operator bool() { return _handle; }
     bool isWindowInitialized() { return _handle; }

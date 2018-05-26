@@ -15,6 +15,7 @@
 #include "mfem.hpp"
 using namespace mfem;
 
+#include "sdl.hpp"
 #include "aux_gl3.hpp"
 
 #include <map>

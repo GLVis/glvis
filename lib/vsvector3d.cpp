@@ -397,31 +397,31 @@ void VisualizationSceneVector3d::Init()
    {
       // init = 1;
 
-      wnd->setOnKeyDown(AUX_h, VectorKeyHPressed);
-      wnd->setOnKeyDown(AUX_H, VectorKeyHPressed);
+      wnd->setOnKeyDown('h', VectorKeyHPressed);
+      wnd->setOnKeyDown('H', VectorKeyHPressed);
 
-      wnd->setOnKeyDown(AUX_d, KeyDPressed);
-      wnd->setOnKeyDown(AUX_D, KeyDPressed);
+      wnd->setOnKeyDown('d', KeyDPressed);
+      wnd->setOnKeyDown('D', KeyDPressed);
 
-      wnd->setOnKeyDown(AUX_n, KeyNPressed);
-      wnd->setOnKeyDown(AUX_N, KeyNPressed);
+      wnd->setOnKeyDown('n', KeyNPressed);
+      wnd->setOnKeyDown('N', KeyNPressed);
 
-      wnd->setOnKeyDown(AUX_b, KeyBPressed);
-      wnd->setOnKeyDown(AUX_B, KeyBPressed);
+      wnd->setOnKeyDown('b', KeyBPressed);
+      wnd->setOnKeyDown('B', KeyBPressed);
 
-      wnd->setOnKeyDown(AUX_r, KeyrPressed); // adds another function to 'r' and 'R'
-      wnd->setOnKeyDown(AUX_R, KeyRPressed); // the other function is in vsdata.cpp
+      wnd->setOnKeyDown('r', KeyrPressed); // adds another function to 'r' and 'R'
+      wnd->setOnKeyDown('R', KeyRPressed); // the other function is in vsdata.cpp
 
-      auxKeyFuncReplace (AUX_u, KeyuPressed); // Keys u, U are also used in
-      auxKeyFuncReplace (AUX_U, KeyUPressed); // VisualizationSceneSolution3d
+      wnd->setOnKeyDown('u', KeyuPressed); // Keys u, U are also used in
+      wnd->setOnKeyDown('U', KeyUPressed); // VisualizationSceneSolution3d
 
-      auxKeyFuncReplace (AUX_w, KeywPressed); // Keys w, W are also used in
-      auxKeyFuncReplace (AUX_W, KeyWPressed); // VisualizationSceneSolution3d
+      wnd->setOnKeyDown('w', KeywPressed); // Keys w, W are also used in
+      wnd->setOnKeyDown('W', KeyWPressed); // VisualizationSceneSolution3d
 
-      auxKeyFuncReplace (AUX_v, KeyvPressed); // Keys v, V are also used in
-      auxKeyFuncReplace (AUX_V, KeyVPressed); // VisualizationSceneSolution3d
+      wnd->setOnKeyDown('v', KeyvPressed); // Keys v, V are also used in
+      wnd->setOnKeyDown('V', KeyVPressed); // VisualizationSceneSolution3d
 
-      wnd->setOnKeyDown(AUX_F, VectorKeyFPressed);
+      wnd->setOnKeyDown('F', VectorKeyFPressed);
    }
 }
 

@@ -14,6 +14,8 @@
 
 #include <cmath>
 
+#include "sdl.hpp"
+
 // Visualization header file
 
 // Some inline functions
@@ -105,6 +107,7 @@ protected:
    // How to scale the visualized object(s)
    double xscale, yscale, zscale;
 
+   SdlWindow * wnd;
 public:
    VisualizationScene();
    virtual ~VisualizationScene();

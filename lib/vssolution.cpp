@@ -427,8 +427,8 @@ VisualizationSceneSolution::VisualizationSceneSolution(
 
    Init();
 
-   wnd->setOnKeyDown(AUX_h, SolutionKeyHPressed);
-   wnd->setOnKeyDown(AUX_H, SolutionKeyHPressed);
+   wnd->setOnKeyDown('h', SolutionKeyHPressed);
+   wnd->setOnKeyDown('H', SolutionKeyHPressed);
 }
 
 void VisualizationSceneSolution::Init()
@@ -469,37 +469,37 @@ void VisualizationSceneSolution::Init()
    {
       // init = 1;
 
-      wnd->setOnKeyDown(AUX_b, KeyBPressed);
-      wnd->setOnKeyDown(AUX_B, KeyBPressed);
+      wnd->setOnKeyDown('b', KeyBPressed);
+      wnd->setOnKeyDown('B', KeyBPressed);
 
-      wnd->setOnKeyDown(AUX_m, KeyMPressed);
-      wnd->setOnKeyDown(AUX_M, KeyMPressed);
+      wnd->setOnKeyDown('m', KeyMPressed);
+      wnd->setOnKeyDown('M', KeyMPressed);
 
-      wnd->setOnKeyDown(AUX_n, KeyNPressed);
-      wnd->setOnKeyDown(AUX_N, KeyNPressed);
+      wnd->setOnKeyDown('n', KeyNPressed);
+      wnd->setOnKeyDown('N', KeyNPressed);
 
-      wnd->setOnKeyDown(AUX_e, KeyEPressed);
-      wnd->setOnKeyDown(AUX_E, KeyEPressed);
+      wnd->setOnKeyDown('e', KeyEPressed);
+      wnd->setOnKeyDown('E', KeyEPressed);
 
-      wnd->setOnKeyDown(AUX_f, KeyFPressed);
-      wnd->setOnKeyDown(AUX_F, KeyFPressed);
+      wnd->setOnKeyDown('f', KeyFPressed);
+      wnd->setOnKeyDown('F', KeyFPressed);
 
-      wnd->setOnKeyDown(AUX_i, KeyiPressed);
-      wnd->setOnKeyDown(AUX_I, KeyIPressed);
+      wnd->setOnKeyDown('i', KeyiPressed);
+      wnd->setOnKeyDown('I', KeyIPressed);
 
-      wnd->setOnKeyDown(AUX_w, KeywPressed);
-      wnd->setOnKeyDown(AUX_y, KeyyPressed);
-      wnd->setOnKeyDown(AUX_Y, KeyYPressed);
-      wnd->setOnKeyDown(AUX_z, KeyzPressed);
-      wnd->setOnKeyDown(AUX_Z, KeyZPressed);
+      wnd->setOnKeyDown('w', KeywPressed);
+      wnd->setOnKeyDown('y', KeyyPressed);
+      wnd->setOnKeyDown('Y', KeyYPressed);
+      wnd->setOnKeyDown('z', KeyzPressed);
+      wnd->setOnKeyDown('Z', KeyZPressed);
 
-      wnd->setOnKeyDown(XK_F3, KeyF3Pressed);
-      wnd->setOnKeyDown(XK_F4, KeyF4Pressed);
-      wnd->setOnKeyDown(XK_F8, KeyF8Pressed);
-      auxModKeyFunc(XK_F9,  KeyF9Pressed);
-      auxModKeyFunc(XK_F10, KeyF10Pressed);
-      wnd->setOnKeyDown(XK_F11, KeyF11Pressed);
-      wnd->setOnKeyDown(XK_F12, KeyF12Pressed);
+      wnd->setOnKeyDown(SDLK_F3, KeyF3Pressed);
+      wnd->setOnKeyDown(SDLK_F4, KeyF4Pressed);
+      wnd->setOnKeyDown(SDLK_F8, KeyF8Pressed);
+      wnd->setOnKeyDown(SDLK_F9,  KeyF9Pressed);
+      wnd->setOnKeyDown(SDLK_F10, KeyF10Pressed);
+      wnd->setOnKeyDown(SDLK_F11, KeyF11Pressed);
+      wnd->setOnKeyDown(SDLK_F12, KeyF12Pressed);
    }
 
    displlist  = glGenLists (1);

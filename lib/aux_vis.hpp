@@ -14,10 +14,9 @@
 
 #include <GL/glew.h>
 #include <GL/glu.h>
-#include <GL/glx.h>
 
 #include "tk.h"
-#include "aux_gl.hpp"
+#include "sdl.hpp"
 
 #include "openglvis.hpp"
 
@@ -40,18 +39,21 @@ void SendExposeEvent();
 void MyExpose();
 
 void MainLoop();
+
+SdlWindow * GetAppWindow();
+
 void AddIdleFunc(void (*Func)(void));
 void RemoveIdleFunc(void (*Func)(void));
 
-void LeftButtonDown  (AUX_EVENTREC *event);
-void LeftButtonLoc   (AUX_EVENTREC *event);
-void LeftButtonUp    (AUX_EVENTREC *event);
-void MiddleButtonDown(AUX_EVENTREC *event);
-void MiddleButtonLoc (AUX_EVENTREC *event);
-void MiddleButtonUp  (AUX_EVENTREC *event);
-void RightButtonDown (AUX_EVENTREC *event);
-void RightButtonLoc  (AUX_EVENTREC *event);
-void RightButtonUp   (AUX_EVENTREC *event);
+void LeftButtonDown  (EventInfo *event);
+void LeftButtonLoc   (EventInfo *event);
+void LeftButtonUp    (EventInfo *event);
+void MiddleButtonDown(EventInfo *event);
+void MiddleButtonLoc (EventInfo *event);
+void MiddleButtonUp  (EventInfo *event);
+void RightButtonDown (EventInfo *event);
+void RightButtonLoc  (EventInfo *event);
+void RightButtonUp   (EventInfo *event);
 
 void KeyCtrlP();
 void KeyS();

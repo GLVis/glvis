@@ -1207,6 +1207,7 @@ VisualizationSceneScalarData::VisualizationSceneScalarData(
 void VisualizationSceneScalarData::Init()
 {
    vsdata = this;
+   wnd = GetAppWindow(); 
 
    arrow_type = arrow_scaling_type = 0;
    scaling = 0;
@@ -1230,35 +1231,51 @@ void VisualizationSceneScalarData::Init()
    {
       // init = 1;
 
-      // wnd->setOnKeyDown(AUX_a, KeyaPressed);
-      auxModKeyFunc(AUX_a, Key_Mod_a_Pressed);
-      wnd->setOnKeyDown(AUX_A, KeyAPressed);
+      wnd->setOnKeyDown('l', KeylPressed);
+      wnd->setOnKeyDown('L', KeyLPressed);
 
-      auxModKeyFunc (AUX_p, KeypPressed);
-      wnd->setOnKeyDown(AUX_P, KeyPPressed);
+      wnd->setOnKeyDown('s', KeySPressed);
 
-      wnd->setOnKeyDown(SDLK_F1, KeyF1Pressed);
-      wnd->setOnKeyDown(SDLK_F2, KeyF2Pressed);
+      // wnd->setOnKeyDown('a', KeyaPressed);
+      wnd->setOnKeyDown('a', Key_Mod_a_Pressed);
+      wnd->setOnKeyDown('A', KeyAPressed);
+
+      wnd->setOnKeyDown('r', KeyrPressed);
+      wnd->setOnKeyDown('R', KeyRPressed);
+
+      wnd->setOnKeyDown('p', KeypPressed);
+      wnd->setOnKeyDown('P', KeyPPressed);
+
       wnd->setOnKeyDown(SDLK_F5, KeyF5Pressed);
       wnd->setOnKeyDown(SDLK_F6, KeyF6Pressed);
       wnd->setOnKeyDown(SDLK_F7, KeyF7Pressed);
 
-      wnd->setOnKeyDown(XK_backslash, KeyBackslashPressed);
+      wnd->setOnKeyDown(SDLK_BACKSLASH, KeyBackslashPressed);
+      wnd->setOnKeyDown('t', KeyTPressed);
+      wnd->setOnKeyDown('T', KeyTPressed);
 
-      wnd->setOnKeyDown(SDLK_g, KeyGPressed);
-      wnd->setOnKeyDown(SDLK_s, KeySPressed);
-      wnd->setOnKeyDown(SDLK_t, KeyTPressed);
-      wnd->setOnKeyDown(SDLK_c, KeyCPressed, KeycPressed);
-      wnd->setOnKeyDown(SDLK_k, KeyKPressed, KeykPressed);
-      wnd->setOnKeyDown(SDLK_l, KeyLPressed, KeylPressed);
-      wnd->setOnKeyDown(SDLK_r, KeyRPressed, KeyrPressed);
+      wnd->setOnKeyDown('g', KeyGPressed);
+      wnd->setOnKeyDown('G', KeyGPressed);
 
-      wnd->setOnKeyDown(XK_comma, KeyCommaPressed);
-      wnd->setOnKeyDown(XK_less, KeyLessPressed);
-      wnd->setOnKeyDown(XK_grave, KeyGravePressed);
-      wnd->setOnKeyDown(XK_asciitilde, KeyTildePressed);
+      wnd->setOnKeyDown('c', KeycPressed);
+      wnd->setOnKeyDown('C', KeyCPressed);
 
-      wnd->setOnKeyDown(XK_exclam, KeyToggleTexture);
+      wnd->setOnKeyDown('k', KeykPressed);
+      wnd->setOnKeyDown('K', KeyKPressed);
+
+      wnd->setOnKeyDown(SDLK_F1, KeyF1Pressed);
+      wnd->setOnKeyDown(SDLK_F2, KeyF2Pressed);
+
+      wnd->setOnKeyDown(SDLK_COMMA, KeyCommaPressed);
+      wnd->setOnKeyDown(SDLK_LESS, KeyLessPressed);
+      wnd->setOnKeyDown(SDLK_GRAVE, KeyGravePressed);
+      wnd->setOnKeyDown(SDLK_BACKQUOTE, [](GLenum e) {
+              (e & KMOD_SHIFT)
+                ? KeyGravePressed()
+                | KeyTildePressed();
+              });
+
+      wnd->setOnKeyDown(SDLK_EXCLAIM, KeyToggleTexture);
    }
 
    Set_Light();

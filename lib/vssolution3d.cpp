@@ -587,8 +587,8 @@ VisualizationSceneSolution3d::VisualizationSceneSolution3d(Mesh &m, Vector &s)
 
    Init();
 
-   wnd->setOnKeyDown(AUX_h, Solution3dKeyHPressed);
-   wnd->setOnKeyDown(AUX_H, Solution3dKeyHPressed);
+   wnd->setOnKeyDown('h', Solution3dKeyHPressed);
+   wnd->setOnKeyDown('H', Solution3dKeyHPressed);
 }
 
 void Set_Palette(int);
@@ -654,49 +654,49 @@ void VisualizationSceneSolution3d::Init()
    {
       // init = 1;
 
-      wnd->setOnKeyDown(AUX_m, KeymPressed);
-      wnd->setOnKeyDown(AUX_M, KeyMPressed);
+      wnd->setOnKeyDown('m', KeymPressed);
+      wnd->setOnKeyDown('M', KeyMPressed);
 
-      wnd->setOnKeyDown(AUX_e, KeyePressed);
-      wnd->setOnKeyDown(AUX_E, KeyEPressed);
+      wnd->setOnKeyDown('e', KeyePressed);
+      wnd->setOnKeyDown('E', KeyEPressed);
 
-      wnd->setOnKeyDown(AUX_f, KeyFPressed);
-      // wnd->setOnKeyDown(AUX_F, KeyFPressed);
+      wnd->setOnKeyDown('f', KeyFPressed);
+      // wnd->setOnKeyDown('F', KeyFPressed);
 
-      wnd->setOnKeyDown(AUX_i, KeyIPressed);
-      wnd->setOnKeyDown(AUX_I, KeyIPressed);
+      wnd->setOnKeyDown('i', KeyIPressed);
+      wnd->setOnKeyDown('I', KeyIPressed);
 
-      wnd->setOnKeyDown(AUX_o, KeyoPressed);
-      wnd->setOnKeyDown(AUX_O, KeyOPressed);
+      wnd->setOnKeyDown('o', KeyoPressed);
+      wnd->setOnKeyDown('O', KeyOPressed);
 
-      wnd->setOnKeyDown(AUX_w, KeywPressed);
-      wnd->setOnKeyDown(AUX_W, KeyWPressed);
+      wnd->setOnKeyDown('w', KeywPressed);
+      wnd->setOnKeyDown('W', KeyWPressed);
 
-      wnd->setOnKeyDown(AUX_x, KeyxPressed);
-      wnd->setOnKeyDown(AUX_X, KeyXPressed);
+      wnd->setOnKeyDown('x', KeyxPressed);
+      wnd->setOnKeyDown('X', KeyXPressed);
 
-      wnd->setOnKeyDown(AUX_y, KeyyPressed);
-      wnd->setOnKeyDown(AUX_Y, KeyYPressed);
+      wnd->setOnKeyDown('y', KeyyPressed);
+      wnd->setOnKeyDown('Y', KeyYPressed);
 
-      wnd->setOnKeyDown(AUX_z, KeyzPressed);
-      wnd->setOnKeyDown(AUX_Z, KeyZPressed);
+      wnd->setOnKeyDown('z', KeyzPressed);
+      wnd->setOnKeyDown('Z', KeyZPressed);
 
-      wnd->setOnKeyDown(AUX_u, KeyuPressed);
-      wnd->setOnKeyDown(AUX_U, KeyUPressed);
+      wnd->setOnKeyDown('u', KeyuPressed);
+      wnd->setOnKeyDown('U', KeyUPressed);
 
-      wnd->setOnKeyDown(AUX_v, KeyvPressed);
-      wnd->setOnKeyDown(AUX_V, KeyVPressed);
+      wnd->setOnKeyDown('v', KeyvPressed);
+      wnd->setOnKeyDown('V', KeyVPressed);
 
-      wnd->setOnKeyDown(XK_F3, KeyF3Pressed);
-      wnd->setOnKeyDown(XK_F4, KeyF4Pressed);
-      wnd->setOnKeyDown(XK_Num_Lock, ToggleMagicKey);
+      wnd->setOnKeyDown(SDLK_F3, KeyF3Pressed);
+      wnd->setOnKeyDown(SDLK_F4, KeyF4Pressed);
+      wnd->setOnKeyDown(SDLK_NUMLOCKCLEAR, ToggleMagicKey);
 
-      wnd->setOnKeyDown(XK_F8, KeyF8Pressed);
-      wnd->setOnKeyDown(XK_F9, KeyF9Pressed);
-      wnd->setOnKeyDown(XK_F10, KeyF10Pressed);
+      wnd->setOnKeyDown(SDLK_F8, KeyF8Pressed);
+      wnd->setOnKeyDown(SDLK_F9, KeyF9Pressed);
+      wnd->setOnKeyDown(SDLK_F10, KeyF10Pressed);
 
-      wnd->setOnKeyDown(XK_F11, KeyF11Pressed);
-      wnd->setOnKeyDown(XK_F12, KeyF12Pressed);
+      wnd->setOnKeyDown(SDLK_F11, KeyF11Pressed);
+      wnd->setOnKeyDown(SDLK_F12, KeyF12Pressed);
    }
    displlist  = glGenLists (1);
    linelist   = glGenLists (1);

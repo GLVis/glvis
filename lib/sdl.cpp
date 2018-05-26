@@ -139,6 +139,18 @@ void SdlWindow::mouseEventUp(SDL_MouseButtonEvent& eb) {
     }
 }
 
+void SdlWindow::keyEvent(SDL_Keysym& ks) {
+    if (e.key.keysym.mod & KMOD_SHIFT) {
+        //check if separate caps handler exists
+        if (onKeyDown[toupper(e.key.keysym.sym)]) {
+            onKeyDown[toupper(e.key.keysym.sym)](e.key.keysym.mod);
+            return;
+        }
+    }
+    if (onKeyDown[e.key.keysym.sym])
+        onKeyDown[e.key.keysym.sym](e.key.keysym.mod);
+}
+
 void SdlWindow::mainLoop() {
     bool running = true;
     SDL_Event e;
@@ -152,8 +164,7 @@ void SdlWindow::mainLoop() {
                     windowEvent(e.window);
                     break;
                 case SDL_KEYDOWN:
-                    if (onKeyDown[e.key.keysym.sym])
-                        onKeyDown[e.key.keysym.sym](e.key.keysym.mod);
+                    keyEvent(e.key.keysym);
                     break;
                 case SDL_MOUSEMOTION:
                     motionEvent(e.motion);
@@ -172,18 +183,42 @@ void SdlWindow::mainLoop() {
     }
 }
 
+void getWindowSize(int& w, int& h) {
+    if (_handle)
+        SDL_GetWindowSize(_handle->hwnd, &w, &h);
+}
 
 void SdlWindow::setWindowTitle(std::string& title) {
+    setWindowTitle(title.c_str());
+}
+
+void SdlWindow::setWindowTitle(const char * title) {
     if (_handle)
-        SDL_SetWindowTitle(_handle->hwnd, title.c_str());
+        SDL_SetWindowTitle(_handle->hwnd, title);
 }
 
 void SdlWindow::setWindowSize(int w, int h) {
     if (_handle)
         SDL_SetWindowSize(_handle->hwnd, w, h);
 }
+
 void SdlWindow::setWindowPos(int x, int y) {
     if (_handle)
         SDL_SetWindowPos(_handle->hwnd, x, y);
+}
+
+void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m) {
+    SDL_Event event;
+    event.type = SDL_KEYDOWN;
+    event.key.keysym.sym = k;
+    event.key.keysym.mod = m;
+    SDL_PushEvent(&event);
+}
+
+void SdlWindow::signalExpose() {
+   SDL_Event event;
+   event.type = SDL_WINDOWEVENT;
+   event.window.event = SDL_WINDOWEVENT_EXPOSED;
+   SDL_PushEvent(&event);
 }
 
