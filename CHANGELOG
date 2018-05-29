@@ -21,8 +21,10 @@ Version 3.4, released on May 29, 2018
 
 - Added a CMake build system.
 
-- Added a number of new color palettes which can now be switched both forwards
-  and backwards with the 'p' and 'P' keys respectively.
+- Added 10 new color palettes which can now be switched both forwards and
+  backwards with the 'p' and 'P' keys respectively.
+
+- Allow multi-screen window managers to redraw on current screen.
 
 - Printing to PDF is now done with 'Ctrl+p' (replacing 'P').
 
