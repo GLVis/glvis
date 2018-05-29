@@ -10,7 +10,7 @@
 // Software Foundation) version 2.1 dated February 1999.
 
 #include <GL/glew.h>
-#include <GL/glu.h>
+#include "platform_gl.hpp"
 // #include <GL/glx.h>
 #include <string>
 #ifdef GLVIS_DEBUG

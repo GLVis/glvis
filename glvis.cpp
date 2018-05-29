@@ -22,7 +22,6 @@
 #include <ctime>
 #include <csignal>
 
-#include <X11/keysym.h>
 #include <unistd.h>
 
 #include "mfem.hpp"
@@ -364,7 +363,7 @@ void StartVisualization(int field_type)
 
    if (input_streams.Size() > 0)
    {
-      auxModKeyFunc(XK_space, ThreadsPauseFunc);
+      GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
       glvis_command = new GLVisCommand(&vs, &mesh, &grid_f, &sol, &keep_attr,
                                        &fix_elem_orient);
       comm_thread = new communication_thread(input_streams);
@@ -1116,7 +1115,7 @@ void PlayScript(istream &scr)
    }
 
    scr_level = scr_running = 0;
-   auxKeyFunc(XK_space, ScriptControl);
+   GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
    script = &scr;
    keys.clear();
 

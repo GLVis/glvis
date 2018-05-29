@@ -14,8 +14,6 @@
 #include <cmath>
 #include <limits>
 
-#include <X11/keysym.h>
-
 #include "mfem.hpp"
 using namespace mfem;
 #include "visual.hpp"
@@ -2836,5 +2834,4 @@ void VisualizationSceneSolution3d::Draw()
    }
 
    glFlush();
-   auxSwapBuffers();
 }

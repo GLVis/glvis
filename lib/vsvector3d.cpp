@@ -1649,5 +1649,4 @@ void VisualizationSceneVector3d::Draw()
    }
 
    glFlush();
-   auxSwapBuffers();
 }

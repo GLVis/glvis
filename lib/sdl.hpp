@@ -5,6 +5,25 @@
 #include <functional>
 #include <map>
 #include <SDL2/SDL.h>
+#include <GL/glew.h>
+#include <SDL2/SDL_opengl.h>
+
+
+#define AUX_MOUSESTATUS		3
+
+#define AUX_MOUSEDOWN	16
+#define AUX_MOUSEUP	32
+#define AUX_MOUSELOC	64
+
+#define AUX_MOUSEX		0
+#define AUX_MOUSEY		1
+
+#define	AUX_LEFTBUTTON		1
+#define	AUX_RIGHTBUTTON		2
+#define	AUX_MIDDLEBUTTON	4
+
+#define AUX_LEFT SDLK_LEFT
+#define AUX_RIGHT SDLK_RIGHT
 
 struct EventInfo {
     GLint event;
@@ -16,9 +35,6 @@ typedef std::function<void(GLenum)> KeyDelegate;
 typedef std::function<void(int, int)> WindowDelegate;
 typedef std::function<void()> Delegate;
 
-KeyDelegate toKeyFn(Delegate func) {
-    return [func](GLenum e) { func(); }
-}
 
 class SdlWindow
 {
@@ -27,15 +43,21 @@ private:
     //Use shared_ptr to manage handle lifetimes
     std::shared_ptr<_SdlHandle> _handle;
     Delegate onIdle;
-    WindowDelegate onExpose
+    Delegate onExpose;
     WindowDelegate onReshape;
     std::map<int, KeyDelegate> onKeyDown;
     std::map<int, MouseDelegate> onMouseDown;
     std::map<int, MouseDelegate> onMouseUp;
     std::map<int, MouseDelegate> onMouseMove;
-
+   
+    //internal event handlers
+    void windowEvent(SDL_WindowEvent& ew);
+    void motionEvent(SDL_MouseMotionEvent& em);
+    void mouseEventDown(SDL_MouseButtonEvent& eb);
+    void mouseEventUp(SDL_MouseButtonEvent& eb);
+    void keyEvent(SDL_Keysym& ks);
 public:
-    SdlWindow(std::string& title, int w, int h);
+    SdlWindow(const char * title, int w, int h);
     ~SdlWindow();
 
     /**
@@ -49,11 +71,11 @@ public:
     void mainLoop();
 
     void setOnIdle(Delegate func) { onIdle = func; }
-    void setOnExpose(WindowDelegate func) { onExpose = func; }
+    void setOnExpose(Delegate func) { onExpose = func; }
     void setOnReshape(WindowDelegate func) { onReshape = func; }
     
     void setOnKeyDown(int key, Delegate func) {
-        onKeyDown[key] = [func](GLenum e) { func(); }
+        onKeyDown[key] = [func](GLenum e) { func(); };
     }
     void setOnKeyDown(int key, KeyDelegate func) { onKeyDown[key] = func; }
     
@@ -64,6 +86,7 @@ public:
     void callKeyDown(SDL_Keycode k) { onKeyDown[k](0); } 
 
     void getWindowSize(int& w, int& h);
+    void getDpi(int& wdpi, int& hdpi);
 
     void setWindowTitle(std::string& title);
     void setWindowTitle(const char* title);
@@ -73,8 +96,8 @@ public:
     void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE);
     void signalExpose();
 
-    operator bool() { return _handle; }
-    bool isWindowInitialized() { return _handle; }
+    operator bool() { return (bool) _handle ; }
+    bool isWindowInitialized() { return (bool) _handle; }
     /**
      * Returns true if the OpenGL context was successfully initialized.
      */

@@ -2537,5 +2537,4 @@ void VisualizationSceneSolution::Draw()
 #endif
 
    glFlush();
-   auxSwapBuffers();
 }

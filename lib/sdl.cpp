@@ -11,12 +11,12 @@ using std::endl;
 struct SdlWindow::_SdlHandle {
     SDL_Window * hwnd;
     SDL_GLContext gl_ctx;
-    _SdlHandle(SDL_Window * window, SDL_GLContext context)
+    _SdlHandle(SDL_Window * window)
         : hwnd(window)
-        , gl_ctx(context) { }
+        , gl_ctx(0) { }
 
     ~_SdlHandle() {
-        if (context)
+        if (gl_ctx)
             SDL_GL_DeleteContext(gl_ctx);
         SDL_DestroyWindow(hwnd);
     }
@@ -26,21 +26,21 @@ bool SdlWindow::isGlInitialized() {
     return (_handle->gl_ctx != 0);
 }
 
-SdlWindow::SdlWindow(std::string& title, int w, int h) {
+SdlWindow::SdlWindow(const char * title, int w, int h) {
 
     if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
-            SDL_Log("Failed to initialize SDL: %s", SDL_GetError());
+            cerr << "Failed to initialize SDL: " << SDL_GetError() << endl;
             return;
         }
     }
 
-    _handle = std::make_shared(SDL_CreateWindow(title,
+    _handle = std::make_shared<_SdlHandle>(SDL_CreateWindow(title,
                                                 SDL_WINDOWPOS_UNDEFINED,
                                                 SDL_WINDOWPOS_UNDEFINED,
                                                 w,
                                                 h,
-                                                SDL_WINDOW_OPENGL), 0);
+                                                SDL_WINDOW_OPENGL));
 }
 
 bool SdlWindow::createGlContext() {
@@ -65,17 +65,21 @@ bool SdlWindow::createGlContext() {
     SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 1);
     //SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 1);
 
-    SDL_GLContext context = SDL_GL_CreateContext(hwnd);
+    SDL_GLContext context = SDL_GL_CreateContext(_handle->hwnd);
     if (!context) {
-        SDL_Log("Failed to create an OpenGL 2.1 context: %s", SDL_GetError());
+        cerr << "Failed to create an OpenGL 2.1 context: %s" << SDL_GetError() << endl;
         return false;
     }
     _handle->gl_ctx = context;
+
+    SDL_GL_SetSwapInterval(1);
+
     GLenum err = glewInit();
     if (err != GLEW_OK) {
-        SDL_Log("Failed to initialize GLEW: %s", glewGetErrorString(err));
+        cerr << "Failed to initialize GLEW: %s" << glewGetErrorString(err) << endl;
         return false;
     }
+    return true;
 }
 
 SdlWindow::~SdlWindow() {
@@ -84,10 +88,12 @@ SdlWindow::~SdlWindow() {
 void SdlWindow::windowEvent(SDL_WindowEvent& ew) {
     switch(ew.event) {
         case SDL_WINDOWEVENT_SIZE_CHANGED:
+            cerr << "Window:reshape event" << endl;
             if (onReshape)
                 onReshape(ew.data1, ew.data2);
             break;
         case SDL_WINDOWEVENT_EXPOSED:
+            cerr << "Window:expose event" << endl;
             if (onExpose)
                 onExpose();
             break;
@@ -101,15 +107,15 @@ void SdlWindow::motionEvent(SDL_MouseMotionEvent& em) {
     info.data[AUX_MOUSEY] = em.y;
     info.data[2] = SDL_GetModState();
     if (em.state | SDL_BUTTON_LMASK) {
-        info.data[SDL_BUTTON_MOUSESTATUS] = AUX_LEFT;
+        info.data[AUX_MOUSESTATUS] = AUX_LEFTBUTTON;
         if (onMouseMove[SDL_BUTTON_LEFT])
             onMouseMove[SDL_BUTTON_LEFT](&info);
     } else if (em.state | SDL_BUTTON_RMASK) {
-        info.data[SDL_BUTTON_MOUSESTATUS] = AUX_RIGHT
+        info.data[AUX_MOUSESTATUS] = AUX_RIGHTBUTTON;
         if (onMouseMove[SDL_BUTTON_RIGHT])
             onMouseMove[SDL_BUTTON_RIGHT](&info);
     } else if (em.state | SDL_BUTTON_MMASK) {
-        info.data[SDL_BUTTON_MOUSESTATUS] = AUX_MIDDLE
+        info.data[AUX_MOUSESTATUS] = AUX_MIDDLEBUTTON;
         if (onMouseMove[SDL_BUTTON_MIDDLE])
             onMouseMove[SDL_BUTTON_MIDDLE](&info);
     }
@@ -119,11 +125,11 @@ void SdlWindow::mouseEventDown(SDL_MouseButtonEvent& eb) {
     if (onMouseDown[eb.button]) {
         EventInfo info;
         info.event = AUX_MOUSEDOWN;
-        info.data[AUX_MOUSEX] = x;
-        info.data[AUX_MOUSEY] = y;
+        info.data[AUX_MOUSEX] = eb.x;
+        info.data[AUX_MOUSEY] = eb.y;
         info.data[2] = SDL_GetModState();
         info.data[AUX_MOUSESTATUS] = eb.button;
-        result = onMouseDown[eb.button](&info);
+        onMouseDown[eb.button](&info);
     }
 }
 
@@ -131,30 +137,31 @@ void SdlWindow::mouseEventUp(SDL_MouseButtonEvent& eb) {
     if (onMouseUp[eb.button]) {
         EventInfo info;
         info.event = AUX_MOUSEUP;
-        info.data[AUX_MOUSEX] = x;
-        info.data[AUX_MOUSEY] = y;
+        info.data[AUX_MOUSEX] = eb.x;
+        info.data[AUX_MOUSEY] = eb.y;
         info.data[2] = SDL_GetModState();
         info.data[AUX_MOUSESTATUS] = eb.button;
-        result = onMouseUp[eb.button](&info);
+        onMouseUp[eb.button](&info);
     }
 }
 
 void SdlWindow::keyEvent(SDL_Keysym& ks) {
-    if (e.key.keysym.mod & KMOD_SHIFT) {
+    if (ks.mod & KMOD_SHIFT) {
         //check if separate caps handler exists
-        if (onKeyDown[toupper(e.key.keysym.sym)]) {
-            onKeyDown[toupper(e.key.keysym.sym)](e.key.keysym.mod);
+        if (onKeyDown[toupper(ks.sym)]) {
+            onKeyDown[toupper(ks.sym)](ks.mod);
             return;
         }
     }
-    if (onKeyDown[e.key.keysym.sym])
-        onKeyDown[e.key.keysym.sym](e.key.keysym.mod);
+    if (onKeyDown[ks.sym])
+        onKeyDown[ks.sym](ks.mod);
 }
 
 void SdlWindow::mainLoop() {
     bool running = true;
     SDL_Event e;
     while (running) {
+        SDL_GL_SwapWindow(_handle->hwnd);
         while (SDL_PollEvent(&e)) {
             switch(e.type) {
                 case SDL_QUIT:
@@ -164,28 +171,41 @@ void SdlWindow::mainLoop() {
                     windowEvent(e.window);
                     break;
                 case SDL_KEYDOWN:
+                    cerr << "Key down event" << endl;
                     keyEvent(e.key.keysym);
                     break;
                 case SDL_MOUSEMOTION:
+                    cerr << "Mouse move event" << endl;
                     motionEvent(e.motion);
                     break;
                 case SDL_MOUSEBUTTONDOWN:
+                    cerr << "Mouse down event" << endl;
                     mouseEventDown(e.button);
                     break;
                 case SDL_MOUSEBUTTONUP:
+                    cerr << "Mosue up event" << endl;
                     mouseEventUp(e.button);
                     break;
             }
         }
         if (onIdle)
             onIdle();
-        SDL_GL_SwapWindow(_handle.hwnd);
     }
 }
 
-void getWindowSize(int& w, int& h) {
+void SdlWindow::getWindowSize(int& w, int& h) {
     if (_handle)
         SDL_GetWindowSize(_handle->hwnd, &w, &h);
+}
+
+void SdlWindow::getDpi(int& w, int& h) {
+    if (_handle) {
+        int disp = SDL_GetWindowDisplayIndex(_handle->hwnd);
+        float f_w, f_h;
+        SDL_GetDisplayDPI(disp, NULL, &f_w, &f_h);
+        w = f_w;
+        h = f_h;
+    }
 }
 
 void SdlWindow::setWindowTitle(std::string& title) {
@@ -204,7 +224,7 @@ void SdlWindow::setWindowSize(int w, int h) {
 
 void SdlWindow::setWindowPos(int x, int y) {
     if (_handle)
-        SDL_SetWindowPos(_handle->hwnd, x, y);
+        SDL_SetWindowPosition(_handle->hwnd, x, y);
 }
 
 void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m) {

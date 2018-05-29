@@ -13,9 +13,8 @@
 #define GLVIS_AUX_VIS
 
 #include <GL/glew.h>
-#include <GL/glu.h>
+#include "platform_gl.hpp"
 
-#include "tk.h"
 #include "sdl.hpp"
 
 #include "openglvis.hpp"

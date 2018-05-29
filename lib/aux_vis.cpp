@@ -14,11 +14,10 @@
 #include <fstream>
 #include <cmath>
 #include <ctime>
-#include <X11/keysym.h>
 
 #include "mfem.hpp"
 using namespace mfem;
-#include <GL/glew.h>
+#include "sdl.hpp"
 #include "palettes.hpp"
 #include "visual.hpp"
 #include "gl2ps.h"
@@ -59,6 +58,7 @@ SdlWindow * GetAppWindow()
 }
 
 void MyExpose(GLsizei w, GLsizei h);
+void MyExpose();
 
 int InitVisualization (const char name[], int x, int y, int w, int h)
 {
@@ -73,15 +73,14 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 #ifdef GLVIS_DEBUG
    cout << "OpenGL Visualization" << endl;
 #endif
-   std::string title(name);
-   wnd = new SdlWindow(title, w, h);
+   wnd = new SdlWindow(name, w, h);
    // GLenum mode = AUX_DOUBLE | AUX_RGBA | AUX_DEPTH;
    // mode |= (AUX_ALPHA | AUX_ACCUM);
-   if (wnd->isWindowInitialized()) {
+   if (!wnd->isWindowInitialized()) {
       return 1;
    }
    wnd->createGlContext();
-   if (wnd->isGlInitialized()) {
+   if (!wnd->isGlInitialized()) {
        return 1;
    }
 
@@ -110,7 +109,8 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 
    // auxReshapeFunc (MyReshape); // not needed, MyExpose calls it
    // auxReshapeFunc (NULL);
-   wnd->setOnExpose(MyExpose);
+   void (*exposeFunc)(void) = MyExpose;
+   wnd->setOnExpose(exposeFunc);
 
    wnd->setOnMouseDown(SDL_BUTTON_LEFT, LeftButtonDown);
    wnd->setOnMouseUp(SDL_BUTTON_LEFT, LeftButtonUp);
@@ -123,7 +123,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
 
    // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
-   wnd->setOnKeyDown (SDLK_S, KeyS);
+   wnd->setOnKeyDown (SDLK_s, KeyS);
 
    wnd->setOnKeyDown (SDLK_q, KeyQPressed);
    //wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
@@ -144,8 +144,8 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    wnd->setOnKeyDown (SDLK_KP_8, Key8Pressed);
    wnd->setOnKeyDown (SDLK_KP_9, Key9Pressed);
 
-   wnd->setOnKeyDown (SDLK_KP_SUBTRACT, KeyMinusPressed);
-   wnd->setOnKeyDown (SDLK_KP_ADD, KeyPlusPressed);
+   wnd->setOnKeyDown (SDLK_KP_MEMSUBTRACT, KeyMinusPressed);
+   wnd->setOnKeyDown (SDLK_KP_MEMADD, KeyPlusPressed);
 
    wnd->setOnKeyDown (SDLK_KP_DECIMAL, KeyDeletePressed);
    wnd->setOnKeyDown (SDLK_KP_ENTER, KeyEnterPressed);
@@ -166,9 +166,9 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 
    wnd->setOnKeyDown (SDLK_MINUS, KeyMinusPressed);
    wnd->setOnKeyDown (SDLK_PLUS, KeyPlusPressed);
-   wnd->setOnKeyDown (SDLK_EQUAL, KeyPlusPressed);
+   wnd->setOnKeyDown (SDLK_EQUALS, KeyPlusPressed);
 
-   wnd->setOnKeyDown (SDLK_J, KeyJPressed);
+   wnd->setOnKeyDown (SDLK_j, KeyJPressed);
    //wnd->setOnKeyDown (AUX_J, KeyJPressed);
 
    wnd->setOnKeyDown (SDLK_KP_MULTIPLY, ZoomIn);
@@ -177,12 +177,12 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    wnd->setOnKeyDown (SDLK_ASTERISK, ZoomIn);
    wnd->setOnKeyDown (SDLK_SLASH, ZoomOut);
 
-   wnd->setOnKeyDown (SDLK_BRACKETLEFT, ScaleDown);
-   wnd->setOnKeyDown (SDLK_BRACKETRIGHT, ScaleUp);
+   wnd->setOnKeyDown (SDLK_LEFTBRACKET, ScaleDown);
+   wnd->setOnKeyDown (SDLK_RIGHTBRACKET, ScaleUp);
    wnd->setOnKeyDown (SDLK_AT, LookAt);
 
-   wnd->setOnKeyDown(SDLK_PARENLEFT, ShrinkWindow);
-   wnd->setOnKeyDown(SDLK_PARENRIGHT, EnlargeWindow);
+   wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
+   wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
 
    locscene = NULL;
 
@@ -190,7 +190,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 }
 
 void SendKeySequence(const char *seq) {
-    for (char* key = seq; *key != '\0'; key++) {
+    for (const char* key = seq; *key != '\0'; key++) {
         if (*key == '~') {
             key++;
             switch (*key)
@@ -328,7 +328,7 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
    }
 
    //auxMainLoop(NULL);
-
+   wnd->mainLoop();
    InitIdleFuncs();
 }
 
@@ -395,7 +395,7 @@ void MyExpose(GLsizei w, GLsizei h)
 
 void MyExpose()
 {
-   int w, int h;
+   int w, h;
    wnd->getWindowSize(w, h);
    MyExpose(w, h);
 }
@@ -751,6 +751,7 @@ const char *glvis_screenshot_ext = ".xwd";
 
 int Screenshot(const char *fname, bool convert)
 {
+/*
 #ifdef GLVIS_DEBUG
    cout << "Screenshot: glXWaitX() ... " << flush;
 #endif
@@ -923,7 +924,8 @@ int Screenshot(const char *fname, bool convert)
       }
       remove(filename.c_str());
    }
-
+*/
+   cout << "Screenshots not yet implemented." << endl;
    return 0;
 }
 
@@ -959,7 +961,7 @@ void KeyCtrlP()
    int state, buffsize;
    FILE * fp;
    GLint viewport[4];
-
+   /*
    cout << "Printing the figure to GLVis.pdf... " << flush;
 
    fp = fopen("GLVis.pdf", "wb");
@@ -990,6 +992,8 @@ void KeyCtrlP()
    fclose(fp);
 
    cout << "done" << endl;
+   */
+   cout << "Printing not yet implemented" << endl;
    locscene -> Draw();
 }
 
@@ -1876,10 +1880,8 @@ public:
       if (1)
       {
          // set font height in points
-         Screen *scr = tkGetXScreen();
-         int ppi_w = (int)rint(25.4*WidthOfScreen(scr)/WidthMMOfScreen(scr));
-         int ppi_h = (int)rint(25.4*HeightOfScreen(scr)/HeightMMOfScreen(scr));
-
+         int ppi_w, ppi_h;
+         GetAppWindow()->getDpi(ppi_w, ppi_h);
          err = FT_Set_Char_Size(face, 0, height*64, ppi_w, ppi_h);
          if (err)
          {

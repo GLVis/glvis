@@ -1268,11 +1268,11 @@ void VisualizationSceneScalarData::Init()
 
       wnd->setOnKeyDown(SDLK_COMMA, KeyCommaPressed);
       wnd->setOnKeyDown(SDLK_LESS, KeyLessPressed);
-      wnd->setOnKeyDown(SDLK_GRAVE, KeyGravePressed);
+      //wnd->setOnKeyDown(SDLK_GRAVE, KeyGravePressed);
       wnd->setOnKeyDown(SDLK_BACKQUOTE, [](GLenum e) {
               (e & KMOD_SHIFT)
                 ? KeyGravePressed()
-                | KeyTildePressed();
+                : KeyTildePressed();
               });
 
       wnd->setOnKeyDown(SDLK_EXCLAIM, KeyToggleTexture);
