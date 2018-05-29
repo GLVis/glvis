@@ -42,6 +42,7 @@ private:
     struct _SdlHandle;
     //Use shared_ptr to manage handle lifetimes
     std::shared_ptr<_SdlHandle> _handle;
+    
     Delegate onIdle;
     Delegate onExpose;
     WindowDelegate onReshape;
@@ -50,8 +51,9 @@ private:
     std::map<int, MouseDelegate> onMouseUp;
     std::map<int, MouseDelegate> onMouseMove;
    
+    bool requiresExpose;
     //internal event handlers
-    void windowEvent(SDL_WindowEvent& ew);
+    bool windowEvent(SDL_WindowEvent& ew);
     void motionEvent(SDL_MouseMotionEvent& em);
     void mouseEventDown(SDL_MouseButtonEvent& eb);
     void mouseEventUp(SDL_MouseButtonEvent& eb);
@@ -94,7 +96,7 @@ public:
     void setWindowPos(int x, int y);
 
     void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE);
-    void signalExpose();
+    void signalExpose() { requiresExpose = true; }
 
     operator bool() { return (bool) _handle ; }
     bool isWindowInitialized() { return (bool) _handle; }

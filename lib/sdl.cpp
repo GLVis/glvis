@@ -26,7 +26,8 @@ bool SdlWindow::isGlInitialized() {
     return (_handle->gl_ctx != 0);
 }
 
-SdlWindow::SdlWindow(const char * title, int w, int h) {
+SdlWindow::SdlWindow(const char * title, int w, int h)
+    : requiresExpose(false) {
 
     if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
@@ -85,18 +86,20 @@ bool SdlWindow::createGlContext() {
 SdlWindow::~SdlWindow() {
 }
 
-void SdlWindow::windowEvent(SDL_WindowEvent& ew) {
+bool SdlWindow::windowEvent(SDL_WindowEvent& ew) {
     switch(ew.event) {
         case SDL_WINDOWEVENT_SIZE_CHANGED:
             cerr << "Window:reshape event" << endl;
             if (onReshape)
                 onReshape(ew.data1, ew.data2);
-            break;
+            return false;
         case SDL_WINDOWEVENT_EXPOSED:
             cerr << "Window:expose event" << endl;
             if (onExpose)
                 onExpose();
-            break;
+            return true;
+        default:
+            return false;
     }
 }
 
@@ -106,18 +109,21 @@ void SdlWindow::motionEvent(SDL_MouseMotionEvent& em) {
     info.data[AUX_MOUSEX] = em.x;
     info.data[AUX_MOUSEY] = em.y;
     info.data[2] = SDL_GetModState();
-    if (em.state | SDL_BUTTON_LMASK) {
+    if (em.state & SDL_BUTTON_LMASK) {
         info.data[AUX_MOUSESTATUS] = AUX_LEFTBUTTON;
-        if (onMouseMove[SDL_BUTTON_LEFT])
+        if (onMouseMove[SDL_BUTTON_LEFT]) {
             onMouseMove[SDL_BUTTON_LEFT](&info);
-    } else if (em.state | SDL_BUTTON_RMASK) {
+        }
+    } else if (em.state & SDL_BUTTON_RMASK) {
         info.data[AUX_MOUSESTATUS] = AUX_RIGHTBUTTON;
-        if (onMouseMove[SDL_BUTTON_RIGHT])
-            onMouseMove[SDL_BUTTON_RIGHT](&info);
-    } else if (em.state | SDL_BUTTON_MMASK) {
+        if (onMouseMove[SDL_BUTTON_RIGHT]) {
+            onMouseMove[SDL_BUTTON_RIGHT](&info); 
+        }
+    } else if (em.state & SDL_BUTTON_MMASK) {
         info.data[AUX_MOUSESTATUS] = AUX_MIDDLEBUTTON;
-        if (onMouseMove[SDL_BUTTON_MIDDLE])
-            onMouseMove[SDL_BUTTON_MIDDLE](&info);
+        if (onMouseMove[SDL_BUTTON_MIDDLE]) {
+            onMouseMove[SDL_BUTTON_MIDDLE](&info); 
+        }
     }
 }
 
@@ -129,7 +135,7 @@ void SdlWindow::mouseEventDown(SDL_MouseButtonEvent& eb) {
         info.data[AUX_MOUSEY] = eb.y;
         info.data[2] = SDL_GetModState();
         info.data[AUX_MOUSESTATUS] = eb.button;
-        onMouseDown[eb.button](&info);
+        onMouseDown[eb.button](&info); 
     }
 }
 
@@ -153,22 +159,23 @@ void SdlWindow::keyEvent(SDL_Keysym& ks) {
             return;
         }
     }
-    if (onKeyDown[ks.sym])
+    if (onKeyDown[ks.sym]) {
         onKeyDown[ks.sym](ks.mod);
+    }
 }
 
 void SdlWindow::mainLoop() {
     bool running = true;
     SDL_Event e;
     while (running) {
-        SDL_GL_SwapWindow(_handle->hwnd);
         while (SDL_PollEvent(&e)) {
             switch(e.type) {
                 case SDL_QUIT:
                     running = false;
                     break;
                 case SDL_WINDOWEVENT:
-                    windowEvent(e.window);
+                    if (windowEvent(e.window))
+                        SDL_GL_SwapWindow(_handle->hwnd);
                     break;
                 case SDL_KEYDOWN:
                     cerr << "Key down event" << endl;
@@ -190,6 +197,11 @@ void SdlWindow::mainLoop() {
         }
         if (onIdle)
             onIdle();
+        if (requiresExpose) {
+            onExpose();
+            SDL_GL_SwapWindow(_handle->hwnd);
+            requiresExpose = false;
+        }
     }
 }
 
@@ -234,11 +246,12 @@ void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m) {
     event.key.keysym.mod = m;
     SDL_PushEvent(&event);
 }
-
+/*
 void SdlWindow::signalExpose() {
    SDL_Event event;
    event.type = SDL_WINDOWEVENT;
    event.window.event = SDL_WINDOWEVENT_EXPOSED;
    SDL_PushEvent(&event);
 }
+*/
 
