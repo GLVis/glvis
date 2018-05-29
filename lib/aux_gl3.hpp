@@ -43,7 +43,6 @@ struct GlVertex
 
 /* *
  * Class to manage vertex buffers
- * TODO: if we move off of X windows for apple, purge all the ARB stuff
  */
 class VertexBuffer
 {
@@ -60,7 +59,7 @@ protected:
     
     void init() {
         glewInit(); //just in case
-        glGenBuffersARB(2, vbo_handles);
+        glGenBuffers(2, vbo_handles);
         if (vbo_handles[0] != 0 && vbo_handles[1] != 0) {
             cout << "Handles created" << endl;
             handles_created = true;
@@ -79,7 +78,7 @@ public:
 
     ~VertexBuffer() {
         cout << "Handles destroyed" << endl;
-        glDeleteBuffersARB(2, vbo_handles);
+        glDeleteBuffers(2, vbo_handles);
     }
 
     void clear() {

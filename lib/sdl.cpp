@@ -42,6 +42,7 @@ SdlWindow::SdlWindow(const char * title, int w, int h)
                                                 w,
                                                 h,
                                                 SDL_WINDOW_OPENGL));
+    SDL_SetWindowResizable(_handle->hwnd, SDL_TRUE);
 }
 
 bool SdlWindow::createGlContext() {
