@@ -1531,7 +1531,7 @@ void VisualizationSceneScalarData::DrawPolygonLevelLines(
 }
 
 void VisualizationSceneScalarData::DrawPolygonLevelLines(
-   double * point, int n, Array<double> &level, bool log_vals, gl3::LineLoopBuffer& buf)
+   double * point, int n, Array<double> &level, bool log_vals, gl3::LineBuilder& builder)
 {
    int l, k, k1;
    double curve, t;
@@ -1542,9 +1542,7 @@ void VisualizationSceneScalarData::DrawPolygonLevelLines(
       // Using GL_LINE_STRIP (explicitly closed for more than 2 points)
       // should produce the same result, however visually the level lines
       // have discontinuities. Using GL_LINE_LOOP does not have that problem.
-#ifndef GLVIS_OGL3
-      glBegin(GL_LINE_LOOP);
-#endif
+      builder.glBegin(GL_LINE_LOOP);
       curve = LogVal(level[l], log_vals);
       for (k = 0; k < n; k++)
       {
@@ -1567,18 +1565,10 @@ void VisualizationSceneScalarData::DrawPolygonLevelLines(
             p[0] = (1.0-t)*point[4*k+0]+t*point[4*k1+0];
             p[1] = (1.0-t)*point[4*k+1]+t*point[4*k1+1];
             p[2] = (1.0-t)*point[4*k+2]+t*point[4*k1+2];
-#ifdef GLVIS_OGL3
-            buf.addVertex(p[0], p[1], p[2]);
-#else
-            glVertex3dv(p);
-#endif
+            builder.glVertex3d(p[0], p[1], p[2]);
          }
       }
-#ifdef GLVIS_OGL3
-      buf.endLoop();
-#else
-      glEnd();
-#endif
+      builder.glEnd();
    }
 }
 

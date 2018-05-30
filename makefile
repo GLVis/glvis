@@ -119,10 +119,11 @@ X11_SEARCH_PATHS = /usr /usr/X11 /opt/X11 /usr/X11R6
 X11_SEARCH_FILE = include/X11/Xlib.h
 X11_DIR = $(call find_dir,$(X11_SEARCH_FILE),$(X11_SEARCH_PATHS))
 X11_LIB_DIR = $(call find_dir,libX11.$(SO_EXT),$(X11_DIR)/lib64 $(X11_DIR)/lib)
-GL_OPTS = -I$(X11_DIR)/include -I$(BREW_PATH)/include
+GL_OPTS = -I$(BREW_PATH)/include
 # for servers not supporting GLX 1.3:
 # GL_OPTS = -I$(X11_DIR)/include -DGLVIS_GLX10
-GL_LIBS = -L$(X11_LIB_DIR) -L$(BREW_PATH)/lib -lX11 -lGL -lGLU -lGLEW
+
+GL_LIBS = -L$(BREW_PATH)/lib -framework OpenGL -lGLEW -lSDL2
 
 GLVIS_FLAGS += $(GL_OPTS)
 GLVIS_LIBS  += $(GL_LIBS)
@@ -166,14 +167,14 @@ CCC  = $(strip $(CXX) $(GLVIS_FLAGS))
 Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
 # generated with 'echo lib/*.c*'
-SOURCE_FILES = lib/aux_gl.cpp lib/aux_vis.cpp lib/aux_gl3.cpp lib/gl2ps.c \
- lib/material.cpp lib/openglvis.cpp lib/threads.cpp lib/tk.cpp lib/vsdata.cpp \
+SOURCE_FILES = lib/aux_vis.cpp lib/aux_gl3.cpp lib/sdl.cpp lib/gl2ps.c \
+ lib/material.cpp lib/openglvis.cpp lib/threads.cpp lib/vsdata.cpp \
  lib/vssolution3d.cpp lib/vssolution.cpp lib/vsvector3d.cpp lib/vsvector.cpp
 OBJECT_FILES1 = $(SOURCE_FILES:.cpp=.o)
 OBJECT_FILES = $(OBJECT_FILES1:.c=.o)
 # generated with 'echo lib/*.h*'
-HEADER_FILES = lib/aux_gl.hpp lib/aux_vis.hpp lib/aux_gl3.hpp lib/gl2ps.h lib/material.hpp \
- lib/openglvis.hpp lib/palettes.hpp lib/threads.hpp lib/tk.h lib/visual.hpp \
+HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/sdl.hpp lib/gl2ps.h lib/material.hpp \
+ lib/openglvis.hpp lib/palettes.hpp lib/threads.hpp lib/visual.hpp \
  lib/vsdata.hpp lib/vssolution3d.hpp lib/vssolution.hpp lib/vsvector3d.hpp \
  lib/vsvector.hpp
 

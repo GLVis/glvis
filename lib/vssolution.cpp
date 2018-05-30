@@ -1720,7 +1720,7 @@ void VisualizationSceneSolution::PrepareLevelCurves()
    DenseMatrix pointmat;
 
    callListBeginShim(lcurvelist, lcurve_buf);
-
+   LineBuilder build = lcurve_buf.createBuilder();
    for (int i = 0; i < mesh->GetNE(); i++)
    {
       mesh->GetElementVertices(i, vertices);
@@ -1732,13 +1732,13 @@ void VisualizationSceneSolution::PrepareLevelCurves()
             values(j) = _LogVal(values(j));
          }
       RG.SetSize(vertices.Size());
-      DrawLevelCurves(lcurve_buf, RG, pointmat, values, vertices.Size(), level);
+      DrawLevelCurves(build, RG, pointmat, values, vertices.Size(), level);
    }
    callListEndShim(lcurve_buf);
 }
 
 void VisualizationSceneSolution::DrawLevelCurves(
-   gl3::LineLoopBuffer& buf, Array<int> &RG, DenseMatrix &pointmat, Vector &values,
+   gl3::LineBuilder& builder, Array<int> &RG, DenseMatrix &pointmat, Vector &values,
    int sides, Array<double> &lvl, int flat)
 {
    double point[4][4];
@@ -1757,7 +1757,7 @@ void VisualizationSceneSolution::DrawLevelCurves(
             point[j][3] = values(vv);
             point[j][2] = (flat) ? zc : point[j][3];
          }
-         DrawPolygonLevelLines(point[0], sides, lvl, logscale, buf);
+         DrawPolygonLevelLines(point[0], sides, lvl, logscale, builder);
       }
       else if (split_quads == 1)
       {
@@ -1774,7 +1774,7 @@ void VisualizationSceneSolution::DrawLevelCurves(
                point[j][3] = values(ind[vt[it][j]]);
                point[j][2] = (flat) ? zc : point[j][3];
             }
-            DrawPolygonLevelLines(point[0], 3, lvl, logscale, buf);
+            DrawPolygonLevelLines(point[0], 3, lvl, logscale, builder);
          }
       }
       else
@@ -1810,7 +1810,7 @@ void VisualizationSceneSolution::DrawLevelCurves(
             point[1][3] = values(ind[l]);
             point[1][2] = (flat) ? zc : point[1][3];
 
-            DrawPolygonLevelLines(point[0], 3, lvl, logscale, buf);
+            DrawPolygonLevelLines(point[0], 3, lvl, logscale, builder);
          }
       }
    }
@@ -1824,7 +1824,7 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
    RefinedGeometry *RefG;
 
    callListBeginShim(lcurvelist, lcurve_buf);
-
+   LineBuilder build = lcurve_buf.createBuilder();
    for (i = 0; i < ne; i++)
    {
       RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
@@ -1833,7 +1833,7 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
       Array<int> &RG = RefG->RefGeoms;
       int sides = mesh->GetElement(i)->GetNVertices();
 
-      DrawLevelCurves(lcurve_buf, RG, pointmat, values, sides, level);
+      DrawLevelCurves(build, RG, pointmat, values, sides, level);
    }
 
    callListEndShim(lcurve_buf);
@@ -1852,23 +1852,24 @@ void VisualizationSceneSolution::PrepareLines()
    DenseMatrix pointmat;
    Array<int> vertices;
 
-   glNewList(linelist, GL_COMPILE);
+   callListBeginShim(linelist, line_buf);
+   LoopBuilder lb = line_buf.createBuilder();
 
    for (i = 0; i < ne; i++)
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
 
-      glBegin(GL_LINE_LOOP);
+      lb.glBegin(GL_LINE_LOOP);
       mesh->GetPointMatrix (i, pointmat);
       mesh->GetElementVertices (i, vertices);
 
       for (j = 0; j < pointmat.Size(); j++)
-         glVertex3d(pointmat(0, j), pointmat(1, j),
+         lb.glVertex3d(pointmat(0, j), pointmat(1, j),
                     LogVal((*sol)(vertices[j])));
-      glEnd();
+      lb.glEnd();
    }
 
-   glEndList();
+   callListEndShim(line_buf);
 }
 
 double VisualizationSceneSolution::GetElementLengthScale(int k)
@@ -2103,7 +2104,8 @@ void VisualizationSceneSolution::PrepareLines2()
    DenseMatrix pointmat;
    RefinedGeometry *RefG;
 
-   glNewList(linelist, GL_COMPILE);
+   callListBeginShim(linelist, line_buf);
+   LoopBuilder lb = line_buf.createBuilder();
 
    for (i = 0; i < ne; i++)
    {
@@ -2117,17 +2119,17 @@ void VisualizationSceneSolution::PrepareLines2()
 
       for (k = 0; k < RG.Size()/sides; k++)
       {
-         glBegin(GL_LINE_LOOP);
+         lb.glBegin(GL_LINE_LOOP);
 
          for (j = 0; j < sides; j++)
-            glVertex3d(pointmat(0, RG[sides*k+j]),
+            lb.glVertex3d(pointmat(0, RG[sides*k+j]),
                        pointmat(1, RG[sides*k+j]),
                        values(RG[sides*k+j]));
-         glEnd();
+         lb.glEnd();
       }
    }
 
-   glEndList();
+   callListEndShim(line_buf);
 }
 
 void VisualizationSceneSolution::PrepareLines3()
@@ -2137,7 +2139,8 @@ void VisualizationSceneSolution::PrepareLines3()
    DenseMatrix pointmat;
    RefinedGeometry *RefG;
 
-   glNewList(linelist, GL_COMPILE);
+   callListBeginShim(linelist, line_buf);
+   LoopBuilder lb = line_buf.createBuilder();
 
    for (i = 0; i < ne; i++)
    {
@@ -2147,20 +2150,20 @@ void VisualizationSceneSolution::PrepareLines3()
       GetRefinedValues (i, RefG->RefPts, values, pointmat);
       Array<int> &RE = RefG->RefEdges;
 
-      glBegin (GL_LINES);
+      lb.glBegin (GL_LINES);
       for (k = 0; k < RE.Size()/2; k++)
       {
-         glVertex3d (pointmat(0, RE[2*k]),
+         lb.glVertex3d (pointmat(0, RE[2*k]),
                      pointmat(1, RE[2*k]),
                      values(RE[2*k]));
-         glVertex3d (pointmat(0, RE[2*k+1]),
+         lb.glVertex3d (pointmat(0, RE[2*k+1]),
                      pointmat(1, RE[2*k+1]),
                      values(RE[2*k+1]));
       }
-      glEnd();
+      lb.glEnd();
    }
 
-   glEndList();
+   callListEndShim(line_buf);
 }
 
 void VisualizationSceneSolution::UpdateValueRange(bool prepare)
@@ -2485,11 +2488,11 @@ void VisualizationSceneSolution::Draw()
    // draw lines
    if (drawmesh == 1)
    {
-      glCallList(linelist);
+      callListDrawShim(linelist, line_buf);
    }
    else if (drawmesh == 2)
    {
-      callListDrawShim(lcurvelist, lcurve_buf, GL_LINE_LOOP);
+      callListDrawShim(lcurvelist, lcurve_buf);
    }
 
    // draw numberings

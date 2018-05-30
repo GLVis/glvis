@@ -41,6 +41,38 @@ struct GlVertex
     }
 };
 
+struct PolyBuilder
+{
+    float norm[3];
+    float color[3];
+    float uv[2];
+};
+
+class LineBuffer;
+
+class LineBuilder
+{
+    LineBuffer * parent_buf;
+    GLenum render_as;
+    std::vector<float> pts;
+
+public:
+    LineBuilder(LineBuffer * buf)
+        : parent_buf(buf) { }
+    
+    void glBegin(GLenum e) {
+#ifdef GLVIS_OGL3
+        render_as = e;
+#else
+        glBegin(e);
+#endif
+    }
+
+    void glVertex3d(double x, double y, double z);
+
+    void glEnd();
+};
+
 /* *
  * Class to manage vertex buffers
  */
@@ -112,18 +144,21 @@ public:
     bool isEmpty() { return size == 0; }
 };
 
-class LineLoopBuffer : public VertexBuffer {
+class LineBuffer : public VertexBuffer {
 private:
     std::vector<float> pt_data;
-    std::vector<size_t> loop_strides;
     size_t curr_count;
+    GLenum renderHint;
     
+    friend void LineBuilder::glEnd();
+
 public:
-    LineLoopBuffer()
-        : curr_count(0){
+    LineBuffer()
+        : curr_count(0),
+          renderHint(GL_LINE_LOOP) {
     }
 
-    ~LineLoopBuffer() {
+    ~LineBuffer() {
     }
 
     void clear() {
@@ -137,14 +172,15 @@ public:
         pt_data.push_back(y);
         pt_data.push_back(z);
         curr_count++;
+        size++;
     }
 
-    void endLoop() {
-        if (curr_count != 0) {
-            loop_strides.push_back(curr_count);
-            curr_count = 0;
-        }
-        size++;
+    void renderAs(GLenum type) {
+        renderHint = type;
+    }
+
+    LineBuilder createBuilder() {
+        return LineBuilder(this);
     }
 
     virtual void BufferData();
@@ -153,6 +189,8 @@ public:
      * Draws the VBO.
      */
     virtual void DrawObject(GLenum renderAs, bool drawNow = true);
+    
+    void DrawObject();
 };
 
 }

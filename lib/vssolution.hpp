@@ -34,14 +34,14 @@ protected:
    int e_nums_list, v_nums_list;
 
    std::map<GLenum, gl3::VertexBuffer> disp_buf;
-   std::map<GLenum, gl3::VertexBuffer> line_buf;
+   //std::map<GLenum, gl3::VertexBuffer> line_buf;
    std::map<GLenum, gl3::VertexBuffer> bdr_buf;
    std::map<GLenum, gl3::VertexBuffer> cp_list_buf;
    std::map<GLenum, gl3::VertexBuffer> e_nums_buf;
    std::map<GLenum, gl3::VertexBuffer> v_nums_buf;
 
-   gl3::LineLoopBuffer lcurve_buf;
-
+   gl3::LineBuffer lcurve_buf;
+   gl3::LineBuffer line_buf;
    void Init();
 
    void FindNewBox(double rx[], double ry[], double rval[]);
@@ -58,7 +58,7 @@ protected:
                                           Vector &vals, DenseMatrix &tr,
                                           DenseMatrix &normals);
 
-   void DrawLevelCurves(gl3::LineLoopBuffer& buf, Array<int> &RG, DenseMatrix &pointmat,
+   void DrawLevelCurves(gl3::LineBuilder& buf, Array<int> &RG, DenseMatrix &pointmat,
                         Vector &values, int sides, Array<double> &lvl,
                         int flat = 0);
 

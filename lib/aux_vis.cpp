@@ -961,7 +961,6 @@ void KeyCtrlP()
    int state, buffsize;
    FILE * fp;
    GLint viewport[4];
-   /*
    cout << "Printing the figure to GLVis.pdf... " << flush;
 
    fp = fopen("GLVis.pdf", "wb");
@@ -992,8 +991,6 @@ void KeyCtrlP()
    fclose(fp);
 
    cout << "done" << endl;
-   */
-   cout << "Printing not yet implemented" << endl;
    locscene -> Draw();
 }
 

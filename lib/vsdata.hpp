@@ -125,7 +125,7 @@ protected:
 #endif
     }
 
-    inline void callListBeginShim(int call_list, gl3::LineLoopBuffer& buf) {
+    inline void callListBeginShim(int call_list, gl3::LineBuffer& buf) {
 #ifdef GLVIS_OGL3
        buf.clear();
 #else
@@ -143,7 +143,7 @@ protected:
 #endif
     }
 
-    inline void callListEndShim(gl3::LineLoopBuffer& buf) {
+    inline void callListEndShim(gl3::LineBuffer& buf) {
 #ifdef GLVIS_OGL3
         buf.BufferData();
 #else
@@ -164,6 +164,14 @@ protected:
     inline void callListDrawShim(int call_list, gl3::LineLoopBuffer& buf, GLenum renderAs) {
 #ifdef GLVIS_OGL3
         buf.DrawObject(renderAs);
+#else
+        glCallList(call_list);
+#endif
+    }
+
+    inline void callListDrawShim(int call_list, gl3::LineBuffer& buf) {
+#ifdef GLVIS_OGL3
+        buf.DrawObject();
 #else
         glCallList(call_list);
 #endif
@@ -261,7 +269,7 @@ public:
                double cone_scale = 0.075);
 
    void DrawPolygonLevelLines(double *point, int n, Array<double> &level,
-                              bool log_vals, gl3::LineLoopBuffer& buf);
+                              bool log_vals, gl3::LineBuilder& builder);
 
    void DrawPolygonLevelLines(double *point, int n, Array<double> &level,
                               bool log_vals);
