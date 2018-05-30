@@ -179,19 +179,15 @@ void SdlWindow::mainLoop() {
                         SDL_GL_SwapWindow(_handle->hwnd);
                     break;
                 case SDL_KEYDOWN:
-                    cerr << "Key down event" << endl;
                     keyEvent(e.key.keysym);
                     break;
                 case SDL_MOUSEMOTION:
-                    cerr << "Mouse move event" << endl;
                     motionEvent(e.motion);
                     break;
                 case SDL_MOUSEBUTTONDOWN:
-                    cerr << "Mouse down event" << endl;
                     mouseEventDown(e.button);
                     break;
                 case SDL_MOUSEBUTTONUP:
-                    cerr << "Mosue up event" << endl;
                     mouseEventUp(e.button);
                     break;
             }

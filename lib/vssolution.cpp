@@ -1720,7 +1720,7 @@ void VisualizationSceneSolution::PrepareLevelCurves()
    DenseMatrix pointmat;
 
    callListBeginShim(lcurvelist, lcurve_buf);
-   LineBuilder build = lcurve_buf.createBuilder();
+   gl3::LineBuilder build = lcurve_buf.createBuilder();
    for (int i = 0; i < mesh->GetNE(); i++)
    {
       mesh->GetElementVertices(i, vertices);
@@ -1824,7 +1824,7 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
    RefinedGeometry *RefG;
 
    callListBeginShim(lcurvelist, lcurve_buf);
-   LineBuilder build = lcurve_buf.createBuilder();
+   gl3::LineBuilder build = lcurve_buf.createBuilder();
    for (i = 0; i < ne; i++)
    {
       RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
@@ -1853,7 +1853,7 @@ void VisualizationSceneSolution::PrepareLines()
    Array<int> vertices;
 
    callListBeginShim(linelist, line_buf);
-   LoopBuilder lb = line_buf.createBuilder();
+   gl3::LineBuilder lb = line_buf.createBuilder();
 
    for (i = 0; i < ne; i++)
    {
@@ -2105,7 +2105,7 @@ void VisualizationSceneSolution::PrepareLines2()
    RefinedGeometry *RefG;
 
    callListBeginShim(linelist, line_buf);
-   LoopBuilder lb = line_buf.createBuilder();
+   gl3::LineBuilder lb = line_buf.createBuilder();
 
    for (i = 0; i < ne; i++)
    {
@@ -2140,7 +2140,7 @@ void VisualizationSceneSolution::PrepareLines3()
    RefinedGeometry *RefG;
 
    callListBeginShim(linelist, line_buf);
-   LoopBuilder lb = line_buf.createBuilder();
+   gl3::LineBuilder lb = line_buf.createBuilder();
 
    for (i = 0; i < ne; i++)
    {

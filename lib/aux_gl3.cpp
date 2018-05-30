@@ -15,9 +15,13 @@ void LineBuilder::glVertex3d(double x, double y, double z) {
 
 void LineBuilder::glEnd() {
 #ifdef GLVIS_OGL3
-    if (render_as == GL_LINES) {
+    if (render_as == GL_LINES || pts.size() == 2) {
         std::move(pts.begin(), pts.end(), std::back_inserter(parent_buf->pt_data));
     } else {
+        if (pts.size() < 2) {
+            pts.clear();
+            return;
+        }
         bool first = true;
         for (auto v : pts) {
             parent_buf->pt_data.push_back(v);

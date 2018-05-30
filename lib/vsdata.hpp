@@ -161,14 +161,6 @@ protected:
 #endif
     }
 
-    inline void callListDrawShim(int call_list, gl3::LineLoopBuffer& buf, GLenum renderAs) {
-#ifdef GLVIS_OGL3
-        buf.DrawObject(renderAs);
-#else
-        glCallList(call_list);
-#endif
-    }
-
     inline void callListDrawShim(int call_list, gl3::LineBuffer& buf) {
 #ifdef GLVIS_OGL3
         buf.DrawObject();

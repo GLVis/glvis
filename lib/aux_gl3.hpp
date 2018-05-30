@@ -163,7 +163,6 @@ public:
 
     void clear() {
         pt_data.clear();
-        loop_strides.clear();
         size = 0;
     }
 
