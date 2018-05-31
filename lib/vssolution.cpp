@@ -2196,21 +2196,21 @@ void VisualizationSceneSolution::PrepareBoundary()
    Array<int> vertices;
    DenseMatrix pointmat;
 
-   glNewList(bdrlist, GL_COMPILE);
-
+   callListBeginShim(bdrlist, bdr_buf);
+   gl3::LineBuilder bl = bdr_buf.createBuilder();
    if (shading != 2)
    {
-      glBegin(GL_LINES);
+      bl.glBegin(GL_LINES);
       for (i = 0; i < ne; i++)
       {
          if (!bdr_el_attr_to_show[mesh->GetBdrAttribute(i)-1]) { continue; }
          mesh->GetBdrElementVertices(i, vertices);
          mesh->GetBdrPointMatrix(i, pointmat);
          for (j = 0; j < pointmat.Size(); j++)
-            glVertex3d(pointmat(0, j), pointmat(1, j),
+            bl.glVertex3d(pointmat(0, j), pointmat(1, j),
                        LogVal((*sol)(vertices[j])));
       }
-      glEnd();
+      bl.glEnd();
    }
    else // shading == 2
    {
@@ -2232,30 +2232,30 @@ void VisualizationSceneSolution::PrepareBoundary()
          T = mesh->GetFaceElementTransformations(en, 4);
          T->Loc1.Transform(ir, eir);
          GetRefinedValues(T->Elem1No, eir, vals, pointmat);
-         glBegin(GL_LINE_STRIP);
+         bl.glBegin(GL_LINE_STRIP);
          for (j = 0; j < vals.Size(); j++)
          {
-            glVertex3d(pointmat(0, j), pointmat(1, j), vals(j));
+            bl.glVertex3d(pointmat(0, j), pointmat(1, j), vals(j));
          }
-         glEnd();
+         bl.glEnd();
 
          if (T->Elem2No >= 0)
          {
             T = mesh->GetFaceElementTransformations(en, 8);
             T->Loc2.Transform(ir, eir);
             GetRefinedValues(T->Elem2No, eir, vals, pointmat);
-            glBegin(GL_LINE_STRIP);
+            bl.glBegin(GL_LINE_STRIP);
             for (j = 0; j < vals.Size(); j++)
             {
-               glVertex3d(pointmat(0, j), pointmat(1, j), vals(j));
+               bl.glVertex3d(pointmat(0, j), pointmat(1, j), vals(j));
             }
-            glEnd();
+            bl.glEnd();
          }
       }
       shrink = shr;
    }
 
-   glEndList();
+   callListEndShim(bdr_buf);
 }
 
 void VisualizationSceneSolution::PrepareCP()
@@ -2482,7 +2482,7 @@ void VisualizationSceneSolution::Draw()
 
    if (drawbdr)
    {
-      glCallList(bdrlist);
+      callListDrawShim(bdrlist, bdr_buf);
    }
 
    // draw lines
