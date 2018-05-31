@@ -35,12 +35,14 @@ protected:
 
    std::map<GLenum, gl3::VertexBuffer> disp_buf;
    std::map<GLenum, gl3::VertexBuffer> cp_list_buf;
-   std::map<GLenum, gl3::VertexBuffer> e_nums_buf;
-   std::map<GLenum, gl3::VertexBuffer> v_nums_buf;
 
+   gl3::TextBuffer e_nums_buf;
+   gl3::TextBuffer v_nums_buf;
+   
    gl3::LineBuffer lcurve_buf;
    gl3::LineBuffer line_buf;
    gl3::LineBuffer bdr_buf;
+
    void Init();
 
    void FindNewBox(double rx[], double ry[], double rval[]);
@@ -143,6 +145,8 @@ public:
 };
 
 void DrawNumberedMarker(const double x[3], double dx, int n);
+
+void DrawNumberedMarker(const double x[3], double dx, int n, gl3::TextBuffer& buff);
 
 void DrawTriangle(const double pts[][3], const double cv[],
                   const double minv, const double maxv);

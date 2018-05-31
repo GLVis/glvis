@@ -125,14 +125,14 @@ protected:
 #endif
     }
 
-    inline void callListBeginShim(int call_list, gl3::LineBuffer& buf) {
+    inline void callListBeginShim(int call_list, gl3::VertexBuffer& buf) {
 #ifdef GLVIS_OGL3
        buf.clear();
 #else
        glNewList(call_list, GL_COMPILE);
 #endif
     }
-
+    
     inline void callListEndShim(std::map<GLenum, gl3::VertexBuffer>& buf) {
 #ifdef GLVIS_OGL3
         for (auto& it : buf) {
@@ -143,7 +143,7 @@ protected:
 #endif
     }
 
-    inline void callListEndShim(gl3::LineBuffer& buf) {
+    inline void callListEndShim(gl3::VertexBuffer& buf) {
 #ifdef GLVIS_OGL3
         buf.BufferData();
 #else
@@ -160,7 +160,13 @@ protected:
         glCallList(call_list);
 #endif
     }
-
+    inline void callListDrawShim(int call_list, gl3::VertexBuffer& buf, GLenum as) {
+#ifdef GLVIS_OGL3
+            buf.DrawObject(as);
+#else
+            glCallList(call_list);
+#endif
+    }
     inline void callListDrawShim(int call_list, gl3::LineBuffer& buf) {
 #ifdef GLVIS_OGL3
         buf.DrawObject();

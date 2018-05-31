@@ -12,7 +12,6 @@
 #ifndef GLVIS_AUX_VIS
 #define GLVIS_AUX_VIS
 
-#include <GL/glew.h>
 #include "platform_gl.hpp"
 
 #include "sdl.hpp"

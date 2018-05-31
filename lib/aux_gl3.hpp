@@ -11,10 +11,11 @@
 
 #ifndef GLVIS_AUX_GL3
 #define GLVIS_AUX_GL3
-#include <GL/glew.h>
 #include <vector>
 #include <map>
 #include <iostream>
+
+#include "platform_gl.hpp"
 
 using namespace std;
 
@@ -113,7 +114,7 @@ public:
         glDeleteBuffers(2, vbo_handles);
     }
 
-    void clear() {
+    virtual void clear() {
         pt_data.clear();
         color_data.clear();
         texcoord_data.clear();
@@ -161,7 +162,7 @@ public:
     ~LineBuffer() {
     }
 
-    void clear() {
+    virtual void clear() {
         pt_data.clear();
         size = 0;
     }
@@ -189,6 +190,30 @@ public:
      */
     virtual void DrawObject(GLenum renderAs, bool drawNow = true);
     
+    void DrawObject();
+};
+
+class TextBuffer : public LineBuffer {
+    struct _text_entry {
+        float x, y, z;
+        std::string text;
+        _text_entry(float x, float y, float z, std::string text)
+            : x(x), y(y), z(z), text(std::move(text)) { }
+    };
+    std::vector<_text_entry> entries;
+public:
+    TextBuffer() { }
+
+    virtual void clear() {
+        entries.clear();
+        LineBuffer::clear();
+    }
+
+    void SetText(float x, float y, float z, std::string text) {
+        entries.emplace_back(x, y, z, std::move(text));
+    }
+    virtual void BufferData();
+    virtual void DrawObject(GLenum renderAs, bool drawNow = true);
     void DrawObject();
 };
 

@@ -1,4 +1,5 @@
 #include "aux_gl3.hpp"
+#include "aux_vis.hpp"
 #include <iostream>
 #include <utility>
 using namespace gl3;
@@ -81,6 +82,28 @@ void VertexBuffer::DrawObject(GLenum renderAs, bool drawNow) {
     glDisableClientState(GL_NORMAL_ARRAY);
     glDisableClientState(GL_VERTEX_ARRAY);
 //    if (drawNow) { glFlush(); }
+}
+
+void TextBuffer::BufferData() {
+    // Stub since we're just drawing directly
+    LineBuffer::DrawObject();
+}
+
+void TextBuffer::DrawObject(GLenum renderAs, bool drawNow) {
+    DrawObject();
+}
+
+void TextBuffer::DrawObject() {
+    LineBuffer::DrawObject();
+    if (entries.size() == 0) { return; }
+#ifndef GLVIS_USE_FREETYPE
+    cerr << "Can't use text buffer object without Freetype" << endl;
+#else
+    for (auto& str_obj : entries) {
+        glRasterPos3f(str_obj.x, str_obj.y, str_obj.z);
+        DrawBitmapText(str_obj.text.c_str());
+    }
+#endif
 }
 
 void LineBuffer::BufferData() {

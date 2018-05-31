@@ -11,6 +11,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <string>
 #include <limits>
 #include <cmath>
 #include <vector>
@@ -1034,6 +1035,20 @@ void DrawNumberedMarker(const double x[3], double dx, int n)
 #endif
 }
 
+void DrawNumberedMarker(const double x[3], double dx, int n, gl3::TextBuffer& buff)
+{
+    gl3::LineBuilder bld = buff.createBuilder();
+    bld.glBegin(GL_LINES);
+    // glColor4d(0, 0, 0, 0);
+    bld.glVertex3d(x[0]-dx, x[1]-dx, x[2]);
+    bld.glVertex3d(x[0]+dx, x[1]+dx, x[2]);
+    bld.glVertex3d(x[0]+dx, x[1]-dx, x[2]);
+    bld.glVertex3d(x[0]-dx, x[1]+dx, x[2]);
+    bld.glEnd();
+
+    buff.SetText(x[0], x[1], x[2], std::to_string(n));
+}
+
 void DrawTriangle(const double pts[][3], const double cv[],
                   const double minv, const double maxv)
 {
@@ -1927,7 +1942,7 @@ void VisualizationSceneSolution::PrepareElementNumbering()
 
 void VisualizationSceneSolution::PrepareElementNumbering1()
 {
-   glNewList(e_nums_list, GL_COMPILE);
+   callListBeginShim(e_nums_list, e_nums_buf);
 
    DenseMatrix pointmat;
    Array<int> vertices;
@@ -1958,10 +1973,10 @@ void VisualizationSceneSolution::PrepareElementNumbering1()
       double dx = 0.05*ds;
 
       double xx[3] = {xs,ys,us};
-      DrawNumberedMarker(xx,dx,k);
+      DrawNumberedMarker(xx,dx,k,e_nums_buf);
    }
 
-   glEndList();
+   callListEndShim(e_nums_buf);
 }
 
 void VisualizationSceneSolution::PrepareElementNumbering2()
@@ -1970,7 +1985,7 @@ void VisualizationSceneSolution::PrepareElementNumbering2()
    DenseMatrix pointmat;
    Vector values;
 
-   glNewList(e_nums_list, GL_COMPILE);
+   callListBeginShim(e_nums_list, e_nums_buf);
 
    int ne = mesh->GetNE();
    for (int i = 0; i < ne; i++)
@@ -1989,10 +2004,10 @@ void VisualizationSceneSolution::PrepareElementNumbering2()
       double dx = 0.05*ds;
 
       double xx[3] = {xc,yc,uc};
-      DrawNumberedMarker(xx,dx,i);
+      DrawNumberedMarker(xx,dx,i,e_nums_buf);
    }
 
-   glEndList();
+   callListEndShim(e_nums_buf);
 }
 
 void VisualizationSceneSolution::PrepareVertexNumbering()
@@ -2019,7 +2034,7 @@ void VisualizationSceneSolution::PrepareVertexNumbering()
 
 void VisualizationSceneSolution::PrepareVertexNumbering1()
 {
-   glNewList(v_nums_list, GL_COMPILE);
+   callListBeginShim(v_nums_list, v_nums_buf);
 
    DenseMatrix pointmat;
    Array<int> vertices;
@@ -2046,11 +2061,11 @@ void VisualizationSceneSolution::PrepareVertexNumbering1()
          double u = LogVal((*sol)(vertices[j]));
 
          double xx[3] = {x,y,u};
-         DrawNumberedMarker(xx,xs,vertices[j]);
+         DrawNumberedMarker(xx,xs,vertices[j], v_nums_buf);
       }
    }
 
-   glEndList();
+   callListEndShim(v_nums_buf);
 }
 
 void VisualizationSceneSolution::PrepareVertexNumbering2()
@@ -2059,7 +2074,7 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
    Vector values;
    Array<int> vertices;
 
-   glNewList(v_nums_list, GL_COMPILE);
+   callListBeginShim(v_nums_list, v_nums_buf);
 
    const int ne = mesh->GetNE();
    for (int i = 0; i < ne; i++)
@@ -2084,11 +2099,11 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
          double u = values[j];
 
          double xx[3] = {xv,yv,u};
-         DrawNumberedMarker(xx,xs,vertices[j]);
+         DrawNumberedMarker(xx,xs,vertices[j], v_nums_buf);
       }
    }
 
-   glEndList();
+   callListEndShim(v_nums_buf);
 }
 
 void VisualizationSceneSolution::PrepareNumbering()
@@ -2500,11 +2515,11 @@ void VisualizationSceneSolution::Draw()
    {
       if (1 == drawnums)
       {
-         glCallList(e_nums_list);
+         callListDrawShim(e_nums_list, e_nums_buf);
       }
       else if (2 == drawnums)
       {
-         glCallList(v_nums_list);
+         callListDrawShim(v_nums_list, v_nums_buf);
       }
    }
 

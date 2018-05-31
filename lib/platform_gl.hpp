@@ -1,6 +1,7 @@
 #ifndef PLATFORM_GL_HPP
 #define PLATFORM_GL_HPP
 
+#include <GL/glew.h>
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
