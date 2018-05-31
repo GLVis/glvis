@@ -153,20 +153,28 @@ void SdlWindow::mouseEventUp(SDL_MouseButtonEvent& eb) {
 }
 
 void SdlWindow::keyEvent(SDL_Keysym& ks) {
+    //handle case where letter key is already held down
+    if (keyDown && (ks.sym == SDLK_LSHIFT || ks.sym == SDLK_RSHIFT)) {
+        ks.sym = curr;
+    }
     if (ks.mod & KMOD_SHIFT) {
         //check if separate caps handler exists
         if (onKeyDown[toupper(ks.sym)]) {
             onKeyDown[toupper(ks.sym)](ks.mod);
+            keyDown = true;
+            curr = ks.sym;
             return;
         }
     }
     if (onKeyDown[ks.sym]) {
         onKeyDown[ks.sym](ks.mod);
+        keyDown = true;
+        curr = ks.sym;
     }
 }
 
 void SdlWindow::mainLoop() {
-    bool running = true;
+    running = true;
     SDL_Event e;
     while (running) {
         while (SDL_PollEvent(&e)) {
@@ -180,6 +188,10 @@ void SdlWindow::mainLoop() {
                     break;
                 case SDL_KEYDOWN:
                     keyEvent(e.key.keysym);
+                    break;
+                case SDL_KEYUP:
+                    if (e.key.keysym.sym == curr)
+                        keyDown = false;
                     break;
                 case SDL_MOUSEMOTION:
                     motionEvent(e.motion);

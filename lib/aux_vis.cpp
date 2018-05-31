@@ -996,6 +996,7 @@ void KeyCtrlP()
 
 void KeyQPressed()
 {
+   wnd->signalQuit();
    visualize = 0;
 }
 

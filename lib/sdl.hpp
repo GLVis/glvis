@@ -42,6 +42,8 @@ private:
     struct _SdlHandle;
     //Use shared_ptr to manage handle lifetimes
     std::shared_ptr<_SdlHandle> _handle;
+
+    bool running;
     
     Delegate onIdle;
     Delegate onExpose;
@@ -50,6 +52,9 @@ private:
     std::map<int, MouseDelegate> onMouseDown;
     std::map<int, MouseDelegate> onMouseUp;
     std::map<int, MouseDelegate> onMouseMove;
+
+    SDL_Keycode curr;
+    bool keyDown;
    
     bool requiresExpose;
     //internal event handlers
@@ -97,6 +102,7 @@ public:
 
     void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE);
     void signalExpose() { requiresExpose = true; }
+    void signalQuit() { running = false; }
 
     operator bool() { return (bool) _handle ; }
     bool isWindowInitialized() { return (bool) _handle; }
