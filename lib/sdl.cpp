@@ -8,6 +8,8 @@
 using std::cerr;
 using std::endl;
 
+extern int GetMultisample();
+
 struct SdlWindow::_SdlHandle {
     SDL_Window * hwnd;
     SDL_GLContext gl_ctx;
@@ -66,10 +68,14 @@ bool SdlWindow::createGlContext() {
     //SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 1);
     //SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 1);
+    if (GetMultisample() > 0) {
+        SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);
+        SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
+    }
 
     SDL_GLContext context = SDL_GL_CreateContext(_handle->hwnd);
     if (!context) {
-        cerr << "Failed to create an OpenGL 2.1 context: %s" << SDL_GetError() << endl;
+        cerr << "Failed to create an OpenGL 2.1 context: " << SDL_GetError() << endl;
         return false;
     }
     _handle->gl_ctx = context;
@@ -78,7 +84,7 @@ bool SdlWindow::createGlContext() {
 
     GLenum err = glewInit();
     if (err != GLEW_OK) {
-        cerr << "Failed to initialize GLEW: %s" << glewGetErrorString(err) << endl;
+        cerr << "Failed to initialize GLEW: " << glewGetErrorString(err) << endl;
         return false;
     }
     return true;
