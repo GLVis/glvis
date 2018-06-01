@@ -56,20 +56,54 @@ class LineBuilder
     LineBuffer * parent_buf;
     GLenum render_as;
     std::vector<float> pts;
-
+    int count;
+    bool has_color;
+    bool has_stipple;
+    float color[4];
 public:
-    LineBuilder(LineBuffer * buf)
-        : parent_buf(buf) { }
-    
+    LineBuilder(LineBuffer * buf, bool save_color)
+        : parent_buf(buf), has_color(save_color) { }
+
+    void setUseColor(bool use = true) {
+        has_color = use;
+    }
+
     void glBegin(GLenum e) {
 #ifdef GLVIS_OGL3
         render_as = e;
 #else
-        glBegin(e);
+        ::glBegin(e);
+#endif
+    }
+    
+    void glEnable(GLenum e) {
+#ifdef GLVIS_OGL3
+        if (pts.size() != 0) {
+            cerr << "WARNING: Disabling stipple in the middle of a glEnable/glDisable block" << endl;
+        }
+        if (e == GL_LINE_STIPPLE) {
+            has_stipple = true;
+        }
+#else
+        ::glEnable(e);
 #endif
     }
 
+    void glDisable(GLenum e) {
+#ifdef GLVIS_OGL3
+        if (pts.size() != 0) {
+            cerr << "WARNING: Disabling stipple in the middle of a glEnable/glDisable block" << endl;
+        }
+        if (e == GL_LINE_STIPPLE) {
+            has_stipple = false;
+        }
+#else
+        ::glDisable(e);
+#endif
+    }
     void glVertex3d(double x, double y, double z);
+    void glColor3f(float r, float g, float b);
+    void glColor4fv(float * color);
 
     void glEnd();
 };
@@ -82,57 +116,49 @@ class VertexBuffer
 protected:
 
     bool handles_created;
-    GLuint vbo_handles[2];
-    bool is_textured;
-    size_t size;
-
-    std::vector<GlVertex> pt_data;
+    GLuint vbo_handles[3];
+    
+    // contains only point data
+    std::vector<float> pt_data;
+    // contains interleaved point and color data
+    // default layout: V(3f)|N(3f)|C(4f)
     std::vector<float> color_data;
+    // contains interleaved point and texture coord data
+    // default layout: V(3f)|N(3f)|T(1f)
     std::vector<float> texcoord_data;
     
     void init() {
-        glewInit(); //just in case
-        glGenBuffers(2, vbo_handles);
-        if (vbo_handles[0] != 0 && vbo_handles[1] != 0) {
-            cout << "Handles created" << endl;
-            handles_created = true;
-        } else {
-            const GLubyte* string = gluErrorString(glGetError());
-            cout << string << endl;
-        }
+        glGenBuffers(3, vbo_handles);
     }
 public:
     /**
      * Constructs a new Vertex buffer object.
      */
     VertexBuffer()
-        : handles_created(false), size(0) {
+        : handles_created(false) {
     }
 
     ~VertexBuffer() {
         cout << "Handles destroyed" << endl;
-        glDeleteBuffers(2, vbo_handles);
+        glDeleteBuffers(3, vbo_handles);
     }
 
     virtual void clear() {
         pt_data.clear();
         color_data.clear();
         texcoord_data.clear();
-        size = 0;
     }
 
     void addVertex(GlVertex gv, float texCoord) {
-        is_textured = true;
-        pt_data.push_back(gv);
+        std::move(gv.pos, gv.pos + 3, std::back_inserter(texcoord_data));
+        std::move(gv.norm, gv.norm + 3, std::back_inserter(texcoord_data));
         texcoord_data.push_back(texCoord);
-        size++;
     }
     
     void addVertex(GlVertex gv, float (&rgba)[4]) {
-        is_textured = false;
-        pt_data.push_back(gv); 
+        std::move(gv.pos, gv.pos + 3, std::back_inserter(color_data));
+        std::move(gv.norm, gv.norm + 3, std::back_inserter(color_data));
         color_data.insert(color_data.end(), rgba, rgba+4);
-        size++;
     }
 
     virtual void BufferData();
@@ -140,47 +166,22 @@ public:
     /**
      * Draws the VBO.
      */
-    virtual void DrawObject(GLenum renderAs, bool drawNow = true);
-
-    bool isEmpty() { return size == 0; }
+    virtual void DrawObject(GLenum renderAs);
 };
 
 class LineBuffer : public VertexBuffer {
-private:
-    std::vector<float> pt_data;
-    size_t curr_count;
-    GLenum renderHint;
-    
+    //texcoord_data is used to store stipple lines
     friend void LineBuilder::glEnd();
-
 public:
-    LineBuffer()
-        : curr_count(0),
-          renderHint(GL_LINE_LOOP) {
-    }
-
-    ~LineBuffer() {
-    }
-
-    virtual void clear() {
-        pt_data.clear();
-        size = 0;
-    }
 
     void addVertex(float x, float y, float z) {
         pt_data.push_back(x);
         pt_data.push_back(y);
         pt_data.push_back(z);
-        curr_count++;
-        size++;
     }
 
-    void renderAs(GLenum type) {
-        renderHint = type;
-    }
-
-    LineBuilder createBuilder() {
-        return LineBuilder(this);
+    LineBuilder createBuilder(bool save_color = false) {
+        return LineBuilder(this, save_color);
     }
 
     virtual void BufferData();
@@ -188,7 +189,7 @@ public:
     /**
      * Draws the VBO.
      */
-    virtual void DrawObject(GLenum renderAs, bool drawNow = true);
+    virtual void DrawObject(GLenum renderAs);
     
     void DrawObject();
 };
@@ -213,7 +214,7 @@ public:
         entries.emplace_back(x, y, z, std::move(text));
     }
     virtual void BufferData();
-    virtual void DrawObject(GLenum renderAs, bool drawNow = true);
+    virtual void DrawObject(GLenum renderAs);
     void DrawObject();
 };
 
