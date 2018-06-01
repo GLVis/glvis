@@ -1379,73 +1379,77 @@ void VisualizationSceneScalarData::PrepareAxes()
    GLfloat blk[4];
    glGetFloatv(GL_CURRENT_COLOR, blk);
 
-   glNewList(axeslist, GL_COMPILE);
+   callListBeginShim(axeslist, axes_buf);
+   gl3::LineBuilder bld = axes_buf.createBuilder();
 
    if (drawaxes == 3)
    {
       glLineStipple(1, 255);
-      glBegin(GL_LINES);
-      glColor3f(1., 0., 0.);
-      glVertex3d(x[0], y[0], z[0]);
-      glColor4fv(blk);
-      glVertex3d(x[1], y[0], z[0]);
-      glVertex3d(x[0], y[1], z[0]);
-      glColor3f(0., 1., 0.);
-      glVertex3d(x[0], y[0], z[0]);
-      glEnd();
-      glColor4fv(blk);
-      glEnable(GL_LINE_STIPPLE);
-      glBegin(GL_LINE_STRIP);
-      glVertex3d(x[1], y[0], z[0]);
-      glVertex3d(x[1], y[1], z[0]);
-      glVertex3d(x[0], y[1], z[0]);
-      glEnd();
+      bld.setUseColor(true);
+      bld.glBegin(GL_LINES);
+      bld.glColor3f(1., 0., 0.);
+      bld.glVertex3d(x[0], y[0], z[0]);
+      bld.glColor4fv(blk);
+      bld.glVertex3d(x[1], y[0], z[0]);
+      bld.glVertex3d(x[0], y[1], z[0]);
+      bld.glColor3f(0., 1., 0.);
+      bld.glVertex3d(x[0], y[0], z[0]);
+      bld.glEnd();
+      bld.glColor4fv(blk);
+      bld.glEnable(GL_LINE_STIPPLE);
+      bld.glBegin(GL_LINE_STRIP);
+      bld.glVertex3d(x[1], y[0], z[0]);
+      bld.glVertex3d(x[1], y[1], z[0]);
+      bld.glVertex3d(x[0], y[1], z[0]);
+      bld.glEnd();
    }
    else
    {
-      glBegin(GL_LINE_LOOP);
-      glVertex3d(x[0], y[0], z[0]);
-      glVertex3d(x[1], y[0], z[0]);
-      glVertex3d(x[1], y[1], z[0]);
-      glVertex3d(x[0], y[1], z[0]);
-      glEnd();
-   }
-
-   glBegin(GL_LINE_LOOP);
-   glVertex3d(x[0], y[0], z[1]);
-   glVertex3d(x[1], y[0], z[1]);
-   glVertex3d(x[1], y[1], z[1]);
-   glVertex3d(x[0], y[1], z[1]);
-   glEnd();
+      bld.glBegin(GL_LINE_LOOP);
+      bld.glVertex3d(x[0], y[0], z[0]);
+      bld.glVertex3d(x[1], y[0], z[0]);
+      bld.glVertex3d(x[1], y[1], z[0]);
+      bld.glVertex3d(x[0], y[1], z[0]);
+      bld.glEnd();
+   }  
+   bld.setUseColor(false);
+   bld.glBegin(GL_LINE_LOOP);
+   bld.glVertex3d(x[0], y[0], z[1]);
+   bld.glVertex3d(x[1], y[0], z[1]);
+   bld.glVertex3d(x[1], y[1], z[1]);
+   bld.glVertex3d(x[0], y[1], z[1]);
+   bld.glEnd();
 
    if (drawaxes == 3)
    {
-      glDisable(GL_LINE_STIPPLE);
-      glBegin(GL_LINES);
-      glVertex3d(x[0], y[0], z[1]);
-      glColor3f(0., 0., 1.);
-      glVertex3d(x[0], y[0], z[0]);
-      glEnd();
-      glEnable(GL_LINE_STIPPLE);
-      glColor4fv(blk);
-      glBegin(GL_LINES);
+      bld.setUseColor(true);
+      bld.glDisable(GL_LINE_STIPPLE);
+      bld.glBegin(GL_LINES);
+      bld.glVertex3d(x[0], y[0], z[1]);
+      bld.glColor3f(0., 0., 1.);
+      bld.glVertex3d(x[0], y[0], z[0]);
+      bld.glEnd();
+      bld.glEnable(GL_LINE_STIPPLE);
+      bld.glColor4fv(blk);
+      bld.setUseColor(false);
+      bld.glBegin(GL_LINES);
    }
    else
    {
-      glBegin(GL_LINES);
-      glVertex3d(x[0], y[0], z[0]);
-      glVertex3d(x[0], y[0], z[1]);
+      bld.glBegin(GL_LINES);
+      bld.glVertex3d(x[0], y[0], z[0]);
+      bld.glVertex3d(x[0], y[0], z[1]);
    }
-   glVertex3d(x[1], y[0], z[0]);
-   glVertex3d(x[1], y[0], z[1]);
-   glVertex3d(x[1], y[1], z[0]);
-   glVertex3d(x[1], y[1], z[1]);
-   glVertex3d(x[0], y[1], z[0]);
-   glVertex3d(x[0], y[1], z[1]);
-   glEnd();
+   bld.glVertex3d(x[1], y[0], z[0]);
+   bld.glVertex3d(x[1], y[0], z[1]);
+   bld.glVertex3d(x[1], y[1], z[0]);
+   bld.glVertex3d(x[1], y[1], z[1]);
+   bld.glVertex3d(x[0], y[1], z[0]);
+   bld.glVertex3d(x[0], y[1], z[1]);
+   bld.glEnd();
    if (drawaxes == 3)
    {
-      glDisable(GL_LINE_STIPPLE);
+      bld.glDisable(GL_LINE_STIPPLE);
    }
 
    // Write the coordinates of the lower left and upper right corner.
@@ -1463,29 +1467,19 @@ void VisualizationSceneScalarData::PrepareAxes()
       ostringstream buf;
       buf << setprecision(4)
           << "(" << x[0] << "," << y[0] << ","  << z[0] << ")" ;
-      glRasterPos3d (x[0], y[0], z[0]);
-#ifndef GLVIS_USE_FREETYPE
-      glCallLists(buf.str().size(), GL_UNSIGNED_BYTE, buf.str().c_str());
-#else
-      DrawBitmapText(buf.str().c_str());
-#endif
+      axes_buf.SetText(x[0], y[0], z[0], buf.str());
 
       ostringstream buf1;
       buf1 << setprecision(4)
            << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
-      glRasterPos3d (x[1], y[1], z[1]);
-#ifndef GLVIS_USE_FREETYPE
-      glCallLists(buf1.str().size(), GL_UNSIGNED_BYTE, buf1.str().c_str());
-#else
-      DrawBitmapText(buf1.str().c_str());
-#endif
+      axes_buf.SetText(x[1], y[1], z[1], buf1.str());
 
 #ifndef GLVIS_USE_FREETYPE
       glPopAttrib();
 #endif
    }
 
-   glEndList();
+   callListEndShim(axes_buf);
 }
 
 void VisualizationSceneScalarData::DrawPolygonLevelLines(

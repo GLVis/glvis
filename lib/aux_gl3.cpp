@@ -83,6 +83,7 @@ void VertexBuffer::BufferData() {
         glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[0]);
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * pt_data.size(), pt_data.data(), GL_STATIC_DRAW);
         glVertexPointer(3, GL_FLOAT, 0, 0);
+        pt_cnt = pt_data.size() / 3;
     }
     if (!color_data.empty()) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[1]);
@@ -90,7 +91,7 @@ void VertexBuffer::BufferData() {
         glVertexPointer(3, GL_FLOAT, sizeof(float) * 10, 0);
         glNormalPointer(GL_FLOAT, sizeof(float) * 10, (void*)(sizeof(float) * 3));
         glColorPointer(4, GL_FLOAT, sizeof(float) * 10, (void*)(sizeof(float) * 6));
-
+        color_cnt = color_data.size() / 10;
     }
     if (!texcoord_data.empty()) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[2]);
@@ -98,6 +99,7 @@ void VertexBuffer::BufferData() {
         glVertexPointer(3, GL_FLOAT, sizeof(float) * 7, 0);
         glNormalPointer(GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 3));
         glTexCoordPointer(1, GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 6));
+        texcoord_cnt = texcoord_data.size() / 7;
     }
 }
 
@@ -106,13 +108,13 @@ void VertexBuffer::DrawObject(GLenum renderAs) {
     glEnableClientState(GL_VERTEX_ARRAY);
     if (!pt_data.empty()) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[0]);
-        glDrawArrays(renderAs, 0, pt_data.size());
+        glDrawArrays(renderAs, 0, pt_cnt);
     }
     if (!color_data.empty()) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[1]);
         glEnableClientState(GL_NORMAL_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
-        glDrawArrays(renderAs, 0, color_data.size());
+        glDrawArrays(renderAs, 0, color_cnt);
         glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_NORMAL_ARRAY);
     }
@@ -120,7 +122,7 @@ void VertexBuffer::DrawObject(GLenum renderAs) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[2]);
         glEnableClientState(GL_NORMAL_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glDrawArrays(renderAs, 0, texcoord_data.size());
+        glDrawArrays(renderAs, 0, texcoord_cnt);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisableClientState(GL_NORMAL_ARRAY);
     }
@@ -155,18 +157,20 @@ void LineBuffer::BufferData() {
         glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[0]);
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * pt_data.size(), pt_data.data(), GL_STATIC_DRAW);
         glVertexPointer(3, GL_FLOAT, 0, 0);
+        pt_cnt = pt_data.size() / 3;
     }
     if (!color_data.empty()) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[1]);
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * pt_data.size(), pt_data.data(), GL_STATIC_DRAW);
         glVertexPointer(3, GL_FLOAT, sizeof(float) * 7, 0);
         glColorPointer(4, GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 3));
-
+        color_cnt = color_data.size() / 7;
     }
     if (!texcoord_data.empty()) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[2]);
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * texcoord_data.size(), texcoord_data.data(), GL_STATIC_DRAW);
         glVertexPointer(3, GL_FLOAT, 0, 0);
+        texcoord_cnt = texcoord_data.size() / 3;
     }
 }
 
@@ -179,18 +183,18 @@ void LineBuffer::DrawObject() {
     glEnableClientState(GL_VERTEX_ARRAY);
     if (!pt_data.empty()) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[0]);
-        glDrawArrays(GL_LINES, 0, pt_data.size());
+        glDrawArrays(GL_LINES, 0, pt_cnt);
     }
     if (!color_data.empty()) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[1]);
         glEnableClientState(GL_COLOR_ARRAY);
-        glDrawArrays(GL_LINES, 0, color_data.size());
+        glDrawArrays(GL_LINES, 0, color_cnt);
         glDisableClientState(GL_COLOR_ARRAY);
     }
     if (!texcoord_data.empty()) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[2]);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glDrawArrays(GL_LINES, 0, texcoord_data.size());
+        glDrawArrays(GL_LINES, 0, texcoord_cnt);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     }
     glDisableClientState(GL_VERTEX_ARRAY);

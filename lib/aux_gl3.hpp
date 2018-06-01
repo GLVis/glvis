@@ -120,12 +120,15 @@ protected:
     
     // contains only point data
     std::vector<float> pt_data;
+    int pt_cnt;
     // contains interleaved point and color data
     // default layout: V(3f)|N(3f)|C(4f)
     std::vector<float> color_data;
+    int color_cnt;
     // contains interleaved point and texture coord data
     // default layout: V(3f)|N(3f)|T(1f)
     std::vector<float> texcoord_data;
+    int texcoord_cnt;
     
     void init() {
         glGenBuffers(3, vbo_handles);

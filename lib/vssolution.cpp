@@ -2531,7 +2531,7 @@ void VisualizationSceneSolution::Draw()
    // draw axes
    if (drawaxes)
    {
-      glCallList(axeslist);
+      callListDrawShim(axeslist, axes_buf);
       DrawCoordinateCross();
    }
 

@@ -64,6 +64,8 @@ protected:
    int scaling, colorbar, drawaxes, axeslist;
    int auto_ref_max, auto_ref_max_surf_elem;
 
+   gl3::TextBuffer axes_buf;
+
    void Init();
 
    int arrow_type, arrow_scaling_type;
