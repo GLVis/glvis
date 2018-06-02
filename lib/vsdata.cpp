@@ -1380,12 +1380,10 @@ void VisualizationSceneScalarData::PrepareAxes()
    glGetFloatv(GL_CURRENT_COLOR, blk);
 
    callListBeginShim(axeslist, axes_buf);
-   gl3::LineBuilder bld = axes_buf.createBuilder();
-
+   gl3::LineBuilder bld = axes_buf.createBuilder(true);
    if (drawaxes == 3)
    {
-      glLineStipple(1, 255);
-      bld.setUseColor(true);
+      //glLineStipple(1, 255);
       bld.glBegin(GL_LINES);
       bld.glColor3f(1., 0., 0.);
       bld.glVertex3d(x[0], y[0], z[0]);
@@ -1412,7 +1410,6 @@ void VisualizationSceneScalarData::PrepareAxes()
       bld.glVertex3d(x[0], y[1], z[0]);
       bld.glEnd();
    }  
-   bld.setUseColor(false);
    bld.glBegin(GL_LINE_LOOP);
    bld.glVertex3d(x[0], y[0], z[1]);
    bld.glVertex3d(x[1], y[0], z[1]);
@@ -1422,7 +1419,6 @@ void VisualizationSceneScalarData::PrepareAxes()
 
    if (drawaxes == 3)
    {
-      bld.setUseColor(true);
       bld.glDisable(GL_LINE_STIPPLE);
       bld.glBegin(GL_LINES);
       bld.glVertex3d(x[0], y[0], z[1]);
@@ -1431,7 +1427,6 @@ void VisualizationSceneScalarData::PrepareAxes()
       bld.glEnd();
       bld.glEnable(GL_LINE_STIPPLE);
       bld.glColor4fv(blk);
-      bld.setUseColor(false);
       bld.glBegin(GL_LINES);
    }
    else

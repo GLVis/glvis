@@ -92,6 +92,7 @@ bool SdlWindow::createGlContext() {
     _handle->gl_ctx = context;
 
     SDL_GL_SetSwapInterval(1);
+    glEnable(GL_DEBUG_OUTPUT);
 
     GLenum err = glewInit();
     if (err != GLEW_OK) {

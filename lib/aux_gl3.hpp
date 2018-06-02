@@ -14,6 +14,7 @@
 #include <vector>
 #include <map>
 #include <iostream>
+#include <memory>
 
 #include "platform_gl.hpp"
 
@@ -62,7 +63,9 @@ class LineBuilder
     float color[4];
 public:
     LineBuilder(LineBuffer * buf, bool save_color)
-        : parent_buf(buf), has_color(save_color) { }
+        : parent_buf(buf)
+        , has_color(save_color)
+        , has_stipple(false) { }
 
     void setUseColor(bool use = true) {
         has_color = use;
@@ -71,6 +74,7 @@ public:
     void glBegin(GLenum e) {
 #ifdef GLVIS_OGL3
         render_as = e;
+        count = 0;
 #else
         ::glBegin(e);
 #endif
@@ -115,8 +119,20 @@ class VertexBuffer
 {
 protected:
 
-    bool handles_created;
-    GLuint vbo_handles[3];
+    struct _handle {
+        GLuint vbo_handles[3];
+        _handle() {
+            glGenBuffers(3, vbo_handles);
+        }
+        ~_handle() {
+            glDeleteBuffers(3, vbo_handles);
+        }
+
+        GLuint get(int i) {
+            return vbo_handles[i];
+        }
+    };
+    std::shared_ptr<_handle> vbo;
     
     // contains only point data
     std::vector<float> pt_data;
@@ -130,26 +146,23 @@ protected:
     std::vector<float> texcoord_data;
     int texcoord_cnt;
     
-    void init() {
-        glGenBuffers(3, vbo_handles);
-    }
 public:
     /**
      * Constructs a new Vertex buffer object.
      */
     VertexBuffer()
-        : handles_created(false) {
+        : vbo(std::make_shared<_handle>()) {
     }
 
-    ~VertexBuffer() {
-        cout << "Handles destroyed" << endl;
-        glDeleteBuffers(3, vbo_handles);
-    }
+    ~VertexBuffer() { }
 
     virtual void clear() {
         pt_data.clear();
         color_data.clear();
         texcoord_data.clear();
+        pt_cnt = 0;
+        color_cnt = 0;
+        texcoord_cnt = 0;
     }
 
     void addVertex(GlVertex gv, float texCoord) {
@@ -194,7 +207,7 @@ public:
      */
     virtual void DrawObject(GLenum renderAs);
     
-    void DrawObject();
+    virtual void DrawObject();
 };
 
 class TextBuffer : public LineBuffer {
@@ -218,7 +231,7 @@ public:
     }
     virtual void BufferData();
     virtual void DrawObject(GLenum renderAs);
-    void DrawObject();
+    virtual void DrawObject();
 };
 
 }

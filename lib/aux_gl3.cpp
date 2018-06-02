@@ -18,7 +18,7 @@ using namespace gl3;
 void LineBuilder::glVertex3d(double x, double y, double z) {
 #ifdef GLVIS_OGL3
     int offset = (has_color && !has_stipple) ? 7 : 3;
-    if (count > 2 && (render_as == GL_LINE_STRIP || render_as == GL_LINE_LOOP)) {
+    if (count >= 2 && (render_as == GL_LINE_STRIP || render_as == GL_LINE_LOOP)) {
         pts.reserve(offset * 2 + pts.size());
         //append last-inserted point
         std::copy_n(pts.end() - offset - 1, offset, std::back_inserter(pts));
@@ -74,11 +74,17 @@ void LineBuilder::glEnd() {
         std::copy_n(pts.begin(), offset, std::back_inserter(pts));
     }
     if (has_stipple) {
-        std::move(pts.begin(), pts.end(), std::back_inserter(parent_buf->texcoord_data));
+        parent_buf->texcoord_data.insert(parent_buf->texcoord_data.end(),
+                                         std::make_move_iterator(pts.begin()),
+                                         std::make_move_iterator(pts.end()));
     } else if (has_color) {
-        std::move(pts.begin(), pts.end(), std::back_inserter(parent_buf->color_data));
+        parent_buf->color_data.insert(parent_buf->color_data.end(),
+                                      std::make_move_iterator(pts.begin()),
+                                      std::make_move_iterator(pts.end()));
     } else {
-        std::move(pts.begin(), pts.end(), std::back_inserter(parent_buf->pt_data));
+        parent_buf->pt_data.insert(parent_buf->pt_data.end(),
+                                   std::make_move_iterator(pts.begin()),
+                                   std::make_move_iterator(pts.end()));
     }
     //if we've std::moved the data, pts is junked
     pts.clear();
@@ -89,15 +95,14 @@ void LineBuilder::glEnd() {
 }
 
 void VertexBuffer::BufferData() {
-    if (!handles_created) { init(); }
     if (!pt_data.empty()) {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[0]);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo->get(0));
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * pt_data.size(), pt_data.data(), GL_STATIC_DRAW);
         glVertexPointer(3, GL_FLOAT, 0, 0);
         pt_cnt = pt_data.size() / 3;
     }
     if (!color_data.empty()) {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[1]);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo->get(1));
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * pt_data.size(), pt_data.data(), GL_STATIC_DRAW);
         glVertexPointer(3, GL_FLOAT, sizeof(float) * 10, 0);
         glNormalPointer(GL_FLOAT, sizeof(float) * 10, (void*)(sizeof(float) * 3));
@@ -105,48 +110,56 @@ void VertexBuffer::BufferData() {
         color_cnt = color_data.size() / 10;
     }
     if (!texcoord_data.empty()) {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[2]);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo->get(2));
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * texcoord_data.size(), texcoord_data.data(), GL_STATIC_DRAW);
         glVertexPointer(3, GL_FLOAT, sizeof(float) * 7, 0);
         glNormalPointer(GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 3));
         glTexCoordPointer(1, GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 6));
         texcoord_cnt = texcoord_data.size() / 7;
     }
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void VertexBuffer::DrawObject(GLenum renderAs) {
-    if (!handles_created) { init(); }
-    glEnableClientState(GL_VERTEX_ARRAY);
     if (!pt_data.empty()) {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[0]);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo->get(0));
+        glEnableClientState(GL_VERTEX_ARRAY);
+        cerr << "Drawing object with " << pt_cnt << " vertices" << endl;
         glDrawArrays(renderAs, 0, pt_cnt);
+        glDisableClientState(GL_VERTEX_ARRAY);
     }
     if (!color_data.empty()) {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[1]);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo->get(1));
+        glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_NORMAL_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
+        cerr << "Drawing object with " << color_cnt << " vertices" << endl;
         glDrawArrays(renderAs, 0, color_cnt);
         glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_NORMAL_ARRAY);
+        glDisableClientState(GL_VERTEX_ARRAY);
     }
     if (!texcoord_data.empty()) {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[2]);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo->get(2));
+        glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_NORMAL_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        cerr << "Drawing object with " << texcoord_cnt << " vertices" << endl;
         glDrawArrays(renderAs, 0, texcoord_cnt);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisableClientState(GL_NORMAL_ARRAY);
+        glDisableClientState(GL_VERTEX_ARRAY);
     }
-    glDisableClientState(GL_VERTEX_ARRAY);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void TextBuffer::BufferData() {
     // Stub since we're just drawing directly
-    LineBuffer::DrawObject();
+    LineBuffer::BufferData();
 }
 
 void TextBuffer::DrawObject(GLenum renderAs) {
-    DrawObject();
+    this->DrawObject();
 }
 
 void TextBuffer::DrawObject() {
@@ -163,50 +176,58 @@ void TextBuffer::DrawObject() {
 }
 
 void LineBuffer::BufferData() {
-    if (!handles_created) { init(); }
     if (!pt_data.empty()) {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[0]);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo->get(0));
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * pt_data.size(), pt_data.data(), GL_STATIC_DRAW);
         glVertexPointer(3, GL_FLOAT, 0, 0);
         pt_cnt = pt_data.size() / 3;
     }
     if (!color_data.empty()) {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[1]);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * pt_data.size(), pt_data.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo->get(1));
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * color_data.size(), color_data.data(), GL_STATIC_DRAW);
         glVertexPointer(3, GL_FLOAT, sizeof(float) * 7, 0);
         glColorPointer(4, GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 3));
         color_cnt = color_data.size() / 7;
     }
     if (!texcoord_data.empty()) {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[2]);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo->get(2));
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * texcoord_data.size(), texcoord_data.data(), GL_STATIC_DRAW);
         glVertexPointer(3, GL_FLOAT, 0, 0);
         texcoord_cnt = texcoord_data.size() / 3;
     }
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void LineBuffer::DrawObject(GLenum renderAs) {
-    DrawObject();
+    this->DrawObject();
 }
 
 void LineBuffer::DrawObject() {
-    if (!handles_created) { init(); }
-    glEnableClientState(GL_VERTEX_ARRAY);
     if (!pt_data.empty()) {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[0]);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo->get(0));
+        glEnableClientState(GL_VERTEX_ARRAY);
+        cerr << "Drawing line object with " << pt_cnt << " vertices" << endl;
         glDrawArrays(GL_LINES, 0, pt_cnt);
+        glDisableClientState(GL_VERTEX_ARRAY);
     }
     if (!color_data.empty()) {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[1]);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo->get(1));
+        glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
+        cerr << "Drawing line object with " << color_cnt << " vertices" << endl;
         glDrawArrays(GL_LINES, 0, color_cnt);
         glDisableClientState(GL_COLOR_ARRAY);
+        glDisableClientState(GL_VERTEX_ARRAY);
     }
     if (!texcoord_data.empty()) {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_handles[2]);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo->get(2));
+        glEnableClientState(GL_VERTEX_ARRAY);
+        //glLineStipple(1, 255);
+        //glEnable(GL_LINE_STIPPLE);
+        cerr << "Drawing line object with " << texcoord_cnt << " vertices" << endl;
         glDrawArrays(GL_LINES, 0, texcoord_cnt);
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        //glDisable(GL_LINE_STIPPLE);
+        glDisableClientState(GL_VERTEX_ARRAY);
     }
-    glDisableClientState(GL_VERTEX_ARRAY);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
