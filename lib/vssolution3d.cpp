@@ -2829,7 +2829,7 @@ void VisualizationSceneSolution3d::Draw()
    // draw axes
    if (drawaxes)
    {
-      glCallList(axeslist);
+      callListDrawShim(axeslist, axes_buf);
       DrawCoordinateCross();
    }
 

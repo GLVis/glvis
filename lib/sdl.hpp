@@ -16,7 +16,7 @@
 #include <functional>
 #include <map>
 #include <SDL2/SDL.h>
-#include <GL/glew.h>
+#include "platform_gl.hpp"
 #include <SDL2/SDL_opengl.h>
 
 
@@ -114,6 +114,8 @@ public:
     void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE);
     void signalExpose() { requiresExpose = true; }
     void signalQuit() { running = false; }
+
+    void swapBuffer();
 
     operator bool() { return (bool) _handle ; }
     bool isWindowInitialized() { return (bool) _handle; }

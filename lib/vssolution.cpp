@@ -2481,6 +2481,9 @@ void VisualizationSceneSolution::Draw()
       glDisable(GL_LIGHTING);
    }
    Set_Black_Material();
+   glFlush();
+   wnd->swapBuffer();
+   wnd->swapBuffer();
 
    // ruler may have mixture of polygons and lines
    if (draw_cp)
@@ -2527,11 +2530,16 @@ void VisualizationSceneSolution::Draw()
    {
       glDisable(GL_CLIP_PLANE0);
    }
-
+   glFlush();
+   wnd->swapBuffer();
+   wnd->swapBuffer();
    // draw axes
    if (drawaxes)
    {
       callListDrawShim(axeslist, axes_buf);
+      glFlush();
+      wnd->swapBuffer();
+      wnd->swapBuffer();
       DrawCoordinateCross();
    }
 

@@ -10,9 +10,8 @@
 // Software Foundation) version 2.1 dated February 1999.
 
 #include <SDL2/SDL.h>
-#include <GL/glew.h>
+#include "platform_gl.hpp"
 #include <SDL2/SDL_opengl.h>
-#include <OpenGL/GL.h>
 #include <iostream>
 #include "sdl.hpp"
 
@@ -273,6 +272,11 @@ void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m) {
     event.key.keysym.mod = m;
     SDL_PushEvent(&event);
 }
+
+void SdlWindow::swapBuffer() {
+    SDL_GL_SwapWindow(_handle->hwnd);
+}
+
 /*
 void SdlWindow::signalExpose() {
    SDL_Event event;

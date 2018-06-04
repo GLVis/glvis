@@ -169,6 +169,7 @@ public:
         std::move(gv.pos, gv.pos + 3, std::back_inserter(texcoord_data));
         std::move(gv.norm, gv.norm + 3, std::back_inserter(texcoord_data));
         texcoord_data.push_back(texCoord);
+        texcoord_data.push_back(0);
     }
     
     void addVertex(GlVertex gv, float (&rgba)[4]) {

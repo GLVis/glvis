@@ -1062,7 +1062,7 @@ void VisualizationSceneVector::Draw()
    }
    else if (drawmesh == 2)
    {
-      glCallList(lcurvelist);
+      callListDrawShim(lcurvelist, lcurve_buf);
    }
 
    // draw numberings
@@ -1104,7 +1104,7 @@ void VisualizationSceneVector::Draw()
    // draw axes
    if (drawaxes)
    {
-      glCallList(axeslist);
+      callListDrawShim(axeslist, axes_buf);
       DrawCoordinateCross();
    }
 

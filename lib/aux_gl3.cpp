@@ -112,10 +112,10 @@ void VertexBuffer::BufferData() {
     if (!texcoord_data.empty()) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(2));
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * texcoord_data.size(), texcoord_data.data(), GL_STATIC_DRAW);
-        glVertexPointer(3, GL_FLOAT, sizeof(float) * 7, 0);
-        glNormalPointer(GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 3));
-        glTexCoordPointer(1, GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 6));
-        texcoord_cnt = texcoord_data.size() / 7;
+        glVertexPointer(3, GL_FLOAT, sizeof(float) * 8, 0);
+        glNormalPointer(GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 3));
+        glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 6));
+        texcoord_cnt = texcoord_data.size() / 8;
     }
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
