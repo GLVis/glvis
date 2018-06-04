@@ -1394,6 +1394,7 @@ void VisualizationSceneScalarData::PrepareAxes()
       bld.glVertex3d(x[0], y[0], z[0]);
       bld.glEnd();
       bld.glColor4fv(blk);
+      bld.setUseColor(false);
       bld.glEnable(GL_LINE_STIPPLE);
       bld.glBegin(GL_LINE_STRIP);
       bld.glVertex3d(x[1], y[0], z[0]);
@@ -1403,6 +1404,7 @@ void VisualizationSceneScalarData::PrepareAxes()
    }
    else
    {
+      bld.setUseColor(false);
       bld.glBegin(GL_LINE_LOOP);
       bld.glVertex3d(x[0], y[0], z[0]);
       bld.glVertex3d(x[1], y[0], z[0]);
@@ -1419,12 +1421,14 @@ void VisualizationSceneScalarData::PrepareAxes()
 
    if (drawaxes == 3)
    {
+      bld.setUseColor(true);
       bld.glDisable(GL_LINE_STIPPLE);
       bld.glBegin(GL_LINES);
       bld.glVertex3d(x[0], y[0], z[1]);
       bld.glColor3f(0., 0., 1.);
       bld.glVertex3d(x[0], y[0], z[0]);
       bld.glEnd();
+      bld.setUseColor(false);
       bld.glEnable(GL_LINE_STIPPLE);
       bld.glColor4fv(blk);
       bld.glBegin(GL_LINES);

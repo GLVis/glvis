@@ -21,7 +21,7 @@ void LineBuilder::glVertex3d(double x, double y, double z) {
     if (count >= 2 && (render_as == GL_LINE_STRIP || render_as == GL_LINE_LOOP)) {
         pts.reserve(offset * 2 + pts.size());
         //append last-inserted point
-        std::copy_n(pts.end() - offset - 1, offset, std::back_inserter(pts));
+        std::copy_n(pts.end() - offset, offset, std::back_inserter(pts));
     } else {
         pts.reserve(offset + pts.size());
     }
@@ -70,7 +70,7 @@ void LineBuilder::glEnd() {
         int offset = (has_color && !has_stipple) ? 7 : 3;
         //connect first and last points
         pts.reserve(offset * 2 + pts.size());
-        std::copy_n(pts.end() - offset - 1, offset, std::back_inserter(pts));
+        std::copy_n(pts.end() - offset, offset, std::back_inserter(pts));
         std::copy_n(pts.begin(), offset, std::back_inserter(pts));
     }
     if (has_stipple) {
@@ -118,7 +118,6 @@ void VertexBuffer::DrawObject(GLenum renderAs) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(0));
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, 0);
-        cerr << "Drawing object with " << pt_cnt << " vertices" << endl;
         glDrawArrays(renderAs, 0, pt_cnt);
         glDisableClientState(GL_VERTEX_ARRAY);
     }
@@ -130,7 +129,6 @@ void VertexBuffer::DrawObject(GLenum renderAs) {
         glNormalPointer(GL_FLOAT, sizeof(float) * 10, (void*)(sizeof(float) * 3));
         glEnableClientState(GL_COLOR_ARRAY);
         glColorPointer(4, GL_FLOAT, sizeof(float) * 10, (void*)(sizeof(float) * 6));
-        cerr << "Drawing object with " << color_cnt << " vertices" << endl;
         glDrawArrays(renderAs, 0, color_cnt);
         glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_NORMAL_ARRAY);
@@ -144,7 +142,6 @@ void VertexBuffer::DrawObject(GLenum renderAs) {
         glNormalPointer(GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 3));
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 6));
-        cerr << "Drawing object with " << texcoord_cnt << " vertices" << endl;
         glDrawArrays(renderAs, 0, texcoord_cnt);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisableClientState(GL_NORMAL_ARRAY);
@@ -203,7 +200,6 @@ void LineBuffer::DrawObject() {
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(0));
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, 0);
-        cerr << "Drawing line object with " << pt_cnt << " vertices" << endl;
         glDrawArrays(GL_LINES, 0, pt_cnt);
         glDisableClientState(GL_VERTEX_ARRAY);
     }
@@ -213,7 +209,6 @@ void LineBuffer::DrawObject() {
         glVertexPointer(3, GL_FLOAT, sizeof(float) * 7, 0);
         glEnableClientState(GL_COLOR_ARRAY);
         glColorPointer(4, GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 3));
-        cerr << "Drawing line object with " << color_cnt << " vertices" << endl;
         glDrawArrays(GL_LINES, 0, color_cnt);
         glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
@@ -222,11 +217,10 @@ void LineBuffer::DrawObject() {
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(2));
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, 0);
-        //glLineStipple(1, 255);
-        //glEnable(GL_LINE_STIPPLE);
-        cerr << "Drawing line object with " << texcoord_cnt << " vertices" << endl;
+        glLineStipple(1, 255);
+        glEnable(GL_LINE_STIPPLE);
         glDrawArrays(GL_LINES, 0, texcoord_cnt);
-        //glDisable(GL_LINE_STIPPLE);
+        glDisable(GL_LINE_STIPPLE);
         glDisableClientState(GL_VERTEX_ARRAY);
     }
     glBindBuffer(GL_ARRAY_BUFFER, 0);
