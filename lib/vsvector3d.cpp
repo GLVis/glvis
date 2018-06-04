@@ -1647,6 +1647,4 @@ void VisualizationSceneVector3d::Draw()
       callListDrawShim(axeslist, axes_buf);
       DrawCoordinateCross();
    }
-
-   glFlush();
 }
