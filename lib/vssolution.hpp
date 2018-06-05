@@ -34,7 +34,6 @@ protected:
    int e_nums_list, v_nums_list;
 
    std::map<GLenum, gl3::VertexBuffer> disp_buf;
-   std::map<GLenum, gl3::VertexBuffer> cp_list_buf;
 
    gl3::TextBuffer e_nums_buf;
    gl3::TextBuffer v_nums_buf;
@@ -42,12 +41,13 @@ protected:
    gl3::LineBuffer lcurve_buf;
    gl3::LineBuffer line_buf;
    gl3::LineBuffer bdr_buf;
+   gl3::LineBuffer cp_list_buf;
 
    void Init();
 
    void FindNewBox(double rx[], double ry[], double rval[]);
 
-   void DrawCPLine(DenseMatrix &pointmat, Vector &values, Array<int> &ind);
+   void DrawCPLine(DenseMatrix &pointmat, Vector &values, Array<int> &ind, gl3::LineBuilder& bld);
 
    void GetRefinedDetJ(int i, const IntegrationRule &ir,
                        Vector &vals, DenseMatrix &tr);

@@ -2284,8 +2284,9 @@ void VisualizationSceneSolution::PrepareCP()
       return;
    }
 
-   glNewList(cp_list, GL_COMPILE);
-   glBegin(GL_LINES);
+   callListBeginShim(cp_list, cp_list_buf);
+   gl3::LineBuilder bld = cp_list_buf.createBuilder();
+   bld.glBegin(GL_LINES);
 
    if (shading != 2)
    {
@@ -2319,7 +2320,7 @@ void VisualizationSceneSolution::PrepareCP()
             ind[j] = j;
          }
 
-         DrawCPLine(pointmat, values, ind);
+         DrawCPLine(pointmat, values, ind, bld);
       }
    }
    else
@@ -2358,17 +2359,17 @@ void VisualizationSceneSolution::PrepareCP()
                continue;
             }
 
-            DrawCPLine(pointmat, values, ind);
+            DrawCPLine(pointmat, values, ind, bld);
          }
       }
    }
 
-   glEnd();
-   glEndList();
+   bld.glEnd();
+   callListEndShim(cp_list_buf);
 }
 
 void VisualizationSceneSolution::DrawCPLine(
-   DenseMatrix &pointmat, Vector &values, Array<int> &ind)
+   DenseMatrix &pointmat, Vector &values, Array<int> &ind, gl3::LineBuilder& bld)
 {
    int n, js, nv = ind.Size();
    double s, xs, ys;
@@ -2387,7 +2388,7 @@ void VisualizationSceneSolution::DrawCPLine(
       {
          double a = fabs(s) / (fabs(s) + fabs(t));
 
-         glVertex3d((1.-a) * xs + a * xt,
+         bld.glVertex3d((1.-a) * xs + a * xt,
                     (1.-a) * ys + a * yt,
                     (1.-a) * values(ind[js]) + a * values(ind[j]));
          n++;
@@ -2487,7 +2488,7 @@ void VisualizationSceneSolution::Draw()
    {
       glDisable(GL_CLIP_PLANE0);
       DrawRuler(logscale);
-      glCallList(cp_list);
+      callListDrawShim(cp_list, cp_list_buf);
       glEnable(GL_CLIP_PLANE0);
    }
    else
