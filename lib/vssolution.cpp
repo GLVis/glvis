@@ -2284,8 +2284,8 @@ void VisualizationSceneSolution::PrepareCP()
       return;
    }
 
-   callListBeginShim(cp_list, cp_list_buf);
-   gl3::LineBuilder bld = cp_list_buf.createBuilder();
+   callListBeginShim(cp_list, cp_buf);
+   gl3::LineBuilder bld = cp_buf.createBuilder();
    bld.glBegin(GL_LINES);
 
    if (shading != 2)
@@ -2365,7 +2365,7 @@ void VisualizationSceneSolution::PrepareCP()
    }
 
    bld.glEnd();
-   callListEndShim(cp_list_buf);
+   callListEndShim(cp_buf);
 }
 
 void VisualizationSceneSolution::DrawCPLine(
@@ -2488,7 +2488,7 @@ void VisualizationSceneSolution::Draw()
    {
       glDisable(GL_CLIP_PLANE0);
       DrawRuler(logscale);
-      callListDrawShim(cp_list, cp_list_buf);
+      callListDrawShim(cp_list, cp_buf);
       glEnable(GL_CLIP_PLANE0);
    }
    else

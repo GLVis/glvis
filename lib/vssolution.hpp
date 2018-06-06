@@ -41,7 +41,7 @@ protected:
    gl3::LineBuffer lcurve_buf;
    gl3::LineBuffer line_buf;
    gl3::LineBuffer bdr_buf;
-   gl3::LineBuffer cp_list_buf;
+   gl3::LineBuffer cp_buf;
 
    void Init();
 

@@ -108,7 +108,7 @@ void VertexBuffer::BufferData() {
     if (!texcoord_data.empty()) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(2));
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * texcoord_data.size(), texcoord_data.data(), GL_STATIC_DRAW);
-        texcoord_cnt = texcoord_data.size() / 8;
+        texcoord_cnt = texcoord_data.size() / 7;
     }
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -137,11 +137,11 @@ void VertexBuffer::DrawObject(GLenum renderAs) {
     if (!texcoord_data.empty()) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(2));
         glEnableClientState(GL_VERTEX_ARRAY);
-        glVertexPointer(3, GL_FLOAT, sizeof(float) * 8, 0);
+        glVertexPointer(3, GL_FLOAT, sizeof(float) * 7, 0);
         glEnableClientState(GL_NORMAL_ARRAY);
-        glNormalPointer(GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 3));
+        glNormalPointer(GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 3));
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 6));
+        glTexCoordPointer(1, GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 6));
         glDrawArrays(renderAs, 0, texcoord_cnt);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisableClientState(GL_NORMAL_ARRAY);
@@ -150,8 +150,11 @@ void VertexBuffer::DrawObject(GLenum renderAs) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+void TextBuffer::SetText(float x, float y, float z, std::string text) {
+    entries.emplace_back(x, y, z, std::move(text));
+}
+
 void TextBuffer::BufferData() {
-    // Stub since we're just drawing directly
     LineBuffer::BufferData();
 }
 
@@ -166,8 +169,8 @@ void TextBuffer::DrawObject() {
     cerr << "Can't use text buffer object without Freetype" << endl;
 #else
     for (auto& str_obj : entries) {
-        glRasterPos3f(str_obj.x, str_obj.y, str_obj.z);
-        DrawBitmapText(str_obj.text.c_str());
+        glRasterPos3d(str_obj.x, str_obj.y, str_obj.z);
+        DrawBitmapText(str_obj.str.c_str());
     }
 #endif
 }

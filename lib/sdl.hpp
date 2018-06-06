@@ -69,7 +69,7 @@ private:
    
     bool requiresExpose;
     //internal event handlers
-    bool windowEvent(SDL_WindowEvent& ew);
+    void windowEvent(SDL_WindowEvent& ew);
     void motionEvent(SDL_MouseMotionEvent& em);
     void mouseEventDown(SDL_MouseButtonEvent& eb);
     void mouseEventUp(SDL_MouseButtonEvent& eb);

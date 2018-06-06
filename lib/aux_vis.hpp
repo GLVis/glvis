@@ -15,7 +15,7 @@
 #include "platform_gl.hpp"
 
 #include "sdl.hpp"
-
+#include "font.hpp"
 #include "openglvis.hpp"
 
 extern GLuint fontbase;
@@ -121,8 +121,7 @@ int GetMultisample();
 void SetMultisample(int m);
 
 #ifdef GLVIS_USE_FREETYPE
-int RenderBitmapText(const char *text, int &width, int &heigth);
-void DrawBitmapText(); // Draws the last rendered bitmap text
+GlVisFont * GetFont();
 void DrawBitmapText(const char *text);
 int SetFontFile(const char *font_file, int height);
 int SetFont(const char *font_patterns[], int num_patterns, int height);

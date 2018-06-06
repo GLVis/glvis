@@ -545,9 +545,8 @@ void VisualizationSceneScalarData::DrawCaption()
 
    int width = 0, height = 0;
 #ifdef GLVIS_USE_FREETYPE
-   RenderBitmapText(caption.c_str(), width, height);
+   GLuint vbo = GetFont()->BufferText(caption);
 #endif
-
    glMatrixMode(GL_PROJECTION);
    glPushMatrix();
    glLoadIdentity();
@@ -558,7 +557,6 @@ void VisualizationSceneScalarData::DrawCaption()
 
    GLint viewport[4];
    glGetIntegerv(GL_VIEWPORT, viewport);
-
 #ifndef GLVIS_USE_FREETYPE
    int len = caption.length();
    double width_in_chars = 44*viewport[2]/400.0;
@@ -571,6 +569,7 @@ void VisualizationSceneScalarData::DrawCaption()
       glTranslatef(-len/width_in_chars, 0.8, 0.0);
    }
 #else
+   
    glTranslatef(-(double)width/viewport[2],
                 1.0-5*(double)height/viewport[3], 0.0);
 #endif
@@ -578,12 +577,25 @@ void VisualizationSceneScalarData::DrawCaption()
    cam.GLMultRotMatrix();
    glMultMatrixd(rotmat);
 
-   glRasterPos3f(0.0f, 0.0f, 0.0f);
+    //glRasterPos3f(0.0f, 0.0f, 0.0f);
    if (print) { gl2psText(caption.c_str(),"Times",8); }
 #ifndef GLVIS_USE_FREETYPE
    glCallLists(len, GL_UNSIGNED_BYTE, caption.c_str());
 #else
-   DrawBitmapText();
+    glEnable(GL_TEXTURE_2D);
+   glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glVertexPointer(2, GL_FLOAT, sizeof(float) * 4, 0);
+    glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 4, (void*)(sizeof(float) * 2)); 
+    GLint size = 0;
+    glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
+    glDrawArrays(GL_TRIANGLES, 0, size / (sizeof(float) * 4)); 
+
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisable(GL_TEXTURE_2D);
 #endif
 
    glMatrixMode(GL_PROJECTION);

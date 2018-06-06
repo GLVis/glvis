@@ -1018,7 +1018,7 @@ void VisualizationSceneVector::Draw()
    // draw elements
    if (drawelems)
    {
-      glCallList(displlist);
+      callListDrawShim(displlist, disp_buf);
    }
 
    if (MatAlpha < 1.0)
@@ -1042,7 +1042,7 @@ void VisualizationSceneVector::Draw()
    {
       glDisable(GL_CLIP_PLANE0);
       DrawRuler(logscale);
-      glCallList(cp_list);
+      callListDrawShim(cp_list, cp_buf);
       glEnable(GL_CLIP_PLANE0);
    }
    else
@@ -1052,13 +1052,13 @@ void VisualizationSceneVector::Draw()
 
    if (drawbdr)
    {
-      glCallList(bdrlist);
+      callListDrawShim(bdrlist, bdr_buf);
    }
 
    // draw lines
    if (drawmesh == 1)
    {
-      glCallList(linelist);
+      callListDrawShim(linelist, line_buf);
    }
    else if (drawmesh == 2)
    {
@@ -1070,11 +1070,11 @@ void VisualizationSceneVector::Draw()
    {
       if (1 == drawnums)
       {
-         glCallList(e_nums_list);
+         callListDrawShim(e_nums_list, e_nums_buf);
       }
       else if (2 == drawnums)
       {
-         glCallList(v_nums_list);
+         callListDrawShim(v_nums_list, v_nums_buf);
       }
    }
 

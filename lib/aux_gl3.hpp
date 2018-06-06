@@ -169,7 +169,6 @@ public:
         std::move(gv.pos, gv.pos + 3, std::back_inserter(texcoord_data));
         std::move(gv.norm, gv.norm + 3, std::back_inserter(texcoord_data));
         texcoord_data.push_back(texCoord);
-        texcoord_data.push_back(0);
     }
     
     void addVertex(GlVertex gv, float (&rgba)[4]) {
@@ -214,22 +213,21 @@ public:
 class TextBuffer : public LineBuffer {
     struct _text_entry {
         float x, y, z;
-        std::string text;
-        _text_entry(float x, float y, float z, std::string text)
-            : x(x), y(y), z(z), text(std::move(text)) { }
+        std::string str;
+        _text_entry(float x, float y, float z, std::string str)
+            : x(x), y(y), z(z), str(std::move(str)) { }
     };
     std::vector<_text_entry> entries;
 public:
     TextBuffer() { }
+    ~TextBuffer() { }
 
     virtual void clear() {
         entries.clear();
         LineBuffer::clear();
     }
 
-    void SetText(float x, float y, float z, std::string text) {
-        entries.emplace_back(x, y, z, std::move(text));
-    }
+    void SetText(float x, float y, float z, std::string text);
     virtual void BufferData();
     virtual void DrawObject(GLenum renderAs);
     virtual void DrawObject();

@@ -104,20 +104,20 @@ bool SdlWindow::createGlContext() {
 SdlWindow::~SdlWindow() {
 }
 
-bool SdlWindow::windowEvent(SDL_WindowEvent& ew) {
+void SdlWindow::windowEvent(SDL_WindowEvent& ew) {
     switch(ew.event) {
         case SDL_WINDOWEVENT_SIZE_CHANGED:
             cerr << "Window:reshape event" << endl;
             if (onReshape)
                 onReshape(ew.data1, ew.data2);
-            return false;
+            break;
         case SDL_WINDOWEVENT_EXPOSED:
             cerr << "Window:expose event" << endl;
             if (onExpose)
-                onExpose();
-            return true;
+                requiresExpose = true;
+            break;
         default:
-            return false;
+            break;
     }
 }
 
@@ -200,8 +200,7 @@ void SdlWindow::mainLoop() {
                     running = false;
                     break;
                 case SDL_WINDOWEVENT:
-                    if (windowEvent(e.window))
-                        SDL_GL_SwapWindow(_handle->hwnd);
+                    windowEvent(e.window);
                     break;
                 case SDL_KEYDOWN:
                     keyEvent(e.key.keysym);
