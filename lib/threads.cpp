@@ -14,10 +14,10 @@
 #include <cerrno>      // errno, EAGAIN
 #include <cstdio>      // perror
 #include "visual.hpp"
+#include "palettes.hpp"
 
 using namespace std;
 
-void Set_Palette(int);
 void SetMeshSolution(Mesh *mesh, GridFunction *&grid_f, bool save_coloring);
 extern const char *strings_off_on[]; // defined in vsdata.cpp
 
@@ -661,7 +661,7 @@ int GLVisCommand::Execute()
       case PALETTE:
       {
          cout << "Command: palette: " << palette << endl;
-         Set_Palette(palette-1);
+         paletteSet(palette-1);
          if (!GetUseTexture())
          {
             (*vs)->EventUpdateColors();

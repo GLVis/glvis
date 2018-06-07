@@ -17,7 +17,7 @@
 #include "mfem.hpp"
 using namespace mfem;
 #include "visual.hpp"
-
+#include "palettes.hpp"
 using namespace std;
 
 
@@ -589,7 +589,6 @@ VisualizationSceneSolution3d::VisualizationSceneSolution3d(Mesh &m, Vector &s)
    wnd->setOnKeyDown('H', Solution3dKeyHPressed);
 }
 
-void Set_Palette(int);
 
 void VisualizationSceneSolution3d::Init()
 {
@@ -637,7 +636,7 @@ void VisualizationSceneSolution3d::Init()
 
    node_pos = new double[mesh->GetNV()];
 
-   Set_Palette(12); // use the 'vivid' palette in 3D
+   paletteSet(12); // use the 'vivid' palette in 3D
    SetUseTexture(1);
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts

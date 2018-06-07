@@ -168,7 +168,7 @@ Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
 # generated with 'echo lib/*.c*'
 SOURCE_FILES = lib/aux_vis.cpp lib/aux_gl3.cpp lib/font.cpp lib/sdl.cpp lib/gl2ps.c \
- lib/material.cpp lib/openglvis.cpp lib/threads.cpp lib/vsdata.cpp \
+ lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/threads.cpp lib/vsdata.cpp \
  lib/vssolution3d.cpp lib/vssolution.cpp lib/vsvector3d.cpp lib/vsvector.cpp
 OBJECT_FILES1 = $(SOURCE_FILES:.cpp=.o)
 OBJECT_FILES = $(OBJECT_FILES1:.c=.o)

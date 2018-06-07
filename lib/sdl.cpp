@@ -178,8 +178,6 @@ void SdlWindow::keyEvent(SDL_Keysym& ks) {
         //check if separate caps handler exists
         if (onKeyDown[toupper(ks.sym)]) {
             onKeyDown[toupper(ks.sym)](ks.mod);
-            keyDown = true;
-            curr = ks.sym;
             return;
         }
     }

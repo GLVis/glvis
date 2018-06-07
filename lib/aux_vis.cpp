@@ -61,7 +61,6 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 
    if (!init)
    {
-      Init_Palettes();
       init = 1;
    }
 
@@ -79,7 +78,8 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
        return 1;
    }
 
-   Set_Texture_Image();
+   paletteInit();
+
 #ifdef GLVIS_DEBUG
    cout << "Window should be up" << endl;
 #endif
@@ -1343,7 +1343,7 @@ void Cone()
 
 
 int MySetColorLogscale = 0;
-int RepeatPaletteTimes = 1;
+extern int RepeatPaletteTimes;
 int UseTexture         = 0;
 
 float MySetColor (double val, double min, double max, float (&rgba)[4])
@@ -1393,6 +1393,8 @@ float MySetColor (double val, float (&rgba)[4])
    int i;
    double t, r, g, b, *pal;
 
+   int palSize = paletteGetSize();
+
    if (UseTexture)
    {
       //glTexCoord1d(val);
@@ -1419,19 +1421,19 @@ float MySetColor (double val, float (&rgba)[4])
       }
    }
 
-   val *= 0.999999999 * ( RGB_Palette_Size - 1 ) * abs(RepeatPaletteTimes);
+   val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
    i = (int) floor( val );
    t = val - i;
 
-   if (((i / (RGB_Palette_Size-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
-       ((i / (RGB_Palette_Size-1)) % 2 == 1 && RepeatPaletteTimes < 0))
+   if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
+       ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
    {
-      pal = RGB_Palette + 3 * ( i % (RGB_Palette_Size-1) );
+      pal = paletteGet() + 3 * ( i % (palSize-1) );
    }
    else
    {
-      pal = RGB_Palette + 3 * ( (RGB_Palette_Size-2) -
-                                i % (RGB_Palette_Size-1) );
+      pal = paletteGet() + 3 * ( (palSize-2) -
+                                i % (palSize-1) );
       t = 1.0 - t;
    }
 
@@ -1467,67 +1469,6 @@ const int Max_Texture_Size = 4*1024;
 int Texture_Size;
 GLfloat Texture_Image[3*Max_Texture_Size];
 
-void Make_Texture_From_Palette()
-{
-   int i, j;
-   double t, *pal;
-
-   Texture_Size = Max_Texture_Size;
-
-   for (i = 0; i < Texture_Size; i++)
-   {
-      t = double(i) / (Texture_Size - 1);
-      t *= 0.999999999 * ( RGB_Palette_Size - 1 ) * abs(RepeatPaletteTimes);
-      j = (int) floor(t);
-      t -= j;
-
-      if (((j / (RGB_Palette_Size-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
-          ((j / (RGB_Palette_Size-1)) % 2 == 1 && RepeatPaletteTimes < 0))
-      {
-         pal = RGB_Palette + 3 * ( j % (RGB_Palette_Size-1) );
-      }
-      else
-      {
-         pal = RGB_Palette + 3 * ( (RGB_Palette_Size-2) -
-                                   j % (RGB_Palette_Size-1) );
-         t = 1.0 - t;
-      }
-
-      Texture_Image[3*i+0] = (1.0 - t) * pal[0] + t * pal[3];
-      Texture_Image[3*i+1] = (1.0 - t) * pal[1] + t * pal[4];
-      Texture_Image[3*i+2] = (1.0 - t) * pal[2] + t * pal[5];
-   }
-}
-
-void Make_Texture_From_Palette_2()
-{
-   if (RGB_Palette_Size > Max_Texture_Size)
-   {
-      Texture_Size = Max_Texture_Size;
-   }
-   else
-   {
-      Texture_Size = RGB_Palette_Size;
-   }
-
-   if (RepeatPaletteTimes > 0)
-   {
-      for (int i = 0; i < 3*Texture_Size; i++)
-      {
-         Texture_Image[i] = RGB_Palette[i];
-      }
-   }
-   else
-   {
-      for (int i = 0; i < Texture_Size; i++)
-      {
-         Texture_Image[3*i+0] = RGB_Palette[3*(Texture_Size-1-i)+0];
-         Texture_Image[3*i+1] = RGB_Palette[3*(Texture_Size-1-i)+1];
-         Texture_Image[3*i+2] = RGB_Palette[3*(Texture_Size-1-i)+2];
-      }
-   }
-}
-
 void Write_Texture_To_File()
 {
    const char ppm_fname[] = "GLVis_texture.ppm";
@@ -1543,42 +1484,6 @@ void Write_Texture_To_File()
    cout << ppm_fname << endl;
 }
 
-void Set_Texture_Image()
-{
-   if (UseTexture == 1)
-   {
-      Make_Texture_From_Palette_2();
-   }
-   else
-   {
-      Make_Texture_From_Palette();
-   }
-
-   glTexImage1D(GL_TEXTURE_1D, // GLenum target,
-                0,             // GLint level,
-                3,             // GLint internalFormat,
-                Texture_Size,  // GLsizei width,
-                0,             // GLint border,
-                GL_RGB,        // GLenum format,
-                GL_FLOAT,      // GLenum type,
-                Texture_Image  // const GLvoid *pixels
-               );
-   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-   // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
-   // glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-   // glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-
-   // glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-   // glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-   // Write_Texture_To_File();
-}
-
 int GetUseTexture()
 {
    return UseTexture;
@@ -1589,7 +1494,10 @@ void SetUseTexture(int ut)
    if (UseTexture != ut)
    {
       UseTexture = ut;
-      Set_Texture_Image();
+      if (UseTexture == 1)
+          paletteUseDiscrete();
+      else
+          paletteUseSmooth();
    }
 }
 
