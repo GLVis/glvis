@@ -102,7 +102,7 @@ void VertexBuffer::BufferData() {
     }
     if (!color_data.empty()) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(1));
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * pt_data.size(), pt_data.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * color_data.size(), color_data.data(), GL_STATIC_DRAW);
         color_cnt = color_data.size() / 10;
     }
     if (!texcoord_data.empty()) {

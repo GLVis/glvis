@@ -1464,26 +1464,6 @@ void MySetColor (double val) {
    }
 }
 
-// const int Max_Texture_Size = 512;
-const int Max_Texture_Size = 4*1024;
-int Texture_Size;
-GLfloat Texture_Image[3*Max_Texture_Size];
-
-void Write_Texture_To_File()
-{
-   const char ppm_fname[] = "GLVis_texture.ppm";
-   cout << "Saving texture image --> " << flush;
-   ofstream ppm_file(ppm_fname);
-   ppm_file << "P3\n" << Texture_Size << " 1\n255\n";
-   for (int i = 0; i < Texture_Size; i++)
-      for (int j = 0; j < 3; j++)
-      {
-         ppm_file << ' ' << int(floor(255.*Texture_Image[3*i+j]+0.5));
-      }
-   ppm_file << endl;
-   cout << ppm_fname << endl;
-}
-
 int GetUseTexture()
 {
    return UseTexture;
@@ -1547,68 +1527,7 @@ GlVisFont glvis_font;
 GlVisFont * GetFont() {
     return &glvis_font;
 }
-/*
-int RenderBitmapText(const char *text, int &width, int &height)
-{
-   if (!glvis_font.Initialized())
-   {
-      if (fontname.empty())
-      {
-         glvis_font.Init(fc_font_patterns, num_font_patterns, font_size);
-      }
-      else
-      {
-         const char *fc_pat[1];
-         fc_pat[0] = fontname.c_str();
-         glvis_font.Init(fc_pat, 1, font_size);
-         if (glvis_font.Initialized() == -4)
-         {
-            cout << "Font not found: " << fontname << endl;
-            glvis_font.Init(fc_font_patterns, num_font_patterns, font_size);
-         }
-      }
 
-      if (glvis_font.Initialized() == -4)
-         cout <<
-              "GLVis: No fonts found! Use the -fn option or"
-              " edit 'fc_font_patterns' in lib/aux_vis.cpp" << endl;
-   }
-
-   int fail = glvis_font.Render(text);
-
-   if (!fail)
-   {
-      width = glvis_font.GetImageWidth();
-      height = glvis_font.GetImageHeight();
-   }
-   else
-   {
-      width = height = 0;
-   }
-
-   return !fail;
-}
-
-void DrawBitmapText()
-{
-   if (glvis_font.Initialized() > 0 && glvis_font.GetImage())
-   {
-      glPushAttrib(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      glEnable(GL_BLEND);
-      glDepthMask(GL_FALSE);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-      glDrawPixels(
-         glvis_font.GetImageWidth(),
-         glvis_font.GetImageHeight(),
-         GL_RGBA,
-         GL_UNSIGNED_BYTE,
-         glvis_font.GetImage());
-
-      glPopAttrib();
-   }
-}
-*/
 void DrawBitmapText(const char *text)
 {
    if (!glvis_font.isFontLoaded()) {

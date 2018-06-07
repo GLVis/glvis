@@ -176,9 +176,11 @@ void SdlWindow::keyEvent(SDL_Keysym& ks) {
     }
     if (ks.mod & KMOD_SHIFT) {
         //check if separate caps handler exists
-        if (onKeyDown[toupper(ks.sym)]) {
+        if (isalpha(ks.sym) && onKeyDown[toupper(ks.sym)]) {
             onKeyDown[toupper(ks.sym)](ks.mod);
             return;
+        } else if (ks.sym == '1' && onKeyDown[SDLK_EXCLAIM]) {
+            onKeyDown[SDLK_EXCLAIM](ks.mod);
         }
     }
     if (onKeyDown[ks.sym]) {
