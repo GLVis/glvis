@@ -13,8 +13,8 @@
 #define GLVIS_OPENGLVIS
 
 #include <cmath>
-
 #include "sdl.hpp"
+#include "glcontext.hpp"
 
 // Visualization header file
 
@@ -99,6 +99,10 @@ public:
    void GLMultTransposeRotMatrix();
    void GLMultMatrix();
    void Print();
+
+   glm::mat4 RotMatrix();
+   glm::mat4 TransposeRotMatrix();
+   glm::mat4 TranslateMatrix();
 };
 
 class VisualizationScene
@@ -108,6 +112,7 @@ protected:
    double xscale, yscale, zscale;
 
    SdlWindow * wnd;
+   GlState * gl;
 public:
    VisualizationScene();
    virtual ~VisualizationScene();
@@ -121,8 +126,8 @@ public:
    /// Bounding box.
    double x[2], y[2], z[2];
 
-   double rotmat[16];
-   double translmat[16];
+   glm::mat4 rotmat;
+   glm::mat4 translmat;
 
    virtual void Draw() = 0;
 
