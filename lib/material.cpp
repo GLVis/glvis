@@ -10,10 +10,12 @@
 // Software Foundation) version 2.1 dated February 1999.
 
 #include "platform_gl.hpp"
+#include "material.hpp"
 #include <string>
 #ifdef GLVIS_DEBUG
 #include <iostream>
 #endif
+#include "aux_vis.hpp"
 
 #include "gl2ps.h"
 
@@ -33,238 +35,21 @@ double MS_LineWidth = 1.4;
 
 void Set_Material()
 {
-   switch (Current_Material)
-   {
-      case 0:
-      {
-         GLfloat mdiff[] = { 0.8, 0.8, 0.8, 1.0 };
-         GLfloat mspec[] = { 1.0, 1.0, 1.0, 1.0 };
-         GLfloat mshin[] = { 100.0 };
-         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiff);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mdiff);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mspec);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mshin);
-
-         // if (glIsEnabled (GL_BLEND))
-         //    glDisable(GL_BLEND);
-      }
-      break;
-
-      case 1:
-      {
-         GLfloat mdiff[] = { 0.7, 0.7, 0.7, 1.0 };
-         GLfloat mambi[] = { 0.3, 0.3, 0.3, 1.0 };
-         GLfloat mspec[] = { 0.8, 0.8, 0.8, 1.0 };
-         GLfloat mshin[] = { 20.0 };
-         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiff);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mambi);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mspec);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mshin);
-
-         // if (glIsEnabled (GL_BLEND))
-         //    glDisable(GL_BLEND);
-      }
-      break;
-
-      case 2:
-      {
-         GLfloat mdiff[] = { 1.0, 1.0, 1.0, 1.0 };
-         GLfloat mambi[] = { 0.3, 0.3, 0.3, 1.0 };
-         GLfloat mspec[] = { 0.0, 0.0, 0.0, 1.0 };
-         GLfloat mshin[] = { 0.0 };
-         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiff);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mambi);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mspec);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mshin);
-
-         // if (glIsEnabled (GL_BLEND))
-         //    glDisable(GL_BLEND);
-      }
-      break;
-
-      case 3:
-      {
-         GLfloat mdiff[] = { 0.75164, 0.60648, 0.22648, 1.0 };
-         GLfloat mambi[] = { 0.24725, 0.1995, 0.0745, 1.0 };
-         GLfloat mspec[] = { 0.628281, 0.555802, 0.366065, 1.0 };
-         GLfloat mshin[] = { 51.2 };
-         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiff);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mambi);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mspec);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mshin);
-
-         // if (glIsEnabled (GL_BLEND))
-         //    glDisable(GL_BLEND);
-      }
-      break;
-
-      case 4:
-      {
-         GLfloat mdiff[] = { 0.8, 0.8, 0.8, 1.0 };
-         GLfloat mambi[] = { 0.0, 0.0, 0.0, 1.0 };
-         GLfloat mspec[] = { 0.1, 0.1, 0.1, 1.0 };
-         GLfloat mshin[] = { 1.0 };
-         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiff);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mambi);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mspec);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mshin);
-
-         // glEnable(GL_BLEND);
-         // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      }
-      break;
-
-   }
-
-   GLfloat memis[] = { 0.0, 0.0, 0.0, 1.0 };
-   glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, memis);
+    GetGlState()->setMaterial(materials[Current_Material]);
 }
 
 void Set_Light()
 {
-   glLoadIdentity();
-
-   switch (Current_Material)
-   {
-      case 0:
-      {
-         GLfloat light[] = { 1.0, 1.0, 1.0, 0.0 };
-         glLightfv(GL_LIGHT0, GL_POSITION, light);
-
-         GLfloat ambvals[]  = { 0.1f, 0.1f, 0.1f, 1.0f };
-         GLfloat diffvals[] = { 0.9f, 0.9f, 0.9f, 1.0f };
-         GLfloat specvals[] = { 0.8f, 0.8f, 0.8f, 1.0f };
-         glLightfv(GL_LIGHT0, GL_AMBIENT, ambvals);
-         glLightfv(GL_LIGHT0, GL_DIFFUSE, diffvals);
-         glLightfv(GL_LIGHT0, GL_SPECULAR, specvals);
-         GLfloat lmodel_ambient[] = { 0.2, 0.2, 0.2, 1.0 };
-         glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
-         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-
-         if (glIsEnabled (GL_LIGHT1))
-         {
-            glDisable(GL_LIGHT1);
-         }
-         if (glIsEnabled (GL_LIGHT2))
-         {
-            glDisable(GL_LIGHT2);
-         }
-      }
-      break;
-
-      case 1:
-      {
-         GLfloat light[] = { 0.5, 0.5, 1.0, 0.0 };
-         glLightfv(GL_LIGHT0, GL_POSITION, light);
-
-         GLfloat ambvals[]  = { 0.0f, 0.0f, 0.0f, 1.0f };
-         GLfloat diffvals[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-         GLfloat specvals[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-         glLightfv(GL_LIGHT0, GL_AMBIENT, ambvals);
-         glLightfv(GL_LIGHT0, GL_DIFFUSE, diffvals);
-         glLightfv(GL_LIGHT0, GL_SPECULAR, specvals);
-         GLfloat lmodel_ambient[] = { 0.5, 0.5, 0.5, 1.0 };
-         glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
-         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-
-         if (glIsEnabled (GL_LIGHT1))
-         {
-            glDisable(GL_LIGHT1);
-         }
-         if (glIsEnabled (GL_LIGHT2))
-         {
-            glDisable(GL_LIGHT2);
-         }
-      }
-      break;
-
-      case 2:
-      {
-         GLfloat light[] = { 0.0, 0.0, 1.0, 0.0 };
-         glLightfv(GL_LIGHT0, GL_POSITION, light);
-
-         GLfloat ambvals[]  = { 0.0f, 0.0f, 0.0f, 1.0f };
-         GLfloat diffvals[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-         GLfloat specvals[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-         glLightfv(GL_LIGHT0, GL_AMBIENT, ambvals);
-         glLightfv(GL_LIGHT0, GL_DIFFUSE, diffvals);
-         glLightfv(GL_LIGHT0, GL_SPECULAR, specvals);
-         GLfloat lmodel_ambient[] = { 0.5, 0.5, 0.5, 1.0 };
-         glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
-         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-
-         if (glIsEnabled (GL_LIGHT1))
-         {
-            glDisable(GL_LIGHT1);
-         }
-         if (glIsEnabled (GL_LIGHT2))
-         {
-            glDisable(GL_LIGHT2);
-         }
-      }
-      break;
-
-      case 3:
-      {
-         GLfloat light[] = { 0.0, 0.0, 1.0, 0.0 };
-         glLightfv(GL_LIGHT0, GL_POSITION, light);
-
-         GLfloat ambvals[]  = { 0.0f, 0.0f, 0.0f, 1.0f };
-         GLfloat diffvals[] = { 0.7f, 0.7f, 0.7f, 1.0f };
-         GLfloat specvals[] = { 0.6f, 0.6f, 0.6f, 1.0f };
-         glLightfv(GL_LIGHT0, GL_AMBIENT, ambvals);
-         glLightfv(GL_LIGHT0, GL_DIFFUSE, diffvals);
-         glLightfv(GL_LIGHT0, GL_SPECULAR, specvals);
-         GLfloat lmodel_ambient[] = { 0.5, 0.5, 0.5, 1.0 };
-         glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
-         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-
-         if (glIsEnabled (GL_LIGHT1))
-         {
-            glDisable(GL_LIGHT1);
-         }
-         if (glIsEnabled (GL_LIGHT2))
-         {
-            glDisable(GL_LIGHT2);
-         }
-      }
-      break;
-
-      case 4:
-      {
-         GLfloat light[] = { 1.0, 0.0, 1.0, 0.0 };
-         glLightfv(GL_LIGHT0, GL_POSITION, light);
-         GLfloat light1[] = { 1.0, 1.0, 1.0, 0.0 };
-         glLightfv(GL_LIGHT1, GL_POSITION, light1);
-         GLfloat light2[] = { 0.0, 1.0, 1.0, 0.0 };
-         glLightfv(GL_LIGHT2, GL_POSITION, light2);
-
-         GLfloat specvals[] = { 0.3f, 0.3f, 0.3f, 1.0f };
-
-         GLfloat diffvals[] = { 0.4f, 0.0f, 0.0f, 0.0f };
-         glLightfv(GL_LIGHT0, GL_DIFFUSE, diffvals);
-         glLightfv(GL_LIGHT0, GL_SPECULAR, specvals);
-
-         GLfloat diffvals1[] = { 0.0f, 0.4f, 0.0f, 0.0f };
-         glLightfv(GL_LIGHT1, GL_DIFFUSE, diffvals1);
-         glLightfv(GL_LIGHT1, GL_SPECULAR, specvals);
-
-         GLfloat diffvals2[] = { 0.0f, 0.0f, 0.4f, 0.0f };
-         glLightfv(GL_LIGHT2, GL_DIFFUSE, diffvals2);
-         glLightfv(GL_LIGHT2, GL_SPECULAR, specvals);
-
-         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-
-         glEnable(GL_LIGHT0);
-         glEnable(GL_LIGHT1);
-         glEnable(GL_LIGHT2);
-      }
-      break;
-
-   }
-
-   // Enable textures with specular color
-   glLightModeli (GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);
+    GetGlState()->setGlobalAmbLight(amb_setting[Current_Material]);
+    if (Current_Material == 4) {
+        for (int i = 0; i < 3; i++) {
+            GetGlState()->setLight(i, lights_4[i]);
+        }
+        GetGlState()->setNumLights(3);
+    } else {
+        GetGlState()->setLight(0, lights[Current_Material]);
+        GetGlState()->setNumLights(1);
+    }
 }
 
 int Next_Material_And_Light()
@@ -288,41 +73,28 @@ int Background = 1;
 
 void Set_Black_Material()
 {
+    Material m = {
+        { 0.0, 0.0, 0.0, 1.0 },
+        { 0.0, 0.0, 0.0, 1.0 },
+        { 0.0, 0.0, 0.0, 1.0 },
+        0.0
+    };
    switch (Background)
    {
       case 0:
       {
          // glColor3f (0.75, 0.75, 0.75);
          glColor3f (1., 1., 1.);
-         GLfloat mdiff[] = { 0.0, 0.0, 0.0, 1.0 };
-         GLfloat mambi[] = { 0.0, 0.0, 0.0, 1.0 };
-         GLfloat mspec[] = { 0.0, 0.0, 0.0, 1.0 };
-         // GLfloat memis[] = { 0.75, 0.75, 0.75, 1.0 };
-         GLfloat memis[] = { 0., 0., 0., 1.0 };
-         GLfloat mshin[] = { 0.0 };
-         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiff);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mambi);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mspec);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, memis);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mshin);
+         GetGlState()->setMaterial(m);
       }
       break;
 
       case 1:
       {
          glColor3f (0, 0, 0);
-         GLfloat mdiff[] = { 0.0, 0.0, 0.0, 1.0 };
-         GLfloat mambi[] = { 0.0, 0.0, 0.0, 1.0 };
-         GLfloat mspec[] = { 0.0, 0.0, 0.0, 1.0 };
-         GLfloat memis[] = { 0.0, 0.0, 0.0, 1.0 };
-         GLfloat mshin[] = { 0.0 };
-         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiff);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mambi);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mspec);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, memis);
-         glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mshin);
-         break;
+         GetGlState()->setMaterial(m);
       }
+      break;
    }
 }
 

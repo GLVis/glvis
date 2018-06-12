@@ -2407,7 +2407,7 @@ void VisualizationSceneSolution::DrawCPLine(
 
 void VisualizationSceneSolution::Draw()
 {
-   glEnable(GL_DEPTH_TEST);
+   gl->enableDepthTest();
 
    Set_Background();
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -2420,7 +2420,7 @@ void VisualizationSceneSolution::Draw()
    glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
    glDisable(GL_CLIP_PLANE0);
-   glDisable(GL_LIGHTING);
+   gl->disableLight();
 
 #if 0
    // Testing: moved the drawing of the colorbar at the end. If there are no
@@ -2449,7 +2449,7 @@ void VisualizationSceneSolution::Draw()
    Set_Material();
    if (light)
    {
-      glEnable(GL_LIGHTING);
+      gl->enableLight();
    }
 
    if (MatAlpha < 1.0)
@@ -2479,7 +2479,7 @@ void VisualizationSceneSolution::Draw()
 
    if (light)
    {
-      glDisable(GL_LIGHTING);
+      gl->disableLight();
    }
    Set_Black_Material();
 

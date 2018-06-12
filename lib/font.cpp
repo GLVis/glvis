@@ -15,6 +15,8 @@
 #include "aux_vis.hpp"
 #include "platform_gl.hpp"
 
+extern void paletteRebind();
+
 struct vert_tex2d {
     float x, y;
     float u, v;
@@ -60,6 +62,10 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
     }
     tex_w = w;
     tex_h = h;
+
+    glGenTextures(1, &font_tex);
+
+    glBindTexture(GL_TEXTURE_2D, font_tex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, w, h, 0, GL_ALPHA, GL_UNSIGNED_BYTE, 0);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -94,6 +100,7 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
         x += face->glyph->bitmap.width;
     }
     font_init = true;
+    paletteRebind();
     return true;
 }
 
@@ -124,31 +131,11 @@ uint32_t GlVisFont::BufferText(std::string& str) {
     return buf;
 }
 
-void GlVisFont::RenderBuffer(uint32_t buf) {
-    
-    GLint viewport[4];
-    GLdouble raster[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    glGetDoublev(GL_CURRENT_RASTER_POSITION, raster);
+void GlVisFont::RenderBuffer(uint32_t buf, double x, double y, double z) {
+    state->setModeRenderText(x, y, z);
 
-    glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0, viewport[2], 0, viewport[3], -1.0, 1.0);
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glTranslated(raster[0], raster[1], raster[2]);
-
-    glEnable(GL_TEXTURE_2D);
+    glActiveTexture(GL_TEXTURE0 + 1);
+    glBindTexture(GL_TEXTURE_2D, font_tex);
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
@@ -161,14 +148,6 @@ void GlVisFont::RenderBuffer(uint32_t buf) {
     
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisable(GL_TEXTURE_2D);
-
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-
-    glPopAttrib();
-
+    glActiveTexture(GL_TEXTURE0);
 }
 

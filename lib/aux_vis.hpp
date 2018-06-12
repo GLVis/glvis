@@ -15,6 +15,7 @@
 #include "platform_gl.hpp"
 
 #include "sdl.hpp"
+#include "glstate.hpp"
 #include "font.hpp"
 #include "openglvis.hpp"
 
@@ -39,6 +40,7 @@ void MyExpose();
 void MainLoop();
 
 SdlWindow * GetAppWindow();
+GlState * GetGlState();
 
 void AddIdleFunc(void (*Func)(void));
 void RemoveIdleFunc(void (*Func)(void));

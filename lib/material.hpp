@@ -8,30 +8,107 @@
 // GLVis is free software; you can redistribute it and/or modify it under the
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
+#ifndef MATERIAL_HPP
+#define MATERIAL_HPP
 
-extern void Set_Material();
+struct Material
+{
+    float ambient[4];
+    float diffuse[4];
+    float specular[4];
+    float shininess;
+};
 
-extern void Set_Light();
+Material materials[5] =
+{
+    {
+        { 0.8, 0.8, 0.8, 1.0 },
+        { 0.8, 0.8, 0.8, 1.0 },
+        { 1.0, 1.0, 1.0, 1.0 },
+        100
+    },
+    {
+        { 0.3, 0.3, 0.3, 1.0 },
+        { 0.7, 0.7, 0.7, 1.0 },
+        { 0.8, 0.8, 0.8, 1.0 },
+        20
+    },
+    {
+        { 0.3, 0.3, 0.3, 1.0 },
+        { 1.0, 1.0, 1.0, 1.0 },
+        { 0.0, 0.0, 0.0, 1.0 },
+        0
+    },
+    {
+        { 0.24725, 0.1995, 0.0745, 1.0 },
+        { 0.75164, 0.60648, 0.22648, 1.0 },
+        { 0.628281, 0.555802, 0.366065, 1.0 }, 
+        51.2
+    },
+    {
+        { 0.0, 0.0, 0.0, 1.0 },
+        { 0.8, 0.8, 0.8, 1.0 },
+        { 0.1, 0.1, 0.1, 1.0 },
+        1.0
+    }
+};
 
-extern int Next_Material_And_Light();
+struct Light
+{
+    float position[4];
+    float diffuse[4];
+    float specular[4];
+};
 
-extern void Set_Material_And_Light(int,int);
+Light lights[] =
+{
+    { { 1.0, 1.0, 1.0, 0.0 }, { 0.9, 0.9, 0.9, 1.0 }, { 0.8, 0.8, 0.8, 1.0 } },
+    { { 0.5, 0.5, 1.0, 0.0 }, { 0.5, 0.5, 0.5, 1.0 }, { 1.0, 1.0, 1.0, 1.0 } },
+    { { 0.0, 0.0, 1.0, 0.0 }, { 0.5, 0.5, 0.5, 1.0 }, { 0.0, 0.0, 0.0, 1.0 } },
+    { { 0.0, 0.0, 1.0, 0.0 }, { 0.7, 0.7, 0.7, 1.0 }, { 0.6, 0.6, 0.6, 1.0 } }
+};
 
-extern void Set_Black_Material();
+float amb_setting[][4] = 
+{
+    { 0.3, 0.3, 0.3, 1.0 },
+    { 0.5, 0.5, 0.5, 1.0 },
+    { 0.5, 0.5, 0.5, 1.0 },
+    { 0.5, 0.5, 0.5, 1.0 },
+    { 0.2, 0.2, 0.2, 1.0 }
+};
 
-extern void Set_Background();
+Light lights_4[] = 
+{
+    { { 1.0, 0.0, 1.0, 0.0 }, { 0.3, 0.3, 0.3, 1.0 }, { 0.4, 0.0, 0.0, 0.0 } },
+    { { 1.0, 1.0, 1.0, 0.0 }, { 0.3, 0.3, 0.3, 1.0 }, { 0.0, 0.4, 0.0, 0.0 } },
+    { { 0.0, 1.0, 1.0, 0.0 }, { 0.3, 0.3, 0.3, 1.0 }, { 0.0, 0.0, 0.4, 0.0 } }
+};
 
-extern void Toggle_Background();
+void Set_Material();
 
-extern void Set_Transparency();
+void Set_Light();
 
-extern void Remove_Transparency();
+int Next_Material_And_Light();
 
-extern int  Get_AntiAliasing();
-extern void Set_AntiAliasing();
-extern void Remove_AntiAliasing();
+void Set_Material_And_Light(int,int);
 
-extern double Get_LineWidth();
-extern void Set_LineWidth(double);
-extern double Get_MS_LineWidth();
-extern void Set_MS_LineWidth(double);
+void Set_Black_Material();
+
+void Set_Background();
+
+void Toggle_Background();
+
+void Set_Transparency();
+
+void Remove_Transparency();
+
+int  Get_AntiAliasing();
+void Set_AntiAliasing();
+void Remove_AntiAliasing();
+
+double Get_LineWidth();
+void Set_LineWidth(double);
+double Get_MS_LineWidth();
+void Set_MS_LineWidth(double);
+
+#endif

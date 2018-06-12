@@ -745,11 +745,11 @@ void KeylPressed()
    vsdata -> ToggleLight();
    if (! vsdata -> light)
    {
-      glDisable(GL_LIGHTING);
+      gl->disableLight();
    }
    else
    {
-      glEnable(GL_LIGHTING);
+      gl->enableLight();
    }
    SendExposeEvent();
 }
@@ -920,10 +920,9 @@ void KeyBackslashPressed()
    cout << "w = " << flush;
    cin >> w;
 
-   glLoadIdentity();
    GLfloat light[] = { x, y, z, w };
    // load modelview matrix before calling glLightfv?
-   glLightfv(GL_LIGHT0, GL_POSITION, light);
+   gl->setLightPosition(0, light);
    SendExposeEvent();
 }
 
@@ -1114,7 +1113,7 @@ void VisualizationSceneScalarData::DrawRuler(bool log_z)
          Set_Material();
          if (light)
          {
-            glEnable(GL_LIGHTING);
+            gl->enableLight();
          }
          glBegin(GL_QUADS);
          glColor4d(0.8, 0.8, 0.8, 1.0);
@@ -1147,7 +1146,7 @@ void VisualizationSceneScalarData::DrawRuler(bool log_z)
          glEnd();
          if (light)
          {
-            glDisable(GL_LIGHTING);
+            gl->disableLight();
          }
          Set_Black_Material();
 
@@ -1220,6 +1219,7 @@ void VisualizationSceneScalarData::Init()
 {
    vsdata = this;
    wnd = GetAppWindow(); 
+   gl = GetGlState();
 
    arrow_type = arrow_scaling_type = 0;
    scaling = 0;
@@ -1292,15 +1292,13 @@ void VisualizationSceneScalarData::Init()
 
    Set_Light();
 
-   glEnable (GL_COLOR_MATERIAL);
-   glShadeModel (GL_SMOOTH);
+   //glEnable (GL_COLOR_MATERIAL);
+   //glShadeModel (GL_SMOOTH);
 
-   glEnable(GL_LIGHTING);
-   glEnable(GL_LIGHT0);
-   glDepthFunc(GL_LEQUAL);
-   glEnable(GL_DEPTH_TEST);
-   glEnable(GL_AUTO_NORMAL);
-   glEnable(GL_NORMALIZE);
+   gl->enableLight();
+   gl->enableDepthTest();
+   //glEnable(GL_AUTO_NORMAL);
+   //glEnable(GL_NORMALIZE);
 
    glLineWidth(Get_LineWidth());
 

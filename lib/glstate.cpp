@@ -13,11 +13,11 @@ uniform mat4 modelViewMatrix; \
 uniform mat4 projectionMatrix; \
 uniform mat3 normalMatrix; \
  \
-varying vec3 fNormal; \
-varying vec3 fPosition; \
-varying vec4 fColor; \
-varying vec2 fTexCoord; \
-varying vec2 fFontTexCoord; \
+smooth varying vec3 fNormal; \
+smooth varying vec3 fPosition; \
+smooth varying vec4 fColor; \
+smooth varying vec2 fTexCoord; \
+smooth varying vec2 fFontTexCoord; \
  \
 void main() \
 { \
@@ -39,11 +39,11 @@ uniform bool useColorTex; \
 uniform sampler2D fontTex; \
 uniform sampler2D colorTex; \
  \
-varying vec3 fNormal; \
-varying vec3 fPosition; \
-varying vec4 fColor; \
-varying vec2 fTexCoord; \
-varying vec2 fFontTexCoord; \
+smooth varying vec3 fNormal; \
+smooth varying vec3 fPosition; \
+smooth varying vec4 fColor; \
+smooth varying vec2 fTexCoord; \
+smooth varying vec2 fFontTexCoord; \
  \
 struct PointLight { \
     vec3 position; \

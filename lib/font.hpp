@@ -52,7 +52,7 @@ public:
 
     uint32_t BufferText(std::string& str);
 
-    void RenderBuffer(uint32_t buf);
+    void RenderBuffer(uint32_t buf, double x, double y, double z);
 
     GlVisFont()
         : init(false)

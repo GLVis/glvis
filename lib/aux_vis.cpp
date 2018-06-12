@@ -46,10 +46,16 @@ static int glvis_multisample = -1;
 
 //TODO: anything but this
 SdlWindow * wnd;
+GlState * state;
 
 SdlWindow * GetAppWindow()
 {
     return wnd;
+}
+
+GlState * GetGlState()
+{
+    return state;
 }
 
 void MyExpose(GLsizei w, GLsizei h);
@@ -77,6 +83,12 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    if (!wnd->isGlInitialized()) {
        return 1;
    }
+
+   state = new GlState();
+   if (!state->compileShaders()) {
+       return 1;
+   }
+   state->initShaderState();
 
    paletteInit();
 
@@ -348,10 +360,9 @@ void SendExposeEvent()
 
 void MyReshape(GLsizei w, GLsizei h)
 {
-   glViewport (0, 0, w, h);
+   state->setViewPort(w, h);
 
-   glMatrixMode (GL_PROJECTION);
-   glLoadIdentity();
+   state->projection.identity();
 
    double ViewCenterX = locscene->ViewCenterX;
    double ViewCenterY = locscene->ViewCenterY;
@@ -361,13 +372,13 @@ void MyReshape(GLsizei w, GLsizei h)
       double scale = locscene->ViewScale;
       if (w <= h)
       {
-         glOrtho (-1.0, 1.0, -double(h)/w, double(h)/w, -10, 10);
+         state->projection.ortho(-1.0, 1.0, -double(h)/w, double(h)/w, -10, 10);
       }
       else
       {
-         glOrtho (-double(w)/h, double(w)/h, -1, 1, -10, 10);
+         state->projection.ortho(-double(w)/h, double(w)/h, -1, 1, -10, 10);
       }
-      glScaled(scale, scale, 1.0);
+      state->projection.scale(scale, scale, 1.0);
    }
    else
    {
@@ -377,9 +388,9 @@ void MyReshape(GLsizei w, GLsizei h)
          ViewAngle = (360.0/M_PI)*atan( tan( ViewAngle*(M_PI/360.0) ) *
                                         double(h)/w );
 
-      gluPerspective(ViewAngle, double(w)/h, 0.1, 5.0);
+      state->projection.perspective(ViewAngle, double(w)/h, 0.1, 5.0);
    }
-   glTranslated(-ViewCenterX, -ViewCenterY, 0.0);
+   state->projection.translate(-ViewCenterX, -ViewCenterY, 0.0);
 }
 
 void MyExpose(GLsizei w, GLsizei h)
@@ -432,7 +443,7 @@ void RemoveIdleFunc(void (*Func)(void))
 
 
 double xang = 0., yang = 0.;
-double srot[16], sph_t, sph_u;
+GlMatrix srot, sph_t, sph_u;
 static GLint oldx, oldy, startx, starty;
 
 int constrained_spinning = 0;
@@ -476,11 +487,11 @@ inline double sqr(double t)
 inline void ComputeSphereAngles(int &newx, int &newy,
                                 double &new_sph_u, double &new_sph_t)
 {
-   GLint viewport[4];
+   GLint viewport[4] = { 0, 0, 0, 0 };
    double r, x, y, rr;
    const double maxr = 0.996194698091745532295;
 
-   glGetIntegerv(GL_VIEWPORT, viewport);
+   state->getViewport(viewport);
    r = sqrt(sqr(viewport[2])+sqr(viewport[3]))*M_SQRT1_2;
 
    x = double(newx-viewport[0]-viewport[2]/2) / r;
@@ -505,6 +516,7 @@ void LeftButtonDown (EventInfo *event)
    oldy = event->data[AUX_MOUSEY];
 
    ComputeSphereAngles(oldx, oldy, sph_u, sph_t);
+/*
    glMatrixMode(GL_MODELVIEW);
    glPushMatrix();
    glLoadIdentity();
@@ -512,6 +524,10 @@ void LeftButtonDown (EventInfo *event)
    glMultMatrixd(locscene->rotmat);
    glGetDoublev(GL_MODELVIEW_MATRIX, srot);
    glPopMatrix();
+*/
+   srot.identity();
+   srot.mult(locscene->cam.RotMatrix());
+   srot.mult(locscene->rotmat);
 
    startx = oldx;
    starty = oldy;
@@ -535,8 +551,12 @@ void LeftButtonLoc (EventInfo *event)
 
          ComputeSphereAngles(newx, newy, new_sph_u, new_sph_t);
 
+         /*
          glMatrixMode (GL_MODELVIEW);
          glLoadIdentity();
+         */
+
+         state->modelView.identity();
 
          double scoord[3], ncoord[3], inprod, cross[3];
          scoord[0] = scoord[1] = cos(sph_u);     scoord[2] = sin(sph_u);
@@ -546,10 +566,10 @@ void LeftButtonLoc (EventInfo *event)
          inprod = InnerProd(scoord, ncoord);
          CrossProd(scoord, ncoord, cross);
 
-         locscene->cam.GLMultTransposeRotMatrix();
-         glRotated(acos(inprod)*(180.0/M_PI), cross[0], cross[1], cross[2]);
-         glMultMatrixd(srot);
-         glGetDoublev(GL_MODELVIEW_MATRIX, locscene->rotmat);
+         state->modelView.mult(locscene->cam.TransposeRotMatrix());
+         state->modelView.rotated(acos(inprod)*(180.0/M_PI), cross[0], cross[1], cross[2]);
+         state->modelView.mult(srot);
+         locscene->rotmat = state->modelView.mtx;
       }
    }
    else if (event->data[2] & KMOD_ALT)
@@ -625,7 +645,7 @@ void MiddleButtonLoc (EventInfo *event)
       {
          scale = 0.4142135623730950488/tan(locscene->ViewAngle*(M_PI/360));
       }
-      glGetIntegerv(GL_VIEWPORT, vp);
+      state->getViewport(vp);
       if (vp[2] < vp[3])
       {
          scale *= vp[2];
@@ -955,14 +975,14 @@ void KeyCtrlP()
 {
    int state, buffsize;
    FILE * fp;
-   GLint viewport[4];
+   GLint viewport[4] = { 0, 0, 0, 0 };
    cout << "Printing the figure to GLVis.pdf... " << flush;
 
    fp = fopen("GLVis.pdf", "wb");
    buffsize = 0;
    state = GL2PS_OVERFLOW;
    locscene -> print = 1;
-   glGetIntegerv(GL_VIEWPORT, viewport);
+   state->getViewport(viewport);
    while (state == GL2PS_OVERFLOW)
    {
       buffsize += 1024*1024;
@@ -1275,7 +1295,7 @@ void ShrinkWindow()
 {
    GLint viewport[4];
 
-   glGetIntegerv(GL_VIEWPORT, viewport);
+   state->getViewport(viewport);
    int w = viewport[2], h = viewport[3];
    w = (int)ceil(w / window_scale_factor);
    h = (int)ceil(h / window_scale_factor);
@@ -1289,7 +1309,7 @@ void EnlargeWindow()
 {
    GLint viewport[4];
 
-   glGetIntegerv(GL_VIEWPORT, viewport);
+   state->getViewport(viewport);
    int w = viewport[2], h = viewport[3];
    w = (int)ceil(w * window_scale_factor);
    h = (int)ceil(h * window_scale_factor);

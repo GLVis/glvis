@@ -256,6 +256,7 @@ void VisualizationScene::Scale(double s1, double s2, double s3)
 
 void VisualizationScene::CenterObject()
 {
+/*
    glMatrixMode (GL_MODELVIEW);
    glLoadIdentity();
    glGetDoublev (GL_MODELVIEW_MATRIX, translmat);
@@ -265,19 +266,37 @@ void VisualizationScene::CenterObject()
    glRotatef(-60.0, 1.0f, 0.0f, 0.0f);
    glRotatef(-40.0, 0.0f, 0.0f, 1.0f);
    glGetDoublev (GL_MODELVIEW_MATRIX, rotmat);
+*/
+    gl->modelView.identity();
+    translmat = gl->modelView.mtx;
+
+    Set_Light();
+
+    gl->modelView.rotate(-60.0, 1.0f, 0.0f, 0.0f);
+    gl->modelView.rotate(-40.0, 0.0f, 0.0f, 1.0f);
+    rotmat = gl->modelView;
 }
 
 void VisualizationScene::CenterObject2D()
 {
+/*
    glMatrixMode (GL_MODELVIEW);
    glLoadIdentity();
    glGetDoublev (GL_MODELVIEW_MATRIX, translmat);
    Set_Light();
    glGetDoublev (GL_MODELVIEW_MATRIX, rotmat);
+*/
+    gl->modelView.identity();
+    translmat = gl->modelView.mtx;
+
+    Set_Light();
+
+    rotmat = gl->modelView;
 }
 
 void VisualizationScene::SetView(double theta, double phi)
 {
+   /*
    glMatrixMode (GL_MODELVIEW);
    glLoadIdentity();
    glGetDoublev (GL_MODELVIEW_MATRIX, translmat);
@@ -285,7 +304,13 @@ void VisualizationScene::SetView(double theta, double phi)
    glRotatef(-theta, 1.0f, 0.0f, 0.0f);
    glRotatef(-phi, 0.0f, 0.0f, 1.0f);
    glGetDoublev (GL_MODELVIEW_MATRIX, rotmat);
-}
+   */
+    gl->modelView.identity();
+    translmat = gl->modelView.mtx;
+
+    gl->modelView.rotate(-theta, 1.0f, 0.0f, 0.0f);
+    gl->modelView.rotate(-phi, 0.0f, 0.0f, 1.0f);
+ }
 
 void VisualizationScene::Zoom(double factor)
 {
@@ -302,6 +327,7 @@ void VisualizationScene::Zoom(double factor)
 
 void VisualizationScene::ModelView()
 {
+/*
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
    cam.GLMultMatrix();
@@ -309,4 +335,11 @@ void VisualizationScene::ModelView()
    glMultMatrixd(rotmat);
    glScaled(xscale, yscale, zscale);
    glTranslated(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
+*/
+    gl->modelView.identity();
+    gl->modelView.mult(cam.TranslateMatrix());
+    gl->modelView.mult(translmat);
+    gl->modelView.mult(rotmat);
+    gl->modelView.scale(xscale, yscale, zscale);
+    gl->modelView.translate(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
 }

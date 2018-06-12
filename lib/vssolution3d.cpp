@@ -2701,7 +2701,7 @@ void VisualizationSceneSolution3d::Draw()
 
    glDisable(GL_CLIP_PLANE0);
    // draw colorbar
-   glDisable(GL_LIGHTING);
+   gl->disableLight();
    if (colorbar)
    {
       if (drawmesh == 2 || cp_drawmesh >= 2)
@@ -2747,7 +2747,7 @@ void VisualizationSceneSolution3d::Draw()
    Set_Material();
    if (light)
    {
-      glEnable(GL_LIGHTING);
+      gl->enableLight();
    }
 
    if (MatAlpha < 1.0)
@@ -2794,7 +2794,7 @@ void VisualizationSceneSolution3d::Draw()
 
    if (light)
    {
-      glDisable(GL_LIGHTING);
+      gl->disableLight();
    }
    Set_Black_Material();
 
