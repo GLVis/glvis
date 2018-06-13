@@ -12,13 +12,15 @@
 #define GLSTATE_HPP
 #include <SDL2/SDL.h>
 #include "platform_gl.hpp"
-#include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_opengles2.h>
 
 #include "material.hpp"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 struct GlMatrix {
     glm::mat4 mtx;
@@ -26,7 +28,7 @@ struct GlMatrix {
     /**
      * Applies a rotation transform to the matrix.
      */
-    void rotate(double angle, double x, double y, double z) {
+    void rotate(float angle, double x, double y, double z) {
         mtx = glm::rotate(mtx, glm::radians(angle), glm::vec3(x,y,z));
     }
 
@@ -84,13 +86,14 @@ class GlState
         RENDER_COLOR_TEX
     } _shaderMode;
 
-    int _w, int _h;
+    int _w;
+    int _h;
     bool _lighting = false, _depthTest = false, _blend = false;
     int _numLights;
     float _ambient[4];
 
     glm::vec3 getRasterPoint(double x, double y, double z) {
-        return glm::project(glm::vec3(x, y, z), modelView, projection, glm::vec4(0, 0, w, h));
+        return glm::project(glm::vec3(x, y, z), modelView.mtx, projection.mtx, glm::vec4(0, 0, _w, _h));
     }
 public:
     GlMatrix modelView;
@@ -161,9 +164,29 @@ public:
             glUniformMatrix3fv(locNormal, 1, GL_FALSE, glm::value_ptr(normal));
         } else {
             // 2d view
-            glm::mat4 proj2d = glm::ortho(0, w, 0 h, -5.0, 5.0);
+            glm::mat4 proj2d = glm::ortho(0, _w, 0, _h, -5.0, 5.0);
             glUniformMatrix4fv(locProject, 1, GL_FALSE, glm::value_ptr(proj2d));
         }
+    }
+
+    /**
+     * Set temporary model-view matrix directly in the shader.
+     */
+    void setImmModelView(GlMatrix modelview) {
+        GLuint locModelView = glGetUniformLocation(program, "modelViewMatrix");
+        GLuint locNormal = glGetUniformLocation(program, "normalMatrix");
+        glUniformMatrix4fv(locModelView, 1, GL_FALSE, glm::value_ptr(modelview.mtx));
+        glm::mat3 normal(modelview.mtx);
+        normal = glm::inverseTranspose(normal);
+        glUniformMatrix3fv(locNormal, 1, GL_FALSE, glm::value_ptr(normal));
+    }
+
+    /**
+     * Set temporary projection matrix directly in the shader.
+     */
+    void setImmProjection(GlMatrix proj) {
+        GLuint locProject = glGetUniformLocation(program, "projectionMatrix");
+        glUniformMatrix4fv(locProject, 1, GL_FALSE, glm::value_ptr(proj.mtx));
     }
 
     /**

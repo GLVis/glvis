@@ -119,8 +119,8 @@ void VisualizationSceneScalarData::Arrow3(double px, double py, double pz,
    }
 
    glBegin(GL_LINES);
-   glVertex3d(0, 0, 0);
-   glVertex3d(0, 0, 1);
+   glVertex3f(0, 0, 0);
+   glVertex3f(0, 0, 1);
    glEnd();
 
    glTranslated (0, 0, 1);
@@ -150,8 +150,8 @@ void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
    glScaled (length, length, length);
 
    glBegin(GL_LINES);
-   glVertex3d(0, 0, 0);
-   glVertex3d(0, 0, 1);
+   glVertex3f(0, 0, 0);
+   glVertex3f(0, 0, 1);
    glEnd();
 
    glTranslated (0, 0, 1);
@@ -321,19 +321,19 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
 
    double Y;
 
-   glNormal3d (0, 0, 1);
+   glNormal3f(0, 0, 1);
 
    if (GetUseTexture())
    {
       glEnable (GL_TEXTURE_1D);
-      glColor4d(1, 1, 1, 1);
+      glColor4f(1, 1, 1, 1);
       glBegin(GL_QUADS);
-      glTexCoord1d(0.);
-      glVertex3d(minx, miny, posz);
-      glVertex3d(maxx, miny, posz);
-      glTexCoord1d(1.);
-      glVertex3d(maxx, maxy, posz);
-      glVertex3d(minx, maxy, posz);
+      glTexCoord2f(0., 0.);
+      glVertex3f(minx, miny, posz);
+      glVertex3f(maxx, miny, posz);
+      glTexCoord2f(1., 0.);
+      glVertex3f(maxx, maxy, posz);
+      glVertex3f(minx, maxy, posz);
       glEnd();
       glDisable (GL_TEXTURE_1D);
    }
@@ -348,8 +348,8 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
          const double a = double(i) / nquads;
          Y = (1.0 - a) * miny + a * maxy;
          MySetColor(a);
-         glVertex3d (minx,Y,posz);
-         glVertex3d (maxx,Y,posz);
+         glVertex3f(minx,Y,posz);
+         glVertex3f(maxx,Y,posz);
       }
       glEnd();
       MatAlpha = mat_alpha;
@@ -362,19 +362,19 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
    if (border == 1)
    {
       glBegin(GL_LINE_LOOP);
-      glVertex3d(minx, miny, posz);
-      glVertex3d(maxx, miny, posz);
-      glVertex3d(maxx, maxy, posz);
-      glVertex3d(minx, maxy, posz);
+      glVertex3f(minx, miny, posz);
+      glVertex3f(maxx, miny, posz);
+      glVertex3f(maxx, maxy, posz);
+      glVertex3f(minx, maxy, posz);
       glEnd();
    }
    else if (border == 2)
    {
       glBegin(GL_LINES);
-      glVertex3d(minx, miny, posz);
-      glVertex3d(minx, maxy, posz);
-      glVertex3d(maxx, miny, posz);
-      glVertex3d(maxx, maxy, posz);
+      glVertex3f(minx, miny, posz);
+      glVertex3f(minx, maxy, posz);
+      glVertex3f(maxx, miny, posz);
+      glVertex3f(maxx, maxy, posz);
       glEnd();
    }
 
@@ -384,8 +384,8 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       for (i = 0; i < levels->Size(); i++)
       {
          Y = miny + (maxy - miny) * LogUVal((*levels)[i]);
-         glVertex3d (minx,Y,posz);
-         glVertex3d (maxx,Y,posz);
+         glVertex3f(minx,Y,posz);
+         glVertex3f(maxx,Y,posz);
       }
    }
    if (level)
@@ -393,8 +393,8 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       for (i = 0; i < level->Size(); i++)
       {
          Y = miny + (maxy - miny) * LogUVal((*level)[i]);
-         glVertex3d (minx,Y,posz);
-         glVertex3d (maxx,Y,posz);
+         glVertex3f(minx,Y,posz);
+         glVertex3f(maxx,Y,posz);
       }
    }
    glEnd();
@@ -417,16 +417,16 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       for (i = 0; i <= 4; i++)
       {
          Y = miny + i * (maxy-miny) / 4;
-         glRasterPos3d (maxx+0.02,Y,posz);
 
          val = ULogVal(i / 4.0);
 
          buf = new ostringstream;
          (*buf) << setprecision(4) << val;
 #ifndef GLVIS_USE_FREETYPE
+         glRasterPos3f(maxx+0.02,Y,posz);
          glCallLists(buf->str().size(), GL_UNSIGNED_BYTE, buf->str().c_str());
 #else
-         DrawBitmapText(buf->str().c_str());
+         DrawBitmapText(buf->str().c_str(),maxx+0.02,Y,posz);
 #endif
          delete buf;
       }
@@ -437,14 +437,14 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       {
          val = (*level)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
-         glRasterPos3d (maxx+0.02,Y,posz);
 
          buf = new ostringstream;
          (*buf) << setprecision(4) << val;
 #ifndef GLVIS_USE_FREETYPE
+         glRasterPos3f(maxx+0.02,Y,posz);
          glCallLists(buf->str().size(), GL_UNSIGNED_BYTE, buf->str().c_str());
 #else
-         DrawBitmapText(buf->str().c_str());
+         DrawBitmapText(buf->str().c_str(),maxx+0.02,Y,posz);
 #endif
          delete buf;
       }
@@ -456,14 +456,14 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       {
          val = (*levels)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
-         glRasterPos3d (maxx+0.02,Y,posz);
 
          buf = new ostringstream;
          (*buf) << setprecision(4) << val;
 #ifndef GLVIS_USE_FREETYPE
+         glRasterPos3f(maxx+0.02,Y,posz);
          glCallLists(buf->str().size(), GL_UNSIGNED_BYTE, buf->str().c_str());
 #else
-         DrawBitmapText(buf->str().c_str());
+         DrawBitmapText(buf->str().c_str(),maxx+0.02,Y,posz);
 #endif
          delete buf;
       }
@@ -475,12 +475,13 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
 
    if (print)
    {
+#ifndef GLVIS_OGL3
       if (!level)
       {
          for (i = 0; i <= 4; i++)
          {
             Y = miny + i * (maxy-miny) / 4;
-            glRasterPos3d (maxx+0.02,Y,posz);
+            glRasterPos3f(maxx+0.02,Y,posz);
 
             val = ULogVal(i / 4.0);
 
@@ -496,8 +497,8 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
          {
             val = (*level)[i];
             Y = miny + (maxy - miny) * LogUVal(val);
-            glRasterPos3d (maxx+0.02,Y,posz);
-            glRasterPos3d (maxx+0.02,Y,posz);
+            glRasterPos3f(maxx+0.02,Y,posz);
+            glRasterPos3f(maxx+0.02,Y,posz);
 
             buf = new ostringstream;
             (*buf) << setprecision(4) << val;
@@ -512,7 +513,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
          {
             val = (*levels)[i];
             Y = miny + (maxy - miny) * LogUVal(val);
-            glRasterPos3d (maxx+0.02,Y,posz);
+            glRasterPos3f(maxx+0.02,Y,posz);
 
             buf = new ostringstream;
             (*buf) << setprecision(4) << val;
@@ -520,6 +521,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
             delete buf;
          }
       }
+#endif
    }
 
    // glMultMatrixd (rotmat);
@@ -578,7 +580,9 @@ void VisualizationSceneScalarData::DrawCaption()
    glMultMatrixd(rotmat);
 
     //glRasterPos3f(0.0f, 0.0f, 0.0f);
+#ifndef GLVIS_OGL3
    if (print) { gl2psText(caption.c_str(),"Times",8); }
+#endif
 #ifndef GLVIS_USE_FREETYPE
    glCallLists(len, GL_UNSIGNED_BYTE, caption.c_str());
 #else
@@ -645,28 +649,34 @@ void VisualizationSceneScalarData::DrawCoordinateCross()
    glListBase (fontbase);
 #endif
 
-   glRasterPos3d (lenx, 0.0f, 0.0f);
+#ifndef GLVIS_OGL3
    if (print) { gl2psText(a_label_x.c_str(),"Times",8); }
+#endif
 #ifndef GLVIS_USE_FREETYPE
+   glRasterPos3f(lenx, 0.0f, 0.0f);
    glCallLists(a_label_x.length(), GL_UNSIGNED_BYTE, a_label_x.c_str());
 #else
-   DrawBitmapText(a_label_x.c_str());
+   DrawBitmapText(a_label_x.c_str(), lenx, 0.0f, 0.0f);
 #endif
 
-   glRasterPos3d (0.0f, leny, 0.0f);
+#ifndef GLVIS_OGL3
    if (print) { gl2psText(a_label_y.c_str(),"Times",8); }
+#endif
 #ifndef GLVIS_USE_FREETYPE
+   glRasterPos3f(0.0f, leny, 0.0f);
    glCallLists(a_label_y.length(), GL_UNSIGNED_BYTE, a_label_y.c_str());
 #else
-   DrawBitmapText(a_label_y.c_str());
+   DrawBitmapText(a_label_y.c_str(), 0.0f, leny, 0.0f);
 #endif
 
-   glRasterPos3d (0.0f, 0.0f, lenz);
+#ifndef GLVIS_OGL3
    if (print) { gl2psText(a_label_z.c_str(),"Times",8); }
+#endif
 #ifndef GLVIS_USE_FREETYPE
+   glRasterPos3f(0.0f, 0.0f, lenz);
    glCallLists(a_label_z.length(), GL_UNSIGNED_BYTE, a_label_z.c_str());
 #else
-   DrawBitmapText(a_label_z.c_str());
+   DrawBitmapText(a_label_z.c_str(), 0.0f, 0.0f, lenz);
 #endif
 
 #ifndef GLVIS_USE_FREETYPE
@@ -680,15 +690,17 @@ void VisualizationSceneScalarData::DrawCoordinateCross()
 
    if (print)
    {
+#ifndef GLVIS_OGL3
       ostringstream buf4;
       buf4 << setprecision(4) << "(" << x[0] << "," << y[0] << ","  << z[0] << ")" ;
-      glRasterPos3d (x[0], y[0], z[0]);
+      glRasterPos3f(x[0], y[0], z[0]);
       if (print) { gl2psText(buf4.str().c_str(),"Times",8); }
 
       ostringstream buf5;
       buf5 << setprecision(4) << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
-      glRasterPos3d (x[1], y[1], z[1]);
+      glRasterPos3f(x[1], y[1], z[1]);
       if (print) { gl2psText(buf5.str().c_str(),"Times",8); }
+#endif
    }
 }
 
@@ -1116,33 +1128,33 @@ void VisualizationSceneScalarData::DrawRuler(bool log_z)
             gl->enableLight();
          }
          glBegin(GL_QUADS);
-         glColor4d(0.8, 0.8, 0.8, 1.0);
+         glColor4f(0.8, 0.8, 0.8, 1.0);
          if (light)
          {
-            glNormal3d(0, 0, 1);
+            glNormal3f(0, 0, 1);
          }
-         glVertex3d(x[0], y[0], pos_z);
-         glVertex3d(x[1], y[0], pos_z);
-         glVertex3d(x[1], y[1], pos_z);
-         glVertex3d(x[0], y[1], pos_z);
+         glVertex3f(x[0], y[0], pos_z);
+         glVertex3f(x[1], y[0], pos_z);
+         glVertex3f(x[1], y[1], pos_z);
+         glVertex3f(x[0], y[1], pos_z);
 
          if (light)
          {
-            glNormal3d(0, 1, 0);
+            glNormal3f(0, 1, 0);
          }
-         glVertex3d(x[0], ruler_y, z[0]);
-         glVertex3d(x[0], ruler_y, z[1]);
-         glVertex3d(x[1], ruler_y, z[1]);
-         glVertex3d(x[1], ruler_y, z[0]);
+         glVertex3f(x[0], ruler_y, z[0]);
+         glVertex3f(x[0], ruler_y, z[1]);
+         glVertex3f(x[1], ruler_y, z[1]);
+         glVertex3f(x[1], ruler_y, z[0]);
 
          if (light)
          {
-            glNormal3d(1, 0, 0);
+            glNormal3f(1, 0, 0);
          }
-         glVertex3d(ruler_x, y[0], z[0]);
-         glVertex3d(ruler_x, y[1], z[0]);
-         glVertex3d(ruler_x, y[1], z[1]);
-         glVertex3d(ruler_x, y[0], z[1]);
+         glVertex3f(ruler_x, y[0], z[0]);
+         glVertex3f(ruler_x, y[1], z[0]);
+         glVertex3f(ruler_x, y[1], z[1]);
+         glVertex3f(ruler_x, y[0], z[1]);
          glEnd();
          if (light)
          {
@@ -1151,34 +1163,34 @@ void VisualizationSceneScalarData::DrawRuler(bool log_z)
          Set_Black_Material();
 
          glBegin(GL_LINE_LOOP);
-         glVertex3d(x[0], y[0], pos_z);
-         glVertex3d(x[1], y[0], pos_z);
-         glVertex3d(x[1], y[1], pos_z);
-         glVertex3d(x[0], y[1], pos_z);
+         glVertex3f(x[0], y[0], pos_z);
+         glVertex3f(x[1], y[0], pos_z);
+         glVertex3f(x[1], y[1], pos_z);
+         glVertex3f(x[0], y[1], pos_z);
          glEnd();
 
          glBegin(GL_LINE_LOOP);
-         glVertex3d(x[0], ruler_y, z[0]);
-         glVertex3d(x[1], ruler_y, z[0]);
-         glVertex3d(x[1], ruler_y, z[1]);
-         glVertex3d(x[0], ruler_y, z[1]);
+         glVertex3f(x[0], ruler_y, z[0]);
+         glVertex3f(x[1], ruler_y, z[0]);
+         glVertex3f(x[1], ruler_y, z[1]);
+         glVertex3f(x[0], ruler_y, z[1]);
          glEnd();
 
          glBegin(GL_LINE_LOOP);
-         glVertex3d(ruler_x, y[0], z[0]);
-         glVertex3d(ruler_x, y[1], z[0]);
-         glVertex3d(ruler_x, y[1], z[1]);
-         glVertex3d(ruler_x, y[0], z[1]);
+         glVertex3f(ruler_x, y[0], z[0]);
+         glVertex3f(ruler_x, y[1], z[0]);
+         glVertex3f(ruler_x, y[1], z[1]);
+         glVertex3f(ruler_x, y[0], z[1]);
          glEnd();
       }
 
       glBegin(GL_LINES);
-      glVertex3d(x[0], ruler_y, pos_z);
-      glVertex3d(x[1], ruler_y, pos_z);
-      glVertex3d(ruler_x, y[0], pos_z);
-      glVertex3d(ruler_x, y[1], pos_z);
-      glVertex3d(ruler_x, ruler_y, z[0]);
-      glVertex3d(ruler_x, ruler_y, z[1]);
+      glVertex3f(x[0], ruler_y, pos_z);
+      glVertex3f(x[1], ruler_y, pos_z);
+      glVertex3f(ruler_x, y[0], pos_z);
+      glVertex3f(ruler_x, y[1], pos_z);
+      glVertex3f(ruler_x, ruler_y, z[0]);
+      glVertex3f(ruler_x, ruler_y, z[1]);
       glEnd();
    }
 }
@@ -1314,7 +1326,6 @@ void VisualizationSceneScalarData::Init()
 
    SetLevelLines(minv, maxv, 15);
 
-   axeslist = glGenLists(1);
    FindNewBox(false);
    ruler_on = 0;
    ruler_x = 0.5 * (x[0] + x[1]);
@@ -1326,7 +1337,6 @@ void VisualizationSceneScalarData::Init()
 
 VisualizationSceneScalarData::~VisualizationSceneScalarData()
 {
-   glDeleteLists (axeslist, 1);
    delete CuttingPlane;
 }
 

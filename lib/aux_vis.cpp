@@ -1548,14 +1548,14 @@ GlVisFont * GetFont() {
     return &glvis_font;
 }
 
-void DrawBitmapText(const char *text)
+void DrawBitmapText(const char *text, float x, float y, float z)
 {
    if (!glvis_font.isFontLoaded()) {
        if (!glvis_font.LoadFont("OpenSans.ttf", font_size))
            return;
    }
     std::string toBuf(text);
-   uint32_t vbo = glvis_font.BufferText(toBuf);
+   uint32_t vbo = glvis_font.BufferText(toBuf, x, y, z);
    glvis_font.RenderBuffer(vbo);
    glDeleteBuffers(1, &vbo);
 }
