@@ -32,6 +32,63 @@ double MS_LineWidth = GLVIS_MS_LINEWIDTH;
 double MS_LineWidth = 1.4;
 #endif
 
+Material materials[5] =
+{
+    {
+        { 0.8, 0.8, 0.8, 1.0 },
+        { 0.8, 0.8, 0.8, 1.0 },
+        { 1.0, 1.0, 1.0, 1.0 },
+        100
+    },
+    {
+        { 0.3, 0.3, 0.3, 1.0 },
+        { 0.7, 0.7, 0.7, 1.0 },
+        { 0.8, 0.8, 0.8, 1.0 },
+        20
+    },
+    {
+        { 0.3, 0.3, 0.3, 1.0 },
+        { 1.0, 1.0, 1.0, 1.0 },
+        { 0.0, 0.0, 0.0, 1.0 },
+        0
+    },
+    {
+        { 0.24725, 0.1995, 0.0745, 1.0 },
+        { 0.75164, 0.60648, 0.22648, 1.0 },
+        { 0.628281, 0.555802, 0.366065, 1.0 }, 
+        51.2
+    },
+    {
+        { 0.0, 0.0, 0.0, 1.0 },
+        { 0.8, 0.8, 0.8, 1.0 },
+        { 0.1, 0.1, 0.1, 1.0 },
+        1.0
+    }
+};
+
+Light lights[] =
+{
+    { { 1.0, 1.0, 1.0, 0.0 }, { 0.9, 0.9, 0.9, 1.0 }, { 0.8, 0.8, 0.8, 1.0 } },
+    { { 0.5, 0.5, 1.0, 0.0 }, { 0.5, 0.5, 0.5, 1.0 }, { 1.0, 1.0, 1.0, 1.0 } },
+    { { 0.0, 0.0, 1.0, 0.0 }, { 0.5, 0.5, 0.5, 1.0 }, { 0.0, 0.0, 0.0, 1.0 } },
+    { { 0.0, 0.0, 1.0, 0.0 }, { 0.7, 0.7, 0.7, 1.0 }, { 0.6, 0.6, 0.6, 1.0 } }
+};
+
+float amb_setting[][4] = 
+{
+    { 0.3, 0.3, 0.3, 1.0 },
+    { 0.5, 0.5, 0.5, 1.0 },
+    { 0.5, 0.5, 0.5, 1.0 },
+    { 0.5, 0.5, 0.5, 1.0 },
+    { 0.2, 0.2, 0.2, 1.0 }
+};
+
+Light lights_4[] = 
+{
+    { { 1.0, 0.0, 1.0, 0.0 }, { 0.3, 0.3, 0.3, 1.0 }, { 0.4, 0.0, 0.0, 0.0 } },
+    { { 1.0, 1.0, 1.0, 0.0 }, { 0.3, 0.3, 0.3, 1.0 }, { 0.0, 0.4, 0.0, 0.0 } },
+    { { 0.0, 1.0, 1.0, 0.0 }, { 0.3, 0.3, 0.3, 1.0 }, { 0.0, 0.0, 0.4, 0.0 } }
+};
 
 void Set_Material()
 {
@@ -120,9 +177,10 @@ void Set_Transparency()
 {
    if (AntiAliasing == 0)
    {
+#ifndef GLVIS_OGL3
       gl2psEnable(GL2PS_BLEND);
-      glEnable(GL_BLEND);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+#endif
+      GetGlState()->enableBlend();
    }
    glDepthMask(GL_FALSE);
 }
@@ -131,8 +189,10 @@ void Remove_Transparency()
 {
    if (AntiAliasing == 0)
    {
-      glDisable(GL_BLEND);
+      GetGlState()->disableBlend(); 
+#ifndef GLVIS_OGL3
       gl2psDisable(GL2PS_BLEND);
+#endif
    }
    glDepthMask(GL_TRUE);
 }
@@ -157,11 +217,14 @@ void Set_AntiAliasing()
 #endif
    }
 
+#ifndef GLVIS_OGL3
    gl2psEnable(GL2PS_BLEND);
-   glEnable(GL_BLEND);
+#endif
+   //glEnable(GL_BLEND);
    // glDisable(GL_DEPTH_TEST);
-   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+   //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
    // glBlendFunc (GL_SRC_ALPHA_SATURATE, GL_ONE);
+   GetGlState()->enableBlend();
 
    glLineWidth(MS_LineWidth);
 
@@ -218,8 +281,10 @@ void Remove_AntiAliasing()
    glLineWidth(NM_LineWidth);
 
    // glEnable(GL_DEPTH_TEST);
-   glDisable(GL_BLEND);
+   GetGlState()->disableBlend();
+#ifndef GLVIS_OGL3
    gl2psDisable(GL2PS_BLEND);
+#endif
 
    if (GetMultisample() > 0)
    {

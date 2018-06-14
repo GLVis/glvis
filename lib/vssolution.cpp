@@ -1025,9 +1025,10 @@ void DrawNumberedMarker(const double x[3], double dx, int n)
 
    glRasterPos3d (x[0], x[1], x[2]);
 #ifndef GLVIS_USE_FREETYPE
+   glRasterPos3d (x[0], x[1], x[2]);
    glCallLists(buf.str().size(), GL_UNSIGNED_BYTE, buf.str().c_str());
 #else
-   DrawBitmapText(buf.str().c_str());
+   DrawBitmapText(buf.str().c_str(), x[0], x[1], x[2]);
 #endif
 
 #ifndef GLVIS_USE_FREETYPE
@@ -2462,13 +2463,13 @@ void VisualizationSceneSolution::Draw()
    {
       if (GetUseTexture())
       {
-         glEnable (GL_TEXTURE_1D);
-         glColor4d(1, 1, 1, 1);
+          gl->setModeColorTexture();
+          glColor4d(1, 1, 1, 1);
       }
       callListDrawShim(displlist, disp_buf);
       if (GetUseTexture())
       {
-         glDisable (GL_TEXTURE_1D);
+         gl->setModeColorTexture();
       }
    }
 

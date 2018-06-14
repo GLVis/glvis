@@ -10,9 +10,11 @@
 // Software Foundation) version 2.1 dated February 1999.
 #ifndef GLSTATE_HPP
 #define GLSTATE_HPP
+#include <string>
+
 #include <SDL2/SDL.h>
 #include "platform_gl.hpp"
-#include <SDL2/SDL_opengles2.h>
+#include <SDL2/SDL_opengl.h>
 
 #include "material.hpp"
 
@@ -73,18 +75,23 @@ struct GlMatrix {
      * Sets the matrix to the identity matrix.
      */
     void identity() {
-        mtx = glm::mat4();
+        mtx = glm::mat4(1.0);
     }
 };
 
 class GlState
 {
-    GLuint program;
+public:
     enum render_type {
         RENDER_TEXT,
         RENDER_COLOR,
         RENDER_COLOR_TEX
-    } _shaderMode;
+    };
+
+protected:
+    render_type _shaderMode;
+
+    GLuint program;
 
     int _w;
     int _h;
@@ -114,8 +121,24 @@ public:
         }
     }
 
+    void enableBlend() {
+        if (!_blend) {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            _blend = true;
+        }
+    }
+
+    void disableBlend() {
+        if (_blend) {
+            glDisable(GL_BLEND);
+            _blend = false;
+        }
+    }
+
     GlState()
-        : program(0) {
+        : program(0),
+         _ambient{0.2, 0.2, 0.2, 1.0} {
     }
 
     ~GlState() {
@@ -135,14 +158,16 @@ public:
      */
     void initShaderState() {
         GLuint locColorTex = glGetUniformLocation(program, "colorTex");
-        glBindSampler(0, locFontTex);
         GLuint locFontTex = glGetUniformLocation(program, "fontTex");
-        glBindSampler(1, locFontTex);
+        glUniform1i(locColorTex, 0);
+        glUniform1i(locFontTex, 1);
         GLuint locContainsText = glGetUniformLocation(program, "containsText");
         glUniform1i(locContainsText, GL_FALSE);
         GLuint locUseColorTex = glGetUniformLocation(program, "useColorTex");
         glUniform1i(locUseColorTex, GL_FALSE);
         _shaderMode = RENDER_COLOR;
+        modelView.identity();
+        projection.identity();
         loadMatrixUniforms();
     }
 
@@ -164,7 +189,7 @@ public:
             glUniformMatrix3fv(locNormal, 1, GL_FALSE, glm::value_ptr(normal));
         } else {
             // 2d view
-            glm::mat4 proj2d = glm::ortho(0, _w, 0, _h, -5.0, 5.0);
+            glm::mat4 proj2d = glm::ortho<float>(0, _w, 0, _h, -5.0, 5.0);
             glUniformMatrix4fv(locProject, 1, GL_FALSE, glm::value_ptr(proj2d));
         }
     }
@@ -195,11 +220,11 @@ public:
     void setMaterial(Material mat) {
         GLuint locAmb = glGetUniformLocation(program, "material.ambient");
         GLuint locDif = glGetUniformLocation(program, "material.diffuse");
-        GLuint locSpec = glGetUinformLocation(program, "material.specular");
-        GLuint locShin = glGetUniformLocation(progrma, "material.shininess");
-        glUniform4fv(locAmb, 4, mat.ambient);
-        glUniform4fv(locDif, 4, mat.diffuse);
-        glUniform4fv(locSpec, 4, mat.specular);
+        GLuint locSpec = glGetUniformLocation(program, "material.specular");
+        GLuint locShin = glGetUniformLocation(program, "material.shininess");
+        glUniform4fv(locAmb, 1, mat.ambient);
+        glUniform4fv(locDif, 1, mat.diffuse);
+        glUniform4fv(locSpec, 1, mat.specular);
         glUniform1f(locShin, mat.shininess);
     }
 
@@ -207,19 +232,19 @@ public:
      * Sets an individual point light's parameters.
      */
     void setLight(int i, Light lt) {
-        std::string location = "lights[" + std::to_str(i) + "].";
-        GLuint locPosition = glGetUniformLocation(program, location + "position"); 
-        GLuint locDiffuse = glGetUniformLocation(program, location + "diffuse");
-        GLuint locSpecular = glGetUniformLocation(program, location + "specular");
-        glUniform4fv(locPosition, 4, lt.position);
-        glUniform4fv(locDiffuse, 4, lt.diffuse);
-        glUniform4fv(locSpecular, 4, lt.specular);
+        std::string location = "lights[" + std::to_string(i) + "].";
+        GLuint locPosition = glGetUniformLocation(program, (location + "position").c_str());
+        GLuint locDiffuse = glGetUniformLocation(program, (location + "diffuse").c_str());
+        GLuint locSpecular = glGetUniformLocation(program, (location + "specular").c_str());
+        glUniform3fv(locPosition, 1, lt.position);
+        glUniform4fv(locDiffuse, 1, lt.diffuse);
+        glUniform4fv(locSpecular, 1, lt.specular);
     }
 
     void setLightPosition(int i, float * pos) {
-        std::string location = "lights[" + std::to_str(i) + "].";
-        GLuint locPosition = glGetUniformLocation(program, location + "position");
-        glUniform4fv(locPosition, 4, pos); 
+        std::string location = "lights[" + std::to_string(i) + "].";
+        GLuint locPosition = glGetUniformLocation(program, (location + "position").c_str());
+        glUniform3fv(locPosition, 1, pos); 
     }
 
     /**
@@ -242,7 +267,7 @@ public:
         }
         if (_lighting) {
             GLuint locGLight = glGetUniformLocation(program, "g_ambient");
-            glUniform4fv(locGLight, 4, amb);
+            glUniform4fv(locGLight, 1, amb);
         }
     }
 
@@ -251,10 +276,10 @@ public:
      */
     void disableLight() {
         if (_lighting) {
-            float ambNoLight = { 1.0, 1.0, 1.0, 1.0 }; // pass through color directly
+            float ambNoLight[4] = { 1.0, 1.0, 1.0, 1.0 }; // pass through color directly
             GLuint locGLight = glGetUniformLocation(program, "g_ambient");
             GLuint locNumLights = glGetUniformLocation(program, "numLights");
-            glUniform4fv(locGLight, 4, ambNoLight);
+            glUniform4fv(locGLight, 1, ambNoLight);
             glUniform1i(locNumLights, 0);
             _lighting = false;
         }
@@ -267,7 +292,7 @@ public:
         if (!_lighting) {
             GLuint locGLight = glGetUniformLocation(program, "g_ambient");
             GLuint locNumLights = glGetUniformLocation(program, "numLights");
-            glUniform4fv(locGLight, 4, _ambient);
+            glUniform4fv(locGLight, 1, _ambient);
             glUniform1i(locNumLights, _numLights);
             _lighting = true;
         }
@@ -277,6 +302,19 @@ public:
      * Prepares the shader pipeline for text rendering.
      */
     void setModeRenderText(double x, double y, double z) {
+        setModeRenderText();
+        //need to recalculate model view if raster point changes
+        loadMatrixUniforms();
+        GLuint locModelView = glGetUniformLocation(program, "modelViewMatrix");
+        glm::mat4 mv2d = glm::translate(glm::mat4(), getRasterPoint(x, y, z));
+        glUniformMatrix4fv(locModelView, 1, GL_FALSE, glm::value_ptr(mv2d));
+    }
+
+    /**
+     * Prepares the shader pipeline for text rendering, without setting the
+     * uniform matrices.
+     */
+    void setModeRenderText() {
         if (_shaderMode != RENDER_TEXT) {
             glDisable(GL_DEPTH_TEST);
             glEnable(GL_BLEND);
@@ -285,16 +323,12 @@ public:
             glUniform1i(locContainsText, GL_TRUE);
             _shaderMode = RENDER_TEXT;
         }
-        //need to recalculate model view if raster point changes
-        GLuint locModelView = glGetUniformLocation(program, "modelViewMatrix");
-        glm::mat4 mv2d = glm::translate(glm::mat4(), getRasterPoint(x, y, z));
-        glUniformMatrix4fv(locModelView, 1, GL_FALSE, glm::value_ptr(mv2d));
     }
 
     /**
      * Prepares the shader pipeline for rendering with color textures.
      */
-    void setModeColorTexture() {
+    void setModeColorTexture(bool setUniforms = true) {
         if (_shaderMode == RENDER_TEXT) {
             if (_depthTest)
                 glEnable(GL_DEPTH_TEST);
@@ -307,18 +341,20 @@ public:
             GLuint locUseColorTex = glGetUniformLocation(program, "useColorTex");
             glUniform1i(locUseColorTex, GL_TRUE);
             _shaderMode = RENDER_COLOR_TEX;
-            loadMatrixUniforms();
+            if (setUniforms) {
+                loadMatrixUniforms();
+            }
         }
     }
 
     /**
      * Prepares the shader pipeline for rendering with color values.
      */
-    void setModeColor() {
+    void setModeColor(bool setUniforms = true) {
         if (_shaderMode == RENDER_TEXT) {
-            if (depth_test)
+            if (_depthTest)
                 glEnable(GL_DEPTH_TEST);
-            if (!blend)
+            if (!_blend)
                 glDisable(GL_BLEND);
             GLuint locContainsText = glGetUniformLocation(program, "containsText");
             glUniform1i(locContainsText, GL_FALSE);
@@ -327,7 +363,9 @@ public:
             GLuint locUseColorTex = glGetUniformLocation(program, "useColorTex");
             glUniform1i(locUseColorTex, GL_FALSE);
             _shaderMode = RENDER_COLOR;
-            loadMatrixUniforms();
+            if (setUniforms) {
+                loadMatrixUniforms();
+            }
         }
     }
 
@@ -345,6 +383,10 @@ public:
         vp[0] = vp[1] = 0;
         vp[2] = _w;
         vp[3] = _h;
+    }
+
+    render_type getRenderMode() {
+        return _shaderMode;
     }
 };
 

@@ -136,18 +136,28 @@ void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
                                           double length,
                                           double cone_scale)
 {
+/*
    glPushMatrix();
    glTranslated(px, py, pz);
+*/
+   GlMatrix mv = gl->modelView;
+   mv.translate(px, py, pz);
 
    double rhos = sqrt (vx*vx+vy*vy+vz*vz);
    double phi   = acos(vz/rhos);
    double theta;
    theta = atan2 (vy, vx);
 
+   /*
    glRotatef(theta*180/M_PI, 0.0f, 0.0f, 1.0f);
    glRotatef(phi*180/M_PI, 0.0f, 1.0f, 0.0f);
 
    glScaled (length, length, length);
+   */
+   mv.rotate(theta*180/M_PI, 0.0f, 0.0f, 1.0f);
+   mv.rotate(phi*180/M_PI, 0.0f, 1.0f, 0.0f);
+   mv.scale(length, length, length);
+   gl->setImmModelView(mv);
 
    glBegin(GL_LINES);
    glVertex3f(0, 0, 0);
@@ -159,7 +169,7 @@ void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
 
    Cone();
 
-   glPopMatrix();
+   gl->loadMatrixUniforms();
 }
 
 void VisualizationSceneScalarData::Arrow(double px, double py, double pz,
@@ -292,9 +302,14 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
                                                  Array<double> *level,
                                                  Array<double> *levels)
 {
+   /*
    glMatrixMode(GL_MODELVIEW);
    glPushMatrix();
    glLoadIdentity();
+   */
+   GlMatrix mv_save = gl->modelView;
+   gl->modelView.identity();
+   gl->loadMatrixUniforms();
 
    int i;
 
@@ -325,6 +340,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
 
    if (GetUseTexture())
    {
+      gl->setModeColorTexture(false);
       glEnable (GL_TEXTURE_1D);
       glColor4f(1, 1, 1, 1);
       glBegin(GL_QUADS);
@@ -339,6 +355,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
    }
    else
    {
+      gl->setModeColor(false);
       float mat_alpha = MatAlpha;
       MatAlpha = 1.0f;
       const int nquads = 256;
@@ -354,6 +371,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       glEnd();
       MatAlpha = mat_alpha;
    }
+   gl->setModeColor(false);
 
    Set_Black_Material();
 
@@ -410,7 +428,9 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
    double val;
    ostringstream * buf;
 
-   if (colorbar == 1) { DrawCaption(); }
+   if (colorbar == 1) {
+       DrawCaption();
+   }
 
    if (!level)
    {
@@ -527,7 +547,8 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
    // glMultMatrixd (rotmat);
    // glScaled(xscale, yscale, zscale);
    // glTranslated(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
-   glPopMatrix();
+   gl->modelView = mv_save;
+   gl->loadMatrixUniforms();
 }
 
 // Draw a centered caption at the top (visible with the colorbar)
@@ -549,16 +570,10 @@ void VisualizationSceneScalarData::DrawCaption()
 #ifdef GLVIS_USE_FREETYPE
    GLuint vbo = GetFont()->BufferText(caption);
 #endif
-   glMatrixMode(GL_PROJECTION);
-   glPushMatrix();
-   glLoadIdentity();
-
-   glMatrixMode(GL_MODELVIEW);
-   glPushMatrix();
-   glLoadIdentity();
+   GlMatrix proj, modelview;
 
    GLint viewport[4];
-   glGetIntegerv(GL_VIEWPORT, viewport);
+   gl->getViewport(viewport);
 #ifndef GLVIS_USE_FREETYPE
    int len = caption.length();
    double width_in_chars = 44*viewport[2]/400.0;
@@ -572,13 +587,14 @@ void VisualizationSceneScalarData::DrawCaption()
    }
 #else
    
-   glTranslatef(-(double)width/viewport[2],
-                1.0-5*(double)height/viewport[3], 0.0);
+   modelview.translate(-(double)width/viewport[2],
+                        1.0-5*(double)height/viewport[3], 0.0);
 #endif
 
-   cam.GLMultRotMatrix();
-   glMultMatrixd(rotmat);
-
+   modelview.mult(cam.RotMatrix());
+   modelview.mult(rotmat);
+   gl->setImmModelView(modelview);
+   gl->setImmProjection(proj);
     //glRasterPos3f(0.0f, 0.0f, 0.0f);
 #ifndef GLVIS_OGL3
    if (print) { gl2psText(caption.c_str(),"Times",8); }
@@ -586,26 +602,24 @@ void VisualizationSceneScalarData::DrawCaption()
 #ifndef GLVIS_USE_FREETYPE
    glCallLists(len, GL_UNSIGNED_BYTE, caption.c_str());
 #else
-    glEnable(GL_TEXTURE_2D);
+   gl->setModeRenderText();
+   glActiveTexture(GL_TEXTURE0 + 1);
    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glVertexPointer(2, GL_FLOAT, sizeof(float) * 4, 0);
-    glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 4, (void*)(sizeof(float) * 2)); 
-    GLint size = 0;
-    glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
-    glDrawArrays(GL_TRIANGLES, 0, size / (sizeof(float) * 4)); 
+   glBindBuffer(GL_ARRAY_BUFFER, vbo);
+   glVertexPointer(2, GL_FLOAT, sizeof(float) * 4, 0);
+   glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 4, (void*)(sizeof(float) * 2)); 
+   GLint size = 0;
+   glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
+   glDrawArrays(GL_TRIANGLES, 0, size / (sizeof(float) * 4)); 
 
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisable(GL_TEXTURE_2D);
+   glDisableClientState(GL_VERTEX_ARRAY);
+   glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+   glActiveTexture(GL_TEXTURE0);
+   gl->setModeColor();
 #endif
-
-   glMatrixMode(GL_PROJECTION);
-   glPopMatrix();
-   glMatrixMode(GL_MODELVIEW);
-   glPopMatrix();
+   gl->loadMatrixUniforms();
 }
 
 void VisualizationSceneScalarData::DrawCoordinateCross()
@@ -615,22 +629,20 @@ void VisualizationSceneScalarData::DrawCoordinateCross()
       return;
    }
 
-   glMatrixMode (GL_PROJECTION);
-   glPushMatrix();
-   glLoadIdentity();
-
-   glMatrixMode (GL_MODELVIEW);
-   glPushMatrix();
-   glLoadIdentity();
+   GlMatrix proj_save = gl->projection,
+            mv_save   = gl->modelView;
 
    GLint viewport[4];
-   glGetIntegerv (GL_VIEWPORT, viewport);
+   gl->getViewport(viewport);
 
-   glTranslatef (-1, -1, 0.0);
-   glScaled (40.0 / viewport[2], 40.0 / viewport[3], 1);
-   glTranslatef (2.0, 2.0, 0.0);
-   cam.GLMultRotMatrix();
-   glMultMatrixd (rotmat);
+   gl->projection.identity();
+   gl->modelView.identity();
+   gl->modelView.translate(-1, -1, 0.0);
+   gl->modelView.scale(40.0 / viewport[2], 40.0 / viewport[3], 1);
+   gl->modelView.translate(2.0, 2.0, 0.0);
+   gl->modelView.mult(cam.RotMatrix());
+   gl->modelView.mult(rotmat);
+   gl->loadMatrixUniforms();
 
    // glEnable (GL_COLOR_MATERIAL);
 
@@ -683,11 +695,9 @@ void VisualizationSceneScalarData::DrawCoordinateCross()
    glPopAttrib();
 #endif
 
-   glMatrixMode (GL_PROJECTION);
-   glPopMatrix();
-   glMatrixMode (GL_MODELVIEW);
-   glPopMatrix();
-
+   gl->projection = proj_save;
+   gl->modelView = mv_save;
+   gl->loadMatrixUniforms();
    if (print)
    {
 #ifndef GLVIS_OGL3
@@ -757,11 +767,11 @@ void KeylPressed()
    vsdata -> ToggleLight();
    if (! vsdata -> light)
    {
-      gl->disableLight();
+      GetGlState()->disableLight();
    }
    else
    {
-      gl->enableLight();
+      GetGlState()->enableLight();
    }
    SendExposeEvent();
 }
@@ -791,9 +801,8 @@ void KeyRPressed()
 {
    locscene -> spinning = 0;
    RemoveIdleFunc(MainLoop);
-   glMatrixMode (GL_MODELVIEW);
-   glLoadIdentity();
-   glGetDoublev (GL_MODELVIEW_MATRIX,   locscene -> translmat);
+   GetGlState()->modelView.identity();
+   locscene->translmat = GetGlState()->modelView.mtx;
    Set_Light();
 
    switch (vsdata -> key_r_state)
@@ -802,33 +811,33 @@ void KeyRPressed()
          break;
 
       case 1:
-         glRotatef(-90.0, 1.0f, 0.0f, 0.0f);
+         GetGlState()->modelView.rotate(-90.0, 1.0f, 0.0f, 0.0f);
          break;
 
       case 2:
-         glRotatef(-90.0, 1.0f, 0.0f, 0.0f);
-         glRotatef(-90.0, 0.0f, 0.0f, 1.0f);
+         GetGlState()->modelView.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         GetGlState()->modelView.rotate(-90.0, 0.0f, 0.0f, 1.0f);
          break;
 
       case 3:
-         glRotatef(-90.0, 1.0f, 0.0f, 0.0f);
-         glRotatef(-180.0, 0.0f, 0.0f, 1.0f);
+         GetGlState()->modelView.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         GetGlState()->modelView.rotate(-180.0, 0.0f, 0.0f, 1.0f);
          break;
 
       case 4:
-         glRotatef(-90.0, 1.0f, 0.0f, 0.0f);
-         glRotatef(-270.0, 0.0f, 0.0f, 1.0f);
+         GetGlState()->modelView.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         GetGlState()->modelView.rotate(-270.0, 0.0f, 0.0f, 1.0f);
          break;
 
       case 5:
-         glRotatef(180.0, 1.0f, 0.0f, 0.0f);
+         GetGlState()->modelView.rotate(180.0, 1.0f, 0.0f, 0.0f);
          break;
    }
 
    // if (locscene -> view != 2) // make 'R' work the same in 2D and 3D
    vsdata -> key_r_state = (vsdata -> key_r_state+1)%6;
 
-   glGetDoublev (GL_MODELVIEW_MATRIX,   locscene -> rotmat);
+   locscene->rotmat = GetGlState()->modelView.mtx;
    SendExposeEvent();
 }
 
@@ -934,7 +943,7 @@ void KeyBackslashPressed()
 
    GLfloat light[] = { x, y, z, w };
    // load modelview matrix before calling glLightfv?
-   gl->setLightPosition(0, light);
+   GetGlState()->setLightPosition(0, light);
    SendExposeEvent();
 }
 
@@ -1231,7 +1240,6 @@ void VisualizationSceneScalarData::Init()
 {
    vsdata = this;
    wnd = GetAppWindow(); 
-   gl = GetGlState();
 
    arrow_type = arrow_scaling_type = 0;
    scaling = 0;
@@ -1634,7 +1642,7 @@ void VisualizationSceneScalarData::PrintState()
         << "\nzoom " << (OrthogonalProjection ? ViewScale :
                          tan(M_PI / 8.) / tan(ViewAngle * (M_PI / 360.0)))
         << "\nvaluerange " << minv << ' ' << maxv;
-   const double *r = rotmat;
+   const float *r = glm::value_ptr(rotmat);
    ios::fmtflags fmt = cout.flags();
    cout << fixed << showpos
         << "\nrotmat " << r[ 0] << ' ' << r[ 1] << ' ' << r[ 2] << ' ' << r[ 3]

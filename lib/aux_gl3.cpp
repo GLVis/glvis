@@ -108,13 +108,14 @@ void VertexBuffer::BufferData() {
     if (!texcoord_data.empty()) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(2));
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * texcoord_data.size(), texcoord_data.data(), GL_STATIC_DRAW);
-        texcoord_cnt = texcoord_data.size() / 7;
+        texcoord_cnt = texcoord_data.size() / 8;
     }
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void VertexBuffer::DrawObject(GLenum renderAs) {
     if (!pt_data.empty()) {
+        GetGlState()->setModeColor();
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(0));
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -122,6 +123,7 @@ void VertexBuffer::DrawObject(GLenum renderAs) {
         glDisableClientState(GL_VERTEX_ARRAY);
     }
     if (!color_data.empty()) {
+        GetGlState()->setModeColor();
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(1));
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, sizeof(float) * 10, 0);
@@ -135,13 +137,14 @@ void VertexBuffer::DrawObject(GLenum renderAs) {
         glDisableClientState(GL_VERTEX_ARRAY);
     }
     if (!texcoord_data.empty()) {
+        GetGlState()->setModeColorTexture();
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(2));
         glEnableClientState(GL_VERTEX_ARRAY);
-        glVertexPointer(3, GL_FLOAT, sizeof(float) * 7, 0);
+        glVertexPointer(3, GL_FLOAT, sizeof(float) * 8, 0);
         glEnableClientState(GL_NORMAL_ARRAY);
-        glNormalPointer(GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 3));
+        glNormalPointer(GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 3));
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glTexCoordPointer(1, GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 6));
+        glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 6));
         glDrawArrays(renderAs, 0, texcoord_cnt);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisableClientState(GL_NORMAL_ARRAY);
@@ -169,19 +172,20 @@ void TextBuffer::DrawObject() {
     cerr << "Can't use text buffer object without Freetype" << endl;
 #else
     for (auto& str_obj : entries) {
-        glRasterPos3d(str_obj.x, str_obj.y, str_obj.z);
-        DrawBitmapText(str_obj.str.c_str());
+        DrawBitmapText(str_obj.str.c_str(), str_obj.x, str_obj.y, str_obj.z);
     }
 #endif
 }
 
 void LineBuffer::BufferData() {
     if (!pt_data.empty()) {
+        GetGlState()->setModeColor();
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(0));
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * pt_data.size(), pt_data.data(), GL_STATIC_DRAW);
         pt_cnt = pt_data.size() / 3;
     }
     if (!color_data.empty()) {
+        GetGlState()->setModeColor();
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(1));
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * color_data.size(), color_data.data(), GL_STATIC_DRAW);
         color_cnt = color_data.size() / 7;
@@ -200,6 +204,7 @@ void LineBuffer::DrawObject(GLenum renderAs) {
 
 void LineBuffer::DrawObject() {
     if (!pt_data.empty()) {
+        GetGlState()->setModeColor();
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(0));
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -207,6 +212,7 @@ void LineBuffer::DrawObject() {
         glDisableClientState(GL_VERTEX_ARRAY);
     }
     if (!color_data.empty()) {
+        GetGlState()->setModeColor();
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(1));
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, sizeof(float) * 7, 0);
@@ -217,13 +223,14 @@ void LineBuffer::DrawObject() {
         glDisableClientState(GL_VERTEX_ARRAY);
     }
     if (!texcoord_data.empty()) {
+        GetGlState()->setModeColor();
         glBindBuffer(GL_ARRAY_BUFFER, vbo->get(2));
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, 0);
-        glLineStipple(1, 255);
-        glEnable(GL_LINE_STIPPLE);
+        //glLineStipple(1, 255);
+        //glEnable(GL_LINE_STIPPLE);
         glDrawArrays(GL_LINES, 0, texcoord_cnt);
-        glDisable(GL_LINE_STIPPLE);
+        //glDisable(GL_LINE_STIPPLE);
         glDisableClientState(GL_VERTEX_ARRAY);
     }
     glBindBuffer(GL_ARRAY_BUFFER, 0);

@@ -65,6 +65,7 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
 
     glGenTextures(1, &font_tex);
 
+    glActiveTexture(GL_TEXTURE0 + 1);
     glBindTexture(GL_TEXTURE_2D, font_tex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, w, h, 0, GL_ALPHA, GL_UNSIGNED_BYTE, 0);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -100,7 +101,8 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
         x += face->glyph->bitmap.width;
     }
     font_init = true;
-    paletteRebind();
+    glEnable(GL_TEXTURE_2D);
+    glActiveTexture(GL_TEXTURE0);
     return true;
 }
 
@@ -132,10 +134,9 @@ uint32_t GlVisFont::BufferText(std::string& str) {
 }
 
 void GlVisFont::RenderBuffer(uint32_t buf, double x, double y, double z) {
-    state->setModeRenderText(x, y, z);
+    GetGlState()->setModeRenderText(x, y, z);
 
     glActiveTexture(GL_TEXTURE0 + 1);
-    glBindTexture(GL_TEXTURE_2D, font_tex);
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
@@ -149,5 +150,6 @@ void GlVisFont::RenderBuffer(uint32_t buf, double x, double y, double z) {
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glActiveTexture(GL_TEXTURE0);
+    GetGlState()->setModeColor();
 }
 

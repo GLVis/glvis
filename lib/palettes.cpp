@@ -4682,20 +4682,21 @@ void _paletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
          texture_buf[3*i+2] = palette[3*(plt_size-1-i)+2];
       }
    }
-   glBindTexture(GL_TEXTURE_1D, tex);
-   glTexImage1D(GL_TEXTURE_1D,
+   glBindTexture(GL_TEXTURE_2D, tex);
+   glTexImage2D(GL_TEXTURE_2D,
                 0,
                 GL_RGB,
                 plt_size,
+                1,
                 0,
                 GL_RGB,
                 GL_FLOAT,
                 texture_buf);
 
    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 }
 
 /* *
@@ -4731,24 +4732,25 @@ void _paletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
       texture_buf[3*i+1] = (1.0 - t) * palette[offset + 1] + t * palette[offset + 4];
       texture_buf[3*i+2] = (1.0 - t) * palette[offset + 2] + t * palette[offset + 5];
    }
-   glBindTexture(GL_TEXTURE_1D, tex);
-   glTexImage1D(GL_TEXTURE_1D,
+   glBindTexture(GL_TEXTURE_2D, tex);
+   glTexImage2D(GL_TEXTURE_2D,
                 0,
                 GL_RGB,
                 Texture_Size,
+                1,
                 0,
                 GL_RGB,
                 GL_FLOAT,
                 texture_buf);
 
    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 }
 
 void _paletteRebind() {
-    glBindTexture(GL_TEXTURE_1D, palette_tex[curr_palette][use_smooth]);
+    glBindTexture(GL_TEXTURE_2D, palette_tex[curr_palette][use_smooth]);
 }
 
 void paletteInit() {

@@ -971,8 +971,8 @@ void ExecuteScriptCommand()
          cout << "Script: rotmat:";
          for (int i = 0; i < 16; i++)
          {
-            scr >> vs->rotmat[i];
-            cout << ' ' << vs->rotmat[i];
+            scr >> vs->rotmat[i/4][i%4];
+            cout << ' ' << vs->rotmat[i/4][i%4];
          }
          cout << endl;
          MyExpose();

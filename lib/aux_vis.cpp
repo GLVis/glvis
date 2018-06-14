@@ -360,7 +360,7 @@ void SendExposeEvent()
 
 void MyReshape(GLsizei w, GLsizei h)
 {
-   state->setViewPort(w, h);
+   state->setViewport(w, h);
 
    state->projection.identity();
 
@@ -443,7 +443,8 @@ void RemoveIdleFunc(void (*Func)(void))
 
 
 double xang = 0., yang = 0.;
-GlMatrix srot, sph_t, sph_u;
+GlMatrix srot;
+double sph_t, sph_u;
 static GLint oldx, oldy, startx, starty;
 
 int constrained_spinning = 0;
@@ -567,8 +568,8 @@ void LeftButtonLoc (EventInfo *event)
          CrossProd(scoord, ncoord, cross);
 
          state->modelView.mult(locscene->cam.TransposeRotMatrix());
-         state->modelView.rotated(acos(inprod)*(180.0/M_PI), cross[0], cross[1], cross[2]);
-         state->modelView.mult(srot);
+         state->modelView.rotate(acos(inprod)*(180.0/M_PI), cross[0], cross[1], cross[2]);
+         state->modelView.mult(srot.mtx);
          locscene->rotmat = state->modelView.mtx;
       }
    }
@@ -982,7 +983,7 @@ void KeyCtrlP()
    buffsize = 0;
    state = GL2PS_OVERFLOW;
    locscene -> print = 1;
-   state->getViewport(viewport);
+   GetGlState()->getViewport(viewport);
    while (state == GL2PS_OVERFLOW)
    {
       buffsize += 1024*1024;
@@ -1554,9 +1555,9 @@ void DrawBitmapText(const char *text, float x, float y, float z)
        if (!glvis_font.LoadFont("OpenSans.ttf", font_size))
            return;
    }
-    std::string toBuf(text);
-   uint32_t vbo = glvis_font.BufferText(toBuf, x, y, z);
-   glvis_font.RenderBuffer(vbo);
+   std::string toBuf(text);
+   uint32_t vbo = glvis_font.BufferText(toBuf);
+   glvis_font.RenderBuffer(vbo, x, y, z);
    glDeleteBuffers(1, &vbo);
 }
 

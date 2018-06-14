@@ -13,7 +13,7 @@
 #include "platform_gl.hpp"
 #include "openglvis.hpp"
 #include "material.hpp"
-
+#include "aux_vis.hpp"
 
 void Camera::Reset()
 {
@@ -115,7 +115,7 @@ void Camera::GLMultTransposeRotMatrix()
 #endif
 }
 
-glm::mat4 TransposeRotMatrix()
+glm::mat4 Camera::TransposeRotMatrix()
 {
    GetLeft();
    double mat_t[16] =
@@ -136,8 +136,7 @@ void Camera::GLMultMatrix()
 
 glm::mat4 Camera::TranslateMatrix() {
     glm::mat4 rotmtx = RotMatrix();
-    rotmtx.translate(-eye[0], -eye[1], -eye[2]);
-    return rotmtx;
+    return glm::translate(rotmtx, glm::vec3(-eye[0], -eye[1], -eye[2]));
 }
 
 void Camera::Print()
@@ -151,11 +150,13 @@ void Camera::Print()
 
 VisualizationScene::VisualizationScene()
 {
+    gl = GetGlState();
     gl->modelView.identity();
     translmat = gl->modelView.mtx;
     gl->modelView.rotate(-60.0, 1.0, 0.0, 0.0);
     gl->modelView.rotate(-40.0, 0.0, 0.0, 1.0);
     rotmat = gl->modelView.mtx;
+    gl->loadMatrixUniforms();
     xscale = yscale = zscale = 1;
     spinning = print = movie = 0;
     OrthogonalProjection = 0;
@@ -183,6 +184,7 @@ void VisualizationScene::Rotate(double angle, double x, double y, double z)
     gl->modelView.rotate(angle, x, y, z);
     gl->modelView.mult(cam.RotMatrix());
     gl->modelView.mult(rotmat);
+    gl->loadMatrixUniforms();
     rotmat = gl->modelView.mtx;
 }
 
@@ -196,6 +198,7 @@ void VisualizationScene::PreRotate(double angle, double x, double y, double z)
 */
     gl->modelView.mtx = rotmat;
     gl->modelView.rotate(angle, x, y, z);
+    gl->loadMatrixUniforms();
     rotmat = gl->modelView.mtx;
 }
 
@@ -217,7 +220,8 @@ void VisualizationScene::Rotate(double angley, double anglex)
     gl->modelView.rotate(anglex, 1.0, 0.0, 0.0);
     gl->modelView.mult(cam.RotMatrix());
     gl->modelView.mult(rotmat);
-    rotmat = gl->modelView.mult(rotmat);
+    gl->loadMatrixUniforms();
+    rotmat = gl->modelView.mtx;
 }
 
 void VisualizationScene::Translate(double _x, double _y, double _z)
@@ -232,6 +236,7 @@ void VisualizationScene::Translate(double _x, double _y, double _z)
     gl->modelView.identity();
     gl->modelView.translate(_x, -_y, _z);
     gl->modelView.mult(translmat);
+    gl->loadMatrixUniforms();
     translmat = gl->modelView.mtx;
 }
 
@@ -274,7 +279,8 @@ void VisualizationScene::CenterObject()
 
     gl->modelView.rotate(-60.0, 1.0f, 0.0f, 0.0f);
     gl->modelView.rotate(-40.0, 0.0f, 0.0f, 1.0f);
-    rotmat = gl->modelView;
+    gl->loadMatrixUniforms();
+    rotmat = gl->modelView.mtx;
 }
 
 void VisualizationScene::CenterObject2D()
@@ -288,10 +294,11 @@ void VisualizationScene::CenterObject2D()
 */
     gl->modelView.identity();
     translmat = gl->modelView.mtx;
+    gl->loadMatrixUniforms();
 
     Set_Light();
 
-    rotmat = gl->modelView;
+    rotmat = gl->modelView.mtx;
 }
 
 void VisualizationScene::SetView(double theta, double phi)
@@ -310,6 +317,7 @@ void VisualizationScene::SetView(double theta, double phi)
 
     gl->modelView.rotate(-theta, 1.0f, 0.0f, 0.0f);
     gl->modelView.rotate(-phi, 0.0f, 0.0f, 1.0f);
+    gl->loadMatrixUniforms();
  }
 
 void VisualizationScene::Zoom(double factor)
@@ -342,4 +350,5 @@ void VisualizationScene::ModelView()
     gl->modelView.mult(rotmat);
     gl->modelView.scale(xscale, yscale, zscale);
     gl->modelView.translate(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
+    gl->loadMatrixUniforms();
 }

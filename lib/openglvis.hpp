@@ -14,7 +14,7 @@
 
 #include <cmath>
 #include "sdl.hpp"
-#include "glcontext.hpp"
+#include "glstate.hpp"
 
 // Visualization header file
 
