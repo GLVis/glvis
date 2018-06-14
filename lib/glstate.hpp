@@ -95,7 +95,10 @@ protected:
 
     int _w;
     int _h;
-    bool _lighting = false, _depthTest = false, _blend = false;
+    bool _lighting = false,
+         _depthTest = false,
+         _blend = false,
+         _colorMat = false;
     int _numLights;
     float _ambient[4];
 
@@ -134,6 +137,17 @@ public:
             glDisable(GL_BLEND);
             _blend = false;
         }
+    }
+
+    /**
+     * Sets the ambient and diffuse lighting to full intensity, tracking the object color.
+     */
+    void enableColorMaterial() {
+        _colorMat = true;
+    }
+
+    void disableColorMaterial() {
+        _colorMat = false;
     }
 
     GlState()
@@ -222,8 +236,14 @@ public:
         GLuint locDif = glGetUniformLocation(program, "material.diffuse");
         GLuint locSpec = glGetUniformLocation(program, "material.specular");
         GLuint locShin = glGetUniformLocation(program, "material.shininess");
-        glUniform4fv(locAmb, 1, mat.ambient);
-        glUniform4fv(locDif, 1, mat.diffuse);
+        if (!_colorMat) {
+            glUniform4fv(locAmb, 1, mat.ambient);
+            glUniform4fv(locDif, 1, mat.diffuse);
+        } else {
+            float fullIntens[4] = {1.0, 1.0, 1.0, 1.0};
+            glUniform4fv(locAmb, 1, fullIntens);
+            glUniform4fv(locDif, 1, fullIntens);
+        }
         glUniform4fv(locSpec, 1, mat.specular);
         glUniform1f(locShin, mat.shininess);
     }
