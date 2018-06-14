@@ -55,25 +55,25 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
             cout << "GLVis: Cannot load glyph: " << (char) c << endl;
             continue;
         }
-        w += face->glyph->bitmap.width;
+        w += face->glyph->bitmap.width + 2;
         if (h < face->glyph->bitmap.rows) {
             h = face->glyph->bitmap.rows;
         }
     }
     tex_w = w;
-    tex_h = h;
+    tex_h = h + 2;
 
     glGenTextures(1, &font_tex);
 
     glActiveTexture(GL_TEXTURE0 + 1);
     glBindTexture(GL_TEXTURE_2D, font_tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, w, h, 0, GL_ALPHA, GL_UNSIGNED_BYTE, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, tex_w, tex_h, 0, GL_ALPHA, GL_UNSIGNED_BYTE, 0);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     int x = 0;
     for (int c = 32; c < 128; c++) {
@@ -83,22 +83,22 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
         }
         glTexSubImage2D(GL_TEXTURE_2D,
                         0,
-                        x, 0,
+                        x + 1, 1,
                         face->glyph->bitmap.width,
                         face->glyph->bitmap.rows,
                         GL_ALPHA,
                         GL_UNSIGNED_BYTE,
                         face->glyph->bitmap.buffer);
         font_chars[c] = {
-            face->glyph->bitmap.width,
-            face->glyph->bitmap.rows,
+            face->glyph->bitmap.width + 2,
+            face->glyph->bitmap.rows + 2,
             face->glyph->bitmap_left,
             face->glyph->bitmap_top,
             (int)(face->glyph->advance.x >> 6),
             (int)(face->glyph->advance.y >> 6),
             (float) x / w
         };
-        x += face->glyph->bitmap.width;
+        x += face->glyph->bitmap.width + 2;
     }
     font_init = true;
     glEnable(GL_TEXTURE_2D);
