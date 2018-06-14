@@ -276,10 +276,7 @@ public:
      */
     void disableLight() {
         if (_lighting) {
-            float ambNoLight[4] = { 1.0, 1.0, 1.0, 1.0 }; // pass through color directly
-            GLuint locGLight = glGetUniformLocation(program, "g_ambient");
             GLuint locNumLights = glGetUniformLocation(program, "numLights");
-            glUniform4fv(locGLight, 1, ambNoLight);
             glUniform1i(locNumLights, 0);
             _lighting = false;
         }

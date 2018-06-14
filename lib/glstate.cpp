@@ -80,19 +80,20 @@ void main()
         if (numLights == 0) {
             gl_FragColor = color;
         } else {
+            float normSgn = float(int(gl_FrontFacing) * 2 - 1);
             vec4 ambient_light = g_ambient * material.ambient; 
             vec4 diffuse_light = vec4(0.0, 0.0, 0.0, 0.0); 
             vec4 specular_light = vec4(0.0, 0.0, 0.0, 0.0); 
             for (int i = 0; i < numLights; i++) { 
                 vec3 light_dir = normalize(lights[i].position - fPosition); 
-                diffuse_light += lights[i].diffuse * material.diffuse * max(dot(fNormal, light_dir), 0.0); 
+                diffuse_light += lights[i].diffuse * material.diffuse * max(dot(fNormal * normSgn, light_dir), 0.0); 
      
-                vec3 eye_to_vert = normalize(-fPosition); 
-                vec3 vert_to_light = reflect(-light_dir, fNormal); 
-                float specular_factor = max(dot(eye_to_vert, vert_to_light), 0.0); 
+                //vec3 eye_to_vert = normalize(-fPosition); 
+                vec3 half_v = normalize(vec3(0,0,1) + light_dir);
+                float specular_factor = max(dot(half_v, fNormal * normSgn), 0.0); 
                 specular_light += lights[i].specular * material.specular * pow(specular_factor, material.shininess); 
             } 
-            gl_FragColor = color * (ambient_light + diffuse_light + specular_light);
+            gl_FragColor = color * (vec4(ambient_light.xyz, 0.0) + diffuse_light + vec4(specular_light.xyz, 0.0));
         }
     } 
 })";
