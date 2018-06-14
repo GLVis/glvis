@@ -303,7 +303,7 @@ public:
         //need to recalculate model view if raster point changes
         loadMatrixUniforms();
         GLuint locModelView = glGetUniformLocation(program, "modelViewMatrix");
-        glm::mat4 mv2d = glm::translate(glm::mat4(), getRasterPoint(x, y, z));
+        glm::mat4 mv2d = glm::translate(glm::mat4(1.0), getRasterPoint(x, y, z));
         glUniformMatrix4fv(locModelView, 1, GL_FALSE, glm::value_ptr(mv2d));
     }
 

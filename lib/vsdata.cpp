@@ -164,8 +164,9 @@ void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
    glVertex3f(0, 0, 1);
    glEnd();
 
-   glTranslated (0, 0, 1);
-   glScaled (cone_scale, cone_scale, cone_scale);
+   mv.translate(0, 0, 1);
+   mv.scale(cone_scale, cone_scale, cone_scale);
+   gl->setImmModelView(mv);
 
    Cone();
 
@@ -341,7 +342,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
    if (GetUseTexture())
    {
       gl->setModeColorTexture(false);
-      glEnable (GL_TEXTURE_1D);
+      glEnable (GL_TEXTURE_2D);
       glColor4f(1, 1, 1, 1);
       glBegin(GL_QUADS);
       glTexCoord2f(0., 0.);
@@ -351,7 +352,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       glVertex3f(maxx, maxy, posz);
       glVertex3f(minx, maxy, posz);
       glEnd();
-      glDisable (GL_TEXTURE_1D);
+      glDisable (GL_TEXTURE_2D);
    }
    else
    {
@@ -571,6 +572,8 @@ void VisualizationSceneScalarData::DrawCaption()
    GLuint vbo = GetFont()->BufferText(caption);
 #endif
    GlMatrix proj, modelview;
+   proj.identity();
+   modelview.identity();
 
    GLint viewport[4];
    gl->getViewport(viewport);

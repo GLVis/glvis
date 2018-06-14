@@ -136,7 +136,7 @@ uint32_t GlVisFont::BufferText(std::string& str) {
 void GlVisFont::RenderBuffer(uint32_t buf, double x, double y, double z) {
     GetGlState()->setModeRenderText(x, y, z);
 
-    glActiveTexture(GL_TEXTURE0 + 1);
+    glClientActiveTexture(GL_TEXTURE0 + 1);
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
@@ -149,7 +149,7 @@ void GlVisFont::RenderBuffer(uint32_t buf, double x, double y, double z) {
     
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glActiveTexture(GL_TEXTURE0);
+    glClientActiveTexture(GL_TEXTURE0);
     GetGlState()->setModeColor();
 }
 

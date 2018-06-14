@@ -71,7 +71,7 @@ uniform Material material;
 void main() 
 { 
     if (containsText) { 
-        gl_FragColor = texture2D(fontTex, fFontTexCoord); 
+        gl_FragColor = vec4(0.0, 0.0, 0.0, texture2D(fontTex, fFontTexCoord).a); 
     } else { 
         vec4 color = fColor; 
         if (useColorTex) { 
@@ -93,7 +93,8 @@ void main()
                 float specular_factor = max(dot(half_v, fNormal * normSgn), 0.0); 
                 specular_light += lights[i].specular * material.specular * pow(specular_factor, material.shininess); 
             } 
-            gl_FragColor = color * (vec4(ambient_light.xyz, 0.0) + diffuse_light + vec4(specular_light.xyz, 0.0));
+            gl_FragColor.xyz = vec3(color) * (ambient_light.xyz + diffuse_light.xyz + specular_light.xyz);
+            gl_FragColor.w = 1.0;
         }
     } 
 })";
