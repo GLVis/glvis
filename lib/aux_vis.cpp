@@ -737,7 +737,7 @@ void RightButtonLoc (EventInfo *event)
       }
       cout << "(x,y,z) = (" << x << ',' << y << ',' << z << ')' << endl;
       GLfloat light[] = { float(x), float(y), float(z), 0.0f };
-      glLightfv(GL_LIGHT0, GL_POSITION, light);
+      state->setLightPosition(0, light);
    }
    else if ( !( event->data[2] & KMOD_CTRL ) )
    {
