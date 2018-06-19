@@ -12,7 +12,7 @@
 #ifndef GLVIS_AUX_GL3
 #define GLVIS_AUX_GL3
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <iostream>
 #include <memory>
 
@@ -50,11 +50,11 @@ struct PolyBuilder
     float uv[2];
 };
 
-class LineBuffer;
+class GlDrawable;
 
 class LineBuilder
 {
-    LineBuffer * parent_buf;
+    GlDrawable * parent_buf;
     GLenum render_as;
     std::vector<float> pts;
     int count;
@@ -62,7 +62,7 @@ class LineBuilder
     bool has_stipple;
     float color[4];
 public:
-    LineBuilder(LineBuffer * buf, bool save_color)
+    LineBuilder(GlDrawable * buf, bool save_color)
         : parent_buf(buf)
         , has_color(save_color)
         , has_stipple(false) { }
@@ -117,121 +117,129 @@ public:
  */
 class VertexBuffer
 {
-protected:
-
-    struct _handle {
-        GLuint vbo_handles[3];
-        _handle() {
-            glGenBuffers(3, vbo_handles);
-        }
-        ~_handle() {
-            glDeleteBuffers(3, vbo_handles);
-        }
-
-        GLuint get(int i) {
-            return vbo_handles[i];
-        }
-    };
-    std::shared_ptr<_handle> vbo;
-    
-    // contains only point data
-    std::vector<float> pt_data;
-    int pt_cnt;
-    // contains interleaved point and color data
-    // default layout: V(3f)|N(3f)|C(4f)
-    std::vector<float> color_data;
-    int color_cnt;
-    // contains interleaved point and texture coord data
-    // default layout: V(3f)|N(3f)|T(1f)
-    std::vector<float> texcoord_data;
-    int texcoord_cnt;
-    
 public:
-    /**
-     * Constructs a new Vertex buffer object.
-     */
-    VertexBuffer()
-        : vbo(std::make_shared<_handle>()) {
-    }
+    enum array_layout {
+        LAYOUT_NONE = 0,
+        LAYOUT_VTX,
+        LAYOUT_VTX_COLOR,
+        LAYOUT_VTX_TEXTURE0,
+        LAYOUT_VTX_NORMAL_COLOR,
+        LAYOUT_VTX_NORMAL_TEXTURE0
+    };
+private:
+    array_layout _layout;
+    std::unique_ptr<GLuint> _handle;
+    std::vector<float> _pt_data;
+    int _buffered_size;
 
-    ~VertexBuffer() { }
-
-    virtual void clear() {
-        pt_data.clear();
-        color_data.clear();
-        texcoord_data.clear();
-        pt_cnt = 0;
-        color_cnt = 0;
-        texcoord_cnt = 0;
-    }
-
-    void addVertex(GlVertex gv, float texCoord) {
-        std::move(gv.pos, gv.pos + 3, std::back_inserter(texcoord_data));
-        std::move(gv.norm, gv.norm + 3, std::back_inserter(texcoord_data));
-        texcoord_data.push_back(texCoord);
-        texcoord_data.push_back(0);
-    }
-    
-    void addVertex(GlVertex gv, float (&rgba)[4]) {
-        std::move(gv.pos, gv.pos + 3, std::back_inserter(color_data));
-        std::move(gv.norm, gv.norm + 3, std::back_inserter(color_data));
-        color_data.insert(color_data.end(), rgba, rgba+4);
-    }
-
-    virtual void BufferData();
-
-    /**
-     * Draws the VBO.
-     */
-    virtual void DrawObject(GLenum renderAs);
-};
-
-class LineBuffer : public VertexBuffer {
-    //texcoord_data is used to store stipple lines
     friend void LineBuilder::glEnd();
 public:
 
-    void addVertex(float x, float y, float z) {
-        pt_data.push_back(x);
-        pt_data.push_back(y);
-        pt_data.push_back(z);
+    VertexBuffer(array_layout layout)
+        : _layout(layout)
+        , _handle(new GLuint)
+        , _buffered_size(0) {
+        glGenBuffers(1, _handle.get());
     }
 
+    ~VertexBuffer() {
+        glDeleteBuffers(1, _handle.get());
+    }
+
+    void clear() {
+        _pt_data.clear();
+        _layout = LAYOUT_NONE;
+    }
+
+    array_layout getArrayLayout() { return _layout; }
+
+    void addVertex(float (&vtx)[3], float (&rgba)[4]) {
+        if (_pt_data.empty()) {
+            _layout = LAYOUT_VTX_COLOR;
+        } else if (_layout != LAYOUT_VTX_COLOR) {
+            cerr << "Unexpected vertex of layout VTX_COLOR" << endl;
+        }
+        std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
+        std::copy(rgba, rgba+4, std::back_inserter(_pt_data));
+    }
+
+    void addVertex(float (&vtx)[3], float colorTexCoord) {
+        if (_pt_data.empty()) {
+            _layout = LAYOUT_VTX_TEXTURE0;
+        } else if (_layout != LAYOUT_VTX_TEXTURE0) {
+            cerr << "Unexpected vertex of layout VTX_TEXTURE0" << endl;
+        }
+        std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
+        _pt_data.emplace_back(colorTexCoord);
+        _pt_data.emplace_back(0);
+    }
+
+    void addVertex(float (&vtx)[3], float (&norm)[3], float (&rgba)[4]) {
+        if (_pt_data.empty()) {
+            _layout = LAYOUT_VTX_NORMAL_COLOR;
+        } else if (_layout != LAYOUT_VTX_NORMAL_COLOR) {
+            cerr << "Unexpected vertex of layout LAYOUT_VTX_NORMAL_COLOR" << endl;
+        }
+        std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
+        std::copy(norm, norm+3, std::back_inserter(_pt_data));
+        std::copy(rgba, rgba+4, std::back_inserter(_pt_data));
+    }
+
+    void addVertex(float (&vtx)[3], float (&norm)[3], float colorTexCoord) {
+        if (_pt_data.empty()) {
+            _layout = LAYOUT_VTX_NORMAL_TEXTURE0;
+        } else if (_layout != LAYOUT_VTX_NORMAL_TEXTURE0) {
+            cerr << "Unexpected vertex of layout VTX_NORMAL_TEXTURE0" << endl;
+        }
+        std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
+        std::copy(norm, norm+3, std::back_inserter(_pt_data));
+        _pt_data.emplace_back(colorTexCoord);
+        _pt_data.emplace_back(0);
+    }
+
+    /**
+     * Buffers the vertex data onto the GPU.
+     */
+    virtual void bufferData();
+
+    /**
+     * Draws the vertex data.
+     */
+    virtual void drawObject(GLenum renderAs);
+};
+
+class GlDrawable {
+private:
+    std::unordered_map<GLenum, VertexBuffer> buffers[6];
+
+    VertexBuffer& getBuffer(VertexBuffer::array_layout layout, GLenum shape) {
+        if (buffers[layout].find(shape) == buffers[layout].end()) {
+            buffers[layout].emplace(shape, VertexBuffer(layout));
+        }
+        return buffers[layout][shape];
+    }
+
+    friend void LineBuilder::glEnd();
+public:
+
+    void addText(float x, float y, float z, std::string text);
+    
+    /**
+     * Creates a new LineBuilder associated with the current drawable object.
+     */
     LineBuilder createBuilder(bool save_color = false) {
         return LineBuilder(this, save_color);
     }
 
-    virtual void BufferData();
+    /**
+     * Buffers the drawable object onto the GPU.
+     */
+    void buffer();
 
     /**
-     * Draws the VBO.
+     * Draws the object.
      */
-    virtual void DrawObject(GLenum renderAs);
-    
-    virtual void DrawObject();
-};
-
-class TextBuffer : public LineBuffer {
-    struct _text_entry {
-        float x, y, z;
-        std::string str;
-        _text_entry(float x, float y, float z, std::string str)
-            : x(x), y(y), z(z), str(std::move(str)) { }
-    };
-    std::vector<_text_entry> entries;
-public:
-    TextBuffer() { }
-    ~TextBuffer() { }
-
-    virtual void clear() {
-        entries.clear();
-        LineBuffer::clear();
-    }
-
-    void SetText(float x, float y, float z, std::string text);
-    virtual void BufferData();
-    virtual void DrawObject(GLenum renderAs);
-    virtual void DrawObject();
+    void draw();
 };
 
 }
