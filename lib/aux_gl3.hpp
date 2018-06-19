@@ -119,7 +119,6 @@ class VertexBuffer
 {
 public:
     enum array_layout {
-        LAYOUT_NONE = 0,
         LAYOUT_VTX,
         LAYOUT_VTX_COLOR,
         LAYOUT_VTX_TEXTURE0,
@@ -148,26 +147,31 @@ public:
 
     void clear() {
         _pt_data.clear();
-        _layout = LAYOUT_NONE;
     }
 
     array_layout getArrayLayout() { return _layout; }
 
+    void addVertex(float (&vtx)[3]) {
+        if (_layout != LAYOUT_VTX) {
+            cerr << "Unexpected vertex of layout VTX" << endl;
+            return;
+        }
+        std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
+    }
+
     void addVertex(float (&vtx)[3], float (&rgba)[4]) {
-        if (_pt_data.empty()) {
-            _layout = LAYOUT_VTX_COLOR;
-        } else if (_layout != LAYOUT_VTX_COLOR) {
+        if (_layout != LAYOUT_VTX_COLOR) {
             cerr << "Unexpected vertex of layout VTX_COLOR" << endl;
+            return;
         }
         std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
         std::copy(rgba, rgba+4, std::back_inserter(_pt_data));
     }
 
     void addVertex(float (&vtx)[3], float colorTexCoord) {
-        if (_pt_data.empty()) {
-            _layout = LAYOUT_VTX_TEXTURE0;
-        } else if (_layout != LAYOUT_VTX_TEXTURE0) {
+        if (_layout != LAYOUT_VTX_TEXTURE0) {
             cerr << "Unexpected vertex of layout VTX_TEXTURE0" << endl;
+            return;
         }
         std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
         _pt_data.emplace_back(colorTexCoord);
@@ -175,10 +179,9 @@ public:
     }
 
     void addVertex(float (&vtx)[3], float (&norm)[3], float (&rgba)[4]) {
-        if (_pt_data.empty()) {
-            _layout = LAYOUT_VTX_NORMAL_COLOR;
-        } else if (_layout != LAYOUT_VTX_NORMAL_COLOR) {
+        if (_layout != LAYOUT_VTX_NORMAL_COLOR) {
             cerr << "Unexpected vertex of layout LAYOUT_VTX_NORMAL_COLOR" << endl;
+            return;
         }
         std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
         std::copy(norm, norm+3, std::back_inserter(_pt_data));
@@ -186,10 +189,9 @@ public:
     }
 
     void addVertex(float (&vtx)[3], float (&norm)[3], float colorTexCoord) {
-        if (_pt_data.empty()) {
-            _layout = LAYOUT_VTX_NORMAL_TEXTURE0;
-        } else if (_layout != LAYOUT_VTX_NORMAL_TEXTURE0) {
+        if (_layout != LAYOUT_VTX_NORMAL_TEXTURE0) {
             cerr << "Unexpected vertex of layout VTX_NORMAL_TEXTURE0" << endl;
+            return;
         }
         std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
         std::copy(norm, norm+3, std::back_inserter(_pt_data));
@@ -212,17 +214,36 @@ class GlDrawable {
 private:
     std::unordered_map<GLenum, VertexBuffer> buffers[6];
 
+public:
+
+    void addText(float x, float y, float z, std::string text);
+
+    /**
+     * Adds a triangle to the drawable object, with the specified face normal
+     * and vertex coloring.
+     */
+    void addTriangle(float vtx[][3], float (&norm)[3], float (&rgba)[3][4]);
+
+    /**
+     * Adds a triangle to the drawable object, with the specified face normal
+     * and color texture coordinates.
+     */
+    void addTriangle(float vtx[][3], float (&norm)[3], float (&texcoord)[3]);
+
+    /**
+     * Adds a quadrilateral to the drawable object, with the specified face normal
+     * and vertex coloring.
+     */
+    void addQuad(float (&vtx)[4][3], float (&norm)[3], float (&rgba)[4][4]);
+
+    void addQuad(float (&vtx)[4][3], float (&norm)[3], float (&texcoord)[4]);
+
     VertexBuffer& getBuffer(VertexBuffer::array_layout layout, GLenum shape) {
         if (buffers[layout].find(shape) == buffers[layout].end()) {
             buffers[layout].emplace(shape, VertexBuffer(layout));
         }
         return buffers[layout][shape];
     }
-
-    friend void LineBuilder::glEnd();
-public:
-
-    void addText(float x, float y, float z, std::string text);
     
     /**
      * Creates a new LineBuilder associated with the current drawable object.

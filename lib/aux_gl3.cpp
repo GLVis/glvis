@@ -113,9 +113,6 @@ void VertexBuffer::drawObject(GLenum renderAs) {
     glBindBuffer(GL_ARRAY_BUFFER, *_handle);
     glEnableClientState(GL_VERTEX_ARRAY);
     switch (_layout) {
-        case LAYOUT_NONE:
-            cerr << "ERROR: Unable to buffer vertex data." << endl;
-            return;
         case LAYOUT_VTX:
             glVertexPointer(3, GL_FLOAT, 0, 0);
             glDrawArrays(renderAs, 0, _buffered_size / 3);
@@ -156,5 +153,21 @@ void VertexBuffer::drawObject(GLenum renderAs) {
             break;
     }
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void GlDrawable::buffer() {
+    for (int i = 0; i < 6; i++) {
+        for (auto& pair : buffers[i]) {
+            pair.second.bufferData();
+        }
+    }
+}
+
+void GlDrawable::draw() {
+    for (int i = 0; i < 6; i++) {
+        for (auto& pair : buffers[i]) {
+            pair.second.drawObject(pair.first);
+        }
+    }
 }
 
