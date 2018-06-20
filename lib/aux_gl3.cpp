@@ -97,6 +97,42 @@ void LineBuilder::glEnd() {
 #endif
 }
 
+void PolyBuilder::glEnd() {
+#ifdef GLVIS_OGL3
+    int pts_stride = 6;
+    VertexBuffer::array_layout dst_layout = VertexBuffer::LAYOUT_VTX_NORMAL;
+    if (use_color) {
+        dst_layout = VertexBuffer::LAYOUT_VTX_NORMAL_COLOR;
+        pts_stride += 4;
+    }
+    else if (use_color_tex) {
+        dst_layout = VertexBuffer::LAYOUT_VTX_NORMAL_TEXTURE0;
+        pts_stride += 2;
+    }
+    if (render_as != GL_TRIANGLES && render_as != GL_QUADS) {
+        cerr << "Type is not implemented" << endl;
+        return;
+    }
+    VertexBuffer& toInsert = parent_buf->getBuffer(dst_layout, GL_TRIANGLES);
+    if (render_as == GL_QUADS) {
+        //split quads into triangles, along diagonal 2->4
+        std::vector<float> tri2(pts.begin() + pts_stride, pts.end());
+        toInsert._pt_data.insert(toInsert._pt_data.end(),
+                                 std::make_move_iterator(tri2.begin()),
+                                 std::make_move_iterator(tri2.end()));
+        //pts now contains vertices 1,2,4
+        pts.erase(pts.begin() + (pts_stride * 2), pts.begin() + (pts_stride * 3));
+    }
+    toInsert._pt_data.insert(toInsert._pt_data.end(),
+                             std::make_move_iterator(pts.begin()),
+                             std::make_move_iterator(pts.end()));
+    pts.clear();
+    count = 0;
+#else
+    ::glEnd();
+#endif
+}
+
 void VertexBuffer::bufferData() {
     if (_pt_data.empty()) {
         return;
@@ -106,9 +142,15 @@ void VertexBuffer::bufferData() {
     _buffered_size = _pt_data.size();
 }
 
+//TODO: switch between vertexpointer and vertexattribpointer depending on available GL version
 void VertexBuffer::drawObject(GLenum renderAs) {
     if (_buffered_size == 0) {
         return;
+    }
+    if (_layout == LAYOUT_VTX_TEXTURE0 || _layout == LAYOUT_VTX_NORMAL_TEXTURE0) {
+        GetGlState()->setModeColorTexture();
+    } else {
+        GetGlState()->setModeColor();
     }
     glBindBuffer(GL_ARRAY_BUFFER, *_handle);
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -116,6 +158,13 @@ void VertexBuffer::drawObject(GLenum renderAs) {
         case LAYOUT_VTX:
             glVertexPointer(3, GL_FLOAT, 0, 0);
             glDrawArrays(renderAs, 0, _buffered_size / 3);
+            break;
+        case LAYOUT_VTX_NORMAL:
+            glVertexPointer(3, GL_FLOAT, sizeof(float) * 6, 0);
+            glEnableClientState(GL_NORMAL_ARRAY);
+            glNormalPointer(GL_FLOAT, sizeof(float) * 6, (void*)(sizeof(float) * 3));
+            glDrawArrays(renderAs, 0, _buffered_size / 6);
+            glDisableClientState(GL_NORMAL_ARRAY);
             break;
         case LAYOUT_VTX_COLOR:
             glVertexPointer(3, GL_FLOAT, sizeof(float) * 7, 0);
@@ -155,19 +204,28 @@ void VertexBuffer::drawObject(GLenum renderAs) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void GlDrawable::buffer() {
-    for (int i = 0; i < 6; i++) {
-        for (auto& pair : buffers[i]) {
-            pair.second.bufferData();
-        }
-    }
+TextBuffer::TextBuffer(float x, float y, float z, std::string& text) noexcept
+    : _handle(new GLuint)
+    , rast_x(x)
+    , rast_y(y)
+    , rast_z(z) {
+    *_handle = GetFont()->BufferText(text);
+    size = text.size() * 6;
 }
 
-void GlDrawable::draw() {
-    for (int i = 0; i < 6; i++) {
-        for (auto& pair : buffers[i]) {
-            pair.second.drawObject(pair.first);
-        }
-    }
-}
+void TextBuffer::drawObject() {
+    GetGlState()->setModeRenderText(rast_x, rast_y, rast_z);
 
+    glClientActiveTexture(GL_TEXTURE0 + 1);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, *_handle);
+    glVertexPointer(2, GL_FLOAT, sizeof(float) * 4, 0);
+    glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 4, (void*)(sizeof(float) * 2));
+    glDrawArrays(GL_TRIANGLES, 0, size); 
+    
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glClientActiveTexture(GL_TEXTURE0);
+}

@@ -23,7 +23,7 @@ protected:
    Vector *solx, *soly;
    int vectorlist, displinelist, drawdisp, drawvector;
 
-   gl3::LineBuffer displine_buf;
+   gl3::GlDrawable displine_buf;
    GridFunction *VecGridF;
 
    void Init();

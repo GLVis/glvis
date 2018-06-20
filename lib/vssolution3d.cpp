@@ -1331,7 +1331,7 @@ void VisualizationSceneSolution3d::DrawRefinedSurfLevelLines(
 void VisualizationSceneSolution3d::PrepareFlat()
 {
    int i, j;
-   callListBeginShim(displlist, disp_buf);
+   disp_buf[0].clear();
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
    DenseMatrix pointmat;
@@ -1384,21 +1384,21 @@ void VisualizationSceneSolution3d::PrepareFlat()
       }
       if (j == 3)
       {
-          DrawTriangle(p, c, minv, maxv, disp_buf[GL_TRIANGLES]);
+          DrawTriangle(p, c, minv, maxv, disp_buf[0]);
       }
       else
       {
-          DrawQuad(p, c, minv, maxv, disp_buf[GL_QUADS]);
+          DrawQuad(p, c, minv, maxv, disp_buf[0]);
       }
    }
-   callListEndShim(disp_buf);
+   disp_buf[0].buffer();
 }
 
 void VisualizationSceneSolution3d::PrepareFlat2()
 {
    int i, k, fn, fo, di, have_normals;
    double bbox_diam, vmin, vmax;
-   callListBeginShim(displlist, disp_buf);
+   disp_buf[2].clear();
 
    int dim = mesh->Dimension();
    int nbe = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -1517,10 +1517,10 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       // Comment the above lines and use the below version in order to remove
       // the 3D dark artifacts (indicating wrong boundary element orientation)
       // have_normals = have_normals ? 1 : 0;
-      DrawPatch(sides == 3 ? disp_buf[GL_TRIANGLES] : disp_buf[GL_QUADS], pointmat, values,
-                normals, sides, RefG->RefGeoms, minv, maxv, have_normals);
+      DrawPatch(disp_buf[2], pointmat, values, normals, sides, RefG->RefGeoms,
+                minv, maxv, have_normals);
    }
-   callListEndShim(disp_buf);
+   disp_buf[2].buffer();
 
    cout << "VisualizationSceneSolution3d::PrepareFlat2() : [min,max] = ["
         << vmin << "," << vmax << "]" << endl;
@@ -1539,20 +1539,11 @@ void VisualizationSceneSolution3d::Prepare()
       return;
    }
 
-   switch (shading)
-   {
-      case 0:
-         PrepareFlat();
-         return;
-      case 2:
-         PrepareFlat2();
-         return;
-      default:
-         break;
-   }
+   PrepareFlat();
+   PrepareFlat2();
 
-
-   callListBeginShim(displlist, disp_buf);
+   disp_buf[1].clear();
+   gl3::PolyBuilder poly = disp_buf[1].createPolyBuilder();
    
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -1683,9 +1674,7 @@ void VisualizationSceneSolution3d::Prepare()
                elemType = GL_QUADS;
                break;
          }
-#ifndef GLVIS_OGL3
          glBegin(elemType);
-#endif
          if (dim == 3)
          {
             mesh->GetBdrPointMatrix(elem[i], pointmat);
@@ -1697,30 +1686,20 @@ void VisualizationSceneSolution3d::Prepare()
 
          for (j = 0; j < pointmat.Size(); j++)
          {
-#ifdef GLVIS_OGL3
-            gl3::GlVertex v(&pointmat(0,j));
-            v.norm[0] = nx(vertices[j]);
-            v.norm[1] = ny(vertices[j]);
-            v.norm[2] = nz(vertices[j]);
             float rgba[4];
             float texcoord = MySetColor((*sol)(vertices[j]), minv, maxv, rgba);
             if (GetUseTexture()) {
-                disp_buf[elemType].addVertex(v, texcoord);
+                poly.glTexCoord1f(texcoord);
             } else {
-                disp_buf[elemType].addVertex(v, rgba);
+                poly.glColor4fv(rgba);
             }
-#else
-            MySetColor((*sol)(vertices[j]), minv ,maxv);
-            glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
-            glVertex3dv(&pointmat(0, j));
-#endif
+            poly.glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
+            poly.glVertex3dv(&pointmat(0, j));
          }
-#ifndef GLVIS_OGL3
-         glEnd();
-#endif
+         poly.glEnd();
       }
    }
-   callListEndShim(disp_buf);
+   disp_buf[1].buffer();
 }
 
 void VisualizationSceneSolution3d::PrepareLines()
@@ -2772,7 +2751,7 @@ void VisualizationSceneSolution3d::Draw()
    // draw elements
    if (drawelems)
    {
-       callListDrawShim(displlist, disp_buf);
+       disp_buf[shading].draw();
    }
 
    if (cplane && cp_drawelems)
@@ -2828,7 +2807,7 @@ void VisualizationSceneSolution3d::Draw()
    // draw axes
    if (drawaxes)
    {
-      callListDrawShim(axeslist, axes_buf);
+      axes_buf.draw();
       DrawCoordinateCross();
    }
 }

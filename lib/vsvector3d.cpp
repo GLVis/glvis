@@ -1644,7 +1644,7 @@ void VisualizationSceneVector3d::Draw()
    // draw axes
    if (drawaxes)
    {
-      callListDrawShim(axeslist, axes_buf);
+      axes_buf.draw();
       DrawCoordinateCross();
    }
 }

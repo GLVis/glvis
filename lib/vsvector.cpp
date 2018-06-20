@@ -661,8 +661,8 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
    double zc = 0.5*(z[0]+z[1]);
 
    // prepare the displaced mesh
-   callListBeginShim(displinelist, displine_buf);
-   gl3::LineBuilder build = displine_buf.createBuilder();
+   displine_buf.clear();
+   gl3::LineBuilder build = displine_buf.createLineBuilder();
    if (shading != 2)
    {
       for (i = 0; i < ne; i++)
@@ -839,7 +839,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
       }
    }
 
-   callListEndShim(displine_buf);
+   displine_buf.buffer();
 }
 
 double new_maxlen;
@@ -1018,7 +1018,7 @@ void VisualizationSceneVector::Draw()
    // draw elements
    if (drawelems)
    {
-      callListDrawShim(displlist, disp_buf);
+      disp_buf[shading].draw();
    }
 
    if (MatAlpha < 1.0)
@@ -1042,7 +1042,7 @@ void VisualizationSceneVector::Draw()
    {
       glDisable(GL_CLIP_PLANE0);
       DrawRuler(logscale);
-      callListDrawShim(cp_list, cp_buf);
+      cp_buf.draw();
       glEnable(GL_CLIP_PLANE0);
    }
    else
@@ -1052,17 +1052,17 @@ void VisualizationSceneVector::Draw()
 
    if (drawbdr)
    {
-      callListDrawShim(bdrlist, bdr_buf);
+      bdr_buf.draw();
    }
 
    // draw lines
    if (drawmesh == 1)
    {
-      callListDrawShim(linelist, line_buf);
+      line_buf.draw();
    }
    else if (drawmesh == 2)
    {
-      callListDrawShim(lcurvelist, lcurve_buf);
+      lcurve_buf.draw();
    }
 
    // draw numberings
@@ -1070,11 +1070,11 @@ void VisualizationSceneVector::Draw()
    {
       if (1 == drawnums)
       {
-         callListDrawShim(e_nums_list, e_nums_buf);
+         e_nums_buf.draw();
       }
       else if (2 == drawnums)
       {
-         callListDrawShim(v_nums_list, v_nums_buf);
+         v_nums_buf.draw();
       }
    }
 
@@ -1089,7 +1089,7 @@ void VisualizationSceneVector::Draw()
       {
          glColor3d(1., 0., 0.);
       }
-      callListDrawShim(displinelist, displine_buf);
+      displine_buf.draw();
       if (drawmesh == 1)
       {
          Set_Black_Material();
@@ -1104,7 +1104,7 @@ void VisualizationSceneVector::Draw()
    // draw axes
    if (drawaxes)
    {
-      callListDrawShim(axeslist, axes_buf);
+      axes_buf.draw();
       DrawCoordinateCross();
    }
 }

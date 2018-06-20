@@ -15,7 +15,6 @@
 #include "openglvis.hpp"
 #include "mfem.hpp"
 #include "aux_gl3.hpp"
-#include <GL/glew.h>
 using namespace mfem;
 
 extern std::string plot_caption; // defined in glvis.cpp
@@ -64,7 +63,7 @@ protected:
    int scaling, colorbar, drawaxes, axeslist;
    int auto_ref_max, auto_ref_max_surf_elem;
 
-   gl3::TextBuffer axes_buf;
+   gl3::GlDrawable axes_buf;
 
    void Init();
 
@@ -117,6 +116,7 @@ protected:
 
    void FixValueRange();
    //our hacky shims for replacing call lists
+   /*
     inline void callListBeginShim(int call_list, std::map<GLenum, gl3::VertexBuffer>& buf) {
 #ifdef GLVIS_OGL3
         for (auto& it : buf) {
@@ -176,7 +176,7 @@ protected:
         glCallList(call_list);
 #endif
     }
-
+*/
 public:
    Plane *CuttingPlane;
    int light;
