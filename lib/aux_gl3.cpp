@@ -11,6 +11,7 @@
 
 #include "aux_gl3.hpp"
 #include "aux_vis.hpp"
+#include "openglvis.hpp"
 #include <iostream>
 #include <utility>
 using namespace gl3;
@@ -104,8 +105,7 @@ void PolyBuilder::glEnd() {
     if (use_color) {
         dst_layout = VertexBuffer::LAYOUT_VTX_NORMAL_COLOR;
         pts_stride += 4;
-    }
-    else if (use_color_tex) {
+    } else if (use_color_tex) {
         dst_layout = VertexBuffer::LAYOUT_VTX_NORMAL_TEXTURE0;
         pts_stride += 2;
     }
@@ -113,19 +113,10 @@ void PolyBuilder::glEnd() {
         cerr << "Type is not implemented" << endl;
         return;
     }
-    VertexBuffer& toInsert = parent_buf->getBuffer(dst_layout, GL_TRIANGLES);
-    if (render_as == GL_QUADS) {
-        //split quads into triangles, along diagonal 2->4
-        std::vector<float> tri2(pts.begin() + pts_stride, pts.end());
-        toInsert._pt_data.insert(toInsert._pt_data.end(),
-                                 std::make_move_iterator(tri2.begin()),
-                                 std::make_move_iterator(tri2.end()));
-        //pts now contains vertices 1,2,4
-        pts.erase(pts.begin() + (pts_stride * 2), pts.begin() + (pts_stride * 3));
-    }
+    VertexBuffer& toInsert = parent_buf->getBuffer(dst_layout, render_as);
     toInsert._pt_data.insert(toInsert._pt_data.end(),
-                             std::make_move_iterator(pts.begin()),
-                             std::make_move_iterator(pts.end()));
+                                 std::make_move_iterator(pts.begin()),
+                                 std::make_move_iterator(pts.end()));
     pts.clear();
     count = 0;
 #else

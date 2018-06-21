@@ -246,7 +246,7 @@ public:
     }
 
     ~VertexBuffer() {
-        if (_handle && *_handle)
+        if (_handle)
             glDeleteBuffers(1, _handle.get());
     }
 
@@ -327,7 +327,7 @@ private:
 public:
     TextBuffer(float x, float y, float z, std::string& text) noexcept;
     ~TextBuffer() {
-        if (_handle && *_handle)
+        if (_handle)
             glDeleteBuffers(1, _handle.get());
     }
 
@@ -412,9 +412,11 @@ public:
     }
 
     VertexBuffer& getBuffer(VertexBuffer::array_layout layout, GLenum shape) {
-        if (buffers[layout].find(shape) == buffers[layout].end()) {
-            buffers[layout].emplace(std::make_pair(shape, VertexBuffer(layout)));
+        auto loc = buffers[layout].find(shape);
+        if (loc != buffers[layout].end()) {
+            return loc->second;
         }
+        buffers[layout].emplace(std::make_pair(shape, VertexBuffer(layout)));
         return buffers[layout].at(shape);
     }
     
