@@ -20,7 +20,7 @@ extern void paletteRebind();
 struct vert_tex2d {
     float x, y;
     float u, v;
-    vert_tex2d() = default;
+
     vert_tex2d(float x, float y, float u, float v)
         : x(x), y(y), u(u), v(v) { }
 };
@@ -107,7 +107,8 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
 }
 
 uint32_t GlVisFont::BufferText(std::string& str) {
-    std::vector<vert_tex2d> coordData(str.size() * 6);
+    std::vector<vert_tex2d> coordData;
+    coordData.reserve(str.size() * 6);
     float x = 0.0, y = 0.0;
     for (char& c : str) {
         glyph g = font_chars[(uint8_t) c];
