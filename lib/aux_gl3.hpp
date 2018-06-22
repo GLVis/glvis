@@ -385,13 +385,10 @@ public:
      */
     void addQuad(const double (&vtx)[4][3], double (&norm)[3], float (&rgba)[4][4]) {
         float fnorm[3] = { (float) norm[0], (float) norm[1], (float) norm[2] };
-        int ordering[] = {1, 2, 4, 2, 3, 4};
-        for (int i = 0; i < 6; i++) {
-            float fvert[3] = { (float) vtx[ordering[i]][0],
-                               (float) vtx[ordering[i]][1],
-                               (float) vtx[ordering[i]][2] };
+        for (int i = 0; i < 4; i++) {
+            float fvert[3] = { (float) vtx[i][0], (float) vtx[i][1], (float) vtx[i][2] };
             getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL_COLOR,
-                  GL_TRIANGLES).addVertex(fvert, fnorm, rgba[ordering[i]]);
+                  GL_QUADS).addVertex(fvert, fnorm, rgba[i]);
         }
     }
 
@@ -401,13 +398,10 @@ public:
      */
     void addQuad(const double (&vtx)[4][3], double (&norm)[3], float (&texcoord)[4]) {
         float fnorm[3] = { (float) norm[0], (float) norm[1], (float) norm[2] };
-        int ordering[] = {1, 2, 4, 2, 3, 4};
-        for (int i = 0; i < 3; i++) {
-            float fvert[3] = { (float) vtx[ordering[i]][0],
-                               (float) vtx[ordering[i]][1],
-                               (float) vtx[ordering[i]][2] };
+        for (int i = 0; i < 4; i++) {
+            float fvert[3] = { (float) vtx[i][0], (float) vtx[i][1], (float) vtx[i][2] };
             getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL_TEXTURE0,
-                  GL_TRIANGLES).addVertex(fvert, fnorm, texcoord[ordering[i]]);
+                  GL_QUADS).addVertex(fvert, fnorm, texcoord[i]);
         }
     }
 
