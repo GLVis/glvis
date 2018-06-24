@@ -114,11 +114,12 @@ endef
 X11_SEARCH_PATHS = /usr /usr/X11 /opt/X11 /usr/X11R6
 X11_SEARCH_FILE = include/X11/Xlib.h
 X11_DIR = $(call find_dir,$(X11_SEARCH_FILE),$(X11_SEARCH_PATHS))
-X11_LIB_DIR = $(call find_dir,libX11.$(SO_EXT),$(X11_DIR)/lib64 $(X11_DIR)/lib)
-GL_OPTS = -I$(X11_DIR)/include
+X11_LIB_SEARCH_PATHS = $(if $(X11_DIR),$(addprefix $(X11_DIR)/,lib64 lib))
+X11_LIB_DIR = $(call find_dir,libX11.$(SO_EXT),$(X11_LIB_SEARCH_PATHS))
+GL_OPTS = $(if $(X11_DIR),-I$(X11_DIR)/include)
 # for servers not supporting GLX 1.3:
 # GL_OPTS = -I$(X11_DIR)/include -DGLVIS_GLX10
-GL_LIBS = -L$(X11_LIB_DIR) -lX11 -lGL -lGLU
+GL_LIBS = $(if $(X11_LIB_DIR),-L$(X11_LIB_DIR) )-lX11 -lGL -lGLU
 GLVIS_FLAGS += $(GL_OPTS)
 GLVIS_LIBS  += $(GL_LIBS)
 
@@ -226,6 +227,7 @@ status info:
 	$(info MFEM_DIR    = $(MFEM_DIR))
 	$(info GLVIS_FLAGS = $(GLVIS_FLAGS))
 	$(info GLVIS_LIBS  = $(value GLVIS_LIBS))
+	$(info GLVIS_LIBS  = $(GLVIS_LIBS))
 	$(info PREFIX      = $(PREFIX))
 	@true
 
