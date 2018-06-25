@@ -625,11 +625,95 @@ void VisualizationSceneScalarData::DrawCaption()
    gl->loadMatrixUniforms();
 }
 
+std::vector<float> Cone(float x, float y, float z,
+                        float vx, float vy, float vz,
+                        float cone_scale = 0.075) {
+   double rhos  = sqrt (vx*vx+vy*vy+vz*vz);
+   float phi   = acos(vz/rhos);
+   float theta = atan2 (vy, vx);
+
+   glm::mat4 mtx(1.0);
+   mtx = glm::translate(mtx, glm::vec3(x, y, z));
+   mtx = glm::scale(mtx, glm::vec3(cone_scale));
+   mtx = glm::translate(mtx, glm::vec3(x, y, z));
+   mtx = glm::rotate(mtx, theta, glm::vec3(0.f, 0.f, 1.f));
+   mtx = glm::rotate(mtx, phi, glm::vec3(0.f, 1.f, 0.f));
+   glm::mat3 norm(mtx);
+   norm = glm::inverseTranspose(norm);
+
+   glm::vec3 start_vtx = glm::vec3(mtx * glm::vec4(0.f, 0.f, 0.f, 1.f));
+   glm::vec3 start_norm = glm::vec3(norm * glm::vec3(0.f, 0.f, 1.f));
+
+   glm::vec3 base_pts[] = {
+       glm::vec3(mtx * glm::vec4(1, 0, -4, 1)),
+       glm::vec3(mtx * glm::vec4(cos(2*M_PI/4), sin(2*M_PI/4), -4, 1)),
+       glm::vec3(mtx * glm::vec4(cos(4*M_PI/4), sin(4*M_PI/4), -4, 1)),
+       glm::vec3(mtx * glm::vec4(cos(6*M_PI/4), sin(6*M_PI/4), -4, 1)),
+   };
+
+   float nz = (1.0/4.0);
+   glm::vec3 base_norms[] = {
+       glm::vec3(norm * glm::vec3(1, 0, nz)),
+       glm::vec3(norm * glm::vec3(cos(2*M_PI/4), sin(2*M_PI/4), nz)),
+       glm::vec3(norm * glm::vec3(cos(4*M_PI/4), sin(4*M_PI/4), nz)),
+       glm::vec3(norm * glm::vec3(cos(6*M_PI/4), sin(6*M_PI/4), nz)),
+   };
+
+   std::vector<float> cone_pts;
+   for (int i = 0; i < 4; i++) {
+       cone_pts.insert(cone_pts.end(), glm::value_ptr(start_vtx),
+                                       glm::value_ptr(start_vtx) + 3);
+       cone_pts.insert(cone_pts.end(), glm::value_ptr(start_norm),
+                                       glm::value_ptr(start_norm) + 3);
+       cone_pts.insert(cone_pts.end(), glm::value_ptr(base_pts[i]),
+                                       glm::value_ptr(base_pts[i]) + 3);
+       cone_pts.insert(cone_pts.end(), glm::value_ptr(base_norms[i]),
+                                       glm::value_ptr(base_norms[i]) + 3);
+       cone_pts.insert(cone_pts.end(), glm::value_ptr(base_pts[(i + 1)%4]),
+                                       glm::value_ptr(base_pts[(i + 1)%4]) + 3);
+       cone_pts.insert(cone_pts.end(), glm::value_ptr(base_norms[(i + 1)%4]),
+                                       glm::value_ptr(base_norms[(i + 1)%4]) + 3);
+   }
+   return cone_pts;
+}
+
 void VisualizationSceneScalarData::DrawCoordinateCross()
 {
    if (drawaxes == 3)
    {
       return;
+   }
+
+   if (!coord_cross_init) {
+       float lenx, leny, lenz;
+       lenx = leny = lenz = 1;
+
+       coord_cross.addLines(
+           {
+              0, 0, 0, 0, 0, 0.9,
+              0, 0, 0, 0, 0.9, 0,
+              0, 0, 0, 0.9, 0, 0
+           });
+       coord_cross.addShape(
+           GL_TRIANGLES,
+           gl3::VertexBuffer::LAYOUT_VTX_NORMAL,
+           Cone(0,0,.9,0,0,1)
+           );
+       coord_cross.addShape(
+           GL_TRIANGLES,
+           gl3::VertexBuffer::LAYOUT_VTX_NORMAL,
+           Cone(0,.9,0,0,1,0)
+           );
+       coord_cross.addShape(
+           GL_TRIANGLES,
+           gl3::VertexBuffer::LAYOUT_VTX_NORMAL,
+           Cone(.9,0,0,1,0,0)
+           );
+       coord_cross.addText(lenx, 0.0f, 0.0f, a_label_x);
+       coord_cross.addText(0.0f, leny, 0.0f, a_label_y);
+       coord_cross.addText(0.0f, 0.0f, lenz, a_label_z);
+       coord_cross.buffer();
+       coord_cross_init = true;
    }
 
    GlMatrix proj_save = gl->projection,
@@ -651,13 +735,7 @@ void VisualizationSceneScalarData::DrawCoordinateCross()
 
    // glLineWidth (1.0f);
 
-   float lenx, leny, lenz;
-
-   lenx = leny = lenz = 1;
-
-   Arrow2(0,0,0,1,0,0, 0.9);
-   Arrow2(0,0,0,0,1,0, 0.9);
-   Arrow2(0,0,0,0,0,1, 0.9);
+   coord_cross.draw();
 
 #ifndef GLVIS_USE_FREETYPE
    glPushAttrib (GL_LIST_BIT);
@@ -666,38 +744,27 @@ void VisualizationSceneScalarData::DrawCoordinateCross()
 
 #ifndef GLVIS_OGL3
    if (print) { gl2psText(a_label_x.c_str(),"Times",8); }
-#endif
 #ifndef GLVIS_USE_FREETYPE
    glRasterPos3f(lenx, 0.0f, 0.0f);
    glCallLists(a_label_x.length(), GL_UNSIGNED_BYTE, a_label_x.c_str());
-#else
-   DrawBitmapText(a_label_x.c_str(), lenx, 0.0f, 0.0f);
 #endif
 
-#ifndef GLVIS_OGL3
    if (print) { gl2psText(a_label_y.c_str(),"Times",8); }
-#endif
 #ifndef GLVIS_USE_FREETYPE
    glRasterPos3f(0.0f, leny, 0.0f);
    glCallLists(a_label_y.length(), GL_UNSIGNED_BYTE, a_label_y.c_str());
-#else
-   DrawBitmapText(a_label_y.c_str(), 0.0f, leny, 0.0f);
 #endif
 
-#ifndef GLVIS_OGL3
    if (print) { gl2psText(a_label_z.c_str(),"Times",8); }
-#endif
 #ifndef GLVIS_USE_FREETYPE
    glRasterPos3f(0.0f, 0.0f, lenz);
    glCallLists(a_label_z.length(), GL_UNSIGNED_BYTE, a_label_z.c_str());
-#else
-   DrawBitmapText(a_label_z.c_str(), 0.0f, 0.0f, lenz);
 #endif
 
 #ifndef GLVIS_USE_FREETYPE
    glPopAttrib();
 #endif
-
+#endif
    gl->projection = proj_save;
    gl->modelView = mv_save;
    gl->loadMatrixUniforms();

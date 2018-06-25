@@ -12,6 +12,8 @@
 #ifndef GLVIS_VSDATA
 #define GLVIS_VSDATA
 
+#include <array>
+
 #include "openglvis.hpp"
 #include "mfem.hpp"
 #include "aux_gl3.hpp"
@@ -64,6 +66,8 @@ protected:
    int auto_ref_max, auto_ref_max_surf_elem;
 
    gl3::GlDrawable axes_buf;
+   bool coord_cross_init;
+   gl3::GlDrawable coord_cross;
 
    void Init();
 
@@ -115,68 +119,7 @@ protected:
    double LogVal(const double &z) { return LogVal(z, logscale); }
 
    void FixValueRange();
-   //our hacky shims for replacing call lists
-   /*
-    inline void callListBeginShim(int call_list, std::map<GLenum, gl3::VertexBuffer>& buf) {
-#ifdef GLVIS_OGL3
-        for (auto& it : buf) {
-            it.second.clear();
-        }
-#else
-       glNewList(call_list, GL_COMPILE);
-#endif
-    }
 
-    inline void callListBeginShim(int call_list, gl3::VertexBuffer& buf) {
-#ifdef GLVIS_OGL3
-       buf.clear();
-#else
-       glNewList(call_list, GL_COMPILE);
-#endif
-    }
-    
-    inline void callListEndShim(std::map<GLenum, gl3::VertexBuffer>& buf) {
-#ifdef GLVIS_OGL3
-        for (auto& it : buf) {
-            it.second.BufferData();
-        }
-#else
-       glEndList();
-#endif
-    }
-
-    inline void callListEndShim(gl3::VertexBuffer& buf) {
-#ifdef GLVIS_OGL3
-        buf.BufferData();
-#else
-       glEndList();
-#endif
-    }
-
-    inline void callListDrawShim(int call_list, std::map<GLenum, gl3::VertexBuffer>& buf) {
-#ifdef GLVIS_OGL3
-        for (auto& it : buf) {
-            it.second.DrawObject(it.first);
-        }
-#else
-        glCallList(call_list);
-#endif
-    }
-    inline void callListDrawShim(int call_list, gl3::VertexBuffer& buf, GLenum as) {
-#ifdef GLVIS_OGL3
-            buf.DrawObject(as);
-#else
-            glCallList(call_list);
-#endif
-    }
-    inline void callListDrawShim(int call_list, gl3::LineBuffer& buf) {
-#ifdef GLVIS_OGL3
-        buf.DrawObject();
-#else
-        glCallList(call_list);
-#endif
-    }
-*/
 public:
    Plane *CuttingPlane;
    int light;

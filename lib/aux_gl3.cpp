@@ -219,4 +219,5 @@ void TextBuffer::drawObject() {
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glClientActiveTexture(GL_TEXTURE0);
+    GetGlState()->setModeColor();
 }

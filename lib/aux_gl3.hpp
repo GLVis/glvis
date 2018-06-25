@@ -307,6 +307,12 @@ public:
         _pt_data.emplace_back(0);
     }
 
+    void addVertices(std::vector<float>&& in_move) {
+        _pt_data.insert(_pt_data.end(),
+                        std::make_move_iterator(in_move.begin()),
+                        std::make_move_iterator(in_move.end()));
+    }
+
     /**
      * Buffers the vertex data onto the GPU.
      */
@@ -351,6 +357,15 @@ public:
      */
     void addText(float x, float y, float z, std::string&& text) {
         text_buffers.emplace_back(x, y, z, text);
+    }
+
+    void addText(float x, float y, float z, std::string& text) {
+        text_buffers.emplace_back(x, y, z, text);
+    }
+
+    void addLines(std::vector<float>&& in_move) {
+        getBuffer(VertexBuffer::LAYOUT_VTX, GL_LINES)
+            .addVertices(std::move(in_move));
     }
 
     /**
@@ -403,6 +418,13 @@ public:
             getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL_TEXTURE0,
                   GL_QUADS).addVertex(fvert, fnorm, texcoord[i]);
         }
+    }
+
+    void addShape(GLenum primitive,
+                  VertexBuffer::array_layout layout,
+                  std::vector<float>&& points) {
+            getBuffer(layout, primitive)
+                .addVertices(std::move(points));
     }
 
     VertexBuffer& getBuffer(VertexBuffer::array_layout layout, GLenum shape) {

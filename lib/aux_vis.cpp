@@ -1362,7 +1362,6 @@ void Cone()
    glEnd();
 }
 
-
 int MySetColorLogscale = 0;
 extern int RepeatPaletteTimes;
 int UseTexture         = 0;
