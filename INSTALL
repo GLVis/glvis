@@ -37,6 +37,9 @@ There are two build systems, one based on GNU make and one based on CMake, as
 described below. Choose the one that matches the build system you used to
 build MFEM.
 
+In addition to the native build systems, a GLVis package is also available
+in the Spack package manager, https://github.com/LLNL/spack.
+
 
 Building with GNU make
 ======================

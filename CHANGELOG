@@ -9,7 +9,7 @@
                               http://glvis.org
 
 
-Development version, not released yet
+Version 3.4, released on May 29, 2018
 =====================================
 - When enabled, secure sockets (based on GnuTLS) now use authentication based on
   X.509 certificates. A new set of X.509 client/server keys can be generated
@@ -21,8 +21,10 @@ Development version, not released yet
 
 - Added a CMake build system.
 
-- Added a number of new color palettes which can now be switched both forwards
-  and backwards with the 'p' and 'P' keys respectively.
+- Added 10 new color palettes which can now be switched both forwards and
+  backwards with the 'p' and 'P' keys respectively.
+
+- Allow multi-screen window managers to redraw on current screen.
 
 - Printing to PDF is now done with 'Ctrl+p' (replacing 'P').
 
