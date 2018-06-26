@@ -166,10 +166,10 @@ void VertexBuffer::drawObject(GLenum renderAs) {
             glDisableClientState(GL_COLOR_ARRAY);
             break;
         case LAYOUT_VTX_TEXTURE0:
-            glVertexPointer(3, GL_FLOAT, sizeof(float) * 8, 0);
+            glVertexPointer(3, GL_FLOAT, sizeof(float) * 5, 0);
             glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-            glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 6));
-            glDrawArrays(renderAs, 0, _buffered_size / 8);
+            glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 5, (void*)(sizeof(float) * 3));
+            glDrawArrays(renderAs, 0, _buffered_size / 5);
             glDisableClientState(GL_TEXTURE_COORD_ARRAY);
             break;
         case LAYOUT_VTX_NORMAL_COLOR:

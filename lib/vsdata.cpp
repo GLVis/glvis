@@ -335,137 +335,135 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       minx =  1.2;
       maxx =  1.3;
    }
-
-   if (!color_bar_init) {
-       if (GetUseTexture()) {
+   color_bar.clear();
+   if (GetUseTexture()) {
+       color_bar.addShape(
+           GL_TRIANGLES,
+           gl3::VertexBuffer::LAYOUT_VTX_TEXTURE0,
+           {
+               minx, miny, posz, 0.f, 0.f,
+               maxx, miny, posz, 0.f, 0.f,
+               maxx, maxy, posz, 1.f, 0.f,
+               minx, maxy, posz, 1.f, 0.f,
+               minx, miny, posz, 0.f, 0.f,
+               maxx, maxy, posz, 1.f, 0.f
+           });
+   } else {
+       const int nquads = 256;
+       float rgba_lo[4];
+       float rgba_hi[4];
+       float Y_hi, Y_lo;
+       for (int i = 1; i <= nquads; i++) {
+           const double a_lo = double(i - 1) / nquads;
+           const double a_hi = double(i) / nquads;
+           Y_lo = (1.0 - a_lo) * miny + a_lo * maxy;
+           Y_hi = (1.0 - a_hi) * miny + a_hi * maxy;
+           MySetColor(a_lo, rgba_lo);
+           MySetColor(a_hi, rgba_hi);
            color_bar.addShape(
                GL_TRIANGLES,
-               gl3::VertexBuffer::LAYOUT_VTX_TEXTURE0,
+               gl3::VertexBuffer::LAYOUT_VTX_COLOR,
                {
-                   minx, miny, posz, 0.f, 0.f,
-                   maxx, miny, posz, 0.f, 0.f,
-                   maxx, maxy, posz, 1.f, 0.f,
-                   minx, maxy, posz, 1.f, 0.f,
-                   minx, miny, posz, 0.f, 0.f,
-                   maxx, maxy, posz, 1.f, 0.f
-               });
-       } else {
-           const int nquads = 256;
-           float rgba_lo[4];
-           float rgba_hi[4];
-           float Y_hi, Y_lo;
-           for (int i = 1; i <= nquads; i++) {
-               const double a_lo = double(i - 1) / nquads;
-               const double a_hi = double(i) / nquads;
-               Y_lo = (1.0 - a_lo) * miny + a_lo * maxy;
-               Y_hi = (1.0 - a_hi) * miny + a_hi * maxy;
-               MySetColor(a_lo, rgba_lo);
-               MySetColor(a_hi, rgba_hi);
-               color_bar.addShape(
-                   GL_TRIANGLES,
-                   gl3::VertexBuffer::LAYOUT_VTX_COLOR,
-                   {
-                       minx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0,
-                       maxx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0,
-                       maxx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0,
-                       minx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0,
-                       minx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0,
-                       maxx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0,
-                   });
-           }
-       }
-
-       static const int border = 2;
-
-       if (border == 1) {
-           color_bar.addShape(
-               GL_LINES,
-               gl3::VertexBuffer::LAYOUT_VTX,
-               {
-                   minx, miny, posz, maxx, miny, posz,
-                   maxx, miny, posz, maxx, maxy, posz,
-                   maxx, maxy, posz, minx, maxy, posz,
-                   minx, maxy, posz, minx, miny, posz
-               });
-       } else if (border == 2) {
-           color_bar.addShape(
-               GL_LINES,
-               gl3::VertexBuffer::LAYOUT_VTX,
-               {
-                   minx, miny, posz,
-                   maxx, miny, posz,
-                   maxx, maxy, posz,
-                   minx, maxy, posz,
+                   minx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0,
+                   maxx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0,
+                   maxx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0,
+                   minx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0,
+                   minx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0,
+                   maxx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0,
                });
        }
-
-       if (levels)
-       {
-          for (i = 0; i < levels->Size(); i++)
-          {
-             float Y = miny + (maxy - miny) * LogUVal((*levels)[i]);
-             color_bar.addShape(
-                 GL_LINES, gl3::VertexBuffer::LAYOUT_VTX,
-                 {minx, Y, posz, maxx, Y, posz});
-          }
-       }
-       if (level)
-       {
-          for (i = 0; i < level->Size(); i++)
-          {
-             float Y = miny + (maxy - miny) * LogUVal((*level)[i]);
-             color_bar.addShape(
-                 GL_LINES, gl3::VertexBuffer::LAYOUT_VTX,
-                 {minx, Y, posz, maxx, Y, posz});
-          }
-       }
-
-       double val;
-       double Y;
-       ostringstream * buf;
-       if (!level)
-       {
-          for (i = 0; i <= 4; i++)
-          {
-             Y = miny + i * (maxy-miny) / 4;
-
-             val = ULogVal(i / 4.0);
-
-             buf = new ostringstream;
-             (*buf) << setprecision(4) << val;
-             color_bar.addText(maxx+0.02,Y,posz, buf->str());
-             delete buf;
-          }
-       }
-       else
-       {
-          for (i = 0; i < level->Size(); i++)
-          {
-             val = (*level)[i];
-             Y = miny + (maxy - miny) * LogUVal(val);
-
-             buf = new ostringstream;
-             (*buf) << setprecision(4) << val;
-             color_bar.addText(maxx+0.02,Y,posz, buf->str());
-             delete buf;
-          }
-       }
-
-       if (levels)
-       {
-          for (i = 0; i < levels->Size(); i++)
-          {
-             val = (*levels)[i];
-             Y = miny + (maxy - miny) * LogUVal(val);
-
-             buf = new ostringstream;
-             (*buf) << setprecision(4) << val;
-             color_bar.addText(maxx+0.02,Y,posz, buf->str());
-             delete buf;
-          }
-       }
-       color_bar.buffer();
    }
+
+   static const int border = 1;
+
+   if (border == 1) {
+       color_bar.addShape(
+           GL_LINES,
+           gl3::VertexBuffer::LAYOUT_VTX,
+           {
+               minx, miny, posz, maxx, miny, posz,
+               maxx, miny, posz, maxx, maxy, posz,
+               maxx, maxy, posz, minx, maxy, posz,
+               minx, maxy, posz, minx, miny, posz
+           });
+   } else if (border == 2) {
+       color_bar.addShape(
+           GL_LINES,
+           gl3::VertexBuffer::LAYOUT_VTX,
+           {
+               minx, miny, posz,
+               maxx, miny, posz,
+               maxx, maxy, posz,
+               minx, maxy, posz,
+           });
+   }
+
+   if (levels)
+   {
+      for (i = 0; i < levels->Size(); i++)
+      {
+         float Y = miny + (maxy - miny) * LogUVal((*levels)[i]);
+         color_bar.addShape(
+             GL_LINES, gl3::VertexBuffer::LAYOUT_VTX,
+             {minx, Y, posz, maxx, Y, posz});
+      }
+   }
+   if (level)
+   {
+      for (i = 0; i < level->Size(); i++)
+      {
+         float Y = miny + (maxy - miny) * LogUVal((*level)[i]);
+         color_bar.addShape(
+             GL_LINES, gl3::VertexBuffer::LAYOUT_VTX,
+             {minx, Y, posz, maxx, Y, posz});
+      }
+   }
+
+   double val;
+   double Y;
+   ostringstream * buf;
+   if (!level)
+   {
+      for (i = 0; i <= 4; i++)
+      {
+         Y = miny + i * (maxy-miny) / 4;
+
+         val = ULogVal(i / 4.0);
+
+         buf = new ostringstream;
+         (*buf) << setprecision(4) << val;
+         color_bar.addText(maxx+0.02,Y,posz, buf->str());
+         delete buf;
+      }
+   }
+   else
+   {
+      for (i = 0; i < level->Size(); i++)
+      {
+         val = (*level)[i];
+         Y = miny + (maxy - miny) * LogUVal(val);
+
+         buf = new ostringstream;
+         (*buf) << setprecision(4) << val;
+         color_bar.addText(maxx+0.02,Y,posz, buf->str());
+         delete buf;
+      }
+   }
+
+   if (levels)
+   {
+      for (i = 0; i < levels->Size(); i++)
+      {
+         val = (*levels)[i];
+         Y = miny + (maxy - miny) * LogUVal(val);
+
+         buf = new ostringstream;
+         (*buf) << setprecision(4) << val;
+         color_bar.addText(maxx+0.02,Y,posz, buf->str());
+         delete buf;
+      }
+   }
+   color_bar.buffer();
 
    bool wasLit = gl->disableLight();
 
