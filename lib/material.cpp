@@ -128,7 +128,7 @@ void Set_Material_And_Light (int m, int l)
 
 int Background = 1;
 
-void Set_Black_Material()
+float Set_Black_Material()
 {
     Material m = {
         { 0.0, 0.0, 0.0, 1.0 },
@@ -139,19 +139,15 @@ void Set_Black_Material()
    switch (Background)
    {
       case 0:
-      {
          // glColor3f (0.75, 0.75, 0.75);
          glColor3f (1., 1., 1.);
          GetGlState()->setMaterial(m);
-      }
-      break;
+         return 1;
 
       case 1:
-      {
          glColor3f (0, 0, 0);
          GetGlState()->setMaterial(m);
-      }
-      break;
+         return 0;
    }
 }
 

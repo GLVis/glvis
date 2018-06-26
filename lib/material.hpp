@@ -34,7 +34,7 @@ int Next_Material_And_Light();
 
 void Set_Material_And_Light(int,int);
 
-void Set_Black_Material();
+float Set_Black_Material();
 
 void Set_Background();
 

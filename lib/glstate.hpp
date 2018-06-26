@@ -294,12 +294,14 @@ public:
     /**
      * Disables lighting in the shader, passing through colors directly.
      */
-    void disableLight() {
+    bool disableLight() {
         if (_lighting) {
             GLuint locNumLights = glGetUniformLocation(program, "numLights");
             glUniform1i(locNumLights, 0);
             _lighting = false;
+            return true;
         }
+        return false;
     }
 
     /**

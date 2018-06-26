@@ -66,8 +66,9 @@ protected:
    int auto_ref_max, auto_ref_max_surf_elem;
 
    gl3::GlDrawable axes_buf;
-   bool coord_cross_init;
-   gl3::GlDrawable coord_cross;
+   bool coord_cross_init = false,
+        color_bar_init = false;
+   gl3::GlDrawable coord_cross, color_bar;
 
    void Init();
 
