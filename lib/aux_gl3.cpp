@@ -12,6 +12,7 @@
 #include "aux_gl3.hpp"
 #include "aux_vis.hpp"
 #include "openglvis.hpp"
+#include <algorithm>
 #include <iostream>
 #include <utility>
 using namespace gl3;
