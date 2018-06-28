@@ -136,21 +136,24 @@ uint32_t GlVisFont::BufferText(std::string& str) {
 
 void GlVisFont::RenderBuffer(uint32_t buf, double x, double y, double z) {
     GetGlState()->setModeRenderText(x, y, z);
+    
+    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
+    int loc_tex = GetGlState()->getAttribLoc(GlState::ATTR_TEXCOORD1);
 
-    glClientActiveTexture(GL_TEXTURE0 + 1);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
+    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
+    GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD1);
+    
     glBindBuffer(GL_ARRAY_BUFFER, buf);
-    glVertexPointer(2, GL_FLOAT, sizeof(float) * 4, 0);
-    glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 4, (void*)(sizeof(float) * 2));
+
+    glVertexAttribPointer(loc_vtx, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, 0);
+    //glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 4, (void*)(sizeof(float) * 2));
+    glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void*)(sizeof(float) * 2));
     GLint size = 0;
     glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
     glDrawArrays(GL_TRIANGLES, 0, size / (sizeof(float) * 4)); 
     
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glClientActiveTexture(GL_TEXTURE0);
+    GetGlState()->disableAttribArray(GlState::ATTR_VERTEX);
+    GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD1);
     GetGlState()->setModeColor();
 }
 

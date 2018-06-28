@@ -5,13 +5,21 @@
 using std::cerr;
 using std::endl;
 
-const std::string vertex_shader_file = 
-R"(#version 120 
- 
-//attribute vec4 gl_Vertex; 
-//attribute vec4 gl_Color; 
-//attribute vec4 gl_Normal; 
-//attribute vec4 gl_MultiTexCoord0; 
+#ifdef __EMSCRIPTEN__
+const std::string _glsl_ver = "";
+#else
+const std::string _glsl_ver = "#version 120\n";
+#endif
+
+const std::string vertex_shader_file = _glsl_ver +
+R"(
+//precision highp float;
+
+attribute vec3 vertex;
+attribute vec4 color;
+attribute vec3 normal;
+attribute vec4 texCoord0;
+attribute vec4 texCoord1;
  
 uniform mat4 modelViewMatrix; 
 uniform mat4 projectionMatrix; 
@@ -25,18 +33,19 @@ varying vec2 fFontTexCoord;
  
 void main() 
 { 
-    fNormal = normalize(normalMatrix * gl_Normal); 
-    vec4 pos = modelViewMatrix * gl_Vertex; 
+    fNormal = normalize(normalMatrix * normal); 
+    vec4 pos = modelViewMatrix * vec4(vertex, 1.0);
     fPosition = pos.xyz; 
-    fColor = gl_Color; 
-    fTexCoord = gl_MultiTexCoord0.xy; 
-    fFontTexCoord = gl_MultiTexCoord1.xy; 
+    fColor = color; 
+    fTexCoord = texCoord0.xy; 
+    fFontTexCoord = texCoord1.xy; 
     gl_Position = projectionMatrix * pos; 
 })";
 
-const std::string fragment_shader_file =
-R"(#version 120 
- 
+const std::string fragment_shader_file = _glsl_ver +
+R"(
+//precision highp float;
+
 uniform bool containsText; 
 uniform bool useColorTex; 
  
@@ -84,7 +93,9 @@ void main()
             vec4 ambient_light = g_ambient * material.ambient; 
             vec4 diffuse_light = vec4(0.0, 0.0, 0.0, 0.0); 
             vec4 specular_light = vec4(0.0, 0.0, 0.0, 0.0); 
-            for (int i = 0; i < numLights; i++) { 
+            for (int i = 0; i < 3; i++) {
+                if (i == numLights)
+                    break;
                 vec3 light_dir = normalize(lights[i].position - fPosition); 
                 diffuse_light += lights[i].diffuse * material.diffuse * max(dot(fNormal * normSgn, light_dir), 0.0); 
      
@@ -110,6 +121,12 @@ bool GlState::compileShaders() {
     glGetShaderiv(vtx_shader, GL_COMPILE_STATUS, &success);
     if (success == GL_FALSE) {
         cerr << "FATAL: Vertex shader compilation failed." << endl;
+        int err_len;
+        glGetShaderiv(vtx_shader, GL_INFO_LOG_LENGTH, &err_len);
+        char * error_text = new char[err_len];
+        glGetShaderInfoLog(vtx_shader, err_len, &err_len, error_text);
+        cerr << error_text << endl;
+        delete [] error_text;
         return false;
     }
     int frag_shader_len = fragment_shader_file.length();
@@ -119,6 +136,12 @@ bool GlState::compileShaders() {
     glGetShaderiv(frag_shader, GL_COMPILE_STATUS, &success);
     if (success == GL_FALSE) {
         cerr << "FATAL: Fragment shader compilation failed." << endl;
+        int err_len;
+        glGetShaderiv(frag_shader, GL_INFO_LOG_LENGTH, &err_len);
+        char * error_text = new char[err_len];
+        glGetShaderInfoLog(frag_shader, err_len, &err_len, error_text);
+        cerr << error_text << endl;
+        delete [] error_text;
         return false;
     }
     program = glCreateProgram();

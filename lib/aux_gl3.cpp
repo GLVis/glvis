@@ -145,52 +145,67 @@ void VertexBuffer::drawObject(GLenum renderAs) {
         GetGlState()->setModeColor();
     }
     glBindBuffer(GL_ARRAY_BUFFER, *_handle);
-    glEnableClientState(GL_VERTEX_ARRAY);
+    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
+    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
+    int loc_nor = GetGlState()->getAttribLoc(GlState::ATTR_NORMAL);
+    int loc_color = GetGlState()->getAttribLoc(GlState::ATTR_COLOR);
+    int loc_tex = GetGlState()->getAttribLoc(GlState::ATTR_TEXCOORD0);
     switch (_layout) {
         case LAYOUT_VTX:
-            glVertexPointer(3, GL_FLOAT, 0, 0);
+            //glVertexPointer(3, GL_FLOAT, 0, 0);
+            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, 0, 0);
             glDrawArrays(renderAs, 0, _buffered_size / 3);
             break;
         case LAYOUT_VTX_NORMAL:
-            glVertexPointer(3, GL_FLOAT, sizeof(float) * 6, 0);
-            glEnableClientState(GL_NORMAL_ARRAY);
-            glNormalPointer(GL_FLOAT, sizeof(float) * 6, (void*)(sizeof(float) * 3));
+            //glVertexPointer(3, GL_FLOAT, sizeof(float) * 6, 0);
+            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, 0);
+            GetGlState()->enableAttribArray(GlState::ATTR_NORMAL);
+            //glNormalPointer(GL_FLOAT, sizeof(float) * 6, (void*)(sizeof(float) * 3));
+            glVertexAttribPointer(loc_nor, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void*)(sizeof(float) * 3));
             glDrawArrays(renderAs, 0, _buffered_size / 6);
-            glDisableClientState(GL_NORMAL_ARRAY);
+            GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
             break;
         case LAYOUT_VTX_COLOR:
-            glVertexPointer(3, GL_FLOAT, sizeof(float) * 7, 0);
-            glEnableClientState(GL_COLOR_ARRAY);
-            glColorPointer(4, GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 3));
+            //glVertexPointer(3, GL_FLOAT, sizeof(float) * 7, 0);
+            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 7, 0);
+            GetGlState()->enableAttribArray(GlState::ATTR_COLOR);
+            //glColorPointer(4, GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 3));
+            glVertexAttribPointer(loc_color, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 7, (void*)(sizeof(float) * 3));
             glDrawArrays(renderAs, 0, _buffered_size / 7);
-            glDisableClientState(GL_COLOR_ARRAY);
+            GetGlState()->disableAttribArray(GlState::ATTR_COLOR);
             break;
         case LAYOUT_VTX_TEXTURE0:
-            glVertexPointer(3, GL_FLOAT, sizeof(float) * 5, 0);
-            glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-            glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 5, (void*)(sizeof(float) * 3));
+            //glVertexPointer(3, GL_FLOAT, sizeof(float) * 5, 0);
+            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 5, 0);
+            GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD0);
+            //glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 5, (void*)(sizeof(float) * 3));
+            glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)(sizeof(float) * 3));
             glDrawArrays(renderAs, 0, _buffered_size / 5);
-            glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+            GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD0);
             break;
         case LAYOUT_VTX_NORMAL_COLOR:
-            glVertexPointer(3, GL_FLOAT, sizeof(float) * 10, 0);
-            glEnableClientState(GL_NORMAL_ARRAY);
-            glNormalPointer(GL_FLOAT, sizeof(float) * 10, (void*)(sizeof(float) * 3));
-            glEnableClientState(GL_COLOR_ARRAY);
-            glColorPointer(4, GL_FLOAT, sizeof(float) * 10, (void*)(sizeof(float) * 6));
+            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 10, 0);
+            GetGlState()->enableAttribArray(GlState::ATTR_NORMAL);
+            //glNormalPointer(GL_FLOAT, sizeof(float) * 10, (void*)(sizeof(float) * 3));
+            glVertexAttribPointer(loc_nor, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 10, (void*)(sizeof(float) * 3));
+            GetGlState()->enableAttribArray(GlState::ATTR_COLOR);
+            //glColorPointer(4, GL_FLOAT, sizeof(float) * 10, (void*)(sizeof(float) * 6));
+            glVertexAttribPointer(loc_color, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 10, (void*)(sizeof(float) * 6));
             glDrawArrays(renderAs, 0, _buffered_size / 10);
-            glDisableClientState(GL_COLOR_ARRAY);
-            glDisableClientState(GL_NORMAL_ARRAY);
+            GetGlState()->disableAttribArray(GlState::ATTR_COLOR);
+            GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
             break;
         case LAYOUT_VTX_NORMAL_TEXTURE0:
-            glVertexPointer(3, GL_FLOAT, sizeof(float) * 8, 0);
-            glEnableClientState(GL_NORMAL_ARRAY);
-            glNormalPointer(GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 3));
-            glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-            glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 6));
+            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, 0);
+            GetGlState()->enableAttribArray(GlState::ATTR_NORMAL);
+            //glNormalPointer(GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 3));
+            glVertexAttribPointer(loc_nor, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 3));
+            GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD0);
+            //glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 6));
+            glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 6));
             glDrawArrays(renderAs, 0, _buffered_size / 8);
-            glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-            glDisableClientState(GL_NORMAL_ARRAY);
+            GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD0);
+            GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
             break;
     }
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -207,18 +222,21 @@ TextBuffer::TextBuffer(float x, float y, float z, std::string& text) noexcept
 
 void TextBuffer::drawObject() {
     GetGlState()->setModeRenderText(rast_x, rast_y, rast_z);
+    
+    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
+    int loc_tex = GetGlState()->getAttribLoc(GlState::ATTR_TEXCOORD1);
 
-    glClientActiveTexture(GL_TEXTURE0 + 1);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
+    GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD1);
     
     glBindBuffer(GL_ARRAY_BUFFER, *_handle);
-    glVertexPointer(2, GL_FLOAT, sizeof(float) * 4, 0);
-    glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 4, (void*)(sizeof(float) * 2));
+
+    glVertexAttribPointer(loc_vtx, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, 0);
+    //glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 4, (void*)(sizeof(float) * 2));
+    glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void*)(sizeof(float) * 2));
     glDrawArrays(GL_TRIANGLES, 0, size); 
     
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glClientActiveTexture(GL_TEXTURE0);
+    GetGlState()->disableAttribArray(GlState::ATTR_VERTEX);
+    GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD1);
     GetGlState()->setModeColor();
 }

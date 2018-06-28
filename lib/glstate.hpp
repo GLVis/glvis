@@ -88,6 +88,14 @@ public:
         RENDER_COLOR_TEX
     };
 
+    enum shader_attrib {
+        ATTR_VERTEX,
+        ATTR_COLOR,
+        ATTR_NORMAL,
+        ATTR_TEXCOORD0,
+        ATTR_TEXCOORD1
+    };
+
 protected:
     render_type _shaderMode;
 
@@ -101,6 +109,10 @@ protected:
          _colorMat = false;
     int _numLights;
     float _ambient[4];
+    int _attr_locs[5];
+
+    GLuint locAmb, locDif, locSpec, locShin;
+    GLuint locModelView, locProject, locNormal;
 
     glm::vec3 getRasterPoint(double x, double y, double z) {
         return glm::project(glm::vec3(x, y, z), modelView.mtx, projection.mtx, glm::vec4(0, 0, _w, _h));
@@ -171,6 +183,21 @@ public:
      * font atlas.
      */
     void initShaderState() {
+        _attr_locs[ATTR_VERTEX] = glGetAttribLocation(program, "vertex");
+        _attr_locs[ATTR_COLOR] = glGetAttribLocation(program, "color");
+        _attr_locs[ATTR_NORMAL] = glGetAttribLocation(program, "normal");
+        _attr_locs[ATTR_TEXCOORD0] = glGetAttribLocation(program, "texCoord0");
+        _attr_locs[ATTR_TEXCOORD1] = glGetAttribLocation(program, "texCoord1");
+
+        locModelView = glGetUniformLocation(program, "modelViewMatrix");
+        locProject = glGetUniformLocation(program, "projectionMatrix");
+        locNormal = glGetUniformLocation(program, "normalMatrix");
+
+        locAmb = glGetUniformLocation(program, "material.ambient");
+        locDif = glGetUniformLocation(program, "material.diffuse");
+        locSpec = glGetUniformLocation(program, "material.specular");
+        locShin = glGetUniformLocation(program, "material.shininess");
+
         GLuint locColorTex = glGetUniformLocation(program, "colorTex");
         GLuint locFontTex = glGetUniformLocation(program, "fontTex");
         glUniform1i(locColorTex, 0);
@@ -185,15 +212,25 @@ public:
         loadMatrixUniforms();
     }
 
+    int getAttribLoc(GlState::shader_attrib attr) {
+        return _attr_locs[attr];
+    }
+
+    void enableAttribArray(GlState::shader_attrib attr) {
+        glEnableVertexAttribArray(_attr_locs[attr]);
+    }
+
+    //TODO: if color, use glVertexAttrib
+    void disableAttribArray(GlState::shader_attrib attr) {
+        glDisableVertexAttribArray(_attr_locs[attr]);
+    }
+
     /**
      * Loads the current model-view and projection matrix into the shader.
      */
     void loadMatrixUniforms(bool viewportChange = false) {
         if (viewportChange && _shaderMode != RENDER_TEXT)
             return; //we only need to update projective uniform if text is being rendered
-        GLuint locModelView = glGetUniformLocation(program, "modelViewMatrix");
-        GLuint locProject = glGetUniformLocation(program, "projectionMatrix");
-        GLuint locNormal = glGetUniformLocation(program, "normalMatrix");
         if (_shaderMode != RENDER_TEXT) {
             // standard 3d view
             glUniformMatrix4fv(locModelView, 1, GL_FALSE, glm::value_ptr(modelView.mtx));
@@ -212,8 +249,6 @@ public:
      * Set temporary model-view matrix directly in the shader.
      */
     void setImmModelView(GlMatrix modelview) {
-        GLuint locModelView = glGetUniformLocation(program, "modelViewMatrix");
-        GLuint locNormal = glGetUniformLocation(program, "normalMatrix");
         glUniformMatrix4fv(locModelView, 1, GL_FALSE, glm::value_ptr(modelview.mtx));
         glm::mat3 normal(modelview.mtx);
         normal = glm::inverseTranspose(normal);
@@ -224,7 +259,6 @@ public:
      * Set temporary projection matrix directly in the shader.
      */
     void setImmProjection(GlMatrix proj) {
-        GLuint locProject = glGetUniformLocation(program, "projectionMatrix");
         glUniformMatrix4fv(locProject, 1, GL_FALSE, glm::value_ptr(proj.mtx));
     }
 
@@ -232,10 +266,6 @@ public:
      * Sets the material parameters to use in lighting calculations.
      */
     void setMaterial(Material mat) {
-        GLuint locAmb = glGetUniformLocation(program, "material.ambient");
-        GLuint locDif = glGetUniformLocation(program, "material.diffuse");
-        GLuint locSpec = glGetUniformLocation(program, "material.specular");
-        GLuint locShin = glGetUniformLocation(program, "material.shininess");
         if (!_colorMat) {
             glUniform4fv(locAmb, 1, mat.ambient);
             glUniform4fv(locDif, 1, mat.diffuse);
@@ -324,7 +354,6 @@ public:
         setModeRenderText();
         //need to recalculate model view if raster point changes
         loadMatrixUniforms();
-        GLuint locModelView = glGetUniformLocation(program, "modelViewMatrix");
         glm::mat4 mv2d = glm::translate(glm::mat4(1.0), getRasterPoint(x, y, z));
         glUniformMatrix4fv(locModelView, 1, GL_FALSE, glm::value_ptr(mv2d));
     }
