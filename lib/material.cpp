@@ -140,12 +140,12 @@ float Set_Black_Material()
    {
       case 0:
          // glColor3f (0.75, 0.75, 0.75);
-         glColor3f (1., 1., 1.);
+         GetGlState()->setStaticColor(1., 1., 1.);
          GetGlState()->setMaterial(m);
          return 1;
 
       case 1:
-         glColor3f (0, 0, 0);
+         GetGlState()->setStaticColor(0, 0, 0);
          GetGlState()->setMaterial(m);
          return 0;
    }

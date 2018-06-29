@@ -1464,10 +1464,11 @@ float MySetColor (double val, float (&rgba)[4])
    return 0.0;
 }
 
+
 void MySetColor (double val) {
    float rgb[4];
    MySetColor(val, rgb);
-   /*
+/*   
    if (MatAlpha < 1.0)
    {
       glColor4f ( rgb[0], rgb[1], rgb[2], malpha );
@@ -1476,13 +1477,15 @@ void MySetColor (double val) {
    {
       glColor3f ( rgb[0], rgb[1], rgb[2] );
    }
-   */
+   
    if (UseTexture) {
        glTexCoord1d (val);
    } else {
        glColor4f ( rgb[0], rgb[1], rgb[2], rgb[3]);
    }
+*/
 }
+
 
 int GetUseTexture()
 {

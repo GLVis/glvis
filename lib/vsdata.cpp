@@ -1192,6 +1192,7 @@ void VisualizationSceneScalarData::RulerPosition()
 
 void VisualizationSceneScalarData::DrawRuler(bool log_z)
 {
+/*
    if (ruler_on)
    {
       double pos_z = LogVal(ruler_z, log_z);
@@ -1268,6 +1269,7 @@ void VisualizationSceneScalarData::DrawRuler(bool log_z)
       glVertex3f(ruler_x, ruler_y, z[1]);
       glEnd();
    }
+*/
 }
 
 void VisualizationSceneScalarData::ToggleTexture()

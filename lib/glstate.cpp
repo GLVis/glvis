@@ -22,8 +22,11 @@ attribute vec4 texCoord0;
 attribute vec4 texCoord1;
  
 uniform mat4 modelViewMatrix; 
-uniform mat4 projectionMatrix; 
-uniform mat3 normalMatrix; 
+uniform mat4 projectionMatrix;
+uniform mat4 clippedProjMatrix;
+uniform mat3 normalMatrix;
+
+uniform bool clipPlane;
  
 varying vec3 fNormal; 
 varying vec3 fPosition; 
@@ -39,7 +42,7 @@ void main()
     fColor = color; 
     fTexCoord = texCoord0.xy; 
     fFontTexCoord = texCoord1.xy; 
-    gl_Position = projectionMatrix * pos; 
+    gl_Position = (clipPlane ? clippedProjMatrix : projectionMatrix) * pos; 
 })";
 
 const std::string fragment_shader_file = _glsl_ver +
@@ -145,6 +148,8 @@ bool GlState::compileShaders() {
         return false;
     }
     program = glCreateProgram();
+    //for OSX, attrib 0 must be bound to render an object
+    glBindAttribLocation(program, 0, "vertex");
     glAttachShader(program, vtx_shader);
     glAttachShader(program, frag_shader);
 

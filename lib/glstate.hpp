@@ -20,6 +20,7 @@
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
+#include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -93,7 +94,8 @@ public:
         ATTR_COLOR,
         ATTR_NORMAL,
         ATTR_TEXCOORD0,
-        ATTR_TEXCOORD1
+        ATTR_TEXCOORD1,
+        NUM_ATTRS
     };
 
 protected:
@@ -103,19 +105,51 @@ protected:
 
     int _w;
     int _h;
+
+    //client state variables
     bool _lighting = false,
          _depthTest = false,
          _blend = false,
-         _colorMat = false;
+         _colorMat = false,
+         _clipPlane = false;
+    float _staticColor[4];
+
+    //lighting uniforms
     int _numLights;
     float _ambient[4];
-    int _attr_locs[5];
 
+    glm::vec4 _clip_plane;
+    GlMatrix _projection_cp;
+
+    //shader locations
+    int _attr_locs[NUM_ATTRS];
+    bool _attr_enabled[NUM_ATTRS];
+
+    GLuint locClipPlane;
     GLuint locAmb, locDif, locSpec, locShin;
-    GLuint locModelView, locProject, locNormal;
+    GLuint locModelView, locProject, locProjectClip, locNormal;
 
     glm::vec3 getRasterPoint(double x, double y, double z) {
         return glm::project(glm::vec3(x, y, z), modelView.mtx, projection.mtx, glm::vec4(0, 0, _w, _h));
+    }
+
+    //perform oblique view frustum clipping, to simulate clip plane
+    void obliqueClipping() {
+        _projection_cp.mtx = projection.mtx;
+
+        float x_sgn = _clip_plane.x >= 0 ? 1.0 : -1.0;
+        float y_sgn = _clip_plane.y >= 0 ? 1.0 : -1.0;
+        if (_clip_plane.x == 0)
+            x_sgn = 0;
+        if (_clip_plane.x == 0)
+            y_sgn = 0;
+        glm::vec4 q(x_sgn, y_sgn, 1.f, 1.f);
+        q = glm::inverse(projection.mtx) * q;
+        glm::vec4 p_4_mod = (2.0f/(_clip_plane * q)) * _clip_plane;
+        _projection_cp.mtx[0][2] = p_4_mod.x - _projection_cp.mtx[0][3];
+        _projection_cp.mtx[1][2] = p_4_mod.y - _projection_cp.mtx[1][3];
+        _projection_cp.mtx[2][2] = p_4_mod.z - _projection_cp.mtx[2][3];
+        _projection_cp.mtx[3][2] = p_4_mod.w - _projection_cp.mtx[3][3];
     }
 public:
     GlMatrix modelView;
@@ -154,12 +188,37 @@ public:
     /**
      * Sets the ambient and diffuse lighting to full intensity, tracking the object color.
      */
-    void enableColorMaterial() {
-        _colorMat = true;
+    void enableColorMaterial() { _colorMat = true; }
+
+    void disableColorMaterial() { _colorMat = false; }
+
+    void enableClipPlane() {
+        if (!_clipPlane) {
+            glUniform1i(locClipPlane, GL_TRUE); 
+            _clipPlane = true;
+        }
     }
 
-    void disableColorMaterial() {
-        _colorMat = false;
+    void disableClipPlane() {
+        if (_clipPlane) {
+            glUniform1i(locClipPlane, GL_FALSE);
+            _clipPlane = false;
+        }
+    }
+
+    void setClipPlane(const double * eqn) {
+        _clip_plane = glm::vec4(eqn[0], eqn[1], eqn[2], eqn[3]);
+        _clip_plane = glm::inverse(modelView.mtx) * _clip_plane;
+        obliqueClipping();
+        glUniformMatrix4fv(locProjectClip, 1, GL_FALSE, glm::value_ptr(_projection_cp.mtx));
+    }
+
+    void setStaticColor(float r, float g, float b, float a = 1.0) {
+        _staticColor[0] = r;
+        _staticColor[1] = g;
+        _staticColor[2] = b;
+        _staticColor[3] = a;
+        glVertexAttrib4fv(_attr_locs[ATTR_COLOR], _staticColor);
     }
 
     GlState()
@@ -189,8 +248,12 @@ public:
         _attr_locs[ATTR_TEXCOORD0] = glGetAttribLocation(program, "texCoord0");
         _attr_locs[ATTR_TEXCOORD1] = glGetAttribLocation(program, "texCoord1");
 
+        locClipPlane = glGetUniformLocation(program, "clipPlane");
+        glUniform1i(locClipPlane, GL_FALSE);
+        
         locModelView = glGetUniformLocation(program, "modelViewMatrix");
         locProject = glGetUniformLocation(program, "projectionMatrix");
+        locProjectClip = glGetUniformLocation(program, "clippedProjMatrix");
         locNormal = glGetUniformLocation(program, "normalMatrix");
 
         locAmb = glGetUniformLocation(program, "material.ambient");
@@ -218,11 +281,18 @@ public:
 
     void enableAttribArray(GlState::shader_attrib attr) {
         glEnableVertexAttribArray(_attr_locs[attr]);
+        _attr_enabled[attr] = true;
     }
 
     //TODO: if color, use glVertexAttrib
     void disableAttribArray(GlState::shader_attrib attr) {
         glDisableVertexAttribArray(_attr_locs[attr]);
+        _attr_enabled[attr] = false;
+        if (attr == ATTR_COLOR) {
+            glVertexAttrib4fv(_attr_locs[ATTR_COLOR], _staticColor);
+        } else if (attr == ATTR_NORMAL) {
+            glVertexAttrib3f(_attr_locs[ATTR_NORMAL], 0.f, 0.f, 1.f);
+        }
     }
 
     /**
@@ -235,6 +305,8 @@ public:
             // standard 3d view
             glUniformMatrix4fv(locModelView, 1, GL_FALSE, glm::value_ptr(modelView.mtx));
             glUniformMatrix4fv(locProject, 1, GL_FALSE, glm::value_ptr(projection.mtx));
+            obliqueClipping();
+            glUniformMatrix4fv(locProjectClip, 1, GL_FALSE, glm::value_ptr(_projection_cp.mtx));
             glm::mat3 normal(modelView.mtx);
             normal = glm::inverseTranspose(normal);
             glUniformMatrix3fv(locNormal, 1, GL_FALSE, glm::value_ptr(normal));

@@ -1023,7 +1023,6 @@ void DrawNumberedMarker(const double x[3], double dx, int n)
    ostringstream buf;
    buf << n;
 
-   glRasterPos3d (x[0], x[1], x[2]);
 #ifndef GLVIS_USE_FREETYPE
    glRasterPos3d (x[0], x[1], x[2]);
    glCallLists(buf.str().size(), GL_UNSIGNED_BYTE, buf.str().c_str());
@@ -2399,9 +2398,9 @@ void VisualizationSceneSolution::Draw()
 
    glPolygonOffset (1, 1);
    glEnable (GL_POLYGON_OFFSET_FILL);
-   glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+   //glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
-   glDisable(GL_CLIP_PLANE0);
+   gl->disableClipPlane();
    gl->disableLight();
 
 #if 0
@@ -2424,8 +2423,8 @@ void VisualizationSceneSolution::Draw()
 
    if (draw_cp)
    {
-      glClipPlane(GL_CLIP_PLANE0, CuttingPlane->Equation());
-      glEnable(GL_CLIP_PLANE0);
+      gl->setClipPlane(CuttingPlane->Equation());
+      gl->enableClipPlane();
    }
 
    Set_Material();
@@ -2445,7 +2444,7 @@ void VisualizationSceneSolution::Draw()
       if (GetUseTexture())
       {
           gl->setModeColorTexture();
-          glColor4d(1, 1, 1, 1);
+          gl->setStaticColor(1, 1, 1, 1);
       }
       disp_buf[shading].draw();
       if (GetUseTexture())
@@ -2466,6 +2465,7 @@ void VisualizationSceneSolution::Draw()
    Set_Black_Material();
 
    // ruler may have mixture of polygons and lines
+#ifndef GLVIS_OGL3
    if (draw_cp)
    {
       glDisable(GL_CLIP_PLANE0);
@@ -2475,9 +2475,11 @@ void VisualizationSceneSolution::Draw()
    }
    else
    {
+#endif
       DrawRuler(logscale);
+#ifndef GLVIS_OGL3
    }
-
+#endif
    if (drawbdr)
    {
       bdr_buf.draw();
@@ -2508,7 +2510,7 @@ void VisualizationSceneSolution::Draw()
 
    if (draw_cp)
    {
-      glDisable(GL_CLIP_PLANE0);
+      gl->disableClipPlane();
    }
 
    // draw axes

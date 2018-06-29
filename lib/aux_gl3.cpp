@@ -144,6 +144,7 @@ void VertexBuffer::drawObject(GLenum renderAs) {
     } else {
         GetGlState()->setModeColor();
     }
+
     glBindBuffer(GL_ARRAY_BUFFER, *_handle);
     GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
     int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
@@ -203,7 +204,14 @@ void VertexBuffer::drawObject(GLenum renderAs) {
             GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD0);
             //glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 6));
             glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 6));
-            glDrawArrays(renderAs, 0, _buffered_size / 8);
+            /*
+            if (renderAs == GL_QUADS) {
+                for (uint32_t i = 0; i < _buffered_size / 32; i++)
+                    glDrawArrays(GL_TRIANGLE_FAN, 4*i, 4);
+            } else {
+            */
+                glDrawArrays(renderAs, 0, _buffered_size / 8);
+            //}
             GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD0);
             GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
             break;
