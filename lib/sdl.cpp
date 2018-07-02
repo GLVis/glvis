@@ -90,7 +90,9 @@ bool SdlWindow::createGlContext() {
     }
     _handle->gl_ctx = context;
 
+#ifndef __EMSCRIPTEN__
     SDL_GL_SetSwapInterval(1);
+#endif
     glEnable(GL_DEBUG_OUTPUT);
 
     GLenum err = glewInit();

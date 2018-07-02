@@ -16,23 +16,24 @@ R"(
 //precision highp float;
 
 attribute vec3 vertex;
+attribute vec2 textVertex;
 attribute vec4 color;
 attribute vec3 normal;
-attribute vec4 texCoord0;
-attribute vec4 texCoord1;
- 
-uniform mat4 modelViewMatrix; 
-uniform mat4 projectionMatrix;
-uniform mat4 clippedProjMatrix;
-uniform mat3 normalMatrix;
+attribute vec2 texCoord0;
+attribute vec2 texCoord1;
 
-uniform bool clipPlane;
+uniform bool containsText;
+
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform mat4 textProjMatrix;
+uniform mat3 normalMatrix; 
  
 varying vec3 fNormal; 
 varying vec3 fPosition; 
 varying vec4 fColor; 
 varying vec2 fTexCoord; 
-varying vec2 fFontTexCoord; 
+varying vec2 fFontTexCoord;
  
 void main() 
 { 
@@ -41,8 +42,13 @@ void main()
     fPosition = pos.xyz; 
     fColor = color; 
     fTexCoord = texCoord0.xy; 
-    fFontTexCoord = texCoord1.xy; 
-    gl_Position = (clipPlane ? clippedProjMatrix : projectionMatrix) * pos; 
+    fFontTexCoord = texCoord1.xy;
+    vec4 textOffset = textProjMatrix * vec4(textVertex, 0.0, 0.0);
+    pos = projectionMatrix * pos;
+    gl_Position = pos;
+    if (containsText) {
+        gl_Position += vec4((textOffset.xy * pos.w), -0.005, 0.0);
+    }
 })";
 
 const std::string fragment_shader_file = _glsl_ver +
@@ -50,10 +56,12 @@ R"(
 //precision highp float;
 
 uniform bool containsText; 
-uniform bool useColorTex; 
+uniform bool useColorTex;
+uniform bool useClipPlane;
  
 uniform sampler2D fontTex; 
-uniform sampler2D colorTex; 
+uniform sampler2D colorTex;
+uniform vec4 clipPlane;
  
 varying vec3 fNormal; 
 varying vec3 fPosition; 
@@ -81,9 +89,15 @@ struct Material {
 uniform Material material; 
  
 void main() 
-{ 
+{
+    if (useClipPlane && dot(vec4(fPosition, 1.0),clipPlane) < 0.0) {
+        discard;
+    }
     if (containsText) { 
-        gl_FragColor = vec4(0.0, 0.0, 0.0, texture2D(fontTex, fFontTexCoord).a); 
+        vec4 colorOut = vec4(0.0, 0.0, 0.0, texture2D(fontTex, fFontTexCoord).a); 
+        if (colorOut.a < 0.01)
+            discard;
+        gl_FragColor = colorOut;
     } else { 
         vec4 color = fColor; 
         if (useColorTex) { 
@@ -168,4 +182,41 @@ bool GlState::compileShaders() {
     glDeleteShader(vtx_shader);
     glDeleteShader(frag_shader);
     return (success != GL_FALSE);
+}
+
+void GlState::initShaderState() {
+    _attr_locs[ATTR_VERTEX] = glGetAttribLocation(program, "vertex");
+    _attr_locs[ATTR_TEXT_VERTEX] = glGetAttribLocation(program, "textVertex");
+    _attr_locs[ATTR_COLOR] = glGetAttribLocation(program, "color");
+    _attr_locs[ATTR_NORMAL] = glGetAttribLocation(program, "normal");
+    _attr_locs[ATTR_TEXCOORD0] = glGetAttribLocation(program, "texCoord0");
+    _attr_locs[ATTR_TEXCOORD1] = glGetAttribLocation(program, "texCoord1");
+
+    locUseClipPlane = glGetUniformLocation(program, "useClipPlane");
+    locClipPlane = glGetUniformLocation(program, "clipPlane");
+    
+    locModelView = glGetUniformLocation(program, "modelViewMatrix");
+    locProject = glGetUniformLocation(program, "projectionMatrix");
+    locProjectText = glGetUniformLocation(program, "textProjMatrix");
+    locNormal = glGetUniformLocation(program, "normalMatrix");
+
+    locAmb = glGetUniformLocation(program, "material.ambient");
+    locDif = glGetUniformLocation(program, "material.diffuse");
+    locSpec = glGetUniformLocation(program, "material.specular");
+    locShin = glGetUniformLocation(program, "material.shininess");
+
+    //Texture unit 0: color palettes
+    //Texture unit 1: font atlas
+    GLuint locColorTex = glGetUniformLocation(program, "colorTex");
+    GLuint locFontTex = glGetUniformLocation(program, "fontTex");
+    glUniform1i(locColorTex, 0);
+    glUniform1i(locFontTex, 1);
+    GLuint locContainsText = glGetUniformLocation(program, "containsText");
+    glUniform1i(locContainsText, GL_FALSE);
+    GLuint locUseColorTex = glGetUniformLocation(program, "useColorTex");
+    glUniform1i(locUseColorTex, GL_FALSE);
+    _shaderMode = RENDER_COLOR;
+    modelView.identity();
+    projection.identity();
+    loadMatrixUniforms();
 }

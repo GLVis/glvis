@@ -137,10 +137,10 @@ uint32_t GlVisFont::BufferText(std::string& str) {
 void GlVisFont::RenderBuffer(uint32_t buf, double x, double y, double z) {
     GetGlState()->setModeRenderText(x, y, z);
     
-    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
+    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_TEXT_VERTEX);
     int loc_tex = GetGlState()->getAttribLoc(GlState::ATTR_TEXCOORD1);
 
-    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
+    GetGlState()->enableAttribArray(GlState::ATTR_TEXT_VERTEX);
     GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD1);
     
     glBindBuffer(GL_ARRAY_BUFFER, buf);
@@ -152,7 +152,7 @@ void GlVisFont::RenderBuffer(uint32_t buf, double x, double y, double z) {
     glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
     glDrawArrays(GL_TRIANGLES, 0, size / (sizeof(float) * 4)); 
     
-    GetGlState()->disableAttribArray(GlState::ATTR_VERTEX);
+    GetGlState()->disableAttribArray(GlState::ATTR_TEXT_VERTEX);
     GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD1);
     GetGlState()->setModeColor();
 }

@@ -326,41 +326,56 @@ public:
 
 class TextBuffer {
 private:
+    struct _entry {
+        float rx, ry, rz;
+        std::string text;
+        _entry() = default;
+        _entry(float x, float y, float z, std::string txt)
+            : rx(x), ry(y), rz(z), text(txt) { }
+    };
+
     std::unique_ptr<GLuint> _handle;
-    std::vector<float> _pt_data;
-    float rast_x, rast_y, rast_z;
-    size_t size;
+    std::vector<_entry> _data;
+    size_t _size;
 public:
-    TextBuffer(float x, float y, float z, std::string& text) noexcept;
+    TextBuffer() : _handle(new GLuint(0)) { };
     ~TextBuffer() {
         if (_handle)
             glDeleteBuffers(1, _handle.get());
     }
 
-    TextBuffer(TextBuffer&&) = default;
-    TextBuffer& operator = (TextBuffer&&) = default;
+    void addText(float x, float y, float z, std::string& text) {
+        _data.emplace_back(x, y, z, text);
+    }
+
+    void bufferData();
 
     /**
      * Draws the text.
      */
     void drawObject();
+
+    void clear() {
+        _data.clear();
+        _size = 0;
+    }
 };
 
 class GlDrawable {
 private:
     std::unordered_map<GLenum, VertexBuffer> buffers[6];
-    std::vector<TextBuffer> text_buffers;
+    TextBuffer text_buffer;
 public:
 
     /**
      * Adds a string at the given position in object coordinates.
      */
     void addText(float x, float y, float z, std::string&& text) {
-        text_buffers.emplace_back(x, y, z, text);
+        text_buffer.addText(x, y, z, text);
     }
 
     void addText(float x, float y, float z, std::string& text) {
-        text_buffers.emplace_back(x, y, z, text);
+        text_buffer.addText(x, y, z, text);
     }
 
     void addLines(std::vector<float>&& in_move) {
@@ -400,10 +415,11 @@ public:
      */
     void addQuad(const double (&vtx)[4][3], double (&norm)[3], float (&rgba)[4][4]) {
         float fnorm[3] = { (float) norm[0], (float) norm[1], (float) norm[2] };
-        for (int i = 0; i < 4; i++) {
+        int indices[] = {0, 1, 2, 0, 2, 3};
+        for (int i : indices) {
             float fvert[3] = { (float) vtx[i][0], (float) vtx[i][1], (float) vtx[i][2] };
             getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL_COLOR,
-                  GL_QUADS).addVertex(fvert, fnorm, rgba[i]);
+                  GL_TRIANGLES).addVertex(fvert, fnorm, rgba[i]);
         }
     }
 
@@ -413,10 +429,11 @@ public:
      */
     void addQuad(const double (&vtx)[4][3], double (&norm)[3], float (&texcoord)[4]) {
         float fnorm[3] = { (float) norm[0], (float) norm[1], (float) norm[2] };
-        for (int i = 0; i < 4; i++) {
+        int indices[] = {0, 1, 2, 0, 2, 3};
+        for (int i : indices) {
             float fvert[3] = { (float) vtx[i][0], (float) vtx[i][1], (float) vtx[i][2] };
             getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL_TEXTURE0,
-                  GL_QUADS).addVertex(fvert, fnorm, texcoord[i]);
+                  GL_TRIANGLES).addVertex(fvert, fnorm, texcoord[i]);
         }
     }
 
@@ -456,7 +473,7 @@ public:
                 pair.second.clear();
             }
         }
-        text_buffers.clear();
+        text_buffer.clear();
     }
     
     /**
@@ -468,6 +485,7 @@ public:
                 pair.second.bufferData();
             }
         }
+        text_buffer.bufferData();
     }
 
     /**
@@ -479,9 +497,7 @@ public:
                 pair.second.drawObject(pair.first);
             }
         }
-        for (auto& text : text_buffers) {
-            text.drawObject();
-        }
+        text_buffer.drawObject();
     }
 };
 

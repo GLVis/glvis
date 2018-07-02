@@ -114,10 +114,19 @@ void PolyBuilder::glEnd() {
         cerr << "Type is not implemented" << endl;
         return;
     }
-    VertexBuffer& toInsert = parent_buf->getBuffer(dst_layout, render_as);
-    toInsert._pt_data.insert(toInsert._pt_data.end(),
+    VertexBuffer& toInsert = parent_buf->getBuffer(dst_layout, GL_TRIANGLES);
+    if (render_as == GL_QUADS) {
+        while (!pts.empty()) {
+            toInsert._pt_data.insert(toInsert._pt_data.end(), pts.begin(), pts.begin() + pts_stride * 3);
+            toInsert._pt_data.insert(toInsert._pt_data.end(), pts.begin(), pts.begin() + pts_stride);
+            toInsert._pt_data.insert(toInsert._pt_data.end(), pts.begin() + pts_stride * 2, pts.begin() + pts_stride * 4);
+            pts.erase(pts.begin(), pts.begin() + pts_stride * 4);
+        }
+    } else {
+        toInsert._pt_data.insert(toInsert._pt_data.end(),
                                  std::make_move_iterator(pts.begin()),
                                  std::make_move_iterator(pts.end()));
+    }
     pts.clear();
     count = 0;
 #else
@@ -204,14 +213,7 @@ void VertexBuffer::drawObject(GLenum renderAs) {
             GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD0);
             //glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 6));
             glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 6));
-            /*
-            if (renderAs == GL_QUADS) {
-                for (uint32_t i = 0; i < _buffered_size / 32; i++)
-                    glDrawArrays(GL_TRIANGLE_FAN, 4*i, 4);
-            } else {
-            */
-                glDrawArrays(renderAs, 0, _buffered_size / 8);
-            //}
+            glDrawArrays(renderAs, 0, _buffered_size / 8);
             GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD0);
             GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
             break;
@@ -219,32 +221,67 @@ void VertexBuffer::drawObject(GLenum renderAs) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-TextBuffer::TextBuffer(float x, float y, float z, std::string& text) noexcept
-    : _handle(new GLuint)
-    , rast_x(x)
-    , rast_y(y)
-    , rast_z(z) {
-    *_handle = GetFont()->BufferText(text);
-    size = text.size() * 6;
+void TextBuffer::bufferData() {
+    std::vector<float> buf_data;
+    int offset = 0;
+    float tex_w = GetFont()->getAtlasWidth();
+    float tex_h = GetFont()->getAtlasHeight();
+    for (auto& e : _data) {
+        float x = 0.f, y = 0.f;
+        for (char c : e.text) {
+            GlVisFont::glyph g = GetFont()->GetTexChar(c);
+            float cur_x = x + g.bear_x;
+            float cur_y = -y - g.bear_y;
+            x += g.adv_x;
+            y += g.adv_y;
+            if (!g.w || !g.h) {
+                continue;
+            }
+            float tris[] = {
+                e.rx, e.ry, e.rz, cur_x,       -cur_y,       g.tex_x,               0,           0,
+                e.rx, e.ry, e.rz, cur_x + g.w, -cur_y,       g.tex_x + g.w / tex_w, 0,           0,
+                e.rx, e.ry, e.rz, cur_x,       -cur_y - g.h, g.tex_x,               g.h / tex_h, 0,
+                e.rx, e.ry, e.rz, cur_x + g.w, -cur_y,       g.tex_x + g.w / tex_w, 0,           0,
+                e.rx, e.ry, e.rz, cur_x,       -cur_y - g.h, g.tex_x,               g.h / tex_h, 0,
+                e.rx, e.ry, e.rz, cur_x + g.w, -cur_y - g.h, g.tex_x + g.w / tex_w, g.h / tex_h, 0
+            };
+            buf_data.insert(buf_data.end(), tris, tris + 8 * 6 * sizeof(float));
+        }
+    }
+    _size = buf_data.size() / 8;
+    if (*_handle == 0) {
+        glGenBuffers(1, _handle.get());
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, *_handle);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * buf_data.size(), buf_data.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void TextBuffer::drawObject() {
-    GetGlState()->setModeRenderText(rast_x, rast_y, rast_z);
+    if (_size == 0 || *_handle == 0) {
+        return;
+    }
+    GetGlState()->setModeRenderText();
     
-    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
+    int loc_rast_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
+    int loc_txt_vtx = GetGlState()->getAttribLoc(GlState::ATTR_TEXT_VERTEX);
     int loc_tex = GetGlState()->getAttribLoc(GlState::ATTR_TEXCOORD1);
 
     GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
+    GetGlState()->enableAttribArray(GlState::ATTR_TEXT_VERTEX);
     GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD1);
     
     glBindBuffer(GL_ARRAY_BUFFER, *_handle);
 
-    glVertexAttribPointer(loc_vtx, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, 0);
+    glVertexAttribPointer(loc_rast_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, 0);
+    glVertexAttribPointer(loc_txt_vtx, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 3));
     //glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 4, (void*)(sizeof(float) * 2));
-    glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void*)(sizeof(float) * 2));
-    glDrawArrays(GL_TRIANGLES, 0, size); 
+    glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 5));
+    glDrawArrays(GL_TRIANGLES, 0, _size);
     
-    GetGlState()->disableAttribArray(GlState::ATTR_VERTEX);
+    GetGlState()->disableAttribArray(GlState::ATTR_TEXT_VERTEX);
     GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD1);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
     GetGlState()->setModeColor();
 }

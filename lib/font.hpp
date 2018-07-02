@@ -69,6 +69,10 @@ public:
     }
 
     bool isFontLoaded() { return font_init; }
+
+    float getAtlasWidth() { return tex_w; }
+
+    float getAtlasHeight() { return tex_h; }
 };
 #endif /* GLVIS_USE_FREETYPE */
 #endif /* FONT_HPP */
