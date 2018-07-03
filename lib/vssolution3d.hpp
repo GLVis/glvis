@@ -57,7 +57,7 @@ protected:
                               int part = -1);
    void LiftRefinedSurf (int n, DenseMatrix &pointmat,
                          Vector &values, int *RG);
-   void DrawTetLevelSurf(const DenseMatrix &verts, const Vector &vals,
+   void DrawTetLevelSurf(gl3::GlDrawable& target, const DenseMatrix &verts, const Vector &vals,
                          const int *ind, const Array<double> &levels,
                          const DenseMatrix *grad = NULL);
 

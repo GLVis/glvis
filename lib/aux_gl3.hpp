@@ -256,6 +256,9 @@ public:
 
     void clear() {
         _pt_data.clear();
+        glBindBuffer(GL_ARRAY_BUFFER, *_handle);
+        glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
     array_layout getArrayLayout() { return _layout; }

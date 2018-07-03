@@ -110,12 +110,24 @@ void PolyBuilder::glEnd() {
         dst_layout = VertexBuffer::LAYOUT_VTX_NORMAL_TEXTURE0;
         pts_stride += 2;
     }
-    if (render_as != GL_TRIANGLES && render_as != GL_QUADS) {
+    if (render_as != GL_TRIANGLES && render_as != GL_QUADS && render_as != GL_POLYGON) {
         cerr << "Type is not implemented" << endl;
         return;
     }
     VertexBuffer& toInsert = parent_buf->getBuffer(dst_layout, GL_TRIANGLES);
-    if (render_as == GL_QUADS) {
+    if (render_as == GL_POLYGON) {
+        //fan out from point 0
+        int fan = pts_stride;
+        while (fan + pts_stride * 2 <= pts.size()) {
+            toInsert._pt_data.insert(toInsert._pt_data.end(),
+                                     pts.begin(),
+                                     pts.begin() + pts_stride);
+            toInsert._pt_data.insert(toInsert._pt_data.end(),
+                                     pts.begin() + fan,
+                                     pts.begin() + fan + pts_stride * 2);
+            fan += pts_stride;
+        }
+    } else if (render_as == GL_QUADS) {
         while (!pts.empty()) {
             toInsert._pt_data.insert(toInsert._pt_data.end(), pts.begin(), pts.begin() + pts_stride * 3);
             toInsert._pt_data.insert(toInsert._pt_data.end(), pts.begin(), pts.begin() + pts_stride);
