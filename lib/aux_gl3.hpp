@@ -208,6 +208,7 @@ public:
 #endif
     }
     void glVertex3d(double x, double y, double z);
+    void glVertex3dv(double * v) { glVertex3d(v[0], v[1], v[2]); }
     void glColor3f(float r, float g, float b);
     void glColor4fv(float * color);
 
