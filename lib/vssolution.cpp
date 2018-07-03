@@ -2465,21 +2465,17 @@ void VisualizationSceneSolution::Draw()
    Set_Black_Material();
 
    // ruler may have mixture of polygons and lines
-#ifndef GLVIS_OGL3
    if (draw_cp)
    {
-      glDisable(GL_CLIP_PLANE0);
+      gl->disableClipPlane();
       DrawRuler(logscale);
       cp_buf.draw();
-      glEnable(GL_CLIP_PLANE0);
+      gl->enableClipPlane();
    }
    else
    {
-#endif
       DrawRuler(logscale);
-#ifndef GLVIS_OGL3
    }
-#endif
    if (drawbdr)
    {
       bdr_buf.draw();

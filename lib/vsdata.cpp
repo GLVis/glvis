@@ -1192,84 +1192,91 @@ void VisualizationSceneScalarData::RulerPosition()
 
 void VisualizationSceneScalarData::DrawRuler(bool log_z)
 {
-/*
    if (ruler_on)
    {
+      gl3::GlDrawable ruler, ruler_lines;
+      gl3::LineBuilder line = ruler_lines.createLineBuilder();
       double pos_z = LogVal(ruler_z, log_z);
       if (ruler_on == 2)
       {
-         Set_Material();
-         if (light)
-         {
-            gl->enableLight();
-         }
-         glBegin(GL_QUADS);
-         glColor4f(0.8, 0.8, 0.8, 1.0);
-         if (light)
-         {
-            glNormal3f(0, 0, 1);
-         }
-         glVertex3f(x[0], y[0], pos_z);
-         glVertex3f(x[1], y[0], pos_z);
-         glVertex3f(x[1], y[1], pos_z);
-         glVertex3f(x[0], y[1], pos_z);
+         float color_quads[] = { 0.8, 0.8, 0.8, 1.0 };
+         double norm_quads[] = { 0, 0, 1 };
+         double vert_quads[4][3] = {
+            { x[0], y[0], pos_z },
+            { x[1], y[0], pos_z },
+            { x[1], y[1], pos_z },
+            { x[0], y[1], pos_z }
+         };
 
-         if (light)
-         {
-            glNormal3f(0, 1, 0);
-         }
-         glVertex3f(x[0], ruler_y, z[0]);
-         glVertex3f(x[0], ruler_y, z[1]);
-         glVertex3f(x[1], ruler_y, z[1]);
-         glVertex3f(x[1], ruler_y, z[0]);
+         ruler.addQuadFace(vert_quads, norm_quads, color_quads); 
 
-         if (light)
-         {
-            glNormal3f(1, 0, 0);
-         }
-         glVertex3f(ruler_x, y[0], z[0]);
-         glVertex3f(ruler_x, y[1], z[0]);
-         glVertex3f(ruler_x, y[1], z[1]);
-         glVertex3f(ruler_x, y[0], z[1]);
-         glEnd();
-         if (light)
-         {
-            gl->disableLight();
-         }
-         Set_Black_Material();
+         double norm_quads2[] = { 0, 1, 0 };
+         double vert_quads2[4][3] = {
+            { x[0], ruler_y, z[0] },
+            { x[0], ruler_y, z[1] },
+            { x[1], ruler_y, z[1] },
+            { x[1], ruler_y, z[0] }
+         };
+         
+         ruler.addQuadFace(vert_quads2, norm_quads2, color_quads); 
 
-         glBegin(GL_LINE_LOOP);
-         glVertex3f(x[0], y[0], pos_z);
-         glVertex3f(x[1], y[0], pos_z);
-         glVertex3f(x[1], y[1], pos_z);
-         glVertex3f(x[0], y[1], pos_z);
-         glEnd();
+         double norm_quads3[] = { 1, 0, 0 };
+         double vert_quads3[4][3] = {
+            { ruler_x, y[0], z[0] },
+            { ruler_x, y[1], z[0] },
+            { ruler_x, y[1], z[1] },
+            { ruler_x, y[0], z[1] }
+         };
+         
+         ruler.addQuadFace(vert_quads3, norm_quads3, color_quads);
 
-         glBegin(GL_LINE_LOOP);
-         glVertex3f(x[0], ruler_y, z[0]);
-         glVertex3f(x[1], ruler_y, z[0]);
-         glVertex3f(x[1], ruler_y, z[1]);
-         glVertex3f(x[0], ruler_y, z[1]);
-         glEnd();
+         line.glBegin(GL_LINE_LOOP);
+         line.glVertex3d(x[0], y[0], pos_z);
+         line.glVertex3d(x[1], y[0], pos_z);
+         line.glVertex3d(x[1], y[1], pos_z);
+         line.glVertex3d(x[0], y[1], pos_z);
+         line.glEnd();
 
-         glBegin(GL_LINE_LOOP);
-         glVertex3f(ruler_x, y[0], z[0]);
-         glVertex3f(ruler_x, y[1], z[0]);
-         glVertex3f(ruler_x, y[1], z[1]);
-         glVertex3f(ruler_x, y[0], z[1]);
-         glEnd();
+         line.glBegin(GL_LINE_LOOP);
+         line.glVertex3d(x[0], ruler_y, z[0]);
+         line.glVertex3d(x[1], ruler_y, z[0]);
+         line.glVertex3d(x[1], ruler_y, z[1]);
+         line.glVertex3d(x[0], ruler_y, z[1]);
+         line.glEnd();
+
+         line.glBegin(GL_LINE_LOOP);
+         line.glVertex3d(ruler_x, y[0], z[0]);
+         line.glVertex3d(ruler_x, y[1], z[0]);
+         line.glVertex3d(ruler_x, y[1], z[1]);
+         line.glVertex3d(ruler_x, y[0], z[1]);
+         line.glEnd();
       }
 
-      glBegin(GL_LINES);
-      glVertex3f(x[0], ruler_y, pos_z);
-      glVertex3f(x[1], ruler_y, pos_z);
-      glVertex3f(ruler_x, y[0], pos_z);
-      glVertex3f(ruler_x, y[1], pos_z);
-      glVertex3f(ruler_x, ruler_y, z[0]);
-      glVertex3f(ruler_x, ruler_y, z[1]);
-      glEnd();
+      line.glBegin(GL_LINES);
+      line.glVertex3d(x[0], ruler_y, pos_z);
+      line.glVertex3d(x[1], ruler_y, pos_z);
+      line.glVertex3d(ruler_x, y[0], pos_z);
+      line.glVertex3d(ruler_x, y[1], pos_z);
+      line.glVertex3d(ruler_x, ruler_y, z[0]);
+      line.glVertex3d(ruler_x, ruler_y, z[1]);
+      line.glEnd();
+
+      ruler.buffer();
+      ruler_lines.buffer();
+      Set_Material();
+      if (light)
+      {
+         gl->enableLight();
+      }
+      ruler.draw();
+      if (light)
+      {
+         gl->disableLight();
+      }
+      Set_Black_Material();
+      ruler_lines.draw();
    }
-*/
+
 }
 
 void VisualizationSceneScalarData::ToggleTexture()

@@ -511,7 +511,7 @@ void VisualizationSceneVector3d::PrepareFlat()
 {
    int i, j;
 
-   glNewList (displlist, GL_COMPILE);
+   disp_buf[0].clear();
 
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -552,14 +552,14 @@ void VisualizationSceneVector3d::PrepareFlat()
       }
       if (j == 3)
       {
-         DrawTriangle(p, c, minv, maxv);
+         DrawTriangle(p, c, minv, maxv, disp_buf[0]);
       }
       else
       {
-         DrawQuad(p, c, minv, maxv);
+         DrawQuad(p, c, minv, maxv, disp_buf[0]);
       }
    }
-   glEndList();
+   disp_buf[0].buffer();
 }
 
 void VisualizationSceneVector3d::PrepareFlat2()
@@ -582,7 +582,7 @@ void VisualizationSceneVector3d::PrepareFlat2()
                      (z[1]-z[0])*(z[1]-z[0]) );
    double sc = FaceShiftScale * bbox_diam;
 
-   glNewList (displlist, GL_COMPILE);
+   disp_buf[2].clear();
 
    vmin = numeric_limits<double>::infinity();
    vmax = -vmin;
@@ -714,10 +714,10 @@ void VisualizationSceneVector3d::PrepareFlat2()
       {
          have_normals = -1 - have_normals;
       }
-      DrawPatch(pointmat, values, normals, sides, RefG->RefGeoms,
+      DrawPatch(disp_buf[2], pointmat, values, normals, sides, RefG->RefGeoms,
                 minv, maxv, have_normals);
    }
-   glEndList();
+   disp_buf[2].buffer();
    cout << "VisualizationSceneVector3d::PrepareFlat2() : [min,max] = ["
         << vmin << "," << vmax << "]" << endl;
 }
@@ -738,7 +738,8 @@ void VisualizationSceneVector3d::Prepare()
          break;
    }
 
-   glNewList(displlist, GL_COMPILE);
+   disp_buf[1].clear();
+   gl3::PolyBuilder draw = disp_buf[1].createPolyBuilder();
 
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -811,11 +812,11 @@ void VisualizationSceneVector3d::Prepare()
          switch (el_type)
          {
             case Element::TRIANGLE:
-               glBegin (GL_TRIANGLES);
+               draw.glBegin (GL_TRIANGLES);
                break;
 
             case Element::QUADRILATERAL:
-               glBegin (GL_QUADS);
+               draw.glBegin (GL_QUADS);
                break;
          }
          if (dim == 3)
@@ -836,14 +837,20 @@ void VisualizationSceneVector3d::Prepare()
          }
          for (j = 0; j < pointmat.Size(); j++)
          {
-            MySetColor((*sol)(vertices[j]), minv, maxv);
-            glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
-            glVertex3dv(&pointmat(0, j));
+            float rgba[4];
+            float texcoord = MySetColor((*sol)(vertices[j]), minv, maxv, rgba);
+            if (GetUseTexture()) {
+                draw.glTexCoord1f(texcoord);
+            } else {
+                draw.glColor4fv(rgba);
+            }
+            draw.glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
+            draw.glVertex3dv(&pointmat(0, j));
          }
-         glEnd();
+         draw.glEnd();
       }
    }
-   glEndList();
+   disp_buf[1].buffer();
 }
 
 void VisualizationSceneVector3d::PrepareLines()
@@ -862,7 +869,7 @@ void VisualizationSceneVector3d::PrepareLines()
    Array<int> vertices;
    double point[4][4];
 
-   glNewList(linelist, GL_COMPILE);
+   line_buf.clear();
 
    for (i = 0; i < ne; i++)
    {
@@ -898,17 +905,17 @@ void VisualizationSceneVector3d::PrepareLines()
          pointmat(1, j) += (*soly)(vertices[j])*(ianim)/ianimmax;
          pointmat(2, j) += (*solz)(vertices[j])*(ianim)/ianimmax;
       }
-
+      gl3::LineBuilder line = line_buf.createLineBuilder();
       switch (drawmesh)
       {
          case 1:
-            glBegin(GL_LINE_LOOP);
+            line.glBegin(GL_LINE_LOOP);
 
             for (j = 0; j < pointmat.Size(); j++)
             {
-               glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j));
+               line.glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j));
             }
-            glEnd();
+            line.glEnd();
             break;
 
          case 2:
@@ -920,11 +927,11 @@ void VisualizationSceneVector3d::PrepareLines()
                }
                point[j][3] = (*sol)(vertices[j]);
             }
-            DrawPolygonLevelLines(point[0], pointmat.Size(), level, false);
+            DrawPolygonLevelLines(point[0], pointmat.Size(), level, false, line);
             break;
       }
    }
-   glEndList();
+   line_buf.buffer();
 }
 
 void VisualizationSceneVector3d::PrepareLines2()
@@ -932,7 +939,8 @@ void VisualizationSceneVector3d::PrepareLines2()
    int i, j, k, fn, fo, di = 0;
    double bbox_diam;
 
-   glNewList (linelist, GL_COMPILE);
+   line_buf.clear();
+   gl3::LineBuilder line = line_buf.createLineBuilder();
 
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -1026,7 +1034,7 @@ void VisualizationSceneVector3d::PrepareLines2()
       if (drawmesh == 1)
       {
          Array<int> &REdges = RefG->RefEdges;
-         glBegin (GL_LINES);
+         line.glBegin (GL_LINES);
          for (k = 0; k < REdges.Size()/2; k++)
          {
             int *RE = &(REdges[2*k]);
@@ -1034,21 +1042,21 @@ void VisualizationSceneVector3d::PrepareLines2()
             if (sc == 0.0)
             {
                for (j = 0; j < 2; j++)
-                  glVertex3d (pointmat(0, RE[j]), pointmat(1, RE[j]),
-                              pointmat(2, RE[j]));
+                  line.glVertex3d (pointmat(0, RE[j]), pointmat(1, RE[j]),
+                                   pointmat(2, RE[j]));
             }
             else
             {
                for (j = 0; j < 2; j++)
                {
                   double val = sc * (values(RE[j]) - minv) / (maxv - minv);
-                  glVertex3d (pointmat(0, RE[j])+val*norm[0],
-                              pointmat(1, RE[j])+val*norm[1],
-                              pointmat(2, RE[j])+val*norm[2]);
+                  line.glVertex3d (pointmat(0, RE[j])+val*norm[0],
+                                   pointmat(1, RE[j])+val*norm[1],
+                                   pointmat(2, RE[j])+val*norm[2]);
                }
             }
          }
-         glEnd();
+         line.glEnd();
       }
       else if (drawmesh == 2)
       {
@@ -1094,11 +1102,11 @@ void VisualizationSceneVector3d::PrepareLines2()
                   point[j][3] = values(RG[j]);
                }
             }
-            DrawPolygonLevelLines(point[0], sides, level, false);
+            DrawPolygonLevelLines(point[0], sides, level, false, line);
          }
       }
    }
-   glEndList();
+   line_buf.buffer();
 }
 
 void VisualizationSceneVector3d::PrepareDisplacedMesh()
@@ -1517,9 +1525,9 @@ void VisualizationSceneVector3d::Draw()
    // model transformation
    ModelView();
 
-   glDisable(GL_CLIP_PLANE0);
+   gl->disableClipPlane();
    // draw colorbar
-   glDisable(GL_LIGHTING);
+   gl->disableLight();
    if (colorbar)
    {
       if (drawvector == 4)
@@ -1539,8 +1547,8 @@ void VisualizationSceneVector3d::Draw()
    // define and enable the clipping plane
    if (cplane)
    {
-      glClipPlane(GL_CLIP_PLANE0, CuttingPlane->Equation());
-      glEnable(GL_CLIP_PLANE0);
+      gl->setClipPlane(CuttingPlane->Equation());
+      gl->enableClipPlane();
    }
 
    if (MatAlpha < 1.0)
@@ -1550,14 +1558,14 @@ void VisualizationSceneVector3d::Draw()
 
    if (GetUseTexture())
    {
-      glEnable (GL_TEXTURE_1D);
-      glColor4d(1, 1, 1, 1);
+      gl->setModeColorTexture();
+      gl->setStaticColor(1, 1, 1, 1);
    }
 
    Set_Material();
    if (light)
    {
-      glEnable(GL_LIGHTING);
+      gl->enableLight();
    }
 
    // draw vector field
@@ -1569,19 +1577,19 @@ void VisualizationSceneVector3d::Draw()
    // draw elements
    if (drawelems)
    {
-      glCallList(displlist);
+       disp_buf[shading].draw();
    }
 
    if (cplane && cp_drawelems)
    {
-      glDisable(GL_CLIP_PLANE0);
-      glCallList(cplanelist);
-      glEnable(GL_CLIP_PLANE0);
+      gl->disableClipPlane();
+      cplane_buf.draw();
+      gl->enableClipPlane();
    }
 
    if (GetUseTexture())
    {
-      glDisable(GL_TEXTURE_1D);
+      gl->setModeColor();
    }
 
    if (MatAlpha < 1.0)
@@ -1591,7 +1599,7 @@ void VisualizationSceneVector3d::Draw()
 
    if (light)
    {
-      glDisable(GL_LIGHTING);
+      gl->disableLight();
    }
 
    if (drawvector > 3)
@@ -1609,13 +1617,13 @@ void VisualizationSceneVector3d::Draw()
    // ruler may have mixture of polygons and lines
    if (cplane)
    {
-      glDisable(GL_CLIP_PLANE0);
+      gl->disableClipPlane();
       DrawRuler();
       if (cp_drawmesh)
       {
-         glCallList(cplanelineslist);
+         cplines_buf.draw();
       }
-      glEnable(GL_CLIP_PLANE0);
+      gl->enableClipPlane();
    }
    else
    {
@@ -1625,20 +1633,20 @@ void VisualizationSceneVector3d::Draw()
    // draw lines
    if (drawmesh)
    {
-      glCallList(linelist);
+      line_buf.draw();
    }
 
    // draw displacement
    if (drawdisp)
    {
-      glColor3f(1.0f, 0.0f, 0.0f);
+      gl->setStaticColor(1.f, 0.f, 0.f);
       glCallList(displinelist);
       Set_Black_Material();
    }
 
    if (cplane)
    {
-      glDisable(GL_CLIP_PLANE0);
+      gl->disableClipPlane();
    }
 
    // draw axes

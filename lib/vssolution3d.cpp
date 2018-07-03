@@ -1542,10 +1542,6 @@ void VisualizationSceneSolution3d::Prepare()
 
    if (!drawelems)
    {
-#ifndef GLVIS_OGL3
-      glNewList(displlist, GL_COMPILE);
-      glEndList();
-#endif
       return;
    }
 
@@ -1725,8 +1721,6 @@ void VisualizationSceneSolution3d::PrepareLines()
 {
    if (!drawmesh)
    {
-      //glNewList(linelist, GL_COMPILE);
-      //glEndList();
       return;
    }
 
@@ -2795,7 +2789,6 @@ void VisualizationSceneSolution3d::Draw()
       lsurf_buf.draw();
       // Set_Black_Material();
       // glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
-      // glCallList (lsurflist);
    }
 
    // draw elements
@@ -2828,7 +2821,6 @@ void VisualizationSceneSolution3d::Draw()
    Set_Black_Material();
 
    // ruler may have mixture of polygons and lines
-#ifndef GLVIS_OGL3
    if (cplane)
    {
       gl->disableClipPlane();
@@ -2843,7 +2835,6 @@ void VisualizationSceneSolution3d::Draw()
    {
       DrawRuler();
    }
-#endif
    // draw lines
    if (drawmesh)
    {
