@@ -12,7 +12,7 @@
 
 // Colormap values created by:
 //
-// Peter Kovesi 
+// Peter Kovesi
 // CET Perceptually Uniform Colour Maps
 // http://peterkovesi.com/projects/colourmaps/
 //
@@ -283,7 +283,7 @@ double CET_Palette_1[CET_Palette_Size][3] =
     {0.9393, 0.52391, 0.996},
     {0.94819, 0.5245, 0.99274},
     {0.95631, 0.52446, 0.98864},
-    {0.9636, 0.52374, 0.98368}, 
+    {0.9636, 0.52374, 0.98368},
     {0.97003, 0.52229, 0.97779}
 };
 
