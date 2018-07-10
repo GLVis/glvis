@@ -47,7 +47,7 @@ protected:
 
    void FindNewBox(double rx[], double ry[], double rval[]);
 
-   void DrawCPLine(DenseMatrix &pointmat, Vector &values, Array<int> &ind, gl3::LineBuilder& bld);
+   void DrawCPLine(DenseMatrix &pointmat, Vector &values, Array<int> &ind, gl3::GlBuilder& bld);
 
    void GetRefinedDetJ(int i, const IntegrationRule &ir,
                        Vector &vals, DenseMatrix &tr);
@@ -59,7 +59,7 @@ protected:
                                           Vector &vals, DenseMatrix &tr,
                                           DenseMatrix &normals);
 
-   void DrawLevelCurves(gl3::LineBuilder& buf, Array<int> &RG, DenseMatrix &pointmat,
+   void DrawLevelCurves(gl3::GlBuilder& buf, Array<int> &RG, DenseMatrix &pointmat,
                         Vector &values, int sides, Array<double> &lvl,
                         int flat = 0);
 

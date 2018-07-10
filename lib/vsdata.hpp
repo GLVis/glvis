@@ -213,7 +213,7 @@ public:
                double cone_scale = 0.075);
 
    void DrawPolygonLevelLines(double *point, int n, Array<double> &level,
-                              bool log_vals, gl3::LineBuilder& builder);
+                              bool log_vals, gl3::GlBuilder& builder);
 
    void DrawPolygonLevelLines(double *point, int n, Array<double> &level,
                               bool log_vals);

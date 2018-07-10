@@ -662,7 +662,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
 
    // prepare the displaced mesh
    displine_buf.clear();
-   gl3::LineBuilder build = displine_buf.createLineBuilder();
+   gl3::GlBuilder build = displine_buf.createBuilder();
    if (shading != 2)
    {
       for (i = 0; i < ne; i++)

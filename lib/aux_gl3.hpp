@@ -22,49 +22,54 @@ using namespace std;
 
 namespace gl3 {
 
-struct GlVertex
+struct GlColor 
 {
-    float pos[3];
-    float norm[3];
+    float rgba[4];
+    float texcoord;
+    bool use_texture;
 
-    GlVertex() = default;
+    GlColor() = default;
+    
+    GlColor(float val)
+        : texcoord(val)
+        , use_texture(true) { }
 
-    GlVertex(const double pos[]) {
-        for (int i = 0; i < 3; i++) {
-            this->pos[i] = pos[i];
-        }
-   }
-
-    GlVertex(const double pos[], const double norm[]) {
-        for (int i = 0; i < 3; i++) {
-            this->pos[i] = pos[i];
-            this->norm[i] = norm[i];
-        }
-    }
+    GlColor(float r, float g, float b, float a)
+        : rgba{r,g,b,a}
+        , use_texture(false) { }
 };
 
 class GlDrawable;
 
-class PolyBuilder
+class GlBuilder
 {
     GlDrawable * parent_buf;
     GLenum render_as;
     std::vector<float> pts;
     int count;
+
+    bool is_line;
     bool use_color;
     bool use_color_tex;
+
     float norm[3];
     float color[4];
     float texcoord;
 public:
-    PolyBuilder(GlDrawable * buf)
+    GlBuilder(GlDrawable * buf)
         : parent_buf(buf)
         , count(0) 
+        , is_line(false) 
         , use_color(false)
-        , use_color_tex(false){ }
+        , use_color_tex(false) { }
 
     void glBegin(GLenum e) {
 #ifdef GLVIS_OGL3
+        if (e == GL_LINES || e == GL_LINE_STRIP || e == GL_LINE_LOOP) {
+            is_line = true;
+        } else {
+            is_line = false;
+        }
         render_as = e;
         count = 0;
 #else
@@ -76,38 +81,35 @@ public:
 
     void glVertex3d(double x, double y, double z) {
 #ifdef GLVIS_OGL3
+        if (count >= 2 && (render_as == GL_LINE_STRIP
+                        || render_as == GL_LINE_LOOP)) {
+            int offset = 4;
+            if (use_color) offset = 8;
+            else if (use_color_tex) offset = 5;
+            std::copy_n(pts.end() - offset, offset, std::back_inserter(pts));
+        }
         pts.emplace_back(x);
         pts.emplace_back(y);
         pts.emplace_back(z);
-        std::copy(norm, norm+3, std::back_inserter(pts));
+        if (!is_line) {
+            std::copy(norm, norm+3, std::back_inserter(pts));
+        }
         if (use_color) {
             std::copy(color, color+4, std::back_inserter(pts));
         } else if (use_color_tex) {
             pts.emplace_back(texcoord);
+        }
+        if (is_line || use_color_tex) {
             pts.emplace_back(0);
         }
         count++;
 #else
-        ::glVertex3dv(d);
+        ::glVertex3d(x, y, z);
 #endif
     }
 
     void glVertex3dv(const double * d) {
-#ifdef GLVIS_OGL3
-        pts.emplace_back(d[0]);
-        pts.emplace_back(d[1]);
-        pts.emplace_back(d[2]);
-        std::copy(norm, norm+3, std::back_inserter(pts));
-        if (use_color) {
-            std::copy(color, color+4, std::back_inserter(pts));
-        } else if (use_color_tex) {
-            pts.emplace_back(texcoord);
-            pts.emplace_back(0);
-        }
-        count++;
-#else
-        ::glVertex3dv(d);
-#endif
+        glVertex3d(d[0], d[1], d[2]);
     }
 
     void glNormal3d(double nx, double ny, double nz) {
@@ -130,6 +132,17 @@ public:
 #endif
     }
 
+    void glColor3f(float r, float g, float b) {
+#ifdef GLVIS_OGL3
+        this->color[0] = r;
+        this->color[1] = g;
+        this->color[2] = b;
+        this->color[3] = 1.0;
+#else
+        ::glColor3f(r,g,b);
+#endif
+    }
+
     void glColor4fv(float (&rgba)[4]) {
 #ifdef GLVIS_OGL3
         if (pts.empty()) {
@@ -141,6 +154,7 @@ public:
         ::glColor4fv(rgba);
 #endif
     }
+    
     void glTexCoord1f(float coord) {
 #ifdef GLVIS_OGL3
         if (pts.empty()) {
@@ -152,67 +166,6 @@ public:
         ::glTexCoord1f(coord);
 #endif
     }
-};
-
-class LineBuilder
-{
-    GlDrawable * parent_buf;
-    GLenum render_as;
-    std::vector<float> pts;
-    int count;
-    bool has_color;
-    bool has_stipple;
-    float color[4];
-public:
-    LineBuilder(GlDrawable * buf, bool save_color)
-        : parent_buf(buf)
-        , has_color(save_color)
-        , has_stipple(false) { }
-
-    void setUseColor(bool use = true) {
-        has_color = use;
-    }
-
-    void glBegin(GLenum e) {
-#ifdef GLVIS_OGL3
-        render_as = e;
-        count = 0;
-#else
-        ::glBegin(e);
-#endif
-    }
-    
-    void glEnable(GLenum e) {
-#ifdef GLVIS_OGL3
-        if (e == GL_LINE_STIPPLE) {
-            if (pts.size() != 0) {
-                cerr << "WARNING: Disabling stipple in the middle of a glEnable/glDisable block" << endl;
-            }
-            has_stipple = true;
-        }
-#else
-        ::glEnable(e);
-#endif
-    }
-
-    void glDisable(GLenum e) {
-#ifdef GLVIS_OGL3
-        if (pts.size() != 0) {
-            cerr << "WARNING: Disabling stipple in the middle of a glEnable/glDisable block" << endl;
-        }
-        if (e == GL_LINE_STIPPLE) {
-            has_stipple = false;
-        }
-#else
-        ::glDisable(e);
-#endif
-    }
-    void glVertex3d(double x, double y, double z);
-    void glVertex3dv(double * v) { glVertex3d(v[0], v[1], v[2]); }
-    void glColor3f(float r, float g, float b);
-    void glColor4fv(float * color);
-
-    void glEnd();
 };
 
 /* *
@@ -235,8 +188,7 @@ private:
     std::vector<float> _pt_data;
     int _buffered_size;
 
-    friend void LineBuilder::glEnd();
-    friend void PolyBuilder::glEnd();
+    friend void GlBuilder::glEnd();
 public:
 
     VertexBuffer(array_layout layout)
@@ -453,6 +405,15 @@ public:
         }
     }
 
+    void addArrow(double px, double py, double pz,
+                  double vx, double vy, double vz,
+                  double length, double cone_scale);
+
+    void addArrow(double px, double py, double pz,
+                  double vx, double vy, double vz,
+                  double length, double cone_scale,
+                  GlColor color);
+
     void addShape(GLenum primitive,
                   VertexBuffer::array_layout layout,
                   std::vector<float>&& points) {
@@ -468,16 +429,9 @@ public:
         buffers[layout].emplace(std::make_pair(shape, VertexBuffer(layout)));
         return buffers[layout].at(shape);
     }
-    
-    /**
-     * Creates a new LineBuilder associated with the current drawable object.
-     */
-    LineBuilder createLineBuilder(bool save_color = false) {
-        return LineBuilder(this, save_color);
-    }
 
-    PolyBuilder createPolyBuilder() {
-        return PolyBuilder(this);
+    GlBuilder createBuilder() {
+        return GlBuilder(this);
     }
 
     /**

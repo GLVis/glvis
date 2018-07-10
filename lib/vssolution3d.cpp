@@ -1235,7 +1235,7 @@ void VisualizationSceneSolution3d::DrawRefinedSurf(
 {
    double norm[3], pts[4][3];
    float rgba[4], texcoord;
-   gl3::PolyBuilder draw = cplane_buf.createPolyBuilder();
+   gl3::GlBuilder draw = cplane_buf.createBuilder();
 
    for (int i = 0; i < RefGeoms.Size()/n; i++)
    {
@@ -1286,7 +1286,7 @@ void VisualizationSceneSolution3d::DrawRefinedSurfEdges(
 
    k_start = 0;
    k_end   = RefEdges.Size();
-   gl3::LineBuilder line = cplines_buf.createLineBuilder();
+   gl3::GlBuilder line = cplines_buf.createBuilder();
    if (part == 0)
    {
       k_end = (k_end/n) * (n-1);
@@ -1320,7 +1320,7 @@ void VisualizationSceneSolution3d::DrawRefinedSurfLevelLines(
    int *RG;
    double point[4][4];
    
-   gl3::LineBuilder line = cplines_buf.createLineBuilder();
+   gl3::GlBuilder line = cplines_buf.createBuilder();
 
    for (k = 0; k < RefGeoms.Size()/n; k++)
    {
@@ -1558,7 +1558,7 @@ void VisualizationSceneSolution3d::Prepare()
    }
 
    disp_buf[1].clear();
-   gl3::PolyBuilder poly = disp_buf[1].createPolyBuilder();
+   gl3::GlBuilder poly = disp_buf[1].createBuilder();
    
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -1777,7 +1777,7 @@ void VisualizationSceneSolution3d::PrepareLines()
          mesh->GetPointMatrix(i, pointmat);
       }
 
-      gl3::LineBuilder line = line_buf.createLineBuilder();
+      gl3::GlBuilder line = line_buf.createBuilder();
       switch (drawmesh)
       {
          case 1:
@@ -1925,7 +1925,7 @@ void VisualizationSceneSolution3d::PrepareLines2()
             }
          }
       }
-      gl3::LineBuilder line = line_buf.createLineBuilder();
+      gl3::GlBuilder line = line_buf.createBuilder();
       if (drawmesh == 1)
       {
          Array<int> &REdges = RefG->RefEdges;
@@ -2142,7 +2142,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
                      break;
                   }
 
-                  gl3::PolyBuilder draw = cplane_buf.createPolyBuilder();
+                  gl3::GlBuilder draw = cplane_buf.createBuilder();
                   float rgba[4];
                   if (!j)
                   {
@@ -2174,7 +2174,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
                else
                {
                   // glBegin (GL_POLYGON);
-                  gl3::LineBuilder line = cplines_buf.createLineBuilder();
+                  gl3::GlBuilder line = cplines_buf.createBuilder();
                   line.glBegin(GL_LINE_LOOP);
                   for (j = 0; j < n; j++)
                   {
@@ -2194,7 +2194,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
                }
                else
                {
-                  gl3::LineBuilder line = cplines_buf.createLineBuilder();
+                  gl3::GlBuilder line = cplines_buf.createBuilder();
                   DrawPolygonLevelLines(point[0], n, level, false, line);
                }
             }
@@ -2363,7 +2363,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines2()
                point[j][2] = coord[2];
                point[j][3] = (*sol)(nodes[j]);
             }
-            gl3::LineBuilder line = cplines_buf.createLineBuilder();
+            gl3::GlBuilder line = cplines_buf.createBuilder();
             switch (cp_drawmesh)
             {
                case 1:
@@ -2421,7 +2421,7 @@ void VisualizationSceneSolution3d::DrawTetLevelSurf(
    int i, j, l, pos[4];
    bool flipped;
 
-   gl3::PolyBuilder draw = target.createPolyBuilder();
+   gl3::GlBuilder draw = target.createBuilder();
 
    for (l = 0; l < levels.Size(); l++)
    {

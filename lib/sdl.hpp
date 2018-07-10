@@ -15,9 +15,7 @@
 #include <memory>
 #include <functional>
 #include <map>
-#include <SDL2/SDL.h>
 #include "platform_gl.hpp"
-#include <SDL2/SDL_opengl.h>
 
 
 #define AUX_MOUSESTATUS		3
@@ -87,6 +85,7 @@ public:
      * Runs the window loop.
      */
     void mainLoop();
+    bool mainIter();
 
     void setOnIdle(Delegate func) { onIdle = func; }
     void setOnExpose(Delegate func) { onExpose = func; }

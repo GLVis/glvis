@@ -739,7 +739,7 @@ void VisualizationSceneVector3d::Prepare()
    }
 
    disp_buf[1].clear();
-   gl3::PolyBuilder draw = disp_buf[1].createPolyBuilder();
+   gl3::GlBuilder draw = disp_buf[1].createBuilder();
 
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -905,7 +905,7 @@ void VisualizationSceneVector3d::PrepareLines()
          pointmat(1, j) += (*soly)(vertices[j])*(ianim)/ianimmax;
          pointmat(2, j) += (*solz)(vertices[j])*(ianim)/ianimmax;
       }
-      gl3::LineBuilder line = line_buf.createLineBuilder();
+      gl3::GlBuilder line = line_buf.createBuilder();
       switch (drawmesh)
       {
          case 1:
@@ -940,7 +940,7 @@ void VisualizationSceneVector3d::PrepareLines2()
    double bbox_diam;
 
    line_buf.clear();
-   gl3::LineBuilder line = line_buf.createLineBuilder();
+   gl3::GlBuilder line = line_buf.createBuilder();
 
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
