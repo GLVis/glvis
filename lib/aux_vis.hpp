@@ -18,6 +18,7 @@
 #include "glstate.hpp"
 #include "font.hpp"
 #include "openglvis.hpp"
+#include "aux_gl3.hpp"
 
 extern GLuint fontbase;
 extern float MatAlpha;
@@ -112,11 +113,11 @@ void CallKeySequence(const char *seq);
 void Cone();
 
 extern int MySetColorLogscale;
-void MySetColor(double val, double min, double max);
+void MySetColor(gl3::GlBuilder& builder, double val, double min, double max);
 //TODO: find a better way to return either texcoord or rgb
 float MySetColor (double val, double min, double max, float (&argb)[4]);
 float MySetColor (double val, float (&argb)[4]);
-void MySetColor(double val);
+void MySetColor(gl3::GlBuilder& builder, double val);
 void SetUseTexture(int ut);
 int GetUseTexture();
 int GetMultisample();

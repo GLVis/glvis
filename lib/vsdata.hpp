@@ -200,7 +200,8 @@ public:
 
    void SetLevelLines(double min, double max, int n, int adj = 1);
 
-   void Arrow(double px, double py, double pz,
+   void Arrow(gl3::GlBuilder& builder,
+              double px, double py, double pz,
               double vx, double vy, double vz, double length,
               double cone_scale = 0.075);
    void Arrow2(double px, double py, double pz,

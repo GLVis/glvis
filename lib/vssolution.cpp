@@ -1049,30 +1049,9 @@ void DrawNumberedMarker(const double x[3], double dx, int n, gl3::GlDrawable& bu
     buff.addText(x[0], x[1], x[2], std::to_string(n));
 }
 
-void DrawTriangle(const double pts[][3], const double cv[],
-                  const double minv, const double maxv)
-{
-   double nor[3];
-   if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
-   {
-      return;
-   }
-   glBegin(GL_TRIANGLES);
-   glNormal3dv(nor);
-   for (int j = 0; j < 3; j++)
-   {
-      MySetColor(cv[j], minv, maxv);
-      glVertex3dv(pts[j]);
-   }
-   glEnd();
-}
-
 void DrawTriangle(const double (&pts)[4][3], const double (&cv)[4],
                   const double minv, const double maxv, gl3::GlDrawable& buff)
 {
-#ifndef GLVIS_OGL3
-    DrawTriangle(pts, cv, minv, maxv);
-#else
    double nor[3];
    if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
    {
@@ -1090,15 +1069,11 @@ void DrawTriangle(const double (&pts)[4][3], const double (&cv)[4],
    } else {
        buff.addTriangle(pts, nor, rgba);
    }
-#endif
 }
 
 void DrawQuad(const double (&pts)[4][3], const double (&cv)[4],
               const double minv, const double maxv, gl3::GlDrawable& buff)
 {
-#ifndef GLVIS_OGL3
-    DrawQuad(pts, cv, minv, maxv);
-#else
    double nor[3];
    if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
    {
@@ -1116,25 +1091,6 @@ void DrawQuad(const double (&pts)[4][3], const double (&cv)[4],
    } else {
        buff.addQuad(pts, nor, rgba);
    }
-#endif
-}
-
-void DrawQuad(const double pts[][3], const double cv[],
-              const double minv, const double maxv)
-{
-   double nor[3];
-   if (Compute3DUnitNormal(pts[0], pts[1], pts[2], pts[3], nor))
-   {
-      return;
-   }
-   glBegin(GL_QUADS);
-   glNormal3dv(nor);
-   for (int j = 0; j < 4; j++)
-   {
-      MySetColor(cv[j], minv, maxv);
-      glVertex3dv(pts[j]);
-   }
-   glEnd();
 }
 
 void RemoveFPErrors(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
@@ -1166,107 +1122,10 @@ void RemoveFPErrors(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
    f_ind.SetSize(o);
 }
 
-void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
-               const int n, const Array<int> &ind, const double minv,
-               const double maxv, const int normals_opt)
-{
-   double na[3];
-
-   if (normals_opt == 1 || normals_opt == -2)
-   {
-      normals.SetSize(3, pts.Width());
-      normals = 0.;
-      for (int i = 0; i < ind.Size(); i += n)
-      {
-         int j;
-         if (n == 3)
-            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
-                                    &pts(0, ind[i+2]), na);
-         else
-            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
-                                    &pts(0, ind[i+2]), &pts(0, ind[i+3]), na);
-         if (j == 0)
-            for ( ; j < n; j++)
-               for (int k = 0; k < 3; k++)
-               {
-                  normals(k, ind[i+j]) += na[k];
-               }
-      }
-   }
-
-   if (n == 3)
-   {
-      glBegin(GL_TRIANGLES);
-   }
-   else
-   {
-      glBegin(GL_QUADS);
-   }
-   if (normals_opt != 0 && normals_opt != -1)
-   {
-      if (normals_opt > 0)
-      {
-         for (int i = 0; i < ind.Size(); i++)
-         {
-            glNormal3dv(&normals(0, ind[i]));
-            MySetColor(vals(ind[i]), minv, maxv);
-            glVertex3dv(&pts(0, ind[i]));
-         }
-      }
-      else
-      {
-         for (int i = ind.Size()-1; i >= 0; i--)
-         {
-            glNormal3dv(&normals(0, ind[i]));
-            MySetColor(vals(ind[i]), minv, maxv);
-            glVertex3dv(&pts(0, ind[i]));
-         }
-      }
-   }
-   else
-   {
-      for (int i = 0; i < ind.Size(); i += n)
-      {
-         int j;
-         if (n == 3)
-            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
-                                    &pts(0, ind[i+2]), na);
-         else
-            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
-                                    &pts(0, ind[i+2]), &pts(0, ind[i+3]), na);
-         if (j == 0)
-         {
-            if (normals_opt == 0)
-            {
-               glNormal3dv(na);
-               for ( ; j < n; j++)
-               {
-                  MySetColor(vals(ind[i+j]), minv, maxv);
-                  glVertex3dv(&pts(0, ind[i+j]));
-               }
-            }
-            else
-            {
-               glNormal3d(-na[0], -na[1], -na[2]);
-               for (j = n-1; j >= 0; j--)
-               {
-                  MySetColor(vals(ind[i+j]), minv, maxv);
-                  glVertex3dv(&pts(0, ind[i+j]));
-               }
-            }
-         }
-      }
-   }
-   glEnd();
-}
-
 void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
                const double maxv, const int normals_opt)
 {
-#ifndef GLVIS_OGL3
-    DrawPatch(pts, vals, normals, n, ind, minv, maxv, normals_opt);
-#else
    gl3::GlBuilder poly = drawable.createBuilder();
    double na[3];
 
@@ -1312,13 +1171,7 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
             glVertex3dv(&pts(0, ind[i]));
             */
             poly.glNormal3dv(&normals(0, ind[i]));
-            float rgba[4];
-            float texCoord = MySetColor(vals(ind[i]), minv, maxv, rgba);
-            if (GetUseTexture()) {
-                poly.glTexCoord1f(texCoord);
-            } else {
-                poly.glColor4fv(rgba);
-            }
+            MySetColor(poly, vals(ind[i]), minv, maxv);
             poly.glVertex3dv(&pts(0, ind[i]));
          }
       }
@@ -1332,13 +1185,7 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
             glVertex3dv(&pts(0, ind[i]));
             */
             poly.glNormal3dv(&normals(0, ind[i]));
-            float rgba[4];
-            float texCoord = MySetColor(vals(ind[i]), minv, maxv, rgba);
-            if (GetUseTexture()) {
-                poly.glTexCoord1f(texCoord);
-            } else {
-                poly.glColor4fv(rgba);
-            }
+            MySetColor(poly, vals(ind[i]), minv, maxv);
             poly.glVertex3dv(&pts(0, ind[i]));
          }
       }
@@ -1361,13 +1208,7 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
                poly.glNormal3dv(na);
                for ( ; j < n; j++)
                {
-                  float rgba[4];
-                  float texCoord = MySetColor(vals(ind[i]), minv, maxv, rgba);
-                  if (GetUseTexture()) {
-                      poly.glTexCoord1f(texCoord);
-                  } else {
-                      poly.glColor4fv(rgba);
-                  }
+                  MySetColor(poly, vals(ind[i]), minv, maxv);
                   poly.glVertex3dv(&pts(0, ind[i+j]));
                }
             }
@@ -1376,13 +1217,7 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
                poly.glNormal3d(-na[0], -na[1], -na[2]);
                for (j = n-1; j >= 0; j--)
                {
-                  float rgba[4];
-                  float texCoord = MySetColor(vals(ind[i]), minv, maxv, rgba);
-                  if (GetUseTexture()) {
-                      poly.glTexCoord1f(texCoord);
-                  } else {
-                      poly.glColor4fv(rgba);
-                  }
+                  MySetColor(poly, vals(ind[i]), minv, maxv);
                   poly.glVertex3dv(&pts(0, ind[i+j]));
                }
             }
@@ -1390,7 +1225,6 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
       }
    }
    poly.glEnd();
-#endif
 }
 
 
@@ -1432,13 +1266,7 @@ void VisualizationSceneSolution::PrepareWithNormals()
          {
             poly.glNormal3dv(nor);
          }
-         float rgba[4];
-         float texCoord = MySetColor(val, minv, maxv, rgba);
-         if (GetUseTexture()) {
-             poly.glTexCoord1f(texCoord);
-         } else {
-             poly.glColor4fv(rgba);
-         }
+         MySetColor(poly, val, minv, maxv);
          poly.glVertex3d(vtx[0], vtx[1], val);
       }
       poly.glEnd();
@@ -2449,7 +2277,7 @@ void VisualizationSceneSolution::Draw()
       disp_buf[shading].draw();
       if (GetUseTexture())
       {
-         gl->setModeColorTexture();
+         gl->setModeColor();
       }
    }
 

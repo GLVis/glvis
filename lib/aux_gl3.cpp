@@ -59,7 +59,7 @@ void GlBuilder::glEnd() {
             pts_stride = 8;
         }
         VertexBuffer& toInsert = parent_buf->getBuffer(dst_layout, GL_TRIANGLES);
-        if (render_as == GL_POLYGON) {
+        if (render_as == GL_POLYGON || render_as == GL_TRIANGLE_FAN) {
             //fan out from point 0
             int fan = pts_stride;
             while (fan + pts_stride * 2 <= pts.size()) {

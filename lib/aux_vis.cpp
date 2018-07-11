@@ -1388,7 +1388,7 @@ float MySetColor (double val, double min, double max, float (&rgba)[4])
    }
 }
 
-void MySetColor (double val, double min, double max) {
+void MySetColor (gl3::GlBuilder& builder, double val, double min, double max) {
   static const double eps = 0.0;
   if (MySetColorLogscale)
   {
@@ -1400,18 +1400,18 @@ void MySetColor (double val, double min, double max) {
      {
         val = max;
      }
-     MySetColor (log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps));
+     return MySetColor (builder, log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps));
   }
   else
   {
-     MySetColor ((val-min)/(max-min));
+     return MySetColor (builder, (val-min)/(max-min));
   }
 }
 
 float MySetColor (double val, float (&rgba)[4])
 {
    int i;
-   double t, r, g, b, *pal;
+   double t, *pal;
 
    int palSize = paletteGetSize();
 
@@ -1464,28 +1464,61 @@ float MySetColor (double val, float (&rgba)[4])
    return 0.0;
 }
 
+void MySetColor (gl3::GlBuilder& builder, double val)
+{
+   int i;
+   double t, *pal;
 
-void MySetColor (double val) {
-   float rgb[4];
-   MySetColor(val, rgb);
-/*   
-   if (MatAlpha < 1.0)
+   int palSize = paletteGetSize();
+
+   if (UseTexture)
    {
-      glColor4f ( rgb[0], rgb[1], rgb[2], malpha );
+      builder.glTexCoord1f(val);
+   }
+
+   if (val < 0.0) { val = 0.0; }
+   if (val > 1.0) { val = 1.0; }
+
+   double malpha = MatAlpha;
+   if (malpha < 1.0)
+   {
+      if (MatAlphaCenter > 1.0)
+      {
+         malpha *= exp(-(MatAlphaCenter)*fabs(val-1.0));
+      }
+      else if (MatAlphaCenter < 0.0)
+      {
+         malpha *= exp((MatAlphaCenter-1.0)*fabs(val-0.0));
+      }
+      else
+      {
+         malpha *= exp(-fabs(val-MatAlphaCenter));
+      }
+   }
+
+   val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
+   i = (int) floor( val );
+   t = val - i;
+
+   if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
+       ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
+   {
+      pal = paletteGet() + 3 * ( i % (palSize-1) );
    }
    else
    {
-      glColor3f ( rgb[0], rgb[1], rgb[2] );
+      pal = paletteGet() + 3 * ( (palSize-2) -
+                                i % (palSize-1) );
+      t = 1.0 - t;
    }
-   
-   if (UseTexture) {
-       glTexCoord1d (val);
-   } else {
-       glColor4f ( rgb[0], rgb[1], rgb[2], rgb[3]);
-   }
-*/
+   float rgba[4] = {
+       (float)((1.0 - t) * pal[0] + t * pal[3]),
+       (float)((1.0 - t) * pal[1] + t * pal[4]),
+       (float)((1.0 - t) * pal[2] + t * pal[5]),
+       (float)(MatAlpha < 1.0 ? malpha : 1.0)
+   };
+   builder.glColor4fv(rgba);
 }
-
 
 int GetUseTexture()
 {

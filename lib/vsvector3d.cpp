@@ -837,13 +837,7 @@ void VisualizationSceneVector3d::Prepare()
          }
          for (j = 0; j < pointmat.Size(); j++)
          {
-            float rgba[4];
-            float texcoord = MySetColor((*sol)(vertices[j]), minv, maxv, rgba);
-            if (GetUseTexture()) {
-                draw.glTexCoord1f(texcoord);
-            } else {
-                draw.glColor4fv(rgba);
-            }
+            MySetColor(draw, (*sol)(vertices[j]), minv, maxv);
             draw.glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
             draw.glVertex3dv(&pointmat(0, j));
          }
@@ -1117,11 +1111,12 @@ void VisualizationSceneVector3d::PrepareDisplacedMesh()
    Array<int> vertices;
 
    // prepare the displaced mesh
-   glNewList(displinelist, GL_COMPILE);
+   displine_buf.clear();
+   gl3::GlBuilder builder = displine_buf.createBuilder();
 
    for (i = 0; i < ne; i++)
    {
-      glBegin(GL_LINE_LOOP);
+      builder.glBegin(GL_LINE_LOOP);
       if (dim == 3)
       {
          mesh->GetBdrPointMatrix (i, pointmat);
@@ -1142,11 +1137,11 @@ void VisualizationSceneVector3d::PrepareDisplacedMesh()
 
       for (j = 0; j < pointmat.Size(); j++)
       {
-         glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j) );
+         builder.glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j) );
       }
-      glEnd();
+      builder.glEnd();
    }
-   glEndList();
+   displine_buf.buffer();
 }
 
 void ArrowsDrawOrNot (Array<int> l[], int nv, Vector & sol,
@@ -1209,7 +1204,8 @@ int ArrowDrawOrNot (double v, int nl, Array<double> & level)
    return 0;
 }
 
-void VisualizationSceneVector3d::DrawVector(int type, double v0, double v1,
+void VisualizationSceneVector3d::DrawVector(gl3::GlBuilder& builder,
+                                            int type, double v0, double v1,
                                             double v2, double sx, double sy,
                                             double sz, double s)
 {
@@ -1225,7 +1221,7 @@ void VisualizationSceneVector3d::DrawVector(int type, double v0, double v1,
          arrow_type = 0;
          arrow_scaling_type = 0;
          // glColor3f(0, 0, 0); // color is set in Draw()
-         Arrow(v0,v1,v2,sx,sy,sz,s);
+         Arrow(builder,v0,v1,v2,sx,sy,sz,s);
       }
       break;
 
@@ -1233,8 +1229,8 @@ void VisualizationSceneVector3d::DrawVector(int type, double v0, double v1,
       {
          arrow_type = 1;
          arrow_scaling_type = 1;
-         MySetColor(s, minv, maxv);
-         Arrow(v0,v1,v2,sx,sy,sz,h,0.125);
+         MySetColor(builder, s, minv, maxv);
+         Arrow(builder,v0,v1,v2,sx,sy,sz,h,0.125);
       }
       break;
 
@@ -1243,8 +1239,8 @@ void VisualizationSceneVector3d::DrawVector(int type, double v0, double v1,
          arrow_type = 1;
          arrow_scaling_type = 1;
          // MySetColor(s,maxv,minv);
-         MySetColor(s, minv, maxv);
-         Arrow(v0,v1,v2,sx,sy,sz,h*s/maxv,0.125);
+         MySetColor(builder, s, minv, maxv);
+         Arrow(builder,v0,v1,v2,sx,sy,sz,h*s/maxv,0.125);
       }
       break;
 
@@ -1253,8 +1249,8 @@ void VisualizationSceneVector3d::DrawVector(int type, double v0, double v1,
       {
          arrow_type = 1;
          arrow_scaling_type = 1;
-         glColor3f(0.3, 0.3, 0.3);
-         Arrow(v0,v1,v2,sx,sy,sz,hh*s/maxv,0.125);
+         builder.glColor3f(0.3, 0.3, 0.3);
+         Arrow(builder,v0,v1,v2,sx,sy,sz,hh*s/maxv,0.125);
       }
       break;
    }
@@ -1265,7 +1261,8 @@ void VisualizationSceneVector3d::PrepareVectorField()
    int i, nv = mesh -> GetNV();
    double *vertex;
 
-   glNewList(vectorlist, GL_COMPILE);
+   vector_buf.clear();
+   gl3::GlBuilder builder = vector_buf.createBuilder();
 
    switch (drawvector)
    {
@@ -1277,7 +1274,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
             if (drawmesh != 2 || ArrowDrawOrNot((*sol)(i), nl, level))
             {
                vertex = mesh->GetVertex(i);
-               DrawVector(drawvector, vertex[0], vertex[1], vertex[2],
+               DrawVector(builder, drawvector, vertex[0], vertex[1], vertex[2],
                           (*solx)(i), (*soly)(i), (*solz)(i), (*sol)(i));
             }
          break;
@@ -1290,7 +1287,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
             if (drawmesh != 2 || ArrowDrawOrNot((*sol)(i), nl, level))
             {
                vertex = mesh->GetVertex(i);
-               DrawVector(drawvector, vertex[0], vertex[1], vertex[2],
+               DrawVector(builder, drawvector, vertex[0], vertex[1], vertex[2],
                           (*solx)(i), (*soly)(i), (*solz)(i), (*sol)(i));
             }
       }
@@ -1305,7 +1302,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
             if (drawmesh != 2 || ArrowDrawOrNot((*sol)(i), nl, level))
             {
                vertex = mesh->GetVertex(i);
-               DrawVector(drawvector, vertex[0], vertex[1], vertex[2],
+               DrawVector(builder, drawvector, vertex[0], vertex[1], vertex[2],
                           (*solx)(i), (*soly)(i), (*solz)(i), (*sol)(i));
             }
       }
@@ -1324,7 +1321,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
             for (j = 0; j < l[i].Size(); j++)
             {
                vertex = mesh->GetVertex( l[i][j] );
-               DrawVector(drawvector, vertex[0], vertex[1], vertex[2],
+               DrawVector(builder, drawvector, vertex[0], vertex[1], vertex[2],
                           (*solx)(l[i][j]), (*soly)(l[i][j]), (*solz)(l[i][j]),
                           (*sol)(l[i][j]));
             }
@@ -1357,7 +1354,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
                i = vertices[j];
                if (vert_marker[i]) { continue; }
                vertex = mesh->GetVertex(i);
-               DrawVector(drawvector, vertex[0], vertex[1], vertex[2],
+               DrawVector(builder, drawvector, vertex[0], vertex[1], vertex[2],
                           (*solx)(i), (*soly)(i), (*solz)(i), (*sol)(i));
                vert_marker[i] = true;
             }
@@ -1365,8 +1362,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
       }
       break;
    }
-   glEndList();
-
+   vector_buf.buffer();
 }
 
 void VisualizationSceneVector3d::PrepareCuttingPlane()
@@ -1382,7 +1378,8 @@ void VisualizationSceneVector3d::PrepareCuttingPlane()
    int flag[4], ind[6][2]= {{0,3},{0,2},{0,1},{1,2},{1,3},{2,3}};
    double t, point[4][4], val[4][3];
 
-   glNewList(cplanelist, GL_COMPILE);
+   cplane_buf.clear();
+   gl3::GlBuilder builder = cplane_buf.createBuilder();
 
    DenseMatrix pointmat(3,4);
    double * coord;
@@ -1473,41 +1470,41 @@ void VisualizationSceneVector3d::PrepareCuttingPlane()
          {
             if (drawvector != 5)
             {
-               glBegin (GL_POLYGON);
+               builder.glBegin (GL_POLYGON);
                for (j=0; j<n; j++)
                {
-                  MySetColor ( point[j][3] , maxv , minv);
-                  glNormal3dv (CuttingPlane -> Equation());
-                  glVertex3d (point[j][0],point[j][1],point[j][2]);
+                  MySetColor ( builder, point[j][3] , maxv , minv);
+                  builder.glNormal3dv (CuttingPlane -> Equation());
+                  builder.glVertex3d (point[j][0],point[j][1],point[j][2]);
                }
             }
-            glEnd();
+            builder.glEnd();
             if (drawvector)
                for (j=0; j<n; j++)
-                  DrawVector(drawvector, point[n][0], point[n][1], point[n][2],
+                  DrawVector(builder, drawvector, point[n][0], point[n][1], point[n][2],
                              val[n][0],val[n][1], val[n][2], point[n][3]);
          }
          else
          {
             if (drawvector != 5)
             {
-               glBegin (GL_POLYGON);
+               builder.glBegin (GL_POLYGON);
                for (j=n-1; j>=0; j--)
                {
-                  MySetColor ( point[j][3] , minv , maxv);
-                  glNormal3dv (CuttingPlane -> Equation());
-                  glVertex3d (point[j][0],point[j][1],point[j][2]);
+                  MySetColor ( builder, point[j][3] , minv , maxv);
+                  builder.glNormal3dv (CuttingPlane -> Equation());
+                  builder.glVertex3d (point[j][0],point[j][1],point[j][2]);
                }
             }
-            glEnd();
+            builder.glEnd();
             if (drawvector)
                for (j=n-1; j>=0; j--)
-                  DrawVector(drawvector, point[n][0], point[n][1], point[n][2],
+                  DrawVector(builder, drawvector, point[n][0], point[n][1], point[n][2],
                              val[n][0],val[n][1], val[n][2], point[n][3]);
          }
       }
    }
-   glEndList();
+   cplane_buf.buffer();
 }
 
 void VisualizationSceneVector3d::Draw()
@@ -1571,7 +1568,7 @@ void VisualizationSceneVector3d::Draw()
    // draw vector field
    if (drawvector == 2 || drawvector == 3)
    {
-      glCallList(vectorlist);
+       vector_buf.draw();
    }
 
    // draw elements
@@ -1604,14 +1601,14 @@ void VisualizationSceneVector3d::Draw()
 
    if (drawvector > 3)
    {
-      glCallList(vectorlist);
+      vector_buf.draw();
    }
 
    Set_Black_Material();
 
    if (drawvector == 1)
    {
-      glCallList(vectorlist);
+      vector_buf.draw();
    }
 
    // ruler may have mixture of polygons and lines

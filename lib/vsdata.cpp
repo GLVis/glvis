@@ -173,7 +173,8 @@ void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
    gl->loadMatrixUniforms();
 }
 
-void VisualizationSceneScalarData::Arrow(double px, double py, double pz,
+void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
+                                         double px, double py, double pz,
                                          double vx, double vy, double vz,
                                          double length,
                                          double cone_scale)
@@ -285,18 +286,18 @@ void VisualizationSceneScalarData::Arrow(double px, double py, double pz,
       normal[i][2] *= zscale;
    }
 
-   glBegin(GL_TRIANGLE_FAN);
+   builder.glBegin(GL_TRIANGLE_FAN);
    for (i=0; i<=n+1; i++)
    {
-      glNormal3dv(normal[i]);
-      glVertex3dv(cone[i]);
+      builder.glNormal3dv(normal[i]);
+      builder.glVertex3dv(cone[i]);
    }
-   glEnd();
+   builder.glEnd();
 
-   glBegin(GL_LINES);
-   glVertex3dv(cone[n+2]);
-   glVertex3dv(cone[n+3]);
-   glEnd();
+   builder.glBegin(GL_LINES);
+   builder.glVertex3dv(cone[n+2]);
+   builder.glVertex3dv(cone[n+3]);
+   builder.glEnd();
 }
 
 void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,

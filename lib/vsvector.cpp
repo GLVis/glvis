@@ -849,11 +849,13 @@ void VisualizationSceneVector::DrawVector(double px, double py, double vx,
 {
    double zc = 0.5*(z[0]+z[1]);
 
+   gl3::GlBuilder builder = vector_buf.createBuilder();
+
    if (drawvector == 1)
    {
       arrow_type = 0;
       arrow_scaling_type = 0;
-      Arrow(px, py, zc, vx, vy, 0.0, 1.0, 1./4./3.);
+      Arrow(builder, px, py, zc, vx, vy, 0.0, 1.0, 1./4./3.);
    }
    else if (drawvector > 0)
    {
@@ -863,16 +865,16 @@ void VisualizationSceneVector::DrawVector(double px, double py, double vx,
       arrow_type = 1;
       arrow_scaling_type = 1;
 
-      MySetColor(cval, minv, maxv);
+      MySetColor(builder, cval, minv, maxv);
 
       if (drawvector == 2)
       {
-         Arrow(px, py, zc, vx, vy, 0.0, h, 0.125);
+         Arrow(builder, px, py, zc, vx, vy, 0.0, h, 0.125);
       }
       else
       {
          double len = VecLength(vx, vy);
-         Arrow(px, py, zc, vx, vy, 0.0,
+         Arrow(builder, px, py, zc, vx, vy, 0.0,
                h*max(0.01, len/maxlen), 0.125);
          if (len > new_maxlen)
          {
@@ -889,7 +891,8 @@ void VisualizationSceneVector::PrepareVectorField()
    {
       rerun = 0;
 
-      glNewList(vectorlist, GL_COMPILE);
+      //glNewList(vectorlist, GL_COMPILE);
+      vector_buf.clear();
 
       if (drawvector > 0)
       {
@@ -950,15 +953,16 @@ void VisualizationSceneVector::PrepareVectorField()
          }
       }
 
-      glEndList();
+      //glEndList();
 
    }
    while (rerun);
+   vector_buf.buffer();
 }
 
 void VisualizationSceneVector::Draw()
 {
-   glEnable(GL_DEPTH_TEST);
+   gl->enableDepthTest();
 
    Set_Background();
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -969,11 +973,11 @@ void VisualizationSceneVector::Draw()
    // draw colored faces
    glPolygonOffset (1, 1);
    glEnable (GL_POLYGON_OFFSET_FILL);
-   glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+   //glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
-   glDisable(GL_CLIP_PLANE0);
+   gl->disableClipPlane();
    // draw colorbar
-   glDisable(GL_LIGHTING);
+   gl->disableLight();
    if (colorbar)
    {
       if (drawmesh == 2)
@@ -988,26 +992,26 @@ void VisualizationSceneVector::Draw()
 
    if (draw_cp)
    {
-      glClipPlane(GL_CLIP_PLANE0, CuttingPlane->Equation());
-      glEnable(GL_CLIP_PLANE0);
+      gl->setClipPlane(CuttingPlane->Equation());
+      gl->enableClipPlane();
    }
 
    Set_Material();
    if (light)
    {
-      glEnable(GL_LIGHTING);
+      gl->enableLight();
    }
 
    if (GetUseTexture())
    {
-      glEnable (GL_TEXTURE_1D);
-      glColor4d(1, 1, 1, 1);
+       gl->setModeColorTexture();
+       gl->setStaticColor(1, 1, 1, 1);
    }
 
    // draw vector field
    if (drawvector > 1)
    {
-      glCallList(vectorlist);
+       vector_buf.draw();
    }
 
    if (MatAlpha < 1.0)
@@ -1028,22 +1032,22 @@ void VisualizationSceneVector::Draw()
 
    if (GetUseTexture())
    {
-      glDisable (GL_TEXTURE_1D);
+       gl->setModeColor();
    }
 
    if (light)
    {
-      glDisable(GL_LIGHTING);
+      gl->disableLight();
    }
    Set_Black_Material();
 
    // ruler may have mixture of polygons and lines
    if (draw_cp)
    {
-      glDisable(GL_CLIP_PLANE0);
+      gl->disableClipPlane();
       DrawRuler(logscale);
       cp_buf.draw();
-      glEnable(GL_CLIP_PLANE0);
+      gl->enableClipPlane();
    }
    else
    {
@@ -1080,14 +1084,14 @@ void VisualizationSceneVector::Draw()
 
    if (drawvector == 1)
    {
-      glCallList(vectorlist);
+      vector_buf.draw();
    }
 
    if (drawdisp > 0)
    {
       if (drawmesh == 1)
       {
-         glColor3d(1., 0., 0.);
+         gl->setStaticColor(1, 0, 0);
       }
       displine_buf.draw();
       if (drawmesh == 1)
@@ -1098,7 +1102,7 @@ void VisualizationSceneVector::Draw()
 
    if (draw_cp)
    {
-      glDisable(GL_CLIP_PLANE0);
+      gl->disableClipPlane();
    }
 
    // draw axes
