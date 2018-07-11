@@ -203,55 +203,12 @@ void Set_AntiAliasing()
    if (GetMultisample() > 0)
    {
       glEnable(GL_MULTISAMPLE);
-
-#ifdef GL_MULTISAMPLE_FILTER_HINT_NV
-      std::string s = (const char *)glGetString(GL_EXTENSIONS);
-      if (s.find("GL_NV_multisample_filter_hint") != std::string::npos)
-      {
-         glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
-      }
-#endif
    }
-
 #ifndef GLVIS_OGL3
    gl2psEnable(GL2PS_BLEND);
 #endif
-   //glEnable(GL_BLEND);
-   // glDisable(GL_DEPTH_TEST);
-   //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-   // glBlendFunc (GL_SRC_ALPHA_SATURATE, GL_ONE);
    GetGlState()->enableBlend();
-
    glLineWidth(MS_LineWidth);
-
-   // In order for polygon smoothing to work nicely, the polygons need to be
-   // sorted by depth. Therefore we leave polygon smoothing to multisampling.
-   if (0)
-   {
-      glEnable(GL_POLYGON_SMOOTH);
-      glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-   }
-
-   std::string vendor = (const char *)glGetString(GL_VENDOR);
-   if (vendor.find("ATI") == std::string::npos || GetMultisample() <= 0)
-   {
-      // In order for line smoothing to blend nicely with polygons, we draw
-      // the lines after the polygons.
-      glEnable(GL_LINE_SMOOTH);
-      glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-   }
-   else
-   {
-#ifdef GLVIS_DEBUG
-      std::cout <<
-                "Found 'ATI' in the GL vendor string:"
-                " using line smoothing via multisampling." << std::endl;
-#endif
-   }
-
-   glEnable(GL_POINT_SMOOTH);
-   glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
-
    /* add fog
       glEnable(GL_AUTO_NORMAL);
       glEnable(GL_NORMALIZE);
@@ -270,10 +227,6 @@ void Set_AntiAliasing()
 
 void Remove_AntiAliasing()
 {
-   glDisable(GL_POLYGON_SMOOTH);
-   glDisable(GL_LINE_SMOOTH);
-   glDisable(GL_POINT_SMOOTH);
-
    glLineWidth(NM_LineWidth);
 
    // glEnable(GL_DEPTH_TEST);
@@ -284,14 +237,6 @@ void Remove_AntiAliasing()
 
    if (GetMultisample() > 0)
    {
-#ifdef GL_MULTISAMPLE_FILTER_HINT_NV
-      std::string s = (const char *)glGetString(GL_EXTENSIONS);
-      if (s.find("GL_NV_multisample_filter_hint") != std::string::npos)
-      {
-         glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_FASTEST);
-      }
-#endif
-
       glDisable(GL_MULTISAMPLE);
    }
 

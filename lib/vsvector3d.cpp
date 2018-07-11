@@ -1517,7 +1517,7 @@ void VisualizationSceneVector3d::Draw()
    // draw colored faces
    glPolygonOffset (1, 1);
    glEnable (GL_POLYGON_OFFSET_FILL);
-   glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+   //glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
    // model transformation
    ModelView();
