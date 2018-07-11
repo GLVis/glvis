@@ -1296,10 +1296,7 @@ void VisualizationSceneSolution3d::DrawRefinedSurfEdges(
       k_start = (k_end/n);
    }
 
-   if (part != 1)
-   {
-      line.glBegin (GL_LINES);
-   }
+   line.glBegin(GL_LINES);
    for (k = k_start; k < k_end; k++)
    {
       int RE = RefEdges[k];
@@ -1307,10 +1304,7 @@ void VisualizationSceneSolution3d::DrawRefinedSurfEdges(
       line.glVertex3d (pointmat(0, RE), pointmat(1, RE),
                   pointmat(2, RE));
    }
-   if (part != 0)
-   {
-      line.glEnd();
-   }
+   line.glEnd();
 }
 
 void VisualizationSceneSolution3d::DrawRefinedSurfLevelLines(

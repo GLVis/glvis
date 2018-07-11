@@ -22,6 +22,11 @@ void GlBuilder::glEnd() {
     int pts_stride = 4;
     VertexBuffer::array_layout dst_layout = VertexBuffer::LAYOUT_VTX;
     if (is_line) {
+        if (pts.size() < 2
+            || (pts.size() == 2 && render_as == GL_LINE_LOOP)) {
+            pts.clear();
+            return;
+        }
         if (use_color) {
             dst_layout = VertexBuffer::LAYOUT_VTX_COLOR;
             pts_stride = 8;
@@ -40,6 +45,10 @@ void GlBuilder::glEnd() {
                                  std::make_move_iterator(pts.begin()),
                                  std::make_move_iterator(pts.end()));
     } else {
+        if (pts.size() < 3) {
+            pts.clear();
+            return;
+        }
         dst_layout = VertexBuffer::LAYOUT_VTX_NORMAL;
         pts_stride = 6;
         if (use_color) {
