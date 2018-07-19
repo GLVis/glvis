@@ -484,9 +484,6 @@ void VisualizationSceneVector::Init()
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
    }
 
-   vectorlist = glGenLists(1);
-   displinelist = glGenLists(1);
-
    VisualizationSceneSolution::Init();
 
    PrepareVectorField();
@@ -518,9 +515,6 @@ void VisualizationSceneVector::Init()
 
 VisualizationSceneVector::~VisualizationSceneVector()
 {
-   glDeleteLists (displinelist, 1);
-   glDeleteLists (vectorlist, 1);
-
    delete sol;
 
    if (VecGridF)

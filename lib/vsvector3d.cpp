@@ -379,9 +379,6 @@ void VisualizationSceneVector3d::Init()
 
    SetScalarFunction();
 
-   vectorlist = glGenLists(1);
-   displinelist = glGenLists(1);
-
    VisualizationSceneSolution3d::Init();
 
    PrepareVectorField();
@@ -427,9 +424,6 @@ void VisualizationSceneVector3d::Init()
 
 VisualizationSceneVector3d::~VisualizationSceneVector3d()
 {
-   glDeleteLists (vectorlist, 1);
-   glDeleteLists (displinelist, 1);
-
    delete sol;
 
    if (VecGridF)
@@ -1637,7 +1631,7 @@ void VisualizationSceneVector3d::Draw()
    if (drawdisp)
    {
       gl->setStaticColor(1.f, 0.f, 0.f);
-      glCallList(displinelist);
+      displine_buf.draw();
       Set_Black_Material();
    }
 

@@ -13,7 +13,6 @@
 #define PLATFORM_GL_HPP
 
 #include <GL/glew.h>
-#ifndef __EMSCRIPTEN__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #ifdef __APPLE__
@@ -22,7 +21,6 @@
 #else
 #include <GL/gl.h>
 #include <GL/glu.h>
-#endif
 #endif
 
 #endif
