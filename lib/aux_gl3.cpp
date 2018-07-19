@@ -208,6 +208,8 @@ void TextBuffer::bufferData() {
                 e.rx, e.ry, e.rz, cur_x + g.w, -cur_y - g.h, g.tex_x + g.w / tex_w, g.h / tex_h, 0
             };
             buf_data.insert(buf_data.end(), tris, tris + 8 * 6 * sizeof(float));
+            e.w = (int)(cur_x + g.w);
+            e.h = std::max(e.h, (int)g.h);
         }
     }
     _size = buf_data.size() / 8;

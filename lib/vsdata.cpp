@@ -562,11 +562,16 @@ void VisualizationSceneScalarData::DrawCaption()
 
    int width = 0, height = 0;
 #ifdef GLVIS_USE_FREETYPE
-   GLuint vbo = GetFont()->BufferText(caption);
+   gl3::TextBuffer capt_buf;
+   capt_buf.addText(0, 0, 0, caption);
+   capt_buf.bufferData();
+   capt_buf.getObjectSize(caption, width, height);
 #endif
-   GlMatrix proj, modelview;
-   proj.identity();
-   modelview.identity();
+   GlMatrix proj_save = gl->projection;
+   GlMatrix mv_save = gl->modelView;
+
+   gl->projection.identity();
+   gl->modelView.identity();
 
    GLint viewport[4];
    gl->getViewport(viewport);
@@ -583,14 +588,13 @@ void VisualizationSceneScalarData::DrawCaption()
    }
 #else
    
-   modelview.translate(-(double)width/viewport[2],
-                        1.0-5*(double)height/viewport[3], 0.0);
+   gl->modelView.translate(-(double)width/viewport[2],
+                        1.0-5*(double)height/viewport[3], -1.0);
 #endif
 
-   modelview.mult(cam.RotMatrix());
-   modelview.mult(rotmat);
-   gl->setImmModelView(modelview);
-   gl->setImmProjection(proj);
+   gl->modelView.mult(cam.RotMatrix());
+   gl->modelView.mult(rotmat);
+   gl->loadMatrixUniforms();
     //glRasterPos3f(0.0f, 0.0f, 0.0f);
 #ifndef GLVIS_OGL3
    if (print) { gl2psText(caption.c_str(),"Times",8); }
@@ -598,27 +602,10 @@ void VisualizationSceneScalarData::DrawCaption()
 #ifndef GLVIS_USE_FREETYPE
    glCallLists(len, GL_UNSIGNED_BYTE, caption.c_str());
 #else
-   gl->setModeRenderText();
-    
-   int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
-   int loc_tex = GetGlState()->getAttribLoc(GlState::ATTR_TEXCOORD1);
-
-   GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
-   GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD1);
-   
-   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-   glVertexAttribPointer(loc_vtx, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, 0);
-   //glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 4, (void*)(sizeof(float) * 2));
-   glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void*)(sizeof(float) * 2));
-   GLint size = 0;
-   glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
-   glDrawArrays(GL_TRIANGLES, 0, size / (sizeof(float) * 4)); 
-
-   GetGlState()->disableAttribArray(GlState::ATTR_VERTEX);
-   GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD1);
-   GetGlState()->setModeColor();
+   capt_buf.drawObject();
 #endif
+   gl->projection = proj_save;
+   gl->modelView = mv_save;
    gl->loadMatrixUniforms();
 }
 

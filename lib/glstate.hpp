@@ -399,9 +399,6 @@ public:
             GLuint locUseColorTex = glGetUniformLocation(program, "useColorTex");
             glUniform1i(locUseColorTex, GL_TRUE);
             _shaderMode = RENDER_COLOR_TEX;
-            if (setUniforms) {
-                loadMatrixUniforms();
-            }
         }
     }
 
@@ -421,9 +418,6 @@ public:
             GLuint locUseColorTex = glGetUniformLocation(program, "useColorTex");
             glUniform1i(locUseColorTex, GL_FALSE);
             _shaderMode = RENDER_COLOR;
-            if (setUniforms) {
-                loadMatrixUniforms();
-            }
         }
     }
 

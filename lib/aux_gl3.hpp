@@ -285,6 +285,7 @@ private:
     struct _entry {
         float rx, ry, rz;
         std::string text;
+        int w, h;
         _entry() = default;
         _entry(float x, float y, float z, std::string txt)
             : rx(x), ry(y), rz(z), text(txt) { }
@@ -305,6 +306,17 @@ public:
     }
 
     void bufferData();
+
+    bool getObjectSize(std::string& text, int& w, int& h) {
+        for (auto& e : _data) {
+            if (e.text == text) {
+                w = e.w;
+                h = e.h;
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Draws the text.
