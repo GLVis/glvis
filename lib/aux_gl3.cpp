@@ -96,7 +96,12 @@ void VertexBuffer::bufferData() {
         return;
     }
     glBindBuffer(GL_ARRAY_BUFFER, *_handle);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * _pt_data.size(), _pt_data.data(), GL_STATIC_DRAW);
+    if (_allocated_size >= _pt_data.size()) {
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * _pt_data.size(), _pt_data.data());
+    } else {
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * _pt_data.size(), _pt_data.data(), GL_DYNAMIC_DRAW);
+        _allocated_size = _pt_data.size();
+    }
     _buffered_size = _pt_data.size();
 }
 

@@ -187,6 +187,7 @@ private:
     std::unique_ptr<GLuint> _handle;
     std::vector<float> _pt_data;
     int _buffered_size;
+    int _allocated_size;
 
     friend void GlBuilder::glEnd();
 public:
@@ -194,7 +195,8 @@ public:
     VertexBuffer(array_layout layout)
         : _layout(layout)
         , _handle(new GLuint)
-        , _buffered_size(0) {
+        , _buffered_size(0)
+        , _allocated_size(0) {
         glGenBuffers(1, _handle.get());
     }
 
@@ -208,6 +210,7 @@ public:
 
     void clear() {
         _pt_data.clear();
+        _buffered_size = 0;
     }
 
     array_layout getArrayLayout() { return _layout; }
