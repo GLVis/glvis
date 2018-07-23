@@ -9,19 +9,18 @@
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
 
-#ifndef GLVIS_VISUAL
-#define GLVIS_VISUAL
+#ifndef PLATFORM_GL_HPP
+#define PLATFORM_GL_HPP
 
-// Visualization header file
+#include <GL/glew.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#else
+#include <GL/gl.h>
+#include <GL/glu.h>
+#endif
 
-#include "vsdata.hpp"
-#include "material.hpp"
-#include "aux_vis.hpp"
-#include "openglvis.hpp"
-#include "vssolution.hpp"
-#include "vssolution3d.hpp"
-#include "vsvector.hpp"
-#include "vsvector3d.hpp"
-#include "threads.hpp"
-#include "aux_gl3.hpp"
 #endif

@@ -8,30 +8,49 @@
 // GLVis is free software; you can redistribute it and/or modify it under the
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
+#ifndef MATERIAL_HPP
+#define MATERIAL_HPP
 
-extern void Set_Material();
+struct Material
+{
+    float ambient[4];
+    float diffuse[4];
+    float specular[4];
+    float shininess;
+};
 
-extern void Set_Light();
+struct Light
+{
+    float position[4];
+    float diffuse[4];
+    float specular[4];
+};
 
-extern int Next_Material_And_Light();
+void Set_Material();
 
-extern void Set_Material_And_Light(int,int);
+void Set_Light();
 
-extern void Set_Black_Material();
+int Next_Material_And_Light();
 
-extern void Set_Background();
+void Set_Material_And_Light(int,int);
 
-extern void Toggle_Background();
+float Set_Black_Material();
 
-extern void Set_Transparency();
+void Set_Background();
 
-extern void Remove_Transparency();
+void Toggle_Background();
 
-extern int  Get_AntiAliasing();
-extern void Set_AntiAliasing();
-extern void Remove_AntiAliasing();
+void Set_Transparency();
 
-extern double Get_LineWidth();
-extern void Set_LineWidth(double);
-extern double Get_MS_LineWidth();
-extern void Set_MS_LineWidth(double);
+void Remove_Transparency();
+
+int  Get_AntiAliasing();
+void Set_AntiAliasing();
+void Remove_AntiAliasing();
+
+double Get_LineWidth();
+void Set_LineWidth(double);
+double Get_MS_LineWidth();
+void Set_MS_LineWidth(double);
+
+#endif

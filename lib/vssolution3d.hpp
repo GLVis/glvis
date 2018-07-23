@@ -13,6 +13,8 @@
 #define GLVIS_VSSOLUTION_3D
 
 #include "mfem.hpp"
+#include "aux_gl3.hpp"
+#include <map>
 using namespace mfem;
 
 class VisualizationSceneSolution3d : public VisualizationSceneScalarData
@@ -23,6 +25,14 @@ protected:
    int displlist, linelist;
    int cplane, cplanelist, cplanelineslist, lsurflist;
    int cp_drawmesh, cp_drawelems, drawlsurf;
+
+   //Our VBO indices + sizes
+   gl3::GlDrawable disp_buf[3];
+   gl3::GlDrawable line_buf;
+   gl3::GlDrawable cplane_buf;
+   gl3::GlDrawable cplines_buf;
+   gl3::GlDrawable lsurf_buf;
+   gl3::GlDrawable other_buf;
 
    double *node_pos;
 
@@ -47,7 +57,7 @@ protected:
                               int part = -1);
    void LiftRefinedSurf (int n, DenseMatrix &pointmat,
                          Vector &values, int *RG);
-   void DrawTetLevelSurf(const DenseMatrix &verts, const Vector &vals,
+   void DrawTetLevelSurf(gl3::GlDrawable& target, const DenseMatrix &verts, const Vector &vals,
                          const int *ind, const Array<double> &levels,
                          const DenseMatrix *grad = NULL);
 

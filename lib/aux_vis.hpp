@@ -12,14 +12,13 @@
 #ifndef GLVIS_AUX_VIS
 #define GLVIS_AUX_VIS
 
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glx.h>
+#include "platform_gl.hpp"
 
-#include "tk.h"
-#include "aux_gl.hpp"
-
+#include "sdl.hpp"
+#include "glstate.hpp"
+#include "font.hpp"
 #include "openglvis.hpp"
+#include "aux_gl3.hpp"
 
 extern GLuint fontbase;
 extern float MatAlpha;
@@ -40,18 +39,22 @@ void SendExposeEvent();
 void MyExpose();
 
 void MainLoop();
+
+SdlWindow * GetAppWindow();
+GlState * GetGlState();
+
 void AddIdleFunc(void (*Func)(void));
 void RemoveIdleFunc(void (*Func)(void));
 
-void LeftButtonDown  (AUX_EVENTREC *event);
-void LeftButtonLoc   (AUX_EVENTREC *event);
-void LeftButtonUp    (AUX_EVENTREC *event);
-void MiddleButtonDown(AUX_EVENTREC *event);
-void MiddleButtonLoc (AUX_EVENTREC *event);
-void MiddleButtonUp  (AUX_EVENTREC *event);
-void RightButtonDown (AUX_EVENTREC *event);
-void RightButtonLoc  (AUX_EVENTREC *event);
-void RightButtonUp   (AUX_EVENTREC *event);
+void LeftButtonDown  (EventInfo *event);
+void LeftButtonLoc   (EventInfo *event);
+void LeftButtonUp    (EventInfo *event);
+void MiddleButtonDown(EventInfo *event);
+void MiddleButtonLoc (EventInfo *event);
+void MiddleButtonUp  (EventInfo *event);
+void RightButtonDown (EventInfo *event);
+void RightButtonLoc  (EventInfo *event);
+void RightButtonUp   (EventInfo *event);
 
 void KeyCtrlP();
 void KeyS();
@@ -110,17 +113,19 @@ void CallKeySequence(const char *seq);
 void Cone();
 
 extern int MySetColorLogscale;
-void MySetColor(double val, double min, double max);
-void MySetColor(double val);
+void MySetColor(gl3::GlBuilder& builder, double val, double min, double max);
+//TODO: find a better way to return either texcoord or rgb
+float MySetColor (double val, double min, double max, float (&argb)[4]);
+float MySetColor (double val, float (&argb)[4]);
+void MySetColor(gl3::GlBuilder& builder, double val);
 void SetUseTexture(int ut);
 int GetUseTexture();
 int GetMultisample();
 void SetMultisample(int m);
 
 #ifdef GLVIS_USE_FREETYPE
-int RenderBitmapText(const char *text, int &width, int &heigth);
-void DrawBitmapText(); // Draws the last rendered bitmap text
-void DrawBitmapText(const char *text);
+GlVisFont * GetFont();
+void DrawBitmapText(const char *text, float x, float y, float z);
 int SetFontFile(const char *font_file, int height);
 int SetFont(const char *font_patterns[], int num_patterns, int height);
 #endif

@@ -100,7 +100,8 @@ SO_EXT = $(if $(NOTMAC),so,dylib)
 GLVIS_MULTISAMPLE  = 4
 GLVIS_MS_LINEWIDTH = $(if $(NOTMAC),1.4,0.01)
 GLVIS_FLAGS += -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
- -DGLVIS_MS_LINEWIDTH=$(GLVIS_MS_LINEWIDTH)
+ -DGLVIS_MS_LINEWIDTH=$(GLVIS_MS_LINEWIDTH)\
+ -DGLVIS_OGL3
 
 # Macro that searches for a file in a list of directories returning the first
 # directory that contains the file.
@@ -119,7 +120,7 @@ X11_LIB_DIR = $(call find_dir,libX11.$(SO_EXT),$(X11_LIB_SEARCH_PATHS))
 GL_OPTS = $(if $(X11_DIR),-I$(X11_DIR)/include)
 # for servers not supporting GLX 1.3:
 # GL_OPTS = -I$(X11_DIR)/include -DGLVIS_GLX10
-GL_LIBS = $(if $(X11_LIB_DIR),-L$(X11_LIB_DIR) )-lX11 -lGL -lGLU
+GL_LIBS = $(if $(X11_LIB_DIR),-L$(X11_LIB_DIR) )-lX11 -lGL -lGLEW -lSDL2
 GLVIS_FLAGS += $(GL_OPTS)
 GLVIS_LIBS  += $(GL_LIBS)
 
@@ -162,16 +163,16 @@ CCC  = $(strip $(CXX) $(GLVIS_FLAGS))
 Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
 # generated with 'echo lib/*.c*'
-SOURCE_FILES = lib/aux_gl.cpp lib/aux_vis.cpp lib/gl2ps.c lib/material.cpp \
- lib/openglvis.cpp lib/threads.cpp lib/tk.cpp lib/vsdata.cpp \
- lib/vssolution3d.cpp lib/vssolution.cpp lib/vsvector3d.cpp lib/vsvector.cpp
+SOURCE_FILES = lib/aux_vis.cpp lib/aux_gl3.cpp lib/font.cpp lib/sdl.cpp lib/gl2ps.c \
+ lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/threads.cpp lib/vsdata.cpp \
+ lib/vssolution3d.cpp lib/vssolution.cpp lib/vsvector3d.cpp lib/vsvector.cpp lib/glstate.cpp
 OBJECT_FILES1 = $(SOURCE_FILES:.cpp=.o)
 OBJECT_FILES = $(OBJECT_FILES1:.c=.o)
 # generated with 'echo lib/*.h*'
-HEADER_FILES = lib/aux_gl.hpp lib/aux_vis.hpp lib/gl2ps.h lib/material.hpp \
- lib/openglvis.hpp lib/palettes.hpp lib/threads.hpp lib/tk.h lib/visual.hpp \
+HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/sdl.hpp lib/gl2ps.h lib/material.hpp \
+ lib/openglvis.hpp lib/palettes.hpp lib/threads.hpp lib/visual.hpp \
  lib/vsdata.hpp lib/vssolution3d.hpp lib/vssolution.hpp lib/vsvector3d.hpp \
- lib/vsvector.hpp
+ lib/vsvector.hpp lib/glstate.hpp
 
 # Targets
 

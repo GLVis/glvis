@@ -379,9 +379,6 @@ void VisualizationSceneVector3d::Init()
 
    SetScalarFunction();
 
-   vectorlist = glGenLists(1);
-   displinelist = glGenLists(1);
-
    VisualizationSceneSolution3d::Init();
 
    PrepareVectorField();
@@ -397,39 +394,36 @@ void VisualizationSceneVector3d::Init()
    {
       // init = 1;
 
-      auxKeyFunc (AUX_h, VectorKeyHPressed);
-      auxKeyFunc (AUX_H, VectorKeyHPressed);
+      wnd->setOnKeyDown('h', VectorKeyHPressed);
+      wnd->setOnKeyDown('H', VectorKeyHPressed);
 
-      auxKeyFunc (AUX_d, KeyDPressed);
-      auxKeyFunc (AUX_D, KeyDPressed);
+      wnd->setOnKeyDown('d', KeyDPressed);
+      wnd->setOnKeyDown('D', KeyDPressed);
 
-      auxKeyFunc (AUX_n, KeyNPressed);
-      auxKeyFunc (AUX_N, KeyNPressed);
+      wnd->setOnKeyDown('n', KeyNPressed);
+      wnd->setOnKeyDown('N', KeyNPressed);
 
-      auxKeyFunc (AUX_b, KeyBPressed);
-      auxKeyFunc (AUX_B, KeyBPressed);
+      wnd->setOnKeyDown('b', KeyBPressed);
+      wnd->setOnKeyDown('B', KeyBPressed);
 
-      auxKeyFunc (AUX_r, KeyrPressed); // adds another function to 'r' and 'R'
-      auxKeyFunc (AUX_R, KeyRPressed); // the other function is in vsdata.cpp
+      wnd->setOnKeyDown('r', KeyrPressed); // adds another function to 'r' and 'R'
+      wnd->setOnKeyDown('R', KeyRPressed); // the other function is in vsdata.cpp
 
-      auxKeyFuncReplace (AUX_u, KeyuPressed); // Keys u, U are also used in
-      auxKeyFuncReplace (AUX_U, KeyUPressed); // VisualizationSceneSolution3d
+      wnd->setOnKeyDown('u', KeyuPressed); // Keys u, U are also used in
+      wnd->setOnKeyDown('U', KeyUPressed); // VisualizationSceneSolution3d
 
-      auxKeyFuncReplace (AUX_w, KeywPressed); // Keys w, W are also used in
-      auxKeyFuncReplace (AUX_W, KeyWPressed); // VisualizationSceneSolution3d
+      wnd->setOnKeyDown('w', KeywPressed); // Keys w, W are also used in
+      wnd->setOnKeyDown('W', KeyWPressed); // VisualizationSceneSolution3d
 
-      auxKeyFuncReplace (AUX_v, KeyvPressed); // Keys v, V are also used in
-      auxKeyFuncReplace (AUX_V, KeyVPressed); // VisualizationSceneSolution3d
+      wnd->setOnKeyDown('v', KeyvPressed); // Keys v, V are also used in
+      wnd->setOnKeyDown('V', KeyVPressed); // VisualizationSceneSolution3d
 
-      auxKeyFunc(AUX_F, VectorKeyFPressed);
+      wnd->setOnKeyDown('F', VectorKeyFPressed);
    }
 }
 
 VisualizationSceneVector3d::~VisualizationSceneVector3d()
 {
-   glDeleteLists (vectorlist, 1);
-   glDeleteLists (displinelist, 1);
-
    delete sol;
 
    if (VecGridF)
@@ -511,7 +505,7 @@ void VisualizationSceneVector3d::PrepareFlat()
 {
    int i, j;
 
-   glNewList (displlist, GL_COMPILE);
+   disp_buf[0].clear();
 
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -552,14 +546,14 @@ void VisualizationSceneVector3d::PrepareFlat()
       }
       if (j == 3)
       {
-         DrawTriangle(p, c, minv, maxv);
+         DrawTriangle(p, c, minv, maxv, disp_buf[0]);
       }
       else
       {
-         DrawQuad(p, c, minv, maxv);
+         DrawQuad(p, c, minv, maxv, disp_buf[0]);
       }
    }
-   glEndList();
+   disp_buf[0].buffer();
 }
 
 void VisualizationSceneVector3d::PrepareFlat2()
@@ -582,7 +576,7 @@ void VisualizationSceneVector3d::PrepareFlat2()
                      (z[1]-z[0])*(z[1]-z[0]) );
    double sc = FaceShiftScale * bbox_diam;
 
-   glNewList (displlist, GL_COMPILE);
+   disp_buf[2].clear();
 
    vmin = numeric_limits<double>::infinity();
    vmax = -vmin;
@@ -714,10 +708,10 @@ void VisualizationSceneVector3d::PrepareFlat2()
       {
          have_normals = -1 - have_normals;
       }
-      DrawPatch(pointmat, values, normals, sides, RefG->RefGeoms,
+      DrawPatch(disp_buf[2], pointmat, values, normals, sides, RefG->RefGeoms,
                 minv, maxv, have_normals);
    }
-   glEndList();
+   disp_buf[2].buffer();
    cout << "VisualizationSceneVector3d::PrepareFlat2() : [min,max] = ["
         << vmin << "," << vmax << "]" << endl;
 }
@@ -738,7 +732,8 @@ void VisualizationSceneVector3d::Prepare()
          break;
    }
 
-   glNewList(displlist, GL_COMPILE);
+   disp_buf[1].clear();
+   gl3::GlBuilder draw = disp_buf[1].createBuilder();
 
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -811,11 +806,11 @@ void VisualizationSceneVector3d::Prepare()
          switch (el_type)
          {
             case Element::TRIANGLE:
-               glBegin (GL_TRIANGLES);
+               draw.glBegin (GL_TRIANGLES);
                break;
 
             case Element::QUADRILATERAL:
-               glBegin (GL_QUADS);
+               draw.glBegin (GL_QUADS);
                break;
          }
          if (dim == 3)
@@ -836,14 +831,14 @@ void VisualizationSceneVector3d::Prepare()
          }
          for (j = 0; j < pointmat.Size(); j++)
          {
-            MySetColor((*sol)(vertices[j]), minv, maxv);
-            glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
-            glVertex3dv(&pointmat(0, j));
+            MySetColor(draw, (*sol)(vertices[j]), minv, maxv);
+            draw.glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
+            draw.glVertex3dv(&pointmat(0, j));
          }
-         glEnd();
+         draw.glEnd();
       }
    }
-   glEndList();
+   disp_buf[1].buffer();
 }
 
 void VisualizationSceneVector3d::PrepareLines()
@@ -862,7 +857,7 @@ void VisualizationSceneVector3d::PrepareLines()
    Array<int> vertices;
    double point[4][4];
 
-   glNewList(linelist, GL_COMPILE);
+   line_buf.clear();
 
    for (i = 0; i < ne; i++)
    {
@@ -898,17 +893,17 @@ void VisualizationSceneVector3d::PrepareLines()
          pointmat(1, j) += (*soly)(vertices[j])*(ianim)/ianimmax;
          pointmat(2, j) += (*solz)(vertices[j])*(ianim)/ianimmax;
       }
-
+      gl3::GlBuilder line = line_buf.createBuilder();
       switch (drawmesh)
       {
          case 1:
-            glBegin(GL_LINE_LOOP);
+            line.glBegin(GL_LINE_LOOP);
 
             for (j = 0; j < pointmat.Size(); j++)
             {
-               glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j));
+               line.glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j));
             }
-            glEnd();
+            line.glEnd();
             break;
 
          case 2:
@@ -920,11 +915,11 @@ void VisualizationSceneVector3d::PrepareLines()
                }
                point[j][3] = (*sol)(vertices[j]);
             }
-            DrawPolygonLevelLines(point[0], pointmat.Size(), level, false);
+            DrawPolygonLevelLines(point[0], pointmat.Size(), level, false, line);
             break;
       }
    }
-   glEndList();
+   line_buf.buffer();
 }
 
 void VisualizationSceneVector3d::PrepareLines2()
@@ -932,7 +927,8 @@ void VisualizationSceneVector3d::PrepareLines2()
    int i, j, k, fn, fo, di = 0;
    double bbox_diam;
 
-   glNewList (linelist, GL_COMPILE);
+   line_buf.clear();
+   gl3::GlBuilder line = line_buf.createBuilder();
 
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -1026,7 +1022,7 @@ void VisualizationSceneVector3d::PrepareLines2()
       if (drawmesh == 1)
       {
          Array<int> &REdges = RefG->RefEdges;
-         glBegin (GL_LINES);
+         line.glBegin (GL_LINES);
          for (k = 0; k < REdges.Size()/2; k++)
          {
             int *RE = &(REdges[2*k]);
@@ -1034,21 +1030,21 @@ void VisualizationSceneVector3d::PrepareLines2()
             if (sc == 0.0)
             {
                for (j = 0; j < 2; j++)
-                  glVertex3d (pointmat(0, RE[j]), pointmat(1, RE[j]),
-                              pointmat(2, RE[j]));
+                  line.glVertex3d (pointmat(0, RE[j]), pointmat(1, RE[j]),
+                                   pointmat(2, RE[j]));
             }
             else
             {
                for (j = 0; j < 2; j++)
                {
                   double val = sc * (values(RE[j]) - minv) / (maxv - minv);
-                  glVertex3d (pointmat(0, RE[j])+val*norm[0],
-                              pointmat(1, RE[j])+val*norm[1],
-                              pointmat(2, RE[j])+val*norm[2]);
+                  line.glVertex3d (pointmat(0, RE[j])+val*norm[0],
+                                   pointmat(1, RE[j])+val*norm[1],
+                                   pointmat(2, RE[j])+val*norm[2]);
                }
             }
          }
-         glEnd();
+         line.glEnd();
       }
       else if (drawmesh == 2)
       {
@@ -1094,11 +1090,11 @@ void VisualizationSceneVector3d::PrepareLines2()
                   point[j][3] = values(RG[j]);
                }
             }
-            DrawPolygonLevelLines(point[0], sides, level, false);
+            DrawPolygonLevelLines(point[0], sides, level, false, line);
          }
       }
    }
-   glEndList();
+   line_buf.buffer();
 }
 
 void VisualizationSceneVector3d::PrepareDisplacedMesh()
@@ -1109,11 +1105,12 @@ void VisualizationSceneVector3d::PrepareDisplacedMesh()
    Array<int> vertices;
 
    // prepare the displaced mesh
-   glNewList(displinelist, GL_COMPILE);
+   displine_buf.clear();
+   gl3::GlBuilder builder = displine_buf.createBuilder();
 
    for (i = 0; i < ne; i++)
    {
-      glBegin(GL_LINE_LOOP);
+      builder.glBegin(GL_LINE_LOOP);
       if (dim == 3)
       {
          mesh->GetBdrPointMatrix (i, pointmat);
@@ -1134,11 +1131,11 @@ void VisualizationSceneVector3d::PrepareDisplacedMesh()
 
       for (j = 0; j < pointmat.Size(); j++)
       {
-         glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j) );
+         builder.glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j) );
       }
-      glEnd();
+      builder.glEnd();
    }
-   glEndList();
+   displine_buf.buffer();
 }
 
 void ArrowsDrawOrNot (Array<int> l[], int nv, Vector & sol,
@@ -1201,7 +1198,8 @@ int ArrowDrawOrNot (double v, int nl, Array<double> & level)
    return 0;
 }
 
-void VisualizationSceneVector3d::DrawVector(int type, double v0, double v1,
+void VisualizationSceneVector3d::DrawVector(gl3::GlBuilder& builder,
+                                            int type, double v0, double v1,
                                             double v2, double sx, double sy,
                                             double sz, double s)
 {
@@ -1217,7 +1215,7 @@ void VisualizationSceneVector3d::DrawVector(int type, double v0, double v1,
          arrow_type = 0;
          arrow_scaling_type = 0;
          // glColor3f(0, 0, 0); // color is set in Draw()
-         Arrow(v0,v1,v2,sx,sy,sz,s);
+         Arrow(builder,v0,v1,v2,sx,sy,sz,s);
       }
       break;
 
@@ -1225,8 +1223,8 @@ void VisualizationSceneVector3d::DrawVector(int type, double v0, double v1,
       {
          arrow_type = 1;
          arrow_scaling_type = 1;
-         MySetColor(s, minv, maxv);
-         Arrow(v0,v1,v2,sx,sy,sz,h,0.125);
+         MySetColor(builder, s, minv, maxv);
+         Arrow(builder,v0,v1,v2,sx,sy,sz,h,0.125);
       }
       break;
 
@@ -1235,8 +1233,8 @@ void VisualizationSceneVector3d::DrawVector(int type, double v0, double v1,
          arrow_type = 1;
          arrow_scaling_type = 1;
          // MySetColor(s,maxv,minv);
-         MySetColor(s, minv, maxv);
-         Arrow(v0,v1,v2,sx,sy,sz,h*s/maxv,0.125);
+         MySetColor(builder, s, minv, maxv);
+         Arrow(builder,v0,v1,v2,sx,sy,sz,h*s/maxv,0.125);
       }
       break;
 
@@ -1245,8 +1243,8 @@ void VisualizationSceneVector3d::DrawVector(int type, double v0, double v1,
       {
          arrow_type = 1;
          arrow_scaling_type = 1;
-         glColor3f(0.3, 0.3, 0.3);
-         Arrow(v0,v1,v2,sx,sy,sz,hh*s/maxv,0.125);
+         builder.glColor3f(0.3, 0.3, 0.3);
+         Arrow(builder,v0,v1,v2,sx,sy,sz,hh*s/maxv,0.125);
       }
       break;
    }
@@ -1257,7 +1255,8 @@ void VisualizationSceneVector3d::PrepareVectorField()
    int i, nv = mesh -> GetNV();
    double *vertex;
 
-   glNewList(vectorlist, GL_COMPILE);
+   vector_buf.clear();
+   gl3::GlBuilder builder = vector_buf.createBuilder();
 
    switch (drawvector)
    {
@@ -1269,7 +1268,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
             if (drawmesh != 2 || ArrowDrawOrNot((*sol)(i), nl, level))
             {
                vertex = mesh->GetVertex(i);
-               DrawVector(drawvector, vertex[0], vertex[1], vertex[2],
+               DrawVector(builder, drawvector, vertex[0], vertex[1], vertex[2],
                           (*solx)(i), (*soly)(i), (*solz)(i), (*sol)(i));
             }
          break;
@@ -1282,7 +1281,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
             if (drawmesh != 2 || ArrowDrawOrNot((*sol)(i), nl, level))
             {
                vertex = mesh->GetVertex(i);
-               DrawVector(drawvector, vertex[0], vertex[1], vertex[2],
+               DrawVector(builder, drawvector, vertex[0], vertex[1], vertex[2],
                           (*solx)(i), (*soly)(i), (*solz)(i), (*sol)(i));
             }
       }
@@ -1297,7 +1296,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
             if (drawmesh != 2 || ArrowDrawOrNot((*sol)(i), nl, level))
             {
                vertex = mesh->GetVertex(i);
-               DrawVector(drawvector, vertex[0], vertex[1], vertex[2],
+               DrawVector(builder, drawvector, vertex[0], vertex[1], vertex[2],
                           (*solx)(i), (*soly)(i), (*solz)(i), (*sol)(i));
             }
       }
@@ -1316,7 +1315,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
             for (j = 0; j < l[i].Size(); j++)
             {
                vertex = mesh->GetVertex( l[i][j] );
-               DrawVector(drawvector, vertex[0], vertex[1], vertex[2],
+               DrawVector(builder, drawvector, vertex[0], vertex[1], vertex[2],
                           (*solx)(l[i][j]), (*soly)(l[i][j]), (*solz)(l[i][j]),
                           (*sol)(l[i][j]));
             }
@@ -1349,7 +1348,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
                i = vertices[j];
                if (vert_marker[i]) { continue; }
                vertex = mesh->GetVertex(i);
-               DrawVector(drawvector, vertex[0], vertex[1], vertex[2],
+               DrawVector(builder, drawvector, vertex[0], vertex[1], vertex[2],
                           (*solx)(i), (*soly)(i), (*solz)(i), (*sol)(i));
                vert_marker[i] = true;
             }
@@ -1357,8 +1356,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
       }
       break;
    }
-   glEndList();
-
+   vector_buf.buffer();
 }
 
 void VisualizationSceneVector3d::PrepareCuttingPlane()
@@ -1374,7 +1372,8 @@ void VisualizationSceneVector3d::PrepareCuttingPlane()
    int flag[4], ind[6][2]= {{0,3},{0,2},{0,1},{1,2},{1,3},{2,3}};
    double t, point[4][4], val[4][3];
 
-   glNewList(cplanelist, GL_COMPILE);
+   cplane_buf.clear();
+   gl3::GlBuilder builder = cplane_buf.createBuilder();
 
    DenseMatrix pointmat(3,4);
    double * coord;
@@ -1465,41 +1464,41 @@ void VisualizationSceneVector3d::PrepareCuttingPlane()
          {
             if (drawvector != 5)
             {
-               glBegin (GL_POLYGON);
+               builder.glBegin (GL_POLYGON);
                for (j=0; j<n; j++)
                {
-                  MySetColor ( point[j][3] , maxv , minv);
-                  glNormal3dv (CuttingPlane -> Equation());
-                  glVertex3d (point[j][0],point[j][1],point[j][2]);
+                  MySetColor ( builder, point[j][3] , maxv , minv);
+                  builder.glNormal3dv (CuttingPlane -> Equation());
+                  builder.glVertex3d (point[j][0],point[j][1],point[j][2]);
                }
             }
-            glEnd();
+            builder.glEnd();
             if (drawvector)
                for (j=0; j<n; j++)
-                  DrawVector(drawvector, point[n][0], point[n][1], point[n][2],
+                  DrawVector(builder, drawvector, point[n][0], point[n][1], point[n][2],
                              val[n][0],val[n][1], val[n][2], point[n][3]);
          }
          else
          {
             if (drawvector != 5)
             {
-               glBegin (GL_POLYGON);
+               builder.glBegin (GL_POLYGON);
                for (j=n-1; j>=0; j--)
                {
-                  MySetColor ( point[j][3] , minv , maxv);
-                  glNormal3dv (CuttingPlane -> Equation());
-                  glVertex3d (point[j][0],point[j][1],point[j][2]);
+                  MySetColor ( builder, point[j][3] , minv , maxv);
+                  builder.glNormal3dv (CuttingPlane -> Equation());
+                  builder.glVertex3d (point[j][0],point[j][1],point[j][2]);
                }
             }
-            glEnd();
+            builder.glEnd();
             if (drawvector)
                for (j=n-1; j>=0; j--)
-                  DrawVector(drawvector, point[n][0], point[n][1], point[n][2],
+                  DrawVector(builder, drawvector, point[n][0], point[n][1], point[n][2],
                              val[n][0],val[n][1], val[n][2], point[n][3]);
          }
       }
    }
-   glEndList();
+   cplane_buf.buffer();
 }
 
 void VisualizationSceneVector3d::Draw()
@@ -1512,14 +1511,14 @@ void VisualizationSceneVector3d::Draw()
    // draw colored faces
    glPolygonOffset (1, 1);
    glEnable (GL_POLYGON_OFFSET_FILL);
-   glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+   //glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
    // model transformation
    ModelView();
 
-   glDisable(GL_CLIP_PLANE0);
+   gl->disableClipPlane();
    // draw colorbar
-   glDisable(GL_LIGHTING);
+   gl->disableLight();
    if (colorbar)
    {
       if (drawvector == 4)
@@ -1539,8 +1538,8 @@ void VisualizationSceneVector3d::Draw()
    // define and enable the clipping plane
    if (cplane)
    {
-      glClipPlane(GL_CLIP_PLANE0, CuttingPlane->Equation());
-      glEnable(GL_CLIP_PLANE0);
+      gl->setClipPlane(CuttingPlane->Equation());
+      gl->enableClipPlane();
    }
 
    if (MatAlpha < 1.0)
@@ -1550,38 +1549,38 @@ void VisualizationSceneVector3d::Draw()
 
    if (GetUseTexture())
    {
-      glEnable (GL_TEXTURE_1D);
-      glColor4d(1, 1, 1, 1);
+      gl->setModeColorTexture();
+      gl->setStaticColor(1, 1, 1, 1);
    }
 
    Set_Material();
    if (light)
    {
-      glEnable(GL_LIGHTING);
+      gl->enableLight();
    }
 
    // draw vector field
    if (drawvector == 2 || drawvector == 3)
    {
-      glCallList(vectorlist);
+       vector_buf.draw();
    }
 
    // draw elements
    if (drawelems)
    {
-      glCallList(displlist);
+       disp_buf[shading].draw();
    }
 
    if (cplane && cp_drawelems)
    {
-      glDisable(GL_CLIP_PLANE0);
-      glCallList(cplanelist);
-      glEnable(GL_CLIP_PLANE0);
+      gl->disableClipPlane();
+      cplane_buf.draw();
+      gl->enableClipPlane();
    }
 
    if (GetUseTexture())
    {
-      glDisable(GL_TEXTURE_1D);
+      gl->setModeColor();
    }
 
    if (MatAlpha < 1.0)
@@ -1591,31 +1590,31 @@ void VisualizationSceneVector3d::Draw()
 
    if (light)
    {
-      glDisable(GL_LIGHTING);
+      gl->disableLight();
    }
 
    if (drawvector > 3)
    {
-      glCallList(vectorlist);
+      vector_buf.draw();
    }
 
    Set_Black_Material();
 
    if (drawvector == 1)
    {
-      glCallList(vectorlist);
+      vector_buf.draw();
    }
 
    // ruler may have mixture of polygons and lines
    if (cplane)
    {
-      glDisable(GL_CLIP_PLANE0);
+      gl->disableClipPlane();
       DrawRuler();
       if (cp_drawmesh)
       {
-         glCallList(cplanelineslist);
+         cplines_buf.draw();
       }
-      glEnable(GL_CLIP_PLANE0);
+      gl->enableClipPlane();
    }
    else
    {
@@ -1625,29 +1624,26 @@ void VisualizationSceneVector3d::Draw()
    // draw lines
    if (drawmesh)
    {
-      glCallList(linelist);
+      line_buf.draw();
    }
 
    // draw displacement
    if (drawdisp)
    {
-      glColor3f(1.0f, 0.0f, 0.0f);
-      glCallList(displinelist);
+      gl->setStaticColor(1.f, 0.f, 0.f);
+      displine_buf.draw();
       Set_Black_Material();
    }
 
    if (cplane)
    {
-      glDisable(GL_CLIP_PLANE0);
+      gl->disableClipPlane();
    }
 
    // draw axes
    if (drawaxes)
    {
-      glCallList(axeslist);
+      axes_buf.draw();
       DrawCoordinateCross();
    }
-
-   glFlush();
-   auxSwapBuffers();
 }

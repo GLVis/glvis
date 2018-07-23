@@ -14,14 +14,13 @@
 #include <fstream>
 #include <cmath>
 #include <ctime>
-#include <X11/keysym.h>
 
 #include "mfem.hpp"
 using namespace mfem;
-
+#include "sdl.hpp"
 #include "palettes.hpp"
-#include "gl2ps.h"
 #include "visual.hpp"
+#include "gl2ps.h"
 
 #if defined(GLVIS_USE_LIBTIFF)
 #include "tiffio.h"
@@ -29,12 +28,7 @@ using namespace mfem;
 #include <png.h>
 #endif
 
-#ifdef GLVIS_USE_FREETYPE
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include FT_GLYPH_H
-#include <fontconfig/fontconfig.h>
-#endif
+#include "font.hpp"
 
 string fontname;
 GLuint fontbase;
@@ -50,7 +44,22 @@ static int glvis_multisample = GLVIS_MULTISAMPLE;
 static int glvis_multisample = -1;
 #endif
 
+//TODO: anything but this
+SdlWindow * wnd;
+GlState * state;
+
+SdlWindow * GetAppWindow()
+{
+    return wnd;
+}
+
+GlState * GetGlState()
+{
+    return state;
+}
+
 void MyExpose(GLsizei w, GLsizei h);
+void MyExpose();
 
 int InitVisualization (const char name[], int x, int y, int w, int h)
 {
@@ -58,24 +67,30 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 
    if (!init)
    {
-      Init_Palettes();
       init = 1;
    }
 
 #ifdef GLVIS_DEBUG
    cout << "OpenGL Visualization" << endl;
 #endif
-
-   GLenum mode = AUX_DOUBLE | AUX_RGBA | AUX_DEPTH;
+   wnd = new SdlWindow(name, w, h);
+   // GLenum mode = AUX_DOUBLE | AUX_RGBA | AUX_DEPTH;
    // mode |= (AUX_ALPHA | AUX_ACCUM);
-   auxInitDisplayMode(mode);
-   auxInitPosition(x, y, w, h);
-   if (auxInitWindow(name) == GL_FALSE)
-   {
+   if (!wnd->isWindowInitialized()) {
       return 1;
    }
+   wnd->createGlContext();
+   if (!wnd->isGlInitialized()) {
+       return 1;
+   }
 
-   Set_Texture_Image();
+   state = new GlState();
+   if (!state->compileShaders()) {
+       return 1;
+   }
+   state->initShaderState();
+
+   paletteInit();
 
 #ifdef GLVIS_DEBUG
    cout << "Window should be up" << endl;
@@ -100,174 +115,90 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    SetUseTexture(0);
 
    // auxReshapeFunc (MyReshape); // not needed, MyExpose calls it
-   auxReshapeFunc (NULL);
-   auxExposeFunc (MyExpose);
+   // auxReshapeFunc (NULL);
+   void (*exposeFunc)(void) = MyExpose;
+   wnd->setOnExpose(exposeFunc);
 
-   auxMouseFunc (AUX_LEFTBUTTON, AUX_MOUSEDOWN, LeftButtonDown);
-   auxMouseFunc (AUX_LEFTBUTTON, AUX_MOUSEUP, LeftButtonUp);
-   auxMouseFunc (AUX_LEFTBUTTON, AUX_MOUSELOC, LeftButtonLoc);
-   auxMouseFunc (AUX_MIDDLEBUTTON, AUX_MOUSEDOWN, MiddleButtonDown);
-   auxMouseFunc (AUX_MIDDLEBUTTON, AUX_MOUSEUP, MiddleButtonUp);
-   auxMouseFunc (AUX_MIDDLEBUTTON, AUX_MOUSELOC, MiddleButtonLoc);
-   auxMouseFunc (AUX_RIGHTBUTTON, AUX_MOUSEDOWN, RightButtonDown);
-   auxMouseFunc (AUX_RIGHTBUTTON, AUX_MOUSEUP, RightButtonUp);
-   auxMouseFunc (AUX_RIGHTBUTTON, AUX_MOUSELOC, RightButtonLoc);
+   wnd->setOnMouseDown(SDL_BUTTON_LEFT, LeftButtonDown);
+   wnd->setOnMouseUp(SDL_BUTTON_LEFT, LeftButtonUp);
+   wnd->setOnMouseMove(SDL_BUTTON_LEFT, LeftButtonLoc);
+   wnd->setOnMouseDown(SDL_BUTTON_MIDDLE, MiddleButtonDown);
+   wnd->setOnMouseUp(SDL_BUTTON_MIDDLE, MiddleButtonUp);
+   wnd->setOnMouseMove(SDL_BUTTON_MIDDLE, MiddleButtonLoc);
+   wnd->setOnMouseDown(SDL_BUTTON_RIGHT, RightButtonDown);
+   wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
+   wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
 
    // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
-   auxKeyFunc (AUX_S, KeyS);
+   wnd->setOnKeyDown (SDLK_s, KeyS);
 
-   auxKeyFunc (AUX_q, KeyQPressed);
-   auxKeyFunc (AUX_Q, KeyQPressed);
+   wnd->setOnKeyDown (SDLK_q, KeyQPressed);
+   //wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
 
-   auxModKeyFunc (AUX_LEFT, KeyLeftPressed);
-   auxModKeyFunc (AUX_RIGHT, KeyRightPressed);
-   auxModKeyFunc (AUX_UP, KeyUpPressed);
-   auxModKeyFunc (AUX_DOWN, KeyDownPressed);
+   wnd->setOnKeyDown (SDLK_LEFT, KeyLeftPressed);
+   wnd->setOnKeyDown (SDLK_RIGHT, KeyRightPressed);
+   wnd->setOnKeyDown (SDLK_UP, KeyUpPressed);
+   wnd->setOnKeyDown (SDLK_DOWN, KeyDownPressed);
 
-   auxKeyFunc (XK_KP_0, Key0Pressed);
-   auxKeyFunc (XK_KP_1, Key1Pressed);
-   auxKeyFunc (XK_KP_2, Key2Pressed);
-   auxKeyFunc (XK_KP_3, Key3Pressed);
-   auxKeyFunc (XK_KP_4, Key4Pressed);
-   auxKeyFunc (XK_KP_5, Key5Pressed);
-   auxKeyFunc (XK_KP_6, Key6Pressed);
-   auxKeyFunc (XK_KP_7, Key7Pressed);
-   auxKeyFunc (XK_KP_8, Key8Pressed);
-   auxKeyFunc (XK_KP_9, Key9Pressed);
+   wnd->setOnKeyDown (SDLK_KP_0, Key0Pressed);
+   wnd->setOnKeyDown (SDLK_KP_1, Key1Pressed);
+   wnd->setOnKeyDown (SDLK_KP_2, Key2Pressed);
+   wnd->setOnKeyDown (SDLK_KP_3, Key3Pressed);
+   wnd->setOnKeyDown (SDLK_KP_4, Key4Pressed);
+   wnd->setOnKeyDown (SDLK_KP_5, Key5Pressed);
+   wnd->setOnKeyDown (SDLK_KP_6, Key6Pressed);
+   wnd->setOnKeyDown (SDLK_KP_7, Key7Pressed);
+   wnd->setOnKeyDown (SDLK_KP_8, Key8Pressed);
+   wnd->setOnKeyDown (SDLK_KP_9, Key9Pressed);
 
-   auxKeyFunc (XK_KP_Subtract, KeyMinusPressed);
-   auxKeyFunc (XK_KP_Add, KeyPlusPressed);
+   wnd->setOnKeyDown (SDLK_KP_MEMSUBTRACT, KeyMinusPressed);
+   wnd->setOnKeyDown (SDLK_KP_MEMADD, KeyPlusPressed);
 
-   auxKeyFunc (XK_KP_Decimal, KeyDeletePressed);
-   auxKeyFunc (XK_KP_Enter, KeyEnterPressed);
+   wnd->setOnKeyDown (SDLK_KP_DECIMAL, KeyDeletePressed);
+   wnd->setOnKeyDown (SDLK_KP_ENTER, KeyEnterPressed);
 
-   auxKeyFunc (XK_period, KeyDeletePressed);
-   auxKeyFunc (TK_RETURN, KeyEnterPressed);
+   wnd->setOnKeyDown (SDLK_PERIOD, KeyDeletePressed);
+   wnd->setOnKeyDown (SDLK_RETURN, KeyEnterPressed);
 
-   auxKeyFunc (XK_0, Key0Pressed);
-   auxKeyFunc (XK_1, Key1Pressed);
-   auxKeyFunc (XK_2, Key2Pressed);
-   auxKeyFunc (XK_3, Key3Pressed);
-   auxKeyFunc (XK_4, Key4Pressed);
-   auxKeyFunc (XK_5, Key5Pressed);
-   auxKeyFunc (XK_6, Key6Pressed);
-   auxKeyFunc (XK_7, Key7Pressed);
-   auxKeyFunc (XK_8, Key8Pressed);
-   auxKeyFunc (XK_9, Key9Pressed);
+   wnd->setOnKeyDown (SDLK_0, Key0Pressed);
+   wnd->setOnKeyDown (SDLK_1, Key1Pressed);
+   wnd->setOnKeyDown (SDLK_2, Key2Pressed);
+   wnd->setOnKeyDown (SDLK_3, Key3Pressed);
+   wnd->setOnKeyDown (SDLK_4, Key4Pressed);
+   wnd->setOnKeyDown (SDLK_5, Key5Pressed);
+   wnd->setOnKeyDown (SDLK_6, Key6Pressed);
+   wnd->setOnKeyDown (SDLK_7, Key7Pressed);
+   wnd->setOnKeyDown (SDLK_8, Key8Pressed);
+   wnd->setOnKeyDown (SDLK_9, Key9Pressed);
 
-   auxKeyFunc (XK_minus, KeyMinusPressed);
-   auxKeyFunc (XK_plus, KeyPlusPressed);
-   auxKeyFunc (XK_equal, KeyPlusPressed);
+   wnd->setOnKeyDown (SDLK_MINUS, KeyMinusPressed);
+   wnd->setOnKeyDown (SDLK_PLUS, KeyPlusPressed);
+   wnd->setOnKeyDown (SDLK_EQUALS, KeyPlusPressed);
 
-   auxKeyFunc (AUX_j, KeyJPressed);
-   auxKeyFunc (AUX_J, KeyJPressed);
+   wnd->setOnKeyDown (SDLK_j, KeyJPressed);
+   //wnd->setOnKeyDown (AUX_J, KeyJPressed);
 
-   auxKeyFunc (XK_KP_Multiply, ZoomIn);
-   auxKeyFunc (XK_KP_Divide, ZoomOut);
+   wnd->setOnKeyDown (SDLK_KP_MULTIPLY, ZoomIn);
+   wnd->setOnKeyDown (SDLK_KP_DIVIDE, ZoomOut);
 
-   auxKeyFunc (XK_asterisk, ZoomIn);
-   auxKeyFunc (XK_slash, ZoomOut);
+   wnd->setOnKeyDown (SDLK_ASTERISK, ZoomIn);
+   wnd->setOnKeyDown (SDLK_SLASH, ZoomOut);
 
-   auxKeyFunc (XK_bracketleft, ScaleDown);
-   auxKeyFunc (XK_bracketright, ScaleUp);
-   auxKeyFunc (XK_at, LookAt);
+   wnd->setOnKeyDown (SDLK_LEFTBRACKET, ScaleDown);
+   wnd->setOnKeyDown (SDLK_RIGHTBRACKET, ScaleUp);
+   wnd->setOnKeyDown (SDLK_AT, LookAt);
 
-   auxKeyFunc(XK_parenleft, ShrinkWindow);
-   auxKeyFunc(XK_parenright, EnlargeWindow);
+   wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
+   wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
 
    locscene = NULL;
 
    return 0;
 }
 
-void SendKeyEvent (KeySym keysym, int Shift=0)
-{
-   XKeyEvent  xke;
-
-   xke.display = auxXDisplay();
-   xke.window  = auxXWindow();
-   xke.type    = KeyPress;
-   xke.state   = 0;
-
-   if (!Shift)
-   {
-      xke.keycode = XKeysymToKeycode(xke.display, keysym);
-      XSendEvent(auxXDisplay(), auxXWindow(), True, KeyPressMask, (XEvent*)&xke);
-   }
-   else
-   {
-      xke.keycode = XKeysymToKeycode(xke.display, XK_Shift_L);
-      XSendEvent(auxXDisplay(), auxXWindow(), True, KeyPressMask, (XEvent*)&xke);
-      xke.state |= ShiftMask;
-
-      xke.keycode = XKeysymToKeycode(xke.display, keysym);
-      XSendEvent(auxXDisplay(), auxXWindow(), True, KeyPressMask, (XEvent*)&xke);
-
-      xke.type = KeyRelease;
-      XSendEvent(auxXDisplay(), auxXWindow(), True, KeyPressMask, (XEvent*)&xke);
-
-      xke.keycode = XKeysymToKeycode(xke.display, XK_Shift_L);
-      XSendEvent(auxXDisplay(), auxXWindow(), True, KeyPressMask, (XEvent*)&xke);
-   }
-}
-
-void SendKeySequence (const char *seq)
-{
-   const char *key = seq;
-
-   for ( ; *key != '\0'; key++ ) // see /usr/include/X11/keysymdef.h
-   {
-      if ( ((*key - '0') < 10) && ((*key - '0') >= 0) ) // (keypad) number
-      {
-         SendKeyEvent(XK_0 + (*key) -'0');
-         continue;
-      }
-
-      if ( ((*key - 'a') < 26) && ((*key - 'a') >= 0) ) // lowercase letter
-      {
-         SendKeyEvent(XK_a + (*key) -'a');
-         continue;
-      }
-
-      if ( ((*key - 'A') < 26) && ((*key - 'A') >= 0) ) // uppercase letter
-      {
-         SendKeyEvent(XK_A + (*key) -'A',1);
-         continue;
-      }
-
-      switch (*key)
-      {
-         case '+':
-            SendKeyEvent(XK_plus);
-            continue;
-         case '-':
-            SendKeyEvent(XK_minus);
-            continue;
-         case '*':
-            SendKeyEvent(XK_KP_Multiply);
-            continue;
-         case '/':
-            SendKeyEvent(XK_KP_Divide);
-            continue;
-         case '.':
-            SendKeyEvent(XK_period);
-            continue;
-         case '[':
-            SendKeyEvent(XK_bracketleft);
-            continue;
-         case ']':
-            SendKeyEvent(XK_bracketright);
-            continue;
-         case '(':
-            SendKeyEvent(XK_parenleft,1);
-            continue;
-         case ')':
-            SendKeyEvent(XK_parenright,1);
-            continue;
-         case '!':
-            SendKeyEvent(XK_exclam,1);
-            continue;
-         case '~': // special codes
+void SendKeySequence(const char *seq) {
+    for (const char* key = seq; *key != '\0'; key++) {
+        if (*key == '~') {
             key++;
             switch (*key)
             {
@@ -275,40 +206,53 @@ void SendKeySequence (const char *seq)
                   SendExposeEvent();
                   break;
                case 'l': // left arrow
-                  SendKeyEvent(XK_Left);
+                  wnd->signalKeyDown(SDLK_LEFT);
                   break;
                case 'r': // right arrow
-                  SendKeyEvent(XK_Right);
+                  wnd->signalKeyDown(SDLK_RIGHT);
                   break;
                case 'u': // up arrow
-                  SendKeyEvent(XK_Up);
+                  wnd->signalKeyDown(SDLK_UP);
                   break;
                case 'd': // down arrow
-                  SendKeyEvent(XK_Down);
+                  wnd->signalKeyDown(SDLK_DOWN);
                   break;
                case '3': // F3
-                  SendKeyEvent(XK_F3);
+                  wnd->signalKeyDown(SDLK_F3);
                   break;
                case '5': // F5
-                  SendKeyEvent(XK_F5);
+                  wnd->signalKeyDown(SDLK_F5);
                   break;
                case '6': // F6
-                  SendKeyEvent(XK_F6);
+                  wnd->signalKeyDown(SDLK_F6);
                   break;
                case '7': // F7
-                  SendKeyEvent(XK_F7);
+                  wnd->signalKeyDown(SDLK_F7);
                   break;
                case '.': // Keypad ./Del
-                  SendKeyEvent(XK_period);
+                  wnd->signalKeyDown(SDLK_PERIOD);
                   break;
                case 'E': // Keypad Enter
-                  SendKeyEvent(XK_Return);
+                  wnd->signalKeyDown(SDLK_RETURN);
                   break;
             }
             continue;
-      }
-   }
+        } else if (*key == '*') {
+            wnd->signalKeyDown(SDLK_KP_MULTIPLY);
+        } else if (*key == '/') {
+            wnd->signalKeyDown(SDLK_KP_DIVIDE);
+        } else {
+            if (*key == '('
+                || *key == ')'
+                || *key == '!'
+                || isupper(*key)) {
+                wnd->signalKeyDown(*key, KMOD_LSHIFT);
+            }
+            wnd->signalKeyDown(*key, KMOD_LSHIFT);
+        }
+    }
 }
+
 
 static bool disableSendExposeEvent = false;
 
@@ -321,41 +265,41 @@ void CallKeySequence(const char *seq)
    {
       if (*key != '~')
       {
-         auxCallKeyFunc(*key, 0);
+         wnd->callKeyDown(*key);
       }
       else
       {
          switch (*key)
          {
             case 'l': // left arrow
-               auxCallKeyFunc(XK_Left, 0);
+               wnd->callKeyDown(SDLK_LEFT);
                break;
             case 'r': // right arrow
-               auxCallKeyFunc(XK_Right, 0);
+               wnd->callKeyDown(SDLK_RIGHT);
                break;
             case 'u': // up arrow
-               auxCallKeyFunc(XK_Up, 0);
+               wnd->callKeyDown(SDLK_UP);
                break;
             case 'd': // down arrow
-               auxCallKeyFunc(XK_Down, 0);
+               wnd->callKeyDown(SDLK_DOWN);
                break;
             case '3': // F3
-               auxCallKeyFunc(XK_F3, 0);
+               wnd->callKeyDown(SDLK_F3);
                break;
             case '5': // F5
-               auxCallKeyFunc(XK_F5, 0);
+               wnd->callKeyDown(SDLK_F5);
                break;
             case '6': // F6
-               auxCallKeyFunc(XK_F6, 0);
+               wnd->callKeyDown(SDLK_F6);
                break;
             case '7': // F7
-               auxCallKeyFunc(XK_F7, 0);
+               wnd->callKeyDown(SDLK_F7);
                break;
             case '.': // Keypad ./Del
-               auxCallKeyFunc(XK_period, 0);
+               wnd->callKeyDown(SDLK_PERIOD);
                break;
             case 'E': // Keypad Enter
-               auxCallKeyFunc(XK_Return, 0);
+               wnd->callKeyDown(SDLK_RETURN);
                break;
          }
       }
@@ -369,7 +313,6 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
                            const char *keys)
 {
    locscene = scene;
-
    locscene -> view = view;
    if (view == 2)
    {
@@ -391,8 +334,8 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
       SendKeySequence(keys);
    }
 
-   auxMainLoop(NULL);
-
+   //auxMainLoop(NULL);
+   wnd->mainLoop();
    InitIdleFuncs();
 }
 
@@ -406,28 +349,20 @@ void KillVisualization()
       fontbase = 0;
    }
 #endif
-   auxCloseWindow();
+   delete wnd;
 }
 
 void SendExposeEvent()
 {
    if (disableSendExposeEvent) { return; }
-   XExposeEvent ev;
-   ev.type = Expose;
-   ev.count = 0;
-   ev.x = 0;
-   ev.y = 0;
-   ev.width = 100;
-   ev.height = 100;
-   XSendEvent (auxXDisplay(), auxXWindow(), 1, Expose, (XEvent*)&ev);
+   wnd->signalExpose();
 }
 
 void MyReshape(GLsizei w, GLsizei h)
 {
-   glViewport (0, 0, w, h);
+   state->setViewport(w, h);
 
-   glMatrixMode (GL_PROJECTION);
-   glLoadIdentity();
+   state->projection.identity();
 
    double ViewCenterX = locscene->ViewCenterX;
    double ViewCenterY = locscene->ViewCenterY;
@@ -437,13 +372,13 @@ void MyReshape(GLsizei w, GLsizei h)
       double scale = locscene->ViewScale;
       if (w <= h)
       {
-         glOrtho (-1.0, 1.0, -double(h)/w, double(h)/w, -10, 10);
+         state->projection.ortho(-1.0, 1.0, -double(h)/w, double(h)/w, -10, 10);
       }
       else
       {
-         glOrtho (-double(w)/h, double(w)/h, -1, 1, -10, 10);
+         state->projection.ortho(-double(w)/h, double(w)/h, -1, 1, -10, 10);
       }
-      glScaled(scale, scale, 1.0);
+      state->projection.scale(scale, scale, 1.0);
    }
    else
    {
@@ -453,9 +388,9 @@ void MyReshape(GLsizei w, GLsizei h)
          ViewAngle = (360.0/M_PI)*atan( tan( ViewAngle*(M_PI/360.0) ) *
                                         double(h)/w );
 
-      gluPerspective(ViewAngle, double(w)/h, 0.1, 5.0);
+      state->projection.perspective(ViewAngle, double(w)/h, 0.1, 5.0);
    }
-   glTranslated(-ViewCenterX, -ViewCenterY, 0.0);
+   state->projection.translate(-ViewCenterX, -ViewCenterY, 0.0);
 }
 
 void MyExpose(GLsizei w, GLsizei h)
@@ -466,10 +401,9 @@ void MyExpose(GLsizei w, GLsizei h)
 
 void MyExpose()
 {
-   XWindowAttributes wa;
-
-   XGetWindowAttributes(auxXDisplay(), auxXWindow(), &wa);
-   MyExpose(wa.width, wa.height);
+   int w, h;
+   wnd->getWindowSize(w, h);
+   MyExpose(w, h);
 }
 
 
@@ -480,7 +414,7 @@ void InitIdleFuncs()
 {
    IdleFuncs.SetSize(0);
    LastIdleFunc = 0;
-   auxIdleFunc(NULL);
+   wnd->setOnIdle(NULL);
 }
 
 void MainIdleFunc()
@@ -495,7 +429,7 @@ void MainIdleFunc()
 void AddIdleFunc(void (*Func)(void))
 {
    IdleFuncs.Union(Func);
-   auxIdleFunc(MainIdleFunc);
+   wnd->setOnIdle(MainIdleFunc);
 }
 
 void RemoveIdleFunc(void (*Func)(void))
@@ -503,13 +437,14 @@ void RemoveIdleFunc(void (*Func)(void))
    IdleFuncs.DeleteFirst(Func);
    if (IdleFuncs.Size() == 0)
    {
-      auxIdleFunc(NULL);
+      wnd->setOnIdle(NULL);
    }
 }
 
 
 double xang = 0., yang = 0.;
-double srot[16], sph_t, sph_u;
+GlMatrix srot;
+double sph_t, sph_u;
 static GLint oldx, oldy, startx, starty;
 
 int constrained_spinning = 0;
@@ -553,11 +488,11 @@ inline double sqr(double t)
 inline void ComputeSphereAngles(int &newx, int &newy,
                                 double &new_sph_u, double &new_sph_t)
 {
-   GLint viewport[4];
+   GLint viewport[4] = { 0, 0, 0, 0 };
    double r, x, y, rr;
    const double maxr = 0.996194698091745532295;
 
-   glGetIntegerv(GL_VIEWPORT, viewport);
+   state->getViewport(viewport);
    r = sqrt(sqr(viewport[2])+sqr(viewport[3]))*M_SQRT1_2;
 
    x = double(newx-viewport[0]-viewport[2]/2) / r;
@@ -573,7 +508,7 @@ inline void ComputeSphereAngles(int &newx, int &newy,
    new_sph_t = atan2(y, x);
 }
 
-void LeftButtonDown (AUX_EVENTREC *event)
+void LeftButtonDown (EventInfo *event)
 {
    locscene -> spinning = 0;
    RemoveIdleFunc(MainLoop);
@@ -582,6 +517,7 @@ void LeftButtonDown (AUX_EVENTREC *event)
    oldy = event->data[AUX_MOUSEY];
 
    ComputeSphereAngles(oldx, oldy, sph_u, sph_t);
+/*
    glMatrixMode(GL_MODELVIEW);
    glPushMatrix();
    glLoadIdentity();
@@ -589,20 +525,24 @@ void LeftButtonDown (AUX_EVENTREC *event)
    glMultMatrixd(locscene->rotmat);
    glGetDoublev(GL_MODELVIEW_MATRIX, srot);
    glPopMatrix();
+*/
+   srot.identity();
+   srot.mult(locscene->cam.RotMatrix());
+   srot.mult(locscene->rotmat);
 
    startx = oldx;
    starty = oldy;
 }
 
-void LeftButtonLoc (AUX_EVENTREC *event)
+void LeftButtonLoc (EventInfo *event)
 {
    GLint newx = event->data[AUX_MOUSEX];
    GLint newy = event->data[AUX_MOUSEY];
    int sendexpose = 1;
 
-   if (event->data[2] & ControlMask)
+   if (event->data[2] & KMOD_CTRL)
    {
-      if (event->data[2] & ShiftMask)
+      if (event->data[2] & KMOD_SHIFT)
       {
          locscene->PreRotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
       }
@@ -612,8 +552,12 @@ void LeftButtonLoc (AUX_EVENTREC *event)
 
          ComputeSphereAngles(newx, newy, new_sph_u, new_sph_t);
 
+         /*
          glMatrixMode (GL_MODELVIEW);
          glLoadIdentity();
+         */
+
+         state->modelView.identity();
 
          double scoord[3], ncoord[3], inprod, cross[3];
          scoord[0] = scoord[1] = cos(sph_u);     scoord[2] = sin(sph_u);
@@ -623,17 +567,17 @@ void LeftButtonLoc (AUX_EVENTREC *event)
          inprod = InnerProd(scoord, ncoord);
          CrossProd(scoord, ncoord, cross);
 
-         locscene->cam.GLMultTransposeRotMatrix();
-         glRotated(acos(inprod)*(180.0/M_PI), cross[0], cross[1], cross[2]);
-         glMultMatrixd(srot);
-         glGetDoublev(GL_MODELVIEW_MATRIX, locscene->rotmat);
+         state->modelView.mult(locscene->cam.TransposeRotMatrix());
+         state->modelView.rotate(acos(inprod)*(180.0/M_PI), cross[0], cross[1], cross[2]);
+         state->modelView.mult(srot.mtx);
+         locscene->rotmat = state->modelView.mtx;
       }
    }
-   else if (event->data[2] & Mod1Mask)
+   else if (event->data[2] & KMOD_ALT)
    {
       locscene->Rotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
    }
-   else if (event->data[2] & ShiftMask)
+   else if (event->data[2] & KMOD_SHIFT)
    {
       locscene->Rotate(double(newx-oldx)/2, double(newy-oldy)/2);
    }
@@ -652,7 +596,7 @@ void LeftButtonLoc (AUX_EVENTREC *event)
    }
 }
 
-void LeftButtonUp (AUX_EVENTREC *event)
+void LeftButtonUp (EventInfo *event)
 {
    GLint newx = event->data[AUX_MOUSEX];
    GLint newy = event->data[AUX_MOUSEY];
@@ -660,14 +604,14 @@ void LeftButtonUp (AUX_EVENTREC *event)
    xang = (newx-startx)/5.0;
    yang = (newy-starty)/5.0;
 
-   if ( (event->data[2] & ShiftMask) && (xang != 0.0 || yang != 0.0) )
+   if ( (event->data[2] & KMOD_SHIFT) && (xang != 0.0 || yang != 0.0) )
    {
       locscene -> spinning = 1;
       AddIdleFunc(MainLoop);
       if (xang > 20) { xang = 20; } if (xang < -20) { xang = -20; }
       if (yang > 20) { yang = 20; } if (yang < -20) { yang = -20; }
 
-      if (event->data[2] & ControlMask)
+      if (event->data[2] & KMOD_CTRL)
       {
          constrained_spinning = 1;
       }
@@ -678,18 +622,18 @@ void LeftButtonUp (AUX_EVENTREC *event)
    }
 }
 
-void MiddleButtonDown (AUX_EVENTREC *event)
+void MiddleButtonDown (EventInfo *event)
 {
    startx = oldx = event->data[AUX_MOUSEX];
    starty = oldy = event->data[AUX_MOUSEY];
 }
 
-void MiddleButtonLoc (AUX_EVENTREC *event)
+void MiddleButtonLoc (EventInfo *event)
 {
    GLint newx = event->data[AUX_MOUSEX];
    GLint newy = event->data[AUX_MOUSEY];
 
-   if ( !( event->data[2] & ControlMask ) )
+   if ( !( event->data[2] & KMOD_CTRL ) )
    {
       GLint vp[4];
       double TrX, TrY, scale;
@@ -702,7 +646,7 @@ void MiddleButtonLoc (AUX_EVENTREC *event)
       {
          scale = 0.4142135623730950488/tan(locscene->ViewAngle*(M_PI/360));
       }
-      glGetIntegerv(GL_VIEWPORT, vp);
+      state->getViewport(vp);
       if (vp[2] < vp[3])
       {
          scale *= vp[2];
@@ -723,7 +667,7 @@ void MiddleButtonLoc (AUX_EVENTREC *event)
       double dx = double(newx-oldx)/400;
       double dy = double(oldy-newy)/400;
 
-      if (event->data[2] & ShiftMask)  // ctrl + shift
+      if (event->data[2] & KMOD_SHIFT)  // ctrl + shift
       {
          double sx = double(newx-startx)/400;
          double sy = double(starty-newy)/400;
@@ -734,7 +678,7 @@ void MiddleButtonLoc (AUX_EVENTREC *event)
          locscene->cam.TurnUpDown(-sy);
          locscene->cam.TurnLeftRight(sx);
       }
-      else if (event->data[2] & Mod1Mask) // ctrl + alt
+      else if (event->data[2] & KMOD_ALT) // ctrl + alt
       {
          locscene->cam.MoveForwardBackward(dy);
          locscene->cam.TiltLeftRight(-dx);
@@ -752,21 +696,21 @@ void MiddleButtonLoc (AUX_EVENTREC *event)
    oldy = newy;
 }
 
-void MiddleButtonUp (AUX_EVENTREC *event)
+void MiddleButtonUp (EventInfo *event)
 {}
 
-void RightButtonDown (AUX_EVENTREC *event)
+void RightButtonDown (EventInfo *event)
 {
    startx = oldx = event->data[AUX_MOUSEX];
    starty = oldy = event->data[AUX_MOUSEY];
 }
 
-void RightButtonLoc (AUX_EVENTREC *event)
+void RightButtonLoc (EventInfo *event)
 {
    GLint newx = event->data[AUX_MOUSEX];
    GLint newy = event->data[AUX_MOUSEY];
 
-   if (event->data[2] & ShiftMask)
+   if (event->data[2] & KMOD_SHIFT)
    {
       glLoadIdentity();
       // GLfloat light[] = {newx,-newy, sqrt((float)(newx*newx+newy*newy)), 0.0 };
@@ -793,9 +737,9 @@ void RightButtonLoc (AUX_EVENTREC *event)
       }
       cout << "(x,y,z) = (" << x << ',' << y << ',' << z << ')' << endl;
       GLfloat light[] = { float(x), float(y), float(z), 0.0f };
-      glLightfv(GL_LIGHT0, GL_POSITION, light);
+      state->setLightPosition(0, light);
    }
-   else if ( !( event->data[2] & ControlMask ) )
+   else if ( !( event->data[2] & KMOD_CTRL ) )
    {
       locscene -> Zoom (exp ( double (oldy-newy) / 100 ));
    }
@@ -810,7 +754,7 @@ void RightButtonLoc (AUX_EVENTREC *event)
    oldy = newy;
 }
 
-void RightButtonUp (AUX_EVENTREC *event)
+void RightButtonUp (EventInfo *event)
 {}
 
 #if defined(GLVIS_USE_LIBTIFF)
@@ -823,6 +767,7 @@ const char *glvis_screenshot_ext = ".xwd";
 
 int Screenshot(const char *fname, bool convert)
 {
+/*
 #ifdef GLVIS_DEBUG
    cout << "Screenshot: glXWaitX() ... " << flush;
 #endif
@@ -995,7 +940,8 @@ int Screenshot(const char *fname, bool convert)
       }
       remove(filename.c_str());
    }
-
+*/
+   cout << "Screenshots not yet implemented." << endl;
    return 0;
 }
 
@@ -1030,15 +976,14 @@ void KeyCtrlP()
 {
    int state, buffsize;
    FILE * fp;
-   GLint viewport[4];
-
+   GLint viewport[4] = { 0, 0, 0, 0 };
    cout << "Printing the figure to GLVis.pdf... " << flush;
 
    fp = fopen("GLVis.pdf", "wb");
    buffsize = 0;
    state = GL2PS_OVERFLOW;
    locscene -> print = 1;
-   glGetIntegerv(GL_VIEWPORT, viewport);
+   GetGlState()->getViewport(viewport);
    while (state == GL2PS_OVERFLOW)
    {
       buffsize += 1024*1024;
@@ -1067,6 +1012,7 @@ void KeyCtrlP()
 
 void KeyQPressed()
 {
+   wnd->signalQuit();
    visualize = 0;
 }
 
@@ -1082,7 +1028,7 @@ void ToggleThreads()
 
 void ThreadsPauseFunc(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       glvis_command->ToggleAutopause();
    }
@@ -1242,7 +1188,7 @@ void ShiftView(double dx, double dy)
 
 void KeyLeftPressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       ShiftView(0.05, 0.);
    }
@@ -1255,7 +1201,7 @@ void KeyLeftPressed(GLenum state)
 
 void KeyRightPressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       ShiftView(-0.05, 0.);
    }
@@ -1268,7 +1214,7 @@ void KeyRightPressed(GLenum state)
 
 void KeyUpPressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       ShiftView(0., -0.05);
    }
@@ -1281,7 +1227,7 @@ void KeyUpPressed(GLenum state)
 
 void KeyDownPressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       ShiftView(0., 0.05);
    }
@@ -1350,44 +1296,44 @@ void ShrinkWindow()
 {
    GLint viewport[4];
 
-   glGetIntegerv(GL_VIEWPORT, viewport);
+   state->getViewport(viewport);
    int w = viewport[2], h = viewport[3];
    w = (int)ceil(w / window_scale_factor);
    h = (int)ceil(h / window_scale_factor);
 
    cout << "New window size : " << w << " x " << h << endl;
 
-   XResizeWindow(auxXDisplay(), auxXWindow(), w, h);
+   ResizeWindow(w, h);
 }
 
 void EnlargeWindow()
 {
    GLint viewport[4];
 
-   glGetIntegerv(GL_VIEWPORT, viewport);
+   state->getViewport(viewport);
    int w = viewport[2], h = viewport[3];
    w = (int)ceil(w * window_scale_factor);
    h = (int)ceil(h * window_scale_factor);
 
    cout << "New window size : " << w << " x " << h << endl;
 
-   XResizeWindow(auxXDisplay(), auxXWindow(), w, h);
+   ResizeWindow(w, h);
 }
 
 void MoveResizeWindow(int x, int y, int w, int h)
 {
-   XMoveResizeWindow(auxXDisplay(), auxXWindow(), x, y, w, h);
+    wnd->setWindowSize(w, h);
+    wnd->setWindowPos(x, y);
 }
 
 void ResizeWindow(int w, int h)
 {
-   XResizeWindow(auxXDisplay(), auxXWindow(), w, h);
+    wnd->setWindowSize(w, h);
 }
 
 void SetWindowTitle(const char *title)
 {
-   XSetStandardProperties(auxXDisplay(), auxXWindow(),
-                          title, NULL, None, NULL, 0, NULL);
+    wnd->setWindowTitle(title);
 }
 
 
@@ -1416,12 +1362,11 @@ void Cone()
    glEnd();
 }
 
-
 int MySetColorLogscale = 0;
-int RepeatPaletteTimes = 1;
+extern int RepeatPaletteTimes;
 int UseTexture         = 0;
 
-void MySetColor (double val, double min, double max)
+float MySetColor (double val, double min, double max, float (&rgba)[4])
 {
    // static double eps = 1e-24;
    static const double eps = 0.0;
@@ -1435,22 +1380,100 @@ void MySetColor (double val, double min, double max)
       {
          val = max;
       }
-      MySetColor (log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps));
+      return MySetColor (log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps), rgba);
    }
    else
    {
-      MySetColor ((val-min)/(max-min));
+      return MySetColor ((val-min)/(max-min), rgba);
    }
 }
 
-void MySetColor (double val)
+void MySetColor (gl3::GlBuilder& builder, double val, double min, double max) {
+  static const double eps = 0.0;
+  if (MySetColorLogscale)
+  {
+     if (val < min)
+     {
+        val = min;
+     }
+     if (val > max)
+     {
+        val = max;
+     }
+     return MySetColor (builder, log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps));
+  }
+  else
+  {
+     return MySetColor (builder, (val-min)/(max-min));
+  }
+}
+
+float MySetColor (double val, float (&rgba)[4])
 {
    int i;
-   double t, r, g, b, *pal;
+   double t, *pal;
+
+   int palSize = paletteGetSize();
 
    if (UseTexture)
    {
-      glTexCoord1d(val);
+      //glTexCoord1d(val);
+      return val;
+   }
+
+   if (val < 0.0) { val = 0.0; }
+   if (val > 1.0) { val = 1.0; }
+
+   double malpha = MatAlpha;
+   if (malpha < 1.0)
+   {
+      if (MatAlphaCenter > 1.0)
+      {
+         malpha *= exp(-(MatAlphaCenter)*fabs(val-1.0));
+      }
+      else if (MatAlphaCenter < 0.0)
+      {
+         malpha *= exp((MatAlphaCenter-1.0)*fabs(val-0.0));
+      }
+      else
+      {
+         malpha *= exp(-fabs(val-MatAlphaCenter));
+      }
+   }
+
+   val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
+   i = (int) floor( val );
+   t = val - i;
+
+   if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
+       ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
+   {
+      pal = paletteGet() + 3 * ( i % (palSize-1) );
+   }
+   else
+   {
+      pal = paletteGet() + 3 * ( (palSize-2) -
+                                i % (palSize-1) );
+      t = 1.0 - t;
+   }
+
+   rgba[0] = (1.0 - t) * pal[0] + t * pal[3];
+   rgba[1] = (1.0 - t) * pal[1] + t * pal[4];
+   rgba[2] = (1.0 - t) * pal[2] + t * pal[5];
+   rgba[3] = MatAlpha < 1.0 ? malpha : 1.0;
+   return 0.0;
+}
+
+void MySetColor (gl3::GlBuilder& builder, double val)
+{
+   int i;
+   double t, *pal;
+
+   int palSize = paletteGetSize();
+
+   if (UseTexture)
+   {
+      builder.glTexCoord1f(val);
       return;
    }
 
@@ -1474,151 +1497,28 @@ void MySetColor (double val)
       }
    }
 
-   val *= 0.999999999 * ( RGB_Palette_Size - 1 ) * abs(RepeatPaletteTimes);
+   val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
    i = (int) floor( val );
    t = val - i;
 
-   if (((i / (RGB_Palette_Size-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
-       ((i / (RGB_Palette_Size-1)) % 2 == 1 && RepeatPaletteTimes < 0))
+   if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
+       ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
    {
-      pal = RGB_Palette + 3 * ( i % (RGB_Palette_Size-1) );
+      pal = paletteGet() + 3 * ( i % (palSize-1) );
    }
    else
    {
-      pal = RGB_Palette + 3 * ( (RGB_Palette_Size-2) -
-                                i % (RGB_Palette_Size-1) );
+      pal = paletteGet() + 3 * ( (palSize-2) -
+                                i % (palSize-1) );
       t = 1.0 - t;
    }
-
-   r = (1.0 - t) * pal[0] + t * pal[3];
-   g = (1.0 - t) * pal[1] + t * pal[4];
-   b = (1.0 - t) * pal[2] + t * pal[5];
-
-   if (MatAlpha < 1.0)
-   {
-      glColor4f ( r, g, b, malpha );
-   }
-   else
-   {
-      glColor3f ( r, g, b );
-   }
-}
-
-// const int Max_Texture_Size = 512;
-const int Max_Texture_Size = 4*1024;
-int Texture_Size;
-GLfloat Texture_Image[3*Max_Texture_Size];
-
-void Make_Texture_From_Palette()
-{
-   int i, j;
-   double t, *pal;
-
-   Texture_Size = Max_Texture_Size;
-
-   for (i = 0; i < Texture_Size; i++)
-   {
-      t = double(i) / (Texture_Size - 1);
-      t *= 0.999999999 * ( RGB_Palette_Size - 1 ) * abs(RepeatPaletteTimes);
-      j = (int) floor(t);
-      t -= j;
-
-      if (((j / (RGB_Palette_Size-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
-          ((j / (RGB_Palette_Size-1)) % 2 == 1 && RepeatPaletteTimes < 0))
-      {
-         pal = RGB_Palette + 3 * ( j % (RGB_Palette_Size-1) );
-      }
-      else
-      {
-         pal = RGB_Palette + 3 * ( (RGB_Palette_Size-2) -
-                                   j % (RGB_Palette_Size-1) );
-         t = 1.0 - t;
-      }
-
-      Texture_Image[3*i+0] = (1.0 - t) * pal[0] + t * pal[3];
-      Texture_Image[3*i+1] = (1.0 - t) * pal[1] + t * pal[4];
-      Texture_Image[3*i+2] = (1.0 - t) * pal[2] + t * pal[5];
-   }
-}
-
-void Make_Texture_From_Palette_2()
-{
-   if (RGB_Palette_Size > Max_Texture_Size)
-   {
-      Texture_Size = Max_Texture_Size;
-   }
-   else
-   {
-      Texture_Size = RGB_Palette_Size;
-   }
-
-   if (RepeatPaletteTimes > 0)
-   {
-      for (int i = 0; i < 3*Texture_Size; i++)
-      {
-         Texture_Image[i] = RGB_Palette[i];
-      }
-   }
-   else
-   {
-      for (int i = 0; i < Texture_Size; i++)
-      {
-         Texture_Image[3*i+0] = RGB_Palette[3*(Texture_Size-1-i)+0];
-         Texture_Image[3*i+1] = RGB_Palette[3*(Texture_Size-1-i)+1];
-         Texture_Image[3*i+2] = RGB_Palette[3*(Texture_Size-1-i)+2];
-      }
-   }
-}
-
-void Write_Texture_To_File()
-{
-   const char ppm_fname[] = "GLVis_texture.ppm";
-   cout << "Saving texture image --> " << flush;
-   ofstream ppm_file(ppm_fname);
-   ppm_file << "P3\n" << Texture_Size << " 1\n255\n";
-   for (int i = 0; i < Texture_Size; i++)
-      for (int j = 0; j < 3; j++)
-      {
-         ppm_file << ' ' << int(floor(255.*Texture_Image[3*i+j]+0.5));
-      }
-   ppm_file << endl;
-   cout << ppm_fname << endl;
-}
-
-void Set_Texture_Image()
-{
-   if (UseTexture == 1)
-   {
-      Make_Texture_From_Palette_2();
-   }
-   else
-   {
-      Make_Texture_From_Palette();
-   }
-
-   glTexImage1D(GL_TEXTURE_1D, // GLenum target,
-                0,             // GLint level,
-                3,             // GLint internalFormat,
-                Texture_Size,  // GLsizei width,
-                0,             // GLint border,
-                GL_RGB,        // GLenum format,
-                GL_FLOAT,      // GLenum type,
-                Texture_Image  // const GLvoid *pixels
-               );
-   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-   // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
-   // glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-   // glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-
-   // glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-   // glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-   // Write_Texture_To_File();
+   float rgba[4] = {
+       (float)((1.0 - t) * pal[0] + t * pal[3]),
+       (float)((1.0 - t) * pal[1] + t * pal[4]),
+       (float)((1.0 - t) * pal[2] + t * pal[5]),
+       (float)(MatAlpha < 1.0 ? malpha : 1.0)
+   };
+   builder.glColor4fv(rgba);
 }
 
 int GetUseTexture()
@@ -1631,7 +1531,10 @@ void SetUseTexture(int ut)
    if (UseTexture != ut)
    {
       UseTexture = ut;
-      Set_Texture_Image();
+      if (UseTexture == 1)
+          paletteUseDiscrete();
+      else
+          paletteUseSmooth();
    }
 }
 
@@ -1655,436 +1558,6 @@ void SetMultisample(int m)
 
 #ifdef GLVIS_USE_FREETYPE
 
-class GLVisFont
-{
-private:
-   int         init;
-
-   FT_Library  library;
-   FT_Face     face;
-
-   FT_Bool     use_kerning;
-   FT_Glyph   *glyph;
-   FT_UInt     alloc_glyphs, num_glyphs;
-   FT_BBox     bbox;
-
-   int            image_width, image_height;
-   unsigned char *image;
-
-   void LoadSequence(const char *text)
-   {
-      int          err;
-      FT_UInt      len, glyph_idx, prev_glyph, i;
-      FT_Vector    pen, delta;
-
-      FreeSeq();
-
-      len      = strlen(text);
-      glyph    = new FT_Glyph[len];
-      alloc_glyphs = len;
-
-      pen.x = pen.y = 0;
-      prev_glyph = i = 0;
-      for (FT_UInt ic = 0; ic < len; ic++)
-      {
-         glyph_idx = FT_Get_Char_Index(face, text[ic]);
-
-         if (use_kerning && prev_glyph && glyph_idx)
-         {
-            FT_Get_Kerning(face, prev_glyph, glyph_idx,
-                           FT_KERNING_DEFAULT, &delta);
-            pen.x += delta.x;
-         }
-
-         err = FT_Load_Glyph(face, glyph_idx, FT_LOAD_DEFAULT);
-         if (err) { continue; }
-
-         err = FT_Get_Glyph(face->glyph, &glyph[i]);
-         if (err) { continue; }
-
-         FT_Glyph_Transform(glyph[i], 0, &pen);
-
-         pen.x += face->glyph->advance.x;
-         prev_glyph = glyph_idx;
-
-         i++;
-      }
-      num_glyphs = i;
-   }
-
-   void GetBBox()
-   {
-      FT_BBox glyph_bbox;
-
-      if (num_glyphs <= 0)
-      {
-         bbox.xMin = bbox.yMin = 0;
-         bbox.xMax = bbox.yMax = 0;
-         return;
-      }
-
-      FT_Glyph_Get_CBox(glyph[0], FT_GLYPH_BBOX_PIXELS, &bbox);
-      for (FT_UInt i = 1; i < num_glyphs; i++)
-      {
-         FT_Glyph_Get_CBox(glyph[i], FT_GLYPH_BBOX_PIXELS, &glyph_bbox);
-
-         if (glyph_bbox.xMin < bbox.xMin)
-         {
-            bbox.xMin = glyph_bbox.xMin;
-         }
-         if (glyph_bbox.xMax > bbox.xMax)
-         {
-            bbox.xMax = glyph_bbox.xMax;
-         }
-         if (glyph_bbox.yMin < bbox.yMin)
-         {
-            bbox.yMin = glyph_bbox.yMin;
-         }
-         if (glyph_bbox.yMax > bbox.yMax)
-         {
-            bbox.yMax = glyph_bbox.yMax;
-         }
-      }
-   }
-
-   void FreeSeq()
-   {
-      if (alloc_glyphs <= 0)
-      {
-         return;
-      }
-
-      for (FT_UInt i = 0; i < num_glyphs; i++)
-      {
-         FT_Done_Glyph(glyph[i]);
-      }
-
-      delete [] glyph;
-
-      glyph = NULL;
-
-      alloc_glyphs = num_glyphs = 0;
-   }
-
-   static int FindFontFile(const char *font_patterns[], int num_patterns,
-                           string &font_file)
-   {
-      FcObjectSet *os  = NULL;
-      FcFontSet   *fs  = NULL;
-      FcPattern   *pat = NULL;
-      FcChar8     *s   = NULL;
-#ifdef GLVIS_DEBUG
-      FcChar8     *fnt;
-#endif
-      FcResult     res;
-
-      if (num_patterns <= 0)
-      {
-         return -2;
-      }
-
-      if (!FcInit())
-      {
-         return -1;
-      }
-
-      os = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, (void *)(NULL));
-
-      for (int i = 0; i < num_patterns && !s; i++)
-      {
-         pat = FcNameParse((FcChar8 *)font_patterns[i]);
-         if (!pat)
-         {
-            continue;
-         }
-
-         fs = FcFontList(0, pat, os);
-         FcPatternDestroy(pat);
-         if (!fs)
-         {
-            continue;
-         }
-
-#ifdef GLVIS_DEBUG
-         if (fs->nfont > 1)
-         {
-            cout <<
-                 "Font pattern '" << font_patterns[i] << "' matched"
-                 " multiple fonts:\n";
-            for (int j = 0; j < fs->nfont; j++)
-            {
-               fnt = FcNameUnparse(fs->fonts[j]);
-               cout << fnt << endl;
-               free(fnt);
-            }
-            cout << "-----" << endl;
-         }
-#endif
-
-         for (int j = 0; j < fs->nfont; j++)
-         {
-            res = FcPatternGetString(fs->fonts[j], FC_FILE, 0, &s);
-            if (res == FcResultMatch && s)
-            {
-               font_file = (char *)s;
-#ifdef GLVIS_DEBUG
-               fnt = FcNameUnparse(fs->fonts[j]);
-               cout << "Using font: " << fnt << endl;
-               free(fnt);
-#endif
-               break;
-            }
-         }
-
-         FcFontSetDestroy(fs);
-      }
-
-      if (os)
-      {
-         FcObjectSetDestroy(os);
-      }
-
-      FcFini();
-
-      return s ? 0 : -2;
-   }
-
-public:
-   GLVisFont() { init = 0; }
-
-   int Initialized() const { return init; }
-
-   void Init(const char *font_patterns[], int num_patterns, int height)
-   {
-      SetFont(font_patterns, num_patterns, height);
-   }
-
-   int SetFont(const char *font_patterns[], int num_patterns, int height)
-   {
-      string font_file;
-
-      if (FindFontFile(font_patterns, num_patterns, font_file))
-      {
-         if (!init)
-         {
-            init = -4;
-         }
-         return -4;
-      }
-
-#ifdef GLVIS_DEBUG
-      cout << "Using font file: " << font_file << endl;
-#endif
-
-      return SetFontFile(font_file.c_str(), height);
-   }
-
-   int SetFontFile(const char *font_file, int height)
-   {
-      int err;
-
-      if (init == -1) // library init failed
-      {
-         return -1;
-      }
-
-      if (init <= 0)
-      {
-         err = FT_Init_FreeType(&library);
-         if (err)
-         {
-            cout << "GLVis: Can not initialize FreeType library!" << endl;
-            return (init = -1);
-         }
-      }
-      else
-      {
-         FreeSeq();
-         delete [] image;
-         FT_Done_Face(face);
-      }
-
-      err = FT_New_Face(library, font_file, 0, &face);
-      if (err)
-      {
-         cout << "GLVis: Can not open font file: " << font_file << endl;
-         FT_Done_FreeType(library);
-         return (init = -2);
-      }
-
-      if (1)
-      {
-         // set font height in points
-         Screen *scr = tkGetXScreen();
-         int ppi_w = (int)rint(25.4*WidthOfScreen(scr)/WidthMMOfScreen(scr));
-         int ppi_h = (int)rint(25.4*HeightOfScreen(scr)/HeightMMOfScreen(scr));
-
-         err = FT_Set_Char_Size(face, 0, height*64, ppi_w, ppi_h);
-         if (err)
-         {
-            cout << "GLVis: Can not set font height: " << height << " pts"
-                 << endl;
-            FT_Done_Face(face);
-            FT_Done_FreeType(library);
-            return (init = -3);
-         }
-      }
-      else
-      {
-         // set font height in pixels
-         err = FT_Set_Pixel_Sizes(face, 0, height);
-         if (err)
-         {
-            cout << "GLVis: Can not set font height: " << height << " pixels"
-                 << endl;
-            FT_Done_Face(face);
-            FT_Done_FreeType(library);
-            return (init = -3);
-         }
-      }
-
-      glyph = NULL;
-      use_kerning = FT_HAS_KERNING(face);
-
-      image = NULL;
-
-      init = 1;
-
-      return 0;
-   }
-
-   int Render(const char *text)
-   {
-      int            err;
-      FT_Glyph       a_glyph;
-      FT_BitmapGlyph bit_glyph;
-      FT_Bitmap     *bitmap;
-
-      if (init <= 0)
-      {
-         return 1;
-      }
-
-      delete [] image;
-      image = NULL;
-
-      LoadSequence(text);
-
-      if (num_glyphs <= 0)
-      {
-         return 2;
-      }
-
-      GetBBox();
-
-      const int pad = 2;
-
-      image_width  = (bbox.xMax - bbox.xMin) + 2*pad;
-      image_height = (bbox.yMax - bbox.yMin) + 2*pad;
-
-      if (image_width <= 0 || image_height <= 0)
-      {
-         return 3;
-      }
-
-      GLfloat col[4];
-      glGetFloatv(GL_CURRENT_COLOR, col);
-
-      image = new unsigned char[4*image_width*image_height];
-      for (int i = 0; i < 4*image_width*image_height; i++)
-      {
-         image[i] = 0;
-      }
-
-      for (FT_UInt g = 0; g < num_glyphs; g++)
-      {
-         a_glyph = glyph[g];
-
-         err = FT_Glyph_To_Bitmap(&a_glyph, FT_RENDER_MODE_NORMAL, 0, 0);
-         if (err) { continue; }
-
-         bit_glyph = (FT_BitmapGlyph)a_glyph;
-         bitmap = &bit_glyph->bitmap;
-
-         int off_i = bit_glyph->left - bbox.xMin + pad;
-         int off_j = image_height - bit_glyph->top + bbox.yMin - pad;
-
-         for (int j = 0; j < (int) bitmap->rows; j++)
-         {
-            int im_j = image_height - 1 - (j + off_j);
-            if (im_j < 0 || im_j >= image_height)
-            {
-#ifdef GLVIS_DEBUG
-               cout <<
-                    "GLVisFont::Render : outside 'y' range!\n"
-                    "   text            = " << text            << "\n"
-                    "   j               = " << j               << "\n"
-                    "   bitmap->width   = " << bitmap->width   << "\n"
-                    "   bitmap->rows    = " << bitmap->rows    << "\n"
-                    "   off_i           = " << off_i           << "\n"
-                    "   off_j           = " << off_j           << "\n"
-                    "   bit_glyph->left = " << bit_glyph->left << "\n"
-                    "   bit_glyph->top  = " << bit_glyph->top  << endl;
-#endif
-               continue;
-            }
-            for (int i = 0; i < (int) bitmap->width; i++)
-            {
-               int im_i = i + off_i;
-               if (im_i < 0 || im_i >= image_width)
-               {
-#ifdef GLVIS_DEBUG
-                  cout <<
-                       "GLVisFont::Render : outside 'x' range!\n"
-                       "   text            = " << text            << "\n"
-                       "   i               = " << i               << "\n"
-                       "   j               = " << j               << "\n"
-                       "   bitmap->width   = " << bitmap->width   << "\n"
-                       "   bitmap->rows    = " << bitmap->rows    << "\n"
-                       "   off_i           = " << off_i           << "\n"
-                       "   off_j           = " << off_j           << "\n"
-                       "   bit_glyph->left = " << bit_glyph->left << "\n"
-                       "   bit_glyph->top  = " << bit_glyph->top  << endl;
-#endif
-                  continue;
-               }
-               int off = 4*(im_i + im_j*image_width);
-               int val = bitmap->buffer[i + j*bitmap->width];
-               image[off + 0] = (unsigned char)(col[0]*255);
-               image[off + 1] = (unsigned char)(col[1]*255);
-               image[off + 2] = (unsigned char)(col[2]*255);
-               image[off + 3] = val;
-            }
-         }
-
-         FT_Done_Glyph(a_glyph);
-      }
-
-      FreeSeq();
-
-      return 0;
-   }
-
-   const unsigned char *GetImage() const { return image; }
-   int GetImageWidth() const { return image_width; }
-   int GetImageHeight() const { return image_height; }
-
-   ~GLVisFont()
-   {
-      if (init <= 0)
-      {
-         return;
-      }
-
-      FreeSeq();
-
-      delete [] image;
-
-      FT_Done_Face(face);
-      FT_Done_FreeType(library);
-   }
-};
-
 // Fontconfig patterns to use for finding a font file.
 // Use the command:
 //    fc-list "pattern" file style
@@ -2106,87 +1579,35 @@ const int num_font_patterns = sizeof(fc_font_patterns)/sizeof(char *);
 
 int font_size = 12;
 
-GLVisFont glvis_font;
+GlVisFont glvis_font;
 
-int RenderBitmapText(const char *text, int &width, int &height)
-{
-   if (!glvis_font.Initialized())
-   {
-      if (fontname.empty())
-      {
-         glvis_font.Init(fc_font_patterns, num_font_patterns, font_size);
-      }
-      else
-      {
-         const char *fc_pat[1];
-         fc_pat[0] = fontname.c_str();
-         glvis_font.Init(fc_pat, 1, font_size);
-         if (glvis_font.Initialized() == -4)
-         {
-            cout << "Font not found: " << fontname << endl;
-            glvis_font.Init(fc_font_patterns, num_font_patterns, font_size);
-         }
-      }
-
-      if (glvis_font.Initialized() == -4)
-         cout <<
-              "GLVis: No fonts found! Use the -fn option or"
-              " edit 'fc_font_patterns' in lib/aux_vis.cpp" << endl;
+GlVisFont * GetFont() {
+   if (!glvis_font.isFontLoaded()) {
+       glvis_font.LoadFont("OpenSans.ttf", font_size);
    }
-
-   int fail = glvis_font.Render(text);
-
-   if (!fail)
-   {
-      width = glvis_font.GetImageWidth();
-      height = glvis_font.GetImageHeight();
-   }
-   else
-   {
-      width = height = 0;
-   }
-
-   return !fail;
+   return &glvis_font;
 }
 
-void DrawBitmapText()
+void DrawBitmapText(const char *text, float x, float y, float z)
 {
-   if (glvis_font.Initialized() > 0 && glvis_font.GetImage())
-   {
-      glPushAttrib(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      glEnable(GL_BLEND);
-      glDepthMask(GL_FALSE);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-      glDrawPixels(
-         glvis_font.GetImageWidth(),
-         glvis_font.GetImageHeight(),
-         GL_RGBA,
-         GL_UNSIGNED_BYTE,
-         glvis_font.GetImage());
-
-      glPopAttrib();
+   if (!glvis_font.isFontLoaded()) {
+       if (!glvis_font.LoadFont("OpenSans.ttf", font_size))
+           return;
    }
-}
-
-void DrawBitmapText(const char *text)
-{
-   int width, height;
-
-   if (RenderBitmapText(text, width, height))
-   {
-      DrawBitmapText();
-   }
+   std::string toBuf(text);
+   uint32_t vbo = glvis_font.BufferText(toBuf);
+   glvis_font.RenderBuffer(vbo, x, y, z);
+   glDeleteBuffers(1, &vbo);
 }
 
 int SetFontFile(const char *font_file, int height)
 {
-   return glvis_font.SetFontFile(font_file, height);
+    return glvis_font.LoadFont(font_file, height) ? 0 : 1;
 }
 
 int SetFont(const char *font_patterns[], int num_patterns, int height)
 {
-   return glvis_font.SetFont(font_patterns, num_patterns, height);
+   return SetFontFile("OpenSans.ttf", height);
 }
 
 #endif // GLVIS_USE_FREETYPE
@@ -2218,14 +1639,12 @@ void SetFont(const char *fn)
    cout << "SetFont: name = '" << fontname << "', height = " << font_size
         << endl;
 #endif
-   if (glvis_font.Initialized())
+   if (!glvis_font.isFontLoaded())
    {
-      const char *fc_pat[1];
-      fc_pat[0] = fontname.c_str();
-      if (SetFont(fc_pat, 1, font_size) == -4)
-      {
-         cout << "Font not found: " << fontname << endl;
-      }
+       if (!glvis_font.isFontLoaded()) {
+           if (!glvis_font.LoadFont(fontname.c_str(), font_size))
+               cout << "Font not found: " << fontname << endl;
+       }
    }
 #endif
 }

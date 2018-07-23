@@ -11,7 +11,6 @@
 
 #include <cstdlib>
 #include <cmath>
-#include <X11/keysym.h>
 
 #include <iomanip>
 #include <sstream>
@@ -120,8 +119,8 @@ void VisualizationSceneScalarData::Arrow3(double px, double py, double pz,
    }
 
    glBegin(GL_LINES);
-   glVertex3d(0, 0, 0);
-   glVertex3d(0, 0, 1);
+   glVertex3f(0, 0, 0);
+   glVertex3f(0, 0, 1);
    glEnd();
 
    glTranslated (0, 0, 1);
@@ -137,33 +136,45 @@ void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
                                           double length,
                                           double cone_scale)
 {
+/*
    glPushMatrix();
    glTranslated(px, py, pz);
+*/
+   GlMatrix mv = gl->modelView;
+   mv.translate(px, py, pz);
 
    double rhos = sqrt (vx*vx+vy*vy+vz*vz);
    double phi   = acos(vz/rhos);
    double theta;
    theta = atan2 (vy, vx);
 
+   /*
    glRotatef(theta*180/M_PI, 0.0f, 0.0f, 1.0f);
    glRotatef(phi*180/M_PI, 0.0f, 1.0f, 0.0f);
 
    glScaled (length, length, length);
+   */
+   mv.rotate(theta*180/M_PI, 0.0f, 0.0f, 1.0f);
+   mv.rotate(phi*180/M_PI, 0.0f, 1.0f, 0.0f);
+   mv.scale(length, length, length);
+   gl->setImmModelView(mv);
 
    glBegin(GL_LINES);
-   glVertex3d(0, 0, 0);
-   glVertex3d(0, 0, 1);
+   glVertex3f(0, 0, 0);
+   glVertex3f(0, 0, 1);
    glEnd();
 
-   glTranslated (0, 0, 1);
-   glScaled (cone_scale, cone_scale, cone_scale);
+   mv.translate(0, 0, 1);
+   mv.scale(cone_scale, cone_scale, cone_scale);
+   gl->setImmModelView(mv);
 
    Cone();
 
-   glPopMatrix();
+   gl->loadMatrixUniforms();
 }
 
-void VisualizationSceneScalarData::Arrow(double px, double py, double pz,
+void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
+                                         double px, double py, double pz,
                                          double vx, double vy, double vz,
                                          double length,
                                          double cone_scale)
@@ -275,35 +286,41 @@ void VisualizationSceneScalarData::Arrow(double px, double py, double pz,
       normal[i][2] *= zscale;
    }
 
-   glBegin(GL_TRIANGLE_FAN);
+   builder.glBegin(GL_TRIANGLE_FAN);
    for (i=0; i<=n+1; i++)
    {
-      glNormal3dv(normal[i]);
-      glVertex3dv(cone[i]);
+      builder.glNormal3dv(normal[i]);
+      builder.glVertex3dv(cone[i]);
    }
-   glEnd();
+   builder.glEnd();
 
-   glBegin(GL_LINES);
-   glVertex3dv(cone[n+2]);
-   glVertex3dv(cone[n+3]);
-   glEnd();
+   builder.glBegin(GL_LINES);
+   builder.glVertex3dv(cone[n+2]);
+   builder.glVertex3dv(cone[n+3]);
+   builder.glEnd();
 }
 
 void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
                                                  Array<double> *level,
                                                  Array<double> *levels)
 {
+   /*
    glMatrixMode(GL_MODELVIEW);
    glPushMatrix();
    glLoadIdentity();
+   */
+
+   GlMatrix mv_save = gl->modelView;
+   gl->modelView.identity();
+   gl->loadMatrixUniforms();
 
    int i;
 
-   double miny;
-   double maxy;
-   double minx;
-   double maxx;
-   double posz = -4.0;
+   float miny;
+   float maxy;
+   float minx;
+   float maxx;
+   float posz = -4.0;
 
    if (OrthogonalProjection)
    {
@@ -319,116 +336,104 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       minx =  1.2;
       maxx =  1.3;
    }
-
-   double Y;
-
-   glNormal3d (0, 0, 1);
-
-   if (GetUseTexture())
-   {
-      glEnable (GL_TEXTURE_1D);
-      glColor4d(1, 1, 1, 1);
-      glBegin(GL_QUADS);
-      glTexCoord1d(0.);
-      glVertex3d(minx, miny, posz);
-      glVertex3d(maxx, miny, posz);
-      glTexCoord1d(1.);
-      glVertex3d(maxx, maxy, posz);
-      glVertex3d(minx, maxy, posz);
-      glEnd();
-      glDisable (GL_TEXTURE_1D);
-   }
-   else
-   {
-      float mat_alpha = MatAlpha;
-      MatAlpha = 1.0f;
-      const int nquads = 256;
-      glBegin(GL_QUAD_STRIP);
-      for (int i = 0; i <= nquads; i++)
-      {
-         const double a = double(i) / nquads;
-         Y = (1.0 - a) * miny + a * maxy;
-         MySetColor(a);
-         glVertex3d (minx,Y,posz);
-         glVertex3d (maxx,Y,posz);
-      }
-      glEnd();
-      MatAlpha = mat_alpha;
-   }
-
-   Set_Black_Material();
-
-   static const int border = 2;
-
-   if (border == 1)
-   {
-      glBegin(GL_LINE_LOOP);
-      glVertex3d(minx, miny, posz);
-      glVertex3d(maxx, miny, posz);
-      glVertex3d(maxx, maxy, posz);
-      glVertex3d(minx, maxy, posz);
-      glEnd();
-   }
-   else if (border == 2)
-   {
-      glBegin(GL_LINES);
-      glVertex3d(minx, miny, posz);
-      glVertex3d(minx, maxy, posz);
-      glVertex3d(maxx, miny, posz);
-      glVertex3d(maxx, maxy, posz);
-      glEnd();
+   color_bar.clear();
+   if (GetUseTexture()) {
+       color_bar.addShape(
+           GL_TRIANGLES,
+           gl3::VertexBuffer::LAYOUT_VTX_TEXTURE0,
+           {
+               minx, miny, posz, 0.f, 0.f,
+               maxx, miny, posz, 0.f, 0.f,
+               maxx, maxy, posz, 1.f, 0.f,
+               minx, maxy, posz, 1.f, 0.f,
+               minx, miny, posz, 0.f, 0.f,
+               maxx, maxy, posz, 1.f, 0.f
+           });
+   } else {
+       const int nquads = 256;
+       float rgba_lo[4];
+       float rgba_hi[4];
+       float Y_hi, Y_lo;
+       for (int i = 1; i <= nquads; i++) {
+           const double a_lo = double(i - 1) / nquads;
+           const double a_hi = double(i) / nquads;
+           Y_lo = (1.0 - a_lo) * miny + a_lo * maxy;
+           Y_hi = (1.0 - a_hi) * miny + a_hi * maxy;
+           MySetColor(a_lo, rgba_lo);
+           MySetColor(a_hi, rgba_hi);
+           color_bar.addShape(
+               GL_TRIANGLES,
+               gl3::VertexBuffer::LAYOUT_VTX_COLOR,
+               {
+                   minx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0, 0.0,
+                   maxx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0, 0.0,
+                   maxx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0, 0.0,
+                   minx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0, 0.0,
+                   minx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0, 0.0,
+                   maxx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0, 0.0,
+               });
+       }
    }
 
-   glBegin(GL_LINES);
+   static const int border = 1;
+
+   if (border == 1) {
+       color_bar.addShape(
+           GL_LINES,
+           gl3::VertexBuffer::LAYOUT_VTX,
+           {
+               minx, miny, posz, 0.0, maxx, miny, posz, 0.0,
+               maxx, miny, posz, 0.0, maxx, maxy, posz, 0.0,
+               maxx, maxy, posz, 0.0, minx, maxy, posz, 0.0,
+               minx, maxy, posz, 0.0, minx, miny, posz, 0.0,
+           });
+   } else if (border == 2) {
+       color_bar.addShape(
+           GL_LINES,
+           gl3::VertexBuffer::LAYOUT_VTX,
+           {
+               minx, miny, posz, 0.0,
+               maxx, miny, posz, 0.0,
+               maxx, maxy, posz, 0.0,
+               minx, maxy, posz, 0.0,
+           });
+   }
+
    if (levels)
    {
       for (i = 0; i < levels->Size(); i++)
       {
-         Y = miny + (maxy - miny) * LogUVal((*levels)[i]);
-         glVertex3d (minx,Y,posz);
-         glVertex3d (maxx,Y,posz);
+         float Y = miny + (maxy - miny) * LogUVal((*levels)[i]);
+         color_bar.addShape(
+             GL_LINES, gl3::VertexBuffer::LAYOUT_VTX,
+             {minx, Y, posz, 0.0, maxx, Y, posz, 0.0});
       }
    }
    if (level)
    {
       for (i = 0; i < level->Size(); i++)
       {
-         Y = miny + (maxy - miny) * LogUVal((*level)[i]);
-         glVertex3d (minx,Y,posz);
-         glVertex3d (maxx,Y,posz);
+         float Y = miny + (maxy - miny) * LogUVal((*level)[i]);
+         color_bar.addShape(
+             GL_LINES, gl3::VertexBuffer::LAYOUT_VTX,
+             {minx, Y, posz, 0.0, maxx, Y, posz, 0.0});
       }
    }
-   glEnd();
-
-   // GLfloat textcol[3] = {0,0,0};
-   // glColor3fv (textcol);
-
-#ifndef GLVIS_USE_FREETYPE
-   glPushAttrib (GL_LIST_BIT);
-   glListBase (fontbase);
-#endif
 
    double val;
+   double Y;
    ostringstream * buf;
-
-   if (colorbar == 1) { DrawCaption(); }
-
    if (!level)
    {
       for (i = 0; i <= 4; i++)
       {
          Y = miny + i * (maxy-miny) / 4;
-         glRasterPos3d (maxx+0.02,Y,posz);
 
          val = ULogVal(i / 4.0);
 
          buf = new ostringstream;
          (*buf) << setprecision(4) << val;
-#ifndef GLVIS_USE_FREETYPE
-         glCallLists(buf->str().size(), GL_UNSIGNED_BYTE, buf->str().c_str());
-#else
-         DrawBitmapText(buf->str().c_str());
-#endif
+         color_bar.addText(maxx+0.02,Y,posz, buf->str());
          delete buf;
       }
    }
@@ -438,15 +443,10 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       {
          val = (*level)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
-         glRasterPos3d (maxx+0.02,Y,posz);
 
          buf = new ostringstream;
          (*buf) << setprecision(4) << val;
-#ifndef GLVIS_USE_FREETYPE
-         glCallLists(buf->str().size(), GL_UNSIGNED_BYTE, buf->str().c_str());
-#else
-         DrawBitmapText(buf->str().c_str());
-#endif
+         color_bar.addText(maxx+0.02,Y,posz, buf->str());
          delete buf;
       }
    }
@@ -457,31 +457,45 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       {
          val = (*levels)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
-         glRasterPos3d (maxx+0.02,Y,posz);
 
          buf = new ostringstream;
          (*buf) << setprecision(4) << val;
-#ifndef GLVIS_USE_FREETYPE
-         glCallLists(buf->str().size(), GL_UNSIGNED_BYTE, buf->str().c_str());
-#else
-         DrawBitmapText(buf->str().c_str());
-#endif
+         color_bar.addText(maxx+0.02,Y,posz, buf->str());
          delete buf;
       }
    }
+   color_bar.buffer();
+
+   bool wasLit = gl->disableLight();
+
+   Set_Black_Material();
+
+   // GLfloat textcol[3] = {0,0,0};
+   // glColor3fv (textcol);
 
 #ifndef GLVIS_USE_FREETYPE
-   glPopAttrib();
+   glPushAttrib (GL_LIST_BIT);
+   glListBase (fontbase);
 #endif
+
+   color_bar.draw();
+
+   if (colorbar == 1) {
+       DrawCaption();
+   }
+   
+   if (wasLit)
+       gl->enableLight();
 
    if (print)
    {
+#ifndef GLVIS_OGL3
       if (!level)
       {
          for (i = 0; i <= 4; i++)
          {
             Y = miny + i * (maxy-miny) / 4;
-            glRasterPos3d (maxx+0.02,Y,posz);
+            glRasterPos3f(maxx+0.02,Y,posz);
 
             val = ULogVal(i / 4.0);
 
@@ -497,8 +511,8 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
          {
             val = (*level)[i];
             Y = miny + (maxy - miny) * LogUVal(val);
-            glRasterPos3d (maxx+0.02,Y,posz);
-            glRasterPos3d (maxx+0.02,Y,posz);
+            glRasterPos3f(maxx+0.02,Y,posz);
+            glRasterPos3f(maxx+0.02,Y,posz);
 
             buf = new ostringstream;
             (*buf) << setprecision(4) << val;
@@ -513,7 +527,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
          {
             val = (*levels)[i];
             Y = miny + (maxy - miny) * LogUVal(val);
-            glRasterPos3d (maxx+0.02,Y,posz);
+            glRasterPos3f(maxx+0.02,Y,posz);
 
             buf = new ostringstream;
             (*buf) << setprecision(4) << val;
@@ -521,12 +535,14 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
             delete buf;
          }
       }
+#endif
    }
 
    // glMultMatrixd (rotmat);
    // glScaled(xscale, yscale, zscale);
    // glTranslated(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
-   glPopMatrix();
+   gl->modelView = mv_save;
+   gl->loadMatrixUniforms();
 }
 
 // Draw a centered caption at the top (visible with the colorbar)
@@ -546,20 +562,19 @@ void VisualizationSceneScalarData::DrawCaption()
 
    int width = 0, height = 0;
 #ifdef GLVIS_USE_FREETYPE
-   RenderBitmapText(caption.c_str(), width, height);
+   gl3::TextBuffer capt_buf;
+   capt_buf.addText(0, 0, 0, caption);
+   capt_buf.bufferData();
+   capt_buf.getObjectSize(caption, width, height);
 #endif
+   GlMatrix proj_save = gl->projection;
+   GlMatrix mv_save = gl->modelView;
 
-   glMatrixMode(GL_PROJECTION);
-   glPushMatrix();
-   glLoadIdentity();
-
-   glMatrixMode(GL_MODELVIEW);
-   glPushMatrix();
-   glLoadIdentity();
+   gl->projection.identity();
+   gl->modelView.identity();
 
    GLint viewport[4];
-   glGetIntegerv(GL_VIEWPORT, viewport);
-
+   gl->getViewport(viewport);
 #ifndef GLVIS_USE_FREETYPE
    int len = caption.length();
    double width_in_chars = 44*viewport[2]/400.0;
@@ -572,25 +587,78 @@ void VisualizationSceneScalarData::DrawCaption()
       glTranslatef(-len/width_in_chars, 0.8, 0.0);
    }
 #else
-   glTranslatef(-(double)width/viewport[2],
-                1.0-5*(double)height/viewport[3], 0.0);
+   
+   gl->modelView.translate(-(double)width/viewport[2],
+                        1.0-5*(double)height/viewport[3], -1.0);
 #endif
 
-   cam.GLMultRotMatrix();
-   glMultMatrixd(rotmat);
-
-   glRasterPos3f(0.0f, 0.0f, 0.0f);
+   gl->modelView.mult(cam.RotMatrix());
+   gl->modelView.mult(rotmat);
+   gl->loadMatrixUniforms();
+    //glRasterPos3f(0.0f, 0.0f, 0.0f);
+#ifndef GLVIS_OGL3
    if (print) { gl2psText(caption.c_str(),"Times",8); }
+#endif
 #ifndef GLVIS_USE_FREETYPE
    glCallLists(len, GL_UNSIGNED_BYTE, caption.c_str());
 #else
-   DrawBitmapText();
+   capt_buf.drawObject();
 #endif
+   gl->projection = proj_save;
+   gl->modelView = mv_save;
+   gl->loadMatrixUniforms();
+}
 
-   glMatrixMode(GL_PROJECTION);
-   glPopMatrix();
-   glMatrixMode(GL_MODELVIEW);
-   glPopMatrix();
+std::vector<float> Cone(float x, float y, float z,
+                        float vx, float vy, float vz,
+                        float cone_scale = 0.075) {
+   double rhos  = sqrt (vx*vx+vy*vy+vz*vz);
+   float phi   = acos(vz/rhos);
+   float theta = atan2 (vy, vx);
+
+   glm::mat4 mtx(1.0);
+   mtx = glm::translate(mtx, glm::vec3(x, y, z));
+   mtx = glm::scale(mtx, glm::vec3(cone_scale));
+   mtx = glm::translate(mtx, glm::vec3(x, y, z));
+   mtx = glm::rotate(mtx, theta, glm::vec3(0.f, 0.f, 1.f));
+   mtx = glm::rotate(mtx, phi, glm::vec3(0.f, 1.f, 0.f));
+   glm::mat3 norm(mtx);
+   norm = glm::inverseTranspose(norm);
+
+   glm::vec3 start_vtx = glm::vec3(mtx * glm::vec4(0.f, 0.f, 0.f, 1.f));
+   glm::vec3 start_norm = glm::vec3(norm * glm::vec3(0.f, 0.f, 1.f));
+
+   glm::vec3 base_pts[] = {
+       glm::vec3(mtx * glm::vec4(1, 0, -4, 1)),
+       glm::vec3(mtx * glm::vec4(cos(2*M_PI/4), sin(2*M_PI/4), -4, 1)),
+       glm::vec3(mtx * glm::vec4(cos(4*M_PI/4), sin(4*M_PI/4), -4, 1)),
+       glm::vec3(mtx * glm::vec4(cos(6*M_PI/4), sin(6*M_PI/4), -4, 1)),
+   };
+
+   float nz = (1.0/4.0);
+   glm::vec3 base_norms[] = {
+       glm::vec3(norm * glm::vec3(1, 0, nz)),
+       glm::vec3(norm * glm::vec3(cos(2*M_PI/4), sin(2*M_PI/4), nz)),
+       glm::vec3(norm * glm::vec3(cos(4*M_PI/4), sin(4*M_PI/4), nz)),
+       glm::vec3(norm * glm::vec3(cos(6*M_PI/4), sin(6*M_PI/4), nz)),
+   };
+
+   std::vector<float> cone_pts;
+   for (int i = 0; i < 4; i++) {
+       cone_pts.insert(cone_pts.end(), glm::value_ptr(start_vtx),
+                                       glm::value_ptr(start_vtx) + 3);
+       cone_pts.insert(cone_pts.end(), glm::value_ptr(start_norm),
+                                       glm::value_ptr(start_norm) + 3);
+       cone_pts.insert(cone_pts.end(), glm::value_ptr(base_pts[i]),
+                                       glm::value_ptr(base_pts[i]) + 3);
+       cone_pts.insert(cone_pts.end(), glm::value_ptr(base_norms[i]),
+                                       glm::value_ptr(base_norms[i]) + 3);
+       cone_pts.insert(cone_pts.end(), glm::value_ptr(base_pts[(i + 1)%4]),
+                                       glm::value_ptr(base_pts[(i + 1)%4]) + 3);
+       cone_pts.insert(cone_pts.end(), glm::value_ptr(base_norms[(i + 1)%4]),
+                                       glm::value_ptr(base_norms[(i + 1)%4]) + 3);
+   }
+   return cone_pts;
 }
 
 void VisualizationSceneScalarData::DrawCoordinateCross()
@@ -600,84 +668,103 @@ void VisualizationSceneScalarData::DrawCoordinateCross()
       return;
    }
 
-   glMatrixMode (GL_PROJECTION);
-   glPushMatrix();
-   glLoadIdentity();
+   if (!coord_cross_init) {
+       float lenx, leny, lenz;
+       lenx = leny = lenz = 1;
 
-   glMatrixMode (GL_MODELVIEW);
-   glPushMatrix();
-   glLoadIdentity();
+       coord_cross.addLines(
+           {
+              0, 0, 0, 0, 0, 0, 0.9, 0,
+              0, 0, 0, 0, 0, 0.9, 0, 0,
+              0, 0, 0, 0, 0.9, 0, 0, 0
+           });
+       coord_cross.addShape(
+           GL_TRIANGLES,
+           gl3::VertexBuffer::LAYOUT_VTX_NORMAL,
+           Cone(0,0,.9,0,0,1)
+           );
+       coord_cross.addShape(
+           GL_TRIANGLES,
+           gl3::VertexBuffer::LAYOUT_VTX_NORMAL,
+           Cone(0,.9,0,0,1,0)
+           );
+       coord_cross.addShape(
+           GL_TRIANGLES,
+           gl3::VertexBuffer::LAYOUT_VTX_NORMAL,
+           Cone(.9,0,0,1,0,0)
+           );
+       coord_cross.addText(lenx, 0.0f, 0.0f, a_label_x);
+       coord_cross.addText(0.0f, leny, 0.0f, a_label_y);
+       coord_cross.addText(0.0f, 0.0f, lenz, a_label_z);
+       coord_cross.buffer();
+       coord_cross_init = true;
+   }
+
+   GlMatrix proj_save = gl->projection,
+            mv_save   = gl->modelView;
 
    GLint viewport[4];
-   glGetIntegerv (GL_VIEWPORT, viewport);
+   gl->getViewport(viewport);
 
-   glTranslatef (-1, -1, 0.0);
-   glScaled (40.0 / viewport[2], 40.0 / viewport[3], 1);
-   glTranslatef (2.0, 2.0, 0.0);
-   cam.GLMultRotMatrix();
-   glMultMatrixd (rotmat);
+   gl->projection.identity();
+   gl->modelView.identity();
+   gl->modelView.translate(-1, -1, 0.0);
+   gl->modelView.scale(40.0 / viewport[2], 40.0 / viewport[3], 1);
+   gl->modelView.translate(2.0, 2.0, 0.0);
+   gl->modelView.mult(cam.RotMatrix());
+   gl->modelView.mult(rotmat);
+   gl->loadMatrixUniforms();
 
    // glEnable (GL_COLOR_MATERIAL);
 
    // glLineWidth (1.0f);
 
-   float lenx, leny, lenz;
-
-   lenx = leny = lenz = 1;
-
-   Arrow2(0,0,0,1,0,0, 0.9);
-   Arrow2(0,0,0,0,1,0, 0.9);
-   Arrow2(0,0,0,0,0,1, 0.9);
+   coord_cross.draw();
 
 #ifndef GLVIS_USE_FREETYPE
    glPushAttrib (GL_LIST_BIT);
    glListBase (fontbase);
 #endif
 
-   glRasterPos3d (lenx, 0.0f, 0.0f);
+#ifndef GLVIS_OGL3
    if (print) { gl2psText(a_label_x.c_str(),"Times",8); }
 #ifndef GLVIS_USE_FREETYPE
+   glRasterPos3f(lenx, 0.0f, 0.0f);
    glCallLists(a_label_x.length(), GL_UNSIGNED_BYTE, a_label_x.c_str());
-#else
-   DrawBitmapText(a_label_x.c_str());
 #endif
 
-   glRasterPos3d (0.0f, leny, 0.0f);
    if (print) { gl2psText(a_label_y.c_str(),"Times",8); }
 #ifndef GLVIS_USE_FREETYPE
+   glRasterPos3f(0.0f, leny, 0.0f);
    glCallLists(a_label_y.length(), GL_UNSIGNED_BYTE, a_label_y.c_str());
-#else
-   DrawBitmapText(a_label_y.c_str());
 #endif
 
-   glRasterPos3d (0.0f, 0.0f, lenz);
    if (print) { gl2psText(a_label_z.c_str(),"Times",8); }
 #ifndef GLVIS_USE_FREETYPE
+   glRasterPos3f(0.0f, 0.0f, lenz);
    glCallLists(a_label_z.length(), GL_UNSIGNED_BYTE, a_label_z.c_str());
-#else
-   DrawBitmapText(a_label_z.c_str());
 #endif
 
 #ifndef GLVIS_USE_FREETYPE
    glPopAttrib();
 #endif
-
-   glMatrixMode (GL_PROJECTION);
-   glPopMatrix();
-   glMatrixMode (GL_MODELVIEW);
-   glPopMatrix();
-
+#endif
+   gl->projection = proj_save;
+   gl->modelView = mv_save;
+   gl->loadMatrixUniforms();
    if (print)
    {
+#ifndef GLVIS_OGL3
       ostringstream buf4;
       buf4 << setprecision(4) << "(" << x[0] << "," << y[0] << ","  << z[0] << ")" ;
-      glRasterPos3d (x[0], y[0], z[0]);
+      glRasterPos3f(x[0], y[0], z[0]);
       if (print) { gl2psText(buf4.str().c_str(),"Times",8); }
 
       ostringstream buf5;
       buf5 << setprecision(4) << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
-      glRasterPos3d (x[1], y[1], z[1]);
+      glRasterPos3f(x[1], y[1], z[1]);
       if (print) { gl2psText(buf5.str().c_str(),"Times",8); }
+#endif
    }
 }
 
@@ -712,7 +799,7 @@ void KeyaPressed()
 
 void Key_Mod_a_Pressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       static const char *autoscale_modes[] = { "off", "on", "value", "mesh" };
       int autoscale = vsdata->GetAutoscale();
@@ -734,11 +821,11 @@ void KeylPressed()
    vsdata -> ToggleLight();
    if (! vsdata -> light)
    {
-      glDisable(GL_LIGHTING);
+      GetGlState()->disableLight();
    }
    else
    {
-      glEnable(GL_LIGHTING);
+      GetGlState()->enableLight();
    }
    SendExposeEvent();
 }
@@ -768,9 +855,8 @@ void KeyRPressed()
 {
    locscene -> spinning = 0;
    RemoveIdleFunc(MainLoop);
-   glMatrixMode (GL_MODELVIEW);
-   glLoadIdentity();
-   glGetDoublev (GL_MODELVIEW_MATRIX,   locscene -> translmat);
+   GetGlState()->modelView.identity();
+   locscene->translmat = GetGlState()->modelView.mtx;
    Set_Light();
 
    switch (vsdata -> key_r_state)
@@ -779,33 +865,33 @@ void KeyRPressed()
          break;
 
       case 1:
-         glRotatef(-90.0, 1.0f, 0.0f, 0.0f);
+         GetGlState()->modelView.rotate(-90.0, 1.0f, 0.0f, 0.0f);
          break;
 
       case 2:
-         glRotatef(-90.0, 1.0f, 0.0f, 0.0f);
-         glRotatef(-90.0, 0.0f, 0.0f, 1.0f);
+         GetGlState()->modelView.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         GetGlState()->modelView.rotate(-90.0, 0.0f, 0.0f, 1.0f);
          break;
 
       case 3:
-         glRotatef(-90.0, 1.0f, 0.0f, 0.0f);
-         glRotatef(-180.0, 0.0f, 0.0f, 1.0f);
+         GetGlState()->modelView.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         GetGlState()->modelView.rotate(-180.0, 0.0f, 0.0f, 1.0f);
          break;
 
       case 4:
-         glRotatef(-90.0, 1.0f, 0.0f, 0.0f);
-         glRotatef(-270.0, 0.0f, 0.0f, 1.0f);
+         GetGlState()->modelView.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         GetGlState()->modelView.rotate(-270.0, 0.0f, 0.0f, 1.0f);
          break;
 
       case 5:
-         glRotatef(180.0, 1.0f, 0.0f, 0.0f);
+         GetGlState()->modelView.rotate(180.0, 1.0f, 0.0f, 0.0f);
          break;
    }
 
    // if (locscene -> view != 2) // make 'R' work the same in 2D and 3D
    vsdata -> key_r_state = (vsdata -> key_r_state+1)%6;
 
-   glGetDoublev (GL_MODELVIEW_MATRIX,   locscene -> rotmat);
+   locscene->rotmat = GetGlState()->modelView.mtx;
    SendExposeEvent();
 }
 
@@ -815,7 +901,7 @@ int Select_New_RGB_Palette();
 
 void KeypPressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       KeyCtrlP();
    }
@@ -909,10 +995,9 @@ void KeyBackslashPressed()
    cout << "w = " << flush;
    cin >> w;
 
-   glLoadIdentity();
    GLfloat light[] = { x, y, z, w };
    // load modelview matrix before calling glLightfv?
-   glLightfv(GL_LIGHT0, GL_POSITION, light);
+   GetGlState()->setLightPosition(0, light);
    SendExposeEvent();
 }
 
@@ -1097,80 +1182,89 @@ void VisualizationSceneScalarData::DrawRuler(bool log_z)
 {
    if (ruler_on)
    {
+      gl3::GlDrawable ruler, ruler_lines;
+      gl3::GlBuilder line = ruler_lines.createBuilder();
       double pos_z = LogVal(ruler_z, log_z);
       if (ruler_on == 2)
       {
-         Set_Material();
-         if (light)
-         {
-            glEnable(GL_LIGHTING);
-         }
-         glBegin(GL_QUADS);
-         glColor4d(0.8, 0.8, 0.8, 1.0);
-         if (light)
-         {
-            glNormal3d(0, 0, 1);
-         }
-         glVertex3d(x[0], y[0], pos_z);
-         glVertex3d(x[1], y[0], pos_z);
-         glVertex3d(x[1], y[1], pos_z);
-         glVertex3d(x[0], y[1], pos_z);
+         float color_quads[] = { 0.8, 0.8, 0.8, 1.0 };
+         double norm_quads[] = { 0, 0, 1 };
+         double vert_quads[4][3] = {
+            { x[0], y[0], pos_z },
+            { x[1], y[0], pos_z },
+            { x[1], y[1], pos_z },
+            { x[0], y[1], pos_z }
+         };
 
-         if (light)
-         {
-            glNormal3d(0, 1, 0);
-         }
-         glVertex3d(x[0], ruler_y, z[0]);
-         glVertex3d(x[0], ruler_y, z[1]);
-         glVertex3d(x[1], ruler_y, z[1]);
-         glVertex3d(x[1], ruler_y, z[0]);
+         ruler.addQuadFace(vert_quads, norm_quads, color_quads); 
 
-         if (light)
-         {
-            glNormal3d(1, 0, 0);
-         }
-         glVertex3d(ruler_x, y[0], z[0]);
-         glVertex3d(ruler_x, y[1], z[0]);
-         glVertex3d(ruler_x, y[1], z[1]);
-         glVertex3d(ruler_x, y[0], z[1]);
-         glEnd();
-         if (light)
-         {
-            glDisable(GL_LIGHTING);
-         }
-         Set_Black_Material();
+         double norm_quads2[] = { 0, 1, 0 };
+         double vert_quads2[4][3] = {
+            { x[0], ruler_y, z[0] },
+            { x[0], ruler_y, z[1] },
+            { x[1], ruler_y, z[1] },
+            { x[1], ruler_y, z[0] }
+         };
+         
+         ruler.addQuadFace(vert_quads2, norm_quads2, color_quads); 
 
-         glBegin(GL_LINE_LOOP);
-         glVertex3d(x[0], y[0], pos_z);
-         glVertex3d(x[1], y[0], pos_z);
-         glVertex3d(x[1], y[1], pos_z);
-         glVertex3d(x[0], y[1], pos_z);
-         glEnd();
+         double norm_quads3[] = { 1, 0, 0 };
+         double vert_quads3[4][3] = {
+            { ruler_x, y[0], z[0] },
+            { ruler_x, y[1], z[0] },
+            { ruler_x, y[1], z[1] },
+            { ruler_x, y[0], z[1] }
+         };
+         
+         ruler.addQuadFace(vert_quads3, norm_quads3, color_quads);
 
-         glBegin(GL_LINE_LOOP);
-         glVertex3d(x[0], ruler_y, z[0]);
-         glVertex3d(x[1], ruler_y, z[0]);
-         glVertex3d(x[1], ruler_y, z[1]);
-         glVertex3d(x[0], ruler_y, z[1]);
-         glEnd();
+         line.glBegin(GL_LINE_LOOP);
+         line.glVertex3d(x[0], y[0], pos_z);
+         line.glVertex3d(x[1], y[0], pos_z);
+         line.glVertex3d(x[1], y[1], pos_z);
+         line.glVertex3d(x[0], y[1], pos_z);
+         line.glEnd();
 
-         glBegin(GL_LINE_LOOP);
-         glVertex3d(ruler_x, y[0], z[0]);
-         glVertex3d(ruler_x, y[1], z[0]);
-         glVertex3d(ruler_x, y[1], z[1]);
-         glVertex3d(ruler_x, y[0], z[1]);
-         glEnd();
+         line.glBegin(GL_LINE_LOOP);
+         line.glVertex3d(x[0], ruler_y, z[0]);
+         line.glVertex3d(x[1], ruler_y, z[0]);
+         line.glVertex3d(x[1], ruler_y, z[1]);
+         line.glVertex3d(x[0], ruler_y, z[1]);
+         line.glEnd();
+
+         line.glBegin(GL_LINE_LOOP);
+         line.glVertex3d(ruler_x, y[0], z[0]);
+         line.glVertex3d(ruler_x, y[1], z[0]);
+         line.glVertex3d(ruler_x, y[1], z[1]);
+         line.glVertex3d(ruler_x, y[0], z[1]);
+         line.glEnd();
       }
 
-      glBegin(GL_LINES);
-      glVertex3d(x[0], ruler_y, pos_z);
-      glVertex3d(x[1], ruler_y, pos_z);
-      glVertex3d(ruler_x, y[0], pos_z);
-      glVertex3d(ruler_x, y[1], pos_z);
-      glVertex3d(ruler_x, ruler_y, z[0]);
-      glVertex3d(ruler_x, ruler_y, z[1]);
-      glEnd();
+      line.glBegin(GL_LINES);
+      line.glVertex3d(x[0], ruler_y, pos_z);
+      line.glVertex3d(x[1], ruler_y, pos_z);
+      line.glVertex3d(ruler_x, y[0], pos_z);
+      line.glVertex3d(ruler_x, y[1], pos_z);
+      line.glVertex3d(ruler_x, ruler_y, z[0]);
+      line.glVertex3d(ruler_x, ruler_y, z[1]);
+      line.glEnd();
+
+      ruler.buffer();
+      ruler_lines.buffer();
+      Set_Material();
+      if (light)
+      {
+         gl->enableLight();
+      }
+      ruler.draw();
+      if (light)
+      {
+         gl->disableLight();
+      }
+      Set_Black_Material();
+      ruler_lines.draw();
    }
+
 }
 
 void VisualizationSceneScalarData::ToggleTexture()
@@ -1208,6 +1302,7 @@ VisualizationSceneScalarData::VisualizationSceneScalarData(
 void VisualizationSceneScalarData::Init()
 {
    vsdata = this;
+   wnd = GetAppWindow(); 
 
    arrow_type = arrow_scaling_type = 0;
    scaling = 0;
@@ -1231,60 +1326,63 @@ void VisualizationSceneScalarData::Init()
    {
       // init = 1;
 
-      auxKeyFunc (AUX_l, KeylPressed);
-      auxKeyFunc (AUX_L, KeyLPressed);
+      wnd->setOnKeyDown('l', KeylPressed);
+      wnd->setOnKeyDown('L', KeyLPressed);
 
-      auxKeyFunc (AUX_s, KeySPressed);
+      wnd->setOnKeyDown('s', KeySPressed);
 
-      // auxKeyFunc (AUX_a, KeyaPressed);
-      auxModKeyFunc(AUX_a, Key_Mod_a_Pressed);
-      auxKeyFunc (AUX_A, KeyAPressed);
+      // wnd->setOnKeyDown('a', KeyaPressed);
+      wnd->setOnKeyDown('a', Key_Mod_a_Pressed);
+      wnd->setOnKeyDown('A', KeyAPressed);
 
-      auxKeyFunc (AUX_r, KeyrPressed);
-      auxKeyFunc (AUX_R, KeyRPressed);
+      wnd->setOnKeyDown('r', KeyrPressed);
+      wnd->setOnKeyDown('R', KeyRPressed);
 
-      auxModKeyFunc (AUX_p, KeypPressed);
-      auxKeyFunc (AUX_P, KeyPPressed);
+      wnd->setOnKeyDown('p', KeypPressed);
+      wnd->setOnKeyDown('P', KeyPPressed);
 
-      auxKeyFunc (XK_F5, KeyF5Pressed);
-      auxKeyFunc (XK_F6, KeyF6Pressed);
-      auxKeyFunc (XK_F7, KeyF7Pressed);
+      wnd->setOnKeyDown(SDLK_F5, KeyF5Pressed);
+      wnd->setOnKeyDown(SDLK_F6, KeyF6Pressed);
+      wnd->setOnKeyDown(SDLK_F7, KeyF7Pressed);
 
-      auxKeyFunc (XK_backslash, KeyBackslashPressed);
-      auxKeyFunc (AUX_t, KeyTPressed);
-      auxKeyFunc (AUX_T, KeyTPressed);
+      wnd->setOnKeyDown(SDLK_BACKSLASH, KeyBackslashPressed);
+      wnd->setOnKeyDown('t', KeyTPressed);
+      wnd->setOnKeyDown('T', KeyTPressed);
 
-      auxKeyFunc (AUX_g, KeyGPressed);
-      auxKeyFunc (AUX_G, KeyGPressed);
+      wnd->setOnKeyDown('g', KeyGPressed);
+      wnd->setOnKeyDown('G', KeyGPressed);
 
-      auxKeyFunc (AUX_c, KeycPressed);
-      auxKeyFunc (AUX_C, KeyCPressed);
+      wnd->setOnKeyDown('c', KeycPressed);
+      wnd->setOnKeyDown('C', KeyCPressed);
 
-      auxKeyFunc (AUX_k, KeykPressed);
-      auxKeyFunc (AUX_K, KeyKPressed);
+      wnd->setOnKeyDown('k', KeykPressed);
+      wnd->setOnKeyDown('K', KeyKPressed);
 
-      auxKeyFunc (XK_F1, KeyF1Pressed);
-      auxKeyFunc (XK_F2, KeyF2Pressed);
+      wnd->setOnKeyDown(SDLK_F1, KeyF1Pressed);
+      wnd->setOnKeyDown(SDLK_F2, KeyF2Pressed);
 
-      auxKeyFunc (XK_comma, KeyCommaPressed);
-      auxKeyFunc (XK_less, KeyLessPressed);
-      auxKeyFunc (XK_grave, KeyGravePressed);
-      auxKeyFunc (XK_asciitilde, KeyTildePressed);
+      wnd->setOnKeyDown(SDLK_COMMA, KeyCommaPressed);
+      wnd->setOnKeyDown(SDLK_LESS, KeyLessPressed);
+      //wnd->setOnKeyDown(SDLK_GRAVE, KeyGravePressed);
+      wnd->setOnKeyDown(SDLK_BACKQUOTE, [](GLenum e) {
+              (e & KMOD_SHIFT)
+                ? KeyGravePressed()
+                : KeyTildePressed();
+              });
 
-      auxKeyFunc (XK_exclam, KeyToggleTexture);
+      wnd->setOnKeyDown(SDLK_EXCLAIM, KeyToggleTexture);
    }
 
    Set_Light();
 
-   glEnable (GL_COLOR_MATERIAL);
-   glShadeModel (GL_SMOOTH);
+   //glEnable (GL_COLOR_MATERIAL);
+   //glShadeModel (GL_SMOOTH);
+   gl->enableColorMaterial();
 
-   glEnable(GL_LIGHTING);
-   glEnable(GL_LIGHT0);
-   glDepthFunc(GL_LEQUAL);
-   glEnable(GL_DEPTH_TEST);
-   glEnable(GL_AUTO_NORMAL);
-   glEnable(GL_NORMALIZE);
+   gl->enableLight();
+   gl->enableDepthTest();
+   //glEnable(GL_AUTO_NORMAL);
+   //glEnable(GL_NORMALIZE);
 
    glLineWidth(Get_LineWidth());
 
@@ -1292,7 +1390,6 @@ void VisualizationSceneScalarData::Init()
    {
       glDisable(GL_MULTISAMPLE);
    }
-
    // add black fog
    // glEnable(GL_FOG);
    // GLfloat fogcol[4] = {0,0,0,1};
@@ -1301,7 +1398,6 @@ void VisualizationSceneScalarData::Init()
 
    SetLevelLines(minv, maxv, 15);
 
-   axeslist = glGenLists(1);
    FindNewBox(false);
    ruler_on = 0;
    ruler_x = 0.5 * (x[0] + x[1]);
@@ -1313,7 +1409,6 @@ void VisualizationSceneScalarData::Init()
 
 VisualizationSceneScalarData::~VisualizationSceneScalarData()
 {
-   glDeleteLists (axeslist, 1);
    delete CuttingPlane;
 }
 
@@ -1372,77 +1467,79 @@ void VisualizationSceneScalarData::SetAxisLabels(const char * a_x,
 
 void VisualizationSceneScalarData::PrepareAxes()
 {
-   Set_Black_Material();
-   GLfloat blk[4];
-   glGetFloatv(GL_CURRENT_COLOR, blk);
-
-   glNewList(axeslist, GL_COMPILE);
-
+   float blk_val = Set_Black_Material();
+   GLfloat blk[4] = {blk_val, blk_val, blk_val, 1.0};
+   axes_buf.clear();
+   
+   gl3::GlBuilder bld = axes_buf.createBuilder();
    if (drawaxes == 3)
    {
-      glLineStipple(1, 255);
-      glBegin(GL_LINES);
-      glColor3f(1., 0., 0.);
-      glVertex3d(x[0], y[0], z[0]);
-      glColor4fv(blk);
-      glVertex3d(x[1], y[0], z[0]);
-      glVertex3d(x[0], y[1], z[0]);
-      glColor3f(0., 1., 0.);
-      glVertex3d(x[0], y[0], z[0]);
-      glEnd();
-      glColor4fv(blk);
-      glEnable(GL_LINE_STIPPLE);
-      glBegin(GL_LINE_STRIP);
-      glVertex3d(x[1], y[0], z[0]);
-      glVertex3d(x[1], y[1], z[0]);
-      glVertex3d(x[0], y[1], z[0]);
-      glEnd();
+      //glLineStipple(1, 255);
+      bld.glBegin(GL_LINES);
+      bld.glColor3f(1., 0., 0.);
+      bld.glVertex3d(x[0], y[0], z[0]);
+      bld.glColor4fv(blk);
+      bld.glVertex3d(x[1], y[0], z[0]);
+      bld.glVertex3d(x[0], y[1], z[0]);
+      bld.glColor3f(0., 1., 0.);
+      bld.glVertex3d(x[0], y[0], z[0]);
+      bld.glEnd();
+      bld.glColor4fv(blk);
+      //bld.setUseColor(false);
+      //bld.glEnable(GL_LINE_STIPPLE);
+      bld.glBegin(GL_LINE_STRIP);
+      bld.glVertex3d(x[1], y[0], z[0]);
+      bld.glVertex3d(x[1], y[1], z[0]);
+      bld.glVertex3d(x[0], y[1], z[0]);
+      bld.glEnd();
    }
    else
    {
-      glBegin(GL_LINE_LOOP);
-      glVertex3d(x[0], y[0], z[0]);
-      glVertex3d(x[1], y[0], z[0]);
-      glVertex3d(x[1], y[1], z[0]);
-      glVertex3d(x[0], y[1], z[0]);
-      glEnd();
-   }
-
-   glBegin(GL_LINE_LOOP);
-   glVertex3d(x[0], y[0], z[1]);
-   glVertex3d(x[1], y[0], z[1]);
-   glVertex3d(x[1], y[1], z[1]);
-   glVertex3d(x[0], y[1], z[1]);
-   glEnd();
+      //bld.setUseColor(false);
+      bld.glBegin(GL_LINE_LOOP);
+      bld.glVertex3d(x[0], y[0], z[0]);
+      bld.glVertex3d(x[1], y[0], z[0]);
+      bld.glVertex3d(x[1], y[1], z[0]);
+      bld.glVertex3d(x[0], y[1], z[0]);
+      bld.glEnd();
+   }  
+   bld.glBegin(GL_LINE_LOOP);
+   bld.glVertex3d(x[0], y[0], z[1]);
+   bld.glVertex3d(x[1], y[0], z[1]);
+   bld.glVertex3d(x[1], y[1], z[1]);
+   bld.glVertex3d(x[0], y[1], z[1]);
+   bld.glEnd();
 
    if (drawaxes == 3)
    {
-      glDisable(GL_LINE_STIPPLE);
-      glBegin(GL_LINES);
-      glVertex3d(x[0], y[0], z[1]);
-      glColor3f(0., 0., 1.);
-      glVertex3d(x[0], y[0], z[0]);
-      glEnd();
-      glEnable(GL_LINE_STIPPLE);
-      glColor4fv(blk);
-      glBegin(GL_LINES);
+      //bld.setUseColor(true);
+      //bld.glDisable(GL_LINE_STIPPLE);
+      bld.glBegin(GL_LINES);
+      bld.glVertex3d(x[0], y[0], z[1]);
+      bld.glColor3f(0., 0., 1.);
+      bld.glVertex3d(x[0], y[0], z[0]);
+      bld.glEnd();
+      //bld.setUseColor(false);
+      //bld.glEnable(GL_LINE_STIPPLE);
+      bld.glColor4fv(blk);
+      bld.glBegin(GL_LINES);
    }
    else
    {
-      glBegin(GL_LINES);
-      glVertex3d(x[0], y[0], z[0]);
-      glVertex3d(x[0], y[0], z[1]);
+      bld.glBegin(GL_LINES);
+      bld.glVertex3d(x[0], y[0], z[0]);
+      bld.glVertex3d(x[0], y[0], z[1]);
    }
-   glVertex3d(x[1], y[0], z[0]);
-   glVertex3d(x[1], y[0], z[1]);
-   glVertex3d(x[1], y[1], z[0]);
-   glVertex3d(x[1], y[1], z[1]);
-   glVertex3d(x[0], y[1], z[0]);
-   glVertex3d(x[0], y[1], z[1]);
-   glEnd();
+   bld.glVertex3d(x[1], y[0], z[0]);
+   bld.glVertex3d(x[1], y[0], z[1]);
+   bld.glVertex3d(x[1], y[1], z[0]);
+   bld.glVertex3d(x[1], y[1], z[1]);
+   bld.glVertex3d(x[0], y[1], z[0]);
+   bld.glVertex3d(x[0], y[1], z[1]);
+   bld.glEnd();
    if (drawaxes == 3)
    {
-      glDisable(GL_LINE_STIPPLE);
+      //bld.glDisable(GL_LINE_STIPPLE);
    }
 
    // Write the coordinates of the lower left and upper right corner.
@@ -1460,29 +1557,18 @@ void VisualizationSceneScalarData::PrepareAxes()
       ostringstream buf;
       buf << setprecision(4)
           << "(" << x[0] << "," << y[0] << ","  << z[0] << ")" ;
-      glRasterPos3d (x[0], y[0], z[0]);
-#ifndef GLVIS_USE_FREETYPE
-      glCallLists(buf.str().size(), GL_UNSIGNED_BYTE, buf.str().c_str());
-#else
-      DrawBitmapText(buf.str().c_str());
-#endif
+      axes_buf.addText(x[0], y[0], z[0], buf.str());
 
       ostringstream buf1;
       buf1 << setprecision(4)
            << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
-      glRasterPos3d (x[1], y[1], z[1]);
-#ifndef GLVIS_USE_FREETYPE
-      glCallLists(buf1.str().size(), GL_UNSIGNED_BYTE, buf1.str().c_str());
-#else
-      DrawBitmapText(buf1.str().c_str());
-#endif
+      axes_buf.addText(x[1], y[1], z[1], buf1.str());
 
 #ifndef GLVIS_USE_FREETYPE
       glPopAttrib();
 #endif
    }
-
-   glEndList();
+   axes_buf.buffer();
 }
 
 void VisualizationSceneScalarData::DrawPolygonLevelLines(
@@ -1498,7 +1584,6 @@ void VisualizationSceneScalarData::DrawPolygonLevelLines(
       // should produce the same result, however visually the level lines
       // have discontinuities. Using GL_LINE_LOOP does not have that problem.
       glBegin(GL_LINE_LOOP);
-
       curve = LogVal(level[l], log_vals);
       for (k = 0; k < n; k++)
       {
@@ -1525,6 +1610,48 @@ void VisualizationSceneScalarData::DrawPolygonLevelLines(
          }
       }
       glEnd();
+   }
+}
+
+void VisualizationSceneScalarData::DrawPolygonLevelLines(
+   double * point, int n, Array<double> &level, bool log_vals, gl3::GlBuilder& builder)
+{
+   int l, k, k1;
+   double curve, t;
+   double p[3];
+
+   for (l = 0; l < level.Size(); l++)
+   {
+      // Using GL_LINE_STRIP (explicitly closed for more than 2 points)
+      // should produce the same result, however visually the level lines
+      // have discontinuities. Using GL_LINE_LOOP does not have that problem.
+      builder.glBegin(GL_LINE_LOOP);
+      curve = LogVal(level[l], log_vals);
+      for (k = 0; k < n; k++)
+      {
+         k1 = (k+1)%n;
+         if ( (curve <=point[4*k+3] && curve >= point[4*k1+3]) ||
+              (curve >=point[4*k+3] && curve <= point[4*k1+3]) )
+         {
+            if ((curve - point[4*k1+3]) == 0.)
+            {
+               t = 1.;
+            }
+            else if ((curve - point[4*k+3]) == 0.)
+            {
+               t = 0.;
+            }
+            else
+            {
+               t = (curve - point[4*k+3]) / (point[4*k1+3]-point[4*k+3]);
+            }
+            p[0] = (1.0-t)*point[4*k+0]+t*point[4*k1+0];
+            p[1] = (1.0-t)*point[4*k+1]+t*point[4*k1+1];
+            p[2] = (1.0-t)*point[4*k+2]+t*point[4*k1+2];
+            builder.glVertex3d(p[0], p[1], p[2]);
+         }
+      }
+      builder.glEnd();
    }
 }
 
@@ -1577,7 +1704,7 @@ void VisualizationSceneScalarData::PrintState()
         << "\nzoom " << (OrthogonalProjection ? ViewScale :
                          tan(M_PI / 8.) / tan(ViewAngle * (M_PI / 360.0)))
         << "\nvaluerange " << minv << ' ' << maxv;
-   const double *r = rotmat;
+   const float *r = glm::value_ptr(rotmat);
    ios::fmtflags fmt = cout.flags();
    cout << fixed << showpos
         << "\nrotmat " << r[ 0] << ' ' << r[ 1] << ' ' << r[ 2] << ' ' << r[ 3]

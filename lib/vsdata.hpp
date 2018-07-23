@@ -12,8 +12,11 @@
 #ifndef GLVIS_VSDATA
 #define GLVIS_VSDATA
 
+#include <array>
+
 #include "openglvis.hpp"
 #include "mfem.hpp"
+#include "aux_gl3.hpp"
 using namespace mfem;
 
 extern std::string plot_caption; // defined in glvis.cpp
@@ -62,6 +65,11 @@ protected:
    int scaling, colorbar, drawaxes, axeslist;
    int auto_ref_max, auto_ref_max_surf_elem;
 
+   gl3::GlDrawable axes_buf;
+   bool coord_cross_init = false,
+        color_bar_init = false;
+   gl3::GlDrawable coord_cross, color_bar;
+
    void Init();
 
    int arrow_type, arrow_scaling_type;
@@ -80,6 +88,7 @@ protected:
    int autoscale;
 
    bool logscale;
+
    bool LogscaleRange() { return (minv > 0.0 && maxv > minv); }
    void PrintLogscale(bool warn);
 
@@ -191,7 +200,8 @@ public:
 
    void SetLevelLines(double min, double max, int n, int adj = 1);
 
-   void Arrow(double px, double py, double pz,
+   void Arrow(gl3::GlBuilder& builder,
+              double px, double py, double pz,
               double vx, double vy, double vz, double length,
               double cone_scale = 0.075);
    void Arrow2(double px, double py, double pz,
@@ -202,6 +212,9 @@ public:
                double vx, double vy, double vz,
                double length,
                double cone_scale = 0.075);
+
+   void DrawPolygonLevelLines(double *point, int n, Array<double> &level,
+                              bool log_vals, gl3::GlBuilder& builder);
 
    void DrawPolygonLevelLines(double *point, int n, Array<double> &level,
                               bool log_vals);

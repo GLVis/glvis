@@ -15,6 +15,11 @@
 #include "mfem.hpp"
 using namespace mfem;
 
+#include "sdl.hpp"
+#include "aux_gl3.hpp"
+
+#include <map>
+
 // Visualization header file
 
 class VisualizationSceneSolution : public VisualizationSceneScalarData
@@ -28,11 +33,21 @@ protected:
    int bdrlist, drawbdr, draw_cp, cp_list;
    int e_nums_list, v_nums_list;
 
+   gl3::GlDrawable disp_buf[3];
+
+   gl3::GlDrawable e_nums_buf;
+   gl3::GlDrawable v_nums_buf;
+   
+   gl3::GlDrawable lcurve_buf;
+   gl3::GlDrawable line_buf;
+   gl3::GlDrawable bdr_buf;
+   gl3::GlDrawable cp_buf;
+
    void Init();
 
    void FindNewBox(double rx[], double ry[], double rval[]);
 
-   void DrawCPLine(DenseMatrix &pointmat, Vector &values, Array<int> &ind);
+   void DrawCPLine(DenseMatrix &pointmat, Vector &values, Array<int> &ind, gl3::GlBuilder& bld);
 
    void GetRefinedDetJ(int i, const IntegrationRule &ir,
                        Vector &vals, DenseMatrix &tr);
@@ -44,7 +59,7 @@ protected:
                                           Vector &vals, DenseMatrix &tr,
                                           DenseMatrix &normals);
 
-   void DrawLevelCurves(Array<int> &RG, DenseMatrix &pointmat,
+   void DrawLevelCurves(gl3::GlBuilder& buf, Array<int> &RG, DenseMatrix &pointmat,
                         Vector &values, int sides, Array<double> &lvl,
                         int flat = 0);
 
@@ -131,13 +146,26 @@ public:
 
 void DrawNumberedMarker(const double x[3], double dx, int n);
 
+void DrawNumberedMarker(const double x[3], double dx, int n, gl3::GlDrawable& buff);
+
 void DrawTriangle(const double pts[][3], const double cv[],
                   const double minv, const double maxv);
+
+//we only need 3 points, but the array is 4x3
+void DrawTriangle(const double (&pts)[4][3], const double (&cv)[4],
+                  const double minv, const double maxv, gl3::GlDrawable& buff);
 
 void DrawQuad(const double pts[][3], const double cv[],
               const double minv, const double maxv);
 
+void DrawQuad(const double (&pts)[4][3], const double (&cv)[4],
+              const double minv, const double maxv, gl3::GlDrawable& buff);
+
 void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
+               const int n, const Array<int> &ind, const double minv,
+               const double maxv, const int normals_opt = 0);
+
+void DrawPatch(gl3::GlDrawable& buff, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
                const double maxv, const int normals_opt = 0);
 

@@ -22,10 +22,10 @@
 #include <ctime>
 #include <csignal>
 
-#include <X11/keysym.h>
 #include <unistd.h>
 
 #include "mfem.hpp"
+#include "lib/palettes.hpp"
 #include "lib/visual.hpp"
 
 using namespace std;
@@ -79,7 +79,7 @@ Array<istream *> input_streams;
 
 extern char **environ;
 
-void Set_Palette(int); // defined in palettes.hpp
+void paletteSet(int); // defined in palettes.hpp
 
 void PrintSampleUsage(ostream &out);
 
@@ -364,7 +364,7 @@ void StartVisualization(int field_type)
 
    if (input_streams.Size() > 0)
    {
-      auxModKeyFunc(XK_space, ThreadsPauseFunc);
+      GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
       glvis_command = new GLVisCommand(&vs, &mesh, &grid_f, &sol, &keep_attr,
                                        &fix_elem_orient);
       comm_thread = new communication_thread(input_streams);
@@ -382,7 +382,7 @@ void StartVisualization(int field_type)
          VisualizationSceneSolution *vss;
          if (field_type == 2)
          {
-            Set_Palette(4);
+            paletteSet(4);
          }
          if (normals.Size() > 0)
          {
@@ -415,13 +415,13 @@ void StartVisualization(int field_type)
          {
             if (mesh->Dimension() == 3)
             {
-               Set_Palette(4);
-               // Set_Palette(11);
+               paletteSet(4);
+               // paletteSet(11);
                // Set_Material_And_Light(4,3);
             }
             else
             {
-               Set_Palette(4);
+               paletteSet(4);
             }
             vss->ToggleDrawAxes();
             vss->ToggleDrawMesh();
@@ -937,7 +937,7 @@ void ExecuteScriptCommand()
          int pal;
          scr >> pal;
          cout << "Script: palette: " << pal << endl;
-         Set_Palette(pal-1);
+         paletteSet(pal-1);
          if (!GetUseTexture())
          {
             vs->EventUpdateColors();
@@ -971,8 +971,8 @@ void ExecuteScriptCommand()
          cout << "Script: rotmat:";
          for (int i = 0; i < 16; i++)
          {
-            scr >> vs->rotmat[i];
-            cout << ' ' << vs->rotmat[i];
+            scr >> vs->rotmat[i/4][i%4];
+            cout << ' ' << vs->rotmat[i/4][i%4];
          }
          cout << endl;
          MyExpose();
@@ -1116,7 +1116,7 @@ void PlayScript(istream &scr)
    }
 
    scr_level = scr_running = 0;
-   auxKeyFunc(XK_space, ScriptControl);
+   GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
    script = &scr;
    keys.clear();
 
@@ -1596,7 +1596,7 @@ int main (int argc, char *argv[])
             {
                if ((input & 4) == 0)
                {
-                  Set_Palette(4);   // Set_Palette(11);
+                  paletteSet(4);   // paletteSet(11);
                }
                vs = vss = new VisualizationSceneSolution(*mesh, sol);
                if (is_gf)
@@ -1652,13 +1652,13 @@ int main (int argc, char *argv[])
                {
                   if (mesh->Dimension() == 3)
                   {
-                     // Set_Palette(4);
-                     Set_Palette(11);
+                     // paletteSet(4);
+                     paletteSet(11);
                      Set_Material_And_Light(4,3);
                   }
                   else
                   {
-                     Set_Palette(4);
+                     paletteSet(4);
                   }
                   vss->ToggleDrawAxes();
                   vss->ToggleDrawMesh();

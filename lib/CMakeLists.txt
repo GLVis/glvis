@@ -1,5 +1,6 @@
 list(APPEND SOURCES
   aux_gl.cpp
+  aux_gl3.cpp
   aux_vis.cpp
   gl2ps.c
   material.cpp
@@ -14,6 +15,7 @@ list(APPEND SOURCES
 
 list(APPEND HEADERS
   aux_gl.hpp
+  aux_gl3.hpp
   aux_vis.hpp
   gl2ps.h
   material.hpp
