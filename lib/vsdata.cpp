@@ -338,17 +338,14 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
    }
    color_bar.clear();
    if (GetUseTexture()) {
-       color_bar.addShape(
-           GL_TRIANGLES,
-           gl3::VertexBuffer::LAYOUT_VTX_TEXTURE0,
-           {
-               minx, miny, posz, 0.f, 0.f,
-               maxx, miny, posz, 0.f, 0.f,
-               maxx, maxy, posz, 1.f, 0.f,
-               minx, maxy, posz, 1.f, 0.f,
-               minx, miny, posz, 0.f, 0.f,
-               maxx, maxy, posz, 1.f, 0.f
-           });
+       auto& bar_buf = color_bar.getBuffer(gl3::VertexBuffer::LAYOUT_VTX_TEXTURE0,
+                                           GL_TRIANGLES);
+       bar_buf.addVertex({minx, miny, posz}, 0.f);
+       bar_buf.addVertex({maxx, miny, posz}, 0.f);
+       bar_buf.addVertex({maxx, maxy, posz}, 1.f);
+       bar_buf.addVertex({minx, maxy, posz}, 1.f);
+       bar_buf.addVertex({minx, miny, posz}, 0.f);
+       bar_buf.addVertex({maxx, maxy, posz}, 1.f);
    } else {
        const int nquads = 256;
        float rgba_lo[4];
@@ -361,42 +358,27 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
            Y_hi = (1.0 - a_hi) * miny + a_hi * maxy;
            MySetColor(a_lo, rgba_lo);
            MySetColor(a_hi, rgba_hi);
-           color_bar.addShape(
-               GL_TRIANGLES,
-               gl3::VertexBuffer::LAYOUT_VTX_COLOR,
-               {
-                   minx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0, 0.0,
-                   maxx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0, 0.0,
-                   maxx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0, 0.0,
-                   minx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0, 0.0,
-                   minx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0, 0.0,
-                   maxx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0, 0.0,
-               });
+           auto& bar_buf = color_bar.getBuffer(gl3::VertexBuffer::LAYOUT_VTX_COLOR,
+                                               GL_TRIANGLES);
+           bar_buf.addVertex({minx, Y_lo, posz}, {rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0});
+           bar_buf.addVertex({maxx, Y_lo, posz}, {rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0});
+           bar_buf.addVertex({maxx, Y_hi, posz}, {rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0});
+           bar_buf.addVertex({minx, Y_hi, posz}, {rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0});
+           bar_buf.addVertex({minx, Y_lo, posz}, {rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0});
+           bar_buf.addVertex({maxx, Y_hi, posz}, {rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0});
        }
    }
 
    static const int border = 1;
 
    if (border == 1) {
-       color_bar.addShape(
-           GL_LINES,
-           gl3::VertexBuffer::LAYOUT_VTX,
-           {
-               minx, miny, posz, 0.0, maxx, miny, posz, 0.0,
-               maxx, miny, posz, 0.0, maxx, maxy, posz, 0.0,
-               maxx, maxy, posz, 0.0, minx, maxy, posz, 0.0,
-               minx, maxy, posz, 0.0, minx, miny, posz, 0.0,
-           });
+       color_bar.addLine({minx, miny, posz}, {maxx, miny, posz});
+       color_bar.addLine({maxx, miny, posz}, {maxx, maxy, posz});
+       color_bar.addLine({maxx, maxy, posz}, {minx, maxy, posz});
+       color_bar.addLine({minx, maxy, posz}, {minx, miny, posz});
    } else if (border == 2) {
-       color_bar.addShape(
-           GL_LINES,
-           gl3::VertexBuffer::LAYOUT_VTX,
-           {
-               minx, miny, posz, 0.0,
-               maxx, miny, posz, 0.0,
-               maxx, maxy, posz, 0.0,
-               minx, maxy, posz, 0.0,
-           });
+       color_bar.addLine({minx, miny, posz}, {maxx, miny, posz});
+       color_bar.addLine({maxx, maxy, posz}, {minx, maxy, posz});
    }
 
    if (levels)
@@ -404,9 +386,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       for (i = 0; i < levels->Size(); i++)
       {
          float Y = miny + (maxy - miny) * LogUVal((*levels)[i]);
-         color_bar.addShape(
-             GL_LINES, gl3::VertexBuffer::LAYOUT_VTX,
-             {minx, Y, posz, 0.0, maxx, Y, posz, 0.0});
+         color_bar.addLine({minx, Y, posz}, {maxx, Y, posz});
       }
    }
    if (level)
@@ -414,9 +394,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       for (i = 0; i < level->Size(); i++)
       {
          float Y = miny + (maxy - miny) * LogUVal((*level)[i]);
-         color_bar.addShape(
-             GL_LINES, gl3::VertexBuffer::LAYOUT_VTX,
-             {minx, Y, posz, 0.0, maxx, Y, posz, 0.0});
+         color_bar.addLine({minx, Y, posz}, {maxx, Y, posz});
       }
    }
 
@@ -609,58 +587,6 @@ void VisualizationSceneScalarData::DrawCaption()
    gl->loadMatrixUniforms();
 }
 
-std::vector<float> Cone(float x, float y, float z,
-                        float vx, float vy, float vz,
-                        float cone_scale = 0.075) {
-   double rhos  = sqrt (vx*vx+vy*vy+vz*vz);
-   float phi   = acos(vz/rhos);
-   float theta = atan2 (vy, vx);
-
-   glm::mat4 mtx(1.0);
-   mtx = glm::translate(mtx, glm::vec3(x, y, z));
-   mtx = glm::scale(mtx, glm::vec3(cone_scale));
-   mtx = glm::translate(mtx, glm::vec3(x, y, z));
-   mtx = glm::rotate(mtx, theta, glm::vec3(0.f, 0.f, 1.f));
-   mtx = glm::rotate(mtx, phi, glm::vec3(0.f, 1.f, 0.f));
-   glm::mat3 norm(mtx);
-   norm = glm::inverseTranspose(norm);
-
-   glm::vec3 start_vtx = glm::vec3(mtx * glm::vec4(0.f, 0.f, 0.f, 1.f));
-   glm::vec3 start_norm = glm::vec3(norm * glm::vec3(0.f, 0.f, 1.f));
-
-   glm::vec3 base_pts[] = {
-       glm::vec3(mtx * glm::vec4(1, 0, -4, 1)),
-       glm::vec3(mtx * glm::vec4(cos(2*M_PI/4), sin(2*M_PI/4), -4, 1)),
-       glm::vec3(mtx * glm::vec4(cos(4*M_PI/4), sin(4*M_PI/4), -4, 1)),
-       glm::vec3(mtx * glm::vec4(cos(6*M_PI/4), sin(6*M_PI/4), -4, 1)),
-   };
-
-   float nz = (1.0/4.0);
-   glm::vec3 base_norms[] = {
-       glm::vec3(norm * glm::vec3(1, 0, nz)),
-       glm::vec3(norm * glm::vec3(cos(2*M_PI/4), sin(2*M_PI/4), nz)),
-       glm::vec3(norm * glm::vec3(cos(4*M_PI/4), sin(4*M_PI/4), nz)),
-       glm::vec3(norm * glm::vec3(cos(6*M_PI/4), sin(6*M_PI/4), nz)),
-   };
-
-   std::vector<float> cone_pts;
-   for (int i = 0; i < 4; i++) {
-       cone_pts.insert(cone_pts.end(), glm::value_ptr(start_vtx),
-                                       glm::value_ptr(start_vtx) + 3);
-       cone_pts.insert(cone_pts.end(), glm::value_ptr(start_norm),
-                                       glm::value_ptr(start_norm) + 3);
-       cone_pts.insert(cone_pts.end(), glm::value_ptr(base_pts[i]),
-                                       glm::value_ptr(base_pts[i]) + 3);
-       cone_pts.insert(cone_pts.end(), glm::value_ptr(base_norms[i]),
-                                       glm::value_ptr(base_norms[i]) + 3);
-       cone_pts.insert(cone_pts.end(), glm::value_ptr(base_pts[(i + 1)%4]),
-                                       glm::value_ptr(base_pts[(i + 1)%4]) + 3);
-       cone_pts.insert(cone_pts.end(), glm::value_ptr(base_norms[(i + 1)%4]),
-                                       glm::value_ptr(base_norms[(i + 1)%4]) + 3);
-   }
-   return cone_pts;
-}
-
 void VisualizationSceneScalarData::DrawCoordinateCross()
 {
    if (drawaxes == 3)
@@ -672,27 +598,12 @@ void VisualizationSceneScalarData::DrawCoordinateCross()
        float lenx, leny, lenz;
        lenx = leny = lenz = 1;
 
-       coord_cross.addLines(
-           {
-              0, 0, 0, 0, 0, 0, 0.9, 0,
-              0, 0, 0, 0, 0, 0.9, 0, 0,
-              0, 0, 0, 0, 0.9, 0, 0, 0
-           });
-       coord_cross.addShape(
-           GL_TRIANGLES,
-           gl3::VertexBuffer::LAYOUT_VTX_NORMAL,
-           Cone(0,0,.9,0,0,1)
-           );
-       coord_cross.addShape(
-           GL_TRIANGLES,
-           gl3::VertexBuffer::LAYOUT_VTX_NORMAL,
-           Cone(0,.9,0,0,1,0)
-           );
-       coord_cross.addShape(
-           GL_TRIANGLES,
-           gl3::VertexBuffer::LAYOUT_VTX_NORMAL,
-           Cone(.9,0,0,1,0,0)
-           );
+       coord_cross.addLine({0, 0, 0}, {0, 0, 0.9});
+       coord_cross.addLine({0, 0, 0}, {0, 0.9, 0});
+       coord_cross.addLine({0, 0, 0}, {0.9, 0, 0});
+       coord_cross.addCone(0,0,.9,0,0,1);
+       coord_cross.addCone(0,.9,0,0,1,0);
+       coord_cross.addCone(.9,0,0,1,0,0);
        coord_cross.addText(lenx, 0.0f, 0.0f, a_label_x);
        coord_cross.addText(0.0f, leny, 0.0f, a_label_y);
        coord_cross.addText(0.0f, 0.0f, lenz, a_label_z);

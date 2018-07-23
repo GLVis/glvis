@@ -12,6 +12,7 @@
 #ifndef GLVIS_AUX_GL3
 #define GLVIS_AUX_GL3
 #include <vector>
+#include <array>
 #include <unordered_map>
 #include <iostream>
 #include <memory>
@@ -216,35 +217,63 @@ public:
     array_layout getArrayLayout() { return _layout; }
 
     void addVertex(float (&vtx)[3]) {
+        addVertex({vtx[0], vtx[1], vtx[2]});
+    }
+
+    void addVertex(std::array<float, 3>&& vtx) {
         if (_layout != LAYOUT_VTX) {
             cerr << "Unexpected vertex of layout VTX" << endl;
             return;
         }
-        std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
+        _pt_data.insert(_pt_data.end(), std::make_move_iterator(vtx.begin()),
+                                        std::make_move_iterator(vtx.end()));
+        _pt_data.emplace_back(0);
     }
 
     void addVertex(float (&vtx)[3], float (&rgba)[4]) {
+        addVertex({vtx[0], vtx[1], vtx[2]}, {rgba[0], rgba[1], rgba[2], rgba[3]});
+    }
+
+    void addVertex(std::array<float, 3>&& vtx, std::array<float, 4>&& rgba) {
         if (_layout != LAYOUT_VTX_COLOR) {
             cerr << "Unexpected vertex of layout VTX_COLOR" << endl;
             return;
         }
-        std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
-        std::copy(rgba, rgba+4, std::back_inserter(_pt_data));
+        _pt_data.insert(_pt_data.end(), std::make_move_iterator(vtx.begin()),
+                                        std::make_move_iterator(vtx.end()));
+        _pt_data.insert(_pt_data.end(), std::make_move_iterator(rgba.begin()),
+                                        std::make_move_iterator(rgba.end()));
     }
 
     void addVertex(float (&vtx)[3], float colorTexCoord) {
+        addVertex({vtx[0], vtx[1], vtx[2]}, colorTexCoord);
+    }
+
+    void addVertex(std::array<float, 3>&& vtx, float colorTexCoord) {
         if (_layout != LAYOUT_VTX_TEXTURE0) {
             cerr << "Unexpected vertex of layout VTX_TEXTURE0" << endl;
             return;
         }
-        std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
+        _pt_data.insert(_pt_data.end(), std::make_move_iterator(vtx.begin()),
+                                        std::make_move_iterator(vtx.end()));
         _pt_data.emplace_back(colorTexCoord);
         _pt_data.emplace_back(0);
     }
 
+    void addVertexNorm(std::array<float, 3>&& vtx, std::array<float, 3>&& norm) {
+        if (_layout != LAYOUT_VTX_NORMAL) {
+            cerr << "Unexpected vertex of layout VTX_NORMAL" << endl;
+            return;
+        }
+        _pt_data.insert(_pt_data.end(), std::make_move_iterator(vtx.begin()),
+                                        std::make_move_iterator(vtx.end()));
+        _pt_data.insert(_pt_data.end(), std::make_move_iterator(norm.begin()),
+                                        std::make_move_iterator(norm.end()));
+    }
+
     void addVertex(float (&vtx)[3], float (&norm)[3], float (&rgba)[4]) {
         if (_layout != LAYOUT_VTX_NORMAL_COLOR) {
-            cerr << "Unexpected vertex of layout LAYOUT_VTX_NORMAL_COLOR" << endl;
+            cerr << "Unexpected vertex of layout VTX_NORMAL_COLOR" << endl;
             return;
         }
         std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
@@ -261,12 +290,6 @@ public:
         std::copy(norm, norm+3, std::back_inserter(_pt_data));
         _pt_data.emplace_back(colorTexCoord);
         _pt_data.emplace_back(0);
-    }
-
-    void addVertices(std::vector<float>&& in_move) {
-        _pt_data.insert(_pt_data.end(),
-                        std::make_move_iterator(in_move.begin()),
-                        std::make_move_iterator(in_move.end()));
     }
 
     /**
@@ -346,9 +369,11 @@ public:
         text_buffer.addText(x, y, z, text);
     }
 
-    void addLines(std::vector<float>&& in_move) {
+    void addLine(std::array<float,3>&& v1, std::array<float,3>&& v2) {
         getBuffer(VertexBuffer::LAYOUT_VTX, GL_LINES)
-            .addVertices(std::move(in_move));
+            .addVertex(std::move(v1));
+        getBuffer(VertexBuffer::LAYOUT_VTX, GL_LINES)
+            .addVertex(std::move(v2));
     }
 
     /**
@@ -420,21 +445,9 @@ public:
         }
     }
 
-    void addArrow(double px, double py, double pz,
-                  double vx, double vy, double vz,
-                  double length, double cone_scale);
-
-    void addArrow(double px, double py, double pz,
-                  double vx, double vy, double vz,
-                  double length, double cone_scale,
-                  GlColor color);
-
-    void addShape(GLenum primitive,
-                  VertexBuffer::array_layout layout,
-                  std::vector<float>&& points) {
-            getBuffer(layout, primitive)
-                .addVertices(std::move(points));
-    }
+    void addCone(float x, float y, float z,
+                 float vx, float vy, float vz,
+                 float cone_scale = 0.075);
 
     VertexBuffer& getBuffer(VertexBuffer::array_layout layout, GLenum shape) {
         auto loc = buffers[layout].find(shape);

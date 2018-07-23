@@ -252,180 +252,64 @@ void TextBuffer::drawObject() {
     GetGlState()->setModeColor();
 }
 
-/*
-void ArrowHelper(double px, double py, double pz,
-                 double vx, double vy, double vz,
-                 double length, double cone_scale,
-                 double cone[][3], double normal[][3]) {
-   double rhos = sqrt (vx*vx+vy*vy+vz*vz);
-   double phi = acos(vz/rhos), theta = atan2(vy, vx);
-   const int n = 8;
-   const double step = 2*M_PI/n, nz = (1.0/4.0);
-   double point = step;
-   int i, j, k;
+void GlDrawable::addCone(float x, float y, float z,
+                         float vx, float vy, float vz,
+                         float cone_scale) {
+    VertexBuffer& buf = getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL, GL_TRIANGLES);
+    double rhos  = sqrt (vx*vx+vy*vy+vz*vz);
+    float phi   = acos(vz/rhos);
+    float theta = atan2 (vy, vx);
 
-   cone[0][0] = 0;          cone[0][1] = 0; cone[0][2] = 1;
-   cone[1][0] = cone_scale; cone[1][1] = 0; cone[1][2] = -4*cone_scale + 1;
-   normal[0][0] = 0.0/cone_scale;
-   normal[0][1] = 0.0/cone_scale;
-   normal[0][2] = 1.0/cone_scale;
-   normal[1][0] = 1.0/cone_scale;
-   normal[1][1] = 0.0/cone_scale;
-   normal[1][2] = nz/cone_scale;
+    glm::mat4 mtx(1.0);
+    mtx = glm::translate(mtx, glm::vec3(x, y, z));
+    mtx = glm::scale(mtx, glm::vec3(cone_scale));
+    mtx = glm::translate(mtx, glm::vec3(x, y, z));
+    mtx = glm::rotate(mtx, theta, glm::vec3(0.f, 0.f, 1.f));
+    mtx = glm::rotate(mtx, phi, glm::vec3(0.f, 1.f, 0.f));
+    glm::mat3 norm(mtx);
+    norm = glm::inverseTranspose(norm);
 
-   for (i=2; i<n+1; i++)
-   {
-      normal[i][0] = cos(point)/cone_scale;
-      normal[i][1] = sin(point)/cone_scale;
-      normal[i][2] = nz/cone_scale;
+    glm::vec3 start_vtx = glm::vec3(mtx * glm::vec4(0.f, 0.f, 0.f, 1.f));
+    glm::vec3 start_norm = glm::vec3(norm * glm::vec3(0.f, 0.f, 1.f));
 
-      cone[i][0] = cos(point)*cone_scale;
-      cone[i][1] = sin(point)*cone_scale;
-      cone[i][2] = -4*cone_scale + 1;
-      point += step;
-   }
-   cone[n+1][0] = cone_scale; cone[n+1][1] = 0; cone[n+1][2] =-4*cone_scale + 1;
-   normal[n+1][0] = 1.0/cone_scale;
-   normal[n+1][1] = 0.0/cone_scale;
-   normal[n+1][2] = nz/cone_scale;
+    glm::vec3 base_pts[] = {
+        glm::vec3(mtx * glm::vec4(1, 0, -4, 1)),
+        glm::vec3(mtx * glm::vec4(cos(2*M_PI/4), sin(2*M_PI/4), -4, 1)),
+        glm::vec3(mtx * glm::vec4(cos(4*M_PI/4), sin(4*M_PI/4), -4, 1)),
+        glm::vec3(mtx * glm::vec4(cos(6*M_PI/4), sin(6*M_PI/4), -4, 1)),
+    };
 
-   cone[n+2][0] = 0; cone[n+2][1] = 0; cone[n+2][2] = 0;
-   cone[n+3][0] = 0; cone[n+3][1] = 0; cone[n+3][2] = 1;
+    float nz = (1.0/4.0);
+    glm::vec3 base_norms[] = {
+        glm::vec3(norm * glm::vec3(1, 0, nz)),
+        glm::vec3(norm * glm::vec3(cos(2*M_PI/4), sin(2*M_PI/4), nz)),
+        glm::vec3(norm * glm::vec3(cos(4*M_PI/4), sin(4*M_PI/4), nz)),
+        glm::vec3(norm * glm::vec3(cos(6*M_PI/4), sin(6*M_PI/4), nz)),
+    };
+    
+    float* orig = glm::value_ptr(start_vtx);
+    float* orig_n = glm::value_ptr(start_norm);
+    float* base[4] = {
+        glm::value_ptr(base_pts[0]),
+        glm::value_ptr(base_pts[1]),
+        glm::value_ptr(base_pts[2]),
+        glm::value_ptr(base_pts[3])
+    };
+    float* base_n[4] = {
+        glm::value_ptr(base_norms[0]),
+        glm::value_ptr(base_norms[1]),
+        glm::value_ptr(base_norms[2]),
+        glm::value_ptr(base_norms[3])
+    };
 
-   if (arrow_scaling_type == 0)
-   {
-      length = rhos;
-   }
-
-   // double xc = 0.5*(x[0]+x[1]), yc = 0.5*(y[0]+y[1]), zc = 0.5*(z[0]+z[1]);
-   double coord[3];
-   // double rlen = length/rhos;
-
-   // px = (px-xc)*xscale;  py = (py-yc)*yscale;  pz = (pz-zc)*zscale;
-   // vx *= rlen*xscale;    vy *= rlen*yscale;    vz *= rlen*zscale;
-
-   if (arrow_type == 1)
-      for (i=0; i<n+4; i++)
-      {
-         cone[i][2] -= 0.5;
-      }
-
-   double M[3][3]= {{cos(theta)*cos(phi), -sin(theta),  cos(theta)*sin(phi)},
-      {sin(theta)*cos(phi),  cos(theta),  sin(theta)*sin(phi)},
-      {          -sin(phi),          0.,             cos(phi)}
-   };
-   double v[3] = { M[0][2]/xscale, M[1][2]/yscale, M[2][2]/zscale };
-   length /= sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
-
-   for (i=0; i<n+4; i++)
-   {
-      for (j=0; j<3; j++)
-      {
-         coord[j] = cone[i][j] * length;
-      }
-
-      for (k=0; k<3; k++)
-      {
-         cone[i][k] = 0.;
-         for (j=0; j<3; j++)
-         {
-            cone[i][k] += M[k][j] * coord[j];
-         }
-      }
-      // cone[i][0] = (cone[i][0] + px)/xscale + xc;
-      // cone[i][1] = (cone[i][1] + py)/yscale + yc;
-      // cone[i][2] = (cone[i][2] + pz)/zscale + zc;
-      cone[i][0] = cone[i][0]/xscale + px;
-      cone[i][1] = cone[i][1]/yscale + py;
-      cone[i][2] = cone[i][2]/zscale + pz;
-   }
-
-   for (i=0; i<=n+1; i++)
-   {
-      for (j=0; j<3; j++)
-      {
-         coord[j] = normal[i][j];
-      }
-
-      for (k=0; k<3; k++)
-      {
-         normal[i][k] = 0.;
-         for (j=0; j<3; j++)
-         {
-            normal[i][k] += M[k][j] * coord[j];
-         }
-      }
-      normal[i][0] *= xscale;
-      normal[i][1] *= yscale;
-      normal[i][2] *= zscale;
-   }
-
-}
-
-void GlDrawable::addArrow(double px, double py, double pz,
-                          double vx, double vy, double vz,
-                          double length, double cone_scale) {
-    double rhos = sqrt (vx*vx+vy*vy+vz*vz);
-    if (rhos == 0.0)
-    {
-        return;
-    }
-    const int n = 8;
-    double cone[n+4][3], normal[n+2][3];
-    ArrowHelper(px, py, pz, vx, vy, vz,
-                length, cone_scale, cone, normal);
-    VertexBuffer& buf_tris = this->getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL, GL_TRIANGLES);
-    VertexBuffer& buf_lines = this->getBuffer(VertexBuffer::LAYOUT_VTX, GL_LINES);
-    for (i = 2; i <= n+1; i++) {
-        buf_tris.addVertex(cone[0], normal[0]);
-        buf_tris.addVertex(cone[i-1], normal[i-1]);
-        buf_tris.addVertex(cone[i], normal[i]);
-    }
-    buf_lines.addVertex(cone[n+2]);
-    buf_lines.addVertex(cone[n+3]);
-}
-
-void GlDrawable::addArrow(double px, double py, double pz,
-                          double vx, double vy, double vz,
-                          double length, double cone_scale,
-                          GlColor color) {
-    double rhos = sqrt (vx*vx+vy*vy+vz*vz);
-    if (rhos == 0.0)
-    {
-        return;
-    }
-
-    const int n = 8;
-    double cone[n+4][3], normal[n+2][3];
-    ArrowHelper(px, py, pz, vx, vy, vz,
-            length, cone_scale, cone, normal);
-    VertexBuffer::array_layout buf_layout;
-    if (color.use_texture) {
-        buf_layout = VertexBuffer::LAYOUT_VTX_NORMAL_TEXTURE0;
-    } else {
-        buf_layout = VertexBuffer::LAYOUT_VTX_NORMAL_COLOR;
-    }
-
-    VertexBuffer& buf_tris = this->getBuffer(buf_layout, GL_TRIANGLES);
-    VertexBuffer& buf_lines = this->getBuffer(buf_layout, GL_LINES);
-    for (i = 2; i <= n+1; i++) {
-        if (color.use_texture) {
-            buf_tris.addVertex(cone[0], normal[0], color.texcoord);
-            buf_tris.addVertex(cone[i-1], normal[i-1], color.texcoord);
-            buf_tris.addVertex(cone[i], normal[i], color.texcoord);
-        } else {
-            buf_tris.addVertex(cone[0], normal[0], color.rgba);
-            buf_tris.addVertex(cone[i-1], normal[i-1], color.rgba);
-            buf_tris.addVertex(cone[i], normal[i], color.rgba);
-        }
-    }
-    if (color.use_texture) {
-        buf_lines.addVertex(cone[n+2], normal[n+1], color.texcoord);
-        buf_lines.addVertex(cone[n+3], normal[n+1], color.texcoord);
-    } else {
-        buf_lines.addVertex(cone[n+2], normal[n+1], color.rgba);
-        buf_lines.addVertex(cone[n+3], normal[n+1], color.rgba);
+    std::vector<float> cone_pts;
+    for (int i = 0; i < 4; i++) {
+        buf.addVertexNorm({orig[0],   orig[1],   orig[2]},
+                          {orig_n[0], orig_n[1], orig_n[2]});
+        buf.addVertexNorm({base[i][0],   base[i][1],   base[i][2]},
+                          {base_n[i][0], base_n[i][1], base_n[i][2]});
+        buf.addVertexNorm({base[(i+1)%4][0],   base[(i+1)%4][1],   base[(i+1)%4][2]},
+                          {base_n[(i+1)%4][0], base_n[(i+1)%4][1], base_n[(i+1)%4][2]});
     }
 }
 
-*/
