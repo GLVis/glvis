@@ -589,7 +589,7 @@ void VisualizationSceneScalarData::DrawCaption()
 #else
    
    gl->modelView.translate(-(double)width/viewport[2],
-                        1.0-5*(double)height/viewport[3], -1.0);
+                        1.0-5*(double)height/viewport[3], 0.0);
 #endif
 
    gl->modelView.mult(cam.RotMatrix());

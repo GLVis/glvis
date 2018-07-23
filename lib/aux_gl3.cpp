@@ -190,6 +190,8 @@ void TextBuffer::bufferData() {
     float tex_h = GetFont()->getAtlasHeight();
     for (auto& e : _data) {
         float x = 0.f, y = 0.f;
+        e.w = 0;
+        e.h = 0;
         for (char c : e.text) {
             GlVisFont::glyph g = GetFont()->GetTexChar(c);
             float cur_x = x + g.bear_x;
