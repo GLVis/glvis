@@ -12,6 +12,7 @@
 #include "platform_gl.hpp"
 #include <iostream>
 #include "sdl.hpp"
+#include "visual.hpp"
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
@@ -20,6 +21,7 @@ using std::cerr;
 using std::endl;
 
 extern int GetMultisample();
+extern int visualize;
 
 struct SdlWindow::_SdlHandle {
     SDL_Window * hwnd;
@@ -196,6 +198,7 @@ void SdlWindow::keyEvent(SDL_Keysym& ks) {
 
 bool SdlWindow::mainIter() {
     SDL_Event e;
+    static bool useIdle = false;
     while (SDL_PollEvent(&e)) {
         switch(e.type) {
             case SDL_QUIT:
@@ -222,8 +225,15 @@ bool SdlWindow::mainIter() {
                 break;
         }
     }
-    if (onIdle)
-        onIdle();
+    if (onIdle) {
+        if (glvis_command == NULL || visualize == 2 || useIdle) {
+            onIdle();
+        } else {
+            if (glvis_command->Execute() < 0)
+                running = false;
+        }
+        useIdle = !useIdle;
+    }
     if (requiresExpose) {
         onExpose();
         requiresExpose = false;
