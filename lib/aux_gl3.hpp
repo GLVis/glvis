@@ -85,8 +85,6 @@ public:
         if (count >= 2 && (render_as == GL_LINE_STRIP
                         || render_as == GL_LINE_LOOP)) {
             int offset = 4;
-            if (use_color) offset = 8;
-            else if (use_color_tex) offset = 5;
             std::copy_n(pts.end() - offset, offset, std::back_inserter(pts));
         }
         pts.emplace_back(x);
@@ -96,11 +94,19 @@ public:
             std::copy(norm, norm+3, std::back_inserter(pts));
         }
         if (use_color) {
-            std::copy(color, color+4, std::back_inserter(pts));
+            float pack_rgba;
+            ((uint8_t*) &pack_rgba)[0] = (color[0] >= 1.0) ? 255 : (uint8_t)(color[0] * 256.);
+            ((uint8_t*) &pack_rgba)[1] = (color[1] >= 1.0) ? 255 : (uint8_t)(color[1] * 256.);
+            ((uint8_t*) &pack_rgba)[2] = (color[2] >= 1.0) ? 255 : (uint8_t)(color[2] * 256.);
+            ((uint8_t*) &pack_rgba)[3] = (color[3] >= 1.0) ? 255 : (uint8_t)(color[3] * 256.);
+            pts.emplace_back(pack_rgba);
         } else if (use_color_tex) {
             pts.emplace_back(texcoord);
         }
-        if (is_line || use_color_tex) {
+        bool use_padding = false;
+        if (is_line != (use_color || use_color_tex)) {
+            //if shape is line and no color present, need to pad to 16 bytes
+            //if shape is polygon and color present, need to pad to 32 bytes
             pts.emplace_back(0);
         }
         count++;
@@ -241,8 +247,12 @@ public:
         }
         _pt_data.insert(_pt_data.end(), std::make_move_iterator(vtx.begin()),
                                         std::make_move_iterator(vtx.end()));
-        _pt_data.insert(_pt_data.end(), std::make_move_iterator(rgba.begin()),
-                                        std::make_move_iterator(rgba.end()));
+        float pack_rgba;
+        ((uint8_t*) &pack_rgba)[0] = (rgba[0] >= 1.0) ? 255 : (uint8_t)(rgba[0] * 256.);
+        ((uint8_t*) &pack_rgba)[1] = (rgba[1] >= 1.0) ? 255 : (uint8_t)(rgba[1] * 256.);
+        ((uint8_t*) &pack_rgba)[2] = (rgba[2] >= 1.0) ? 255 : (uint8_t)(rgba[2] * 256.);
+        ((uint8_t*) &pack_rgba)[3] = (rgba[3] >= 1.0) ? 255 : (uint8_t)(rgba[3] * 256.);
+        _pt_data.emplace_back(pack_rgba);
     }
 
     void addVertex(float (&vtx)[3], float colorTexCoord) {
@@ -257,7 +267,6 @@ public:
         _pt_data.insert(_pt_data.end(), std::make_move_iterator(vtx.begin()),
                                         std::make_move_iterator(vtx.end()));
         _pt_data.emplace_back(colorTexCoord);
-        _pt_data.emplace_back(0);
     }
 
     void addVertexNorm(std::array<float, 3>&& vtx, std::array<float, 3>&& norm) {
@@ -278,7 +287,13 @@ public:
         }
         std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
         std::copy(norm, norm+3, std::back_inserter(_pt_data));
-        std::copy(rgba, rgba+4, std::back_inserter(_pt_data));
+        float pack_rgba;
+        ((uint8_t*) &pack_rgba)[0] = (rgba[0] >= 1.0) ? 255 : (uint8_t)(rgba[0] * 256.);
+        ((uint8_t*) &pack_rgba)[1] = (rgba[1] >= 1.0) ? 255 : (uint8_t)(rgba[1] * 256.);
+        ((uint8_t*) &pack_rgba)[2] = (rgba[2] >= 1.0) ? 255 : (uint8_t)(rgba[2] * 256.);
+        ((uint8_t*) &pack_rgba)[3] = (rgba[3] >= 1.0) ? 255 : (uint8_t)(rgba[3] * 256.);
+        _pt_data.emplace_back(pack_rgba);
+        _pt_data.emplace_back(0);
     }
 
     void addVertex(float (&vtx)[3], float (&norm)[3], float colorTexCoord) {
