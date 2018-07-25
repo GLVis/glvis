@@ -66,6 +66,8 @@ private:
     bool keyDown;
    
     bool requiresExpose;
+    bool takeScreenshot;
+    std::string screenshot_file;
     //internal event handlers
     void windowEvent(SDL_WindowEvent& ew);
     void motionEvent(SDL_MouseMotionEvent& em);
@@ -104,7 +106,9 @@ public:
 
     void getWindowSize(int& w, int& h);
     void getDpi(int& wdpi, int& hdpi);
-
+#ifdef GLVIS_X11
+    int getXWindow();
+#endif
     void setWindowTitle(std::string& title);
     void setWindowTitle(const char* title);
     void setWindowSize(int w, int h);
@@ -113,6 +117,11 @@ public:
     void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE);
     void signalExpose() { requiresExpose = true; }
     void signalQuit() { running = false; }
+
+    void screenshot(std::string filename) {
+        takeScreenshot = true;
+        screenshot_file = filename;
+    }
 
     void swapBuffer();
 

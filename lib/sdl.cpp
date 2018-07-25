@@ -12,6 +12,7 @@
 #include "platform_gl.hpp"
 #include <iostream>
 #include "sdl.hpp"
+#include <SDL2/SDL_syswm.h>
 #include "visual.hpp"
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -42,7 +43,8 @@ bool SdlWindow::isGlInitialized() {
 }
 
 SdlWindow::SdlWindow(const char * title, int w, int h)
-    : requiresExpose(false) {
+    : requiresExpose(false)
+    , takeScreenshot(false) {
 
     if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
@@ -182,7 +184,7 @@ void SdlWindow::keyEvent(SDL_Keysym& ks) {
     }
     if (ks.mod & KMOD_SHIFT) {
         //check if separate caps handler exists
-        if (isalpha(ks.sym) && onKeyDown[toupper(ks.sym)]) {
+        if (ks.sym < 256 && isalpha(ks.sym) && onKeyDown[toupper(ks.sym)]) {
             onKeyDown[toupper(ks.sym)](ks.mod);
             return;
         } else if (ks.sym == '1' && onKeyDown[SDLK_EXCLAIM]) {
@@ -255,6 +257,10 @@ void SdlWindow::mainLoop() {
         if (glSwap) {
             SDL_GL_SwapWindow(_handle->hwnd);
         }
+        if (takeScreenshot) {
+            Screenshot(screenshot_file.c_str());
+            takeScreenshot = false;
+        }
     }
 #endif
 }
@@ -273,6 +279,19 @@ void SdlWindow::getDpi(int& w, int& h) {
         h = f_h;
     }
 }
+
+#ifdef GLVIS_X11
+Window SdlWindow::getXWindow() {
+    SDL_SysWMinfo info;
+    SDL_VERSION(&info.version);
+
+    if (SDL_GetWindowWMInfo(window, &info)) {
+        if (info.subsystem == SDL_SYSWM_X11) {
+            return info.x11.window;
+        }
+    }
+}
+#endif
 
 void SdlWindow::setWindowTitle(std::string& title) {
     setWindowTitle(title.c_str());
@@ -304,13 +323,4 @@ void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m) {
 void SdlWindow::swapBuffer() {
     SDL_GL_SwapWindow(_handle->hwnd);
 }
-
-/*
-void SdlWindow::signalExpose() {
-   SDL_Event event;
-   event.type = SDL_WINDOWEVENT;
-   event.window.event = SDL_WINDOWEVENT_EXPOSED;
-   SDL_PushEvent(&event);
-}
-*/
 
