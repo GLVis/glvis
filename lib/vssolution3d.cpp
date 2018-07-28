@@ -2037,7 +2037,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
                }
             ev = tet_edges;
             break;
-         case Element::PRISM:
+         case Element::WEDGE:
          {
             int emark[9];
             ev = pri_edges;
@@ -2699,7 +2699,7 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
             case Element::TETRAHEDRON:
                DrawTetLevelSurf(pointmat, vals, tet_id, levels);
                break;
-            case Element::PRISM:
+            case Element::WEDGE:
             {
                for (int k = 0; k < 3; k++)
                {
