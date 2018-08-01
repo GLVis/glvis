@@ -29,11 +29,14 @@ uniform mat4 projectionMatrix;
 uniform mat4 textProjMatrix;
 uniform mat3 normalMatrix; 
  
+uniform vec4 clipPlane;
+
 varying vec3 fNormal; 
 varying vec3 fPosition; 
 varying vec4 fColor; 
 varying vec2 fTexCoord; 
 varying vec2 fFontTexCoord;
+varying float fClipVal;
  
 void main() 
 { 
@@ -43,6 +46,7 @@ void main()
     fColor = color; 
     fTexCoord = texCoord0.xy; 
     fFontTexCoord = texCoord1.xy;
+    fClipVal = dot(vec4(pos.xyz, 1.0), clipPlane);
     vec4 textOffset = textProjMatrix * vec4(textVertex, 0.0, 0.0);
     pos = projectionMatrix * pos;
     gl_Position = pos;
@@ -61,14 +65,14 @@ uniform bool useClipPlane;
  
 uniform sampler2D fontTex; 
 uniform sampler2D colorTex;
-uniform vec4 clipPlane;
  
 varying vec3 fNormal; 
 varying vec3 fPosition; 
 varying vec4 fColor; 
 varying vec2 fTexCoord; 
 varying vec2 fFontTexCoord; 
- 
+varying float fClipVal;
+
 struct PointLight { 
     vec3 position; 
     vec4 diffuse; 
@@ -86,17 +90,15 @@ struct Material {
     float shininess; 
 }; 
  
-uniform Material material; 
+uniform Material material;
  
 void main() 
 {
-    if (useClipPlane && dot(vec4(fPosition, 1.0),clipPlane) < 0.0) {
+    if (useClipPlane && fClipVal < 0.0) {
         discard;
     }
     if (containsText) { 
-        vec4 colorOut = vec4(0.0, 0.0, 0.0, texture2D(fontTex, fFontTexCoord).a); 
-        if (colorOut.a < 0.01)
-            discard;
+        vec4 colorOut = vec4(0.0, 0.0, 0.0, texture2D(fontTex, fFontTexCoord).a);
         gl_FragColor = colorOut;
     } else { 
         vec4 color = fColor; 
@@ -107,22 +109,22 @@ void main()
             gl_FragColor = color;
         } else {
             float normSgn = float(int(gl_FrontFacing) * 2 - 1);
-            vec4 ambient_light = g_ambient * material.ambient; 
+            vec4 ambient_light = g_ambient * color; 
             vec4 diffuse_light = vec4(0.0, 0.0, 0.0, 0.0); 
             vec4 specular_light = vec4(0.0, 0.0, 0.0, 0.0); 
             for (int i = 0; i < 3; i++) {
                 if (i == numLights)
                     break;
                 vec3 light_dir = normalize(lights[i].position - fPosition); 
-                diffuse_light += lights[i].diffuse * material.diffuse * max(dot(fNormal * normSgn, light_dir), 0.0); 
+                diffuse_light += lights[i].diffuse * color * max(dot(fNormal * normSgn, light_dir), 0.0); 
      
-                //vec3 eye_to_vert = normalize(-fPosition); 
-                vec3 half_v = normalize(vec3(0,0,1) + light_dir);
-                float specular_factor = max(dot(half_v, fNormal * normSgn), 0.0); 
+                vec3 eye_to_vert = normalize(-fPosition);
+                vec3 half_v = normalize(eye_to_vert + light_dir);
+                float specular_factor = max(dot(half_v, normSgn * fNormal), 0.0); 
                 specular_light += lights[i].specular * material.specular * pow(specular_factor, material.shininess); 
             } 
-            gl_FragColor.xyz = vec3(color) * (ambient_light.xyz + diffuse_light.xyz + specular_light.xyz);
-            gl_FragColor.w = 1.0;
+            gl_FragColor.xyz = ambient_light.xyz + diffuse_light.xyz + specular_light.xyz;
+            gl_FragColor.w = color.w;
         }
     } 
 })";

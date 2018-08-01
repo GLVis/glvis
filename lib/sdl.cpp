@@ -82,7 +82,7 @@ bool SdlWindow::createGlContext() {
     // all we need is an alpha channel
 
     //SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 1);
+    SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8);
     //SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 1);
     if (GetMultisample() > 0) {
         SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);
