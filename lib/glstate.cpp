@@ -31,12 +31,16 @@ uniform mat3 normalMatrix;
  
 uniform vec4 clipPlane;
 
+uniform float matAlpha;
+uniform float matAlphaCenter;
+
 varying vec3 fNormal; 
 varying vec3 fPosition; 
 varying vec4 fColor; 
 varying vec2 fTexCoord; 
 varying vec2 fFontTexCoord;
 varying float fClipVal;
+varying float fAlpha;
  
 void main() 
 { 
@@ -44,12 +48,22 @@ void main()
     vec4 pos = modelViewMatrix * vec4(vertex, 1.0);
     fPosition = pos.xyz; 
     fColor = color; 
-    fTexCoord = texCoord0.xy; 
+    fTexCoord = texCoord0.xy;
     fFontTexCoord = texCoord1.xy;
     fClipVal = dot(vec4(pos.xyz, 1.0), clipPlane);
     vec4 textOffset = textProjMatrix * vec4(textVertex, 0.0, 0.0);
     pos = projectionMatrix * pos;
     gl_Position = pos;
+    fAlpha = matAlpha;
+    if (matAlpha < 1.0) {
+        if (matAlphaCenter > 1.0) {
+            fAlpha *= exp(-(matAlphaCenter) * abs(texCoord0.x - 1.0));
+        } else if (matAlphaCenter < 0.0) {
+            fAlpha *= exp((matAlphaCenter - 1.0) * abs(texCoord0.x));
+        } else {
+            fAlpha *= exp(-abs(texCoord0.x - matAlphaCenter));
+        }
+    }
     if (containsText) {
         gl_Position += vec4((textOffset.xy * pos.w), -0.005, 0.0);
     }
@@ -72,6 +86,7 @@ varying vec4 fColor;
 varying vec2 fTexCoord; 
 varying vec2 fFontTexCoord; 
 varying float fClipVal;
+varying float fAlpha;
 
 struct PointLight { 
     vec3 position; 
@@ -81,11 +96,9 @@ struct PointLight {
  
 uniform int numLights; 
 uniform PointLight lights[3]; 
-uniform vec4 g_ambient; 
- 
-struct Material { 
-    vec4 ambient; 
-    vec4 diffuse; 
+uniform vec4 g_ambient;
+
+struct Material {
     vec4 specular; 
     float shininess; 
 }; 
@@ -103,7 +116,8 @@ void main()
     } else { 
         vec4 color = fColor; 
         if (useColorTex) { 
-            color = texture2D(colorTex, fTexCoord); 
+            color.xyz = texture2D(colorTex, fTexCoord).xyz;
+            color.w = fAlpha;
         }
         if (numLights == 0) {
             gl_FragColor = color;
@@ -202,10 +216,12 @@ void GlState::initShaderState() {
     locProjectText = glGetUniformLocation(program, "textProjMatrix");
     locNormal = glGetUniformLocation(program, "normalMatrix");
 
-    locAmb = glGetUniformLocation(program, "material.ambient");
-    locDif = glGetUniformLocation(program, "material.diffuse");
     locSpec = glGetUniformLocation(program, "material.specular");
     locShin = glGetUniformLocation(program, "material.shininess");
+
+    locMatAlpha = glGetUniformLocation(program, "matAlpha");
+    locMatAlphaCenter = glGetUniformLocation(program, "matAlphaCenter");
+    glUniform1f(locMatAlpha, 1.f);
 
     //Texture unit 0: color palettes
     //Texture unit 1: font atlas

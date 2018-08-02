@@ -1288,8 +1288,7 @@ void VisualizationSceneScalarData::Init()
 
    //glEnable (GL_COLOR_MATERIAL);
    //glShadeModel (GL_SMOOTH);
-   gl->enableColorMaterial();
-
+   
    gl->enableLight();
    gl->enableDepthTest();
    //glEnable(GL_AUTO_NORMAL);

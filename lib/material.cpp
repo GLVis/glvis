@@ -171,6 +171,7 @@ void Toggle_Background()
 
 void Set_Transparency()
 {
+   GetGlState()->setTransparency(MatAlpha, MatAlphaCenter);
    if (AntiAliasing == 0)
    {
 #ifndef GLVIS_OGL3
@@ -190,6 +191,7 @@ void Remove_Transparency()
       gl2psDisable(GL2PS_BLEND);
 #endif
    }
+   GetGlState()->setTransparency(1.0, MatAlphaCenter);
    glDepthMask(GL_TRUE);
 }
 

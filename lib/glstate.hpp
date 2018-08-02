@@ -125,7 +125,8 @@ protected:
     bool _attr_enabled[NUM_ATTRS];
 
     GLuint locUseClipPlane, locClipPlane;
-    GLuint locAmb, locDif, locSpec, locShin;
+    GLuint locSpec, locShin;
+    GLuint locMatAlpha, locMatAlphaCenter;
     GLuint locModelView, locProject, locProjectText, locNormal;
 
     glm::vec3 getRasterPoint(double x, double y, double z) {
@@ -166,13 +167,6 @@ public:
         }
     }
 
-    /**
-     * Sets the ambient and diffuse lighting to full intensity, tracking the object color.
-     */
-    void enableColorMaterial() { _colorMat = true; }
-
-    void disableColorMaterial() { _colorMat = false; }
-
     void enableClipPlane() {
         if (!_clipPlane) {
             glUniform1i(locUseClipPlane, GL_TRUE); 
@@ -201,6 +195,11 @@ public:
         if (!_attr_enabled[ATTR_COLOR]) {
             glVertexAttrib4fv(_attr_locs[ATTR_COLOR], _staticColor);
         }
+    }
+
+    void setTransparency(float matAlpha, float matAlphaCenter) {
+        glUniform1f(locMatAlpha, matAlpha);
+        glUniform1f(locMatAlphaCenter, matAlphaCenter);
     }
 
     GlState()
@@ -279,14 +278,6 @@ public:
      * Sets the material parameters to use in lighting calculations.
      */
     void setMaterial(Material mat) {
-        if (!_colorMat) {
-            glUniform4fv(locAmb, 1, mat.ambient);
-            glUniform4fv(locDif, 1, mat.diffuse);
-        } else {
-            float fullIntens[4] = {1.0, 1.0, 1.0, 1.0};
-            glUniform4fv(locAmb, 1, fullIntens);
-            glUniform4fv(locDif, 1, fullIntens);
-        }
         glUniform4fv(locSpec, 1, mat.specular);
         glUniform1f(locShin, mat.shininess);
     }
@@ -374,7 +365,7 @@ public:
      */
     void setModeRenderText() {
         if (_shaderMode != RENDER_TEXT) {
-            //glDisable(GL_DEPTH_TEST);
+            glDisable(GL_DEPTH_TEST);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             GLuint locContainsText = glGetUniformLocation(program, "containsText");
