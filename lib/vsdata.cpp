@@ -400,7 +400,6 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
 
    double val;
    double Y;
-   ostringstream * buf;
    if (!level)
    {
       for (i = 0; i <= 4; i++)
@@ -409,10 +408,9 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
 
          val = ULogVal(i / 4.0);
 
-         buf = new ostringstream;
-         (*buf) << setprecision(4) << val;
-         color_bar.addText(maxx+0.02,Y,posz, buf->str());
-         delete buf;
+         ostringstream buf;
+         buf << setprecision(4) << val;
+         color_bar.addText(maxx+0.02,Y,posz, buf.str());
       }
    }
    else
@@ -422,10 +420,9 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
          val = (*level)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
 
-         buf = new ostringstream;
-         (*buf) << setprecision(4) << val;
-         color_bar.addText(maxx+0.02,Y,posz, buf->str());
-         delete buf;
+         ostringstream buf;
+         buf << setprecision(4) << val;
+         color_bar.addText(maxx+0.02,Y,posz, buf.str());
       }
    }
 
@@ -436,10 +433,9 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
          val = (*levels)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
 
-         buf = new ostringstream;
-         (*buf) << setprecision(4) << val;
-         color_bar.addText(maxx+0.02,Y,posz, buf->str());
-         delete buf;
+         ostringstream buf;
+         buf << setprecision(4) << val;
+         color_bar.addText(maxx+0.02,Y,posz, buf.str());
       }
    }
    color_bar.buffer();
