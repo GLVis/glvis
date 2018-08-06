@@ -201,6 +201,7 @@ void SdlWindow::keyEvent(SDL_Keysym& ks) {
 bool SdlWindow::mainIter() {
     SDL_Event e;
     static bool useIdle = false;
+    bool needsSwap = false;
     while (SDL_PollEvent(&e)) {
         switch(e.type) {
             case SDL_QUIT:
@@ -230,6 +231,7 @@ bool SdlWindow::mainIter() {
     if (onIdle) {
         if (glvis_command == NULL || visualize == 2 || useIdle) {
             onIdle();
+            needsSwap = true;
         } else {
             if (glvis_command->Execute() < 0)
                 running = false;
@@ -239,9 +241,9 @@ bool SdlWindow::mainIter() {
     if (requiresExpose) {
         onExpose();
         requiresExpose = false;
-        return true;
+        needsSwap = true;
     }
-    return false;
+    return needsSwap;
 }
 
 void SdlWindow::mainLoop() {
@@ -252,6 +254,7 @@ void SdlWindow::mainLoop() {
                                             SDL_GL_SwapWindow(((SdlWindow*) arg)->_handle->hwnd);
                                     }, this, 0, 1);
 #else
+    visualize = 1;
     while (running) {
         bool glSwap = mainIter();
         if (glSwap) {
