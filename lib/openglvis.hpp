@@ -95,9 +95,6 @@ public:
    void TurnLeftRight(double angle);
    void TurnUpDown(double angle);
 
-   void GLMultRotMatrix();
-   void GLMultTransposeRotMatrix();
-   void GLMultMatrix();
    void Print();
 
    glm::mat4 RotMatrix();

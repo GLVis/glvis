@@ -140,8 +140,8 @@ void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
    glPushMatrix();
    glTranslated(px, py, pz);
 */
-   GlMatrix mv = gl->modelView;
-   mv.translate(px, py, pz);
+   GlMatrix mv_save = gl->modelView;
+   gl->modelView.translate(px, py, pz);
 
    double rhos = sqrt (vx*vx+vy*vy+vz*vz);
    double phi   = acos(vz/rhos);
@@ -154,23 +154,25 @@ void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
 
    glScaled (length, length, length);
    */
-   mv.rotate(theta*180/M_PI, 0.0f, 0.0f, 1.0f);
-   mv.rotate(phi*180/M_PI, 0.0f, 1.0f, 0.0f);
-   mv.scale(length, length, length);
-   gl->setImmModelView(mv);
+   gl->modelView.rotate(theta*180/M_PI, 0.0f, 0.0f, 1.0f);
+   gl->modelView.rotate(phi*180/M_PI, 0.0f, 1.0f, 0.0f);
+   gl->modelView.scale(length, length, length);
+   gl->loadMatrixUniforms();
 
    glBegin(GL_LINES);
    glVertex3f(0, 0, 0);
    glVertex3f(0, 0, 1);
    glEnd();
 
-   mv.translate(0, 0, 1);
-   mv.scale(cone_scale, cone_scale, cone_scale);
-   gl->setImmModelView(mv);
+   gl->modelView.translate(0, 0, 1);
+   gl->modelView.scale(cone_scale, cone_scale, cone_scale);
+   gl->loadMatrixUniforms();
 
    Cone();
 
+   gl->modelView = mv_save;
    gl->loadMatrixUniforms();
+
 }
 
 void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,

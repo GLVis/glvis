@@ -258,23 +258,6 @@ public:
     }
 
     /**
-     * Set temporary model-view matrix directly in the shader.
-     */
-    void setImmModelView(GlMatrix modelview) {
-        glUniformMatrix4fv(locModelView, 1, GL_FALSE, glm::value_ptr(modelview.mtx));
-        glm::mat3 normal(modelview.mtx);
-        normal = glm::inverseTranspose(normal);
-        glUniformMatrix3fv(locNormal, 1, GL_FALSE, glm::value_ptr(normal));
-    }
-
-    /**
-     * Set temporary projection matrix directly in the shader.
-     */
-    void setImmProjection(GlMatrix proj) {
-        glUniformMatrix4fv(locProject, 1, GL_FALSE, glm::value_ptr(proj.mtx));
-    }
-
-    /**
      * Sets the material parameters to use in lighting calculations.
      */
     void setMaterial(Material mat) {
@@ -365,7 +348,7 @@ public:
      */
     void setModeRenderText() {
         if (_shaderMode != RENDER_TEXT) {
-            glDisable(GL_DEPTH_TEST);
+            //glDisable(GL_DEPTH_TEST);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             GLuint locContainsText = glGetUniformLocation(program, "containsText");
