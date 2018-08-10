@@ -74,6 +74,7 @@ private:
     void mouseEventDown(SDL_MouseButtonEvent& eb);
     void mouseEventUp(SDL_MouseButtonEvent& eb);
     void keyEvent(SDL_Keysym& ks);
+    void keyEvent(char c);
 public:
     SdlWindow(const char * title, int w, int h);
     ~SdlWindow();
