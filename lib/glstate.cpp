@@ -6,15 +6,13 @@ using std::cerr;
 using std::endl;
 
 #ifdef __EMSCRIPTEN__
-const std::string _glsl_ver = "";
+const std::string _glsl_add = "precision mediump float;\n";
 #else
-const std::string _glsl_ver = "#version 120\n";
+const std::string _glsl_add = "#version 120\n";
 #endif
 
-const std::string vertex_shader_file = _glsl_ver +
+const std::string vertex_shader_file = _glsl_add +
 R"(
-//precision highp float;
-
 attribute vec3 vertex;
 attribute vec2 textVertex;
 attribute vec4 color;
@@ -69,10 +67,8 @@ void main()
     }
 })";
 
-const std::string fragment_shader_file = _glsl_ver +
+const std::string fragment_shader_file = _glsl_add +
 R"(
-//precision highp float;
-
 uniform bool containsText; 
 uniform bool useColorTex;
 uniform bool useClipPlane;

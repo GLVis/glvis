@@ -503,14 +503,6 @@ void VisualizationSceneSolution::Init()
       wnd->setOnKeyDown(SDLK_F12, KeyF12Pressed);
    }
 
-   displlist  = glGenLists (1);
-   linelist   = glGenLists (1);
-   lcurvelist = glGenLists (1);
-   bdrlist    = glGenLists (1);
-   cp_list    = glGenLists (1);
-   e_nums_list  = glGenLists (1);
-   v_nums_list  = glGenLists (1);
-
    Prepare();
    PrepareLines();
    PrepareLevelCurves();
@@ -520,13 +512,6 @@ void VisualizationSceneSolution::Init()
 
 VisualizationSceneSolution::~VisualizationSceneSolution()
 {
-   glDeleteLists (displlist, 1);
-   glDeleteLists (linelist, 1);
-   glDeleteLists (lcurvelist, 1);
-   glDeleteLists (bdrlist, 1);
-   glDeleteLists (cp_list, 1);
-   glDeleteLists (e_nums_list, 1);
-   glDeleteLists (v_nums_list, 1);
 }
 
 void VisualizationSceneSolution::ToggleDrawElems()

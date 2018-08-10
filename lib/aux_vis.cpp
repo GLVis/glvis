@@ -336,7 +336,9 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
    }
 
    //auxMainLoop(NULL);
+#ifndef __EMSCRIPTEN__
    wnd->mainLoop();
+#endif
    InitIdleFuncs();
 }
 
@@ -775,7 +777,7 @@ int Screenshot(const char *fname, bool convert)
 #ifdef GLVIS_DEBUG
    cout << "done." << endl;
 #endif
-
+#ifndef __EMSCRIPTEN__
    string filename = fname;
    bool call_convert = false;
    if (convert)
@@ -925,6 +927,10 @@ int Screenshot(const char *fname, bool convert)
       remove(filename.c_str());
    }
    return 0;
+#else
+   cout << "Screenshots not yet implemented for JS" << endl;
+   return 1;
+#endif
 }
 
 void KeyS()
@@ -956,6 +962,7 @@ void KeyS()
 
 void KeyCtrlP()
 {
+#ifndef __EMSCRIPTEN__
    int state, buffsize;
    FILE * fp;
    GLint viewport[4] = { 0, 0, 0, 0 };
@@ -990,6 +997,9 @@ void KeyCtrlP()
 
    cout << "done" << endl;
    locscene -> Draw();
+#else
+   cout << "Printing disabled" << endl;
+#endif
 }
 
 void KeyQPressed()

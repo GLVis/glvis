@@ -228,6 +228,7 @@ bool SdlWindow::mainIter() {
                 break;
         }
     }
+#ifndef __EMSCRIPTEN__
     if (onIdle) {
         if (glvis_command == NULL || visualize == 2 || useIdle) {
             onIdle();
@@ -238,6 +239,12 @@ bool SdlWindow::mainIter() {
         }
         useIdle = !useIdle;
     }
+#else
+    if (onIdle) {
+        onIdle();
+        needsSwap = true;
+    }
+#endif
     if (requiresExpose) {
         onExpose();
         requiresExpose = false;
@@ -250,8 +257,7 @@ void SdlWindow::mainLoop() {
     running = true;
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop_arg([](void* arg) {
-                                        if(((SdlWindow*) arg)->mainIter())
-                                            SDL_GL_SwapWindow(((SdlWindow*) arg)->_handle->hwnd);
+                                        ((SdlWindow*) arg)->mainIter();
                                     }, this, 0, 1);
 #else
     visualize = 1;
