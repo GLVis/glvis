@@ -348,7 +348,7 @@ public:
      */
     void setModeRenderText() {
         if (_shaderMode != RENDER_TEXT) {
-            //glDisable(GL_DEPTH_TEST);
+            glDepthMask(GL_FALSE);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             GLuint locContainsText = glGetUniformLocation(program, "containsText");
@@ -363,7 +363,7 @@ public:
     void setModeColorTexture(bool setUniforms = true) {
         if (_shaderMode == RENDER_TEXT) {
             if (_depthTest)
-                glEnable(GL_DEPTH_TEST);
+                glDepthMask(GL_TRUE);
             if (!_blend)
                 glDisable(GL_BLEND);
             GLuint locContainsText = glGetUniformLocation(program, "containsText");
@@ -382,7 +382,7 @@ public:
     void setModeColor(bool setUniforms = true) {
         if (_shaderMode == RENDER_TEXT) {
             if (_depthTest)
-                glEnable(GL_DEPTH_TEST);
+                glDepthMask(GL_TRUE);
             if (!_blend)
                 glDisable(GL_BLEND);
             GLuint locContainsText = glGetUniformLocation(program, "containsText");
