@@ -86,7 +86,9 @@ public:
         if (count >= 2 && (render_as == GL_LINE_STRIP
                         || render_as == GL_LINE_LOOP)) {
             int offset = 4;
-            std::copy_n(pts.end() - offset, offset, std::back_inserter(pts));
+            std::vector<float> last_vtx(pts.end() - offset, pts.end());
+            pts.insert(pts.end(), std::make_move_iterator(last_vtx.begin())
+                                , std::make_move_iterator(last_vtx.end()));
         }
         pts.emplace_back(x);
         pts.emplace_back(y);
@@ -326,7 +328,7 @@ private:
         std::string text;
         int w, h;
         _entry() = default;
-        _entry(float x, float y, float z, std::string txt)
+        _entry(float x, float y, float z, const std::string& txt)
             : rx(x), ry(y), rz(z), text(txt) { }
     };
 
@@ -340,13 +342,13 @@ public:
             glDeleteBuffers(1, _handle.get());
     }
 
-    void addText(float x, float y, float z, std::string& text) {
+    void addText(float x, float y, float z, const std::string& text) {
         _data.emplace_back(x, y, z, text);
     }
 
     void bufferData();
 
-    bool getObjectSize(std::string& text, int& w, int& h) {
+    bool getObjectSize(const std::string& text, int& w, int& h) {
         for (auto& e : _data) {
             if (e.text == text) {
                 w = e.w;

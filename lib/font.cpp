@@ -101,7 +101,7 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
         x += face->glyph->bitmap.width + 2;
     }
     font_init = true;
-    glEnable(GL_TEXTURE_2D);
+    //glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
     return true;
 }
