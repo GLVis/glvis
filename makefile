@@ -38,6 +38,8 @@ make distclean
 make style
    Format the GLVis C++ source files using the Artistic Style (astyle) settings
    from MFEM.
+make js
+   Build a JavaScript library. Requires an MFEM library built with Emscripten.
 
 endef
 
@@ -46,7 +48,7 @@ PREFIX = ./bin
 INSTALL = /usr/bin/install
 
 # Use the MFEM build directory
-MFEM_DIR = ../mfem
+MFEM_DIR = ../mfem-default
 CONFIG_MK = $(MFEM_DIR)/config/config.mk
 # Use the MFEM install directory
 # MFEM_DIR = ../mfem/mfem
@@ -64,16 +66,28 @@ ifeq (,$(filter help clean distclean style,$(MAKECMDGOALS)))
    -include $(CONFIG_MK)
 endif
 
+GLVIS_JS = NO
+
+ifeq ($(GLVIS_JS),YES)
+   ifneq ($(MFEM_CXX),emcc)
+	  $(error MFEM was not compiled with Emscripten)
+   endif
+endif
+
 CXX = $(MFEM_CXX)
 CPPFLAGS = $(MFEM_CPPFLAGS)
 CXXFLAGS = $(MFEM_CXXFLAGS)
 
 # MFEM config does not define C compiler
-CC     = emcc 
+CC = gcc
+ifeq ($(GLVIS_JS),YES)
+    CC = emcc 
+endif
 CFLAGS = -O3 
 
 # Optional link flags
 LDFLAGS =
+
 
 OPTIM_OPTS = -O3
 DEBUG_OPTS = -g -Wall
@@ -113,17 +127,21 @@ endef
 
 # The X11 and OpenGL libraries
 
-BREW_PATH = /Users/yang39/usr/brew
-
 X11_SEARCH_PATHS = /usr /usr/X11 /opt/X11 /usr/X11R6
 X11_SEARCH_FILE = include/X11/Xlib.h
 X11_DIR = $(call find_dir,$(X11_SEARCH_FILE),$(X11_SEARCH_PATHS))
 X11_LIB_DIR = $(call find_dir,libX11.$(SO_EXT),$(X11_DIR)/lib64 $(X11_DIR)/lib)
-GL_OPTS = -Ithirdparty/glm -s USE_SDL=2 -s USE_SDL_TTF=2
+GL_OPTS = -Ithirdparty/glm
 # for servers not supporting GLX 1.3:
 # GL_OPTS = -I$(X11_DIR)/include -DGLVIS_GLX10
 
-GL_LIBS = -L$(BREW_PATH)/lib -s USE_SDL=2 -lGLEW -lSDL2
+ifeq ($(GLVIS_JS), YES)
+   GL_OPTS += -s USE_SDL=2
+   GL_LIBS += -s USE_SDL=2
+else
+   GL_OPTS += -I$(X11_DIR)/include
+   GL_LIBS += -L$(X11_DIR)/lib -lGLEW -lSDL2 $(if $(NOTMAC),-lGL,-framework OpenGL)
+endif
 
 GLVIS_FLAGS += $(GL_OPTS)
 GLVIS_LIBS  += $(GL_LIBS)
@@ -152,8 +170,15 @@ USE_FREETYPE = YES
 # get libs with:   freetype-config --libs    or  pkg-config freetype2 --libs
 # libfontconfig:   pkg-config fontconfig --cflags
 #                  pkg-config fontconfig --libs
-FT_OPTS = -DGLVIS_USE_FREETYPE -s USE_FREETYPE=1 #-I$(X11_DIR)/include/freetype2
+
+FT_OPTS = -DGLVIS_USE_FREETYPE 
 FT_LIBS = -lfreetype -lfontconfig
+ifeq ($(GLVIS_JS), YES)
+   FT_OPTS += -s USE_FREETYPE=1
+   FT_LIBS = -s USE_FREETYPE=1
+else
+   FT_OPTS += -I$(X11_DIR)/include/freetype2
+endif
 ifeq ($(USE_FREETYPE),YES)
    GLVIS_FLAGS += $(FT_OPTS)
    GLVIS_LIBS  += $(FT_LIBS)
@@ -168,14 +193,21 @@ Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
 # generated with 'echo lib/*.c*'
 SOURCE_FILES = lib/aux_vis.cpp lib/aux_gl3.cpp lib/font.cpp lib/sdl.cpp \
- lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/threads.cpp lib/vsdata.cpp \
+ lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/vsdata.cpp \
  lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp lib/vsvector3d.cpp lib/glstate.cpp
-OBJECT_FILES1 = $(SOURCE_FILES:.cpp=.o)
-OBJECT_FILES = $(OBJECT_FILES1:.c=.o)
+ifeq ($(GLVIS_JS), YES)
+   OBJECT_FILES = $(SOURCE_FILES:.cpp=.bc)
+else
+   SOURCE_FILES += lib/threads.cpp lib/gl2ps.c
+   OBJECT_FILES1 = $(SOURCE_FILES:.cpp=.o)
+   OBJECT_FILES = $(OBJECT_FILES1:.c=.o)
+endif
 # generated with 'echo lib/*.h*'
 HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/sdl.hpp lib/material.hpp \
- lib/openglvis.hpp lib/palettes.hpp lib/threads.hpp lib/visual.hpp \
+ lib/openglvis.hpp lib/palettes.hpp lib/visual.hpp \
  lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp lib/glstate.hpp
+
+EMCC_OPTS = --bind -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s EXPORT_NAME="Glvis" --memory-init-file 0
 
 # Targets
 
@@ -183,13 +215,20 @@ HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/sdl.hpp lib/mate
 
 .SUFFIXES: .c .cpp .o
 .cpp.o:
-	$(CCC) -g -c lib/$(<F) -o lib/$(*F).bc
+	$(CCC) -c lib/$(<F) -o lib/$(*F).o
 .c.o:
-	$(Ccc) -g -c lib/$(<F) -o lib/$(*F).bc
+	$(Ccc) -c lib/$(<F) -o lib/$(*F).o
 
-glvis: override MFEM_DIR = $(MFEM_DIR1)
+%.bc: %.cpp $(HEADER_FILES)
+	$(CCC) -c lib/$(<F) -o lib/$(*F).bc
+
+
+#glvis: override MFEM_DIR = $(MFEM_DIR1)
 glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(CCC) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
+
+glvis-js: lib/aux_js.cpp OpenSans.ttf $(OBJECT_FILES) $(CONFIG_MK) $(MFEM_LIB_FILE)
+	$(CCC) -o libglvis.js lib/*.bc lib/aux_js.cpp $(LIBS) --embed-file OpenSans.ttf $(EMCC_OPTS)
 
 # Generate an error message if the MFEM library is not built and exit
 $(CONFIG_MK) $(MFEM_LIB_FILE):
@@ -203,14 +242,17 @@ opt:
 debug:
 	$(MAKE) "GLVIS_DEBUG=YES"
 
-$(OBJECT_FILES): override MFEM_DIR = $(MFEM_DIR2)
+js:
+	$(MAKE) "GLVIS_JS=YES" glvis-js
+
+#$(OBJECT_FILES): override MFEM_DIR = $(MFEM_DIR2)
 $(OBJECT_FILES): $(HEADER_FILES) $(CONFIG_MK)
 
 lib/libglvis.a: $(OBJECT_FILES)
 	cd lib;	ar cruv libglvis.a *.o;	ranlib libglvis.a
 
 clean:
-	rm -rf lib/*.o lib/*~ *~ glvis lib/libglvis.a *.dSYM
+	rm -rf lib/*.o lib/*.bc lib/*~ *~ glvis lib/libglvis.a *.dSYM
 
 distclean: clean
 	rm -rf bin/
