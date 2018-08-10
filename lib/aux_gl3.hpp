@@ -16,6 +16,7 @@
 #include <unordered_map>
 #include <iostream>
 #include <memory>
+#include <algorithm>
 
 #include "platform_gl.hpp"
 
