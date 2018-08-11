@@ -630,33 +630,12 @@ void VisualizationSceneScalarData::DrawCoordinateCross()
 
    coord_cross.draw();
 
-#ifndef GLVIS_USE_FREETYPE
-   glPushAttrib (GL_LIST_BIT);
-   glListBase (fontbase);
-#endif
-
 #ifndef GLVIS_OGL3
    if (print) { gl2psText(a_label_x.c_str(),"Times",8); }
-#ifndef GLVIS_USE_FREETYPE
-   glRasterPos3f(lenx, 0.0f, 0.0f);
-   glCallLists(a_label_x.length(), GL_UNSIGNED_BYTE, a_label_x.c_str());
-#endif
 
    if (print) { gl2psText(a_label_y.c_str(),"Times",8); }
-#ifndef GLVIS_USE_FREETYPE
-   glRasterPos3f(0.0f, leny, 0.0f);
-   glCallLists(a_label_y.length(), GL_UNSIGNED_BYTE, a_label_y.c_str());
-#endif
 
    if (print) { gl2psText(a_label_z.c_str(),"Times",8); }
-#ifndef GLVIS_USE_FREETYPE
-   glRasterPos3f(0.0f, 0.0f, lenz);
-   glCallLists(a_label_z.length(), GL_UNSIGNED_BYTE, a_label_z.c_str());
-#endif
-
-#ifndef GLVIS_USE_FREETYPE
-   glPopAttrib();
-#endif
 #endif
    gl->projection = proj_save;
    gl->modelView = mv_save;

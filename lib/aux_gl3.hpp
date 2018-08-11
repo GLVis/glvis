@@ -106,7 +106,6 @@ public:
         } else if (use_color_tex) {
             pts.emplace_back(texcoord);
         }
-        bool use_padding = false;
         if (is_line != (use_color || use_color_tex)) {
             //if shape is line and no color present, need to pad to 16 bytes
             //if shape is polygon and color present, need to pad to 32 bytes

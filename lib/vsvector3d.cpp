@@ -1547,12 +1547,6 @@ void VisualizationSceneVector3d::Draw()
       Set_Transparency();
    }
 
-   if (GetUseTexture())
-   {
-      gl->setModeColorTexture();
-      gl->setStaticColor(1, 1, 1, 1);
-   }
-
    Set_Material();
    if (light)
    {
@@ -1576,11 +1570,6 @@ void VisualizationSceneVector3d::Draw()
       gl->disableClipPlane();
       cplane_buf.draw();
       gl->enableClipPlane();
-   }
-
-   if (GetUseTexture())
-   {
-      gl->setModeColor();
    }
 
    if (MatAlpha < 1.0)

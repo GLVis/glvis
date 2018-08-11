@@ -1499,13 +1499,7 @@ void VisualizationSceneSolution::Prepare()
             for (j = 0; j < pointmat.Size(); j++)
             {
                double z = LogVal((*sol)(vertices[j]));
-               float rgba[4];
-               float texCoord = MySetColor(z, minv, maxv, rgba);
-               if (GetUseTexture()) {
-                   poly.glTexCoord1f(texCoord);
-               } else {
-                   poly.glColor4fv(rgba);
-               }
+               MySetColor(poly, z, minv, maxv);
                poly.glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
                poly.glVertex3d(pointmat(0, j), pointmat(1, j), z);
             }
@@ -2254,16 +2248,7 @@ void VisualizationSceneSolution::Draw()
    // draw elements
    if (drawelems)
    {
-      if (GetUseTexture())
-      {
-          gl->setModeColorTexture();
-          gl->setStaticColor(1, 1, 1, 1);
-      }
       disp_buf[shading].draw();
-      if (GetUseTexture())
-      {
-         gl->setModeColor();
-      }
    }
 
    if (MatAlpha < 1.0)

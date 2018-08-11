@@ -193,7 +193,6 @@ void VertexBuffer::drawObject(GLenum renderAs) {
 
 void TextBuffer::bufferData() {
     std::vector<float> buf_data;
-    int offset = 0;
     float tex_w = GetFont()->getAtlasWidth();
     float tex_h = GetFont()->getAtlasHeight();
     for (auto& e : _data) {

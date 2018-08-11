@@ -1221,7 +1221,6 @@ void VisualizationSceneSolution3d::DrawRefinedSurf(
    int n, DenseMatrix &pointmat, Vector &values, Array<int> &RefGeoms)
 {
    double norm[3], pts[4][3];
-   float rgba[4], texcoord;
    gl3::GlBuilder draw = cplane_buf.createBuilder();
 
    for (int i = 0; i < RefGeoms.Size()/n; i++)
@@ -1247,12 +1246,7 @@ void VisualizationSceneSolution3d::DrawRefinedSurf(
          draw.glNormal3dv (norm);
          for (j = 0; j < n; j++)
          {
-            texcoord = MySetColor (values(RG[j]), minv, maxv, rgba);
-            if (GetUseTexture()) {
-                draw.glTexCoord1f(texcoord);
-            } else {
-                draw.glColor4fv(rgba);
-            }
+            MySetColor (draw, values(RG[j]), minv, maxv);
             draw.glVertex3dv (pts[j]);
          }
          draw.glEnd();
@@ -1682,13 +1676,7 @@ void VisualizationSceneSolution3d::Prepare()
 
          for (j = 0; j < pointmat.Size(); j++)
          {
-            float rgba[4];
-            float texcoord = MySetColor((*sol)(vertices[j]), minv, maxv, rgba);
-            if (GetUseTexture()) {
-                poly.glTexCoord1f(texcoord);
-            } else {
-                poly.glColor4fv(rgba);
-            }
+            MySetColor(poly, (*sol)(vertices[j]), minv, maxv);
             poly.glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
             poly.glVertex3dv(&pointmat(0, j));
          }
@@ -2124,19 +2112,13 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
                   }
 
                   gl3::GlBuilder draw = cplane_buf.createBuilder();
-                  float rgba[4];
                   if (!j)
                   {
                      draw.glBegin(GL_POLYGON);
                      draw.glNormal3dv(norm);
                      for (j = 0; j < m; j++)
                      {
-                        float texcoord = MySetColor(point[j][3], minv, maxv, rgba);
-                        if (GetUseTexture()) {
-                            draw.glTexCoord1f(texcoord);
-                        } else {
-                            draw.glColor4fv(rgba);
-                        }
+                        MySetColor(draw, point[j][3], minv, maxv);
                         draw.glVertex3dv(point[j]);
                      }
                      draw.glEnd();
@@ -2398,7 +2380,6 @@ void VisualizationSceneSolution3d::DrawTetLevelSurf(
    const Array<double> &levels, const DenseMatrix *grad)
 {
    double t, lvl, normal[3], vert[4][3], norm[4][3];
-   float rgba[4];
    int i, j, l, pos[4];
    bool flipped;
 
@@ -2482,12 +2463,7 @@ void VisualizationSceneSolution3d::DrawTetLevelSurf(
          {
             if (!Compute3DUnitNormal(vert[0], vert[1], vert[2], normal))
             {
-               float tex = MySetColor(lvl, minv, maxv, rgba);
-               if (GetUseTexture()) {
-                   draw.glTexCoord1f(tex);
-               } else {
-                   draw.glColor4fv(rgba);
-               }
+               MySetColor(draw, lvl, minv, maxv);
                draw.glNormal3dv(normal);
                draw.glBegin(GL_TRIANGLES);
                for (int k = 0; k < 3; k++)
@@ -2500,12 +2476,7 @@ void VisualizationSceneSolution3d::DrawTetLevelSurf(
          }
          else
          {
-            float tex = MySetColor(lvl, minv, maxv, rgba);
-            if (GetUseTexture()) {
-                draw.glTexCoord1f(tex);
-            } else {
-                draw.glColor4fv(rgba);
-            }
+            MySetColor(draw, lvl, minv, maxv);
             draw.glBegin(GL_TRIANGLES);
             for (int k = 0; k < 3; k++)
             {
@@ -2541,12 +2512,7 @@ void VisualizationSceneSolution3d::DrawTetLevelSurf(
             if (!Compute3DUnitNormal(vert[0], vert[1], vert[2], vert[3],
                                      normal))
             {
-               float tex = MySetColor(lvl, minv, maxv, rgba);
-               if (GetUseTexture()) {
-                   draw.glTexCoord1f(tex);
-               } else {
-                   draw.glColor4fv(rgba);
-               }
+               MySetColor(draw, lvl, minv, maxv);
                draw.glNormal3dv(normal);
                draw.glBegin(GL_QUADS);
                for (int k = 0; k < 4; k++)
@@ -2559,12 +2525,7 @@ void VisualizationSceneSolution3d::DrawTetLevelSurf(
          }
          else
          {
-            float tex = MySetColor(lvl, minv, maxv, rgba);
-            if (GetUseTexture()) {
-                draw.glTexCoord1f(tex);
-            } else {
-                draw.glColor4fv(rgba);
-            }
+            MySetColor(draw, lvl, minv, maxv);
             draw.glBegin(GL_QUADS);
             for (int k = 0; k < 4; k++)
             {
@@ -2759,12 +2720,6 @@ void VisualizationSceneSolution3d::Draw()
       Set_Transparency();
    }
 
-   if (GetUseTexture())
-   {
-      gl->setModeColorTexture();
-      gl->setStaticColor(1, 1, 1, 1);
-   }
-
    if (drawlsurf)
    {
       lsurf_buf.draw();
@@ -2783,11 +2738,6 @@ void VisualizationSceneSolution3d::Draw()
       gl->disableClipPlane();
       cplane_buf.draw();
       gl->enableClipPlane();
-   }
-
-   if (GetUseTexture())
-   {
-      gl->setModeColor();
    }
 
    if (MatAlpha < 1.0)

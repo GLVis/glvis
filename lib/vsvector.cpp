@@ -996,12 +996,6 @@ void VisualizationSceneVector::Draw()
       gl->enableLight();
    }
 
-   if (GetUseTexture())
-   {
-       gl->setModeColorTexture();
-       gl->setStaticColor(1, 1, 1, 1);
-   }
-
    // draw vector field
    if (drawvector > 1)
    {
@@ -1022,11 +1016,6 @@ void VisualizationSceneVector::Draw()
    if (MatAlpha < 1.0)
    {
       Remove_Transparency();
-   }
-
-   if (GetUseTexture())
-   {
-       gl->setModeColor();
    }
 
    if (light)
