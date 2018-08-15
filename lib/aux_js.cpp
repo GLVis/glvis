@@ -1,4 +1,3 @@
-#include "aux_js.hpp"
 #include "visual.hpp"
 #include "palettes.hpp"
 #include <SDL2/SDL_hints.h>
@@ -7,6 +6,7 @@
 std::string plot_caption;
 std::string extra_caption;
 mfem::GeometryRefiner GLVisGeometryRefiner;
+
 namespace js
 {
 
@@ -23,7 +23,6 @@ struct vis_data {
     mfem::GridFunction * grid_f;
     std::string keys;
 };
-vis_data glvis_data;
 
 void Extrude1DMeshAndSolution(vis_data & data) {
     if (data.mesh->Dimension() != 1 || data.mesh->SpaceDimension() != 1)
@@ -356,7 +355,7 @@ GridFunction *ProjectVectorFEGridFunction(GridFunction *gf)
 
 bool startVisualization(std::string input, std::string data_type) {
 
-    glvis_data = readStream(input, data_type);
+    vis_data glvis_data = readStream(input, data_type);
 
     if (glvis_data.field_type < 0 || glvis_data.field_type > 2) {
         return false;
@@ -504,7 +503,10 @@ void enableKeyHandling() {
     SDL_EventState(SDL_KEYUP, SDL_ENABLE);
 }
 
+void setKeyboardListeningElementId(const std::string & elem_id) {
+  SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, elem_id.c_str());
 }
+} // namespace js
 
 
 EMSCRIPTEN_BINDINGS(js_funcs) {
@@ -512,4 +514,5 @@ EMSCRIPTEN_BINDINGS(js_funcs) {
     emscripten::function("iterVisualization", &js::iterVisualization);
     emscripten::function("disableKeyHanding", &js::disableKeyHandling);
     emscripten::function("enableKeyHandling", &js::enableKeyHandling);
+    emscripten::function("setKeyboardListeningElementId", js::setKeyboardListeningElementId);
 }

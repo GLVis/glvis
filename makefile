@@ -48,7 +48,7 @@ PREFIX = ./bin
 INSTALL = /usr/bin/install
 
 # Use the MFEM build directory
-MFEM_DIR = ../mfem-default
+MFEM_DIR = ../mfem
 CONFIG_MK = $(MFEM_DIR)/config/config.mk
 # Use the MFEM install directory
 # MFEM_DIR = ../mfem/mfem
@@ -80,10 +80,7 @@ CXXFLAGS = $(MFEM_CXXFLAGS)
 
 # MFEM config does not define C compiler
 CC = gcc
-ifeq ($(GLVIS_JS),YES)
-    CC = emcc 
-endif
-CFLAGS = -O3 
+CFLAGS = -O3
 
 # Optional link flags
 LDFLAGS =
@@ -131,13 +128,12 @@ X11_SEARCH_PATHS = /usr /usr/X11 /opt/X11 /usr/X11R6
 X11_SEARCH_FILE = include/X11/Xlib.h
 X11_DIR = $(call find_dir,$(X11_SEARCH_FILE),$(X11_SEARCH_PATHS))
 X11_LIB_DIR = $(call find_dir,libX11.$(SO_EXT),$(X11_DIR)/lib64 $(X11_DIR)/lib)
-GL_OPTS = -Ithirdparty/glm
+GL_OPTS = -I$(GLM_DIR)
 # for servers not supporting GLX 1.3:
 # GL_OPTS = -I$(X11_DIR)/include -DGLVIS_GLX10
 
 ifeq ($(GLVIS_JS), YES)
    GL_OPTS += -s USE_SDL=2
-   GL_LIBS += -s USE_SDL=2
 else
    GL_OPTS += -I$(X11_DIR)/include
    GL_LIBS += -L$(X11_DIR)/lib -lGLEW -lSDL2 $(if $(NOTMAC),-lGL,-framework OpenGL)
@@ -171,7 +167,7 @@ USE_FREETYPE = YES
 # libfontconfig:   pkg-config fontconfig --cflags
 #                  pkg-config fontconfig --libs
 
-FT_OPTS = -DGLVIS_USE_FREETYPE 
+FT_OPTS = -DGLVIS_USE_FREETYPE
 FT_LIBS = -lfreetype -lfontconfig
 ifeq ($(GLVIS_JS), YES)
    FT_OPTS += -s USE_FREETYPE=1
@@ -207,7 +203,7 @@ HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/sdl.hpp lib/mate
  lib/openglvis.hpp lib/palettes.hpp lib/visual.hpp \
  lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp lib/glstate.hpp
 
-EMCC_OPTS = --bind -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s EXPORT_NAME="Glvis" --memory-init-file 0
+EMCC_OPTS = --bind -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s SINGLE_FILE=1 --no-heap-copy
 
 # Targets
 
@@ -227,8 +223,9 @@ EMCC_OPTS = --bind -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s EXPORT_NAME="Glvi
 glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(CCC) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
 
-glvis-js: lib/aux_js.cpp OpenSans.ttf $(OBJECT_FILES) $(CONFIG_MK) $(MFEM_LIB_FILE)
-	$(CCC) -o libglvis.js lib/*.bc lib/aux_js.cpp $(LIBS) --embed-file OpenSans.ttf $(EMCC_OPTS)
+FONT_FILE ?= OpenSans.ttf
+glvis-js: lib/aux_js.cpp $(OBJECT_FILES) $(CONFIG_MK) $(MFEM_LIB_FILE)
+	$(CCC) -o lib/libglvis.js lib/*.bc lib/aux_js.cpp $(LIBS) --embed-file $(FONT_FILE) $(EMCC_OPTS)
 
 # Generate an error message if the MFEM library is not built and exit
 $(CONFIG_MK) $(MFEM_LIB_FILE):
@@ -252,7 +249,7 @@ lib/libglvis.a: $(OBJECT_FILES)
 	cd lib;	ar cruv libglvis.a *.o;	ranlib libglvis.a
 
 clean:
-	rm -rf lib/*.o lib/*.bc lib/*~ *~ glvis lib/libglvis.a *.dSYM
+	rm -rf lib/*.o lib/*.bc lib/*~ *~ glvis lib/libglvis.a *.dSYM lib/libglvis.js
 
 distclean: clean
 	rm -rf bin/
