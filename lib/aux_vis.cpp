@@ -1407,12 +1407,6 @@ float MySetColor (double val, float (&rgba)[4])
 
    int palSize = paletteGetSize();
 
-   if (UseTexture)
-   {
-      //glTexCoord1d(val);
-      return val;
-   }
-
    if (val < 0.0) { val = 0.0; }
    if (val > 1.0) { val = 1.0; }
 
@@ -1431,6 +1425,11 @@ float MySetColor (double val, float (&rgba)[4])
       {
          malpha *= exp(-fabs(val-MatAlphaCenter));
       }
+   }
+   
+   if (UseTexture)
+   {
+      return MatAlpha < 1.0 ? malpha : 1.0;
    }
 
    val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
@@ -1463,12 +1462,6 @@ void MySetColor (gl3::GlBuilder& builder, double val)
 
    int palSize = paletteGetSize();
 
-   if (UseTexture)
-   {
-      builder.glTexCoord1f(val);
-      return;
-   }
-
    if (val < 0.0) { val = 0.0; }
    if (val > 1.0) { val = 1.0; }
 
@@ -1487,6 +1480,12 @@ void MySetColor (gl3::GlBuilder& builder, double val)
       {
          malpha *= exp(-fabs(val-MatAlphaCenter));
       }
+   }
+
+   if (UseTexture)
+   {
+      builder.glTexCoord2f(val, MatAlpha < 1.0 ? malpha : 1.0);
+      return;
    }
 
    val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);

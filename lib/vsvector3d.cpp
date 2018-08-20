@@ -546,11 +546,11 @@ void VisualizationSceneVector3d::PrepareFlat()
       }
       if (j == 3)
       {
-         DrawTriangle(p, c, minv, maxv, disp_buf[0]);
+         DrawTriangle(disp_buf[0], p, c, minv, maxv);
       }
       else
       {
-         DrawQuad(p, c, minv, maxv, disp_buf[0]);
+         DrawQuad(disp_buf[0], p, c, minv, maxv);
       }
    }
    disp_buf[0].buffer();

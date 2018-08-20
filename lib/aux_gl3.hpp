@@ -56,7 +56,7 @@ class GlBuilder
 
     float norm[3];
     float color[4];
-    float texcoord;
+    float texcoord[2];
 public:
     GlBuilder(GlDrawable * buf)
         : parent_buf(buf)
@@ -104,11 +104,13 @@ public:
             ((uint8_t*) &pack_rgba)[3] = (color[3] >= 1.0) ? 255 : (uint8_t)(color[3] * 256.);
             pts.emplace_back(pack_rgba);
         } else if (use_color_tex) {
-            pts.emplace_back(texcoord);
+            pts.emplace_back(texcoord[0]);
+            pts.emplace_back(texcoord[1]);
         }
-        if (is_line != (use_color || use_color_tex)) {
+        if ((is_line && !(use_color || use_color_tex))
+            || (!is_line && use_color)) {
             //if shape is line and no color present, need to pad to 16 bytes
-            //if shape is polygon and color present, need to pad to 32 bytes
+            //if shape is polygon and RGBA color present, need to pad to 32 bytes
             pts.emplace_back(0);
         }
         count++;
@@ -164,15 +166,16 @@ public:
 #endif
     }
     
-    void glTexCoord1f(float coord) {
+    void glTexCoord2f(float coord_u, float coord_v) {
 #ifdef GLVIS_OGL3
         if (pts.empty()) {
             use_color_tex = true;
             use_color = false;
         }
-        texcoord = coord;
+        texcoord[0] = coord_u;
+        texcoord[1] = coord_v;
 #else
-        ::glTexCoord1f(coord);
+        ::glTexCoord2f(coord_u, coord_v);
 #endif
     }
 };
@@ -306,7 +309,17 @@ public:
         std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
         std::copy(norm, norm+3, std::back_inserter(_pt_data));
         _pt_data.emplace_back(colorTexCoord);
-        _pt_data.emplace_back(0);
+        _pt_data.emplace_back(1.0);
+    }
+
+    void addVertex(const float (&vtx)[3], const float (&norm)[3], const float (&texcoord)[2]) {
+        if (_layout != LAYOUT_VTX_NORMAL_TEXTURE0) {
+            cerr << "Unexpected vertex of layout VTX_NORMAL_TEXTURE0" << endl;
+            return;
+        }
+        std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
+        std::copy(norm, norm+3, std::back_inserter(_pt_data));
+        std::copy(texcoord, texcoord+2, std::back_inserter(_pt_data));
     }
 
     /**
@@ -410,7 +423,16 @@ public:
      * Adds a triangle to the drawable object, with the specified face normal
      * and color texture coordinates.
      */
-    void addTriangle(const double vtx[][3], double (&norm)[3], float (&texcoord)[3]) {
+    void addTriangle(const double vtx[][3], const double (&norm)[3], const float (&texcoord)[3]) {
+        float fnorm[3] = { (float) norm[0], (float) norm[1], (float) norm[2] };
+        for (int i = 0; i < 3; i++) {
+            float fvert[3] = { (float) vtx[i][0], (float) vtx[i][1], (float) vtx[i][2] };
+            getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL_TEXTURE0,
+                  GL_TRIANGLES).addVertex(fvert, fnorm, texcoord[i]);
+        }
+    }
+    
+    void addTriangle(const double vtx[][3], const double (&norm)[3], const float (&texcoord)[3][2]) {
         float fnorm[3] = { (float) norm[0], (float) norm[1], (float) norm[2] };
         for (int i = 0; i < 3; i++) {
             float fvert[3] = { (float) vtx[i][0], (float) vtx[i][1], (float) vtx[i][2] };
@@ -459,6 +481,16 @@ public:
             float fvert[3] = { (float) vtx[i][0], (float) vtx[i][1], (float) vtx[i][2] };
             getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL_TEXTURE0,
                   GL_TRIANGLES).addVertex(fvert, fnorm, texcoord[i]);
+        }
+    }
+
+    void addQuad(const double (&vtx)[4][3], const double (&norm)[3], const float (&texcoord)[4][2]) {
+        float fnorm[3] = { (float) norm[0], (float) norm[1], (float) norm[2] };
+        int indices[] = {0, 1, 2, 0, 2, 3};
+        for (int i : indices) {
+            float fvert[3] = { (float) vtx[i][0], (float) vtx[i][1], (float) vtx[i][2] };
+            getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL_TEXTURE0,
+                    GL_TRIANGLES).addVertex(fvert, fnorm, texcoord[i]);
         }
     }
 

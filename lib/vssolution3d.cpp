@@ -1369,11 +1369,11 @@ void VisualizationSceneSolution3d::PrepareFlat()
       }
       if (j == 3)
       {
-          DrawTriangle(p, c, minv, maxv, disp_buf[0]);
+          DrawTriangle(disp_buf[0], p, c, minv, maxv);
       }
       else
       {
-          DrawQuad(p, c, minv, maxv, disp_buf[0]);
+          DrawQuad(disp_buf[0], p, c, minv, maxv);
       }
    }
    disp_buf[0].buffer();
@@ -2233,11 +2233,11 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
 
             if (nodes.Size() == 3)
             {
-               DrawTriangle(p, c, minv, maxv, cplane_buf);
+               DrawTriangle(cplane_buf, p, c, minv, maxv);
             }
             else
             {
-               DrawQuad(p, c, minv, maxv, cplane_buf);
+               DrawQuad(cplane_buf, p, c, minv, maxv);
             }
          }
          else // shading == 2

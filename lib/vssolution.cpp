@@ -990,36 +990,6 @@ void VisualizationSceneSolution::ToggleLogscale(bool print)
    }
 }
 
-void DrawNumberedMarker(const double x[3], double dx, int n)
-{
-   glBegin(GL_LINES);
-   // glColor4d(0, 0, 0, 0);
-   glVertex3d(x[0]-dx, x[1]-dx, x[2]);
-   glVertex3d(x[0]+dx, x[1]+dx, x[2]);
-   glVertex3d(x[0]+dx, x[1]-dx, x[2]);
-   glVertex3d(x[0]-dx, x[1]+dx, x[2]);
-   glEnd();
-
-#ifndef GLVIS_USE_FREETYPE
-   glPushAttrib (GL_LIST_BIT);
-   glListBase (fontbase);
-#endif
-
-   ostringstream buf;
-   buf << n;
-
-#ifndef GLVIS_USE_FREETYPE
-   glRasterPos3d (x[0], x[1], x[2]);
-   glCallLists(buf.str().size(), GL_UNSIGNED_BYTE, buf.str().c_str());
-#else
-   DrawBitmapText(buf.str().c_str(), x[0], x[1], x[2]);
-#endif
-
-#ifndef GLVIS_USE_FREETYPE
-   glPopAttrib();
-#endif
-}
-
 void DrawNumberedMarker(const double x[3], double dx, int n, gl3::GlDrawable& buff)
 {
     gl3::GlBuilder bld = buff.createBuilder();
@@ -1034,8 +1004,9 @@ void DrawNumberedMarker(const double x[3], double dx, int n, gl3::GlDrawable& bu
     buff.addText(x[0], x[1], x[2], std::to_string(n));
 }
 
-void DrawTriangle(const double (&pts)[4][3], const double (&cv)[4],
-                  const double minv, const double maxv, gl3::GlDrawable& buff)
+void DrawTriangle(gl3::GlDrawable& buff,
+                  const double (&pts)[4][3], const double (&cv)[4],
+                  const double minv, const double maxv)
 {
    double nor[3];
    if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
@@ -1043,11 +1014,12 @@ void DrawTriangle(const double (&pts)[4][3], const double (&cv)[4],
       return;
    }
    
-   float texcoord[3];
+   float texcoord[3][2];
    float rgba[3][4];
 
    for (int i = 0; i < 3; i++) {
-       texcoord[i] = MySetColor(cv[i], minv, maxv, rgba[i]);
+       texcoord[i][0] = cv[i];
+       texcoord[i][1] = MySetColor(cv[i], minv, maxv, rgba[i]);
    }
    if (GetUseTexture()) {
        buff.addTriangle(pts, nor, texcoord);
@@ -1056,8 +1028,9 @@ void DrawTriangle(const double (&pts)[4][3], const double (&cv)[4],
    }
 }
 
-void DrawQuad(const double (&pts)[4][3], const double (&cv)[4],
-              const double minv, const double maxv, gl3::GlDrawable& buff)
+void DrawQuad(gl3::GlDrawable& buff,
+              const double (&pts)[4][3], const double (&cv)[4],
+              const double minv, const double maxv)
 {
    double nor[3];
    if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
@@ -1065,11 +1038,12 @@ void DrawQuad(const double (&pts)[4][3], const double (&cv)[4],
       return;
    }
    
-   float texcoord[4];
+   float texcoord[4][2];
    float rgba[4][4];
    
-   for (int i = 0; i < 4; i++) {
-       texcoord[i] = MySetColor(cv[i], minv, maxv, rgba[i]);
+   for (int i = 0; i < 4; i++) { 
+       texcoord[i][0] = cv[i];
+       texcoord[i][1] = MySetColor(cv[i], minv, maxv, rgba[i]);
    }
    if (GetUseTexture()) {
        buff.addQuad(pts, nor, texcoord);
@@ -1283,11 +1257,11 @@ void VisualizationSceneSolution::PrepareFlat()
       }
       if (j == 3)
       {
-         DrawTriangle(pts, col, minv, maxv, disp_buf[0]);
+         DrawTriangle(disp_buf[0], pts, col, minv, maxv);
       }
       else
       {
-         DrawQuad(pts, col, minv, maxv, disp_buf[0]);
+         DrawQuad(disp_buf[0], pts, col, minv, maxv);
       }
    }
    disp_buf[0].buffer();

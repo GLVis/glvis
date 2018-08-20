@@ -126,7 +126,6 @@ protected:
 
     GLuint locUseClipPlane, locClipPlane;
     GLuint locSpec, locShin;
-    GLuint locMatAlpha, locMatAlphaCenter;
     GLuint locModelView, locProject, locProjectText, locNormal;
 
     glm::vec3 getRasterPoint(double x, double y, double z) {
@@ -197,14 +196,10 @@ public:
         }
     }
 
-    void setTransparency(float matAlpha, float matAlphaCenter) {
-        glUniform1f(locMatAlpha, matAlpha);
-        glUniform1f(locMatAlphaCenter, matAlphaCenter);
-    }
-
     GlState()
         : program(0),
-         _ambient{0.2, 0.2, 0.2, 1.0} {
+         _ambient{0.2, 0.2, 0.2, 1.0},
+         _attr_enabled{false} {
     }
 
     ~GlState() {
@@ -227,14 +222,20 @@ public:
     }
 
     void enableAttribArray(GlState::shader_attrib attr) {
-        glEnableVertexAttribArray(_attr_locs[attr]);
-        _attr_enabled[attr] = true;
+        if (!_attr_enabled[attr]) {
+            glEnableVertexAttribArray(_attr_locs[attr]);
+            _attr_enabled[attr] = true;
+        }
+        if (attr == ATTR_TEXCOORD0) {
+            glVertexAttrib2f(_attr_locs[ATTR_TEXCOORD0], 0.f, 1.f);
+        }
     }
 
-    //TODO: if color, use glVertexAttrib
     void disableAttribArray(GlState::shader_attrib attr) {
-        glDisableVertexAttribArray(_attr_locs[attr]);
-        _attr_enabled[attr] = false;
+        if (_attr_enabled[attr]) {
+            glDisableVertexAttribArray(_attr_locs[attr]);
+            _attr_enabled[attr] = false;
+        }
         if (attr == ATTR_COLOR) {
             glVertexAttrib4fv(_attr_locs[ATTR_COLOR], _staticColor);
         } else if (attr == ATTR_NORMAL) {

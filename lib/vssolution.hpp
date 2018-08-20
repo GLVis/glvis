@@ -144,26 +144,16 @@ public:
    virtual void ToggleAttributes(Array<int> &attr_list);
 };
 
-void DrawNumberedMarker(const double x[3], double dx, int n);
-
 void DrawNumberedMarker(const double x[3], double dx, int n, gl3::GlDrawable& buff);
 
-void DrawTriangle(const double pts[][3], const double cv[],
+//we only need 3 points, but the array is 4x3
+void DrawTriangle(gl3::GlDrawable& buff,
+                  const double (&pts)[4][3], const double (&cv)[4],
                   const double minv, const double maxv);
 
-//we only need 3 points, but the array is 4x3
-void DrawTriangle(const double (&pts)[4][3], const double (&cv)[4],
-                  const double minv, const double maxv, gl3::GlDrawable& buff);
-
-void DrawQuad(const double pts[][3], const double cv[],
+void DrawQuad(gl3::GlDrawable& buff,
+              const double (&pts)[4][3], const double (&cv)[4],
               const double minv, const double maxv);
-
-void DrawQuad(const double (&pts)[4][3], const double (&cv)[4],
-              const double minv, const double maxv, gl3::GlDrawable& buff);
-
-void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
-               const int n, const Array<int> &ind, const double minv,
-               const double maxv, const int normals_opt = 0);
 
 void DrawPatch(gl3::GlDrawable& buff, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,

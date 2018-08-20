@@ -29,9 +29,6 @@ uniform mat3 normalMatrix;
  
 uniform vec4 clipPlane;
 
-uniform float matAlpha;
-uniform float matAlphaCenter;
-
 varying vec3 fNormal; 
 varying vec3 fPosition; 
 varying vec4 fColor; 
@@ -52,16 +49,6 @@ void main()
     vec4 textOffset = textProjMatrix * vec4(textVertex, 0.0, 0.0);
     pos = projectionMatrix * pos;
     gl_Position = pos;
-    fAlpha = matAlpha;
-    if (matAlpha < 1.0) {
-        if (matAlphaCenter > 1.0) {
-            fAlpha *= exp(-(matAlphaCenter) * abs(texCoord0.x - 1.0));
-        } else if (matAlphaCenter < 0.0) {
-            fAlpha *= exp((matAlphaCenter - 1.0) * abs(texCoord0.x));
-        } else {
-            fAlpha *= exp(-abs(texCoord0.x - matAlphaCenter));
-        }
-    }
     if (containsText) {
         gl_Position += vec4((textOffset.xy * pos.w), -0.005, 0.0);
     }
@@ -82,7 +69,6 @@ varying vec4 fColor;
 varying vec2 fTexCoord; 
 varying vec2 fFontTexCoord; 
 varying float fClipVal;
-varying float fAlpha;
 
 struct PointLight { 
     vec3 position; 
@@ -112,8 +98,8 @@ void main()
     } else { 
         vec4 color = fColor; 
         if (useColorTex) { 
-            color.xyz = texture2D(colorTex, fTexCoord).xyz;
-            color.w = fAlpha;
+            color.xyz = texture2D(colorTex, vec2(fTexCoord.x, 0.0)).xyz;
+            color.w = fTexCoord.y;
         }
         if (numLights == 0) {
             gl_FragColor = color;
@@ -214,10 +200,6 @@ void GlState::initShaderState() {
 
     locSpec = glGetUniformLocation(program, "material.specular");
     locShin = glGetUniformLocation(program, "material.shininess");
-
-    locMatAlpha = glGetUniformLocation(program, "matAlpha");
-    locMatAlphaCenter = glGetUniformLocation(program, "matAlphaCenter");
-    glUniform1f(locMatAlpha, 1.f);
 
     //Texture unit 0: color palettes
     //Texture unit 1: font atlas
