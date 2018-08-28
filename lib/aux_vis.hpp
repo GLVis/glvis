@@ -113,10 +113,11 @@ void CallKeySequence(const char *seq);
 void Cone();
 
 extern int MySetColorLogscale;
-void MySetColor(gl3::GlBuilder& builder, double val, double min, double max);
-float MySetColor (double val, double min, double max, float (&argb)[4]);
-float MySetColor (double val, float (&argb)[4]);
 void MySetColor(gl3::GlBuilder& builder, double val);
+void MySetColor(gl3::GlBuilder& builder, double val, double min, double max);
+//float returned is alpha value
+float MySetColor (double val, float (&argb)[4]);
+float MySetColor (double val, double min, double max, float (&argb)[4]);
 void SetUseTexture(int ut);
 int GetUseTexture();
 int GetMultisample();

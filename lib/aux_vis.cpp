@@ -1429,7 +1429,8 @@ float MySetColor (double val, float (&rgba)[4])
    
    if (UseTexture)
    {
-      return MatAlpha < 1.0 ? malpha : 1.0;
+      //return 1-alpha since default attrib value is 0.0
+      return MatAlpha < 1.0 ? 1.0 - malpha : 0.0;
    }
 
    val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
@@ -1484,7 +1485,7 @@ void MySetColor (gl3::GlBuilder& builder, double val)
 
    if (UseTexture)
    {
-      builder.glTexCoord2f(val, MatAlpha < 1.0 ? malpha : 1.0);
+      builder.glTexCoord2f(val, MatAlpha < 1.0 ? 1.0 - malpha : 0.0);
       return;
    }
 

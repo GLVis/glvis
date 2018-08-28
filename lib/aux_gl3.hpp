@@ -24,23 +24,6 @@ using namespace std;
 
 namespace gl3 {
 
-struct GlColor 
-{
-    float rgba[4];
-    float texcoord;
-    bool use_texture;
-
-    GlColor() = default;
-    
-    GlColor(float val)
-        : texcoord(val)
-        , use_texture(true) { }
-
-    GlColor(float r, float g, float b, float a)
-        : rgba{r,g,b,a}
-        , use_texture(false) { }
-};
-
 class GlDrawable;
 
 class GlBuilder
@@ -105,7 +88,8 @@ public:
             pts.emplace_back(pack_rgba);
         } else if (use_color_tex) {
             pts.emplace_back(texcoord[0]);
-            pts.emplace_back(texcoord[1]);
+            if (!is_line)
+                pts.emplace_back(texcoord[1]);
         }
         if ((is_line && !(use_color || use_color_tex))
             || (!is_line && use_color)) {

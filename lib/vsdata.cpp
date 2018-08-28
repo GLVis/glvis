@@ -313,6 +313,8 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
    */
 
    GlMatrix mv_save = gl->modelView;
+   GlMatrix proj_save = gl->projection;
+
    gl->modelView.identity();
    gl->loadMatrixUniforms();
 
@@ -449,11 +451,6 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
    // GLfloat textcol[3] = {0,0,0};
    // glColor3fv (textcol);
 
-#ifndef GLVIS_USE_FREETYPE
-   glPushAttrib (GL_LIST_BIT);
-   glListBase (fontbase);
-#endif
-
    color_bar.draw();
 
    if (colorbar == 1) {
@@ -518,6 +515,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
    // glScaled(xscale, yscale, zscale);
    // glTranslated(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
    gl->modelView = mv_save;
+   gl->projection = proj_save;
    gl->loadMatrixUniforms();
 }
 
@@ -568,8 +566,8 @@ void VisualizationSceneScalarData::DrawCaption()
                         1.0-5*(double)height/viewport[3], 0.0);
 #endif
 
-   gl->modelView.mult(cam.RotMatrix());
-   gl->modelView.mult(rotmat);
+//   gl->modelView.mult(cam.RotMatrix());
+//   gl->modelView.mult(rotmat);
    gl->loadMatrixUniforms();
     //glRasterPos3f(0.0f, 0.0f, 0.0f);
 #ifndef GLVIS_OGL3
@@ -1436,11 +1434,6 @@ void VisualizationSceneScalarData::PrepareAxes()
 
    if (drawaxes == 1)
    {
-#ifndef GLVIS_USE_FREETYPE
-      glPushAttrib (GL_LIST_BIT);
-      glListBase (fontbase);
-#endif
-
       ostringstream buf;
       buf << setprecision(4)
           << "(" << x[0] << "," << y[0] << ","  << z[0] << ")" ;
@@ -1450,10 +1443,6 @@ void VisualizationSceneScalarData::PrepareAxes()
       buf1 << setprecision(4)
            << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
       axes_buf.addText(x[1], y[1], z[1], buf1.str());
-
-#ifndef GLVIS_USE_FREETYPE
-      glPopAttrib();
-#endif
    }
    axes_buf.buffer();
 }
