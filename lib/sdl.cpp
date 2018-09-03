@@ -43,7 +43,10 @@ bool SdlWindow::isGlInitialized() {
 }
 
 SdlWindow::SdlWindow(const char * title, int w, int h)
-    : requiresExpose(false)
+    : onIdle(nullptr)
+    , onExpose(nullptr)
+    , onReshape(nullptr)
+    , requiresExpose(false)
     , takeScreenshot(false) {
 
     if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
@@ -98,7 +101,7 @@ bool SdlWindow::createGlContext() {
     _handle->gl_ctx = context;
 
 #ifndef __EMSCRIPTEN__
-    SDL_GL_SetSwapInterval(1);
+    SDL_GL_SetSwapInterval(0);
 #endif
     glEnable(GL_DEBUG_OUTPUT);
 
@@ -177,7 +180,7 @@ void SdlWindow::mouseEventUp(SDL_MouseButtonEvent& eb) {
 }
 
 void SdlWindow::keyEvent(SDL_Keysym& ks) {
-    if (ks.sym > 128 && onKeyDown[ks.sym]) {
+    if ((ks.sym > 128 || ks.sym < 32) && onKeyDown[ks.sym]) {
         onKeyDown[ks.sym](ks.mod);
     }
 }
