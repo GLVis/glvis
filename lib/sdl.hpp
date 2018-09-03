@@ -39,10 +39,10 @@ struct EventInfo {
     GLint data[4];
 };
 
-typedef std::function<void(EventInfo*)> MouseDelegate;
+typedef void (*MouseDelegate)(EventInfo*);
 typedef std::function<void(GLenum)> KeyDelegate;
-typedef std::function<void(int, int)> WindowDelegate;
-typedef std::function<void()> Delegate;
+typedef void (*WindowDelegate)(int, int);
+typedef void (*Delegate)();
 
 
 class SdlWindow

@@ -53,6 +53,23 @@ SdlWindow::SdlWindow(const char * title, int w, int h)
         }
     }
 
+#ifndef __EMSCRIPTEN__
+    // on OSX systems, only core profiles are available for OpenGL 3+, which
+    // removes the fixed-function pipeline
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1);
+#endif
+    // technically, SDL already defaults to double buffering and a depth buffer
+    // all we need is an alpha channel
+
+    //SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8);
+    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
+    if (GetMultisample() > 0) {
+        SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);
+        SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
+    }
+
     _handle = std::make_shared<_SdlHandle>(SDL_CreateWindow(title,
                                                 SDL_WINDOWPOS_UNDEFINED,
                                                 SDL_WINDOWPOS_UNDEFINED,
@@ -72,26 +89,10 @@ bool SdlWindow::createGlContext() {
         SDL_GL_DeleteContext(_handle->gl_ctx);
         _handle->gl_ctx = 0;
     }
-#ifndef __EMSCRIPTEN__
-    // on OSX systems, only core profiles are available for OpenGL 3+, which
-    // removes the fixed-function pipeline
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1);
-#endif
-    // technically, SDL already defaults to double buffering and a depth buffer
-    // all we need is an alpha channel
-
-    //SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8);
-    //SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 1);
-    if (GetMultisample() > 0) {
-        SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);
-        SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
-    }
 
     SDL_GLContext context = SDL_GL_CreateContext(_handle->hwnd);
     if (!context) {
-        cerr << "Failed to create an OpenGL 2.1 context: " << SDL_GetError() << endl;
+        cerr << "Failed to create an OpenGL context: " << SDL_GetError() << endl;
         return false;
     }
     _handle->gl_ctx = context;
@@ -115,12 +116,10 @@ SdlWindow::~SdlWindow() {
 void SdlWindow::windowEvent(SDL_WindowEvent& ew) {
     switch(ew.event) {
         case SDL_WINDOWEVENT_SIZE_CHANGED:
-            cerr << "Window:reshape event" << endl;
             if (onReshape)
                 onReshape(ew.data1, ew.data2);
             break;
         case SDL_WINDOWEVENT_EXPOSED:
-            cerr << "Window:expose event" << endl;
             if (onExpose)
                 requiresExpose = true;
             break;
