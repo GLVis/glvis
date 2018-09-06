@@ -375,11 +375,7 @@ public:
     /**
      * Adds a string at the given position in object coordinates.
      */
-    void addText(float x, float y, float z, std::string&& text) {
-        text_buffer.addText(x, y, z, text);
-    }
-
-    void addText(float x, float y, float z, std::string& text) {
+    void addText(float x, float y, float z, const std::string& text) {
         text_buffer.addText(x, y, z, text);
     }
 

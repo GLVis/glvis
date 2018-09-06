@@ -92,11 +92,10 @@ void main()
     if (useClipPlane && fClipVal < 0.0) {
         discard;
     }
+    vec4 color = fColor; 
     if (containsText) { 
-        vec4 colorOut = vec4(0.0, 0.0, 0.0, texture2D(fontTex, fFontTexCoord).a);
-        gl_FragColor = colorOut;
+        gl_FragColor = color * vec4(1.0, 1.0, 1.0, texture2D(fontTex, fFontTexCoord).a);
     } else { 
-        vec4 color = fColor; 
         if (useColorTex) { 
             color.xyz = texture2D(colorTex, vec2(fTexCoord.x, 0.0)).xyz;
             color.w = 1.0 - fTexCoord.y;

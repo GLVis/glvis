@@ -353,7 +353,7 @@ GridFunction *ProjectVectorFEGridFunction(GridFunction *gf)
    return gf;
 }
 
-bool startVisualization(std::string input, std::string data_type) {
+bool startVisualization(std::string input, std::string data_type, int w, int h) {
 
     vis_data glvis_data = readStream(input, data_type);
 
@@ -361,7 +361,7 @@ bool startVisualization(std::string input, std::string data_type) {
         return false;
     }
 
-    if (InitVisualization("glvis", 0, 0, 640, 480)) {
+    if (InitVisualization("glvis", 0, 0, w, h)) {
         return false;
     }
 
@@ -512,6 +512,7 @@ void setKeyboardListeningElementId(const std::string & elem_id) {
 EMSCRIPTEN_BINDINGS(js_funcs) {
     emscripten::function("startVisualization", &js::startVisualization);
     emscripten::function("iterVisualization", &js::iterVisualization);
+    emscripten::function("sendExposeEvent", &SendExposeEvent);
     emscripten::function("disableKeyHanding", &js::disableKeyHandling);
     emscripten::function("enableKeyHandling", &js::enableKeyHandling);
     emscripten::function("setKeyboardListeningElementId", js::setKeyboardListeningElementId);

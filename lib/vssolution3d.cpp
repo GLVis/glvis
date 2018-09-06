@@ -1309,7 +1309,7 @@ void VisualizationSceneSolution3d::DrawRefinedSurfLevelLines(
          }
          point[j][3] = values(RG[j]);
       }
-      DrawPolygonLevelLines(point[0], n, level, false, line);
+      DrawPolygonLevelLines(line, point[0], n, level, false);
    }
 }
 
@@ -1768,7 +1768,7 @@ void VisualizationSceneSolution3d::PrepareLines()
                }
                point[j][3] = (*sol)(vertices[j]);
             }
-            DrawPolygonLevelLines(point[0], pointmat.Size(), level, false, line);
+            DrawPolygonLevelLines(line, point[0], pointmat.Size(), level, false);
             break;
       }
    }
@@ -1934,7 +1934,7 @@ void VisualizationSceneSolution3d::PrepareLines2()
                }
                point[j][3] = values(RG[j]);
             }
-            DrawPolygonLevelLines(point[0], sides, level, false, line);
+            DrawPolygonLevelLines(line, point[0], sides, level, false);
          }
       }
    }
@@ -2158,7 +2158,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
                else
                {
                   gl3::GlBuilder line = cplines_buf.createBuilder();
-                  DrawPolygonLevelLines(point[0], n, level, false, line);
+                  DrawPolygonLevelLines(line, point[0], n, level, false);
                }
             }
             break;
@@ -2339,7 +2339,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines2()
                   line.glEnd();
                   break;
                case 2:
-                  DrawPolygonLevelLines(point[0], nodes.Size(), level, false, line);
+                  DrawPolygonLevelLines(line, point[0], nodes.Size(), level, false);
                   break;
             }
          }

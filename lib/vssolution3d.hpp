@@ -22,8 +22,7 @@ class VisualizationSceneSolution3d : public VisualizationSceneScalarData
 protected:
 
    int drawmesh, drawelems, shading;
-   int displlist, linelist;
-   int cplane, cplanelist, cplanelineslist, lsurflist;
+   int cplane;
    int cp_drawmesh, cp_drawelems, drawlsurf;
 
    //Our VBO indices + sizes

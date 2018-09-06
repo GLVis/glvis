@@ -179,16 +179,20 @@ void SdlWindow::mouseEventUp(SDL_MouseButtonEvent& eb) {
     }
 }
 
-void SdlWindow::keyEvent(SDL_Keysym& ks) {
+bool SdlWindow::keyEvent(SDL_Keysym& ks) {
     if ((ks.sym > 128 || ks.sym < 32) && onKeyDown[ks.sym]) {
         onKeyDown[ks.sym](ks.mod);
+        return true;
     }
+    return false;
 }
 
-void SdlWindow::keyEvent(char c) {
+bool SdlWindow::keyEvent(char c) {
     if (onKeyDown[c]) {
         onKeyDown[c](SDL_GetModState());
+        return true;
     }
+    return false;
 }
 
 bool SdlWindow::mainIter() {
@@ -196,6 +200,7 @@ bool SdlWindow::mainIter() {
     static bool useIdle = false;
     bool needsSwap = false;
     while (SDL_PollEvent(&e)) {
+        bool renderKeyEvent = false;
         switch(e.type) {
             case SDL_QUIT:
                 running = false;
@@ -204,10 +209,10 @@ bool SdlWindow::mainIter() {
                 windowEvent(e.window);
                 break;
             case SDL_KEYDOWN:
-                keyEvent(e.key.keysym);
+                renderKeyEvent = keyEvent(e.key.keysym);
                 break;
             case SDL_TEXTINPUT:
-                keyEvent(e.text.text[0]);
+                renderKeyEvent = keyEvent(e.text.text[0]);
                 break;
             case SDL_MOUSEMOTION:
                 motionEvent(e.motion);
@@ -219,6 +224,8 @@ bool SdlWindow::mainIter() {
                 mouseEventUp(e.button);
                 break;
         }
+        if (renderKeyEvent)
+            break;
     }
 #ifndef __EMSCRIPTEN__
     if (onIdle) {
@@ -267,8 +274,14 @@ void SdlWindow::mainLoop() {
 }
 
 void SdlWindow::getWindowSize(int& w, int& h) {
-    if (_handle)
+    if (_handle) {
+#ifdef __EMSCRIPTEN__
+        int is_fullscreen;
+        emscripten_get_canvas_size(&w, &h, &is_fullscreen);
+#else
         SDL_GetWindowSize(_handle->hwnd, &w, &h);
+#endif
+    }
 }
 
 void SdlWindow::getDpi(int& w, int& h) {
@@ -295,22 +308,30 @@ Window SdlWindow::getXWindow() {
 #endif
 
 void SdlWindow::setWindowTitle(std::string& title) {
+#ifndef __EMSCRIPTEN__
     setWindowTitle(title.c_str());
+#endif
 }
 
 void SdlWindow::setWindowTitle(const char * title) {
+#ifndef __EMSCRIPTEN__
     if (_handle)
         SDL_SetWindowTitle(_handle->hwnd, title);
+#endif
 }
 
 void SdlWindow::setWindowSize(int w, int h) {
+#ifndef __EMSCRIPTEN__
     if (_handle)
         SDL_SetWindowSize(_handle->hwnd, w, h);
+#endif
 }
 
 void SdlWindow::setWindowPos(int x, int y) {
+#ifndef __EMSCRIPTEN__
     if (_handle)
         SDL_SetWindowPosition(_handle->hwnd, x, y);
+#endif
 }
 
 void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m) {

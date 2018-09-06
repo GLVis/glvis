@@ -41,7 +41,7 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
     }
     int ppi_w, ppi_h;
     GetAppWindow()->getDpi(ppi_w, ppi_h);
-    if (FT_Set_Char_Size(face, 0, font_size*64, ppi_w, ppi_h)) {
+    if (FT_Set_Char_Size(face, 0, font_size*72, ppi_w, ppi_h)) {
         cout << "GLVis: Cannot set font height: " << font_size << " pts"
              << endl;
         FT_Done_Face(face);

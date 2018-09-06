@@ -21,7 +21,7 @@ class VisualizationSceneVector3d : public VisualizationSceneSolution3d
 protected:
 
    Vector *solx, *soly, *solz;
-   int vectorlist, displinelist, drawvector, scal_func;
+   int drawvector, scal_func;
    gl3::GlDrawable vector_buf;
    gl3::GlDrawable displine_buf;
 

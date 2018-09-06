@@ -990,7 +990,7 @@ void VisualizationSceneSolution::ToggleLogscale(bool print)
    }
 }
 
-void DrawNumberedMarker(const double x[3], double dx, int n, gl3::GlDrawable& buff)
+void DrawNumberedMarker(gl3::GlDrawable& buff, const double x[3], double dx, int n)
 {
     gl3::GlBuilder bld = buff.createBuilder();
     bld.glBegin(GL_LINES);
@@ -1124,11 +1124,6 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
       {
          for (int i = 0; i < ind.Size(); i++)
          {
-            /*
-            glNormal3dv(&normals(0, ind[i]));
-            MySetColor(vals(ind[i]), minv, maxv);
-            glVertex3dv(&pts(0, ind[i]));
-            */
             poly.glNormal3dv(&normals(0, ind[i]));
             MySetColor(poly, vals(ind[i]), minv, maxv);
             poly.glVertex3dv(&pts(0, ind[i]));
@@ -1138,11 +1133,6 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
       {
          for (int i = ind.Size()-1; i >= 0; i--)
          {
-            /*
-            glNormal3dv(&normals(0, ind[i]));
-            MySetColor(vals(ind[i]), minv, maxv);
-            glVertex3dv(&pts(0, ind[i]));
-            */
             poly.glNormal3dv(&normals(0, ind[i]));
             MySetColor(poly, vals(ind[i]), minv, maxv);
             poly.glVertex3dv(&pts(0, ind[i]));
@@ -1535,7 +1525,7 @@ void VisualizationSceneSolution::DrawLevelCurves(
             point[j][3] = values(vv);
             point[j][2] = (flat) ? zc : point[j][3];
          }
-         DrawPolygonLevelLines(point[0], sides, lvl, logscale, builder);
+         DrawPolygonLevelLines(builder, point[0], sides, lvl, logscale);
       }
       else if (split_quads == 1)
       {
@@ -1552,7 +1542,7 @@ void VisualizationSceneSolution::DrawLevelCurves(
                point[j][3] = values(ind[vt[it][j]]);
                point[j][2] = (flat) ? zc : point[j][3];
             }
-            DrawPolygonLevelLines(point[0], 3, lvl, logscale, builder);
+            DrawPolygonLevelLines(builder, point[0], 3, lvl, logscale);
          }
       }
       else
@@ -1588,7 +1578,7 @@ void VisualizationSceneSolution::DrawLevelCurves(
             point[1][3] = values(ind[l]);
             point[1][2] = (flat) ? zc : point[1][3];
 
-            DrawPolygonLevelLines(point[0], 3, lvl, logscale, builder);
+            DrawPolygonLevelLines(builder, point[0], 3, lvl, logscale);
          }
       }
    }
@@ -1735,7 +1725,7 @@ void VisualizationSceneSolution::PrepareElementNumbering1()
       double dx = 0.05*ds;
 
       double xx[3] = {xs,ys,us};
-      DrawNumberedMarker(xx,dx,k,e_nums_buf);
+      DrawNumberedMarker(e_nums_buf,xx,dx,k);
    }
 
    e_nums_buf.buffer();
@@ -1766,7 +1756,7 @@ void VisualizationSceneSolution::PrepareElementNumbering2()
       double dx = 0.05*ds;
 
       double xx[3] = {xc,yc,uc};
-      DrawNumberedMarker(xx,dx,i,e_nums_buf);
+      DrawNumberedMarker(e_nums_buf,xx,dx,i);
    }
 
    e_nums_buf.buffer();
@@ -1823,7 +1813,7 @@ void VisualizationSceneSolution::PrepareVertexNumbering1()
          double u = LogVal((*sol)(vertices[j]));
 
          double xx[3] = {x,y,u};
-         DrawNumberedMarker(xx,xs,vertices[j], v_nums_buf);
+         DrawNumberedMarker(v_nums_buf,xx,xs,vertices[j]);
       }
    }
 
@@ -1861,7 +1851,7 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
          double u = values[j];
 
          double xx[3] = {xv,yv,u};
-         DrawNumberedMarker(xx,xs,vertices[j], v_nums_buf);
+         DrawNumberedMarker(v_nums_buf,xx,xs,vertices[j]);
       }
    }
 
@@ -2082,7 +2072,7 @@ void VisualizationSceneSolution::PrepareCP()
             ind[j] = j;
          }
 
-         DrawCPLine(pointmat, values, ind, bld);
+         DrawCPLine(bld, pointmat, values, ind);
       }
    }
    else
@@ -2121,7 +2111,7 @@ void VisualizationSceneSolution::PrepareCP()
                continue;
             }
 
-            DrawCPLine(pointmat, values, ind, bld);
+            DrawCPLine(bld, pointmat, values, ind);
          }
       }
    }
@@ -2131,7 +2121,7 @@ void VisualizationSceneSolution::PrepareCP()
 }
 
 void VisualizationSceneSolution::DrawCPLine(
-   DenseMatrix &pointmat, Vector &values, Array<int> &ind, gl3::GlBuilder& bld)
+   gl3::GlBuilder& bld, DenseMatrix &pointmat, Vector &values, Array<int> &ind)
 {
    int n, js, nv = ind.Size();
    double s, xs, ys;

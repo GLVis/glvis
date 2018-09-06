@@ -915,7 +915,7 @@ void VisualizationSceneVector3d::PrepareLines()
                }
                point[j][3] = (*sol)(vertices[j]);
             }
-            DrawPolygonLevelLines(point[0], pointmat.Size(), level, false, line);
+            DrawPolygonLevelLines(line, point[0], pointmat.Size(), level, false);
             break;
       }
    }
@@ -1090,7 +1090,7 @@ void VisualizationSceneVector3d::PrepareLines2()
                   point[j][3] = values(RG[j]);
                }
             }
-            DrawPolygonLevelLines(point[0], sides, level, false, line);
+            DrawPolygonLevelLines(line, point[0], sides, level, false);
          }
       }
    }

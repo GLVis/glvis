@@ -520,15 +520,7 @@ void LeftButtonDown (EventInfo *event)
    oldy = event->data[AUX_MOUSEY];
 
    ComputeSphereAngles(oldx, oldy, sph_u, sph_t);
-/*
-   glMatrixMode(GL_MODELVIEW);
-   glPushMatrix();
-   glLoadIdentity();
-   locscene->cam.GLMultRotMatrix();
-   glMultMatrixd(locscene->rotmat);
-   glGetDoublev(GL_MODELVIEW_MATRIX, srot);
-   glPopMatrix();
-*/
+
    srot.identity();
    srot.mult(locscene->cam.RotMatrix());
    srot.mult(locscene->rotmat);
@@ -554,11 +546,6 @@ void LeftButtonLoc (EventInfo *event)
          double new_sph_u, new_sph_t;
 
          ComputeSphereAngles(newx, newy, new_sph_u, new_sph_t);
-
-         /*
-         glMatrixMode (GL_MODELVIEW);
-         glLoadIdentity();
-         */
 
          state->modelView.identity();
 
@@ -1569,7 +1556,11 @@ const char *fc_font_patterns[] =
 
 const int num_font_patterns = sizeof(fc_font_patterns)/sizeof(char *);
 
+#ifdef __EMSCRIPTEN__
+int font_size = 12;
+#else
 int font_size = 10;
+#endif
 
 GlVisFont glvis_font;
 

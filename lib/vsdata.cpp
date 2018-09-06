@@ -1249,12 +1249,8 @@ void VisualizationSceneScalarData::Init()
 
       wnd->setOnKeyDown(SDLK_COMMA, KeyCommaPressed);
       wnd->setOnKeyDown(SDLK_LESS, KeyLessPressed);
-      //wnd->setOnKeyDown(SDLK_GRAVE, KeyGravePressed);
-      wnd->setOnKeyDown(SDLK_BACKQUOTE, [](GLenum e) {
-              (e & KMOD_SHIFT)
-                ? KeyGravePressed()
-                : KeyTildePressed();
-              });
+      wnd->setOnKeyDown('~', KeyTildePressed);
+      wnd->setOnKeyDown('`', KeyGravePressed);
 
       wnd->setOnKeyDown(SDLK_EXCLAIM, KeyToggleTexture);
    }
@@ -1448,49 +1444,7 @@ void VisualizationSceneScalarData::PrepareAxes()
 }
 
 void VisualizationSceneScalarData::DrawPolygonLevelLines(
-   double * point, int n, Array<double> &level, bool log_vals)
-{
-   int l, k, k1;
-   double curve, t;
-   double p[3];
-
-   for (l = 0; l < level.Size(); l++)
-   {
-      // Using GL_LINE_STRIP (explicitly closed for more than 2 points)
-      // should produce the same result, however visually the level lines
-      // have discontinuities. Using GL_LINE_LOOP does not have that problem.
-      glBegin(GL_LINE_LOOP);
-      curve = LogVal(level[l], log_vals);
-      for (k = 0; k < n; k++)
-      {
-         k1 = (k+1)%n;
-         if ( (curve <=point[4*k+3] && curve >= point[4*k1+3]) ||
-              (curve >=point[4*k+3] && curve <= point[4*k1+3]) )
-         {
-            if ((curve - point[4*k1+3]) == 0.)
-            {
-               t = 1.;
-            }
-            else if ((curve - point[4*k+3]) == 0.)
-            {
-               t = 0.;
-            }
-            else
-            {
-               t = (curve - point[4*k+3]) / (point[4*k1+3]-point[4*k+3]);
-            }
-            p[0] = (1.0-t)*point[4*k+0]+t*point[4*k1+0];
-            p[1] = (1.0-t)*point[4*k+1]+t*point[4*k1+1];
-            p[2] = (1.0-t)*point[4*k+2]+t*point[4*k1+2];
-            glVertex3dv(p);
-         }
-      }
-      glEnd();
-   }
-}
-
-void VisualizationSceneScalarData::DrawPolygonLevelLines(
-   double * point, int n, Array<double> &level, bool log_vals, gl3::GlBuilder& builder)
+   gl3::GlBuilder& builder, double * point, int n, Array<double> &level, bool log_vals)
 {
    int l, k, k1;
    double curve, t;

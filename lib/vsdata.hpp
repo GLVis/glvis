@@ -62,7 +62,7 @@ protected:
 
    std::string a_label_x, a_label_y, a_label_z;
 
-   int scaling, colorbar, drawaxes, axeslist;
+   int scaling, colorbar, drawaxes;
    int auto_ref_max, auto_ref_max_surf_elem;
 
    gl3::GlDrawable axes_buf;
@@ -213,11 +213,8 @@ public:
                double length,
                double cone_scale = 0.075);
 
-   void DrawPolygonLevelLines(double *point, int n, Array<double> &level,
-                              bool log_vals, gl3::GlBuilder& builder);
-
-   void DrawPolygonLevelLines(double *point, int n, Array<double> &level,
-                              bool log_vals);
+   void DrawPolygonLevelLines(gl3::GlBuilder& builder, double *point, int n,
+                              Array<double> &level, bool log_vals);
 
    void ToggleLight() { light = !light; }
 

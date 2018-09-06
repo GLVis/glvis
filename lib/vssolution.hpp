@@ -29,9 +29,7 @@ protected:
    GridFunction *rsol;
 
    int drawmesh, drawelems, drawnums;
-   int displlist, linelist, lcurvelist;
-   int bdrlist, drawbdr, draw_cp, cp_list;
-   int e_nums_list, v_nums_list;
+   int drawbdr, draw_cp;
 
    gl3::GlDrawable disp_buf[3];
 
@@ -47,7 +45,8 @@ protected:
 
    void FindNewBox(double rx[], double ry[], double rval[]);
 
-   void DrawCPLine(DenseMatrix &pointmat, Vector &values, Array<int> &ind, gl3::GlBuilder& bld);
+   void DrawCPLine(gl3::GlBuilder& bld,
+                   DenseMatrix &pointmat, Vector &values, Array<int> &ind);
 
    void GetRefinedDetJ(int i, const IntegrationRule &ir,
                        Vector &vals, DenseMatrix &tr);
@@ -144,7 +143,7 @@ public:
    virtual void ToggleAttributes(Array<int> &attr_list);
 };
 
-void DrawNumberedMarker(const double x[3], double dx, int n, gl3::GlDrawable& buff);
+void DrawNumberedMarker(gl3::GlDrawable& buff, const double x[3], double dx, int n);
 
 //we only need 3 points, but the array is 4x3
 void DrawTriangle(gl3::GlDrawable& buff,
