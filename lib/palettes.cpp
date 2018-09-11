@@ -4668,7 +4668,7 @@ void _paletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
 
    if (RepeatPaletteTimes > 0)
    {
-      for (int i = 0; i < plt_size; i++)
+      for (size_t i = 0; i < plt_size; i++)
       {
          texture_buf[4*i] = palette[3*i];
          texture_buf[4*i+1] = palette[3*i+1];
@@ -4678,7 +4678,7 @@ void _paletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
    }
    else
    {
-      for (int i = 0; i < plt_size; i++)
+      for (size_t i = 0; i < plt_size; i++)
       {
          texture_buf[4*i+0] = palette[3*(plt_size-1-i)+0];
          texture_buf[4*i+1] = palette[3*(plt_size-1-i)+1];
@@ -4708,13 +4708,13 @@ void _paletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
  */
 void _paletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
 {
-   int i, j;
+   int j;
    double t;
    int offset;
 
    size_t Texture_Size = Max_Texture_Size;
    GLfloat texture_buf[4 * Texture_Size];
-   for (i = 0; i < Texture_Size; i++)
+   for (size_t i = 0; i < Texture_Size; i++)
    {
       t = double(i) / (Texture_Size - 1);
       t *= 0.999999999 * ( plt_size - 1 ) * abs(RepeatPaletteTimes);

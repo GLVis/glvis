@@ -182,8 +182,8 @@ private:
     array_layout _layout;
     std::unique_ptr<GLuint> _handle;
     std::vector<float> _pt_data;
-    int _buffered_size;
-    int _allocated_size;
+    size_t _buffered_size;
+    size_t _allocated_size;
 
     friend void GlBuilder::glEnd();
 public:

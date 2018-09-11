@@ -123,13 +123,10 @@ int GetUseTexture();
 int GetMultisample();
 void SetMultisample(int m);
 
-#ifdef GLVIS_USE_FREETYPE
+void InitFont();
 GlVisFont * GetFont();
 void DrawBitmapText(const char *text, float x, float y, float z);
-int SetFontFile(const char *font_file, int height);
-int SetFont(const char *font_patterns[], int num_patterns, int height);
-#endif
-
+bool SetFont(const char *font_patterns[], int num_patterns, int height);
 void SetFont(const char *fn);
 
 #endif

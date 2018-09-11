@@ -29,9 +29,10 @@ using namespace mfem;
 #endif
 
 #include "font.hpp"
+#ifndef __EMSCRIPTEN__
+#include <fontconfig/fontconfig.h>
+#endif
 
-string fontname;
-GLuint fontbase;
 int visualize = 0;
 VisualizationScene * locscene;
 
@@ -91,25 +92,10 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    state->initShaderState();
 
    paletteInit();
+   InitFont();
 
 #ifdef GLVIS_DEBUG
    cout << "Window should be up" << endl;
-#endif
-
-#ifndef GLVIS_USE_FREETYPE
-   if (fontname.empty())
-   {
-      fontname = "lucidasanstypewriter-14";
-      // "-adobe-times-medium-r-normal-*-*-*-*-p-54-*-*";
-      // "-*-bitstream vera sans-medium-r-normal-*-30-*-*-*-*-*-*-*";
-      // "8x13";
-      // "-adobe-helvetica-medium-r-normal--12-120-75-75-p-67-iso8859-1";
-   }
-   fontbase = tkLoadBitmapFont(fontname.c_str());
-   if (fontbase == 0)
-   {
-      cerr << "Error loading font '" << fontname << '\'' << endl;
-   }
 #endif
 
    SetUseTexture(0);
@@ -345,13 +331,6 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
 void KillVisualization()
 {
    delete locscene;
-#ifndef GLVIS_USE_FREETYPE
-   if (fontbase)
-   {
-      tkUnloadBitmapFont(fontbase);
-      fontbase = 0;
-   }
-#endif
    delete wnd;
 }
 
@@ -1535,8 +1514,6 @@ void SetMultisample(int m)
 }
 
 
-#ifdef GLVIS_USE_FREETYPE
-
 // Fontconfig patterns to use for finding a font file.
 // Use the command:
 //    fc-list "pattern" file style
@@ -1563,18 +1540,26 @@ int font_size = 10;
 #endif
 
 GlVisFont glvis_font;
+std::string priority_font;
+
+void InitFont()
+{
+    if (priority_font == "") {
+        SetFont(fc_font_patterns, num_font_patterns, font_size);
+    } else {
+        if (!glvis_font.LoadFont(priority_font.c_str(), font_size))
+           cout << "Font not found: " << priority_font << endl;
+    }
+}
 
 GlVisFont * GetFont() {
-   if (!glvis_font.isFontLoaded()) {
-       glvis_font.LoadFont("OpenSans.ttf", font_size);
-   }
    return &glvis_font;
 }
 
 void DrawBitmapText(const char *text, float x, float y, float z)
 {
    if (!glvis_font.isFontLoaded()) {
-       if (!glvis_font.LoadFont("OpenSans.ttf", font_size))
+       if (!SetFont(fc_font_patterns, num_font_patterns, font_size))
            return;
    }
    std::string toBuf(text);
@@ -1583,51 +1568,78 @@ void DrawBitmapText(const char *text, float x, float y, float z)
    glDeleteBuffers(1, &vbo);
 }
 
-int SetFontFile(const char *font_file, int height)
-{
-    return glvis_font.LoadFont(font_file, height) ? 0 : 1;
-}
+bool SetFont(const char *font_patterns[], int num_patterns, int height) {
+#ifdef __EMSCRIPTEN__
+    return glvis_font.LoadFont("OpenSans.ttf", height);
+#else
+    if (!FcInit()) {
+        return false;
+    }
 
-int SetFont(const char *font_patterns[], int num_patterns, int height)
-{
-   return SetFontFile("OpenSans.ttf", height);
-}
+    FcObjectSet * os = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, nullptr);
 
-#endif // GLVIS_USE_FREETYPE
+    for (int i = 0; i < num_patterns; i++) {
+        FcPattern * pat = FcNameParse((FcChar8*)font_patterns[i]);
+        if (!pat) {
+            continue;
+        }
+
+        FcFontSet * fs = FcFontList(0, pat, os);
+        if (!fs) {
+            FcPatternDestroy(pat);
+            continue;
+        }
+#ifdef GLVIS_DEBUG
+        if (fs->nfont > 1) {
+            cout << "Font pattern '" << font_patterns[i]
+                 << "' matched multiple fonts:\n";
+        }
+#endif
+        std::string font_file = "";
+        std::string font_name = "";
+        for (int fnt_idx = 0; fnt_idx < fs->nfont; fnt_idx++) {
+            FcChar8 * s;
+            FcResult res = FcPatternGetString(fs->fonts[fnt_idx], FC_FILE, 0, &s);
+            FcChar8 * fnt = FcNameUnparse(fs->fonts[fnt_idx]);
+            cout << fnt << endl;
+            if (res == FcResultMatch && s && font_file == "") {
+                font_file = (char*) s;
+                font_name = (char*) fnt;
+            }
+            free(fnt);
+        }
+        
+        FcFontSetDestroy(fs);
+        if (font_file != "") {
+            if (glvis_font.LoadFont(font_file.c_str(), height)) {
+#ifdef GLVIS_DEBUG
+                cout << "Using font: " << font_name << endl;
+#endif
+                break;
+            }
+        }
+    }
+
+    if (os)
+        FcObjectSetDestroy(os);
+
+    FcFini();
+
+    return glvis_font.isFontLoaded();
+#endif
+}
 
 void SetFont(const char *fn)
 {
-   fontname = fn;
-#ifndef GLVIS_USE_FREETYPE
-   if (visualize)
-   {
-      if (fontbase)
-      {
-         tkUnloadBitmapFont(fontbase);
-      }
-      fontbase = tkLoadBitmapFont(fontname.c_str());
-      if (fontbase == 0)
-      {
-         cerr << "Error loading font '" << fontname << '\'' << endl;
-      }
-   }
-#else
-   size_t pos = fontname.rfind('-');
+   priority_font = fn;
+   size_t pos = priority_font.rfind('-');
    if (pos != string::npos)
    {
-      font_size = atoi(fontname.substr(pos + 1).c_str());
-      fontname.erase(pos);
+      font_size = std::stoi(priority_font.substr(pos + 1));
+      priority_font.erase(pos);
    }
 #ifdef GLVIS_DEBUG
-   cout << "SetFont: name = '" << fontname << "', height = " << font_size
+   cout << "SetFont: name = '" << priority_font << "', height = " << font_size
         << endl;
-#endif
-   if (!glvis_font.isFontLoaded())
-   {
-       if (!glvis_font.isFontLoaded()) {
-           if (!glvis_font.LoadFont(fontname.c_str(), font_size))
-               cout << "Font not found: " << fontname << endl;
-       }
-   }
 #endif
 }

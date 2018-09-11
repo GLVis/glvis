@@ -149,6 +149,7 @@ float Set_Black_Material()
          GetGlState()->setMaterial(m);
          return 0;
    }
+   return 1;
 }
 
 void Set_Background()
