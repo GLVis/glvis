@@ -94,6 +94,7 @@ ifeq ($(GLVIS_DEBUG),YES)
 endif
 
 NOTMAC := $(subst Darwin,,$(shell uname -s))
+SO_EXT = $(if $(NOTMAC),so,dylib)
 
 # Default multisampling mode and multisampling line-width
 GLVIS_MULTISAMPLE  = 4
@@ -101,11 +102,24 @@ GLVIS_MS_LINEWIDTH = $(if $(NOTMAC),1.4,0.01)
 GLVIS_FLAGS += -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
  -DGLVIS_MS_LINEWIDTH=$(GLVIS_MS_LINEWIDTH)
 
+# Macro that searches for a file in a list of directories returning the first
+# directory that contains the file.
+# $(1) - the file to search for
+# $(2) - list of directories to search
+define find_dir
+$(patsubst %/$(1),%,$(firstword $(wildcard $(foreach d,$(2),$(d)/$(1)))))
+endef
+
 # The X11 and OpenGL libraries
-GL_OPTS = -I/usr/X11R6/include
+X11_SEARCH_PATHS = /usr /usr/X11 /opt/X11 /usr/X11R6
+X11_SEARCH_FILE = include/X11/Xlib.h
+X11_DIR = $(call find_dir,$(X11_SEARCH_FILE),$(X11_SEARCH_PATHS))
+X11_LIB_SEARCH_PATHS = $(if $(X11_DIR),$(addprefix $(X11_DIR)/,lib64 lib))
+X11_LIB_DIR = $(call find_dir,libX11.$(SO_EXT),$(X11_LIB_SEARCH_PATHS))
+GL_OPTS = $(if $(X11_DIR),-I$(X11_DIR)/include)
 # for servers not supporting GLX 1.3:
-# GL_OPTS = -I/usr/X11R6/include -DGLVIS_GLX10
-GL_LIBS = -L/usr/X11R6/lib -lX11 -lGL -lGLU
+# GL_OPTS = -I$(X11_DIR)/include -DGLVIS_GLX10
+GL_LIBS = $(if $(X11_LIB_DIR),-L$(X11_LIB_DIR) )-lX11 -lGL -lGLU
 GLVIS_FLAGS += $(GL_OPTS)
 GLVIS_LIBS  += $(GL_LIBS)
 
@@ -133,8 +147,7 @@ USE_FREETYPE = YES
 # get libs with:   freetype-config --libs    or  pkg-config freetype2 --libs
 # libfontconfig:   pkg-config fontconfig --cflags
 #                  pkg-config fontconfig --libs
-FT_OPTS = -DGLVIS_USE_FREETYPE -I/usr/X11R6/include/freetype2\
- -I/usr/include/freetype2
+FT_OPTS = -DGLVIS_USE_FREETYPE -I$(X11_DIR)/include/freetype2
 FT_LIBS = -lfreetype -lfontconfig
 ifeq ($(USE_FREETYPE),YES)
    GLVIS_FLAGS += $(FT_OPTS)
@@ -214,6 +227,7 @@ status info:
 	$(info MFEM_DIR    = $(MFEM_DIR))
 	$(info GLVIS_FLAGS = $(GLVIS_FLAGS))
 	$(info GLVIS_LIBS  = $(value GLVIS_LIBS))
+	$(info GLVIS_LIBS  = $(GLVIS_LIBS))
 	$(info PREFIX      = $(PREFIX))
 	@true
 

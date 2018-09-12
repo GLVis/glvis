@@ -21,6 +21,7 @@
 
 #include "openglvis.hpp"
 
+extern GLuint fontbase;
 extern float MatAlpha;
 extern float MatAlphaCenter;
 
