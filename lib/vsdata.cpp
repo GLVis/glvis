@@ -1587,6 +1587,7 @@ void VisualizationSceneScalarData::PrintState()
         << '\n' << endl;
    cam.Print();
    cout.flags(fmt);
+   mesh->PrintInfo(cout);
 }
 
 void VisualizationSceneScalarData::ShrinkPoints(DenseMatrix &pointmat,
