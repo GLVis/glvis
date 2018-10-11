@@ -9,8 +9,17 @@
                               http://glvis.org
 
 
+Version 3.4.1 (development)
+===========================
+
+- Updated to support the display and slicing of meshes with wedge elements.
+
+- Added a key for setting the bounding box from the terminal (Shift+F7).
+
+
 Version 3.4, released on May 29, 2018
 =====================================
+
 - When enabled, secure sockets (based on GnuTLS) now use authentication based on
   X.509 certificates. A new set of X.509 client/server keys can be generated
   with the updated version of the script 'glvis-keygen.sh'.
