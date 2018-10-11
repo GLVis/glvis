@@ -1124,7 +1124,10 @@ void CheckSpin()
       locscene->spinning = 0;
       RemoveIdleFunc(MainLoop);
    }
+   cout << "Spin angle: " << xang << " degrees / frame" << endl;
 }
+
+const double xang_step = 0.2; // angle in degrees
 
 void Key0Pressed()
 {
@@ -1132,7 +1135,7 @@ void Key0Pressed()
    {
       xang = 0;
    }
-   xang -= 0.2;
+   xang -= xang_step;
    CheckSpin();
 }
 
@@ -1147,7 +1150,7 @@ void KeyDeletePressed()
    }
    else
    {
-      xang = 0.2;
+      xang = xang_step;
       locscene -> spinning = 1;
       AddIdleFunc(MainLoop);
       constrained_spinning = 1;
@@ -1160,7 +1163,7 @@ void KeyEnterPressed()
    {
       xang = 0;
    }
-   xang += 0.2;
+   xang += xang_step;
    CheckSpin();
 }
 
