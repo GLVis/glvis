@@ -1478,7 +1478,7 @@ void VisualizationSceneSolution::Prepare()
                   break;
                default:
                   MFEM_ABORT("Invalid 2D element type");
-		  break;
+                  break;
             }
             mesh->GetPointMatrix (i, pointmat);
             mesh->GetElementVertices (i, vertices);
