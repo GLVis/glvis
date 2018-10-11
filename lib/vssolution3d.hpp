@@ -51,6 +51,20 @@ protected:
                          const int *ind, const Array<double> &levels,
                          const DenseMatrix *grad = NULL);
 
+   static int GetWedgeFaceSplits(const Array<bool> &quad_diag,
+                                 const Array<int> &faces,
+                                 const Array<int> &ofaces);
+   void DrawRefinedWedgeLevelSurf(
+      const DenseMatrix &verts, const Vector &vals, const int *RG, const int np,
+      const int face_splits, const DenseMatrix *grad = NULL);
+
+   static int GetHexFaceSplits(const Array<bool> &quad_diag,
+                               const Array<int> &faces,
+                               const Array<int> &ofaces);
+   void DrawRefinedHexLevelSurf(
+      const DenseMatrix &verts, const Vector &vals, const int *RG, const int nh,
+      const int face_splits, const DenseMatrix *grad = NULL);
+
    int GetAutoRefineFactor();
 
    bool CheckPositions(Array<int> &vertices) const

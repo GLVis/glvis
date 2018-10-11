@@ -1695,6 +1695,9 @@ void VisualizationSceneSolution3d::Prepare()
             case Element::QUADRILATERAL:
                glBegin (GL_QUADS);
                break;
+            default:
+               MFEM_ABORT("Invalid boundary element type");
+               break;
          }
          if (dim == 3)
          {
@@ -1980,6 +1983,17 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
    int i, j, k, m, n, n2;
    int flag[8], oedges[6];
    static const int tet_edges[12]= {0,3, 0,2, 0,1, 1,2, 1,3, 2,3};
+   static const int pri_edges[18] =
+   {0,1, 1,2, 2,0, 3,4, 4,5, 5,3, 0,3, 1,4, 2,5};
+   static const int pri_cutting[18][3] =
+   {
+      { 3, -1,  5}, {13,  7, 14}, { 5, -1,  1}, {15,  9, 16},
+      { 1, -1,  3}, {17, 11, 12},
+      {14,  0, 13}, {10, -1,  8}, {16,  2, 15}, { 6, -1, 10},
+      {12,  4, 17}, { 8, -1,  6},
+      { 7, 14,  0}, { 4, 17, 11}, { 9, 16,  2}, { 0, 13,  7},
+      {11, 12,  4}, { 2, 15,  9}
+   };
    static const int hex_edges[24] =
    { 0,1, 1,2, 3,2, 0,3, 4,5, 5,6, 7,6, 4,7, 0,4, 1,5, 2,6, 3,7 };
    static const int hex_cutting[24][3] =
@@ -2023,7 +2037,65 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
                }
             ev = tet_edges;
             break;
+         case Element::WEDGE:
+         {
+            int emark[9];
+            ev = pri_edges;
+            for (j = 0; j < 9; j++, ev += 2)
+            {
+               emark[j] = flag[ev[1]] - flag[ev[0]];
+            }
+            do
+            {
+               for (j = 0; j < 9; j++)
+               {
+                  if (emark[j]) { break; }
+               }
+               if (j == 9)
+               {
+                  break;
+               }
+               k = 2 * j;
+               if (emark[j] > 0)
+               {
+                  k++;
+               }
+               do
+               {
+                  for (j = 0; j < 3; j++)
+                  {
+                     m = pri_cutting[k][j];
+                     if (m >= 0)
+                     {
+                        ev = pri_edges + 2 * (m / 2);
+                        if ((m % 2 == 0 && flag[ev[0]] > flag[ev[1]]) ||
+                            (m % 2 == 1 && flag[ev[1]] > flag[ev[0]]))
+                        {
+                           break;
+                        }
+                     }
+                  }
+                  oedges[n2++] = k/2;
+                  emark[k/2] = 0;
+                  k = m;
+               }
+               while (k/2 != oedges[n]);
+               if (n == 0)
+               {
+                  n = n2;
+               }
+               else
+               {
+                  break;
+               }
+            }
+            while (1);
+            n2 -= n;
+            ev = pri_edges;
+         }
+         break;
          case Element::HEXAHEDRON:
+         {
             int emark[12];
             ev = hex_edges;
             for (j = 0; j < 12; j++, ev += 2)
@@ -2074,7 +2146,8 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
             while (1);
             n2 -= n;
             ev = hex_edges;
-            break;
+         }
+         break;
          default:
             break;
       }
@@ -2285,6 +2358,9 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
             {
                case Geometry::TRIANGLE:  n = 3; break;
                case Geometry::SQUARE:    n = 4; break;
+               default:
+                  MFEM_ABORT("Invalid element type");
+                  break;
             }
             // DrawRefinedSurf (n, pointmat, values, RefG->RefGeoms);
             DrawPatch(pointmat, values, normals, n, RefG->RefGeoms,
@@ -2386,6 +2462,9 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines2()
             {
                case Geometry::TRIANGLE:  n = 3; break;
                case Geometry::SQUARE:    n = 4; break;
+               default:
+                  MFEM_ABORT("Invalid element type");
+                  break;
             }
             switch (cp_drawmesh)
             {
@@ -2567,14 +2646,372 @@ void VisualizationSceneSolution3d::DrawTetLevelSurf(
    }
 }
 
-void VisualizationSceneSolution3d::PrepareLevelSurf()
+// static method
+int VisualizationSceneSolution3d::GetWedgeFaceSplits(
+   const Array<bool> &quad_diag, const Array<int> &faces,
+   const Array<int> &ofaces)
 {
-   static const int tet_id[4] = { 0, 1, 2, 3 };
+   int fs = 0;
+   for (int lf = 2; lf < 5; lf++)
+   {
+      bool diag = quad_diag[faces[lf]];
+      if ((ofaces[lf]/2)%2) // orientations 2,3,6,7
+      {
+         diag = !diag;
+      }
+      fs = 2*fs + diag;
+   }
+   return fs;
+}
+
+void VisualizationSceneSolution3d::DrawRefinedWedgeLevelSurf(
+   const DenseMatrix &verts, const Vector &vals, const int *RG, const int np,
+   const int face_splits, const DenseMatrix *grad)
+{
+#if 0
+   static const int pri_tets[3][4] =
+   {
+      { 0, 1, 2, 5 }, { 0, 1, 5, 3 }, { 1, 3, 4, 5 }
+   };
+   for (int k = 0; k < np; k++)
+   {
+      const int *hv = &RG[6*k];
+      for (int j = 0; j < 3; j++)
+      {
+         int m_ind[4];
+         for (int i = 0; i < 4; i++)
+         {
+            m_ind[i] = hv[pri_tets[j][i]];
+         }
+         DrawTetLevelSurf(verts, vals, m_ind, levels, grad);
+      }
+   }
+#else
+   static const int pri_tets[8-2][3][4] =
+   {
+      // 0 = 000 (see below; prism is split into 6 tets)
+      { { 0, 1, 2, 5 }, { 0, 1, 5, 4 }, { 0, 3, 4, 5 } }, // 1 = 001
+      { { 0, 1, 2, 4 }, { 0, 2, 3, 4 }, { 2, 3, 4, 5 } }, // 2 = 010
+      { { 0, 1, 2, 4 }, { 0, 2, 5, 4 }, { 0, 3, 4, 5 } }, // 3 = 011
+      { { 0, 1, 2, 3 }, { 1, 2, 3, 5 }, { 1, 3, 4, 5 } }, // 4 = 100
+      { { 0, 1, 2, 5 }, { 0, 1, 5, 3 }, { 1, 3, 4, 5 } }, // 5 = 101
+      { { 0, 1, 2, 3 }, { 1, 2, 3, 4 }, { 2, 3, 4, 5 } }  // 6 = 110
+      // 7 = 111 (see below; prism is split into 6 tets)
+   };
+   static const int pri_tets_0[6][4] =
+   { {0,1,2,6}, {0,1,6,4}, {0,2,3,6}, {0,6,3,4}, {2,3,6,5}, {3,4,6,5} };
+   static const int pri_tets_7[6][4] =
+   { {0,1,2,6}, {0,2,5,6}, {0,1,6,3}, {0,3,6,5}, {1,3,4,6}, {3,4,6,5} };
+   const int fs2 = (~face_splits&7)/2 + 4*((~face_splits&7)%2);
+   const int n = (np == 1) ? 1 : TimesToRefine;
+
+   double vs_data[7], pm_data[3*7], gd_data[3*7];
+   Vector vs(vs_data, 7);
+   DenseMatrix pm(pm_data, 3, 7), gd(gd_data, 3, 7);
+   int l0, l1;
+
+   for (int k = 0; k < np; k++)
+   {
+      const int pk = k % (n*n);
+      if (pk == 0)
+      {
+         l0 = 0; l1 = 2*n-1;
+      }
+      else if (pk == l1)
+      {
+         const int s = l1-l0;
+         l0 = l1;
+         l1 += (s-2);
+      }
+      const int fsl = ((pk-l0)%2 == 0) ? face_splits : fs2;
+      // The algorithm for choosing 'fsl' used above assumes the refined prisms
+      // are listed in certain order -- see the prism case in
+      // mfem::GeometryRefiner::Refine.
+      const int *pv = &RG[6*k];
+      if (fsl == 0)
+      {
+         for (int j = 0; j < 6; j++)
+         {
+            const int idx = pv[j];
+            for (int d = 0; d < 3; d++)
+            {
+               pm(d,j) = verts(d,idx);
+               if (grad) { gd(d,j) = (*grad)(d,idx); }
+            }
+            vs(j) = vals(idx);
+         }
+         for (int d = 0; d < 3; d++)
+         {
+            pm(d,6) = 0.5*(pm(d,1) + pm(d,5));
+            if (grad) { gd(d,6) = 0.5*(gd(d,1) + gd(d,5)); }
+         }
+         vs(6) = 0.5*(vs(1) + vs(5));
+         const DenseMatrix *gd_ = grad ? &gd : NULL;
+         for (int k = 0; k < 6; k++)
+         {
+            DrawTetLevelSurf(pm, vs, pri_tets_0[k], levels, gd_);
+         }
+      }
+      else if (fsl == 7)
+      {
+         for (int j = 0; j < 6; j++)
+         {
+            const int idx = pv[j];
+            for (int d = 0; d < 3; d++)
+            {
+               pm(d,j) = verts(d,idx);
+               if (grad) { gd(d,j) = (*grad)(d,idx); }
+            }
+            vs(j) = vals(idx);
+         }
+         for (int d = 0; d < 3; d++)
+         {
+            pm(d,6) = 0.5*(pm(d,2) + pm(d,4));
+            if (grad) { gd(d,6) = 0.5*(gd(d,2) + gd(d,4)); }
+         }
+         vs(6) = 0.5*(vs(2) + vs(4));
+         const DenseMatrix *gd_ = grad ? &gd : NULL;
+         for (int k = 0; k < 6; k++)
+         {
+            DrawTetLevelSurf(pm, vs, pri_tets_7[k], levels, gd_);
+         }
+      }
+      else
+      {
+         int m_ind[4];
+         for (int j = 0; j < 3; j++)
+         {
+            for (int i = 0; i < 4; i++)
+            {
+               m_ind[i] = pv[pri_tets[fsl-1][j][i]];
+            }
+            DrawTetLevelSurf(verts, vals, m_ind, levels, grad);
+         }
+      }
+   }
+#endif
+}
+
+// static method
+int VisualizationSceneSolution3d::GetHexFaceSplits(
+   const Array<bool> &quad_diag, const Array<int> &faces,
+   const Array<int> &ofaces)
+{
+   int fs = 0;
+   for (int lf = 0; lf < 6; lf++)
+   {
+      bool diag = quad_diag[faces[lf]];
+      if ((ofaces[lf]/2)%2) // orientations 2,3,6,7
+      {
+         diag = !diag;
+      }
+      fs = 2*fs + diag;
+   }
+   return fs;
+}
+
+void VisualizationSceneSolution3d::DrawRefinedHexLevelSurf(
+   const DenseMatrix &verts, const Vector &vals, const int *RG, const int nh,
+   const int face_splits, const DenseMatrix *grad)
+{
+#if 0
    static const int hex_tets[6][4] =
    {
       { 0, 1, 2, 6 }, { 0, 5, 1, 6 }, { 0, 4, 5, 6 },
       { 0, 2, 3, 6 }, { 0, 3, 7, 6 }, { 0, 7, 4, 6 }
    };
+   for (int k = 0; k < nh; k++)
+   {
+      const int *hv = &RG[8*k];
+      for (int j = 0; j < 6; j++)
+      {
+         int m_ind[4];
+         for (int i = 0; i < 4; i++)
+         {
+            m_ind[i] = hv[hex_tets[j][i]];
+         }
+         DrawTetLevelSurf(verts, vals, m_ind, levels, grad);
+      }
+   }
+#else
+   const int n = (nh == 1) ? 1 : TimesToRefine;
+
+   double vs_data[9], pm_data[3*9], gd_data[3*9];
+   Vector vs(vs_data, 9);
+   DenseMatrix pm(pm_data, 3, 9), gd(gd_data, 3, 9);
+
+   for (int k = 0; k < nh; k++)
+   {
+      const int ix = k%n, iy = (k/n)%n, iz = k/(n*n);
+      int fsl = face_splits;
+      if (ix != 0)
+      {
+         // Copy the right face bit (face 2, bit mask 8) to the left face bit
+         // (face 4, bit mask 2) and flip it.
+         fsl = (fsl&(63-2)) + (2-(fsl&8)/4);
+      }
+      if (iy != 0)
+      {
+         // Copy the back face bit (face 3, bit mask 4) to the front face bit
+         // (face 1, bit mask 16) and flip it.
+         fsl = (fsl&(63-16)) + (16-(fsl&4)*4);
+      }
+      if (iz != 0)
+      {
+         // Copy the top face bit (face 5, bit mask 1) to the bottom face bit
+         // (face 0, bit mask 32) and flip it.
+         fsl = (fsl&(63-32)) + (32-(fsl&1)*32);
+      }
+
+      const int *hv_orig = &RG[8*k], *hv;
+      int hv1[8], hv2[8];
+#if 1
+      // Find a pair of opposite faces that are split into triangles using
+      // two parallel diagonals (if such pair exists).
+      if (1-(fsl&1) == (fsl&32)/32)
+      {
+         // The bottom and top faces are split in the same direction.
+         hv = hv_orig;
+      }
+      else if (4-(fsl&4) == (fsl&16)/4)
+      {
+         // The front and back faces are split in the same direction.
+         // Rotate the hex around the x-axis to bring front-back to bottom-top.
+         static const int rot_x[8] = { 4, 5, 1, 0, 7, 6, 2, 3 };
+         for (int j = 0; j < 8; j++)
+         {
+            hv1[j] = hv_orig[rot_x[j]];
+         }
+         hv = hv1;
+         // fsl bits change: a|b|c|d|e|f -> b|f|1-c|a|1-e|d
+         fsl = (fsl&16)*2 + (fsl&1)*16 + (8-(fsl&8)) + (fsl&32)/8 +
+               (2-(fsl&2)) + (fsl&4)/4;
+      }
+      else if (2-(fsl&2) == (fsl&8)/4)
+      {
+         // The left and right faces are split in the same direction.
+         // Rotate the hex around the y-axis to bring left-right to top-bottom.
+         static const int rot_y[8] = { 1, 5, 6, 2, 0, 4, 7, 3 };
+         for (int j = 0; j < 8; j++)
+         {
+            hv1[j] = hv_orig[rot_y[j]];
+         }
+         hv = hv1;
+         // fsl bit change: a|b|c|d|e|f -> 1-c|1-b|1-f|1-d|1-a|1-e
+         fsl = ~fsl&63;
+         fsl = (fsl&8)*4 + (fsl&16) + (fsl&1)*8 + (fsl&4) + (fsl&32)/16 +
+               (fsl&2)/2;
+      }
+      else
+#endif
+      {
+         // All opposite faces are split in opposite directions.
+         // Split the hex into 12 tets using the hex center as a vertex in all
+         // 12 tets.
+         for (int j = 0; j < 8; j++)
+         {
+            const int idx = hv_orig[j];
+            for (int d = 0; d < 3; d++)
+            {
+               pm(d,j) = verts(d,idx);
+               if (grad) { gd(d,j) = (*grad)(d,idx); }
+            }
+            vs(j) = vals(idx);
+         }
+         for (int d = 0; d < 3; d++)
+         {
+            pm(d,8) = 0.0;
+            if (grad) { gd(d,8) = 0.0; }
+         }
+         vs(8) = 0.0;
+         for (int j = 0; j < 8; j++)
+         {
+            for (int d = 0; d < 3; d++)
+            {
+               pm(d,8) += pm(d,j);
+               if (grad) { gd(d,8) += gd(d,j); }
+            }
+            vs(8) += vs(j);
+         }
+         for (int d = 0; d < 3; d++)
+         {
+            pm(d,8) *= 0.125;
+            if (grad) { gd(d,8) *= 0.125; }
+         }
+         vs(8) *= 0.125;
+
+         typedef Mesh::hex_t hex_t;
+         for (int j = 0; j < hex_t::NumFaces; j++)
+         {
+            int tv[8];
+            const int *fv = hex_t::FaceVert[j];
+            const bool diag = fsl&(32>>j);
+            if (diag == 0)
+            {
+               tv[0] = fv[2];
+               tv[1] = fv[1];
+               tv[2] = fv[0];
+               tv[3] = 8;
+               tv[4] = fv[0];
+               tv[5] = fv[3];
+               tv[6] = fv[2];
+               tv[7] = 8;
+            }
+            else
+            {
+               tv[0] = fv[1];
+               tv[1] = fv[0];
+               tv[2] = fv[3];
+               tv[3] = 8;
+               tv[4] = fv[3];
+               tv[5] = fv[2];
+               tv[6] = fv[1];
+               tv[7] = 8;
+            }
+            const DenseMatrix *gp = grad ? &gd : NULL;
+            DrawTetLevelSurf(pm, vs, &tv[0], levels, gp);
+            DrawTetLevelSurf(pm, vs, &tv[4], levels, gp);
+         }
+
+         continue;
+      }
+
+      // Rotate the hex so that the diagonal edge splitting the bottom face is
+      // the edge 0-2.
+      if ((fsl&32) == 0)
+      {
+         // Rotate the hex around the z-axis -- left-right becomes front-back.
+         static const int rot_z[8] = { 3, 0, 1, 2, 7, 4, 5, 6 };
+         for (int j = 0; j < 8; j++)
+         {
+            hv2[j] = hv[rot_z[j]];
+         }
+         hv = hv2;
+         // fsl bit change: a|b|c|d|e|f -> 1-a|e|b|c|d|1-f
+         fsl = (32-(fsl&32)) + (fsl&2)*8 + (fsl&(16+8+4))/2 + (1-(fsl&1));
+      }
+
+      // Split the hex into two prisms using the diagonal face 0-2-6-4.
+      const int pv[2][6] =
+      {
+         { hv[0], hv[1], hv[2], hv[4], hv[5], hv[6] },
+         { hv[2], hv[3], hv[0], hv[6], hv[7], hv[4] }
+      };
+      // Choose the shorter diagonal on the face 0-2-6-4.
+      const double l06 = Distance(&verts(0,hv[0]), &verts(0,hv[6]), 3);
+      const double l24 = Distance(&verts(0,hv[2]), &verts(0,hv[4]), 3);
+      const bool diag = (l06 > 1.01*l24);
+      const int fs1 = (fsl&(16+8))/4 + !diag; // a|b|c|d|e|f -> b|c|1-diag
+      const int fs2 = (fsl&(4+2)) + diag; // a|b|c|d|e|f -> d|e|diag
+      DrawRefinedWedgeLevelSurf(verts, vals, pv[0], 1, fs1, grad);
+      DrawRefinedWedgeLevelSurf(verts, vals, pv[1], 1, fs2, grad);
+   }
+#endif
+}
+
+void VisualizationSceneSolution3d::PrepareLevelSurf()
+{
+   static const int ident[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
    Vector vals;
    DenseMatrix pointmat, grad;
@@ -2599,6 +3036,27 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
       levels[l] = ULogVal(lvl);
    }
 
+   // For every quad face, choose the shorter diagonal to split the quad into
+   // two triangles. Elements adjacent to that quad face (wedge or hex) will use
+   // the same diagonal when subdividing the element.
+   Array<bool> quad_diag;
+   if (mesh->HasGeometry(Geometry::SQUARE))
+   {
+      quad_diag.SetSize(mesh->GetNFaces());
+      for (int fi = 0; fi < mesh->GetNFaces(); fi++)
+      {
+         const Element *face = mesh->GetFace(fi);
+         if (face->GetType() != Element::QUADRILATERAL) { continue; }
+         ElementTransformation *T = mesh->GetFaceTransformation(fi);
+         T->Transform(*Geometries.GetVertices(Geometry::SQUARE), pointmat);
+         const double l02 = Distance(&pointmat(0,0), &pointmat(0,2), 3);
+         const double l13 = Distance(&pointmat(0,1), &pointmat(0,3), 3);
+         quad_diag[fi] = (l02 > 1.01*l13);
+      }
+   }
+
+   Array<int> faces, ofaces;
+
    if (shading != 2)
    {
       for (int ie = 0; ie < mesh->GetNE(); ie++)
@@ -2611,62 +3069,73 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
             vals(j) = (*sol)(vertices[j]);
          }
 
-         if (mesh->GetElementType(ie) == Element::TETRAHEDRON)
+         switch (mesh->GetElementType(ie))
          {
-            DrawTetLevelSurf(pointmat, vals, tet_id, levels);
-         }
-         else if (mesh->GetElementType(ie) == Element::HEXAHEDRON)
-         {
-            for (int k = 0; k < 6; k++)
+            case Element::TETRAHEDRON:
+               DrawTetLevelSurf(pointmat, vals, ident, levels);
+               break;
+            case Element::WEDGE:
             {
-               DrawTetLevelSurf(pointmat, vals, hex_tets[k], levels);
+               mesh->GetElementFaces(ie, faces, ofaces);
+               const int fs = GetWedgeFaceSplits(quad_diag, faces, ofaces);
+               DrawRefinedWedgeLevelSurf(pointmat, vals, ident, 1, fs);
             }
+            break;
+            case Element::HEXAHEDRON:
+            {
+               mesh->GetElementFaces(ie, faces, ofaces);
+               const int fs = GetHexFaceSplits(quad_diag, faces, ofaces);
+               DrawRefinedHexLevelSurf(pointmat, vals, ident, 1, fs);
+            }
+            break;
+            default:
+               MFEM_ABORT("Unrecognized 3D element type \""
+                          << mesh->GetElementType(ie) << "\"");
          }
       }
    }
    else // shading == 2
    {
       RefinedGeometry *RefG;
+#define GLVIS_SMOOTH_LEVELSURF_NORMALS
+#ifdef GLVIS_SMOOTH_LEVELSURF_NORMALS
+      const DenseMatrix *gp = &grad;
+#else
+      const DenseMatrix *gp = NULL;
+#endif
 
       for (int ie = 0; ie < mesh->GetNE(); ie++)
       {
-         RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(ie),
-                                            TimesToRefine);
+         const Geometry::Type geom = mesh->GetElementBaseGeometry(ie);
+
+         RefG = GLVisGeometryRefiner.Refine(geom, TimesToRefine);
          GridF->GetValues(ie, RefG->RefPts, vals, pointmat);
-#define GLVIS_SMOOTH_LEVELSURF_NORMALS
 #ifdef GLVIS_SMOOTH_LEVELSURF_NORMALS
          GridF->GetGradients(ie, RefG->RefPts, grad);
 #endif
 
          Array<int> &RG = RefG->RefGeoms;
-         int nv = mesh->GetElement(ie)->GetNVertices();
+         const int nv = mesh->GetElement(ie)->GetNVertices();
+         const int nre = RG.Size()/nv;
 
-         for (int k = 0; k < RG.Size()/nv; k++)
+         if (geom == Geometry::TETRAHEDRON)
          {
-            if (nv == 4)
+            for (int k = 0; k < nre; k++)
             {
-#ifndef GLVIS_SMOOTH_LEVELSURF_NORMALS
-               DrawTetLevelSurf(pointmat, vals, &RG[nv*k], levels);
-#else
-               DrawTetLevelSurf(pointmat, vals, &RG[nv*k], levels, &grad);
-#endif
+               DrawTetLevelSurf(pointmat, vals, &RG[nv*k], levels, gp);
             }
-            else if (nv == 8)
-            {
-               int m_ind[4];
-               for (int j = 0; j < 6; j++)
-               {
-                  for (int i = 0; i < 4; i++)
-                  {
-                     m_ind[i] = RG[nv*k+hex_tets[j][i]];
-                  }
-#ifndef GLVIS_SMOOTH_LEVELSURF_NORMALS
-                  DrawTetLevelSurf(pointmat, vals, m_ind, levels);
-#else
-                  DrawTetLevelSurf(pointmat, vals, m_ind, levels, &grad);
-#endif
-               }
-            }
+         }
+         else if (geom == Geometry::PRISM)
+         {
+            mesh->GetElementFaces(ie, faces, ofaces);
+            const int fs = GetWedgeFaceSplits(quad_diag, faces, ofaces);
+            DrawRefinedWedgeLevelSurf(pointmat, vals, RG, nre, fs, gp);
+         }
+         else if (geom == Geometry::CUBE)
+         {
+            mesh->GetElementFaces(ie, faces, ofaces);
+            const int fs = GetHexFaceSplits(quad_diag, faces, ofaces);
+            DrawRefinedHexLevelSurf(pointmat, vals, RG, nre, fs, gp);
          }
       }
    }
