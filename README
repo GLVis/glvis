@@ -170,7 +170,7 @@ F7 - Change the minimum and maximum values
 F8      - List of material subdomains to show
 F9/F10  - Walk through material subdomains
 F11/F12 - Shrink/Zoom material subdomains (to the centers of the attributes)
-Shift+F7 - Set the boundiing box from the terminal
+Shift+F7 - Set the bounding box from the terminal
 
 
 Advanced mouse functions
