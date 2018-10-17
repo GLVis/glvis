@@ -170,6 +170,7 @@ F7 - Change the minimum and maximum values
 F8      - List of material subdomains to show
 F9/F10  - Walk through material subdomains
 F11/F12 - Shrink/Zoom material subdomains (to the centers of the attributes)
+Shift+F7 - Set the bounding box from the terminal
 
 
 Advanced mouse functions
@@ -233,6 +234,10 @@ i   - Toggle clipping (cutting) plane
       The options are: -> none
                        -> cut through the elements
                        -> show only elements behind the clipping plane
+I   - Toggle the clipping plane algorithm used when the option "cut through the
+      elements" is selected. The two algorithms are:
+         -> slower, more accurate algorithm for curved meshes (default)
+         -> faster algorithm suitable for meshes with planar faces
 x/X - Rotate clipping plane (phi)
 y/Y - Rotate clipping plane (theta)
 z/Z - Translate clipping plane

@@ -12,6 +12,10 @@
 Version 3.4.1 (development)
 ===========================
 
+- Improved cutting plane algorithm for curved elements. The key 'I' can be used
+  to switch to the previous (faster) algorithm which is suitable for meshes with
+  planar faces.
+
 - Updated to support the display and slicing of meshes with wedge elements.
 
 - Added a key for setting the bounding box from the terminal (Shift+F7).
