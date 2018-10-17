@@ -44,6 +44,7 @@ static void Solution3dKeyHPressed()
         << "| g -  Toggle background             |" << endl
         << "| h -  Displays help menu            |" << endl
         << "| i -  Toggle cutting plane          |" << endl
+        << "| I -  Toggle cutting plane algorithm|" << endl
         << "| j -  Turn on/off perspective       |" << endl
         << "| k/K  Adjust the transparency level |" << endl
         << "| ,/<  Adjust color transparency     |" << endl
@@ -103,9 +104,15 @@ static void Solution3dKeyHPressed()
         << "+------------------------------------+" << endl;
 }
 
-static void KeyIPressed()
+static void KeyiPressed()
 {
    vssol3d -> ToggleCuttingPlane();
+   SendExposeEvent();
+}
+
+static void KeyIPressed()
+{
+   vssol3d -> ToggleCPAlgorithm();
    SendExposeEvent();
 }
 
@@ -600,6 +607,7 @@ void VisualizationSceneSolution3d::Init()
    cplane = 0;
    cp_drawmesh = 0; cp_drawelems = 1;
    drawlsurf = 0;
+   cp_algo = 0;
 
    drawelems = shading = 1;
    drawmesh = 0;
@@ -663,7 +671,7 @@ void VisualizationSceneSolution3d::Init()
       auxKeyFunc (AUX_f, KeyFPressed);
       // auxKeyFunc (AUX_F, KeyFPressed);
 
-      auxKeyFunc (AUX_i, KeyIPressed);
+      auxKeyFunc (AUX_i, KeyiPressed);
       auxKeyFunc (AUX_I, KeyIPressed);
 
       auxKeyFunc (AUX_o, KeyoPressed);
@@ -1026,6 +1034,15 @@ void VisualizationSceneSolution3d::ToggleCPDrawMesh()
       cp_drawmesh = (cp_drawmesh+1)%4;
    }
    PrepareCuttingPlaneLines();
+}
+
+void VisualizationSceneSolution3d::ToggleCPAlgorithm()
+{
+   cp_algo = (cp_algo+1)%2;
+   if (shading == 2 && cplane == 1)
+   {
+      CPPrepare();
+   }
 }
 
 void VisualizationSceneSolution3d::MoveLevelSurf(int move)
@@ -1710,7 +1727,7 @@ void VisualizationSceneSolution3d::Prepare()
 
          for (j = 0; j < pointmat.Size(); j++)
          {
-            MySetColor((*sol)(vertices[j]), minv ,maxv);
+            MySetColor((*sol)(vertices[j]), minv, maxv);
             glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
             glVertex3dv(&pointmat(0, j));
          }
@@ -1978,10 +1995,10 @@ void VisualizationSceneSolution3d::PrepareLines2()
    glEndList();
 }
 
-void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
+static void CutElement(const Geometry::Type geom, const int *vert_flags,
+                       const int **edge_vert_ptr, int *cut_edges,
+                       int *num_cut_edges, int *n2_cut_edges)
 {
-   int i, j, k, m, n, n2;
-   int flag[8], oedges[6];
    static const int tet_edges[12]= {0,3, 0,2, 0,1, 1,2, 1,3, 2,3};
    static const int pri_edges[18] =
    {0,1, 1,2, 2,0, 3,4, 4,5, 5,3, 0,3, 1,4, 2,5};
@@ -2006,6 +2023,155 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
       {12, 22,  5}, { 2, 19, 11}, {14, 16,  7}, { 5, 21, 12}
    };
    const int *ev;
+   int n, n2;
+
+   n = n2 = 0;
+   switch (geom)
+   {
+      case Geometry::TETRAHEDRON:
+      {
+         ev = tet_edges;
+         for (int j = 0; j < 6; j++, ev += 2)
+            if (vert_flags[ev[0]] != vert_flags[ev[1]])
+            {
+               cut_edges[n++] = j;
+            }
+         ev = tet_edges;
+      }
+      break;
+
+      case Geometry::PRISM:
+      {
+         int emark[9];
+         ev = pri_edges;
+         for (int j = 0; j < 9; j++, ev += 2)
+         {
+            emark[j] = vert_flags[ev[1]] - vert_flags[ev[0]];
+         }
+         do
+         {
+            int j;
+            for (j = 0; j < 9; j++)
+            {
+               if (emark[j]) { break; }
+            }
+            if (j == 9)
+            {
+               break;
+            }
+            int k = 2 * j;
+            if (emark[j] > 0)
+            {
+               k++;
+            }
+            do
+            {
+               int m;
+               for (j = 0; j < 3; j++)
+               {
+                  m = pri_cutting[k][j];
+                  if (m >= 0)
+                  {
+                     ev = pri_edges + 2 * (m / 2);
+                     if ((m%2 == 0 && vert_flags[ev[0]] > vert_flags[ev[1]]) ||
+                         (m%2 == 1 && vert_flags[ev[1]] > vert_flags[ev[0]]))
+                     {
+                        break;
+                     }
+                  }
+               }
+               cut_edges[n2++] = k/2;
+               emark[k/2] = 0;
+               k = m;
+            }
+            while (k/2 != cut_edges[n]);
+            if (n == 0)
+            {
+               n = n2;
+            }
+            else
+            {
+               break;
+            }
+         }
+         while (1);
+         n2 -= n;
+         ev = pri_edges;
+      }
+      break;
+
+      case Geometry::CUBE:
+      {
+         int emark[12];
+         ev = hex_edges;
+         for (int j = 0; j < 12; j++, ev += 2)
+         {
+            emark[j] = vert_flags[ev[1]] - vert_flags[ev[0]];
+         }
+         do
+         {
+            int j;
+            for (j = 0; j < 12; j++)
+            {
+               if (emark[j]) { break; }
+            }
+            if (j == 12)
+            {
+               break;
+            }
+            int k = 2 * j;
+            if (emark[j] > 0)
+            {
+               k++;
+            }
+            do
+            {
+               int m;
+               for (j = 0; j < 3; j++)
+               {
+                  m = hex_cutting[k][j];
+                  ev = hex_edges + 2 * (m / 2);
+                  if ((m%2 == 0 && vert_flags[ev[0]] > vert_flags[ev[1]]) ||
+                      (m%2 == 1 && vert_flags[ev[1]] > vert_flags[ev[0]]))
+                  {
+                     break;
+                  }
+               }
+               cut_edges[n2++] = k/2;
+               emark[k/2] = 0;
+               k = m;
+            }
+            while (k/2 != cut_edges[n]);
+            if (n == 0)
+            {
+               n = n2;
+            }
+            else
+            {
+               break;
+            }
+         }
+         while (1);
+         n2 -= n;
+         ev = hex_edges;
+      }
+      break;
+
+      default:
+         ev = NULL; // suppress a warning
+         break;
+   }
+
+   *edge_vert_ptr = ev;
+   *num_cut_edges = n;
+   *n2_cut_edges = n2;
+}
+
+void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
+{
+   int i, j, k, m, n, n2;
+   int flag[8], cut_edges[6];
+   const int *ev;
    double t, point[6][4], norm[3];
 
    DenseMatrix pointmat;
@@ -2026,131 +2192,9 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
             flag[j] = -1;
          }
       }
-      switch (mesh -> GetElementType(i))
-      {
-         case Element::TETRAHEDRON:
-            ev = tet_edges;
-            for (j = 0; j < 6; j++, ev += 2)
-               if (flag[ev[0]] != flag[ev[1]])
-               {
-                  oedges[n++] = j;
-               }
-            ev = tet_edges;
-            break;
-         case Element::WEDGE:
-         {
-            int emark[9];
-            ev = pri_edges;
-            for (j = 0; j < 9; j++, ev += 2)
-            {
-               emark[j] = flag[ev[1]] - flag[ev[0]];
-            }
-            do
-            {
-               for (j = 0; j < 9; j++)
-               {
-                  if (emark[j]) { break; }
-               }
-               if (j == 9)
-               {
-                  break;
-               }
-               k = 2 * j;
-               if (emark[j] > 0)
-               {
-                  k++;
-               }
-               do
-               {
-                  for (j = 0; j < 3; j++)
-                  {
-                     m = pri_cutting[k][j];
-                     if (m >= 0)
-                     {
-                        ev = pri_edges + 2 * (m / 2);
-                        if ((m % 2 == 0 && flag[ev[0]] > flag[ev[1]]) ||
-                            (m % 2 == 1 && flag[ev[1]] > flag[ev[0]]))
-                        {
-                           break;
-                        }
-                     }
-                  }
-                  oedges[n2++] = k/2;
-                  emark[k/2] = 0;
-                  k = m;
-               }
-               while (k/2 != oedges[n]);
-               if (n == 0)
-               {
-                  n = n2;
-               }
-               else
-               {
-                  break;
-               }
-            }
-            while (1);
-            n2 -= n;
-            ev = pri_edges;
-         }
-         break;
-         case Element::HEXAHEDRON:
-         {
-            int emark[12];
-            ev = hex_edges;
-            for (j = 0; j < 12; j++, ev += 2)
-            {
-               emark[j] = flag[ev[1]] - flag[ev[0]];
-            }
-            do
-            {
-               for (j = 0; j < 12; j++)
-               {
-                  if (emark[j]) { break; }
-               }
-               if (j == 12)
-               {
-                  break;
-               }
-               k = 2 * j;
-               if (emark[j] > 0)
-               {
-                  k++;
-               }
-               do
-               {
-                  for (j = 0; j < 3; j++)
-                  {
-                     m = hex_cutting[k][j];
-                     ev = hex_edges + 2 * (m / 2);
-                     if ((m % 2 == 0 && flag[ev[0]] > flag[ev[1]]) ||
-                         (m % 2 == 1 && flag[ev[1]] > flag[ev[0]]))
-                     {
-                        break;
-                     }
-                  }
-                  oedges[n2++] = k/2;
-                  emark[k/2] = 0;
-                  k = m;
-               }
-               while (k/2 != oedges[n]);
-               if (n == 0)
-               {
-                  n = n2;
-               }
-               else
-               {
-                  break;
-               }
-            }
-            while (1);
-            n2 -= n;
-            ev = hex_edges;
-         }
-         break;
-         default:
-            break;
-      }
+
+      CutElement(mesh->GetElementBaseGeometry(i), flag,
+                 &ev, cut_edges, &n, &n2);
 
       while (n > 2)
       {
@@ -2173,7 +2217,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
          }
          for (j = 0; j < n; j++)
          {
-            const int *en = ev + 2*oedges[j];
+            const int *en = ev + 2*cut_edges[j];
             t = node_pos[ nodes[en[1]] ];
             t = t / ( t - node_pos[ nodes[en[0]] ] );
             for (k = 0; k < 3; k++)
@@ -2270,11 +2314,211 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
 
          for (j = 0; j < n2; j++)
          {
-            oedges[j] = oedges[j+n];
+            cut_edges[j] = cut_edges[j+n];
          }
          n = n2;
          n2 = 0;
       }
+   }
+}
+
+void VisualizationSceneSolution3d::CutRefinedElement(
+   const DenseMatrix &verts, const Vector &vert_dist, const Vector &vals,
+   const Geometry::Type geom, const int *elems, int num_elems, int func)
+{
+   double sc = 0.0;
+   if (FaceShiftScale != 0.0)
+   {
+      double bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
+                                (y[1]-y[0])*(y[1]-y[0]) +
+                                (z[1]-z[0])*(z[1]-z[0]) );
+      sc = FaceShiftScale * bbox_diam;
+   }
+   const int nv = Geometry::NumVerts[geom];
+
+   for (int i = 0; i < num_elems; i++)
+   {
+      int vert_flag[8], cut_edges[8];
+      const int *elem = elems + i*nv;
+      const int *edge_vert;
+      int n = 0, n2;
+      for (int j = 0; j < nv; j++)
+      {
+         vert_flag[j] = (vert_dist(elem[j]) >= 0.0) ? n++, 1 : 0;
+      }
+      if (n == 0 || n == nv) { continue; }
+
+      CutElement(geom, vert_flag, &edge_vert, cut_edges, &n, &n2);
+      // n  = number of intersected edges
+      // n2 = number of intersected edges, second polygon
+
+      while (n > 2)
+      {
+         // 'pts' describe the intersecting polygon: triangle, quad, etc
+         double pts[6][4]; // up to 6 points x (3 coordinates + 1 value)
+
+         for (int j = 0; j < n; j++)
+         {
+            const int *ev = edge_vert + 2*cut_edges[j];
+            double t = vert_dist(elem[ev[0]]);
+            t = t / (t - vert_dist(elem[ev[1]]));
+            for (int d = 0; d < 3; d++)
+            {
+               pts[j][d] = (1-t)*verts(d,elem[ev[0]]) + t*verts(d,elem[ev[1]]);
+            }
+            pts[j][3] = (1-t)*vals(elem[ev[0]]) + t*vals(elem[ev[1]]);
+         }
+         if (sc != 0.0)
+         {
+            const double *dir = CuttingPlane->Equation();
+            for (int j = 0; j < n; j++)
+            {
+               // dir points into the visible side, so we add a minus to val:
+               const double val = -sc * (pts[j][3] - minv) / (maxv - minv);
+               for (int d = 0; d < 3; d++)
+               {
+                  pts[j][d] += val*dir[d];
+               }
+            }
+         }
+
+         if (func == 0) // draw surface
+         {
+            double norm[3];
+            int err, m = n;
+            while (1)
+            {
+               if (m > 3)
+               {
+                  err = Compute3DUnitNormal(pts[0], pts[1], pts[2], pts[3],
+                                            norm);
+                  if (err && m > 4)
+                  {
+                     for (int j = 3; j < m; j++)
+                     {
+                        for (int i = 0; i < 4; i++)
+                        {
+                           pts[j-2][i] = pts[j][i];
+                        }
+                     }
+                     m -= 2;
+                     continue;
+                  }
+               }
+               else
+               {
+                  err = Compute3DUnitNormal(pts[0], pts[1], pts[2], norm);
+               }
+               break;
+            }
+            if (!err)
+            {
+               glBegin(GL_POLYGON);
+               glNormal3dv(norm);
+               for (int j = 0; j < m; j++)
+               {
+                  MySetColor(pts[j][3], minv, maxv);
+                  glVertex3dv(pts[j]);
+               }
+               glEnd();
+            }
+         }
+         else // draw level lines
+         {
+            DrawPolygonLevelLines(pts[0], n, level, false);
+         }
+
+         for (int j = 0; j < n2; j++)
+         {
+            cut_edges[j] = cut_edges[j+n];
+         }
+         n = n2;
+         n2 = 0;
+      }
+   }
+}
+
+void VisualizationSceneSolution3d::CutRefinedFace(
+   const DenseMatrix &verts, const Vector &vert_dist, const Vector &vals,
+   const Geometry::Type geom, const int *faces, int num_faces)
+{
+   double sc = 0.0;
+   if (FaceShiftScale != 0.0)
+   {
+      double bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
+                                (y[1]-y[0])*(y[1]-y[0]) +
+                                (z[1]-z[0])*(z[1]-z[0]) );
+      sc = FaceShiftScale * bbox_diam;
+   }
+   const int nv = Geometry::NumVerts[geom];
+
+   bool gl_lines_begun = false;
+   for (int i = 0; i < num_faces; i++)
+   {
+      int vert_flag[4], cut_edges[4];
+      const int *face = faces + i*nv;
+      int n = 0;
+      for (int j = 0; j < nv; j++)
+      {
+         vert_flag[j] = (vert_dist(face[j]) >= 0.0) ? n++, 1 : 0;
+      }
+      if (n == 0 || n == nv) { continue; }
+      n = 0;
+      for (int j = 0; j < nv; j++)
+      {
+         const int j1 = (j+1)%nv;
+         if (vert_flag[j] != vert_flag[j1])
+         {
+            cut_edges[n++] = j;
+         }
+      }
+      // n = number of intersected edges (2, or 4)
+      double pts[4][4]; // up to 4 points x (3 coordinates + 1 value)
+      for (int j = 0; j < n; j++)
+      {
+         const int v0 = cut_edges[j];
+         const int v1 = (v0+1)%nv;
+         double t = vert_dist(face[v0]);
+         t = t / (t - vert_dist(face[v1]));
+         for (int d = 0; d < 3; d++)
+         {
+            pts[j][d] = (1-t)*verts(d,face[v0]) + t*verts(d,face[v1]);
+         }
+         if (sc != 0.0)
+         {
+            pts[j][3] = (1-t)*vals(face[v0]) + t*vals(face[v1]);
+         }
+      }
+      if (sc != 0.0)
+      {
+         const double *dir = CuttingPlane->Equation();
+         for (int j = 0; j < n; j++)
+         {
+            // dir points into the visible side, so we add a minus to val:
+            const double val = -sc * (pts[j][3] - minv) / (maxv - minv);
+            for (int d = 0; d < 3; d++)
+            {
+               pts[j][d] += val*dir[d];
+            }
+         }
+      }
+      if (!gl_lines_begun)
+      {
+         glBegin(GL_LINES);
+         gl_lines_begun = true;
+      }
+      glVertex3dv(pts[0]);
+      glVertex3dv(pts[1]);
+      if (n == 4)
+      {
+         glVertex3dv(pts[2]);
+         glVertex3dv(pts[3]);
+      }
+   }
+
+   if (gl_lines_begun)
+   {
+      glEnd();
    }
 }
 
@@ -2288,9 +2532,31 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane()
       {
          PrepareCuttingPlane2();
       }
-      else
+      else if (cp_algo == 1)
       {
          CuttingPlaneFunc(1);
+      }
+      else
+      {
+         Vector vals, vert_dist;
+         DenseMatrix pointmat;
+         for (int i = 0; i < mesh->GetNE(); i++)
+         {
+            const Geometry::Type geom = mesh->GetElementBaseGeometry(i);
+            RefinedGeometry *RefG =
+               GLVisGeometryRefiner.Refine(geom, TimesToRefine);
+            GridF->GetValues(i, RefG->RefPts, vals, pointmat);
+            vert_dist.SetSize(pointmat.Width());
+            for (int j = 0; j < pointmat.Width(); j++)
+            {
+               vert_dist(j) = CuttingPlane->Transform(&pointmat(0,j));
+            }
+            Array<int> &RG = RefG->RefGeoms;
+
+            const int func = 0; // draw surface
+            CutRefinedElement(pointmat, vert_dist, vals, geom,
+                              RG, RG.Size()/Geometry::NumVerts[geom], func);
+         }
       }
    }
 
@@ -2382,13 +2648,76 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines()
       }
       else
       {
-         if (cp_drawmesh == 1)
+         if (cp_drawmesh == 1 && cp_algo == 1)
          {
             CuttingPlaneFunc(2);
          }
-         else
+         else if (cp_drawmesh == 1)
+         {
+            Vector vert_dist, vals;
+            DenseMatrix pointmat;
+            int num_faces = mesh->GetNFaces();
+            if (mesh->NURBSext)
+            {
+               // Note: for NURBS meshes, the methods
+               //       Mesh::GetFaceTransformation() and
+               //       GridFunction::GetFaceValues() are not supported.
+               cout << _MFEM_FUNC_NAME
+                    << ": NURBS mesh: cut faces will not be drawn!" << endl;
+               num_faces = 0;
+            }
+            for (int i = 0; i < num_faces; i++)
+            {
+               const Geometry::Type geom = mesh->GetFaceBaseGeometry(i);
+               RefinedGeometry *RefG =
+                  GLVisGeometryRefiner.Refine(geom, TimesToRefine);
+               if (FaceShiftScale == 0.0)
+               {
+                  ElementTransformation *T = mesh->GetFaceTransformation(i);
+                  T->Transform(RefG->RefPts, pointmat);
+               }
+               else
+               {
+                  const int side = 2;
+                  GridF->GetFaceValues(i, side, RefG->RefPts, vals, pointmat);
+                  // For discontinuous grid function, we should draw two edges.
+               }
+               vert_dist.SetSize(pointmat.Width());
+               for (int j = 0; j < pointmat.Width(); j++)
+               {
+                  vert_dist(j) = CuttingPlane->Transform(&pointmat(0,j));
+               }
+               Array<int> &RG = RefG->RefGeoms;
+
+               CutRefinedFace(pointmat, vert_dist, vals, geom,
+                              RG, RG.Size()/Geometry::NumVerts[geom]);
+            }
+         }
+         else if (cp_algo == 1)
          {
             CuttingPlaneFunc(3);
+         }
+         else
+         {
+            Vector vals, vert_dist;
+            DenseMatrix pointmat;
+            for (int i = 0; i < mesh->GetNE(); i++)
+            {
+               const Geometry::Type geom = mesh->GetElementBaseGeometry(i);
+               RefinedGeometry *RefG =
+                  GLVisGeometryRefiner.Refine(geom, TimesToRefine);
+               GridF->GetValues(i, RefG->RefPts, vals, pointmat);
+               vert_dist.SetSize(pointmat.Width());
+               for (int j = 0; j < pointmat.Width(); j++)
+               {
+                  vert_dist(j) = CuttingPlane->Transform(&pointmat(0,j));
+               }
+               Array<int> &RG = RefG->RefGeoms;
+
+               const int func = 1; // draw level lines
+               CutRefinedElement(pointmat, vert_dist, vals, geom,
+                                 RG, RG.Size()/Geometry::NumVerts[geom], func);
+            }
          }
       }
    }

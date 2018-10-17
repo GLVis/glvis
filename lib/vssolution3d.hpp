@@ -23,6 +23,10 @@ protected:
    int displlist, linelist;
    int cplane, cplanelist, cplanelineslist, lsurflist;
    int cp_drawmesh, cp_drawelems, drawlsurf;
+   // Algorithm used to draw the cutting plane when shading is 2 and cplane is 1
+   // 0 - slower, more accurate algorithm for curved meshes (default)
+   // 1 - faster algorithm suitable for meshes with planar faces
+   int cp_algo;
 
    double *node_pos;
 
@@ -116,6 +120,13 @@ public:
    void FindNodePos();
 
    void CuttingPlaneFunc (int type);
+   // func: 0 - draw surface, 1 - draw level lines
+   void CutRefinedElement(const DenseMatrix &verts, const Vector &vert_dist,
+                          const Vector &vals, const Geometry::Type geom,
+                          const int *elems, int num_elems, int func);
+   void CutRefinedFace(const DenseMatrix &verts, const Vector &vert_dist,
+                       const Vector &vals, const Geometry::Type geom,
+                       const int *faces, int num_faces);
    void CPPrepare();
    void CPMoved();
    void PrepareFlat2();
@@ -128,6 +139,7 @@ public:
    void ToggleCuttingPlane();
    void ToggleCPDrawElems();
    void ToggleCPDrawMesh();
+   void ToggleCPAlgorithm();
    void MoveLevelSurf(int);
    void NumberOfLevelSurf(int);
    virtual void EventUpdateColors();
