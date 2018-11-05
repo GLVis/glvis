@@ -1471,6 +1471,9 @@ void VisualizationSceneSolution::Prepare()
                case Element::QUADRILATERAL:
                   shape = GL_QUADS;
                   break;
+               default:
+                  MFEM_ABORT("Invalid 2D element type");
+                  break;
             }
             poly.glBegin(shape);
             mesh->GetPointMatrix (i, pointmat);

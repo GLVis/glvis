@@ -850,16 +850,47 @@ void KeyF6Pressed()
    SendExposeEvent();
 }
 
-void KeyF7Pressed()
+void KeyF7Pressed(GLenum state)
 {
-   cout << "[minv,maxv] = [" << vsdata->GetMinV() << "," << vsdata->GetMaxV()
-        << "]  maxv-minv = " << vsdata->GetMaxV()-vsdata->GetMinV() << "\n"
-        << "New value for minv: " << flush;
-   cin >> vsdata->GetMinV();
-   cout << "New value for maxv: " << flush;
-   cin >> vsdata->GetMaxV();
-   vsdata->UpdateValueRange(true);
-   SendExposeEvent();
+   if (state == 0)
+   {
+      cout << "[minv,maxv] = [" << vsdata->GetMinV() << "," << vsdata->GetMaxV()
+           << "]  maxv-minv = " << vsdata->GetMaxV()-vsdata->GetMinV() << "\n"
+           << "New value for minv: " << flush;
+      cin >> vsdata->GetMinV();
+      cout << "New value for maxv: " << flush;
+      cin >> vsdata->GetMaxV();
+      vsdata->UpdateValueRange(true);
+      SendExposeEvent();
+   }
+   else if (state & ShiftMask)
+   {
+      cout << "Current bounding box:\n"
+           << "   min: (" << vsdata->x[0] << ',' << vsdata->y[0] << ','
+           << vsdata->z[0] << ")\n"
+           << "   max: (" << vsdata->x[1] << ',' << vsdata->y[1] << ','
+           << vsdata->z[1] << ")\n"
+           << "Enter new bounding box:\n"
+           << "x_min = " << flush;
+      cin >> vsdata->x[0];
+      cout << "y_min = " << flush;
+      cin >> vsdata->y[0];
+      cout << "z_min = " << flush;
+      cin >> vsdata->z[0];
+      cout << "x_max = " << flush;
+      cin >> vsdata->x[1];
+      cout << "y_max = " << flush;
+      cin >> vsdata->y[1];
+      cout << "z_max = " << flush;
+      cin >> vsdata->z[1];
+      cout << "New bounding box:\n"
+           << "   min: (" << vsdata->x[0] << ',' << vsdata->y[0] << ','
+           << vsdata->z[0] << ")\n"
+           << "   max: (" << vsdata->x[1] << ',' << vsdata->y[1] << ','
+           << vsdata->z[1] << ")\n" << flush;
+      vsdata->UpdateBoundingBox();
+      SendExposeEvent();
+   }
 }
 
 void KeyBackslashPressed()
@@ -1525,6 +1556,7 @@ void VisualizationSceneScalarData::PrintState()
         << '\n' << endl;
    cam.Print();
    cout.flags(fmt);
+   mesh->PrintInfo(cout);
 }
 
 void VisualizationSceneScalarData::ShrinkPoints(DenseMatrix &pointmat,

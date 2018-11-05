@@ -1746,7 +1746,7 @@ void PrintSampleUsage(ostream &out)
 void ReadSerial()
 {
    // get the mesh from a file
-   ifgzstream meshin(mesh_file);
+   named_ifgzstream meshin(mesh_file);
    if (!meshin)
    {
       cerr << "Can not open mesh file " << mesh_file << ". Exit.\n";
