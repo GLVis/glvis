@@ -67,6 +67,7 @@ protected:
                                  const Array<int> &faces,
                                  const Array<int> &ofaces);
    void DrawRefinedWedgeLevelSurf(
+      gl3::GlDrawable& target,
       const DenseMatrix &verts, const Vector &vals, const int *RG, const int np,
       const int face_splits, const DenseMatrix *grad = NULL);
 
@@ -74,6 +75,7 @@ protected:
                                const Array<int> &faces,
                                const Array<int> &ofaces);
    void DrawRefinedHexLevelSurf(
+      gl3::GlDrawable& target,
       const DenseMatrix &verts, const Vector &vals, const int *RG, const int nh,
       const int face_splits, const DenseMatrix *grad = NULL);
 
@@ -129,10 +131,12 @@ public:
 
    void CuttingPlaneFunc (int type);
    // func: 0 - draw surface, 1 - draw level lines
-   void CutRefinedElement(const DenseMatrix &verts, const Vector &vert_dist,
+   void CutRefinedElement(gl3::GlDrawable& target,
+                          const DenseMatrix &verts, const Vector &vert_dist,
                           const Vector &vals, const Geometry::Type geom,
                           const int *elems, int num_elems, int func);
-   void CutRefinedFace(const DenseMatrix &verts, const Vector &vert_dist,
+   void CutRefinedFace(gl3::GlDrawable& target,
+                       const DenseMatrix &verts, const Vector &vert_dist,
                        const Vector &vals, const Geometry::Type geom,
                        const int *faces, int num_faces);
    void CPPrepare();

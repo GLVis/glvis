@@ -2292,6 +2292,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
 }
 
 void VisualizationSceneSolution3d::CutRefinedElement(
+   gl3::GlDrawable& target,
    const DenseMatrix &verts, const Vector &vert_dist, const Vector &vals,
    const Geometry::Type geom, const int *elems, int num_elems, int func)
 {
@@ -2304,6 +2305,8 @@ void VisualizationSceneSolution3d::CutRefinedElement(
       sc = FaceShiftScale * bbox_diam;
    }
    const int nv = Geometry::NumVerts[geom];
+
+   gl3::GlBuilder bld = target.createBuilder();
 
    for (int i = 0; i < num_elems; i++)
    {
@@ -2382,19 +2385,19 @@ void VisualizationSceneSolution3d::CutRefinedElement(
             }
             if (!err)
             {
-               glBegin(GL_POLYGON);
-               glNormal3dv(norm);
+               bld.glBegin(GL_POLYGON);
+               bld.glNormal3dv(norm);
                for (int j = 0; j < m; j++)
                {
-                  MySetColor(pts[j][3], minv, maxv);
-                  glVertex3dv(pts[j]);
+                  MySetColor(bld, pts[j][3], minv, maxv);
+                  bld.glVertex3dv(pts[j]);
                }
-               glEnd();
+               bld.glEnd();
             }
          }
          else // draw level lines
          {
-            DrawPolygonLevelLines(pts[0], n, level, false);
+            DrawPolygonLevelLines(bld, pts[0], n, level, false);
          }
 
          for (int j = 0; j < n2; j++)
@@ -2408,6 +2411,7 @@ void VisualizationSceneSolution3d::CutRefinedElement(
 }
 
 void VisualizationSceneSolution3d::CutRefinedFace(
+   gl3::GlDrawable& target,
    const DenseMatrix &verts, const Vector &vert_dist, const Vector &vals,
    const Geometry::Type geom, const int *faces, int num_faces)
 {
@@ -2421,7 +2425,6 @@ void VisualizationSceneSolution3d::CutRefinedFace(
    }
    const int nv = Geometry::NumVerts[geom];
 
-   bool gl_lines_begun = false;
    for (int i = 0; i < num_faces; i++)
    {
       int vert_flag[4], cut_edges[4];
@@ -2471,23 +2474,12 @@ void VisualizationSceneSolution3d::CutRefinedFace(
             }
          }
       }
-      if (!gl_lines_begun)
-      {
-         glBegin(GL_LINES);
-         gl_lines_begun = true;
-      }
-      glVertex3dv(pts[0]);
-      glVertex3dv(pts[1]);
+      
+      target.addLine(gl3::Vertex(pts[0]), gl3::Vertex(pts[1]));
       if (n == 4)
       {
-         glVertex3dv(pts[2]);
-         glVertex3dv(pts[3]);
+         target.addLine(gl3::Vertex(pts[2]), gl3::Vertex(pts[3]));
       }
-   }
-
-   if (gl_lines_begun)
-   {
-      glEnd();
    }
 }
 
@@ -2522,7 +2514,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane()
             Array<int> &RG = RefG->RefGeoms;
 
             const int func = 0; // draw surface
-            CutRefinedElement(pointmat, vert_dist, vals, geom,
+            CutRefinedElement(cplane_buf, pointmat, vert_dist, vals, geom,
                               RG, RG.Size()/Geometry::NumVerts[geom], func);
          }
       }
@@ -2657,7 +2649,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines()
                }
                Array<int> &RG = RefG->RefGeoms;
 
-               CutRefinedFace(pointmat, vert_dist, vals, geom,
+               CutRefinedFace(cplines_buf, pointmat, vert_dist, vals, geom,
                               RG, RG.Size()/Geometry::NumVerts[geom]);
             }
          }
@@ -2683,7 +2675,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines()
                Array<int> &RG = RefG->RefGeoms;
 
                const int func = 1; // draw level lines
-               CutRefinedElement(pointmat, vert_dist, vals, geom,
+               CutRefinedElement(cplines_buf, pointmat, vert_dist, vals, geom,
                                  RG, RG.Size()/Geometry::NumVerts[geom], func);
             }
          }
@@ -2966,6 +2958,7 @@ int VisualizationSceneSolution3d::GetWedgeFaceSplits(
 }
 
 void VisualizationSceneSolution3d::DrawRefinedWedgeLevelSurf(
+   gl3::GlDrawable& target,
    const DenseMatrix &verts, const Vector &vals, const int *RG, const int np,
    const int face_splits, const DenseMatrix *grad)
 {
@@ -3050,7 +3043,7 @@ void VisualizationSceneSolution3d::DrawRefinedWedgeLevelSurf(
          const DenseMatrix *gd_ = grad ? &gd : NULL;
          for (int k = 0; k < 6; k++)
          {
-            DrawTetLevelSurf(pm, vs, pri_tets_0[k], levels, gd_);
+            DrawTetLevelSurf(target, pm, vs, pri_tets_0[k], levels, gd_);
          }
       }
       else if (fsl == 7)
@@ -3074,7 +3067,7 @@ void VisualizationSceneSolution3d::DrawRefinedWedgeLevelSurf(
          const DenseMatrix *gd_ = grad ? &gd : NULL;
          for (int k = 0; k < 6; k++)
          {
-            DrawTetLevelSurf(pm, vs, pri_tets_7[k], levels, gd_);
+            DrawTetLevelSurf(target, pm, vs, pri_tets_7[k], levels, gd_);
          }
       }
       else
@@ -3086,7 +3079,7 @@ void VisualizationSceneSolution3d::DrawRefinedWedgeLevelSurf(
             {
                m_ind[i] = pv[pri_tets[fsl-1][j][i]];
             }
-            DrawTetLevelSurf(verts, vals, m_ind, levels, grad);
+            DrawTetLevelSurf(target, verts, vals, m_ind, levels, grad);
          }
       }
    }
@@ -3112,6 +3105,7 @@ int VisualizationSceneSolution3d::GetHexFaceSplits(
 }
 
 void VisualizationSceneSolution3d::DrawRefinedHexLevelSurf(
+   gl3::GlDrawable& target,
    const DenseMatrix &verts, const Vector &vals, const int *RG, const int nh,
    const int face_splits, const DenseMatrix *grad)
 {
@@ -3270,8 +3264,8 @@ void VisualizationSceneSolution3d::DrawRefinedHexLevelSurf(
                tv[7] = 8;
             }
             const DenseMatrix *gp = grad ? &gd : NULL;
-            DrawTetLevelSurf(pm, vs, &tv[0], levels, gp);
-            DrawTetLevelSurf(pm, vs, &tv[4], levels, gp);
+            DrawTetLevelSurf(target, pm, vs, &tv[0], levels, gp);
+            DrawTetLevelSurf(target, pm, vs, &tv[4], levels, gp);
          }
 
          continue;
@@ -3304,8 +3298,8 @@ void VisualizationSceneSolution3d::DrawRefinedHexLevelSurf(
       const bool diag = (l06 > 1.01*l24);
       const int fs1 = (fsl&(16+8))/4 + !diag; // a|b|c|d|e|f -> b|c|1-diag
       const int fs2 = (fsl&(4+2)) + diag; // a|b|c|d|e|f -> d|e|diag
-      DrawRefinedWedgeLevelSurf(verts, vals, pv[0], 1, fs1, grad);
-      DrawRefinedWedgeLevelSurf(verts, vals, pv[1], 1, fs2, grad);
+      DrawRefinedWedgeLevelSurf(target, verts, vals, pv[0], 1, fs1, grad);
+      DrawRefinedWedgeLevelSurf(target, verts, vals, pv[1], 1, fs2, grad);
    }
 #endif
 }
@@ -3370,20 +3364,20 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
          switch (mesh->GetElementType(ie))
          {
             case Element::TETRAHEDRON:
-               DrawTetLevelSurf(pointmat, vals, ident, levels);
+               DrawTetLevelSurf(lsurf_buf, pointmat, vals, ident, levels);
                break;
             case Element::WEDGE:
             {
                mesh->GetElementFaces(ie, faces, ofaces);
                const int fs = GetWedgeFaceSplits(quad_diag, faces, ofaces);
-               DrawRefinedWedgeLevelSurf(pointmat, vals, ident, 1, fs);
+               DrawRefinedWedgeLevelSurf(lsurf_buf, pointmat, vals, ident, 1, fs);
             }
             break;
             case Element::HEXAHEDRON:
             {
                mesh->GetElementFaces(ie, faces, ofaces);
                const int fs = GetHexFaceSplits(quad_diag, faces, ofaces);
-               DrawRefinedHexLevelSurf(pointmat, vals, ident, 1, fs);
+               DrawRefinedHexLevelSurf(lsurf_buf, pointmat, vals, ident, 1, fs);
             }
             break;
             default:
@@ -3420,20 +3414,20 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
          {
             for (int k = 0; k < nre; k++)
             {
-               DrawTetLevelSurf(pointmat, vals, &RG[nv*k], levels, gp);
+               DrawTetLevelSurf(lsurf_buf, pointmat, vals, &RG[nv*k], levels, gp);
             }
          }
          else if (geom == Geometry::PRISM)
          {
             mesh->GetElementFaces(ie, faces, ofaces);
             const int fs = GetWedgeFaceSplits(quad_diag, faces, ofaces);
-            DrawRefinedWedgeLevelSurf(pointmat, vals, RG, nre, fs, gp);
+            DrawRefinedWedgeLevelSurf(lsurf_buf, pointmat, vals, RG, nre, fs, gp);
          }
          else if (geom == Geometry::CUBE)
          {
             mesh->GetElementFaces(ie, faces, ofaces);
             const int fs = GetHexFaceSplits(quad_diag, faces, ofaces);
-            DrawRefinedHexLevelSurf(pointmat, vals, RG, nre, fs, gp);
+            DrawRefinedHexLevelSurf(lsurf_buf, pointmat, vals, RG, nre, fs, gp);
          }
       }
    }

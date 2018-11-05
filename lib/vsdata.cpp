@@ -379,13 +379,13 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
    static const int border = 1;
 
    if (border == 1) {
-       color_bar.addLine(gl3::Vertex{minx, miny, posz}, gl3::Vertex{maxx, miny, posz});
-       color_bar.addLine(gl3::Vertex{maxx, miny, posz}, gl3::Vertex{maxx, maxy, posz});
-       color_bar.addLine(gl3::Vertex{maxx, maxy, posz}, gl3::Vertex{minx, maxy, posz});
-       color_bar.addLine(gl3::Vertex{minx, maxy, posz}, gl3::Vertex{minx, miny, posz});
+       color_bar.addLine(gl3::Vertex{{minx, miny, posz}}, gl3::Vertex{{maxx, miny, posz}});
+       color_bar.addLine(gl3::Vertex{{maxx, miny, posz}}, gl3::Vertex{{maxx, maxy, posz}});
+       color_bar.addLine(gl3::Vertex{{maxx, maxy, posz}}, gl3::Vertex{{minx, maxy, posz}});
+       color_bar.addLine(gl3::Vertex{{minx, maxy, posz}}, gl3::Vertex{{minx, miny, posz}});
    } else if (border == 2) {
-       color_bar.addLine(gl3::Vertex{minx, miny, posz}, gl3::Vertex{maxx, miny, posz});
-       color_bar.addLine(gl3::Vertex{maxx, maxy, posz}, gl3::Vertex{minx, maxy, posz});
+       color_bar.addLine(gl3::Vertex{{minx, miny, posz}}, gl3::Vertex{{maxx, miny, posz}});
+       color_bar.addLine(gl3::Vertex{{maxx, maxy, posz}}, gl3::Vertex{{minx, maxy, posz}});
    }
 
    if (levels)
@@ -393,7 +393,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       for (i = 0; i < levels->Size(); i++)
       {
          float Y = miny + (maxy - miny) * LogUVal((*levels)[i]);
-         color_bar.addLine(gl3::Vertex{minx, Y, posz}, gl3::Vertex{maxx, Y, posz});
+         color_bar.addLine(gl3::Vertex{{minx, Y, posz}}, gl3::Vertex{{maxx, Y, posz}});
       }
    }
    if (level)
@@ -401,7 +401,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       for (i = 0; i < level->Size(); i++)
       {
          float Y = miny + (maxy - miny) * LogUVal((*level)[i]);
-         color_bar.addLine(gl3::Vertex{minx, Y, posz}, gl3::Vertex{maxx, Y, posz});
+         color_bar.addLine(gl3::Vertex{{minx, Y, posz}}, gl3::Vertex{{maxx, Y, posz}});
       }
    }
 
@@ -591,9 +591,9 @@ void VisualizationSceneScalarData::DrawCoordinateCross()
        float lenx, leny, lenz;
        lenx = leny = lenz = 1;
 
-       coord_cross.addLine(gl3::Vertex{0, 0, 0}, gl3::Vertex{0, 0, 0.9});
-       coord_cross.addLine(gl3::Vertex{0, 0, 0}, gl3::Vertex{0, 0.9, 0});
-       coord_cross.addLine(gl3::Vertex{0, 0, 0}, gl3::Vertex{0.9, 0, 0});
+       coord_cross.addLine(gl3::Vertex{{0, 0, 0}}, gl3::Vertex{{0, 0, 0.9}});
+       coord_cross.addLine(gl3::Vertex{{0, 0, 0}}, gl3::Vertex{{0, 0.9, 0}});
+       coord_cross.addLine(gl3::Vertex{{0, 0, 0}}, gl3::Vertex{{0.9, 0, 0}});
        coord_cross.addCone(0,0,.9,0,0,1);
        coord_cross.addCone(0,.9,0,0,1,0);
        coord_cross.addCone(.9,0,0,1,0,0);
@@ -863,7 +863,7 @@ void KeyF7Pressed(GLenum state)
       vsdata->UpdateValueRange(true);
       SendExposeEvent();
    }
-   else if (state & ShiftMask)
+   else if (state & KMOD_SHIFT)
    {
       cout << "Current bounding box:\n"
            << "   min: (" << vsdata->x[0] << ',' << vsdata->y[0] << ','
@@ -1125,28 +1125,28 @@ void VisualizationSceneScalarData::DrawRuler(bool log_z)
               gl3::VertexNormColor{{ruler_x, y[0], z[1]},norm_3,color}
           );
 
-         ruler_lines.addLine(gl3::Vertex{x[0], y[0], pos_z}, gl3::Vertex{x[1], y[0], pos_z});
-         ruler_lines.addLine(gl3::Vertex{x[1], y[0], pos_z}, gl3::Vertex{x[1], y[1], pos_z});
-         ruler_lines.addLine(gl3::Vertex{x[1], y[1], pos_z}, gl3::Vertex{x[0], y[1], pos_z});
-         ruler_lines.addLine(gl3::Vertex{x[0], y[1], pos_z}, gl3::Vertex{x[0], y[0], pos_z});
+         ruler_lines.addLine(gl3::Vertex{{x[0], y[0], pos_z}}, gl3::Vertex{{x[1], y[0], pos_z}});
+         ruler_lines.addLine(gl3::Vertex{{x[1], y[0], pos_z}}, gl3::Vertex{{x[1], y[1], pos_z}});
+         ruler_lines.addLine(gl3::Vertex{{x[1], y[1], pos_z}}, gl3::Vertex{{x[0], y[1], pos_z}});
+         ruler_lines.addLine(gl3::Vertex{{x[0], y[1], pos_z}}, gl3::Vertex{{x[0], y[0], pos_z}});
 
-         ruler_lines.addLine(gl3::Vertex{x[0], ruler_y, z[0]}, gl3::Vertex{x[1], ruler_y, z[0]});
-         ruler_lines.addLine(gl3::Vertex{x[1], ruler_y, z[0]}, gl3::Vertex{x[1], ruler_y, z[1]});
-         ruler_lines.addLine(gl3::Vertex{x[1], ruler_y, z[1]}, gl3::Vertex{x[0], ruler_y, z[1]});
-         ruler_lines.addLine(gl3::Vertex{x[0], ruler_y, z[1]}, gl3::Vertex{x[0], ruler_y, z[0]});
+         ruler_lines.addLine(gl3::Vertex{{x[0], ruler_y, z[0]}}, gl3::Vertex{{x[1], ruler_y, z[0]}});
+         ruler_lines.addLine(gl3::Vertex{{x[1], ruler_y, z[0]}}, gl3::Vertex{{x[1], ruler_y, z[1]}});
+         ruler_lines.addLine(gl3::Vertex{{x[1], ruler_y, z[1]}}, gl3::Vertex{{x[0], ruler_y, z[1]}});
+         ruler_lines.addLine(gl3::Vertex{{x[0], ruler_y, z[1]}}, gl3::Vertex{{x[0], ruler_y, z[0]}});
 
-         ruler_lines.addLine(gl3::Vertex{ruler_x, y[0], z[0]}, gl3::Vertex{ruler_x, y[1], z[0]});
-         ruler_lines.addLine(gl3::Vertex{ruler_x, y[1], z[0]}, gl3::Vertex{ruler_x, y[1], z[1]});
-         ruler_lines.addLine(gl3::Vertex{ruler_x, y[1], z[1]}, gl3::Vertex{ruler_x, y[0], z[1]});
-         ruler_lines.addLine(gl3::Vertex{ruler_x, y[0], z[1]}, gl3::Vertex{ruler_x, y[0], z[0]});
+         ruler_lines.addLine(gl3::Vertex{{ruler_x, y[0], z[0]}}, gl3::Vertex{{ruler_x, y[1], z[0]}});
+         ruler_lines.addLine(gl3::Vertex{{ruler_x, y[1], z[0]}}, gl3::Vertex{{ruler_x, y[1], z[1]}});
+         ruler_lines.addLine(gl3::Vertex{{ruler_x, y[1], z[1]}}, gl3::Vertex{{ruler_x, y[0], z[1]}});
+         ruler_lines.addLine(gl3::Vertex{{ruler_x, y[0], z[1]}}, gl3::Vertex{{ruler_x, y[0], z[0]}});
       }
 
-      ruler_lines.addLine(gl3::Vertex{x[0], ruler_y, pos_z},
-                          gl3::Vertex{x[1], ruler_y, pos_z});
-      ruler_lines.addLine(gl3::Vertex{ruler_x, y[0], pos_z},
-                          gl3::Vertex{ruler_x, y[1], pos_z});
-      ruler_lines.addLine(gl3::Vertex{ruler_x, ruler_y, z[0]},
-                          gl3::Vertex{ruler_x, ruler_y, z[1]});
+      ruler_lines.addLine(gl3::Vertex{{x[0], ruler_y, pos_z}},
+                          gl3::Vertex{{x[1], ruler_y, pos_z}});
+      ruler_lines.addLine(gl3::Vertex{{ruler_x, y[0], pos_z}},
+                          gl3::Vertex{{ruler_x, y[1], pos_z}});
+      ruler_lines.addLine(gl3::Vertex{{ruler_x, ruler_y, z[0]}},
+                          gl3::Vertex{{ruler_x, ruler_y, z[1]}});
 
       ruler.buffer();
       ruler_lines.buffer();

@@ -35,6 +35,10 @@ enum array_layout {
 struct alignas(16) Vertex
 {
     std::array<float, 3> coord;
+    Vertex(const std::array<float, 3>& v)
+        : coord{v} { }
+    Vertex(double * v)
+        : coord{{v[0], v[1], v[2]}} { }
 
     static void setupAttribLayout(); 
     static void clearAttribLayout() { }
