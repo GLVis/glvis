@@ -12,193 +12,102 @@
 #include "aux_gl3.hpp"
 #include "aux_vis.hpp"
 #include "openglvis.hpp"
-#include <algorithm>
 #include <iostream>
-#include <utility>
+#include <cstddef>
+
 using namespace gl3;
 
-void GlBuilder::glEnd() {
-#ifdef GLVIS_OGL3
-    int pts_stride = 4;
-    VertexBuffer::array_layout dst_layout = VertexBuffer::LAYOUT_VTX;
-    if (is_line) {
-        if (pts.size() < 2
-            || (pts.size() == 2 && render_as == GL_LINE_LOOP)) {
-            pts.clear();
-            return;
-        }
-        if (use_color) {
-            dst_layout = VertexBuffer::LAYOUT_VTX_COLOR;
-        } else if (use_color_tex) {
-            dst_layout = VertexBuffer::LAYOUT_VTX_TEXTURE0;
-        }
-#ifdef GLVIS_DEBUG
-        if (pts.size() % pts_stride > 0) {
-            cerr << "WARNING: GlBuilder stride does not cleanly divide into pts." << endl;
-        }
-#endif
-        if (render_as == GL_LINE_LOOP) {
-            //connect first and last points
-            pts.reserve(pts_stride * 2 + pts.size());
-            std::copy_n(pts.end() - pts_stride, pts_stride, std::back_inserter(pts));
-            std::copy_n(pts.begin(), pts_stride, std::back_inserter(pts));
-        }
-        VertexBuffer& toInsert = parent_buf->getBuffer(dst_layout, GL_LINES);
-        toInsert._pt_data.insert(toInsert._pt_data.end(),
-                                 std::make_move_iterator(pts.begin()),
-                                 std::make_move_iterator(pts.end()));
-    } else {
-        if (pts.size() < 3) {
-            pts.clear();
-            return;
-        }
-        dst_layout = VertexBuffer::LAYOUT_VTX_NORMAL;
-        pts_stride = 6;
-        if (use_color) {
-            dst_layout = VertexBuffer::LAYOUT_VTX_NORMAL_COLOR;
-            pts_stride = 8;
-        } else if (use_color_tex) {
-            dst_layout = VertexBuffer::LAYOUT_VTX_NORMAL_TEXTURE0;
-            pts_stride = 8;
-        }
-#ifdef GLVIS_DEBUG
-        if (pts.size() % pts_stride > 0) {
-            cerr << "WARNING: GlBuilder stride does not cleanly divide into pts." << endl;
-        }
-#endif
-        VertexBuffer& toInsert = parent_buf->getBuffer(dst_layout, GL_TRIANGLES);
-        if (render_as == GL_POLYGON || render_as == GL_TRIANGLE_FAN) {
-            //fan out from point 0
-            int fan = pts_stride;
-            while (fan + pts_stride * 2 <= pts.size()) {
-                toInsert._pt_data.insert(toInsert._pt_data.end(),
-                                         pts.begin(),
-                                         pts.begin() + pts_stride);
-                toInsert._pt_data.insert(toInsert._pt_data.end(),
-                                         pts.begin() + fan,
-                                         pts.begin() + fan + pts_stride * 2);
-                fan += pts_stride;
-            }
-        } else if (render_as == GL_QUADS) {
-            while (!pts.empty()) {
-                toInsert._pt_data.insert(toInsert._pt_data.end(), pts.begin(), pts.begin() + pts_stride * 3);
-                toInsert._pt_data.insert(toInsert._pt_data.end(), pts.begin(), pts.begin() + pts_stride);
-                toInsert._pt_data.insert(toInsert._pt_data.end(), pts.begin() + pts_stride * 2, pts.begin() + pts_stride * 4);
-                pts.erase(pts.begin(), pts.begin() + pts_stride * 4);
-            }
-        } else {
-            toInsert._pt_data.insert(toInsert._pt_data.end(),
-                                     std::make_move_iterator(pts.begin()),
-                                     std::make_move_iterator(pts.end()));
-        }
-    }
-    pts.clear();
-    count = 0;
-#else
-    ::glEnd();
-#endif
-}
-
-void VertexBuffer::bufferData() {
-    if (_pt_data.empty()) {
-        return;
-    }
-    glBindBuffer(GL_ARRAY_BUFFER, *_handle);
-    if (_allocated_size >= _pt_data.size()) {
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * _pt_data.size(), _pt_data.data());
-    } else {
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * _pt_data.size(), _pt_data.data(), GL_DYNAMIC_DRAW);
-        _allocated_size = _pt_data.size();
-    }
-    _buffered_size = _pt_data.size();
-}
-
-//TODO: switch between vertexpointer and vertexattribpointer depending on available GL version
-void VertexBuffer::drawObject(GLenum renderAs) {
-    if (_buffered_size == 0) {
-        return;
-    }
-    if (_layout == LAYOUT_VTX_TEXTURE0 || _layout == LAYOUT_VTX_NORMAL_TEXTURE0) {
-        GetGlState()->setModeColorTexture();
-    } else {
-        GetGlState()->setModeColor();
-    }
-
-    glBindBuffer(GL_ARRAY_BUFFER, *_handle);
+void Vertex::setupAttribLayout() {
+    GetGlState()->setModeColor();
+    int loc_vtx = GlState::ATTR_VERTEX;
     GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
-    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
-    int loc_nor = GetGlState()->getAttribLoc(GlState::ATTR_NORMAL);
-    int loc_color = GetGlState()->getAttribLoc(GlState::ATTR_COLOR);
-    int loc_tex = GetGlState()->getAttribLoc(GlState::ATTR_TEXCOORD0);
-    switch (_layout) {
-        case LAYOUT_VTX:
-            //glVertexPointer(3, GL_FLOAT, 0, 0);
-            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 4, 0);
-            glDrawArrays(renderAs, 0, _buffered_size / 4);
-            break;
-        case LAYOUT_VTX_NORMAL:
-            //glVertexPointer(3, GL_FLOAT, sizeof(float) * 6, 0);
-            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, 0);
-            GetGlState()->enableAttribArray(GlState::ATTR_NORMAL);
-            //glNormalPointer(GL_FLOAT, sizeof(float) * 6, (void*)(sizeof(float) * 3));
-            glVertexAttribPointer(loc_nor, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void*)(sizeof(float) * 3));
-            glDrawArrays(renderAs, 0, _buffered_size / 6);
-            GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
-            break;
-        case LAYOUT_VTX_COLOR:
-            //glVertexPointer(3, GL_FLOAT, sizeof(float) * 7, 0);
-            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 4, 0);
-            GetGlState()->enableAttribArray(GlState::ATTR_COLOR);
-            //glColorPointer(4, GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 3));
-            glVertexAttribPointer(loc_color, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(float) * 4, (void*)(sizeof(float) * 3));
-            glDrawArrays(renderAs, 0, _buffered_size / 4);
-            GetGlState()->disableAttribArray(GlState::ATTR_COLOR);
-            break;
-        case LAYOUT_VTX_TEXTURE0:
-            //glVertexPointer(3, GL_FLOAT, sizeof(float) * 5, 0);
-            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 4, 0);
-            GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD0);
-            //glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 5, (void*)(sizeof(float) * 3));
-            glVertexAttribPointer(loc_tex, 1, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void*)(sizeof(float) * 3));
-            glDrawArrays(renderAs, 0, _buffered_size / 4);
-            GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD0);
-            break;
-        case LAYOUT_VTX_NORMAL_COLOR:
-            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, 0);
-            GetGlState()->enableAttribArray(GlState::ATTR_NORMAL);
-            //glNormalPointer(GL_FLOAT, sizeof(float) * 10, (void*)(sizeof(float) * 3));
-            glVertexAttribPointer(loc_nor, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 3));
-            GetGlState()->enableAttribArray(GlState::ATTR_COLOR);
-            //glColorPointer(4, GL_FLOAT, sizeof(float) * 10, (void*)(sizeof(float) * 6));
-            glVertexAttribPointer(loc_color, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(float) * 8, (void*)(sizeof(float) * 6));
-            glDrawArrays(renderAs, 0, _buffered_size / 8);
-            GetGlState()->disableAttribArray(GlState::ATTR_COLOR);
-            GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
-            break;
-        case LAYOUT_VTX_NORMAL_TEXTURE0:
-            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, 0);
-            GetGlState()->enableAttribArray(GlState::ATTR_NORMAL);
-            //glNormalPointer(GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 3));
-            glVertexAttribPointer(loc_nor, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 3));
-            GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD0);
-            //glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 6));
-            glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 6));
-            glDrawArrays(renderAs, 0, _buffered_size / 8);
-            GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD0);
-            GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
-            break;
-    }
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, coord));
 }
 
-void TextBuffer::bufferData() {
+void VertexColor::setupAttribLayout() {
+    GetGlState()->setModeColor();
+    int loc_vtx = GlState::ATTR_VERTEX;
+    int loc_color = GlState::ATTR_COLOR;
+    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
+    GetGlState()->enableAttribArray(GlState::ATTR_COLOR);
+    glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(VertexColor), (void*)(void*)offsetof(VertexColor, coord));
+    glVertexAttribPointer(loc_color, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(VertexColor), (void*)offsetof(VertexColor, color));
+}
+
+void VertexColor::clearAttribLayout() {
+    GetGlState()->disableAttribArray(GlState::ATTR_COLOR);
+}
+
+void VertexTex::setupAttribLayout() {
+    GetGlState()->setModeColorTexture();
+    int loc_vtx = GlState::ATTR_VERTEX;
+    int loc_tex = GlState::ATTR_TEXCOORD0;
+    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
+    GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD0);
+    glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(VertexTex), (void*)offsetof(VertexTex, coord));
+    glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(VertexTex), (void*)offsetof(VertexTex, texCoord));
+}
+
+void VertexTex::clearAttribLayout() {
+    GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD0);
+}
+
+void VertexNorm::setupAttribLayout() {
+    GetGlState()->setModeColor();
+    int loc_vtx = GlState::ATTR_VERTEX;
+    int loc_nor = GlState::ATTR_NORMAL;
+    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
+    GetGlState()->enableAttribArray(GlState::ATTR_NORMAL);
+    glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(VertexNorm), (void*)offsetof(VertexNorm, coord));
+    glVertexAttribPointer(loc_nor, 3, GL_FLOAT, GL_FALSE, sizeof(VertexNorm), (void*)offsetof(VertexNorm, norm));
+}
+
+void VertexNorm::clearAttribLayout() {
+    GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
+}
+
+void VertexNormColor::setupAttribLayout() {
+    GetGlState()->setModeColor();
+    int loc_vtx = GlState::ATTR_VERTEX;
+    int loc_nor = GlState::ATTR_NORMAL;
+    int loc_color = GlState::ATTR_COLOR;
+    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
+    GetGlState()->enableAttribArray(GlState::ATTR_NORMAL);
+    GetGlState()->enableAttribArray(GlState::ATTR_COLOR);
+    glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(VertexNormColor), (void*)offsetof(VertexNormColor, coord));
+    glVertexAttribPointer(loc_nor, 3, GL_FLOAT, GL_FALSE, sizeof(VertexNormColor), (void*)offsetof(VertexNormColor, norm));
+    glVertexAttribPointer(loc_color, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(VertexNormColor), (void*)offsetof(VertexNormColor, color));
+}
+
+void VertexNormColor::clearAttribLayout() {
+    GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
+    GetGlState()->disableAttribArray(GlState::ATTR_COLOR);
+}
+
+void VertexNormTex::setupAttribLayout() {
+    GetGlState()->setModeColorTexture();
+    int loc_vtx = GlState::ATTR_VERTEX;
+    int loc_nor = GlState::ATTR_NORMAL;
+    int loc_tex = GlState::ATTR_TEXCOORD0;
+    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
+    GetGlState()->enableAttribArray(GlState::ATTR_NORMAL);
+    GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD0);
+    glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(VertexNormTex), (void*)offsetof(VertexNormTex, coord));
+    glVertexAttribPointer(loc_nor, 3, GL_FLOAT, GL_FALSE, sizeof(VertexNormTex), (void*)offsetof(VertexNormTex, norm));
+    glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(VertexNormTex), (void*)offsetof(VertexNormTex, texCoord));
+}
+
+void VertexNormTex::clearAttribLayout() {
+    GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
+    GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD0);
+}
+
+void TextBuffer::buffer() {
     std::vector<float> buf_data;
     float tex_w = GetFont()->getAtlasWidth();
     float tex_h = GetFont()->getAtlasHeight();
     for (auto& e : _data) {
         float x = 0.f, y = 0.f;
-        e.w = 0;
-        e.h = 0;
         for (char c : e.text) {
             GlVisFont::glyph g = GetFont()->GetTexChar(c);
             float cur_x = x + g.bear_x;
@@ -217,8 +126,6 @@ void TextBuffer::bufferData() {
                 e.rx, e.ry, e.rz, cur_x + g.w, -cur_y - g.h, g.tex_x + g.w / tex_w, g.h / tex_h, 0
             };
             buf_data.insert(buf_data.end(), tris, tris + 8 * 6);
-            e.w = (int)(cur_x + g.w);
-            e.h = std::max(e.h, (int)g.h);
         }
     }
     _size = buf_data.size() / 8;
@@ -230,15 +137,30 @@ void TextBuffer::bufferData() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void TextBuffer::drawObject() {
+void TextBuffer::getObjectSize(const std::string& text, int& w, int& h) {
+    float x = 0.f;
+    w = 0.f, h = 0.f;
+    for (char c : text) {
+        GlVisFont::glyph g = GetFont()->GetTexChar(c);
+        float cur_x = x + g.bear_x;
+        x += g.adv_x;
+        if (!g.w || !g.h) {
+            continue;
+        }
+        w = (int)(cur_x + g.w);
+        h = std::max(h, (int)g.h);
+    }
+}
+
+void TextBuffer::draw() {
     if (_size == 0 || *_handle == 0) {
         return;
     }
     GetGlState()->setModeRenderText();
     
-    int loc_rast_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
-    int loc_txt_vtx = GetGlState()->getAttribLoc(GlState::ATTR_TEXT_VERTEX);
-    int loc_tex = GetGlState()->getAttribLoc(GlState::ATTR_TEXCOORD1);
+    int loc_rast_vtx = GlState::ATTR_VERTEX;
+    int loc_txt_vtx = GlState::ATTR_TEXT_VERTEX;
+    int loc_tex = GlState::ATTR_TEXCOORD1;
 
     GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
     GetGlState()->enableAttribArray(GlState::ATTR_TEXT_VERTEX);
@@ -248,7 +170,6 @@ void TextBuffer::drawObject() {
 
     glVertexAttribPointer(loc_rast_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, 0);
     glVertexAttribPointer(loc_txt_vtx, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 3));
-    //glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 4, (void*)(sizeof(float) * 2));
     glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 5));
     glDrawArrays(GL_TRIANGLES, 0, _size);
     
@@ -259,10 +180,11 @@ void TextBuffer::drawObject() {
     GetGlState()->setModeColor();
 }
 
+IDrawHook * GlDrawable::buf_hook = nullptr;
+
 void GlDrawable::addCone(float x, float y, float z,
                          float vx, float vy, float vz,
                          float cone_scale) {
-    VertexBuffer& buf = getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL, GL_TRIANGLES);
     double rhos  = sqrt (vx*vx+vy*vy+vz*vz);
     float phi   = acos(vz/rhos);
     float theta = atan2 (vy, vx);
@@ -311,12 +233,47 @@ void GlDrawable::addCone(float x, float y, float z,
 
     std::vector<float> cone_pts;
     for (int i = 0; i < 4; i++) {
-        buf.addVertexNorm({orig[0],   orig[1],   orig[2]},
-                          {orig_n[0], orig_n[1], orig_n[2]});
-        buf.addVertexNorm({base[i][0],   base[i][1],   base[i][2]},
-                          {base_n[i][0], base_n[i][1], base_n[i][2]});
-        buf.addVertexNorm({base[(i+1)%4][0],   base[(i+1)%4][1],   base[(i+1)%4][2]},
-                          {base_n[(i+1)%4][0], base_n[(i+1)%4][1], base_n[(i+1)%4][2]});
+        addTriangle(
+            VertexNorm {
+                {orig[0],   orig[1],   orig[2]},
+                {orig_n[0], orig_n[1], orig_n[2]}
+            },
+            VertexNorm {
+                {base[i][0],   base[i][1],   base[i][2]},
+                {base_n[i][0], base_n[i][1], base_n[i][2]}
+            },
+            VertexNorm {
+                {base[(i+1)%4][0],   base[(i+1)%4][1],   base[(i+1)%4][2]},
+                {base_n[(i+1)%4][0], base_n[(i+1)%4][1], base_n[(i+1)%4][2]}
+            }
+        );
+    }
+}
+
+void GlBuilder::saveVertex(const GlBuilder::_vertex& v) {
+    GLenum dst_buf = is_line ? GL_LINES : GL_TRIANGLES;
+    if (!use_norm) {
+        if (use_color) {
+            parent_buf->getBuffer<VertexColor>(dst_buf)
+                      ->addVertex(VertexColor{v.coords, v.color});
+        } else if (use_tex) {
+            parent_buf->getBuffer<VertexTex>(dst_buf)
+                      ->addVertex(VertexTex{v.coords, v.texcoord});
+        } else {
+            parent_buf->getBuffer<Vertex>(dst_buf)
+                      ->addVertex(Vertex{v.coords});
+        }
+    } else {
+        if (use_color) {
+            parent_buf->getBuffer<VertexNormColor>(dst_buf)
+                      ->addVertex(VertexNormColor{v.coords, v.norm, v.color});
+        } else if (use_tex) {
+            parent_buf->getBuffer<VertexNormTex>(dst_buf)
+                      ->addVertex(VertexNormTex{v.coords, v.norm, v.texcoord});
+        } else {
+            parent_buf->getBuffer<VertexNorm>(dst_buf)
+                      ->addVertex(VertexNorm{v.coords, v.norm});
+        }
     }
 }
 

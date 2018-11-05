@@ -1010,7 +1010,7 @@ void VisualizationSceneVector::Draw()
    // draw elements
    if (drawelems)
    {
-      disp_buf[shading].draw();
+      disp_buf.draw();
    }
 
    if (MatAlpha < 1.0)

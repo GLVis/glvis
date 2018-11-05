@@ -21,6 +21,7 @@ using namespace mfem;
 #include "palettes.hpp"
 #include "visual.hpp"
 #include "gl2ps.h"
+#include "gl3print.hpp"
 
 #if defined(GLVIS_USE_LIBTIFF)
 #include "tiffio.h"
@@ -46,8 +47,8 @@ static int glvis_multisample = -1;
 #endif
 
 //TODO: anything but this
-SdlWindow * wnd;
-GlState * state;
+SdlWindow * wnd = nullptr;
+GlState * state = nullptr;
 
 SdlWindow * GetAppWindow()
 {
@@ -59,37 +60,34 @@ GlState * GetGlState()
     return state;
 }
 
+VisualizationScene * GetVisualizationScene()
+{
+    return locscene;
+}
+
 void MyExpose(GLsizei w, GLsizei h);
 void MyExpose();
 
 int InitVisualization (const char name[], int x, int y, int w, int h)
 {
-   static int init = 0;
-
-   if (!init)
-   {
-      init = 1;
-   }
 
 #ifdef GLVIS_DEBUG
    cout << "OpenGL Visualization" << endl;
 #endif
-   wnd = new SdlWindow(name, w, h);
-   // GLenum mode = AUX_DOUBLE | AUX_RGBA | AUX_DEPTH;
-   // mode |= (AUX_ALPHA | AUX_ACCUM);
-   if (!wnd->isWindowInitialized()) {
-      return 1;
-   }
-   wnd->createGlContext();
-   if (!wnd->isGlInitialized()) {
-       return 1;
-   }
+   if (!wnd) {
+       wnd = new SdlWindow();
+       if (!wnd->createWindow(name, w, h)) {
+           return 1;
+       }
 
-   state = new GlState();
-   if (!state->compileShaders()) {
-       return 1;
+       state = new GlState();
+       if (!state->compileShaders()) {
+           return 1;
+       }
+       paletteInit();
+   } else {
+       wnd->clearEvents();
    }
-   state->initShaderState();
 
    paletteInit();
    InitFont();
@@ -175,10 +173,14 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    wnd->setOnKeyDown (SDLK_RIGHTBRACKET, ScaleUp);
    wnd->setOnKeyDown (SDLK_AT, LookAt);
 
+#ifndef __EMSCRIPTEN__
    wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
    wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
 
-   locscene = NULL;
+   if (locscene)
+       delete locscene;
+#endif
+   locscene = nullptr;
 
    return 0;
 }
@@ -332,6 +334,7 @@ void KillVisualization()
 {
    delete locscene;
    delete wnd;
+   wnd = nullptr;
 }
 
 void SendExposeEvent()
@@ -495,8 +498,8 @@ void LeftButtonDown (EventInfo *event)
    locscene -> spinning = 0;
    RemoveIdleFunc(MainLoop);
 
-   oldx = event->data[AUX_MOUSEX];
-   oldy = event->data[AUX_MOUSEY];
+   oldx = event->mouse_x;
+   oldy = event->mouse_y;
 
    ComputeSphereAngles(oldx, oldy, sph_u, sph_t);
 
@@ -510,13 +513,13 @@ void LeftButtonDown (EventInfo *event)
 
 void LeftButtonLoc (EventInfo *event)
 {
-   GLint newx = event->data[AUX_MOUSEX];
-   GLint newy = event->data[AUX_MOUSEY];
+   GLint newx = event->mouse_x;
+   GLint newy = event->mouse_y;
    int sendexpose = 1;
 
-   if (event->data[2] & KMOD_CTRL)
+   if (event->keymod & KMOD_CTRL)
    {
-      if (event->data[2] & KMOD_SHIFT)
+      if (event->keymod & KMOD_SHIFT)
       {
          locscene->PreRotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
       }
@@ -542,11 +545,11 @@ void LeftButtonLoc (EventInfo *event)
          locscene->rotmat = state->modelView.mtx;
       }
    }
-   else if (event->data[2] & KMOD_ALT)
+   else if (event->keymod & KMOD_ALT)
    {
       locscene->Rotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
    }
-   else if (event->data[2] & KMOD_SHIFT)
+   else if (event->keymod & KMOD_SHIFT)
    {
       locscene->Rotate(double(newx-oldx)/2, double(newy-oldy)/2);
    }
@@ -567,20 +570,20 @@ void LeftButtonLoc (EventInfo *event)
 
 void LeftButtonUp (EventInfo *event)
 {
-   GLint newx = event->data[AUX_MOUSEX];
-   GLint newy = event->data[AUX_MOUSEY];
+   GLint newx = event->mouse_x;
+   GLint newy = event->mouse_y;
 
    xang = (newx-startx)/5.0;
    yang = (newy-starty)/5.0;
 
-   if ( (event->data[2] & KMOD_SHIFT) && (xang != 0.0 || yang != 0.0) )
+   if ( (event->keymod & KMOD_SHIFT) && (xang != 0.0 || yang != 0.0) )
    {
       locscene -> spinning = 1;
       AddIdleFunc(MainLoop);
       if (xang > 20) { xang = 20; } if (xang < -20) { xang = -20; }
       if (yang > 20) { yang = 20; } if (yang < -20) { yang = -20; }
 
-      if (event->data[2] & KMOD_CTRL)
+      if (event->keymod & KMOD_CTRL)
       {
          constrained_spinning = 1;
       }
@@ -593,16 +596,16 @@ void LeftButtonUp (EventInfo *event)
 
 void MiddleButtonDown (EventInfo *event)
 {
-   startx = oldx = event->data[AUX_MOUSEX];
-   starty = oldy = event->data[AUX_MOUSEY];
+   startx = oldx = event->mouse_x;
+   starty = oldy = event->mouse_y;
 }
 
 void MiddleButtonLoc (EventInfo *event)
 {
-   GLint newx = event->data[AUX_MOUSEX];
-   GLint newy = event->data[AUX_MOUSEY];
+   GLint newx = event->mouse_x;
+   GLint newy = event->mouse_y;
 
-   if ( !( event->data[2] & KMOD_CTRL ) )
+   if ( !( event->keymod & KMOD_CTRL ) )
    {
       GLint vp[4];
       double TrX, TrY, scale;
@@ -636,7 +639,7 @@ void MiddleButtonLoc (EventInfo *event)
       double dx = double(newx-oldx)/400;
       double dy = double(oldy-newy)/400;
 
-      if (event->data[2] & KMOD_SHIFT)  // ctrl + shift
+      if (event->keymod & KMOD_SHIFT)  // ctrl + shift
       {
          double sx = double(newx-startx)/400;
          double sy = double(starty-newy)/400;
@@ -647,7 +650,7 @@ void MiddleButtonLoc (EventInfo *event)
          locscene->cam.TurnUpDown(-sy);
          locscene->cam.TurnLeftRight(sx);
       }
-      else if (event->data[2] & KMOD_ALT) // ctrl + alt
+      else if (event->keymod & KMOD_ALT) // ctrl + alt
       {
          locscene->cam.MoveForwardBackward(dy);
          locscene->cam.TiltLeftRight(-dx);
@@ -670,18 +673,18 @@ void MiddleButtonUp (EventInfo *event)
 
 void RightButtonDown (EventInfo *event)
 {
-   startx = oldx = event->data[AUX_MOUSEX];
-   starty = oldy = event->data[AUX_MOUSEY];
+   startx = oldx = event->mouse_x;
+   starty = oldy = event->mouse_y;
 }
 
 void RightButtonLoc (EventInfo *event)
 {
-   GLint newx = event->data[AUX_MOUSEX];
-   GLint newy = event->data[AUX_MOUSEY];
+   GLint newx = event->mouse_x;
+   GLint newy = event->mouse_y;
 
-   if (event->data[2] & KMOD_SHIFT)
+   if (event->keymod & KMOD_SHIFT)
    {
-      glLoadIdentity();
+      //glLoadIdentity();
       // GLfloat light[] = {newx,-newy, sqrt((float)(newx*newx+newy*newy)), 0.0 };
       newx -= startx;
       newy -= starty;
@@ -708,7 +711,7 @@ void RightButtonLoc (EventInfo *event)
       GLfloat light[] = { float(x), float(y), float(z), 0.0f };
       state->setLightPosition(0, light);
    }
-   else if ( !( event->data[2] & KMOD_CTRL ) )
+   else if ( !( event->keymod & KMOD_CTRL ) )
    {
       locscene -> Zoom (exp ( double (oldy-newy) / 100 ));
    }
@@ -929,40 +932,42 @@ void KeyS()
 void KeyCtrlP()
 {
 #ifndef __EMSCRIPTEN__
-   int state, buffsize;
-   FILE * fp;
-   GLint viewport[4] = { 0, 0, 0, 0 };
+   if (!GetGlState()->renderToFeedback()) {
+       cout << "Unable to initialize printing capture pipeline." << endl;
+       return;
+   }
    cout << "Printing the figure to GLVis.pdf... " << flush;
-
-   fp = fopen("GLVis.pdf", "wb");
-   buffsize = 0;
-   state = GL2PS_OVERFLOW;
    locscene -> print = 1;
+   FILE * fp;
+   fp = fopen("GLVis.pdf", "wb");
+   GLint viewport[4] = { 0, 0, 0, 0 };
    GetGlState()->getViewport(viewport);
-   while (state == GL2PS_OVERFLOW)
    {
-      buffsize += 1024*1024;
-      gl2psBeginPage ( "GLVis.pdf", "GLVis", viewport,
-                       GL2PS_PDF, // or GL2PS_SVG, or GL2PS_EPS
-                       GL2PS_BSP_SORT,
-                       GL2PS_SIMPLE_LINE_OFFSET |
-                       // GL2PS_NO_PS3_SHADING |
-                       // GL2PS_NO_BLENDING |
-                       // GL2PS_OCCLUSION_CULL |
-                       // GL2PS_BEST_ROOT |
-                       GL2PS_SILENT |
-                       GL2PS_DRAW_BACKGROUND,
-                       GL_RGBA, 0, NULL, 16, 16, 16, buffsize, fp, "a" );
-      gl2psPointSize(.4);
-      gl2psLineWidth(.2);
-      locscene -> Draw();
-      state = gl2psEndPage();
+       gl3::GL2PSFeedbackHook fb_capture;
+       gl3::GlDrawable::setDrawHook(&fb_capture);
+       gl2psBeginPage ( "GLVis.pdf", "GLVis", viewport,
+                        GL2PS_PDF, // or GL2PS_SVG, or GL2PS_EPS
+                        GL2PS_BSP_SORT,
+                        GL2PS_SIMPLE_LINE_OFFSET |
+                        // GL2PS_NO_PS3_SHADING |
+                        // GL2PS_NO_BLENDING |
+                        // GL2PS_OCCLUSION_CULL |
+                        // GL2PS_BEST_ROOT |
+                        GL2PS_SILENT |
+                        //GL2PS_DRAW_BACKGROUND |
+                        GL2PS_NO_BLENDING |
+                        GL2PS_NO_OPENGL_CONTEXT,
+                        GL_RGBA, 0, NULL, 16, 16, 16, 0, fp, "a" );
+       locscene -> Draw();
+       int state = gl2psEndPage();
+       gl3::GlDrawable::setDrawHook(nullptr);
+       GetGlState()->renderToDefault();
    }
    locscene -> print = 0;
    fclose(fp);
 
    cout << "done" << endl;
-   locscene -> Draw();
+   wnd->signalExpose();
 #else
    cout << "Printing disabled" << endl;
 #endif
@@ -1451,7 +1456,7 @@ void MySetColor (gl3::GlBuilder& builder, double val)
 
    if (UseTexture)
    {
-      builder.glTexCoord2f(val, MatAlpha < 1.0 ? 1.0 - malpha : 0.0);
+      builder.glTexCoord2f(val, MatAlpha < 1.0 ? malpha : 1.0);
       return;
    }
 
@@ -1554,18 +1559,6 @@ void InitFont()
 
 GlVisFont * GetFont() {
    return &glvis_font;
-}
-
-void DrawBitmapText(const char *text, float x, float y, float z)
-{
-   if (!glvis_font.isFontLoaded()) {
-       if (!SetFont(fc_font_patterns, num_font_patterns, font_size))
-           return;
-   }
-   std::string toBuf(text);
-   uint32_t vbo = glvis_font.BufferText(toBuf);
-   glvis_font.RenderBuffer(vbo, x, y, z);
-   glDeleteBuffers(1, &vbo);
 }
 
 bool SetFont(const char *font_patterns[], int num_patterns, int height) {

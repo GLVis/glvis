@@ -42,6 +42,7 @@ void MainLoop();
 
 SdlWindow * GetAppWindow();
 GlState * GetGlState();
+VisualizationScene * GetVisualizationScene();
 
 void AddIdleFunc(void (*Func)(void));
 void RemoveIdleFunc(void (*Func)(void));
@@ -125,7 +126,6 @@ void SetMultisample(int m);
 
 void InitFont();
 GlVisFont * GetFont();
-void DrawBitmapText(const char *text, float x, float y, float z);
 bool SetFont(const char *font_patterns[], int num_patterns, int height);
 void SetFont(const char *fn);
 

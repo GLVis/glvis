@@ -1014,17 +1014,24 @@ void DrawTriangle(gl3::GlDrawable& buff,
       return;
    }
    
-   float texcoord[3][2];
    float rgba[3][4];
+   std::array<float, 2> texcoord[3];
+   std::array<float, 3> fpts[3];
+   std::array<float, 3> fnorm = {nor[0], nor[1], nor[2]};
 
    for (int i = 0; i < 3; i++) {
        texcoord[i][0] = cv[i];
        texcoord[i][1] = MySetColor(cv[i], minv, maxv, rgba[i]);
+       fpts[i] = {pts[i][0], pts[i][1], pts[i][2]};
    }
    if (GetUseTexture()) {
-       buff.addTriangle(pts, nor, texcoord);
+       buff.addTriangle(gl3::VertexNormTex{fpts[0], fnorm, texcoord[0]},
+                        gl3::VertexNormTex{fpts[1], fnorm, texcoord[1]},
+                        gl3::VertexNormTex{fpts[2], fnorm, texcoord[2]});
    } else {
-       buff.addTriangle(pts, nor, rgba);
+       buff.addTriangle(gl3::VertexNormColor{fpts[0], fnorm, gl3::ColorU8(rgba[0])},
+                        gl3::VertexNormColor{fpts[1], fnorm, gl3::ColorU8(rgba[1])},
+                        gl3::VertexNormColor{fpts[2], fnorm, gl3::ColorU8(rgba[2])});
    }
 }
 
@@ -1038,17 +1045,26 @@ void DrawQuad(gl3::GlDrawable& buff,
       return;
    }
    
-   float texcoord[4][2];
+   std::array<float, 2> texcoord[4];
    float rgba[4][4];
+   std::array<float, 3> fpts[4];
+   std::array<float, 3> fnorm = {nor[0], nor[1], nor[2]};
    
    for (int i = 0; i < 4; i++) { 
        texcoord[i][0] = cv[i];
        texcoord[i][1] = MySetColor(cv[i], minv, maxv, rgba[i]);
+       fpts[i] = {pts[i][0], pts[i][1], pts[i][2]};
    }
    if (GetUseTexture()) {
-       buff.addQuad(pts, nor, texcoord);
+       buff.addQuad(gl3::VertexNormTex{fpts[0], fnorm, texcoord[0]},
+                    gl3::VertexNormTex{fpts[1], fnorm, texcoord[1]},
+                    gl3::VertexNormTex{fpts[2], fnorm, texcoord[2]},
+                    gl3::VertexNormTex{fpts[3], fnorm, texcoord[3]});
    } else {
-       buff.addQuad(pts, nor, rgba);
+       buff.addQuad(gl3::VertexNormColor{fpts[0], fnorm, gl3::ColorU8(rgba[0])},
+                    gl3::VertexNormColor{fpts[1], fnorm, gl3::ColorU8(rgba[1])},
+                    gl3::VertexNormColor{fpts[2], fnorm, gl3::ColorU8(rgba[2])},
+                    gl3::VertexNormColor{fpts[3], fnorm, gl3::ColorU8(rgba[3])});
    }
 }
 
@@ -1180,8 +1196,8 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
 
 void VisualizationSceneSolution::PrepareWithNormals()
 {
-   disp_buf[1].clear();
-   gl3::GlBuilder poly = disp_buf[1].createBuilder();
+   disp_buf.clear();
+   gl3::GlBuilder poly = disp_buf.createBuilder();
    Array<int> vertices;
    double *vtx, *nor, val, s;
 
@@ -1220,13 +1236,13 @@ void VisualizationSceneSolution::PrepareWithNormals()
       }
       poly.glEnd();
    }
-   disp_buf[1].buffer();
+   disp_buf.buffer();
 }
 
 void VisualizationSceneSolution::PrepareFlat()
 {
    int i, j;
-   disp_buf[0].clear();
+   disp_buf.clear();
    int ne = mesh -> GetNE();
    DenseMatrix pointmat;
    Array<int> vertices;
@@ -1247,14 +1263,14 @@ void VisualizationSceneSolution::PrepareFlat()
       }
       if (j == 3)
       {
-         DrawTriangle(disp_buf[0], pts, col, minv, maxv);
+         DrawTriangle(disp_buf, pts, col, minv, maxv);
       }
       else
       {
-         DrawQuad(disp_buf[0], pts, col, minv, maxv);
+         DrawQuad(disp_buf, pts, col, minv, maxv);
       }
    }
-   disp_buf[0].buffer();
+   disp_buf.buffer();
 }
 
 // determines how quads and their level lines are drawn
@@ -1267,7 +1283,7 @@ const int split_quads = 1;
 void VisualizationSceneSolution::PrepareFlat2()
 {
    int i, j, k;
-   disp_buf[2].clear();
+   disp_buf.clear();
    int ne = mesh -> GetNE();
    DenseMatrix pointmat, pts3d, normals;
    Vector values;
@@ -1295,7 +1311,7 @@ void VisualizationSceneSolution::PrepareFlat2()
       }
       j = (j != 0) ? 2 : 0;
       RemoveFPErrors(pts3d, values, normals, sides, RG, fRG);
-      DrawPatch(disp_buf[2], pts3d, values, normals, sides, fRG, minv, maxv, j);
+      DrawPatch(disp_buf, pts3d, values, normals, sides, fRG, minv, maxv, j);
 #else
       for (k = 0; k < RG.Size()/sides; k++)
       {
@@ -1363,7 +1379,7 @@ void VisualizationSceneSolution::PrepareFlat2()
       }
 #endif
    }
-   disp_buf[2].buffer();
+   disp_buf.buffer();
 }
 
 void VisualizationSceneSolution::Prepare()
@@ -1389,8 +1405,8 @@ void VisualizationSceneSolution::Prepare()
 
    int i, j;
 
-   disp_buf[1].clear();
-   gl3::GlBuilder poly = disp_buf[1].createBuilder();
+   disp_buf.clear();
+   gl3::GlBuilder poly = disp_buf.createBuilder();
    int ne = mesh -> GetNE();
    int nv = mesh -> GetNV();
    DenseMatrix pointmat;
@@ -1471,7 +1487,7 @@ void VisualizationSceneSolution::Prepare()
          }
       }
    }
-   disp_buf[1].buffer();
+   disp_buf.buffer();
 }
 
 void VisualizationSceneSolution::PrepareLevelCurves()
@@ -2212,7 +2228,7 @@ void VisualizationSceneSolution::Draw()
    // draw elements
    if (drawelems)
    {
-      disp_buf[shading].draw();
+      disp_buf.draw();
    }
 
    if (MatAlpha < 1.0)

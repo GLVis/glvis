@@ -256,6 +256,29 @@ public:
 
    void ToggleTexture();
 
+   // Emscripten UI control functions
+   void SetColorbar(int newColorbar) { colorbar = newColorbar % 3; }
+   void SetRuler(int newRuler) { ruler_on = newRuler % 3; }
+   void SetDrawAxes(int newAxes) {
+      if (drawaxes != newAxes % 4) {
+         drawaxes = newAxes % 4;
+         if (drawaxes) {
+            PrepareAxes();
+         }
+      }
+   }
+   //virtual void SetShadingCfg(int, bool);
+   virtual void SetDrawMesh(int i) = 0;
+
+   int GetColorbar() { return colorbar; }
+   int GetRuler() { return ruler_on; };
+   int GetDrawAxes() { return drawaxes; }
+   virtual int GetShading() = 0;
+   virtual int GetDrawMesh() = 0;
+   //virtual bool GetDrawCPCfg() = 0;
+   //virtual bool GetDrawBdrCfg() = 0;
+
+
    void SetAutoscale(int _autoscale);
    int GetAutoscale() const { return autoscale; }
 

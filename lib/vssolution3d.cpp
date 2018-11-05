@@ -1316,7 +1316,7 @@ void VisualizationSceneSolution3d::DrawRefinedSurfLevelLines(
 void VisualizationSceneSolution3d::PrepareFlat()
 {
    int i, j;
-   disp_buf[0].clear();
+   disp_buf.clear();
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
    DenseMatrix pointmat;
@@ -1369,21 +1369,21 @@ void VisualizationSceneSolution3d::PrepareFlat()
       }
       if (j == 3)
       {
-          DrawTriangle(disp_buf[0], p, c, minv, maxv);
+          DrawTriangle(disp_buf, p, c, minv, maxv);
       }
       else
       {
-          DrawQuad(disp_buf[0], p, c, minv, maxv);
+          DrawQuad(disp_buf, p, c, minv, maxv);
       }
    }
-   disp_buf[0].buffer();
+   disp_buf.buffer();
 }
 
 void VisualizationSceneSolution3d::PrepareFlat2()
 {
    int i, k, fn, fo, di, have_normals;
    double bbox_diam, vmin, vmax;
-   disp_buf[2].clear();
+   disp_buf.clear();
 
    int dim = mesh->Dimension();
    int nbe = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -1502,10 +1502,10 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       // Comment the above lines and use the below version in order to remove
       // the 3D dark artifacts (indicating wrong boundary element orientation)
       // have_normals = have_normals ? 1 : 0;
-      DrawPatch(disp_buf[2], pointmat, values, normals, sides, RefG->RefGeoms,
+      DrawPatch(disp_buf, pointmat, values, normals, sides, RefG->RefGeoms,
                 minv, maxv, have_normals);
    }
-   disp_buf[2].buffer();
+   disp_buf.buffer();
 
    cout << "VisualizationSceneSolution3d::PrepareFlat2() : [min,max] = ["
         << vmin << "," << vmax << "]" << endl;
@@ -1532,8 +1532,8 @@ void VisualizationSceneSolution3d::Prepare()
            break;
    }
 
-   disp_buf[1].clear();
-   gl3::GlBuilder poly = disp_buf[1].createBuilder();
+   disp_buf.clear();
+   gl3::GlBuilder poly = disp_buf.createBuilder();
    
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -1683,7 +1683,7 @@ void VisualizationSceneSolution3d::Prepare()
          poly.glEnd();
       }
    }
-   disp_buf[1].buffer();
+   disp_buf.buffer();
 }
 
 void VisualizationSceneSolution3d::PrepareLines()
@@ -2730,7 +2730,7 @@ void VisualizationSceneSolution3d::Draw()
    // draw elements
    if (drawelems)
    {
-       disp_buf[shading].draw();
+       disp_buf.draw();
    }
 
    if (cplane && cp_drawelems)

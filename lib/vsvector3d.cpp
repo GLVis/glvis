@@ -505,7 +505,7 @@ void VisualizationSceneVector3d::PrepareFlat()
 {
    int i, j;
 
-   disp_buf[0].clear();
+   disp_buf.clear();
 
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -546,14 +546,14 @@ void VisualizationSceneVector3d::PrepareFlat()
       }
       if (j == 3)
       {
-         DrawTriangle(disp_buf[0], p, c, minv, maxv);
+         DrawTriangle(disp_buf, p, c, minv, maxv);
       }
       else
       {
-         DrawQuad(disp_buf[0], p, c, minv, maxv);
+         DrawQuad(disp_buf, p, c, minv, maxv);
       }
    }
-   disp_buf[0].buffer();
+   disp_buf.buffer();
 }
 
 void VisualizationSceneVector3d::PrepareFlat2()
@@ -576,7 +576,7 @@ void VisualizationSceneVector3d::PrepareFlat2()
                      (z[1]-z[0])*(z[1]-z[0]) );
    double sc = FaceShiftScale * bbox_diam;
 
-   disp_buf[2].clear();
+   disp_buf.clear();
 
    vmin = numeric_limits<double>::infinity();
    vmax = -vmin;
@@ -708,10 +708,10 @@ void VisualizationSceneVector3d::PrepareFlat2()
       {
          have_normals = -1 - have_normals;
       }
-      DrawPatch(disp_buf[2], pointmat, values, normals, sides, RefG->RefGeoms,
+      DrawPatch(disp_buf, pointmat, values, normals, sides, RefG->RefGeoms,
                 minv, maxv, have_normals);
    }
-   disp_buf[2].buffer();
+   disp_buf.buffer();
    cout << "VisualizationSceneVector3d::PrepareFlat2() : [min,max] = ["
         << vmin << "," << vmax << "]" << endl;
 }
@@ -732,8 +732,8 @@ void VisualizationSceneVector3d::Prepare()
          break;
    }
 
-   disp_buf[1].clear();
-   gl3::GlBuilder draw = disp_buf[1].createBuilder();
+   disp_buf.clear();
+   gl3::GlBuilder draw = disp_buf.createBuilder();
 
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -838,7 +838,7 @@ void VisualizationSceneVector3d::Prepare()
          draw.glEnd();
       }
    }
-   disp_buf[1].buffer();
+   disp_buf.buffer();
 }
 
 void VisualizationSceneVector3d::PrepareLines()
@@ -1562,7 +1562,7 @@ void VisualizationSceneVector3d::Draw()
    // draw elements
    if (drawelems)
    {
-       disp_buf[shading].draw();
+       disp_buf.draw();
    }
 
    if (cplane && cp_drawelems)

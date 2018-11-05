@@ -17,26 +17,10 @@
 #include <map>
 #include "platform_gl.hpp"
 
-
-#define AUX_MOUSESTATUS		3
-
-#define AUX_MOUSEDOWN	16
-#define AUX_MOUSEUP	32
-#define AUX_MOUSELOC	64
-
-#define AUX_MOUSEX		0
-#define AUX_MOUSEY		1
-
-#define	AUX_LEFTBUTTON		1
-#define	AUX_RIGHTBUTTON		2
-#define	AUX_MIDDLEBUTTON	4
-
-#define AUX_LEFT SDLK_LEFT
-#define AUX_RIGHT SDLK_RIGHT
-
 struct EventInfo {
-    GLint event;
-    GLint data[4];
+    GLint mouse_x;
+    GLint mouse_y;
+    SDL_Keymod keymod;
 };
 
 typedef void (*MouseDelegate)(EventInfo*);
@@ -44,13 +28,11 @@ typedef std::function<void(GLenum)> KeyDelegate;
 typedef void (*WindowDelegate)(int, int);
 typedef void (*Delegate)();
 
-
 class SdlWindow
 {
 private:
     struct _SdlHandle;
-    //Use shared_ptr to manage handle lifetimes
-    std::shared_ptr<_SdlHandle> _handle;
+    std::unique_ptr<_SdlHandle> _handle;
 
     bool running;
     
@@ -62,8 +44,7 @@ private:
     std::map<int, MouseDelegate> onMouseUp;
     std::map<int, MouseDelegate> onMouseMove;
 
-    SDL_Keycode curr;
-    bool keyDown;
+    bool ctrlDown;
    
     bool requiresExpose;
     bool takeScreenshot;
@@ -76,14 +57,14 @@ private:
     bool keyEvent(SDL_Keysym& ks);
     bool keyEvent(char c);
 public:
-    SdlWindow(const char * title, int w, int h);
+    SdlWindow();
     ~SdlWindow();
 
     /**
-     * Creates a new OpenGL context with the window.
-     * Returns false if OpenGL or GLEW intialization fails.
+     * Creates a new OpenGL window.
+     * Returns false if SDL or OpenGL intialization fails.
      */
-    bool createGlContext();
+    bool createWindow(const char * title, int w, int h);
     /**
      * Runs the window loop.
      */
@@ -102,6 +83,16 @@ public:
     void setOnMouseDown(int btn, MouseDelegate func) { onMouseDown[btn] = func; }
     void setOnMouseUp(int btn, MouseDelegate func) { onMouseUp[btn] = func; }
     void setOnMouseMove(int btn, MouseDelegate func) { onMouseMove[btn] = func; }
+
+    void clearEvents() {
+        onIdle = nullptr;
+        onExpose = nullptr;
+        onReshape = nullptr;
+        onKeyDown.clear();
+        onMouseUp.clear();
+        onMouseDown.clear();
+        onMouseMove.clear();
+    }
     
     void callKeyDown(SDL_Keycode k) { onKeyDown[k](0); } 
 

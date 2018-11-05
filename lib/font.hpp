@@ -33,15 +33,15 @@ public:
         float tex_x;
     };
 private:
-   bool init;
-   bool font_init;
-   glyph font_chars[256];
-   float tex_w;
-   float tex_h;
-   uint32_t font_tex;
+    bool init;
+    bool font_init;
+    glyph font_chars[256];
+    float tex_w;
+    float tex_h;
+    uint32_t font_tex;
 
-   FT_Library  library;
-   FT_Face     face;
+    FT_Library  library;
+    FT_Face     face;
 public:
 
     bool LoadFont(const char* path, int font_size);
@@ -49,10 +49,6 @@ public:
     glyph GetTexChar(char c) {
         return font_chars[(uint8_t) c];
     }
-
-    uint32_t BufferText(std::string& str);
-
-    void RenderBuffer(uint32_t buf, double x, double y, double z);
 
     GlVisFont()
         : init(false)

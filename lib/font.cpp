@@ -41,7 +41,7 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
     }
     int ppi_w, ppi_h;
     GetAppWindow()->getDpi(ppi_w, ppi_h);
-    if (FT_Set_Char_Size(face, 0, font_size*72, ppi_w, ppi_h)) {
+    if (FT_Set_Char_Size(face, 0, font_size*ppi_w, ppi_w, ppi_h)) {
         cout << "GLVis: Cannot set font height: " << font_size << " pts"
              << endl;
         FT_Done_Face(face);
@@ -68,7 +68,11 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
     glActiveTexture(GL_TEXTURE0 + 1);
     glBindTexture(GL_TEXTURE_2D, font_tex);
     std::vector<uint8_t> zeros(tex_w * tex_h, 0);
+#ifdef __EMSCRIPTEN__
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, tex_w, tex_h, 0, GL_ALPHA, GL_UNSIGNED_BYTE, zeros.data());
+#else
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_w, tex_h, 0, GL_RED, GL_UNSIGNED_BYTE, zeros.data());
+#endif
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -87,7 +91,11 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
                         x + 1, 1,
                         face->glyph->bitmap.width,
                         face->glyph->bitmap.rows,
+#ifdef __EMSCRIPTEN__
                         GL_ALPHA,
+#else
+                        GL_RED,
+#endif
                         GL_UNSIGNED_BYTE,
                         face->glyph->bitmap.buffer);
         font_chars[c] = {
@@ -105,56 +113,5 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
     //glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
     return true;
-}
-
-uint32_t GlVisFont::BufferText(std::string& str) {
-    std::vector<vert_tex2d> coordData;
-    coordData.reserve(str.size() * 6);
-    float x = 0.0, y = 0.0;
-    for (char& c : str) {
-        glyph g = font_chars[(uint8_t) c];
-        float cur_x = x + g.bear_x;
-        float cur_y = -y - g.bear_y;
-        x += g.adv_x;
-        y += g.adv_y;
-        if (!g.w || !g.h) {
-            continue;
-        }
-        coordData.emplace_back(cur_x,       -cur_y,       g.tex_x,               0);
-        coordData.emplace_back(cur_x + g.w, -cur_y,       g.tex_x + g.w / tex_w, 0);
-        coordData.emplace_back(cur_x,       -cur_y - g.h, g.tex_x,               g.h / tex_h);
-        coordData.emplace_back(cur_x + g.w, -cur_y,       g.tex_x + g.w / tex_w, 0);
-        coordData.emplace_back(cur_x,       -cur_y - g.h, g.tex_x,               g.h / tex_h);  
-        coordData.emplace_back(cur_x + g.w, -cur_y - g.h, g.tex_x + g.w / tex_w, g.h / tex_h);
-    }
-    GLuint buf;
-    glGenBuffers(1, &buf);
-    glBindBuffer(GL_ARRAY_BUFFER, buf);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vert_tex2d) * coordData.size(), coordData.data(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    return buf;
-}
-
-void GlVisFont::RenderBuffer(uint32_t buf, double x, double y, double z) {
-    GetGlState()->setModeRenderText(x, y, z);
-    
-    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_TEXT_VERTEX);
-    int loc_tex = GetGlState()->getAttribLoc(GlState::ATTR_TEXCOORD1);
-
-    GetGlState()->enableAttribArray(GlState::ATTR_TEXT_VERTEX);
-    GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD1);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, buf);
-
-    glVertexAttribPointer(loc_vtx, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, 0);
-    //glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 4, (void*)(sizeof(float) * 2));
-    glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void*)(sizeof(float) * 2));
-    GLint size = 0;
-    glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
-    glDrawArrays(GL_TRIANGLES, 0, size / (sizeof(float) * 4)); 
-    
-    GetGlState()->disableAttribArray(GlState::ATTR_TEXT_VERTEX);
-    GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD1);
-    GetGlState()->setModeColor();
 }
 

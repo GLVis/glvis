@@ -69,14 +69,14 @@ endif
 GLVIS_JS = NO
 
 ifeq ($(GLVIS_JS),YES)
-   ifneq ($(MFEM_CXX),emcc)
-	  $(error MFEM was not compiled with Emscripten)
+   ifeq ($(filter $(MFEM_CXX), emcc em++),)
+      $(error MFEM was not compiled with Emscripten, but a JS build was requested)
    endif
 endif
 
 CXX = $(MFEM_CXX)
 CPPFLAGS = $(MFEM_CPPFLAGS)
-CXXFLAGS = $(MFEM_CXXFLAGS)
+CXXFLAGS = $(MFEM_CXXFLAGS) 
 
 # MFEM config does not define C compiler
 CC = gcc
@@ -96,6 +96,8 @@ ifneq ($(GLVIS_DEBUG),$(MFEM_DEBUG))
       CXXFLAGS = $(OPTIM_OPTS)
    endif
 endif
+
+CXXFLAGS += -Wno-narrowing -fno-exceptions
 
 GLVIS_FLAGS = $(CPPFLAGS) $(CXXFLAGS) $(MFEM_INCFLAGS)
 GLVIS_LIBS = $(MFEM_LIBS)
@@ -128,6 +130,10 @@ X11_SEARCH_PATHS = /usr /usr/X11 /opt/X11 /usr/X11R6
 X11_SEARCH_FILE = include/X11/Xlib.h
 X11_DIR = $(call find_dir,$(X11_SEARCH_FILE),$(X11_SEARCH_PATHS))
 X11_LIB_DIR = $(call find_dir,libX11.$(SO_EXT),$(X11_DIR)/lib64 $(X11_DIR)/lib)
+
+SDL_INC_DIR = /usr/include/SDL2
+SDL_LIB_DIR = /usr/lib/SDL2
+
 GL_OPTS = -I$(GLM_DIR)
 # for servers not supporting GLX 1.3:
 # GL_OPTS = -I$(X11_DIR)/include -DGLVIS_GLX10
@@ -135,8 +141,8 @@ GL_OPTS = -I$(GLM_DIR)
 ifeq ($(GLVIS_JS), YES)
    GL_OPTS += -s USE_SDL=2
 else
-   GL_OPTS += -I$(X11_DIR)/include
-   GL_LIBS += -L$(X11_DIR)/lib -lGLEW -lSDL2 $(if $(NOTMAC),-lGL,-framework OpenGL)
+   GL_OPTS += -I$(X11_DIR)/include -I$(SDL_INC_DIR)
+   GL_LIBS += -L$(X11_DIR)/lib -L$(SDL_LIB_DIR) -lGLEW -lSDL2 $(if $(NOTMAC),-lGL,-framework OpenGL)
 endif
 
 GLVIS_FLAGS += $(GL_OPTS)
@@ -190,7 +196,7 @@ Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 # generated with 'echo lib/*.c*'
 SOURCE_FILES = lib/aux_vis.cpp lib/aux_gl3.cpp lib/font.cpp lib/sdl.cpp \
  lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/vsdata.cpp \
- lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp lib/vsvector3d.cpp lib/glstate.cpp
+ lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp lib/vsvector3d.cpp lib/glstate.cpp lib/gl3print.cpp
 ifeq ($(GLVIS_JS), YES)
    OBJECT_FILES = $(SOURCE_FILES:.cpp=.bc)
 else
@@ -201,9 +207,9 @@ endif
 # generated with 'echo lib/*.h*'
 HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/sdl.hpp lib/material.hpp \
  lib/openglvis.hpp lib/palettes.hpp lib/visual.hpp \
- lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp lib/glstate.hpp
+ lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp lib/glstate.hpp lib/gl3print.hpp
 
-EMCC_OPTS = --bind -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s SINGLE_FILE=1 --no-heap-copy
+EMCC_OPTS = --bind --llvm-lto 1 -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s SINGLE_FILE=1 --no-heap-copy
 
 # Targets
 
@@ -218,6 +224,8 @@ EMCC_OPTS = --bind -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s SINGLE_FILE=1 --n
 %.bc: %.cpp $(HEADER_FILES)
 	$(CCC) -c lib/$(<F) -o lib/$(*F).bc
 
+%.bc: %.c $(HEADER_FILES)
+	$(CCC) -c lib/$(<F) -o lib/$(*F).bc
 
 #glvis: override MFEM_DIR = $(MFEM_DIR1)
 glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)

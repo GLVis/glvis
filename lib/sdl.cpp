@@ -11,6 +11,7 @@
 
 #include "platform_gl.hpp"
 #include <iostream>
+#include <chrono>
 #include "sdl.hpp"
 #include <SDL2/SDL_syswm.h>
 #include "visual.hpp"
@@ -27,8 +28,8 @@ extern int visualize;
 struct SdlWindow::_SdlHandle {
     SDL_Window * hwnd;
     SDL_GLContext gl_ctx;
-    _SdlHandle(SDL_Window * window)
-        : hwnd(window)
+    _SdlHandle()
+        : hwnd(nullptr)
         , gl_ctx(0) { }
 
     ~_SdlHandle() {
@@ -42,26 +43,26 @@ bool SdlWindow::isGlInitialized() {
     return (_handle->gl_ctx != 0);
 }
 
-SdlWindow::SdlWindow(const char * title, int w, int h)
+SdlWindow::SdlWindow()
     : onIdle(nullptr)
     , onExpose(nullptr)
     , onReshape(nullptr)
+    , ctrlDown(false)
     , requiresExpose(false)
     , takeScreenshot(false) {
+}
 
+bool SdlWindow::createWindow(const char * title, int w, int h) {
     if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
             cerr << "Failed to initialize SDL: " << SDL_GetError() << endl;
-            return;
+            return false;
         }
     }
 
-#ifndef __EMSCRIPTEN__
-    // on OSX systems, only core profiles are available for OpenGL 3+, which
-    // removes the fixed-function pipeline
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1);
-#endif
+    //destroy any existing SDL window
+    _handle.reset(new _SdlHandle);
+
     // technically, SDL already defaults to double buffering and a depth buffer
     // all we need is an alpha channel
 
@@ -73,25 +74,14 @@ SdlWindow::SdlWindow(const char * title, int w, int h)
         SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
     }
 
-    _handle = std::make_shared<_SdlHandle>(SDL_CreateWindow(title,
-                                                SDL_WINDOWPOS_UNDEFINED,
-                                                SDL_WINDOWPOS_UNDEFINED,
-                                                w,
-                                                h,
-                                                SDL_WINDOW_OPENGL));
-    SDL_SetWindowResizable(_handle->hwnd, SDL_TRUE);
-}
-
-bool SdlWindow::createGlContext() {
-    if (!_handle) {
-        cerr << "Can't initialize an OpenGL context without a valid window" << endl;
-        return false;
-    }
-    if (_handle->gl_ctx) {
-        // destroy existing opengl context
-        SDL_GL_DeleteContext(_handle->gl_ctx);
-        _handle->gl_ctx = 0;
-    }
+    _handle->hwnd = SDL_CreateWindow(title,
+                                     SDL_WINDOWPOS_UNDEFINED,
+                                     SDL_WINDOWPOS_UNDEFINED,
+                                     w,
+                                     h,
+                                     SDL_WINDOW_OPENGL |
+                                     SDL_WINDOW_ALLOW_HIGHDPI |
+                                     SDL_WINDOW_RESIZABLE);
 
     SDL_GLContext context = SDL_GL_CreateContext(_handle->hwnd);
     if (!context) {
@@ -102,13 +92,29 @@ bool SdlWindow::createGlContext() {
 
 #ifndef __EMSCRIPTEN__
     SDL_GL_SetSwapInterval(0);
-#endif
     glEnable(GL_DEBUG_OUTPUT);
+#endif
 
     GLenum err = glewInit();
     if (err != GLEW_OK) {
         cerr << "Failed to initialize GLEW: " << glewGetErrorString(err) << endl;
         return false;
+    }
+    cerr << glGetString(GL_VERSION) << "\n";
+
+    if (!GLEW_ARB_vertex_shader ||
+        !GLEW_ARB_fragment_shader ||
+        !GLEW_ARB_shading_language_100) {
+        cerr << "Shader support missing, failed to launch." << endl;
+    }
+
+    if (!GLEW_VERSION_3_0) {
+        if (GLEW_EXT_transform_feedback) {
+            glBindBufferBase            = glBindBufferBaseEXT;
+            glTransformFeedbackVaryings = glTransformFeedbackVaryingsEXT;
+            glBeginTransformFeedback    = glBeginTransformFeedbackEXT;
+            glEndTransformFeedback      = glEndTransformFeedbackEXT;
+        }
     }
     return true;
 }
@@ -132,23 +138,19 @@ void SdlWindow::windowEvent(SDL_WindowEvent& ew) {
 }
 
 void SdlWindow::motionEvent(SDL_MouseMotionEvent& em) {
-    EventInfo info;
-    info.event = AUX_MOUSELOC;
-    info.data[AUX_MOUSEX] = em.x;
-    info.data[AUX_MOUSEY] = em.y;
-    info.data[2] = SDL_GetModState();
+    EventInfo info = {
+        em.x, em.y,
+        SDL_GetModState()
+    };
     if (em.state & SDL_BUTTON_LMASK) {
-        info.data[AUX_MOUSESTATUS] = AUX_LEFTBUTTON;
         if (onMouseMove[SDL_BUTTON_LEFT]) {
             onMouseMove[SDL_BUTTON_LEFT](&info);
         }
     } else if (em.state & SDL_BUTTON_RMASK) {
-        info.data[AUX_MOUSESTATUS] = AUX_RIGHTBUTTON;
         if (onMouseMove[SDL_BUTTON_RIGHT]) {
             onMouseMove[SDL_BUTTON_RIGHT](&info); 
         }
     } else if (em.state & SDL_BUTTON_MMASK) {
-        info.data[AUX_MOUSESTATUS] = AUX_MIDDLEBUTTON;
         if (onMouseMove[SDL_BUTTON_MIDDLE]) {
             onMouseMove[SDL_BUTTON_MIDDLE](&info); 
         }
@@ -157,34 +159,38 @@ void SdlWindow::motionEvent(SDL_MouseMotionEvent& em) {
 
 void SdlWindow::mouseEventDown(SDL_MouseButtonEvent& eb) {
     if (onMouseDown[eb.button]) {
-        EventInfo info;
-        info.event = AUX_MOUSEDOWN;
-        info.data[AUX_MOUSEX] = eb.x;
-        info.data[AUX_MOUSEY] = eb.y;
-        info.data[2] = SDL_GetModState();
-        info.data[AUX_MOUSESTATUS] = eb.button;
+        EventInfo info = {
+            eb.x, eb.y,
+            SDL_GetModState()
+        };
         onMouseDown[eb.button](&info); 
     }
 }
 
 void SdlWindow::mouseEventUp(SDL_MouseButtonEvent& eb) {
     if (onMouseUp[eb.button]) {
-        EventInfo info;
-        info.event = AUX_MOUSEUP;
-        info.data[AUX_MOUSEX] = eb.x;
-        info.data[AUX_MOUSEY] = eb.y;
-        info.data[2] = SDL_GetModState();
-        info.data[AUX_MOUSESTATUS] = eb.button;
+        EventInfo info = {
+            eb.x, eb.y,
+            SDL_GetModState()
+        };
         onMouseUp[eb.button](&info);
     }
 }
 
 bool SdlWindow::keyEvent(SDL_Keysym& ks) {
-    if ((ks.sym > 128 || ks.sym < 32) && onKeyDown[ks.sym]) {
+    bool handled = false;
+    if (ks.sym > 128 || ks.sym < 32) {
+        if (onKeyDown[ks.sym])
+            onKeyDown[ks.sym](ks.mod);
+        handled = true;
+    } else if (ctrlDown == true) {
         onKeyDown[ks.sym](ks.mod);
-        return true;
+        handled = true;
     }
-    return false;
+    if (ks.sym == SDLK_RCTRL || ks.sym == SDLK_LCTRL) {
+        ctrlDown = true;
+    }
+    return handled;
 }
 
 bool SdlWindow::keyEvent(char c) {
@@ -210,6 +216,12 @@ bool SdlWindow::mainIter() {
                 break;
             case SDL_KEYDOWN:
                 renderKeyEvent = keyEvent(e.key.keysym);
+                break;
+            case SDL_KEYUP:
+                if (e.key.keysym.sym == SDLK_LCTRL
+                    || e.key.keysym.sym == SDLK_RCTRL) {
+                    ctrlDown = false;
+                }
                 break;
             case SDL_TEXTINPUT:
                 renderKeyEvent = keyEvent(e.text.text[0]);
@@ -269,6 +281,8 @@ void SdlWindow::mainLoop() {
             Screenshot(screenshot_file.c_str());
             takeScreenshot = false;
         }
+        // sleep for 2 seconds to avoid pegging CPU at 100%
+        SDL_Delay(2);
     }
 #endif
 }
@@ -279,7 +293,7 @@ void SdlWindow::getWindowSize(int& w, int& h) {
         int is_fullscreen;
         emscripten_get_canvas_size(&w, &h, &is_fullscreen);
 #else
-        SDL_GetWindowSize(_handle->hwnd, &w, &h);
+        SDL_GL_GetDrawableSize(_handle->hwnd, &w, &h);
 #endif
     }
 }
@@ -308,30 +322,22 @@ Window SdlWindow::getXWindow() {
 #endif
 
 void SdlWindow::setWindowTitle(std::string& title) {
-#ifndef __EMSCRIPTEN__
     setWindowTitle(title.c_str());
-#endif
 }
 
 void SdlWindow::setWindowTitle(const char * title) {
-#ifndef __EMSCRIPTEN__
     if (_handle)
         SDL_SetWindowTitle(_handle->hwnd, title);
-#endif
 }
 
 void SdlWindow::setWindowSize(int w, int h) {
-#ifndef __EMSCRIPTEN__
     if (_handle)
         SDL_SetWindowSize(_handle->hwnd, w, h);
-#endif
 }
 
 void SdlWindow::setWindowPos(int x, int y) {
-#ifndef __EMSCRIPTEN__
     if (_handle)
         SDL_SetWindowPosition(_handle->hwnd, x, y);
-#endif
 }
 
 void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m) {
