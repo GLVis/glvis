@@ -1471,7 +1471,6 @@ void VisualizationSceneSolution::Prepare()
                case Element::TRIANGLE:
                   shape = GL_TRIANGLES;
                   break;
-
                case Element::QUADRILATERAL:
                   shape = GL_QUADS;
                   break;

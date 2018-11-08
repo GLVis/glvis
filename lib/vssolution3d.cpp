@@ -1676,7 +1676,6 @@ void VisualizationSceneSolution3d::Prepare()
             case Element::TRIANGLE:
                elemType = GL_TRIANGLES;
                break;
-
             case Element::QUADRILATERAL:
                elemType = GL_QUADS;
                break;

@@ -1175,6 +1175,7 @@ void VisualizationSceneScalarData::Init()
       wnd->setOnKeyDown('p', KeypPressed);
       wnd->setOnKeyDown('P', KeyPPressed);
 
+
       wnd->setOnKeyDown(SDLK_F5, KeyF5Pressed);
       wnd->setOnKeyDown(SDLK_F6, KeyF6Pressed);
       wnd->setOnKeyDown(SDLK_F7, KeyF7Pressed);
