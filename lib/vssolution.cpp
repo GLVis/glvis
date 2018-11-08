@@ -1017,21 +1017,23 @@ void DrawTriangle(gl3::GlDrawable& buff,
    float rgba[3][4];
    std::array<float, 2> texcoord[3];
    std::array<float, 3> fpts[3];
-   std::array<float, 3> fnorm = {nor[0], nor[1], nor[2]};
+   std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
 
    for (int i = 0; i < 3; i++) {
        texcoord[i][0] = cv[i];
        texcoord[i][1] = MySetColor(cv[i], minv, maxv, rgba[i]);
-       fpts[i] = {pts[i][0], pts[i][1], pts[i][2]};
+       fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
    }
    if (GetUseTexture()) {
-       buff.addTriangle(gl3::VertexNormTex{fpts[0], fnorm, texcoord[0]},
-                        gl3::VertexNormTex{fpts[1], fnorm, texcoord[1]},
-                        gl3::VertexNormTex{fpts[2], fnorm, texcoord[2]});
+       buff.addTriangle<gl3::VertexNormTex>(
+           {fpts[0], fnorm, texcoord[0]},
+           {fpts[1], fnorm, texcoord[1]},
+           {fpts[2], fnorm, texcoord[2]});
    } else {
-       buff.addTriangle(gl3::VertexNormColor{fpts[0], fnorm, gl3::ColorU8(rgba[0])},
-                        gl3::VertexNormColor{fpts[1], fnorm, gl3::ColorU8(rgba[1])},
-                        gl3::VertexNormColor{fpts[2], fnorm, gl3::ColorU8(rgba[2])});
+       buff.addTriangle<gl3::VertexNormColor>(
+           {fpts[0], fnorm, gl3::ColorU8(rgba[0])},
+           {fpts[1], fnorm, gl3::ColorU8(rgba[1])},
+           {fpts[2], fnorm, gl3::ColorU8(rgba[2])});
    }
 }
 
@@ -1048,23 +1050,25 @@ void DrawQuad(gl3::GlDrawable& buff,
    std::array<float, 2> texcoord[4];
    float rgba[4][4];
    std::array<float, 3> fpts[4];
-   std::array<float, 3> fnorm = {nor[0], nor[1], nor[2]};
+   std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
    
    for (int i = 0; i < 4; i++) { 
        texcoord[i][0] = cv[i];
        texcoord[i][1] = MySetColor(cv[i], minv, maxv, rgba[i]);
-       fpts[i] = {pts[i][0], pts[i][1], pts[i][2]};
+       fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
    }
    if (GetUseTexture()) {
-       buff.addQuad(gl3::VertexNormTex{fpts[0], fnorm, texcoord[0]},
-                    gl3::VertexNormTex{fpts[1], fnorm, texcoord[1]},
-                    gl3::VertexNormTex{fpts[2], fnorm, texcoord[2]},
-                    gl3::VertexNormTex{fpts[3], fnorm, texcoord[3]});
+       buff.addQuad<gl3::VertexNormTex>(
+           {fpts[0], fnorm, texcoord[0]},
+           {fpts[1], fnorm, texcoord[1]},
+           {fpts[2], fnorm, texcoord[2]},
+           {fpts[3], fnorm, texcoord[3]});
    } else {
-       buff.addQuad(gl3::VertexNormColor{fpts[0], fnorm, gl3::ColorU8(rgba[0])},
-                    gl3::VertexNormColor{fpts[1], fnorm, gl3::ColorU8(rgba[1])},
-                    gl3::VertexNormColor{fpts[2], fnorm, gl3::ColorU8(rgba[2])},
-                    gl3::VertexNormColor{fpts[3], fnorm, gl3::ColorU8(rgba[3])});
+       buff.addQuad<gl3::VertexNormColor>(
+           {fpts[0], fnorm, gl3::ColorU8(rgba[0])},
+           {fpts[1], fnorm, gl3::ColorU8(rgba[1])},
+           {fpts[2], fnorm, gl3::ColorU8(rgba[2])},
+           {fpts[3], fnorm, gl3::ColorU8(rgba[3])});
    }
 }
 

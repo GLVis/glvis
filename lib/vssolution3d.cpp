@@ -2475,10 +2475,10 @@ void VisualizationSceneSolution3d::CutRefinedFace(
          }
       }
       
-      target.addLine(gl3::Vertex(pts[0]), gl3::Vertex(pts[1]));
+      target.addLine(gl3::Vertex::create(pts[0]), gl3::Vertex::create(pts[1]));
       if (n == 4)
       {
-         target.addLine(gl3::Vertex(pts[2]), gl3::Vertex(pts[3]));
+         target.addLine(gl3::Vertex::create(pts[2]), gl3::Vertex::create(pts[3]));
       }
    }
 }

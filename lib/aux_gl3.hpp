@@ -32,14 +32,31 @@ enum array_layout {
     NUM_LAYOUTS
 };
 
+inline std::array<uint8_t, 4> ColorU8(float rgba[]) {
+    return {
+        (rgba[0] >= 1.0) ? (uint8_t) 255 : (uint8_t)(rgba[0] * 256.),
+        (rgba[1] >= 1.0) ? (uint8_t) 255 : (uint8_t)(rgba[1] * 256.),
+        (rgba[2] >= 1.0) ? (uint8_t) 255 : (uint8_t)(rgba[2] * 256.),
+        (rgba[3] >= 1.0) ? (uint8_t) 255 : (uint8_t)(rgba[3] * 256.),
+    };
+}
+
+inline std::array<uint8_t, 4> ColorU8(float r, float g, float b, float a) {
+    return {
+        (r >= 1.0) ? (uint8_t) 255 : (uint8_t)(r * 256.),
+        (g >= 1.0) ? (uint8_t) 255 : (uint8_t)(g * 256.),
+        (b >= 1.0) ? (uint8_t) 255 : (uint8_t)(b * 256.),
+        (a >= 1.0) ? (uint8_t) 255 : (uint8_t)(a * 256.),
+    };
+}
+
 struct alignas(16) Vertex
 {
     std::array<float, 3> coord;
-    Vertex(const std::array<float, 3>& v)
-        : coord{v} { }
-    Vertex(double * v)
-        : coord{{v[0], v[1], v[2]}} { }
 
+    static Vertex create(double * d) {
+        return Vertex{(float) d[0], (float) d[1], (float) d[2]};
+    }
     static void setupAttribLayout(); 
     static void clearAttribLayout() { }
     static const int layout = LAYOUT_VTX;
@@ -97,23 +114,6 @@ struct alignas(16) VertexNormTex
     static const int layout = LAYOUT_VTX_NORMAL_TEXTURE0;
 };
 
-inline std::array<uint8_t, 4> ColorU8(float r, float g, float b, float a) {
-    return {
-        (r >= 1.0) ? (uint8_t) 255 : (uint8_t)(r * 256.),
-        (g >= 1.0) ? (uint8_t) 255 : (uint8_t)(g * 256.),
-        (b >= 1.0) ? (uint8_t) 255 : (uint8_t)(b * 256.),
-        (a >= 1.0) ? (uint8_t) 255 : (uint8_t)(a * 256.),
-    };
-}
-
-inline std::array<uint8_t, 4> ColorU8(float rgba[]) {
-    return {
-        (rgba[0] >= 1.0) ? (uint8_t) 255 : (uint8_t)(rgba[0] * 256.),
-        (rgba[1] >= 1.0) ? (uint8_t) 255 : (uint8_t)(rgba[1] * 256.),
-        (rgba[2] >= 1.0) ? (uint8_t) 255 : (uint8_t)(rgba[2] * 256.),
-        (rgba[3] >= 1.0) ? (uint8_t) 255 : (uint8_t)(rgba[3] * 256.),
-    };
-}
 
 class GlDrawable;
 
@@ -357,6 +357,13 @@ public:
     void addVertex(const T& vertex) {
         _data.emplace_back(vertex);
     }
+
+    /**
+     * Add vertices to a buffer.
+     */
+    void addVertices(const std::vector<T>& verts) {
+        _data.insert(_data.end(), verts.begin(), verts.end());
+    }
 };
 
 class TextBuffer
@@ -482,6 +489,11 @@ public:
     }
 
     template<typename Vert>
+    void addLines(const std::vector<Vert>& verts) {
+        getBuffer<Vert>(GL_LINES)->addVertices(verts);
+    }
+
+    template<typename Vert>
     void addTriangle(const Vert& v1, const Vert& v2, const Vert& v3) {
         getBuffer<Vert>(GL_TRIANGLES)->addVertex(v1);
         getBuffer<Vert>(GL_TRIANGLES)->addVertex(v2);
@@ -511,7 +523,7 @@ public:
      */
     void clear() {
         for (int i = 0; i < NUM_LAYOUTS; i++) {
-            for (int j = 0; j < NUM_SHAPES; j++) {
+            for (size_t j = 0; j < NUM_SHAPES; j++) {
                 if (buffers[i][j]) {
                     buffers[i][j]->clear();
                 }
@@ -525,7 +537,7 @@ public:
      */
     void buffer() {
         for (int i = 0; i < NUM_LAYOUTS; i++) {
-            for (int j = 0; j < NUM_SHAPES; j++) {
+            for (size_t j = 0; j < NUM_SHAPES; j++) {
                 if (buffers[i][j]) {
                     buffers[i][j]->buffer();
                 }
@@ -539,7 +551,7 @@ public:
      */
     void draw() {
         for (int i = 0; i < NUM_LAYOUTS; i++) {
-            for (int j = 0; j < NUM_SHAPES; j++) {
+            for (size_t j = 0; j < NUM_SHAPES; j++) {
                 if (!buffers[i][j])
                     continue;
                 if (GlDrawable::buf_hook) {

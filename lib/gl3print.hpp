@@ -37,6 +37,8 @@ class GL2PSFeedbackHook : public IDrawHook
 {
 private:
     GLuint _feedback_buf;
+    const std::string TEXT_FONT = "Times";
+    const int TEXT_SIZE = 8;
 public:
     GL2PSFeedbackHook() {
         glGenBuffers(1, &_feedback_buf);
@@ -104,7 +106,7 @@ public:
             GL2PSvertex v = { raster.x, raster.y, raster.z,
                               0, 0, 0, 1 };
             gl2psForceRasterPos(&v);
-            gl2psText(entry.text.c_str(), "Times", 8);
+            gl2psText(entry.text.c_str(), TEXT_FONT.c_str(), TEXT_SIZE);
         }
     }
 
