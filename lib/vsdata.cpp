@@ -544,8 +544,8 @@ void VisualizationSceneScalarData::DrawCaption()
       caption += " (" + extra_caption + ")";
    }
 
-   int width = 0, height = 0;
 #ifdef GLVIS_USE_FREETYPE
+   int width = 0, height = 0;
    RenderBitmapText(caption.c_str(), width, height);
 #endif
 
