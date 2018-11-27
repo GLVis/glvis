@@ -41,13 +41,22 @@ make style
 
 endef
 
+# Custom configuration flags
+GLVIS_CONFIG_MK ?=
+-include $(GLVIS_CONFIG_MK)
+
 # Default installation location
-PREFIX = ./bin
-INSTALL = /usr/bin/install
+PREFIX ?= ./bin
+INSTALL ?= /usr/bin/install
+
+# Archiver
+AR ?= ar
+ARFLAGS ?= cruv
+RANLIB ?= ranlib
 
 # Use the MFEM build directory
-MFEM_DIR = ../mfem
-CONFIG_MK = $(MFEM_DIR)/config/config.mk
+MFEM_DIR ?= ../mfem
+CONFIG_MK ?= $(MFEM_DIR)/config/config.mk
 # Use the MFEM install directory
 # MFEM_DIR = ../mfem/mfem
 # CONFIG_MK = $(MFEM_DIR)/config.mk
@@ -69,15 +78,16 @@ CPPFLAGS = $(MFEM_CPPFLAGS)
 CXXFLAGS = $(MFEM_CXXFLAGS)
 
 # MFEM config does not define C compiler
-CC     = gcc
-CFLAGS = -O3
+CC     ?= gcc
+CFLAGS ?= -O3
 
-# Optional link flags
-LDFLAGS =
+# Optional compile/link flags
+GLVIS_OPTS ?=
+GLVIS_LDFLAGS ?=
 
 OPTIM_OPTS = -O3
 DEBUG_OPTS = -g -Wall
-GLVIS_DEBUG = $(MFEM_DEBUG)
+GLVIS_DEBUG ?= $(MFEM_DEBUG)
 ifneq ($(GLVIS_DEBUG),$(MFEM_DEBUG))
    ifeq ($(GLVIS_DEBUG),YES)
       CXXFLAGS = $(DEBUG_OPTS)
@@ -86,7 +96,7 @@ ifneq ($(GLVIS_DEBUG),$(MFEM_DEBUG))
    endif
 endif
 
-GLVIS_FLAGS = $(CPPFLAGS) $(CXXFLAGS) $(MFEM_INCFLAGS)
+GLVIS_FLAGS = $(CPPFLAGS) $(CXXFLAGS) $(MFEM_INCFLAGS) $(GLVIS_OPTS)
 GLVIS_LIBS = $(MFEM_LIBS)
 
 ifeq ($(GLVIS_DEBUG),YES)
@@ -97,8 +107,8 @@ NOTMAC := $(subst Darwin,,$(shell uname -s))
 SO_EXT = $(if $(NOTMAC),so,dylib)
 
 # Default multisampling mode and multisampling line-width
-GLVIS_MULTISAMPLE  = 4
-GLVIS_MS_LINEWIDTH = $(if $(NOTMAC),1.4,0.01)
+GLVIS_MULTISAMPLE  ?= 4
+GLVIS_MS_LINEWIDTH ?= $(if $(NOTMAC),1.4,0.01)
 GLVIS_FLAGS += -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
  -DGLVIS_MS_LINEWIDTH=$(GLVIS_MS_LINEWIDTH)
 
@@ -113,35 +123,35 @@ endef
 # The X11 and OpenGL libraries
 X11_SEARCH_PATHS = /usr /usr/X11 /opt/X11 /usr/X11R6
 X11_SEARCH_FILE = include/X11/Xlib.h
-X11_DIR = $(call find_dir,$(X11_SEARCH_FILE),$(X11_SEARCH_PATHS))
+X11_DIR ?= $(call find_dir,$(X11_SEARCH_FILE),$(X11_SEARCH_PATHS))
 X11_LIB_SEARCH_PATHS = $(if $(X11_DIR),$(addprefix $(X11_DIR)/,lib64 lib))
-X11_LIB_DIR = $(call find_dir,libX11.$(SO_EXT),$(X11_LIB_SEARCH_PATHS))
-GL_OPTS = $(if $(X11_DIR),-I$(X11_DIR)/include)
+X11_LIB_DIR ?= $(call find_dir,libX11.$(SO_EXT),$(X11_LIB_SEARCH_PATHS))
+GL_OPTS ?= $(if $(X11_DIR),-I$(X11_DIR)/include)
 # for servers not supporting GLX 1.3:
 # GL_OPTS = -I$(X11_DIR)/include -DGLVIS_GLX10
-GL_LIBS = $(if $(X11_LIB_DIR),-L$(X11_LIB_DIR) )-lX11 -lGL -lGLU
+GL_LIBS ?= $(if $(X11_LIB_DIR),-L$(X11_LIB_DIR) )-lX11 -lGL -lGLU
 GLVIS_FLAGS += $(GL_OPTS)
 GLVIS_LIBS  += $(GL_LIBS)
 
 # Take screenshots internally with libtiff, libpng, or externally with xwd?
-USE_LIBTIFF = NO
-USE_LIBPNG  = YES
+GLVIS_USE_LIBTIFF ?= NO
+GLVIS_USE_LIBPNG  ?= YES
 TIFF_OPTS = -DGLVIS_USE_LIBTIFF -I/sw/include
 TIFF_LIBS = -L/sw/lib -ltiff
 PNG_OPTS = -DGLVIS_USE_LIBPNG
 PNG_LIBS = -lpng
-ifeq ($(USE_LIBTIFF),YES)
+ifeq ($(GLVIS_USE_LIBTIFF),YES)
    GLVIS_FLAGS += $(TIFF_OPTS)
    GLVIS_LIBS  += $(TIFF_LIBS)
 endif
-ifeq ($(USE_LIBPNG),YES)
+ifeq ($(GLVIS_USE_LIBPNG),YES)
    GLVIS_FLAGS += $(PNG_OPTS)
    GLVIS_LIBS  += $(PNG_LIBS)
 endif
 
 # Render fonts using the freetype library and use the fontconfig library to
 # find font files.
-USE_FREETYPE = YES
+GLVIS_USE_FREETYPE ?= YES
 # libfreetype + libfontconfig
 # get cflags with: freetype-config --cflags  or  pkg-config freetype2 --cflags
 # get libs with:   freetype-config --libs    or  pkg-config freetype2 --libs
@@ -149,7 +159,7 @@ USE_FREETYPE = YES
 #                  pkg-config fontconfig --libs
 FT_OPTS = -DGLVIS_USE_FREETYPE -I$(X11_DIR)/include/freetype2
 FT_LIBS = -lfreetype -lfontconfig
-ifeq ($(USE_FREETYPE),YES)
+ifeq ($(GLVIS_USE_FREETYPE),YES)
    GLVIS_FLAGS += $(FT_OPTS)
    GLVIS_LIBS  += $(FT_LIBS)
 endif
@@ -157,7 +167,7 @@ endif
 PTHREAD_LIB = -lpthread
 GLVIS_LIBS += $(PTHREAD_LIB)
 
-LIBS = $(strip $(GLVIS_LIBS) $(LDFLAGS))
+LIBS = $(strip $(GLVIS_LIBS) $(GLVIS_LDFLAGS))
 CCC  = $(strip $(CXX) $(GLVIS_FLAGS))
 Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
@@ -203,7 +213,7 @@ $(OBJECT_FILES): override MFEM_DIR = $(MFEM_DIR2)
 $(OBJECT_FILES): $(HEADER_FILES) $(CONFIG_MK)
 
 lib/libglvis.a: $(OBJECT_FILES)
-	cd lib;	ar cruv libglvis.a *.o;	ranlib libglvis.a
+	cd lib;	$(AR) $(ARFLAGS) libglvis.a *.o; $(RANLIB) libglvis.a
 
 clean:
 	rm -rf lib/*.o lib/*~ *~ glvis lib/libglvis.a *.dSYM
