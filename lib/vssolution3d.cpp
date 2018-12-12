@@ -2000,6 +2000,15 @@ static void CutElement(const Geometry::Type geom, const int *vert_flags,
                        int *num_cut_edges, int *n2_cut_edges)
 {
    static const int tet_edges[12]= {0,3, 0,2, 0,1, 1,2, 1,3, 2,3};
+   static const int pyr_edges[16] =
+   {0,1, 1,2, 3,2, 0,3, 0,4, 1,4, 2,4, 3,4};
+   static const int pyr_cutting[16][3] =
+   {
+      { 3,  4,  6}, { 9, -1, 10}, { 4,  6,  1}, {11, -1, 12},
+      {13, -1, 14}, { 6,  1,  3}, {15, -1,  8}, { 1,  3,  4},
+      {-1, 10,  0}, { 7, 15, -1}, {-1, 12,  2}, { 0,  9, -1},
+      {-1, 14,  5}, { 2, 11, -1}, {-1,  8,  7}, { 5, 13, -1}
+   };
    static const int pri_edges[18] =
    {0,1, 1,2, 2,0, 3,4, 4,5, 5,3, 0,3, 1,4, 2,5};
    static const int pri_cutting[18][3] =
@@ -2037,6 +2046,66 @@ static void CutElement(const Geometry::Type geom, const int *vert_flags,
                cut_edges[n++] = j;
             }
          ev = tet_edges;
+      }
+      break;
+
+      case Geometry::PYRAMID:
+      {
+         int emark[8];
+         ev = pyr_edges;
+         for (int j = 0; j < 8; j++, ev += 2)
+         {
+            emark[j] = vert_flags[ev[1]] - vert_flags[ev[0]];
+         }
+         do
+         {
+            int j;
+            for (j = 0; j < 8; j++)
+            {
+               if (emark[j]) { break; }
+            }
+            if (j == 8)
+            {
+               break;
+            }
+            int k = 2 * j;
+            if (emark[j] > 0)
+            {
+               k++;
+            }
+            do
+            {
+               int m;
+               for (j = 0; j < 3; j++)
+               {
+                  m = pyr_cutting[k][j];
+                  if (m >= 0)
+                  {
+                     ev = pyr_edges + 2 * (m / 2);
+                     if ((m%2 == 0 && vert_flags[ev[0]] > vert_flags[ev[1]]) ||
+                         (m%2 == 1 && vert_flags[ev[1]] > vert_flags[ev[0]]))
+                     {
+                        break;
+                     }
+                  }
+               }
+               cut_edges[n2++] = k/2;
+               emark[k/2] = 0;
+               k = m;
+            }
+            while (k/2 != cut_edges[n]);
+            if (n == 0)
+            {
+               n = n2;
+            }
+            else
+            {
+               break;
+            }
+         }
+         while (1);
+         n2 -= n;
+         ev = pyr_edges;
       }
       break;
 
