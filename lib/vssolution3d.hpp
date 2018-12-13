@@ -55,6 +55,13 @@ protected:
                          const int *ind, const Array<double> &levels,
                          const DenseMatrix *grad = NULL);
 
+   static int GetPyramidFaceSplits(const Array<bool> &quad_diag,
+				   const Array<int> &faces,
+				   const Array<int> &ofaces);
+   void DrawRefinedPyramidLevelSurf(
+      const DenseMatrix &verts, const Vector &vals, const int *RG, const int np,
+      const int face_splits, const DenseMatrix *grad = NULL);
+
    static int GetWedgeFaceSplits(const Array<bool> &quad_diag,
                                  const Array<int> &faces,
                                  const Array<int> &ofaces);
