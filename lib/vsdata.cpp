@@ -858,7 +858,6 @@ static void KeyF5Pressed()
    SendExposeEvent();
 }
 
-extern int RepeatPaletteTimes;
 void KeyF6Pressed()
 {
    cout << "Palette is repeated " << RepeatPaletteTimes << " times.\n"
