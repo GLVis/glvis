@@ -688,6 +688,7 @@ int GLVisCommand::Execute()
       case PALETTE_REPEAT:
       {
          cout << "Command: palette_repeat: " << palette_repeat << endl;
+         RepeatPaletteTimes = palette_repeat;
          Set_Texture_Image();
          if (!GetUseTexture())
          {
