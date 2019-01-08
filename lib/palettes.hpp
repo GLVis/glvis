@@ -4492,7 +4492,8 @@ const char *RGB_Palettes_Names[Num_RGB_Palettes] =
    "wood      ", "mars      ", "rainbow   ", "cmyk      ", "calewhite ",
    "haxby     ", "manga     ", "drywet    ", "gfdl      ", "wbgyr     ",
    "seq25     ", "terrain   ", "bwor      ", "19-lev    ", "lithology ",
-   "gray"};
+   "gray"
+};
 
 int Default_RGB_Palette = 2;
 int RGB_Palette_Size = RGB_Palettes_Sizes[Default_RGB_Palette];
