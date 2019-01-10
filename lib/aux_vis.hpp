@@ -24,6 +24,7 @@
 extern GLuint fontbase;
 extern float MatAlpha;
 extern float MatAlphaCenter;
+extern int RepeatPaletteTimes;
 
 /// Initializes the visualization and some keys.
 int InitVisualization(const char name[], int x, int y, int w, int h);
@@ -114,6 +115,7 @@ void MySetColor(double val, double min, double max);
 void MySetColor(double val);
 void SetUseTexture(int ut);
 int GetUseTexture();
+void Set_Texture_Image();
 int GetMultisample();
 void SetMultisample(int m);
 
