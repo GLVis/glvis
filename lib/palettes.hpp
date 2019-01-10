@@ -4449,7 +4449,10 @@ double RGB_Palette_35[RGB_Palette_35_Size][3] =
    {0.625000, 0.207031, 0.000000}
 };
 
-const int Num_RGB_Palettes = 35;
+const int RGB_Palette_36_Size = 64; // gray
+double RGB_Palette_36[RGB_Palette_36_Size][3];
+
+const int Num_RGB_Palettes = 36;
 const int RGB_Palettes_Sizes[Num_RGB_Palettes] =
 {
    RGB_Palette_1_Size, RGB_Palette_2_Size, RGB_Palette_3_Size,
@@ -4463,7 +4466,7 @@ const int RGB_Palettes_Sizes[Num_RGB_Palettes] =
    RGB_Palette_25_Size, RGB_Palette_26_Size, RGB_Palette_27_Size,
    RGB_Palette_28_Size, RGB_Palette_29_Size, RGB_Palette_30_Size,
    RGB_Palette_31_Size, RGB_Palette_32_Size, RGB_Palette_33_Size,
-   RGB_Palette_34_Size, RGB_Palette_35_Size
+   RGB_Palette_34_Size, RGB_Palette_35_Size, RGB_Palette_36_Size
 };
 
 double *RGB_Palettes[Num_RGB_Palettes] =
@@ -4476,7 +4479,7 @@ double *RGB_Palettes[Num_RGB_Palettes] =
    *RGB_Palette_21, *RGB_Palette_22, *RGB_Palette_23, *RGB_Palette_24,
    *RGB_Palette_25, *RGB_Palette_26, *RGB_Palette_27, *RGB_Palette_28,
    *RGB_Palette_29, *RGB_Palette_30, *RGB_Palette_31, *RGB_Palette_32,
-   *RGB_Palette_33, *RGB_Palette_34, *RGB_Palette_35
+   *RGB_Palette_33, *RGB_Palette_34, *RGB_Palette_35, *RGB_Palette_36
 };
 
 const char *RGB_Palettes_Names[Num_RGB_Palettes] =
@@ -4489,6 +4492,7 @@ const char *RGB_Palettes_Names[Num_RGB_Palettes] =
    "wood      ", "mars      ", "rainbow   ", "cmyk      ", "calewhite ",
    "haxby     ", "manga     ", "drywet    ", "gfdl      ", "wbgyr     ",
    "seq25     ", "terrain   ", "bwor      ", "19-lev    ", "lithology ",
+   "gray"
 };
 
 int Default_RGB_Palette = 2;
@@ -4620,6 +4624,15 @@ void Init_Palettes()
    }
 
    Init_Visit_Calewhite_Palette();
+
+   // init gray palette
+   for (int i = 0; i < RGB_Palette_36_Size; i++)
+   {
+      double t = double(i) / (RGB_Palette_36_Size-1);
+      RGB_Palette_36[i][0] = t;
+      RGB_Palette_36[i][1] = t;
+      RGB_Palette_36[i][2] = t;
+   }
 }
 
 void Set_Texture_Image();

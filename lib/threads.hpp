@@ -12,6 +12,8 @@
 #ifndef GLVIS_THREADS
 #define GLVIS_THREADS
 
+#include "vsdata.hpp"
+#include <mfem.hpp>
 #include <pthread.h>
 
 class GLVisCommand
@@ -19,11 +21,11 @@ class GLVisCommand
 private:
    // Pointers to global GLVis data
    VisualizationSceneScalarData **vs;
-   Mesh          **mesh;
-   GridFunction  **grid_f;
-   Vector         *sol;
-   bool           *keep_attr;
-   bool           *fix_elem_orient;
+   mfem::Mesh          **mesh;
+   mfem::GridFunction  **grid_f;
+   mfem::Vector         *sol;
+   bool                 *keep_attr;
+   bool                 *fix_elem_orient;
 
    pthread_mutex_t glvis_mutex;
    pthread_cond_t  glvis_cond;
@@ -52,7 +54,8 @@ private:
       AUTOPAUSE = 16,
       WINDOW_GEOMETRY = 17,
       PLOT_CAPTION = 18,
-      AXIS_LABELS = 19
+      AXIS_LABELS = 19,
+      PALETTE_REPEAT = 20
    };
 
    // command to be executed
@@ -77,7 +80,7 @@ private:
    std::string   shading;
    double        view_center_x, view_center_y;
    std::string   autoscale_mode;
-   int           palette;
+   int           palette, palette_repeat;
    double        camera[9];
    std::string   autopause_mode;
 
@@ -119,6 +122,7 @@ public:
    int ViewCenter(double x, double y);
    int Autoscale(const char *mode);
    int Palette(int pal);
+   int PaletteRepeat(int n);
    int Camera(const double cam[]);
    int Autopause(const char *mode);
 
