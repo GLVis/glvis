@@ -51,7 +51,6 @@ static int glvis_multisample = GLVIS_MULTISAMPLE;
 static int glvis_multisample = -1;
 #endif
 
-
 void MyExpose(GLsizei w, GLsizei h);
 
 int InitVisualization (const char name[], int x, int y, int w, int h)
