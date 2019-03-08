@@ -18,6 +18,7 @@
 
 #include "mfem.hpp"
 using namespace mfem;
+using namespace std;
 
 #include "palettes.hpp"
 #include "gl2ps.h"
@@ -49,6 +50,7 @@ static int glvis_multisample = GLVIS_MULTISAMPLE;
 #else
 static int glvis_multisample = -1;
 #endif
+
 
 void MyExpose(GLsizei w, GLsizei h);
 

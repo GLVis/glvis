@@ -1468,7 +1468,7 @@ void VisualizationSceneVector3d::PrepareCuttingPlane()
                glBegin (GL_POLYGON);
                for (j=0; j<n; j++)
                {
-                  MySetColor ( point[j][3] , maxv , minv);
+                  MySetColor ( point[j][3], maxv, minv);
                   glNormal3dv (CuttingPlane -> Equation());
                   glVertex3d (point[j][0],point[j][1],point[j][2]);
                }
@@ -1486,7 +1486,7 @@ void VisualizationSceneVector3d::PrepareCuttingPlane()
                glBegin (GL_POLYGON);
                for (j=n-1; j>=0; j--)
                {
-                  MySetColor ( point[j][3] , minv , maxv);
+                  MySetColor ( point[j][3], minv, maxv);
                   glNormal3dv (CuttingPlane -> Equation());
                   glVertex3d (point[j][0],point[j][1],point[j][2]);
                }
