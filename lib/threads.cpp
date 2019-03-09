@@ -13,11 +13,12 @@
 #include <fcntl.h>     // fcntl
 #include <cerrno>      // errno, EAGAIN
 #include <cstdio>      // perror
+
+#include "palettes.hpp"
 #include "visual.hpp"
 
 using namespace std;
 
-void Set_Palette(int);
 void SetMeshSolution(Mesh *mesh, GridFunction *&grid_f, bool save_coloring);
 extern const char *strings_off_on[]; // defined in vsdata.cpp
 
