@@ -21,6 +21,7 @@ using namespace std;
 #include "vsdata.hpp"
 #include "aux_vis.hpp"
 #include "material.hpp"
+#include "palettes.hpp"
 
 #include "gl2ps.h"
 
@@ -808,10 +809,6 @@ void KeyRPressed()
    glGetDoublev (GL_MODELVIEW_MATRIX,   locscene -> rotmat);
    SendExposeEvent();
 }
-
-void Next_RGB_Palette();
-void Prev_RGB_Palette();
-int Select_New_RGB_Palette();
 
 void KeypPressed(GLenum state)
 {
