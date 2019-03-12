@@ -1528,6 +1528,7 @@ void SetMultisample(int m)
 // to find the font files that match the "pattern".
 const char *fc_font_patterns[] =
 {
+   "OpenSans:style=Regular",
    "Ubuntu Light:style=Regular",
    "Ubuntu:style=Regular:weight=80",
    "DejaVu Sans:style=Book:width=Normal",

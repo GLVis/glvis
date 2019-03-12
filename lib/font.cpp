@@ -99,8 +99,8 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
                         GL_UNSIGNED_BYTE,
                         face->glyph->bitmap.buffer);
         font_chars[c] = {
-            face->glyph->bitmap.width + 2,
-            face->glyph->bitmap.rows + 2,
+            face->glyph->bitmap.width + (unsigned)2,
+            face->glyph->bitmap.rows + (unsigned)2,
             face->glyph->bitmap_left,
             face->glyph->bitmap_top,
             (int)(face->glyph->advance.x >> 6),

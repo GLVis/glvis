@@ -60,8 +60,9 @@ public:
     }
 
     ~GlVisFont() {
-        if (init)
+        if (init) {
             FT_Done_FreeType(library);
+        }
     }
 
     bool isFontLoaded() { return font_init; }

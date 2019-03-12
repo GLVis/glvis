@@ -133,18 +133,43 @@ X11_SEARCH_FILE = include/X11/Xlib.h
 X11_DIR = $(call find_dir,$(X11_SEARCH_FILE),$(X11_SEARCH_PATHS))
 X11_LIB_DIR = $(call find_dir,libX11.$(SO_EXT),$(X11_DIR)/lib64 $(X11_DIR)/lib)
 
-SDL_INC_DIR = /usr/include/SDL2
-SDL_LIB_DIR = /usr/lib/SDL2
+GLEW_SEARCH_PATHS = /usr /usr/local
+GLEW_SEARCH_FILE = include/GL/glew.h
+GLEW_DIR ?= $(call find_dir,$(GLEW_SEARCH_FILE),$(GLEW_SEARCH_PATHS))
+GLEW_LIB_DIR = $(call find_dir,libGLEW.a,$(GLEW_DIR)/lib64 $(GLEW_DIR)/lib)
 
-GL_OPTS = -I$(GLM_DIR)
+SDL_SEARCH_PATHS := /usr /usr/local
+SDL_SEARCH_FILE = include/SDL2/SDL.h
+SDL_DIR ?= $(call find_dir,$(SDL_SEARCH_FILE),$(SDL_SEARCH_PATHS))
+
+GLM_SEARCH_PATHS = /usr /usr/local
+GLM_SEARCH_FILE = include/glm/glm.hpp
+GLM_DIR ?= $(call find_dir,$(GLM_SEARCH_FILE),$(GLM_SEARCH_PATHS))
+
+OPENGL_SEARCH_PATHS = /usr /usr/local /opt/local
+OPENGL_SEARCH_FILE = include/GL/gl.h
+OPENGL_DIR ?= $(call find_dir,$(OPENGL_SEARCH_FILE),$(OPENGL_SEARCH_PATHS))
+
+
 # for servers not supporting GLX 1.3:
 # GL_OPTS = -I$(X11_DIR)/include -DGLVIS_GLX10
 
 ifeq ($(GLVIS_JS), YES)
    GL_OPTS += -s USE_SDL=2
 else
-   GL_OPTS += -I$(X11_DIR)/include -I$(SDL_INC_DIR)
-   GL_LIBS += -L$(X11_DIR)/lib -L$(SDL_LIB_DIR) -lGLEW -lSDL2 $(if $(NOTMAC),-lGL,-framework OpenGL)
+   GL_OPTS ?= $(if $(X11_DIR),-I$(X11_DIR)/include) \
+      $(if $(SDL_DIR),-I$(SDL_DIR)/include) \
+      $(if $(GLEW_DIR),-I$(GLEW_DIR)/include) \
+      $(if $(GLM_DIR),-I$(GLM_DIR)/include) \
+      $(if $(OPENGL_DIR),-I$(OPENGL_DIR)/include)
+
+   rpath=-Wl,-rpath,
+   GL_LIBS ?= $(if $(X11_LIB_DIR),-L$(X11_LIB_DIR)) \
+      $(if $(SDL_DIR),-L$(SDL_DIR)/lib) \
+      $(if $(OPENGL_DIR),-L$(OPENGL_DIR)/lib $(rpath)$(OPENGL_DIR)/lib) \
+      $(if $(GLEW_LIB_DIR),-L$(GLEW_LIB_DIR) $(rpath)$(GLEW_LIB_DIR)) \
+      $(if $(GLM_DIR),-L$(GLM_DIR)/lib) \
+      -lSDL2 -lGL -lGLEW
 endif
 
 GLVIS_FLAGS += $(GL_OPTS)

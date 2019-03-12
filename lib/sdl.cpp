@@ -17,6 +17,7 @@
 #include "visual.hpp"
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#include <html5.h>
 #endif
 
 using std::cerr;
@@ -63,10 +64,7 @@ bool SdlWindow::createWindow(const char * title, int w, int h) {
     //destroy any existing SDL window
     _handle.reset(new _SdlHandle);
 
-    // technically, SDL already defaults to double buffering and a depth buffer
-    // all we need is an alpha channel
-
-    //SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8);
     SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
     if (GetMultisample() > 0) {
@@ -74,14 +72,17 @@ bool SdlWindow::createWindow(const char * title, int w, int h) {
         SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
     }
 
-    _handle->hwnd = SDL_CreateWindow(title,
-                                     SDL_WINDOWPOS_UNDEFINED,
-                                     SDL_WINDOWPOS_UNDEFINED,
-                                     w,
-                                     h,
-                                     SDL_WINDOW_OPENGL |
-                                     SDL_WINDOW_ALLOW_HIGHDPI |
-                                     SDL_WINDOW_RESIZABLE);
+    SDL_Window * win = SDL_CreateWindow(title,
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        w,
+        h,
+        SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
+    if (!win) {
+      std::cerr << "fatal: unable to create sdl window: " << SDL_GetError() << endl;
+      return false;
+    }
+    _handle->hwnd = win;
 
     SDL_GLContext context = SDL_GL_CreateContext(_handle->hwnd);
     if (!context) {
@@ -100,7 +101,15 @@ bool SdlWindow::createWindow(const char * title, int w, int h) {
         cerr << "Failed to initialize GLEW: " << glewGetErrorString(err) << endl;
         return false;
     }
-    cerr << glGetString(GL_VERSION) << "\n";
+
+    // print verisons
+    cerr << "Using GLEW " << glewGetString(GLEW_VERSION) << std::endl;
+    cerr << "Using GL " << glGetString(GL_VERSION) << std::endl;
+
+    SDL_version sdl_ver;
+    SDL_GetVersion(&sdl_ver);
+    std::cerr << "Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor <<
+      "." << (int)sdl_ver.patch << std::endl;
 
     if (!GLEW_ARB_vertex_shader ||
         !GLEW_ARB_fragment_shader ||
@@ -119,8 +128,8 @@ bool SdlWindow::createWindow(const char * title, int w, int h) {
     return true;
 }
 
-SdlWindow::~SdlWindow() {
-}
+// defined here because the _SdlHandle destructor needs to be visable
+SdlWindow::~SdlWindow() {};
 
 void SdlWindow::windowEvent(SDL_WindowEvent& ew) {
     switch(ew.event) {
@@ -292,6 +301,13 @@ void SdlWindow::getWindowSize(int& w, int& h) {
 #ifdef __EMSCRIPTEN__
         int is_fullscreen;
         emscripten_get_canvas_size(&w, &h, &is_fullscreen);
+       // TODO: ^ is deprecated but we need to store the id somewhere
+       /*
+       EMSCRIPTEN_RESULT r = emscripten_get_canvas_element_size("#canvas", &w, &h);
+       if (r != EMSCRIPTEN_RESULT_SUCCESS) {
+         std::cerr << "emscripten error" << std::endl;
+       }
+       */
 #else
         SDL_GL_GetDrawableSize(_handle->hwnd, &w, &h);
 #endif

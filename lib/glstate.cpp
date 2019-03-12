@@ -52,7 +52,13 @@ GLuint compileShaderFile(GLenum shaderType, const std::string& shaderText, int g
             fmt_shader = std::regex_replace(fmt_shader, std::regex("varying"), "out");
         } else { // FRAGMENT_SHADER
             fmt_shader = std::regex_replace(fmt_shader, std::regex("varying"), "in");
-            if (glslVersion >= 140) {
+            // requires GL_ARB_explicit_attrib_location extension or GLSL 3.30
+            // although gl_FragColor was depricated in GLSL 1.3
+            if (glslVersion > 130 && glslVersion < 330) {
+                fmt_shader = "out vec4 fragColor;\n" + fmt_shader;
+                fmt_shader = std::regex_replace(fmt_shader, std::regex("gl_FragColor"), "fragColor");
+            }
+            else if (glslVersion >= 330) {
                 fmt_shader = "layout(location = 0) out vec4 fragColor;\n" + fmt_shader;
                 fmt_shader = std::regex_replace(fmt_shader, std::regex("gl_FragColor"), "fragColor");
             }
@@ -68,7 +74,7 @@ GLuint compileShaderFile(GLenum shaderType, const std::string& shaderText, int g
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (success == GL_FALSE) {
         cerr << "Shader compilation failed." << endl;
-        int err_len; 
+        int err_len;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &err_len);
         char * error_text = new char[err_len];
         glGetShaderInfoLog(shader, err_len, &err_len, error_text);
@@ -106,22 +112,51 @@ bool linkShaders(GLuint prgm, const GLuint (&shaders)[Count]) {
 bool GlState::compileShaders() {
     GLuint refshaders[NUM_SHADERS];
     int glsl_ver = 100;
+
 #ifndef __EMSCRIPTEN__
-    if (GLEW_VERSION_3_0) {
-        //GLSL 1.30-1.50, 3.30+
-        int ver_major, ver_minor;
-        glGetIntegerv(GL_MAJOR_VERSION, &ver_major);
-        glGetIntegerv(GL_MINOR_VERSION, &ver_minor);
-        glsl_ver = ver_major * 100 + ver_minor * 10;
-        if (glsl_ver < 330) {
-            // OpenGL 3.2 -> GLSL 1.50
-            // OpenGL 3.1 -> GLSL 1.40
-            glsl_ver -= 170;
-        }
-    } else if (GLEW_VERSION_2_0) {
-        glsl_ver = 110;
+    int ver_major, ver_minor;
+    glGetIntegerv(GL_MAJOR_VERSION, &ver_major);
+    glGetIntegerv(GL_MINOR_VERSION, &ver_minor);
+    int opengl_ver = ver_major * 100 + ver_minor * 10;
+
+    // The GLSL verion is the same as the OpenGL version
+    // when the OpenGL version is >= 3.30, otherwise
+    // it is:
+    //
+    // GL Version | GLSL Version
+    // -------------------------
+    //    2.0     |   1.10
+    //    2.1     |   1.20
+    //    3.0     |   1.30
+    //    3.1     |   1.40
+    //    3.2     |   1.50
+    //
+    // For OpenGL/WebGL:
+    //
+    // GL Version | WebGL Version | GLSL Version
+    //    2.0     |      1.0      |   1.00 ES
+    //    3.0     |      2.0      |   3.00 ES
+    //    3.1     |               |   3.10 ES
+
+    if (opengl_ver < 330) {
+      if (ver_major == 2) {
+        glsl_ver = opengl_ver - 90;
+      }
+      else if (ver_major == 3) {
+        glsl_ver = opengl_ver - 170;
+      }
+      else {
+        std::cerr << "fatal: unsupported OpenGL version " << opengl_ver << std::endl;
+        return false;
+      }
+    }
+    else {
+      glsl_ver = opengl_ver;
     }
 #endif
+
+    std::cerr << "Using GLSL " << glsl_ver << std::endl;
+
     for (int i = 0; i < NUM_SHADERS; i++) {
         GLenum shader_type = (i % 2 == 0) ? GL_VERTEX_SHADER
                                           : GL_FRAGMENT_SHADER;
@@ -180,7 +215,7 @@ bool GlState::compileShaders() {
 void GlState::initShaderState(GLuint program) {
     locUseClipPlane = glGetUniformLocation(program, "useClipPlane");
     locClipPlane = glGetUniformLocation(program, "clipPlane");
-    
+
     locModelView = glGetUniformLocation(program, "modelViewMatrix");
     locProject = glGetUniformLocation(program, "projectionMatrix");
     locProjectText = glGetUniformLocation(program, "textProjMatrix");
