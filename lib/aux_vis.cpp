@@ -46,6 +46,7 @@ static int glvis_multisample = GLVIS_MULTISAMPLE;
 static int glvis_multisample = -1;
 #endif
 
+
 //TODO: anything but this
 SdlWindow * wnd = nullptr;
 GlState * state = nullptr;
@@ -733,9 +734,80 @@ void RightButtonUp (EventInfo *event)
 const char *glvis_screenshot_ext = ".tif";
 #elif defined(GLVIS_USE_LIBPNG)
 const char *glvis_screenshot_ext = ".png";
-#else
+#elif defined(GLVIS_X11)
 const char *glvis_screenshot_ext = ".xwd";
+#elif defined(SDL_SCREENSHOTS)
+const char *glvis_screenshot_ext = ".bmp";
 #endif
+
+// https://wiki.libsdl.org/SDL_CreateRGBSurfaceFrom
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+  Uint32 rmask = 0xff000000;
+  Uint32 gmask = 0x00ff0000;
+  Uint32 bmask = 0x0000ff00:
+  Uint32 amask = 0x000000ff;
+#else // little endian, like x86
+  Uint32 rmask = 0x000000ff;
+  Uint32 gmask = 0x0000ff00;
+  Uint32 bmask = 0x00ff0000;
+  Uint32 amask = 0xff000000;
+#endif
+
+// https://halfgeek.org/wiki/Vertically_invert_a_surface_in_SDL
+#define SDL_LOCKIFMUST(s) (SDL_MUSTLOCK(s) ? SDL_LockSurface(s) : 0)
+#define SDL_UNLOCKIFMUST(s) { if(SDL_MUSTLOCK(s)) SDL_UnlockSurface(s); }
+
+int invert_surface_vertical(SDL_Surface *surface)
+{
+    Uint8 *t, *a, *b, *last;
+    Uint16 pitch;
+
+    if( SDL_LOCKIFMUST(surface) < 0 ) {
+        return -2;
+    }
+
+    /* do nothing unless at least two lines */
+    if(surface->h < 2) {
+        SDL_UNLOCKIFMUST(surface);
+        return 0;
+    }
+
+    /* get a place to store a line */
+    pitch = surface->pitch;
+    t = (Uint8*)malloc(pitch);
+
+    if(t == NULL) {
+        SDL_UNLOCKIFMUST(surface);
+        return -2;
+    }
+
+    /* get first line; it's about to be trampled */
+    memcpy(t,surface->pixels,pitch);
+
+    /* now, shuffle the rest so it's almost correct */
+    a = (Uint8*)surface->pixels;
+    last = a + pitch * (surface->h - 1);
+    b = last;
+
+    while(a < b) {
+        memcpy(a,b,pitch);
+        a += pitch;
+        memcpy(b,a,pitch);
+        b -= pitch;
+    }
+
+    /* in this shuffled state, the bottom slice is too far down */
+    memmove( b, b+pitch, last-b );
+
+    /* now we can put back that first row--in the last place */
+    memcpy(last,t,pitch);
+
+    /* everything is in the right place; close up. */
+    free(t);
+    SDL_UNLOCKIFMUST(surface);
+
+    return 0;
+}
 
 int Screenshot(const char *fname, bool convert)
 {
@@ -748,6 +820,7 @@ int Screenshot(const char *fname, bool convert)
 #endif
 #ifndef __EMSCRIPTEN__
    string filename = fname;
+   string convert_name = fname;
    bool call_convert = false;
    if (convert)
    {
@@ -880,6 +953,28 @@ int Screenshot(const char *fname, bool convert)
    }
    // View with xwud -in GLVis_s*.xwd, or use convert GLVis_s*.xwd
    // GLVis_s*.{jpg,gif}
+#elif defined(SDL_SCREENSHOTS)
+   // https://stackoverflow.com/questions/20233469/how-do-i-take-and-save-a-bmp-screenshot-in-sdl-2
+   unsigned char * pixels = new unsigned char[w*h*4]; // 4 bytes for RGBA
+   glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+   SDL_Surface * surf = SDL_CreateRGBSurfaceFrom(pixels, w, h, 8*4, w*4, rmask, gmask, bmask, amask);
+   if (surf == nullptr) {
+     std::cerr << "unable to take screenshot: " << SDL_GetError() << std::endl;
+   }
+   else {
+     if (invert_surface_vertical(surf)) {
+       std::cerr << "failed to invert surface, you're screenshot may be upside down" << std::endl;
+     }
+     SDL_SaveBMP(surf, filename.c_str());
+     SDL_FreeSurface(surf);
+     // automatically convert to png if not being used
+     if (!call_convert) {
+       call_convert = true;
+       convert_name += ".png";
+     }
+   }
+   delete [] pixels;
 #else
    cerr << "No method for taking screenshots detected!" << endl;
    return 0;
@@ -888,7 +983,7 @@ int Screenshot(const char *fname, bool convert)
    if (call_convert)
    {
       ostringstream cmd;
-      cmd << "convert " << filename << ' ' << fname;
+      cmd << "convert " << filename << ' ' << convert_name;
       if (system(cmd.str().c_str()))
       {
          return 1;

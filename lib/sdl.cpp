@@ -17,7 +17,6 @@
 #include "visual.hpp"
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
-#include <html5.h>
 #endif
 
 using std::cerr;
@@ -64,6 +63,18 @@ bool SdlWindow::createWindow(const char * title, int w, int h) {
     //destroy any existing SDL window
     _handle.reset(new _SdlHandle);
 
+    // If we want to use WebGL 2:
+    // #ifdef __EMSCRIPTEN__
+    // SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    // #endif
+
+    Uint32 win_flags = SDL_WINDOW_OPENGL;
+#ifndef __EMSCRIPTEN__
+    win_flags |= SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE;
+#endif
+
     SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8);
     SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
@@ -72,12 +83,8 @@ bool SdlWindow::createWindow(const char * title, int w, int h) {
         SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
     }
 
-    SDL_Window * win = SDL_CreateWindow(title,
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        w,
-        h,
-        SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
+    SDL_Window * win = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        w, h, win_flags);
     if (!win) {
       std::cerr << "fatal: unable to create sdl window: " << SDL_GetError() << endl;
       return false;
@@ -111,10 +118,12 @@ bool SdlWindow::createWindow(const char * title, int w, int h) {
     std::cerr << "Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor <<
       "." << (int)sdl_ver.patch << std::endl;
 
+#ifndef __EMSCRIPTEN__
     if (!GLEW_ARB_vertex_shader ||
         !GLEW_ARB_fragment_shader ||
         !GLEW_ARB_shading_language_100) {
         cerr << "Shader support missing, failed to launch." << endl;
+        return false;
     }
 
     if (!GLEW_VERSION_3_0) {
@@ -125,6 +134,8 @@ bool SdlWindow::createWindow(const char * title, int w, int h) {
             glEndTransformFeedback      = glEndTransformFeedbackEXT;
         }
     }
+#endif
+
     return true;
 }
 
@@ -157,11 +168,11 @@ void SdlWindow::motionEvent(SDL_MouseMotionEvent& em) {
         }
     } else if (em.state & SDL_BUTTON_RMASK) {
         if (onMouseMove[SDL_BUTTON_RIGHT]) {
-            onMouseMove[SDL_BUTTON_RIGHT](&info); 
+            onMouseMove[SDL_BUTTON_RIGHT](&info);
         }
     } else if (em.state & SDL_BUTTON_MMASK) {
         if (onMouseMove[SDL_BUTTON_MIDDLE]) {
-            onMouseMove[SDL_BUTTON_MIDDLE](&info); 
+            onMouseMove[SDL_BUTTON_MIDDLE](&info);
         }
     }
 }
@@ -172,7 +183,7 @@ void SdlWindow::mouseEventDown(SDL_MouseButtonEvent& eb) {
             eb.x, eb.y,
             SDL_GetModState()
         };
-        onMouseDown[eb.button](&info); 
+        onMouseDown[eb.button](&info);
     }
 }
 

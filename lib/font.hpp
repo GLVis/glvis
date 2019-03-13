@@ -12,7 +12,6 @@
 #ifndef FONT_HPP
 #define FONT_HPP
 
-#ifdef GLVIS_USE_FREETYPE
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
@@ -71,5 +70,4 @@ public:
 
     float getAtlasHeight() { return tex_h; }
 };
-#endif /* GLVIS_USE_FREETYPE */
 #endif /* FONT_HPP */

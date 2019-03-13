@@ -498,22 +498,9 @@ void VisualizationSceneScalarData::DrawCaption()
 
    GLint viewport[4];
    gl->getViewport(viewport);
-#ifndef GLVIS_USE_FREETYPE
-   int len = caption.length();
-   double width_in_chars = 44*viewport[2]/400.0;
-   if (len > width_in_chars)
-   {
-      glTranslatef(-1.0, 0.8, 0.0);
-   }
-   else
-   {
-      glTranslatef(-len/width_in_chars, 0.8, 0.0);
-   }
-#else
    
    gl->modelView.translate(-(double)width/viewport[2],
                         1.0-5*(double)height/viewport[3], 0.0);
-#endif
 
 //   gl->modelView.mult(cam.RotMatrix());
 //   gl->modelView.mult(rotmat);

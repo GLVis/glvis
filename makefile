@@ -66,14 +66,6 @@ ifeq (,$(filter help clean distclean style,$(MAKECMDGOALS)))
    -include $(CONFIG_MK)
 endif
 
-GLVIS_JS = NO
-
-ifeq ($(GLVIS_JS),YES)
-   ifeq ($(filter $(MFEM_CXX), emcc em++),)
-      $(error MFEM was not compiled with Emscripten, but a JS build was requested)
-   endif
-endif
-
 CXX = $(MFEM_CXX)
 CPPFLAGS = $(MFEM_CPPFLAGS)
 CXXFLAGS = $(MFEM_CXXFLAGS) 
@@ -85,6 +77,14 @@ endif
 # MFEM config does not define C compiler
 CC = gcc
 CFLAGS = -O3
+
+# emcc is used when building the wasm/js version
+EMCC      ?= emcc
+FONT_FILE ?= OpenSans.ttf
+EMCC_OPTS ?= -s USE_SDL=2 -s USE_FREETYPE=1
+EMCC_LIBS ?= -s USE_SDL=2 --bind -s ALLOW_MEMORY_GROWTH=1 -s SINGLE_FILE=1 --no-heap-copy \
+ --no-heap-copy -s ENVIRONMENT=web -s MODULARIZE=1 -s EXPORT_NAME=glvis \
+ -s GL_ASSERTIONS=1 -s GL_DEBUG=1 -s USE_FREETYPE=1 -s USE_WEBGL2=1
 
 # Optional link flags
 LDFLAGS =
@@ -114,9 +114,14 @@ SO_EXT = $(if $(NOTMAC),so,dylib)
 # Default multisampling mode and multisampling line-width
 GLVIS_MULTISAMPLE  = 4
 GLVIS_MS_LINEWIDTH = $(if $(NOTMAC),1.4,0.01)
-GLVIS_FLAGS += -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
+DEFINES = -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
  -DGLVIS_MS_LINEWIDTH=$(GLVIS_MS_LINEWIDTH)\
  -DGLVIS_OGL3
+GLVIS_FLAGS += $(DEFINES)
+
+# we don't want most of the stuff below because emscripten handles that for us
+EMCC_OPTS += $(CPPFLAGS) $(CXXFLAGS) $(MFEM_INCFLAGS) $(DEFINES)
+EMCC_LIBS += $(MFEM_LIBS)
 
 # Macro that searches for a file in a list of directories returning the first
 # directory that contains the file.
@@ -126,21 +131,21 @@ define find_dir
 $(patsubst %/$(1),%,$(firstword $(wildcard $(foreach d,$(2),$(d)/$(1)))))
 endef
 
-# The X11 and OpenGL libraries
-
-X11_SEARCH_PATHS = /usr /usr/X11 /opt/X11 /usr/X11R6
-X11_SEARCH_FILE = include/X11/Xlib.h
-X11_DIR = $(call find_dir,$(X11_SEARCH_FILE),$(X11_SEARCH_PATHS))
-X11_LIB_DIR = $(call find_dir,libX11.$(SO_EXT),$(X11_DIR)/lib64 $(X11_DIR)/lib)
+FREETYPE_SEARCH_PATHS = /usr /opt/X11
+FREETYPE_SEARCH_FILE = include/freetype2/ft2build.h
+FREETYPE_DIR = $(call find_dir,$(FREETYPE_SEARCH_FILE),$(FREETYPE_SEARCH_PATHS))
+FREETYPE_LIBS = -lfreetype -lfontconfig
 
 GLEW_SEARCH_PATHS = /usr /usr/local
 GLEW_SEARCH_FILE = include/GL/glew.h
 GLEW_DIR ?= $(call find_dir,$(GLEW_SEARCH_FILE),$(GLEW_SEARCH_PATHS))
 GLEW_LIB_DIR = $(call find_dir,libGLEW.a,$(GLEW_DIR)/lib64 $(GLEW_DIR)/lib)
+GLEW_LIBS = -lGLEW
 
 SDL_SEARCH_PATHS := /usr /usr/local
 SDL_SEARCH_FILE = include/SDL2/SDL.h
 SDL_DIR ?= $(call find_dir,$(SDL_SEARCH_FILE),$(SDL_SEARCH_PATHS))
+SDL_LIBS = -lSDL2
 
 GLM_SEARCH_PATHS = /usr /usr/local
 GLM_SEARCH_FILE = include/glm/glm.hpp
@@ -149,28 +154,27 @@ GLM_DIR ?= $(call find_dir,$(GLM_SEARCH_FILE),$(GLM_SEARCH_PATHS))
 OPENGL_SEARCH_PATHS = /usr /usr/local /opt/local
 OPENGL_SEARCH_FILE = include/GL/gl.h
 OPENGL_DIR ?= $(call find_dir,$(OPENGL_SEARCH_FILE),$(OPENGL_SEARCH_PATHS))
+OPENGL_LIBS = $(if $(NOTMAC),-lGL,-framework OpenGL)
 
 
 # for servers not supporting GLX 1.3:
 # GL_OPTS = -I$(X11_DIR)/include -DGLVIS_GLX10
 
-ifeq ($(GLVIS_JS), YES)
-   GL_OPTS += -s USE_SDL=2
-else
-   GL_OPTS ?= $(if $(X11_DIR),-I$(X11_DIR)/include) \
-      $(if $(SDL_DIR),-I$(SDL_DIR)/include) \
-      $(if $(GLEW_DIR),-I$(GLEW_DIR)/include) \
-      $(if $(GLM_DIR),-I$(GLM_DIR)/include) \
-      $(if $(OPENGL_DIR),-I$(OPENGL_DIR)/include)
+GL_OPTS ?= $(if $(FREETYPE_DIR),-I$(FREETYPE_DIR)/include/freetype2) \
+  $(if $(SDL_DIR),-I$(SDL_DIR)/include) \
+	$(if $(GLEW_DIR),-I$(GLEW_DIR)/include) \
+	$(if $(GLM_DIR),-I$(GLM_DIR)/include) \
+  $(if $(OPENGL_DIR),-I$(OPENGL_DIR)/include)
 
-   rpath=-Wl,-rpath,
-   GL_LIBS ?= $(if $(X11_LIB_DIR),-L$(X11_LIB_DIR)) \
-      $(if $(SDL_DIR),-L$(SDL_DIR)/lib) \
-      $(if $(OPENGL_DIR),-L$(OPENGL_DIR)/lib $(rpath)$(OPENGL_DIR)/lib) \
-      $(if $(GLEW_LIB_DIR),-L$(GLEW_LIB_DIR) $(rpath)$(GLEW_LIB_DIR)) \
-      $(if $(GLM_DIR),-L$(GLM_DIR)/lib) \
-      -lSDL2 -lGL -lGLEW
-endif
+rpath=-Wl,-rpath,
+GL_LIBS ?= $(if $(FREETYPE_DIR),-L$(FREETYPE_DIR)/lib) \
+  $(if $(SDL_DIR),-L$(SDL_DIR)/lib) \
+  $(if $(NOTMAC),$(if $(OPENGL_DIR),-L$(OPENGL_DIR)/lib $(rpath)$(OPENGL_DIR)/lib)) \
+  $(if $(GLEW_LIB_DIR),-L$(GLEW_LIB_DIR) $(rpath)$(GLEW_LIB_DIR)) \
+  $(if $(GLM_DIR),-L$(GLM_DIR)/lib) \
+  $(FREETYPE_LIBS) $(SDL_LIBS) $(GLEW_LIBS) $(OPENGL_LIBS)
+
+EMCC_OPTS += $(if $(GLM_DIR),-I$(GLM_DIR)/include)
 
 GLVIS_FLAGS += $(GL_OPTS)
 GLVIS_LIBS  += $(GL_LIBS)
@@ -182,35 +186,15 @@ TIFF_OPTS = -DGLVIS_USE_LIBTIFF -I/sw/include
 TIFF_LIBS = -L/sw/lib -ltiff
 PNG_OPTS = -DGLVIS_USE_LIBPNG
 PNG_LIBS = -lpng
+
 ifeq ($(USE_LIBTIFF),YES)
    GLVIS_FLAGS += $(TIFF_OPTS)
    GLVIS_LIBS  += $(TIFF_LIBS)
-endif
-ifeq ($(USE_LIBPNG),YES)
+else ifeq ($(USE_LIBPNG),YES)
    GLVIS_FLAGS += $(PNG_OPTS)
    GLVIS_LIBS  += $(PNG_LIBS)
-endif
-
-# Render fonts using the freetype library and use the fontconfig library to
-# find font files.
-USE_FREETYPE = YES
-# libfreetype + libfontconfig
-# get cflags with: freetype-config --cflags  or  pkg-config freetype2 --cflags
-# get libs with:   freetype-config --libs    or  pkg-config freetype2 --libs
-# libfontconfig:   pkg-config fontconfig --cflags
-#                  pkg-config fontconfig --libs
-
-FT_OPTS = -DGLVIS_USE_FREETYPE
-FT_LIBS = -lfreetype -lfontconfig
-ifeq ($(GLVIS_JS), YES)
-   FT_OPTS += -s USE_FREETYPE=1
-   FT_LIBS = -s USE_FREETYPE=1
 else
-   FT_OPTS += -I$(X11_DIR)/include/freetype2
-endif
-ifeq ($(USE_FREETYPE),YES)
-   GLVIS_FLAGS += $(FT_OPTS)
-   GLVIS_LIBS  += $(FT_LIBS)
+   GLVIS_FLAGS += -DSDL_SCREENSHOTS
 endif
 
 PTHREAD_LIB = -lpthread
@@ -221,46 +205,40 @@ CCC  = $(strip $(CXX) $(GLVIS_FLAGS))
 Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
 # generated with 'echo lib/*.c*'
-SOURCE_FILES = lib/aux_vis.cpp lib/aux_gl3.cpp lib/font.cpp lib/sdl.cpp \
+COMMON_SOURCE_FILES = lib/aux_vis.cpp lib/aux_gl3.cpp lib/font.cpp lib/sdl.cpp \
  lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/vsdata.cpp \
  lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp lib/vsvector3d.cpp lib/glstate.cpp lib/gl3print.cpp
-ifeq ($(GLVIS_JS), YES)
-   OBJECT_FILES = $(SOURCE_FILES:.cpp=.bc)
-else
-   SOURCE_FILES += lib/threads.cpp lib/gl2ps.c
-   OBJECT_FILES1 = $(SOURCE_FILES:.cpp=.o)
-   OBJECT_FILES = $(OBJECT_FILES1:.c=.o)
-endif
+
+DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) lib/threads.cpp lib/gl2ps.c
+WEB_SOURCE_FILES     = $(COMMON_SOURCE_FILES) lib/aux_js.cpp
+
+OBJECT_FILES1  = $(DESKTOP_SOURCE_FILES:.cpp=.o)
+OBJECT_FILES   = $(OBJECT_FILES1:.c=.o)
+BYTECODE_FILES = $(WEB_SOURCE_FILES:.cpp=.bc)
+
 # generated with 'echo lib/*.h*'
 HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/sdl.hpp lib/material.hpp \
  lib/openglvis.hpp lib/palettes.hpp lib/visual.hpp \
  lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp lib/glstate.hpp lib/gl3print.hpp
 
-EMCC_OPTS = -fno-exceptions --bind --llvm-lto 1 -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s SINGLE_FILE=1 --no-heap-copy
-
 # Targets
 
-.PHONY: clean distclean install status info opt debug style
+.PHONY: clean distclean install status info opt debug style js
 
 .SUFFIXES: .c .cpp .o
+
 .cpp.o:
 	$(CCC) -c lib/$(<F) -o lib/$(*F).o
+
 .c.o:
 	$(Ccc) -c lib/$(<F) -o lib/$(*F).o
 
-%.bc: %.cpp $(HEADER_FILES)
-	$(CCC) -c lib/$(<F) -o lib/$(*F).bc
-
-%.bc: %.c $(HEADER_FILES)
-	$(CCC) -c lib/$(<F) -o lib/$(*F).bc
+%.bc: %.cpp
+	$(EMCC) $(EMCC_OPTS) -c lib/$(<F) -o lib/$(*F).bc
 
 #glvis: override MFEM_DIR = $(MFEM_DIR1)
 glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(CCC) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
-
-FONT_FILE ?= OpenSans.ttf
-glvis-js: lib/aux_js.cpp $(OBJECT_FILES) $(CONFIG_MK) $(MFEM_LIB_FILE)
-	$(CCC) -o lib/libglvis.js lib/*.bc lib/aux_js.cpp $(LIBS) --embed-file $(FONT_FILE) $(EMCC_OPTS)
 
 # Generate an error message if the MFEM library is not built and exit
 $(CONFIG_MK) $(MFEM_LIB_FILE):
@@ -274,14 +252,15 @@ opt:
 debug:
 	$(MAKE) "GLVIS_DEBUG=YES"
 
-js:
-	$(MAKE) "GLVIS_JS=YES" glvis-js
-
 #$(OBJECT_FILES): override MFEM_DIR = $(MFEM_DIR2)
 $(OBJECT_FILES): $(HEADER_FILES) $(CONFIG_MK)
 
 lib/libglvis.a: $(OBJECT_FILES)
 	cd lib;	ar cruv libglvis.a *.o;	ranlib libglvis.a
+
+js: lib/libglvis.js
+lib/libglvis.js: $(BYTECODE_FILES) $(CONFIG_MK) $(MFEM_LIB_FILE)
+	$(EMCC) -o $@ $(BYTECODE_FILES) $(EMCC_LIBS) --embed-file $(FONT_FILE)
 
 clean:
 	rm -rf lib/*.o lib/*.bc lib/*~ *~ glvis lib/libglvis.a *.dSYM lib/libglvis.js

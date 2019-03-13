@@ -17,17 +17,20 @@ Besides a C++ compiler, GLVis depends on the following external packages:
   built to depend on
   http://mfem.org
 
-- the X11, GL and GLU libraries
-  http://www.x.org, http://www.opengl.org, http://www.mesa3d.org
+- the GL, GLM, and GLEW libraries
+  http://www.opengl.org, https://glm.g-truc.net, http://glew.sourceforge.net
+
+- the SDL2 library
+  https://www.libsdl.org/index.php
+
+- the FreeType 2 and Fontconfig libraries; used for font rendering
+  http://www.freetype.org, http://www.fontconfig.org
 
 - the XQuarz app (on Mac OS X)
   http://www.xquartz.org/
 
 - the libpng or libtiff library; used for taking screenshots (optional)
   http://www.libpng.org, http://www.libtiff.org
-
-- the FreeType 2 and Fontconfig libraries; used for font rendering (optional)
-  http://www.freetype.org, http://www.fontconfig.org
 
 - Cygwin/X (on Windows); install the packages xinit, libpng-devel,
   fontconfig-devel, libGLU-devel.
@@ -80,7 +83,6 @@ cmake \
     \
     -D GLVIS_USE_LIBTIFF=OFF \
     -D GLVIS_USE_LIBPNG=ON \
-    -D GLVIS_USE_FREETYPE=ON \
     \
     -D MFEM_DIR=/path/to/directory/with/MFEMConfig.cmake \
     \
@@ -104,8 +106,6 @@ Some important variables for CMake are:
 - GLVIS_USE_LIBPNG: Use libpng for creating screenshots. Default is "ON".
 
 - GLVIS_USE_LIBTIFF: Use libtiff for creating screenshots. Default is "OFF".
-
-- GLVIS_USE_FREETYPE: Use freetype for font rendering. Default is "ON".
 
 - GLVIS_MULTISAMPLE and GLVIS_MS_LINEWIDTH: See building considerations below
      for more information on these variables.
@@ -138,9 +138,9 @@ Some building considerations
   in OS X may complain about GLX 1.3 support, but in practice works fine with
   GLVis. To define this in CMake, pass "-D GLVIS_USE_GLX10=ON" to cmake.
 
-- GLVis can be built without libpng/libtiff/FreeType 2/Fontconfig by setting
-  the makefile variables USE_LIBPNG/USE_LIBTIFF/USE_FREETYPE to NO or by
-  passing GLVIS_USE_LIBPNG/GLVIS_USE_LIBTIFF/GLVIS_USE_FREETYPE=OFF to cmake.
+- GLVis can be built without libpng/libtiff/ by setting
+  the makefile variables USE_LIBPNG/USE_LIBTIFF/ to NO or by
+  passing GLVIS_USE_LIBPNG/GLVIS_USE_LIBTIFF to cmake.
 
 - On Mac OS X, it is better to start manually the XQuarz app, before starting
   GLVis, in order to avoid the wait for establishing the first X11 connection.
