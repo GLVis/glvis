@@ -35,6 +35,7 @@ void paletteSet(int num);
 double * paletteGet();
 int paletteGetSize();
 
+void Set_Palette (int num);
 void Next_RGB_Palette();
 void Prev_RGB_Palette();
 int Select_New_RGB_Palette();

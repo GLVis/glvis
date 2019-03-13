@@ -3001,9 +3001,8 @@ void VisualizationSceneSolution3d::DrawRefinedWedgeLevelSurf(
    double vs_data[7], pm_data[3*7], gd_data[3*7];
    Vector vs(vs_data, 7);
    DenseMatrix pm(pm_data, 3, 7), gd(gd_data, 3, 7);
-   int l0, l1;
 
-   for (int k = 0; k < np; k++)
+   for (int k = 0, l0 = -1, l1 = -1; k < np; k++)
    {
       const int pk = k % (n*n);
       if (pk == 0)

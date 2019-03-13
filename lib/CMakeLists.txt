@@ -5,6 +5,7 @@ list(APPEND SOURCES
   gl2ps.c
   material.cpp
   openglvis.cpp
+  palettes.cpp
   threads.cpp
   tk.cpp
   vsdata.cpp

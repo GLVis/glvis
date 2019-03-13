@@ -38,18 +38,30 @@ make distclean
 make style
    Format the GLVis C++ source files using the Artistic Style (astyle) settings
    from MFEM.
-make js
-   Build a JavaScript library. Requires an MFEM library built with Emscripten.
 
 endef
 
+# Custom configuration flags
+GLVIS_CONFIG_MK ?=
+-include $(GLVIS_CONFIG_MK)
+
 # Default installation location
-PREFIX = ./bin
-INSTALL = /usr/bin/install
+PREFIX ?= ./bin
+INSTALL ?= /usr/bin/install
+
+# Archiver: AR and ARFLAGS are defined by default, RANLIB is not.
+# The default value of AR is 'ar' and we do not want to change that.
+# The default value of ARFLAGS is 'rv', however, we want to set a different
+# default, so we modify ARFLAGS, unless it was already changed on the command
+# line or in the configuration file $(GLVIS_CONFIG_MK).
+ifeq ($(origin ARFLAGS),default)
+   ARFLAGS = cruv
+endif
+RANLIB ?= ranlib
 
 # Use the MFEM build directory
-MFEM_DIR = ../mfem
-CONFIG_MK = $(MFEM_DIR)/config/config.mk
+MFEM_DIR ?= ../mfem
+CONFIG_MK ?= $(MFEM_DIR)/config/config.mk
 # Use the MFEM install directory
 # MFEM_DIR = ../mfem/mfem
 # CONFIG_MK = $(MFEM_DIR)/config.mk
@@ -68,15 +80,19 @@ endif
 
 CXX = $(MFEM_CXX)
 CPPFLAGS = $(MFEM_CPPFLAGS)
-CXXFLAGS = $(MFEM_CXXFLAGS) 
+CXXFLAGS = $(MFEM_CXXFLAGS)
 
 ifeq ($(findstring -std=c++11,$(CXX)),)
    CXX += -std=c++11
 endif
 
 # MFEM config does not define C compiler
-CC = gcc
-CFLAGS = -O3
+CC     ?= gcc
+CFLAGS ?= -O3
+
+# Optional compile/link flags
+GLVIS_OPTS ?=
+GLVIS_LDFLAGS ?=
 
 # emcc is used when building the wasm/js version
 EMCC      ?= emcc
@@ -86,13 +102,9 @@ EMCC_LIBS ?= -s USE_SDL=2 --bind -s ALLOW_MEMORY_GROWTH=1 -s SINGLE_FILE=1 --no-
  --no-heap-copy -s ENVIRONMENT=web -s MODULARIZE=1 -s EXPORT_NAME=glvis \
  -s GL_ASSERTIONS=1 -s GL_DEBUG=1 -s USE_FREETYPE=1 -s USE_WEBGL2=1
 
-# Optional link flags
-LDFLAGS =
-
-
 OPTIM_OPTS = -O3
 DEBUG_OPTS = -g -Wall
-GLVIS_DEBUG = $(MFEM_DEBUG)
+GLVIS_DEBUG ?= $(MFEM_DEBUG)
 ifneq ($(GLVIS_DEBUG),$(MFEM_DEBUG))
    ifeq ($(GLVIS_DEBUG),YES)
       CXXFLAGS = $(DEBUG_OPTS)
@@ -101,7 +113,7 @@ ifneq ($(GLVIS_DEBUG),$(MFEM_DEBUG))
    endif
 endif
 
-GLVIS_FLAGS = $(CPPFLAGS) $(CXXFLAGS) $(MFEM_INCFLAGS)
+GLVIS_FLAGS = $(CPPFLAGS) $(CXXFLAGS) $(MFEM_INCFLAGS) $(GLVIS_OPTS)
 GLVIS_LIBS = $(MFEM_LIBS)
 
 ifeq ($(GLVIS_DEBUG),YES)
@@ -112,8 +124,8 @@ NOTMAC := $(subst Darwin,,$(shell uname -s))
 SO_EXT = $(if $(NOTMAC),so,dylib)
 
 # Default multisampling mode and multisampling line-width
-GLVIS_MULTISAMPLE  = 4
-GLVIS_MS_LINEWIDTH = $(if $(NOTMAC),1.4,0.01)
+GLVIS_MULTISAMPLE  ?= 4
+GLVIS_MS_LINEWIDTH ?= $(if $(NOTMAC),1.4,0.01)
 DEFINES = -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
  -DGLVIS_MS_LINEWIDTH=$(GLVIS_MS_LINEWIDTH)\
  -DGLVIS_OGL3
@@ -161,18 +173,18 @@ OPENGL_LIBS = $(if $(NOTMAC),-lGL,-framework OpenGL)
 # GL_OPTS = -I$(X11_DIR)/include -DGLVIS_GLX10
 
 GL_OPTS ?= $(if $(FREETYPE_DIR),-I$(FREETYPE_DIR)/include/freetype2) \
-  $(if $(SDL_DIR),-I$(SDL_DIR)/include) \
-	$(if $(GLEW_DIR),-I$(GLEW_DIR)/include) \
-	$(if $(GLM_DIR),-I$(GLM_DIR)/include) \
-  $(if $(OPENGL_DIR),-I$(OPENGL_DIR)/include)
+ $(if $(SDL_DIR),-I$(SDL_DIR)/include) \
+ $(if $(GLEW_DIR),-I$(GLEW_DIR)/include) \
+ $(if $(GLM_DIR),-I$(GLM_DIR)/include) \
+ $(if $(OPENGL_DIR),-I$(OPENGL_DIR)/include)
 
 rpath=-Wl,-rpath,
 GL_LIBS ?= $(if $(FREETYPE_DIR),-L$(FREETYPE_DIR)/lib) \
-  $(if $(SDL_DIR),-L$(SDL_DIR)/lib) \
-  $(if $(NOTMAC),$(if $(OPENGL_DIR),-L$(OPENGL_DIR)/lib $(rpath)$(OPENGL_DIR)/lib)) \
-  $(if $(GLEW_LIB_DIR),-L$(GLEW_LIB_DIR) $(rpath)$(GLEW_LIB_DIR)) \
-  $(if $(GLM_DIR),-L$(GLM_DIR)/lib) \
-  $(FREETYPE_LIBS) $(SDL_LIBS) $(GLEW_LIBS) $(OPENGL_LIBS)
+ $(if $(SDL_DIR),-L$(SDL_DIR)/lib) \
+ $(if $(NOTMAC),$(if $(OPENGL_DIR),-L$(OPENGL_DIR)/lib $(rpath)$(OPENGL_DIR)/lib)) \
+ $(if $(GLEW_LIB_DIR),-L$(GLEW_LIB_DIR) $(rpath)$(GLEW_LIB_DIR)) \
+ $(if $(GLM_DIR),-L$(GLM_DIR)/lib) \
+ $(FREETYPE_LIBS) $(SDL_LIBS) $(GLEW_LIBS) $(OPENGL_LIBS)
 
 EMCC_OPTS += $(if $(GLM_DIR),-I$(GLM_DIR)/include)
 
@@ -180,17 +192,16 @@ GLVIS_FLAGS += $(GL_OPTS)
 GLVIS_LIBS  += $(GL_LIBS)
 
 # Take screenshots internally with libtiff, libpng, or externally with xwd?
-USE_LIBTIFF = NO
-USE_LIBPNG  = NO
+GLVIS_USE_LIBTIFF ?= NO
+GLVIS_USE_LIBPNG  ?= NO
 TIFF_OPTS = -DGLVIS_USE_LIBTIFF -I/sw/include
 TIFF_LIBS = -L/sw/lib -ltiff
 PNG_OPTS = -DGLVIS_USE_LIBPNG
 PNG_LIBS = -lpng
-
-ifeq ($(USE_LIBTIFF),YES)
+ifeq ($(GLVIS_USE_LIBTIFF),YES)
    GLVIS_FLAGS += $(TIFF_OPTS)
    GLVIS_LIBS  += $(TIFF_LIBS)
-else ifeq ($(USE_LIBPNG),YES)
+else ifeq ($(GLVIS_USE_LIBPNG),YES)
    GLVIS_FLAGS += $(PNG_OPTS)
    GLVIS_LIBS  += $(PNG_LIBS)
 else
@@ -200,7 +211,7 @@ endif
 PTHREAD_LIB = -lpthread
 GLVIS_LIBS += $(PTHREAD_LIB)
 
-LIBS = $(strip $(GLVIS_LIBS) $(LDFLAGS))
+LIBS = $(strip $(GLVIS_LIBS) $(GLVIS_LDFLAGS))
 CCC  = $(strip $(CXX) $(GLVIS_FLAGS))
 Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
@@ -228,15 +239,14 @@ HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/sdl.hpp lib/mate
 .SUFFIXES: .c .cpp .o
 
 .cpp.o:
-	$(CCC) -c lib/$(<F) -o lib/$(*F).o
-
+	cd $(<D); $(CCC) -c $(<F)
 .c.o:
-	$(Ccc) -c lib/$(<F) -o lib/$(*F).o
+	cd $(<D); $(Ccc) -c $(<F)
 
 %.bc: %.cpp
 	$(EMCC) $(EMCC_OPTS) -c lib/$(<F) -o lib/$(*F).bc
 
-#glvis: override MFEM_DIR = $(MFEM_DIR1)
+glvis: override MFEM_DIR = $(MFEM_DIR1)
 glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(CCC) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
 
@@ -252,18 +262,18 @@ opt:
 debug:
 	$(MAKE) "GLVIS_DEBUG=YES"
 
-#$(OBJECT_FILES): override MFEM_DIR = $(MFEM_DIR2)
+$(OBJECT_FILES): override MFEM_DIR = $(MFEM_DIR2)
 $(OBJECT_FILES): $(HEADER_FILES) $(CONFIG_MK)
 
 lib/libglvis.a: $(OBJECT_FILES)
-	cd lib;	ar cruv libglvis.a *.o;	ranlib libglvis.a
+	cd lib;	$(AR) $(ARFLAGS) libglvis.a *.o; $(RANLIB) libglvis.a
 
 js: lib/libglvis.js
 lib/libglvis.js: $(BYTECODE_FILES) $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(EMCC) -o $@ $(BYTECODE_FILES) $(EMCC_LIBS) --embed-file $(FONT_FILE)
 
 clean:
-	rm -rf lib/*.o lib/*.bc lib/*~ *~ glvis lib/libglvis.a *.dSYM lib/libglvis.js
+	rm -rf lib/*.o lib/*~ *~ glvis lib/libglvis.a *.dSYM
 
 distclean: clean
 	rm -rf bin/
@@ -284,6 +294,7 @@ status info:
 	$(info MFEM_DIR    = $(MFEM_DIR))
 	$(info GLVIS_FLAGS = $(GLVIS_FLAGS))
 	$(info GLVIS_LIBS  = $(value GLVIS_LIBS))
+	$(info GLVIS_LIBS  = $(GLVIS_LIBS))
 	$(info PREFIX      = $(PREFIX))
 	@true
 
