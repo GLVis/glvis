@@ -1637,11 +1637,7 @@ const char *fc_font_patterns[] =
 
 const int num_font_patterns = sizeof(fc_font_patterns)/sizeof(char *);
 
-#ifdef __EMSCRIPTEN__
 int font_size = 12;
-#else
-int font_size = 10;
-#endif
 
 GlVisFont glvis_font;
 std::string priority_font;

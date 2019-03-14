@@ -325,13 +325,29 @@ void SdlWindow::getWindowSize(int& w, int& h) {
     }
 }
 
+const int default_dpi = 72;
 void SdlWindow::getDpi(int& w, int& h) {
     if (_handle) {
         int disp = SDL_GetWindowDisplayIndex(_handle->hwnd);
+        if (disp < 0) {
+          std::cerr << "warning: problem getting display index: " << SDL_GetError() << std::endl;
+          return;
+        }
+
         float f_w, f_h;
-        SDL_GetDisplayDPI(disp, NULL, &f_w, &f_h);
-        w = f_w;
-        h = f_h;
+        if (SDL_GetDisplayDPI(disp, NULL, &f_w, &f_h)) {
+          std::cerr << "warning: problem getting dpi, setting to " << default_dpi << ": " <<
+            SDL_GetError() << std::endl;
+          w = default_dpi;
+          h = default_dpi;
+        }
+        else {
+          w = f_w;
+          h = f_h;
+        }
+    }
+    else {
+      std::cerr << "warning: unable to get dpi: handle is null" << std::endl;
     }
 }
 

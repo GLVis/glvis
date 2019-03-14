@@ -26,6 +26,7 @@ struct vert_tex2d {
 };
 
 
+const int font_scale = 72;
 bool GlVisFont::LoadFont(const char* path, int font_size) {
     if (!init) {
         return false;
@@ -41,7 +42,7 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
     }
     int ppi_w, ppi_h;
     GetAppWindow()->getDpi(ppi_w, ppi_h);
-    if (FT_Set_Char_Size(face, 0, font_size*ppi_w, ppi_w, ppi_h)) {
+    if (FT_Set_Char_Size(face, 0, font_size*font_scale, ppi_w, ppi_h)) {
         cout << "GLVis: Cannot set font height: " << font_size << " pts"
              << endl;
         FT_Done_Face(face);
@@ -99,8 +100,8 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
                         GL_UNSIGNED_BYTE,
                         face->glyph->bitmap.buffer);
         font_chars[c] = {
-            face->glyph->bitmap.width + (unsigned)2,
-            face->glyph->bitmap.rows + (unsigned)2,
+            (unsigned)(face->glyph->bitmap.width + 2),
+            (unsigned)(face->glyph->bitmap.rows + 2),
             face->glyph->bitmap_left,
             face->glyph->bitmap_top,
             (int)(face->glyph->advance.x >> 6),
