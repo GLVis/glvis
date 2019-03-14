@@ -691,7 +691,8 @@ int GLVisCommand::Execute()
       {
          cout << "Command: palette_repeat: " << palette_repeat << endl;
          RepeatPaletteTimes = palette_repeat;
-         Set_Texture_Image();
+         paletteInit();
+
          if (!GetUseTexture())
          {
             (*vs)->EventUpdateColors();

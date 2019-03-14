@@ -17,11 +17,11 @@
 #include <limits>
 using namespace std;
 
-#include "vsdata.hpp"
 #include "aux_vis.hpp"
-#include "material.hpp"
-
 #include "gl2ps.h"
+#include "material.hpp"
+#include "palettes.hpp"
+#include "vsdata.hpp"
 
 const char *strings_off_on[] = { "off", "on" };
 
@@ -741,7 +741,6 @@ static void KeyF5Pressed()
    SendExposeEvent();
 }
 
-extern int RepeatPaletteTimes;
 void KeyF6Pressed()
 {
    cout << "Palette is repeated " << RepeatPaletteTimes << " times.\n"
@@ -755,6 +754,7 @@ void KeyF6Pressed()
    cout << "Palette will be repeated " << RepeatPaletteTimes
         << " times now." << endl;
 
+   paletteInit();
    Select_New_RGB_Palette();
 
    if (!GetUseTexture())

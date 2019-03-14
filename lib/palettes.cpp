@@ -4676,7 +4676,7 @@ int Select_New_RGB_Palette()
       pal = Num_RGB_Palettes;
    }
 
-   Set_Palette (pal-1);
+   paletteSet(pal-1);
 
    return pal-1;
 }
@@ -4690,7 +4690,7 @@ const size_t Max_Texture_Size = 4*1024;
  */
 void _paletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
 {
-   GLfloat * texture_buf = new GLfloat[4 * plt_size]; 
+   GLfloat * texture_buf = new GLfloat[4 * plt_size];
 
    if (RepeatPaletteTimes > 0)
    {
@@ -4787,9 +4787,10 @@ void _paletteRebind() {
 void paletteInit() {
     if (first_init) {
         Init_Palettes();
+        glGenTextures(Num_RGB_Palettes * 2, &(palette_tex[0][0]));
         first_init = false;
     }
-    glGenTextures(Num_RGB_Palettes * 2, &(palette_tex[0][0]));
+
     for (int i = 0; i < Num_RGB_Palettes; i++) {
         _paletteToTextureDiscrete(RGB_Palettes[i], RGB_Palettes_Sizes[i], palette_tex[i][0]);
         _paletteToTextureSmooth(RGB_Palettes[i], RGB_Palettes_Sizes[i], palette_tex[i][1]);

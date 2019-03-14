@@ -79,8 +79,6 @@ Array<istream *> input_streams;
 
 extern char **environ;
 
-void paletteSet(int); // defined in palettes.hpp
-
 void PrintSampleUsage(ostream &out);
 
 // read the mesh and the solution from a file
@@ -948,7 +946,7 @@ void ExecuteScriptCommand()
       {
          scr >> RepeatPaletteTimes;
          cout << "Script: palette_repeat: " << RepeatPaletteTimes << endl;
-         Set_Texture_Image();
+         paletteInit();
          if (!GetUseTexture())
          {
             vs->EventUpdateColors();
