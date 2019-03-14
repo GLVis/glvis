@@ -238,6 +238,7 @@ BYTECODE_FILES       = $(WEB_SOURCE_FILES:.cpp=.bc)
 
 .cpp.o:
 	cd $(<D); $(CCC) -c $(<F)
+
 .c.o:
 	cd $(<D); $(Ccc) -c $(<F)
 
@@ -271,7 +272,7 @@ lib/libglvis.js: $(BYTECODE_FILES) $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(EMCC) -o $@ $(BYTECODE_FILES) $(EMCC_LIBS) --embed-file $(FONT_FILE)
 
 clean:
-	rm -rf lib/*.o lib/*~ *~ glvis lib/libglvis.a *.dSYM
+	rm -rf lib/*.o lib/*.bc lib/*~ *~ glvis lib/libglvis.a lib/libglvis.js *.dSYM
 
 distclean: clean
 	rm -rf bin/
