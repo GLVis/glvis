@@ -21,6 +21,7 @@ using namespace std;
 #include "vsdata.hpp"
 #include "aux_vis.hpp"
 #include "material.hpp"
+#include "palettes.hpp"
 
 #include "gl2ps.h"
 
@@ -809,10 +810,6 @@ void KeyRPressed()
    SendExposeEvent();
 }
 
-void Next_RGB_Palette();
-void Prev_RGB_Palette();
-int Select_New_RGB_Palette();
-
 void KeypPressed(GLenum state)
 {
    if (state & ControlMask)
@@ -858,7 +855,6 @@ static void KeyF5Pressed()
    SendExposeEvent();
 }
 
-extern int RepeatPaletteTimes;
 void KeyF6Pressed()
 {
    cout << "Palette is repeated " << RepeatPaletteTimes << " times.\n"

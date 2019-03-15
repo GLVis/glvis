@@ -13,11 +13,12 @@
 #include <fcntl.h>     // fcntl
 #include <cerrno>      // errno, EAGAIN
 #include <cstdio>      // perror
+
+#include "palettes.hpp"
 #include "visual.hpp"
 
 using namespace std;
 
-void Set_Palette(int);
 void SetMeshSolution(Mesh *mesh, GridFunction *&grid_f, bool save_coloring);
 extern const char *strings_off_on[]; // defined in vsdata.cpp
 
@@ -362,6 +363,21 @@ int GLVisCommand::Palette(int pal)
    return 0;
 }
 
+int GLVisCommand::PaletteRepeat(int n)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = PALETTE_REPEAT;
+   palette_repeat = n;
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
+
 int GLVisCommand::Camera(const double cam[])
 {
    if (lock() < 0)
@@ -662,6 +678,19 @@ int GLVisCommand::Execute()
       {
          cout << "Command: palette: " << palette << endl;
          Set_Palette(palette-1);
+         if (!GetUseTexture())
+         {
+            (*vs)->EventUpdateColors();
+         }
+         MyExpose();
+         break;
+      }
+
+      case PALETTE_REPEAT:
+      {
+         cout << "Command: palette_repeat: " << palette_repeat << endl;
+         RepeatPaletteTimes = palette_repeat;
+         Set_Texture_Image();
          if (!GetUseTexture())
          {
             (*vs)->EventUpdateColors();
@@ -1197,6 +1226,24 @@ void *communication_thread::execute(void *p)
          }
 
          if (glvis_command->Palette(pal))
+         {
+            goto comm_terminate;
+         }
+      }
+      else if (_this->ident == "palette_repeat")
+      {
+         int n, a;
+
+         *_this->is[0] >> n;
+
+         // all processors sent the command
+         for (int i = 1; i < _this->is.Size(); i++)
+         {
+            *_this->is[i] >> ws >> _this->ident; // 'palette_repeat'
+            *_this->is[i] >> a;
+         }
+
+         if (glvis_command->PaletteRepeat(n))
          {
             goto comm_terminate;
          }

@@ -944,6 +944,17 @@ void ExecuteScriptCommand()
          }
          MyExpose();
       }
+      else if (word == "palette_repeat")
+      {
+         scr >> RepeatPaletteTimes;
+         cout << "Script: palette_repeat: " << RepeatPaletteTimes << endl;
+         Set_Texture_Image();
+         if (!GetUseTexture())
+         {
+            vs->EventUpdateColors();
+         }
+         MyExpose();
+      }
       else if (word == "toggle_attributes")
       {
          Array<int> attr_list;

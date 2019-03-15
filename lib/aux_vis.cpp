@@ -18,6 +18,7 @@
 
 #include "mfem.hpp"
 using namespace mfem;
+using namespace std;
 
 #include "palettes.hpp"
 #include "gl2ps.h"

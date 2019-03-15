@@ -12,6 +12,12 @@
 Version 3.4.1 (development)
 ===========================
 
+- Added new palette: gray.
+
+- Added new script and socket command: "palette_repeat" which can be used to
+  repeat and reverse/flip the palette - controls the same parameter as the first
+  prompt after pressing the F6 key in the GLVis window.
+
 - Improved cutting plane algorithm for curved elements. The key 'I' can be used
   to switch to the previous (faster) algorithm which is suitable for meshes with
   planar faces.
