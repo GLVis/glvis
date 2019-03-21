@@ -879,18 +879,7 @@ void KeyF6Pressed()
 
 void KeyF7Pressed(GLenum state)
 {
-   if (state == 0)
-   {
-      cout << "[minv,maxv] = [" << vsdata->GetMinV() << "," << vsdata->GetMaxV()
-           << "]  maxv-minv = " << vsdata->GetMaxV()-vsdata->GetMinV() << "\n"
-           << "New value for minv: " << flush;
-      cin >> vsdata->GetMinV();
-      cout << "New value for maxv: " << flush;
-      cin >> vsdata->GetMaxV();
-      vsdata->UpdateValueRange(true);
-      SendExposeEvent();
-   }
-   else if (state & ShiftMask)
+   if (state & ShiftMask)
    {
       cout << "Current bounding box:\n"
            << "   min: (" << vsdata->x[0] << ',' << vsdata->y[0] << ','
@@ -916,6 +905,17 @@ void KeyF7Pressed(GLenum state)
            << "   max: (" << vsdata->x[1] << ',' << vsdata->y[1] << ','
            << vsdata->z[1] << ")\n" << flush;
       vsdata->UpdateBoundingBox();
+      SendExposeEvent();
+   }
+   else
+   {
+      cout << "[minv,maxv] = [" << vsdata->GetMinV() << "," << vsdata->GetMaxV()
+           << "]  maxv-minv = " << vsdata->GetMaxV()-vsdata->GetMinV() << "\n"
+           << "New value for minv: " << flush;
+      cin >> vsdata->GetMinV();
+      cout << "New value for maxv: " << flush;
+      cin >> vsdata->GetMaxV();
+      vsdata->UpdateValueRange(true);
       SendExposeEvent();
    }
 }
