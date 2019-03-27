@@ -259,10 +259,13 @@ public:
    // Emscripten UI control functions
    void SetColorbar(int newColorbar) { colorbar = newColorbar % 3; }
    void SetRuler(int newRuler) { ruler_on = newRuler % 3; }
-   void SetDrawAxes(int newAxes) {
-      if (drawaxes != newAxes % 4) {
+   void SetDrawAxes(int newAxes)
+   {
+      if (drawaxes != newAxes % 4)
+      {
          drawaxes = newAxes % 4;
-         if (drawaxes) {
+         if (drawaxes)
+         {
             PrepareAxes();
          }
       }

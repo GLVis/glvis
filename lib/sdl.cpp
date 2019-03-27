@@ -372,18 +372,21 @@ void SdlWindow::setWindowTitle(std::string& title) {
 }
 
 void SdlWindow::setWindowTitle(const char * title) {
-    if (_handle)
+    if (_handle) {
         SDL_SetWindowTitle(_handle->hwnd, title);
+    }
 }
 
 void SdlWindow::setWindowSize(int w, int h) {
-    if (_handle)
+    if (_handle) {
         SDL_SetWindowSize(_handle->hwnd, w, h);
+    }
 }
 
 void SdlWindow::setWindowPos(int x, int y) {
-    if (_handle)
+    if (_handle) {
         SDL_SetWindowPosition(_handle->hwnd, x, y);
+    }
 }
 
 void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m) {

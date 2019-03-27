@@ -25,49 +25,55 @@ using namespace std;
 class GlVisFont
 {
 public:
-    struct glyph {
-        uint32_t w, h;
-        int32_t bear_x, bear_y;
-        int32_t adv_x, adv_y;
-        float tex_x;
-    };
+   struct glyph
+   {
+      uint32_t w, h;
+      int32_t bear_x, bear_y;
+      int32_t adv_x, adv_y;
+      float tex_x;
+   };
 private:
-    bool init;
-    bool font_init;
-    glyph font_chars[256];
-    float tex_w;
-    float tex_h;
-    uint32_t font_tex;
+   bool init;
+   bool font_init;
+   glyph font_chars[256];
+   float tex_w;
+   float tex_h;
+   uint32_t font_tex;
 
-    FT_Library  library;
-    FT_Face     face;
+   FT_Library  library;
+   FT_Face     face;
 public:
 
-    bool LoadFont(const char* path, int font_size);
+   bool LoadFont(const char* path, int font_size);
 
-    glyph GetTexChar(char c) {
-        return font_chars[(uint8_t) c];
-    }
+   glyph GetTexChar(char c)
+   {
+      return font_chars[(uint8_t) c];
+   }
 
-    GlVisFont()
-        : init(false)
-        , font_init(false) {
-        if (FT_Init_FreeType(&library)) {
-            cout << "GLVis: Can not initialize FreeType library!" << endl;
-        }
-        init = true;
-    }
+   GlVisFont()
+      : init(false)
+      , font_init(false)
+   {
+      if (FT_Init_FreeType(&library))
+      {
+         cout << "GLVis: Can not initialize FreeType library!" << endl;
+      }
+      init = true;
+   }
 
-    ~GlVisFont() {
-        if (init) {
-            FT_Done_FreeType(library);
-        }
-    }
+   ~GlVisFont()
+   {
+      if (init)
+      {
+         FT_Done_FreeType(library);
+      }
+   }
 
-    bool isFontLoaded() { return font_init; }
+   bool isFontLoaded() { return font_init; }
 
-    float getAtlasWidth() { return tex_w; }
+   float getAtlasWidth() { return tex_w; }
 
-    float getAtlasHeight() { return tex_h; }
+   float getAtlasHeight() { return tex_h; }
 };
 #endif /* FONT_HPP */

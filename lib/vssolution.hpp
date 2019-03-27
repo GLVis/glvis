@@ -35,7 +35,7 @@ protected:
 
    gl3::GlDrawable e_nums_buf;
    gl3::GlDrawable v_nums_buf;
-   
+
    gl3::GlDrawable lcurve_buf;
    gl3::GlDrawable line_buf;
    gl3::GlDrawable bdr_buf;
@@ -149,7 +149,8 @@ public:
    //virtual bool GetDrawBdrCfg() { return drawbdr; }
 };
 
-void DrawNumberedMarker(gl3::GlDrawable& buff, const double x[3], double dx, int n);
+void DrawNumberedMarker(gl3::GlDrawable& buff, const double x[3], double dx,
+                        int n);
 
 //we only need 3 points, but the array is 4x3
 void DrawTriangle(gl3::GlDrawable& buff,
@@ -160,7 +161,8 @@ void DrawQuad(gl3::GlDrawable& buff,
               const double (&pts)[4][3], const double (&cv)[4],
               const double minv, const double maxv);
 
-void DrawPatch(gl3::GlDrawable& buff, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
+void DrawPatch(gl3::GlDrawable& buff, const DenseMatrix &pts, Vector &vals,
+               DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
                const double maxv, const int normals_opt = 0);
 

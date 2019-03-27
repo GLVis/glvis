@@ -25,9 +25,9 @@ namespace gl3
 
 struct FeedbackVertex
 {
-    float pos[4];
-    float color[4];
-    float clipCoord;
+   float pos[4];
+   float color[4];
+   float clipCoord;
 };
 
 void processTriangleTransformFeedback(FeedbackVertex * buf, size_t numVerts);
@@ -36,83 +36,101 @@ void processLineTransformFeedback(FeedbackVertex * buf, size_t numVerts);
 class GL2PSFeedbackHook : public IDrawHook
 {
 private:
-    GLuint _feedback_buf;
-    const std::string TEXT_FONT = "Times";
-    const int TEXT_SIZE = 8;
+   GLuint _feedback_buf;
+   const std::string TEXT_FONT = "Times";
+   const int TEXT_SIZE = 8;
 public:
-    GL2PSFeedbackHook() {
-        glGenBuffers(1, &_feedback_buf);
-    }
+   GL2PSFeedbackHook()
+   {
+      glGenBuffers(1, &_feedback_buf);
+   }
 
-    ~GL2PSFeedbackHook() {
-        if (_feedback_buf != 0) {
-            glDeleteBuffers(1, &_feedback_buf);
-        }
-    }
+   ~GL2PSFeedbackHook()
+   {
+      if (_feedback_buf != 0)
+      {
+         glDeleteBuffers(1, &_feedback_buf);
+      }
+   }
 
-    GL2PSFeedbackHook(GL2PSFeedbackHook&& other)
-        : _feedback_buf(other._feedback_buf) {
-        other._feedback_buf = 0;
-    }
+   GL2PSFeedbackHook(GL2PSFeedbackHook&& other)
+      : _feedback_buf(other._feedback_buf)
+   {
+      other._feedback_buf = 0;
+   }
 
-    GL2PSFeedbackHook& operator = (GL2PSFeedbackHook&& other) {
-        if (this != &other) {
-            _feedback_buf = other._feedback_buf;
-            other._feedback_buf = 0;
-        }
-        return *this;
-    }
+   GL2PSFeedbackHook& operator = (GL2PSFeedbackHook&& other)
+   {
+      if (this != &other)
+      {
+         _feedback_buf = other._feedback_buf;
+         other._feedback_buf = 0;
+      }
+      return *this;
+   }
 
-    void preDraw(const IVertexBuffer * d) {
-        // Allocate buffer and setup feedback
-        int buf_size = d->count() * sizeof(FeedbackVertex);
-        glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, _feedback_buf);
-        glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER,
-                     buf_size, nullptr, GL_STATIC_READ);
-        glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, _feedback_buf);
-        // Draw objects while capturing vertices
-        glEnable(GL_RASTERIZER_DISCARD);
-        glBeginTransformFeedback(d->get_shape());
-    }
+   void preDraw(const IVertexBuffer * d)
+   {
+      // Allocate buffer and setup feedback
+      int buf_size = d->count() * sizeof(FeedbackVertex);
+      glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, _feedback_buf);
+      glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER,
+                   buf_size, nullptr, GL_STATIC_READ);
+      glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, _feedback_buf);
+      // Draw objects while capturing vertices
+      glEnable(GL_RASTERIZER_DISCARD);
+      glBeginTransformFeedback(d->get_shape());
+   }
 
-    void postDraw(const IVertexBuffer * d) {
-        int buf_size = d->count() * sizeof(FeedbackVertex);
-        glEndTransformFeedback();
-        glDisable(GL_RASTERIZER_DISCARD);
-        // Read buffer
-        FeedbackVertex * fb_buf = nullptr;
-        fb_buf = new FeedbackVertex[d->count()];
-        glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER,
-                           0, buf_size, fb_buf);
-        if (d->get_shape() == GL_TRIANGLES) {
-            processTriangleTransformFeedback(fb_buf, d->count());
-        } else if (d->get_shape() == GL_LINES) {
-            processLineTransformFeedback(fb_buf, d->count());
-        } else { //shape == GL_POINTS/other?
-            std::cerr << "Warning: Unhandled primitive type during transform feedback parsing.";
-        }
-        delete [] fb_buf;
-    }
+   void postDraw(const IVertexBuffer * d)
+   {
+      int buf_size = d->count() * sizeof(FeedbackVertex);
+      glEndTransformFeedback();
+      glDisable(GL_RASTERIZER_DISCARD);
+      // Read buffer
+      FeedbackVertex * fb_buf = nullptr;
+      fb_buf = new FeedbackVertex[d->count()];
+      glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER,
+                         0, buf_size, fb_buf);
+      if (d->get_shape() == GL_TRIANGLES)
+      {
+         processTriangleTransformFeedback(fb_buf, d->count());
+      }
+      else if (d->get_shape() == GL_LINES)
+      {
+         processLineTransformFeedback(fb_buf, d->count());
+      }
+      else     //shape == GL_POINTS/other?
+      {
+         std::cerr <<
+                   "Warning: Unhandled primitive type during transform feedback parsing.";
+      }
+      delete [] fb_buf;
+   }
 
-    void preDraw(const TextBuffer& t) {
-        glEnable(GL_RASTERIZER_DISCARD);
-        GLint vp[4];
-        GetGlState()->getViewport(vp);
-        for (const auto& entry : t) {
-            glm::vec3 raster = glm::project(glm::vec3(entry.rx, entry.ry, entry.rz),
-                                            GetGlState()->modelView.mtx,
-                                            GetGlState()->projection.mtx,
-                                            glm::vec4(0, 0, vp[2], vp[3]));
-            GL2PSvertex v = { raster.x, raster.y, raster.z,
-                              0, 0, 0, 1 };
-            gl2psForceRasterPos(&v);
-            gl2psText(entry.text.c_str(), TEXT_FONT.c_str(), TEXT_SIZE);
-        }
-    }
+   void preDraw(const TextBuffer& t)
+   {
+      glEnable(GL_RASTERIZER_DISCARD);
+      GLint vp[4];
+      GetGlState()->getViewport(vp);
+      for (const auto& entry : t)
+      {
+         glm::vec3 raster = glm::project(glm::vec3(entry.rx, entry.ry, entry.rz),
+                                         GetGlState()->modelView.mtx,
+                                         GetGlState()->projection.mtx,
+                                         glm::vec4(0, 0, vp[2], vp[3]));
+         GL2PSvertex v = { raster.x, raster.y, raster.z,
+                           0, 0, 0, 1
+                         };
+         gl2psForceRasterPos(&v);
+         gl2psText(entry.text.c_str(), TEXT_FONT.c_str(), TEXT_SIZE);
+      }
+   }
 
-    void postDraw(const TextBuffer& t) {
-        glDisable(GL_RASTERIZER_DISCARD);
-    }
+   void postDraw(const TextBuffer& t)
+   {
+      glDisable(GL_RASTERIZER_DISCARD);
+   }
 
 };
 

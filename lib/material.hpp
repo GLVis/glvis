@@ -13,17 +13,17 @@
 
 struct Material
 {
-    float ambient[4];
-    float diffuse[4];
-    float specular[4];
-    float shininess;
+   float ambient[4];
+   float diffuse[4];
+   float specular[4];
+   float shininess;
 };
 
 struct Light
 {
-    float position[4];
-    float diffuse[4];
-    float specular[4];
+   float position[4];
+   float diffuse[4];
+   float specular[4];
 };
 
 void Set_Material();
