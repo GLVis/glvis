@@ -763,7 +763,7 @@ void KeyF6Pressed()
 
 void KeyF7Pressed(GLenum state)
 {
-   if (state & ShiftMask)
+   if (state & KMOD_SHIFT)
    {
       cout << "Current bounding box:\n"
            << "   min: (" << vsdata->x[0] << ',' << vsdata->y[0] << ','
