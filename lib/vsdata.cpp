@@ -17,11 +17,12 @@
 #include <limits>
 using namespace std;
 
+#include "vsdata.hpp"
 #include "aux_vis.hpp"
-#include "gl2ps.h"
 #include "material.hpp"
 #include "palettes.hpp"
-#include "vsdata.hpp"
+
+#include "gl2ps.h"
 
 const char *strings_off_on[] = { "off", "on" };
 
@@ -692,10 +693,6 @@ void KeyRPressed()
    SendExposeEvent();
 }
 
-void Next_RGB_Palette();
-void Prev_RGB_Palette();
-int Select_New_RGB_Palette();
-
 void KeypPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
@@ -766,18 +763,7 @@ void KeyF6Pressed()
 
 void KeyF7Pressed(GLenum state)
 {
-   if (state == 0)
-   {
-      cout << "[minv,maxv] = [" << vsdata->GetMinV() << "," << vsdata->GetMaxV()
-           << "]  maxv-minv = " << vsdata->GetMaxV()-vsdata->GetMinV() << "\n"
-           << "New value for minv: " << flush;
-      cin >> vsdata->GetMinV();
-      cout << "New value for maxv: " << flush;
-      cin >> vsdata->GetMaxV();
-      vsdata->UpdateValueRange(true);
-      SendExposeEvent();
-   }
-   else if (state & KMOD_SHIFT)
+   if (state & ShiftMask)
    {
       cout << "Current bounding box:\n"
            << "   min: (" << vsdata->x[0] << ',' << vsdata->y[0] << ','
@@ -803,6 +789,17 @@ void KeyF7Pressed(GLenum state)
            << "   max: (" << vsdata->x[1] << ',' << vsdata->y[1] << ','
            << vsdata->z[1] << ")\n" << flush;
       vsdata->UpdateBoundingBox();
+      SendExposeEvent();
+   }
+   else
+   {
+      cout << "[minv,maxv] = [" << vsdata->GetMinV() << "," << vsdata->GetMaxV()
+           << "]  maxv-minv = " << vsdata->GetMaxV()-vsdata->GetMinV() << "\n"
+           << "New value for minv: " << flush;
+      cin >> vsdata->GetMinV();
+      cout << "New value for maxv: " << flush;
+      cin >> vsdata->GetMaxV();
+      vsdata->UpdateValueRange(true);
       SendExposeEvent();
    }
 }
