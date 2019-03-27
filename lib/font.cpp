@@ -50,7 +50,7 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
     }
 
     //generate atlas
-    size_t w = 0, h = 0;
+    int w = 0, h = 0;
     for (int c = 32; c < 128; c++) {
         if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
             cout << "GLVis: Cannot load glyph: " << (char) c << endl;

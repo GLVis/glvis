@@ -52,7 +52,7 @@ SdlWindow::SdlWindow()
     , takeScreenshot(false) {
 }
 
-bool SdlWindow::createWindow(const char * title, int w, int h) {
+bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
     if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
             cerr << "Failed to initialize SDL: " << SDL_GetError() << endl;
@@ -83,8 +83,7 @@ bool SdlWindow::createWindow(const char * title, int w, int h) {
         SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
     }
 
-    SDL_Window * win = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        w, h, win_flags);
+    SDL_Window * win = SDL_CreateWindow(title, x, y, w, h, win_flags);
     if (!win) {
       std::cerr << "fatal: unable to create sdl window: " << SDL_GetError() << endl;
       return false;
@@ -270,6 +269,10 @@ bool SdlWindow::mainIter() {
         }
         useIdle = !useIdle;
     }
+    else {
+      if (glvis_command->Execute() < 0) { running = false; }
+      else { needsSwap = true; }
+    }
 #else
     if (onIdle) {
         onIdle();
@@ -301,7 +304,7 @@ void SdlWindow::mainLoop() {
             Screenshot(screenshot_file.c_str());
             takeScreenshot = false;
         }
-        // sleep for 2 seconds to avoid pegging CPU at 100%
+        // sleep for n milliseconds to avoid pegging CPU at 100%
         SDL_Delay(2);
     }
 #endif

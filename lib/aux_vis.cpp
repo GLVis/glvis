@@ -77,7 +77,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 #endif
    if (!wnd) {
        wnd = new SdlWindow();
-       if (!wnd->createWindow(name, w, h)) {
+       if (!wnd->createWindow(name, x, y, w, h)) {
            return 1;
        }
 
@@ -1054,7 +1054,7 @@ void KeyCtrlP()
                         GL2PS_NO_OPENGL_CONTEXT,
                         GL_RGBA, 0, NULL, 16, 16, 16, 0, fp, "a" );
        locscene -> Draw();
-       int state = gl2psEndPage();
+       gl2psEndPage();
        gl3::GlDrawable::setDrawHook(nullptr);
        GetGlState()->renderToDefault();
    }

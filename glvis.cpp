@@ -48,8 +48,8 @@ bool        save_coloring   = false;
 bool        keep_attr       = false;
 int         window_x        = 0; // not a command line option
 int         window_y        = 0; // not a command line option
-int         window_w        = 800;
-int         window_h        = 600;
+int         window_w        = 400;
+int         window_h        = 350;
 const char *window_title    = string_default;
 const char *c_plot_caption  = string_none;
 string      plot_caption;
