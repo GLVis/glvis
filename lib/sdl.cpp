@@ -271,7 +271,6 @@ bool SdlWindow::mainIter() {
     }
     else {
       if (glvis_command->Execute() < 0) { running = false; }
-      else { needsSwap = true; }
     }
 #else
     if (onIdle) {
@@ -305,7 +304,7 @@ void SdlWindow::mainLoop() {
             takeScreenshot = false;
         }
         // sleep for n milliseconds to avoid pegging CPU at 100%
-        SDL_Delay(2);
+        SDL_WaitEventTimeout(NULL, 10);
     }
 #endif
 }
