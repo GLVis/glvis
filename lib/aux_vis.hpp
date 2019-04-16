@@ -115,6 +115,7 @@ void CallKeySequence(const char *seq);
 void Cone();
 
 extern int MySetColorLogscale;
+double GetColorCoord(double val, double min, double max);
 void MySetColor(gl3::GlBuilder& builder, double val);
 void MySetColor(gl3::GlBuilder& builder, double val, double min, double max);
 //float returned is alpha value

@@ -1427,7 +1427,7 @@ int MySetColorLogscale = 0;
 extern int RepeatPaletteTimes;
 int UseTexture         = 0;
 
-void MySetColor (double val, double min, double max, float (&rgba)[4])
+double GetColorCoord(double val, double min, double max)
 {
    // static double eps = 1e-24;
    static const double eps = 0.0;
@@ -1441,32 +1441,22 @@ void MySetColor (double val, double min, double max, float (&rgba)[4])
       {
          val = max;
       }
-      MySetColor (log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps), rgba);
+      return log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps);
    }
    else
    {
-      MySetColor ((val-min)/(max-min), rgba);
+      return ((val-min)/(max-min));
    }
 }
 
-void MySetColor (gl3::GlBuilder& builder, double val, double min, double max) {
-  static const double eps = 0.0;
-  if (MySetColorLogscale)
-  {
-     if (val < min)
-     {
-        val = min;
-     }
-     if (val > max)
-     {
-        val = max;
-     }
-     MySetColor (builder, log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps));
-  }
-  else
-  {
-     MySetColor (builder, (val-min)/(max-min));
-  }
+void MySetColor (double val, double min, double max, float (&rgba)[4])
+{
+   MySetColor(GetColorCoord(val, min, max), rgba);
+}
+
+void MySetColor (gl3::GlBuilder& builder, double val, double min, double max)
+{
+   MySetColor(builder, GetColorCoord(val, min, max));
 }
 
 void MySetColor (double val, float (&rgba)[4])

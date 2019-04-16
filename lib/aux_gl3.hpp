@@ -326,14 +326,12 @@ private:
    std::vector<T> _data;
    std::unique_ptr<GLuint> _handle;
    size_t _buffered_size;
-   size_t _allocated_size;
 
 public:
    VertexBuffer(GLenum shape)
       : _shape(shape)
       , _handle(new GLuint)
       , _buffered_size(0)
-      , _allocated_size(0)
    {
       glGenBuffers(1, _handle.get());
    }
@@ -378,16 +376,13 @@ public:
          return;
       }
       glBindBuffer(GL_ARRAY_BUFFER, *_handle);
-      if (_allocated_size >= _data.size())
-      {
-         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(T) * _data.size(), _data.data());
+      if (_buffered_size > 0) {
+         glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
       }
-      else
-      {
-         glBufferData(GL_ARRAY_BUFFER, sizeof(T) * _data.size(), _data.data(),
-                      GL_DYNAMIC_DRAW);
-         _allocated_size = _data.size();
-      }
+      glBufferData(GL_ARRAY_BUFFER,
+                   sizeof(T) * _data.size(),
+                   _data.data(),
+                   GL_STATIC_DRAW);
       _buffered_size = _data.size();
    }
 
