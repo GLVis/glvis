@@ -862,7 +862,8 @@ void KeykPressed()
    {
       MatAlpha = 0.0;
    }
-   vsdata -> EventUpdateColors();
+   //vsdata -> EventUpdateColors();
+   GenerateAlphaTexture(MatAlpha, MatAlphaCenter);
    SendExposeEvent();
 }
 
@@ -873,7 +874,8 @@ void KeyKPressed()
    {
       MatAlpha = 1.0;
    }
-   vsdata -> EventUpdateColors();
+   //vsdata -> EventUpdateColors();
+   GenerateAlphaTexture(MatAlpha, MatAlphaCenter);
    SendExposeEvent();
 }
 
@@ -898,7 +900,8 @@ void KeyAPressed()
 void KeyCommaPressed()
 {
    MatAlphaCenter -= 0.25;
-   vsdata -> EventUpdateColors();
+   //vsdata -> EventUpdateColors();
+   GenerateAlphaTexture(MatAlpha, MatAlphaCenter);
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
    cout << "MatAlphaCenter = " << MatAlphaCenter << endl;
@@ -908,7 +911,8 @@ void KeyCommaPressed()
 void KeyLessPressed()
 {
    MatAlphaCenter += 0.25;
-   vsdata -> EventUpdateColors();
+   //vsdata -> EventUpdateColors();
+   GenerateAlphaTexture(MatAlpha, MatAlphaCenter);
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
    cout << "MatAlphaCenter = " << MatAlphaCenter << endl;

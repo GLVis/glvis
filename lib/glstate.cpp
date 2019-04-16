@@ -275,11 +275,14 @@ void GlState::initShaderState(GLuint program) {
     }
 
     //Texture unit 0: color palettes
-    //Texture unit 1: font atlas
+    //Texture unit 1: transparency palette
+    //Texture unit 2: font atlas
     GLuint locColorTex = glGetUniformLocation(program, "colorTex");
+    GLuint locAlphaTex = glGetUniformLocation(program, "alphaTex");
     GLuint locFontTex = glGetUniformLocation(program, "fontTex");
     glUniform1i(locColorTex, 0);
-    glUniform1i(locFontTex, 1);
+    glUniform1i(locAlphaTex, 1);
+    glUniform1i(locFontTex, 2);
     // Set render type uniforms
     locContainsText = glGetUniformLocation(program, "containsText");
     locUseColorTex = glGetUniformLocation(program, "useColorTex");

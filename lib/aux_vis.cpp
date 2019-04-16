@@ -1427,7 +1427,7 @@ int MySetColorLogscale = 0;
 extern int RepeatPaletteTimes;
 int UseTexture         = 0;
 
-float MySetColor (double val, double min, double max, float (&rgba)[4])
+void MySetColor (double val, double min, double max, float (&rgba)[4])
 {
    // static double eps = 1e-24;
    static const double eps = 0.0;
@@ -1441,11 +1441,11 @@ float MySetColor (double val, double min, double max, float (&rgba)[4])
       {
          val = max;
       }
-      return MySetColor (log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps), rgba);
+      MySetColor (log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps), rgba);
    }
    else
    {
-      return MySetColor ((val-min)/(max-min), rgba);
+      MySetColor ((val-min)/(max-min), rgba);
    }
 }
 
@@ -1461,15 +1461,15 @@ void MySetColor (gl3::GlBuilder& builder, double val, double min, double max) {
      {
         val = max;
      }
-     return MySetColor (builder, log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps));
+     MySetColor (builder, log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps));
   }
   else
   {
-     return MySetColor (builder, (val-min)/(max-min));
+     MySetColor (builder, (val-min)/(max-min));
   }
 }
 
-float MySetColor (double val, float (&rgba)[4])
+void MySetColor (double val, float (&rgba)[4])
 {
    int i;
    double t, *pal;
@@ -1494,12 +1494,6 @@ float MySetColor (double val, float (&rgba)[4])
       {
          malpha *= exp(-fabs(val-MatAlphaCenter));
       }
-   }
-   
-   if (UseTexture)
-   {
-      //return 1-alpha since default attrib value is 0.0
-      return MatAlpha < 1.0 ? 1.0 - malpha : 0.0;
    }
 
    val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
@@ -1522,7 +1516,6 @@ float MySetColor (double val, float (&rgba)[4])
    rgba[1] = (1.0 - t) * pal[1] + t * pal[4];
    rgba[2] = (1.0 - t) * pal[2] + t * pal[5];
    rgba[3] = MatAlpha < 1.0 ? malpha : 1.0;
-   return 0.0;
 }
 
 void MySetColor (gl3::GlBuilder& builder, double val)
@@ -1534,6 +1527,12 @@ void MySetColor (gl3::GlBuilder& builder, double val)
 
    if (val < 0.0) { val = 0.0; }
    if (val > 1.0) { val = 1.0; }
+
+   if (UseTexture)
+   {
+      builder.glTexCoord2f(val, 1.0);
+      return;
+   }
 
    double malpha = MatAlpha;
    if (malpha < 1.0)
@@ -1551,13 +1550,6 @@ void MySetColor (gl3::GlBuilder& builder, double val)
          malpha *= exp(-fabs(val-MatAlphaCenter));
       }
    }
-
-   if (UseTexture)
-   {
-      builder.glTexCoord2f(val, MatAlpha < 1.0 ? malpha : 1.0);
-      return;
-   }
-
    val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
    i = (int) floor( val );
    t = val - i;

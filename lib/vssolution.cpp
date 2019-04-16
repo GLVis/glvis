@@ -1020,8 +1020,8 @@ void DrawTriangle(gl3::GlDrawable& buff,
    std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
 
    for (int i = 0; i < 3; i++) {
-       texcoord[i][0] = cv[i];
-       texcoord[i][1] = MySetColor(cv[i], minv, maxv, rgba[i]);
+       texcoord[i] = { (float) cv[i], 1.0 };
+       MySetColor(cv[i], minv, maxv, rgba[i]);
        fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
    }
    if (GetUseTexture()) {
@@ -1053,8 +1053,8 @@ void DrawQuad(gl3::GlDrawable& buff,
    std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
    
    for (int i = 0; i < 4; i++) { 
-       texcoord[i][0] = cv[i];
-       texcoord[i][1] = MySetColor(cv[i], minv, maxv, rgba[i]);
+       texcoord[i] = { (float) cv[i], 1.0 };
+       MySetColor(cv[i], minv, maxv, rgba[i]);
        fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
    }
    if (GetUseTexture()) {

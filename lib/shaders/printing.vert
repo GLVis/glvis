@@ -20,6 +20,7 @@ varying vec4 fColor;
 varying float fClipCoord;
 
 uniform sampler2D colorTex;
+uniform sampler2D alphaTex;
 
 vec4 blinnPhong(in vec3 pos, in vec3 norm, in vec4 color);
  
@@ -28,8 +29,8 @@ void main()
     vec4 pos = modelViewMatrix * vec4(vertex, 1.0);
     vec3 eye_normal = normalize(normalMatrix * normal);
     if (useColorTex) {
-        fColor.xyz = texture2DLod(colorTex, vec2(texCoord0.x, 0.0), 0.0).xyz;
-        fColor.w = texCoord0.y;
+        fColor.rgb = texture2DLod(colorTex, vec2(texCoord0), 0.0).rgb;
+        fColor.a = texture2DLod(alphaTex, vec2(texCoord0), 0.0).r;
     } else {
         fColor = color;
     }

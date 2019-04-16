@@ -4636,6 +4636,7 @@ void Init_Palettes()
 
 bool first_init = true;
 GLuint palette_tex[Num_RGB_Palettes][2];
+GLuint alpha_tex;
 int curr_palette = 2;
 int use_smooth = 0;
 
@@ -4781,13 +4782,18 @@ void _paletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
 }
 
 void _paletteRebind() {
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, palette_tex[curr_palette][use_smooth]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, alpha_tex);
+    glActiveTexture(GL_TEXTURE0);
 }
 
 void paletteInit() {
     if (first_init) {
         Init_Palettes();
         glGenTextures(Num_RGB_Palettes * 2, &(palette_tex[0][0]));
+        glGenTextures(1, &alpha_tex);
         first_init = false;
     }
 
@@ -4795,6 +4801,18 @@ void paletteInit() {
         _paletteToTextureDiscrete(RGB_Palettes[i], RGB_Palettes_Sizes[i], palette_tex[i][0]);
         _paletteToTextureSmooth(RGB_Palettes[i], RGB_Palettes_Sizes[i], palette_tex[i][1]);
     }
+    // set alpha texture to 1.0
+    float alphaTexData[4096 * 2];
+    std::fill(alphaTexData, alphaTexData + 4096*2, 1.0);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, alpha_tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 4096, 2, 0, GL_RED, GL_FLOAT, alphaTexData);
+
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glActiveTexture(GL_TEXTURE0);
     _paletteRebind();
 }
 
@@ -4819,6 +4837,28 @@ double * paletteGet() {
 
 int paletteGetSize() {
     return RGB_Palettes_Sizes[curr_palette];
+}
+
+void GenerateAlphaTexture(float matAlpha, float matAlphaCenter) {
+   float alphaTexData [4096];
+   if (matAlpha >= 1.0) {
+      // transparency off
+      std::fill(alphaTexData, alphaTexData+4096, 1.0);
+   } else {
+      for (int i = 0; i < 4096; i++) {
+         double val = (2*i + 1)/(2*4096.0); // midpoint of texel
+         if (matAlphaCenter > 1.0) {
+            alphaTexData[i] = matAlpha * std::exp(-(matAlphaCenter)*std::abs(val - 1.0));
+         } else if (matAlphaCenter < 0.0) {
+            alphaTexData[i] = matAlpha * std::exp((matAlphaCenter - 1.0)*std::abs(val));
+         } else {
+            alphaTexData[i] = matAlpha * std::exp(-std::abs(val - matAlphaCenter));
+         }
+      }
+   }
+   glActiveTexture(GL_TEXTURE1);
+   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 1, 4096, 1, GL_RED, GL_FLOAT, alphaTexData);
+   glActiveTexture(GL_TEXTURE0);
 }
 
 void Next_RGB_Palette()

@@ -66,7 +66,7 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
 
     glGenTextures(1, &font_tex);
 
-    glActiveTexture(GL_TEXTURE0 + 1);
+    glActiveTexture(GL_TEXTURE0 + 2);
     glBindTexture(GL_TEXTURE_2D, font_tex);
     std::vector<uint8_t> zeros(tex_w * tex_h, 0);
 #ifdef __EMSCRIPTEN__

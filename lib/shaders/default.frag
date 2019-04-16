@@ -2,7 +2,8 @@ R"(
 uniform bool containsText; 
 uniform bool useColorTex;
  
-uniform sampler2D fontTex; 
+uniform sampler2D fontTex;
+uniform sampler2D alphaTex;
 uniform sampler2D colorTex;
  
 varying vec3 fNormal; 
@@ -26,8 +27,8 @@ void main()
 #endif
     } else {
         if (useColorTex) {
-            color.xyz = texture2D(colorTex, vec2(fTexCoord.x, 0.0)).xyz;
-            color.w = fTexCoord.y;
+            color.rgb = texture2D(colorTex, vec2(fTexCoord)).rgb;
+            color.a = texture2D(alphaTex, vec2(fTexCoord)).r;
         } else {
             color = fColor; 
         }
