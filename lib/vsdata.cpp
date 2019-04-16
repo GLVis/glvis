@@ -353,10 +353,10 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
        Y_hi = (1.0 - a_hi) * miny + a_hi * maxy;
        if (GetUseTexture()) {
            color_bar.addQuad<gl3::VertexTex>(
-               {{minx, Y_lo, posz},{(float) a_lo,1.f}},
-               {{maxx, Y_lo, posz},{(float) a_lo,1.f}},
-               {{maxx, Y_hi, posz},{(float) a_hi,1.f}},
-               {{minx, Y_hi, posz},{(float) a_hi,1.f}}
+               {{minx, Y_lo, posz},{(float) a_lo, 0.f}},
+               {{maxx, Y_lo, posz},{(float) a_lo, 0.f}},
+               {{maxx, Y_hi, posz},{(float) a_hi, 0.f}},
+               {{minx, Y_hi, posz},{(float) a_hi, 0.f}}
            );
        } else {
            MySetColor(a_lo, rgba_lo);
