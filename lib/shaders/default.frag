@@ -1,8 +1,4 @@
 R"(
-uniform bool containsText; 
-uniform bool useColorTex;
- 
-uniform sampler2D fontTex;
 uniform sampler2D alphaTex;
 uniform sampler2D colorTex;
  
@@ -17,23 +13,13 @@ vec4 blinnPhong(in vec3 pos, in vec3 norm, in vec4 color);
 void main() 
 {
     fragmentClipPlane();
-    vec4 color;
-    if (containsText) {
-
+    vec4 color = fColor * texture2D(colorTex, vec2(fTexCoord));
 #ifdef GL_ES
-        color = fColor * vec4(1.0, 1.0, 1.0, texture2D(fontTex, fTexCoord).a);
+    color.a = texture2D(alphaTex, vec2(fTexCoord)).a;
 #else
-        color = fColor * vec4(1.0, 1.0, 1.0, texture2D(fontTex, fTexCoord).r);
+    color.a = texture2D(alphaTex, vec2(fTexCoord)).r;
 #endif
-    } else {
-        if (useColorTex) {
-            color.rgb = texture2D(colorTex, vec2(fTexCoord)).rgb;
-            color.a = texture2D(alphaTex, vec2(fTexCoord)).r;
-        } else {
-            color = fColor; 
-        }
-        color = blinnPhong(fPosition, fNormal, color);
-    }
+    color = blinnPhong(fPosition, fNormal, color);
     gl_FragColor = color;
 }
 )"

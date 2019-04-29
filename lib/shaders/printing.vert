@@ -28,12 +28,8 @@ void main()
 { 
     vec4 pos = modelViewMatrix * vec4(vertex, 1.0);
     vec3 eye_normal = normalize(normalMatrix * normal);
-    if (useColorTex) {
-        fColor.rgb = texture2DLod(colorTex, vec2(texCoord0), 0.0).rgb;
-        fColor.a = texture2DLod(alphaTex, vec2(texCoord0), 0.0).r;
-    } else {
-        fColor = color;
-    }
+    fColor = color * texture2DLod(colorTex, vec2(texCoord0), 0.0);
+    fColor.a = texture2DLod(alphaTex, vec2(texCoord0), 0.0).r;
     fColor = blinnPhong(pos.xyz, eye_normal, fColor);
     //colors normally get clamped after fragment shader stage
     fColor = clamp(fColor, 0.0, 1.0);

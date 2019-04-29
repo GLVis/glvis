@@ -33,6 +33,10 @@ void paletteSet(int num);
  * Gets the palette color array.
  */
 double * paletteGet();
+/**
+ * Rebind the color and alpha textures to their texture units.
+ */
+void paletteRebind();
 
 int paletteGetSize();
 

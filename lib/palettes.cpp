@@ -4781,7 +4781,7 @@ void _paletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 }
 
-void _paletteRebind() {
+void paletteRebind() {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, palette_tex[curr_palette][use_smooth]);
     glActiveTexture(GL_TEXTURE1);
@@ -4789,46 +4789,59 @@ void _paletteRebind() {
     glActiveTexture(GL_TEXTURE0);
 }
 
-void paletteInit() {
-    if (first_init) {
-        Init_Palettes();
-        glGenTextures(Num_RGB_Palettes * 2, &(palette_tex[0][0]));
-        glGenTextures(1, &alpha_tex);
-        first_init = false;
-    }
+void paletteInit()
+{
+   if (first_init)
+   {
+      Init_Palettes();
+      //generate a black default texture
+      //modulation with default texture will just pass through input color
+      glBindTexture(GL_TEXTURE_2D, 0);
+      int black_color = 0xFFFFFFFF;
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &black_color);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    for (int i = 0; i < Num_RGB_Palettes; i++) {
-        _paletteToTextureDiscrete(RGB_Palettes[i], RGB_Palettes_Sizes[i], palette_tex[i][0]);
-        _paletteToTextureSmooth(RGB_Palettes[i], RGB_Palettes_Sizes[i], palette_tex[i][1]);
-    }
-    // set alpha texture to 1.0
-    float alphaTexData[4096 * 2];
-    std::fill(alphaTexData, alphaTexData + 4096*2, 1.0);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, alpha_tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 4096, 2, 0, GL_RED, GL_FLOAT, alphaTexData);
+      glGenTextures(Num_RGB_Palettes * 2, &(palette_tex[0][0]));
+      glGenTextures(1, &alpha_tex);
+      first_init = false;
+   }
 
+   for (int i = 0; i < Num_RGB_Palettes; i++)
+   {
+      _paletteToTextureDiscrete(RGB_Palettes[i], RGB_Palettes_Sizes[i], palette_tex[i][0]);
+      _paletteToTextureSmooth(RGB_Palettes[i], RGB_Palettes_Sizes[i], palette_tex[i][1]);
+   }
+   // set alpha texture to 1.0
+   float alphaTexData[4096 * 2];
+   std::fill(alphaTexData, alphaTexData + 4096 * 2, 1.0);
+   glActiveTexture(GL_TEXTURE1);
+   glBindTexture(GL_TEXTURE_2D, alpha_tex);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 4096, 2, 0, GL_RED, GL_FLOAT, alphaTexData);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glActiveTexture(GL_TEXTURE0);
-    _paletteRebind();
+
+   glActiveTexture(GL_TEXTURE0);
+   paletteRebind();
 }
 
 void paletteUseDiscrete() {
     use_smooth = 0;
-    _paletteRebind();
+    paletteRebind();
 }
 
 void paletteUseSmooth() {
     use_smooth = 1;
-    _paletteRebind();
+    paletteRebind();
 }
 
 void paletteSet(int num) {
     curr_palette = num;
-    _paletteRebind();
+    paletteRebind();
 }
 
 double * paletteGet() {
@@ -4857,7 +4870,12 @@ void GenerateAlphaTexture(float matAlpha, float matAlphaCenter) {
       }
    }
    glActiveTexture(GL_TEXTURE1);
+   glBindTexture(GL_TEXTURE_2D, alpha_tex);
+#ifdef __EMSCRIPTEN__
+   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 1, 4096, 1, GL_ALPHA, GL_FLOAT, alphaTexData);
+#else
    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 1, 4096, 1, GL_RED, GL_FLOAT, alphaTexData);
+#endif
    glActiveTexture(GL_TEXTURE0);
 }
 

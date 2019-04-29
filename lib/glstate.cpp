@@ -1,4 +1,5 @@
 #include "glstate.hpp"
+#include "visual.hpp"
 #include <string>
 #include <regex>
 #include <iostream>
@@ -279,22 +280,16 @@ void GlState::initShaderState(GLuint program) {
     //Texture unit 2: font atlas
     GLuint locColorTex = glGetUniformLocation(program, "colorTex");
     GLuint locAlphaTex = glGetUniformLocation(program, "alphaTex");
-    GLuint locFontTex = glGetUniformLocation(program, "fontTex");
     glUniform1i(locColorTex, 0);
     glUniform1i(locAlphaTex, 1);
-    glUniform1i(locFontTex, 2);
     // Set render type uniforms
     locContainsText = glGetUniformLocation(program, "containsText");
-    locUseColorTex = glGetUniformLocation(program, "useColorTex");
     if (_shaderMode == RENDER_COLOR) {
         glUniform1i(locContainsText, GL_FALSE);
-        glUniform1i(locUseColorTex, GL_FALSE);
     } else if (_shaderMode == RENDER_COLOR_TEX) {
         glUniform1i(locContainsText, GL_FALSE);
-        glUniform1i(locUseColorTex, GL_TRUE);
     } else { //_shaderMode == RENDER_TEXT
         glUniform1i(locContainsText, GL_TRUE);
-        glUniform1i(locUseColorTex, GL_FALSE);
     }
     // Set lighting uniforms
     glUniform1i(locNumLights, gl_lighting ? _num_lights : 0);
@@ -311,4 +306,19 @@ void GlState::initShaderState(GLuint program) {
     glUniform4fv(locClipPlane, 1, glm::value_ptr(_clip_plane));
     // Set transform matrix uniforms
     loadMatrixUniforms(true);
+}
+
+void GlState::setModeRenderText()
+{
+   if (_shaderMode != RENDER_TEXT)
+   {
+      glDepthMask(GL_FALSE);
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      glUniform1i(locContainsText, GL_TRUE);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, 0);
+      GetFont()->bindFontTex();
+      _shaderMode = RENDER_TEXT;
+   }
 }

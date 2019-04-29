@@ -128,13 +128,11 @@ void TextBuffer::buffer() {
             buf_data.insert(buf_data.end(), tris, tris + 8 * 6);
         }
     }
+    if (buf_data.size() == 0) { return; }
     _size = buf_data.size() / 8;
-    if (*_handle == 0) {
-        glGenBuffers(1, _handle.get());
-    }
+    if (*_handle == 0) { glGenBuffers(1, _handle.get()); }
     glBindBuffer(GL_ARRAY_BUFFER, *_handle);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * buf_data.size(), buf_data.data(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void TextBuffer::getObjectSize(const std::string& text, int& w, int& h) {
@@ -175,7 +173,6 @@ void TextBuffer::draw() {
     
     GetGlState()->disableAttribArray(GlState::ATTR_TEXT_VERTEX);
     GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD1);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     GetGlState()->setModeColor();
 }

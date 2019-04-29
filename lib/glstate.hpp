@@ -15,6 +15,7 @@
 #include "platform_gl.hpp"
 
 #include "material.hpp"
+#include "palettes.hpp"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -156,6 +157,7 @@ public:
       , default_program(0)
       , feedback_program(0)
       , global_vao(0)
+      , _static_color {1.f, 1.f, 1.f, 1.f}
       , _ambient {0.2, 0.2, 0.2, 1.0}
    , _clip_plane(0.0, 0.0, 0.0, 0.0)
    , _attr_enabled {false}
@@ -299,6 +301,11 @@ public:
          glEnableVertexAttribArray(attr);
          _attr_enabled[attr] = true;
       }
+      if (attr == ATTR_TEXCOORD0)
+      {
+         float passthrough[4] = {1.f, 1.f, 1.f, 1.f};
+         glVertexAttrib4fv(ATTR_COLOR, passthrough);
+      }
    }
 
    void disableAttribArray(GlState::shader_attrib attr)
@@ -308,7 +315,7 @@ public:
          glDisableVertexAttribArray(attr);
          _attr_enabled[attr] = false;
       }
-      if (attr == ATTR_COLOR)
+      if (attr == ATTR_COLOR || attr == ATTR_TEXCOORD0)
       {
          glVertexAttrib4fv(ATTR_COLOR, _static_color);
       }
@@ -433,17 +440,7 @@ public:
    /**
     * Prepares the shader pipeline for text rendering.
     */
-   void setModeRenderText()
-   {
-      if (_shaderMode != RENDER_TEXT)
-      {
-         glDepthMask(GL_FALSE);
-         glEnable(GL_BLEND);
-         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-         glUniform1i(locContainsText, GL_TRUE);
-         _shaderMode = RENDER_TEXT;
-      }
-   }
+   void setModeRenderText();
 
    /**
     * Prepares the shader pipeline for rendering with color textures.
@@ -462,9 +459,9 @@ public:
          }
          glUniform1i(locContainsText, GL_FALSE);
       }
+      paletteRebind();
       if (_shaderMode != RENDER_COLOR_TEX)
       {
-         glUniform1i(locUseColorTex, GL_TRUE);
          _shaderMode = RENDER_COLOR_TEX;
       }
    }
@@ -486,9 +483,11 @@ public:
          }
          glUniform1i(locContainsText, GL_FALSE);
       }
+      paletteRebind();
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, 0);
       if (_shaderMode != RENDER_COLOR)
       {
-         glUniform1i(locUseColorTex, GL_FALSE);
          _shaderMode = RENDER_COLOR;
       }
    }
