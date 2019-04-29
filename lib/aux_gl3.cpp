@@ -18,88 +18,82 @@
 using namespace gl3;
 
 void Vertex::setupAttribLayout() {
-    GetGlState()->setModeColor();
     int loc_vtx = GlState::ATTR_VERTEX;
-    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
+    glEnableVertexAttribArray(GlState::ATTR_VERTEX);
     glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, coord));
 }
 
 void VertexColor::setupAttribLayout() {
-    GetGlState()->setModeColor();
     int loc_vtx = GlState::ATTR_VERTEX;
     int loc_color = GlState::ATTR_COLOR;
-    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
-    GetGlState()->enableAttribArray(GlState::ATTR_COLOR);
+    glEnableVertexAttribArray(GlState::ATTR_VERTEX);
+    glEnableVertexAttribArray(GlState::ATTR_COLOR);
     glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(VertexColor), (void*)(void*)offsetof(VertexColor, coord));
     glVertexAttribPointer(loc_color, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(VertexColor), (void*)offsetof(VertexColor, color));
 }
 
 void VertexColor::clearAttribLayout() {
-    GetGlState()->disableAttribArray(GlState::ATTR_COLOR);
+    glDisableVertexAttribArray(GlState::ATTR_COLOR);
 }
 
 void VertexTex::setupAttribLayout() {
-    GetGlState()->setModeColorTexture();
     int loc_vtx = GlState::ATTR_VERTEX;
     int loc_tex = GlState::ATTR_TEXCOORD0;
-    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
-    GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD0);
+    glEnableVertexAttribArray(GlState::ATTR_VERTEX);
+    glEnableVertexAttribArray(GlState::ATTR_TEXCOORD0);
     glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(VertexTex), (void*)offsetof(VertexTex, coord));
     glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(VertexTex), (void*)offsetof(VertexTex, texCoord));
 }
 
 void VertexTex::clearAttribLayout() {
-    GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD0);
+    glDisableVertexAttribArray(GlState::ATTR_TEXCOORD0);
 }
 
 void VertexNorm::setupAttribLayout() {
-    GetGlState()->setModeColor();
     int loc_vtx = GlState::ATTR_VERTEX;
     int loc_nor = GlState::ATTR_NORMAL;
-    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
-    GetGlState()->enableAttribArray(GlState::ATTR_NORMAL);
+    glEnableVertexAttribArray(GlState::ATTR_VERTEX);
+    glEnableVertexAttribArray(GlState::ATTR_NORMAL);
     glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(VertexNorm), (void*)offsetof(VertexNorm, coord));
     glVertexAttribPointer(loc_nor, 3, GL_FLOAT, GL_FALSE, sizeof(VertexNorm), (void*)offsetof(VertexNorm, norm));
 }
 
 void VertexNorm::clearAttribLayout() {
-    GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
+    glDisableVertexAttribArray(GlState::ATTR_NORMAL);
 }
 
 void VertexNormColor::setupAttribLayout() {
-    GetGlState()->setModeColor();
     int loc_vtx = GlState::ATTR_VERTEX;
     int loc_nor = GlState::ATTR_NORMAL;
     int loc_color = GlState::ATTR_COLOR;
-    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
-    GetGlState()->enableAttribArray(GlState::ATTR_NORMAL);
-    GetGlState()->enableAttribArray(GlState::ATTR_COLOR);
+    glEnableVertexAttribArray(GlState::ATTR_VERTEX);
+    glEnableVertexAttribArray(GlState::ATTR_NORMAL);
+    glEnableVertexAttribArray(GlState::ATTR_COLOR);
     glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(VertexNormColor), (void*)offsetof(VertexNormColor, coord));
     glVertexAttribPointer(loc_nor, 3, GL_FLOAT, GL_FALSE, sizeof(VertexNormColor), (void*)offsetof(VertexNormColor, norm));
     glVertexAttribPointer(loc_color, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(VertexNormColor), (void*)offsetof(VertexNormColor, color));
 }
 
 void VertexNormColor::clearAttribLayout() {
-    GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
-    GetGlState()->disableAttribArray(GlState::ATTR_COLOR);
+    glDisableVertexAttribArray(GlState::ATTR_NORMAL);
+    glDisableVertexAttribArray(GlState::ATTR_COLOR);
 }
 
 void VertexNormTex::setupAttribLayout() {
-    GetGlState()->setModeColorTexture();
     int loc_vtx = GlState::ATTR_VERTEX;
     int loc_nor = GlState::ATTR_NORMAL;
     int loc_tex = GlState::ATTR_TEXCOORD0;
-    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
-    GetGlState()->enableAttribArray(GlState::ATTR_NORMAL);
-    GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD0);
+    glEnableVertexAttribArray(GlState::ATTR_VERTEX);
+    glEnableVertexAttribArray(GlState::ATTR_NORMAL);
+    glEnableVertexAttribArray(GlState::ATTR_TEXCOORD0);
     glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(VertexNormTex), (void*)offsetof(VertexNormTex, coord));
     glVertexAttribPointer(loc_nor, 3, GL_FLOAT, GL_FALSE, sizeof(VertexNormTex), (void*)offsetof(VertexNormTex, norm));
     glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(VertexNormTex), (void*)offsetof(VertexNormTex, texCoord));
 }
 
 void VertexNormTex::clearAttribLayout() {
-    GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
-    GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD0);
+    glDisableVertexAttribArray(GlState::ATTR_NORMAL);
+    glDisableVertexAttribArray(GlState::ATTR_TEXCOORD0);
 }
 
 void TextBuffer::buffer() {
@@ -160,9 +154,9 @@ void TextBuffer::draw() {
     int loc_txt_vtx = GlState::ATTR_TEXT_VERTEX;
     int loc_tex = GlState::ATTR_TEXCOORD1;
 
-    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
-    GetGlState()->enableAttribArray(GlState::ATTR_TEXT_VERTEX);
-    GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD1);
+    glEnableVertexAttribArray(GlState::ATTR_VERTEX);
+    glEnableVertexAttribArray(GlState::ATTR_TEXT_VERTEX);
+    glEnableVertexAttribArray(GlState::ATTR_TEXCOORD1);
     
     glBindBuffer(GL_ARRAY_BUFFER, *_handle);
 
@@ -171,8 +165,9 @@ void TextBuffer::draw() {
     glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 5));
     glDrawArrays(GL_TRIANGLES, 0, _size);
     
-    GetGlState()->disableAttribArray(GlState::ATTR_TEXT_VERTEX);
-    GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD1);
+    glDisableVertexAttribArray(GlState::ATTR_TEXT_VERTEX);
+    glDisableVertexAttribArray(GlState::ATTR_TEXCOORD1);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     GetGlState()->setModeColor();
 }

@@ -308,14 +308,21 @@ public:
 
 class IVertexBuffer
 {
+private:
 public:
    virtual ~IVertexBuffer() { }
+   /**
+    * Clears the data stored in the vertex buffer.
+    */
    virtual void clear() = 0;
-   virtual void buffer() = 0;
-   virtual void draw() = 0;
+   virtual GLuint get_handle() const = 0;
+   virtual void set_handle(GLuint dev_hnd) = 0;
 
    virtual size_t count() const = 0;
    virtual GLenum get_shape() const = 0;
+   virtual size_t get_stride() const = 0;
+   virtual const void* data_begin() const = 0;
+   virtual const void* data_end() const = 0;
 };
 
 template<typename T>
@@ -325,13 +332,11 @@ private:
    GLenum _shape;
    std::vector<T> _data;
    std::unique_ptr<GLuint> _handle;
-   size_t _buffered_size;
 
 public:
    VertexBuffer(GLenum shape)
       : _shape(shape)
       , _handle(new GLuint)
-      , _buffered_size(0)
    {
       glGenBuffers(1, _handle.get());
    }
@@ -347,10 +352,15 @@ public:
    VertexBuffer(VertexBuffer&&) = default;
    VertexBuffer& operator = (VertexBuffer&&) = default;
 
+   virtual void clear()
+   {
+      _data.clear();
+   }
+
    /**
-    * Returns the number of vertices buffered on the GPU.
+    * Returns the number of vertices.
     */
-   virtual size_t count() const { return _buffered_size; }
+   virtual size_t count() const { return _data; }
 
    /**
     * Gets the primitive type contained by the vertex buffer.
@@ -358,48 +368,10 @@ public:
    virtual GLenum get_shape() const { return _shape; }
 
    /**
-    * Clears the buffer of all data.
+    * Gets the stride between vertices.
     */
-   virtual void clear()
-   {
-      _data.clear();
-      _buffered_size = 0;
-   }
+   virtual size_t get_stride() const { return sizeof(T); }
 
-   /**
-    * Buffers vertex data onto the GPU.
-    */
-   virtual void buffer()
-   {
-      if (_data.empty())
-      {
-         return;
-      }
-      glBindBuffer(GL_ARRAY_BUFFER, *_handle);
-      if (_buffered_size > 0) {
-         glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
-      }
-      glBufferData(GL_ARRAY_BUFFER,
-                   sizeof(T) * _data.size(),
-                   _data.data(),
-                   GL_STATIC_DRAW);
-      _buffered_size = _data.size();
-   }
-
-   /**
-    * Draws the vertex data buffered on the GPU.
-    */
-   virtual void draw()
-   {
-      if (_buffered_size == 0)
-      {
-         return;
-      }
-      glBindBuffer(GL_ARRAY_BUFFER, *_handle);
-      T::setupAttribLayout();
-      glDrawArrays(_shape, 0, _buffered_size);
-      T::clearAttribLayout();
-   }
 
    /**
     * Add a vertex to the buffer.
@@ -418,7 +390,7 @@ public:
    }
 };
 
-class TextBuffer
+class TextBuffer : public IVertexBuffer
 {
 public:
    struct Entry
@@ -435,6 +407,7 @@ private:
    std::unique_ptr<GLuint> _handle;
    std::vector<Entry> _data;
    size_t _size;
+
 public:
    TextBuffer() : _handle(new GLuint(0)) { };
    ~TextBuffer()
@@ -466,20 +439,10 @@ public:
    ConstIterator end() const { return _data.end(); }
 
    /**
-    * Buffers the text onto the GPU.
-    */
-   void buffer();
-
-   /**
     * Gets the width and height of the bounding box containing the rendered
     * text.
     */
    static void getObjectSize(const std::string& text, int& w, int& h);
-
-   /**
-    * Draws the text buffered onto the GPU.
-    */
-   void draw();
 
    /**
     * Clears the text buffer.
@@ -510,6 +473,7 @@ private:
    TextBuffer text_buffer;
 
    friend class GlBuilder;
+   friend class MeshRenderer;
 
    template<typename Vert>
    VertexBuffer<Vert> * getBuffer(GLenum shape)
@@ -607,60 +571,6 @@ public:
          }
       }
       text_buffer.clear();
-   }
-
-   /**
-    * Buffers the drawable object onto the GPU.
-    */
-   void buffer()
-   {
-      for (int i = 0; i < NUM_LAYOUTS; i++)
-      {
-         for (size_t j = 0; j < NUM_SHAPES; j++)
-         {
-            if (buffers[i][j])
-            {
-               buffers[i][j]->buffer();
-            }
-         }
-      }
-      text_buffer.buffer();
-   }
-
-   /**
-    * Draws the object.
-    */
-   void draw()
-   {
-      for (int i = 0; i < NUM_LAYOUTS; i++)
-      {
-         for (size_t j = 0; j < NUM_SHAPES; j++)
-         {
-            if (!buffers[i][j])
-            {
-               continue;
-            }
-            if (GlDrawable::buf_hook)
-            {
-               GlDrawable::buf_hook->preDraw(buffers[i][j].get());
-            }
-            buffers[i][j]->draw();
-            if (GlDrawable::buf_hook)
-            {
-               GlDrawable::buf_hook->postDraw(buffers[i][j].get());
-            }
-         }
-      }
-      if (GlDrawable::buf_hook)
-      {
-         GlDrawable::buf_hook->preDraw(text_buffer);
-         text_buffer.draw();
-         GlDrawable::buf_hook->postDraw(text_buffer);
-      }
-      else
-      {
-         text_buffer.draw();
-      }
    }
 };
 
