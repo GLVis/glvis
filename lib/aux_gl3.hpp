@@ -309,20 +309,28 @@ public:
 class IVertexBuffer
 {
 private:
+   GLuint _handle;
 public:
    virtual ~IVertexBuffer() { }
+
+   GLuint get_handle() const { return _handle; }
+   void set_handle(GLuint dev_hnd) { _handle = dev_hnd; }
    /**
     * Clears the data stored in the vertex buffer.
     */
    virtual void clear() = 0;
-   virtual GLuint get_handle() const = 0;
-   virtual void set_handle(GLuint dev_hnd) = 0;
-
+   /**
+    * Gets the number of vertices contained in the buffer.
+    */
    virtual size_t count() const = 0;
+   /**
+    * Gets the primitive type contained by the vertex buffer.
+    */
    virtual GLenum get_shape() const = 0;
+   /**
+    * Gets the stride between vertices.
+    */
    virtual size_t get_stride() const = 0;
-   virtual const void* data_begin() const = 0;
-   virtual const void* data_end() const = 0;
 };
 
 template<typename T>
@@ -331,47 +339,23 @@ class VertexBuffer : public IVertexBuffer
 private:
    GLenum _shape;
    std::vector<T> _data;
-   std::unique_ptr<GLuint> _handle;
 
 public:
-   VertexBuffer(GLenum shape)
-      : _shape(shape)
-      , _handle(new GLuint)
-   {
-      glGenBuffers(1, _handle.get());
-   }
+   typedef std::vector<T>::const_iterator ConstIterator;
 
-   ~VertexBuffer()
-   {
-      if (_handle)
-      {
-         glDeleteBuffers(1, _handle.get());
-      }
-   }
+   VertexBuffer(GLenum shape) : _shape(shape) { }
+   ~VertexBuffer() { }
 
    VertexBuffer(VertexBuffer&&) = default;
    VertexBuffer& operator = (VertexBuffer&&) = default;
 
-   virtual void clear()
-   {
-      _data.clear();
-   }
-
-   /**
-    * Returns the number of vertices.
-    */
-   virtual size_t count() const { return _data; }
-
-   /**
-    * Gets the primitive type contained by the vertex buffer.
-    */
+   virtual void clear() { _data.clear(); }
+   virtual size_t count() const { return _data.size(); }
    virtual GLenum get_shape() const { return _shape; }
-
-   /**
-    * Gets the stride between vertices.
-    */
    virtual size_t get_stride() const { return sizeof(T); }
 
+   ConstIterator begin() const { return _data.begin(); };
+   ConstIterator end() const { return _data.end(); };
 
    /**
     * Add a vertex to the buffer.
@@ -404,19 +388,12 @@ public:
    typedef std::vector<Entry>::iterator Iterator;
    typedef std::vector<Entry>::const_iterator ConstIterator;
 private:
-   std::unique_ptr<GLuint> _handle;
    std::vector<Entry> _data;
-   size_t _size;
+   size_t _num_chars;
 
 public:
-   TextBuffer() : _handle(new GLuint(0)) { };
-   ~TextBuffer()
-   {
-      if (_handle)
-      {
-         glDeleteBuffers(1, _handle.get());
-      }
-   }
+   TextBuffer() : _num_chars(0) { }
+   ~TextBuffer() { }
 
    /**
     * Adds a text element at the specified local space (pre-transform) coordinates.
@@ -424,6 +401,7 @@ public:
    void addText(float x, float y, float z, const std::string& text)
    {
       _data.emplace_back(x, y, z, text);
+      _num_chars += text.length();
    }
 
    /**
@@ -444,14 +422,10 @@ public:
     */
    static void getObjectSize(const std::string& text, int& w, int& h);
 
-   /**
-    * Clears the text buffer.
-    */
-   void clear()
-   {
-      _data.clear();
-      _size = 0;
-   }
+   virtual void clear() { _data.clear(); }
+   virtual size_t count() const { return _num_chars * 6; };
+   virtual GLenum get_shape() const { return GL_TRIANGLES; };
+   virtual size_t get_stride() const { return sizeof(float) * 8; };
 };
 
 class IDrawHook

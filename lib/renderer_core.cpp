@@ -339,7 +339,7 @@ void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
     glBindBuffer(GL_ARRAY_BUFFER, buf.get_handle());
     glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
     glBufferData(GL_ARRAY_BUFFER, buf.count() * buf.get_stride(),
-                 buf.data_begin(), GL_STATIC_DRAW);
+                 buf.get_data(), GL_STATIC_DRAW);
 }
 
 void CoreGLDevice::bufferToDevice(TextBuffer &t_buf)
@@ -371,6 +371,7 @@ void CoreGLDevice::bufferToDevice(TextBuffer &t_buf)
             buf_data.insert(buf_data.end(), tris, tris + 8 * 6);
         }
     }
+    if (buf_data.size() == 0) { return; }
     if (t_buf.get_handle() == 0)
     {
         GLuint handle;
@@ -383,32 +384,75 @@ void CoreGLDevice::bufferToDevice(TextBuffer &t_buf)
 
 void CoreGLDevice::drawDeviceBuffer(array_layout layout, const IVertexBuffer &buf)
 {
-  if (buf.get_handle() == 0) { return; }
-  if (buf.count() == 0) { return; }
-  switch (layout) {
+    if (buf.get_handle() == 0) { return; }
+    if (buf.count() == 0) { return; }
+    glBindBuffer(GL_ARRAY_BUFFER, buf.get_handle());
+    switch (layout) {
     case Vertex::layout:
     {
-      Vertex::setupAttribLayout();
+        Vertex::setupAttribLayout();
+        glVertexAttrib4fv(ATTR_COLOR, _static_color.data());
+        glVertexAttrib3f(ATTR_NORMAL, 0.f, 0.f, 1.f);
+        glDrawArrays(buf.get_shape(), 0, buf.count());
+        Vertex::clearAttribLayout();
+    }
+    break;
+    case VertexColor::layout:
+    {
+        VertexColor::setupAttribLayout();
+        glVertexAttrib3f(ATTR_NORMAL, 0.f, 0.f, 1.f);
+        glDrawArrays(buf.get_shape(), 0, buf.count());
+        VertexColor::clearAttribLayout();
+    }
+    break;
+    case VertexTex::layout:
+    {
+        VertexTex::setupAttribLayout();
+        glVertexAttrib4f(ATTR_COLOR, 1.f, 1.f, 1.f, 1.f);
+        glVertexAttrib3f(ATTR_NORMAL, 0.f, 0.f, 1.f);
+        glDrawArrays(buf.get_shape(), 0, buf.count());
+        VertexTex::clearAttribLayout();
     }
     break;
     case VertexNorm::layout:
     {
-      VertexNorm::
+        VertexNorm::setupAttribLayout();
+        glVertexAttrib4fv(ATTR_COLOR, _static_color.data());
+        glDrawArrays(buf.get_shape(), 0, buf.count());
+        VertexNorm::clearAttribLayout();
     }
-  }
-  if (layout == Vertex::layout || layout == VertexNorm::layout) {
-    glVertexAttrib4fv(ATTR_COLOR, _static_color.data());
-  }
-  if (!(layout == VertexNorm::layout
-      || layout == VertexNormColor::layout
-      || layout == VertexNormTex::layout)) {
-    glVertexAttrib3f(ATTR_NORMAL, 0.f, 0.f, 1.f);
-  }
-  glBindBuffer(GL_ARRAY_BUFFER, buf.get_handle());
-  glDrawArrays(buf.get_shape(), 0, buf.count());
+    break;
+    case VertexNormColor::layout:
+    {
+        VertexNormColor::setupAttribLayout();
+        glDrawArrays(buf.get_shape(), 0, buf.count());
+        VertexNormColor::clearAttribLayout();
+    }
+    break;
+    case VertexNormTex::layout:
+    {
+        VertexNormTex::setupAttribLayout();
+        glVertexAttrib4f(ATTR_COLOR, 1.f, 1.f, 1.f, 1.f);
+        glDrawArrays(buf.get_shape(), 0, buf.count());
+        VertexNormTex::clearAttribLayout();
+    }
+    break;
+    }
 }
 void CoreGLDevice::drawDeviceBuffer(const TextBuffer& t_buf)
 {
+    glEnableVertexAttribArray(ATTR_VERTEX);
+    glEnableVertexAttribArray(ATTR_TEXT_VERTEX);
+    glEnableVertexAttribArray(ATTR_TEXCOORD1);
+    glBindBuffer(GL_ARRAY_BUFFER, t_buf.get_handle());
+
+    glVertexAttribPointer(ATTR_VERTEX, 3, GL_FLOAT, GL_FALSE, t_buf.get_stride(), 0);
+    glVertexAttribPointer(ATTR_VERTEX, 2, GL_FLOAT, GL_FALSE, t_buf.get_stride(), (void*)(sizeof(float) * 3));
+    glVertexAttribPointer(ATTR_VERTEX, 2, GL_FLOAT, GL_FALSE, t_buf.get_stride(), (void*)(sizeof(float) * 5));
+    glDrawArrays(GL_TRIANGLES, 0, t_buf.count());
+
+    glDisableVertexAttribArray(ATTR_TEXT_VERTEX);
+    glDisableVertexAttribArray(ATTR_TEXCOORD1);
 }
 
 }

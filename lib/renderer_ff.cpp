@@ -4,6 +4,43 @@
 namespace gl3
 {
 
+void FFDrawVertex(Vertex v)
+{
+    glVertex3fv(v.coord.data());
+}
+
+void FFDrawVertexColor(VertexColor vc)
+{
+    glColor4ubv(vc.color.data());
+    glVertex3fv(vc.coord.data());
+}
+
+void FFDrawVertexTex(VertexTex vt)
+{
+    glTexCoord2fv(vt.texCoord.data());
+    glVertex3fv(vt.coord.data());
+}
+
+void FFDrawVertexNorm(VertexNorm vn)
+{
+    glNormal3fv(vn.norm.data());
+    glVertex3fv(vn.coord.data());
+}
+
+void FFDrawVertexNormColor(VertexNormColor vnc)
+{
+    glColor4ubv(vnc.color.data());
+    glNormal3fv(vnc.norm.data());
+    glVertex3fv(vnc.coord.data());
+}
+
+void FFDrawVertexNormTex(VertexNormTex vnc)
+{
+    glTexCoord2fv(vnc.texCoord.data());
+    glNormal3fv(vnc.norm.data());
+    glVertex3fv(vnc.coord.data());
+}
+
 void FFGLDevice::init()
 {
     GLDevice::init();
@@ -85,65 +122,57 @@ void FFGLDevice::setClipPlaneEqn(const std::array<double, 4>& eqn)
 
 void FFGLDevice::bufferToDevice(array_layout layout, IVertexBuffer& buf)
 {
+    if (buf.count() == 0) { return; }
     if (buf.get_handle() == 0) {
         int new_hnd = glGenLists(1);
         buf.set_handle(new_hnd);
     }
     glNewList(buf.get_handle(), GL_COMPILE);
     glBegin(buf.get_shape());
-    const void * buf_data = buf.data_begin();
-    while (buf_data < buf.data_end()) {
-        switch(layout) {
-            case LAYOUT_VTX:
-            {
-                const Vertex* vtx = (const Vertex*) buf_data;
-                glVertex3fv(vtx->coord.data());
-                buf_data = vtx+1;
+
+    switch(layout) {
+        case LAYOUT_VTX:
+        {
+            for (const Vertex& v : static_cast<VertexBuffer<Vertex>&>(buf)) {
+                FFDrawVertex(v);
             }
-            break;
-            case LAYOUT_VTX_COLOR:
-            {
-                const VertexColor* vtx = (const VertexColor*) buf_data;
-                glVertex3fv(vtx->coord.data());
-                glColor3ubv(vtx->color.data());
-                buf_data = vtx+1;
-            }
-            break;
-            case LAYOUT_VTX_TEXTURE0:
-            {
-                const VertexTex* vtx = (const VertexTex*) buf_data;
-                glVertex3fv(vtx->coord.data());
-                glTexCoord2fv(vtx->texCoord.data());
-                buf_data = vtx+1;
-            }
-            break;
-            case LAYOUT_VTX_NORMAL:
-            {
-                const VertexNorm* vtx = (const VertexNorm*) buf_data;
-                glVertex3fv(vtx->coord.data());
-                glNormal3fv(vtx->norm.data());
-                buf_data = vtx+1;
-            }
-            break;
-            case LAYOUT_VTX_NORMAL_COLOR:
-            {
-                const VertexNormColor* vtx = (const VertexNormColor*) buf_data;
-                glVertex3fv(vtx->coord.data());
-                glNormal3fv(vtx->norm.data());
-                glColor3ubv(vtx->color.data());
-                buf_data = vtx+1;
-            }
-            break;
-            case LAYOUT_VTX_NORMAL_TEXTURE0:
-            {
-                const VertexNormTex* vtx = (const VertexNormTex*) buf_data;
-                glVertex3fv(vtx->coord.data());
-                glNormal3fv(vtx->norm.data());
-                glTexCoord2fv(vtx->texCoord.data());
-                buf_data = vtx+1;
-            }
-            break;
         }
+        break;
+        case LAYOUT_VTX_COLOR:
+        {
+            for (const VertexColor& v : static_cast<VertexBuffer<VertexColor>&>(buf)) {
+                FFDrawVertexColor(v);
+            }
+        }
+        break;
+        case LAYOUT_VTX_TEXTURE0:
+        {
+            for (const VertexTex& v : static_cast<VertexBuffer<VertexTex>&>(buf)) {
+                FFDrawVertexTex(v);
+            }
+        }
+        break;
+        case LAYOUT_VTX_NORMAL:
+        {
+            for (const VertexNorm& v : static_cast<VertexBuffer<VertexNorm>&>(buf)) {
+                FFDrawVertexNorm(v);
+            }
+        }
+        break;
+        case LAYOUT_VTX_NORMAL_COLOR:
+        {
+            for (const VertexNormColor& v : static_cast<VertexBuffer<VertexNormColor>&>(buf)) {
+                FFDrawVertexNormColor(v);
+            }
+        }
+        break;
+        case LAYOUT_VTX_NORMAL_TEXTURE0:
+        {
+            for (const VertexNormTex& v : static_cast<VertexBuffer<VertexNormTex>&>(buf)) {
+                FFDrawVertexNormTex(v);
+            }
+        }
+        break;
     }
     glEndList();
 }
@@ -165,9 +194,9 @@ void FFGLDevice::drawDeviceBuffer(array_layout layout, const IVertexBuffer& buf)
     } else {
         glColor4f(1.f, 1.f, 1.f, 1.f);
     }
-    if (layout == VertexNorm::layout
+    if (!(layout == VertexNorm::layout
         || layout == VertexNormColor::layout
-        || layout == VertexNormTex::layout) {
+        || layout == VertexNormTex::layout)) {
         glNormal3f(0.f, 0.f, 1.f);
     }
     glCallList(buf.get_handle());

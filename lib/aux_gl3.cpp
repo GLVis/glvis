@@ -96,39 +96,6 @@ void VertexNormTex::clearAttribLayout() {
     glDisableVertexAttribArray(GlState::ATTR_TEXCOORD0);
 }
 
-void TextBuffer::buffer() {
-    std::vector<float> buf_data;
-    float tex_w = GetFont()->getAtlasWidth();
-    float tex_h = GetFont()->getAtlasHeight();
-    for (auto& e : _data) {
-        float x = 0.f, y = 0.f;
-        for (char c : e.text) {
-            GlVisFont::glyph g = GetFont()->GetTexChar(c);
-            float cur_x = x + g.bear_x;
-            float cur_y = -y - g.bear_y;
-            x += g.adv_x;
-            y += g.adv_y;
-            if (!g.w || !g.h) {
-                continue;
-            }
-            float tris[] = {
-                e.rx, e.ry, e.rz, cur_x,       -cur_y,       g.tex_x,               0,           0,
-                e.rx, e.ry, e.rz, cur_x + g.w, -cur_y,       g.tex_x + g.w / tex_w, 0,           0,
-                e.rx, e.ry, e.rz, cur_x,       -cur_y - g.h, g.tex_x,               g.h / tex_h, 0,
-                e.rx, e.ry, e.rz, cur_x + g.w, -cur_y,       g.tex_x + g.w / tex_w, 0,           0,
-                e.rx, e.ry, e.rz, cur_x,       -cur_y - g.h, g.tex_x,               g.h / tex_h, 0,
-                e.rx, e.ry, e.rz, cur_x + g.w, -cur_y - g.h, g.tex_x + g.w / tex_w, g.h / tex_h, 0
-            };
-            buf_data.insert(buf_data.end(), tris, tris + 8 * 6);
-        }
-    }
-    if (buf_data.size() == 0) { return; }
-    _size = buf_data.size() / 8;
-    if (*_handle == 0) { glGenBuffers(1, _handle.get()); }
-    glBindBuffer(GL_ARRAY_BUFFER, *_handle);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * buf_data.size(), buf_data.data(), GL_STATIC_DRAW);
-}
-
 void TextBuffer::getObjectSize(const std::string& text, int& w, int& h) {
     float x = 0.f;
     w = 0.f, h = 0.f;
@@ -142,34 +109,6 @@ void TextBuffer::getObjectSize(const std::string& text, int& w, int& h) {
         w = (int)(cur_x + g.w);
         h = std::max(h, (int)g.h);
     }
-}
-
-void TextBuffer::draw() {
-    if (_size == 0 || *_handle == 0) {
-        return;
-    }
-    GetGlState()->setModeRenderText();
-    
-    int loc_rast_vtx = GlState::ATTR_VERTEX;
-    int loc_txt_vtx = GlState::ATTR_TEXT_VERTEX;
-    int loc_tex = GlState::ATTR_TEXCOORD1;
-
-    glEnableVertexAttribArray(GlState::ATTR_VERTEX);
-    glEnableVertexAttribArray(GlState::ATTR_TEXT_VERTEX);
-    glEnableVertexAttribArray(GlState::ATTR_TEXCOORD1);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, *_handle);
-
-    glVertexAttribPointer(loc_rast_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, 0);
-    glVertexAttribPointer(loc_txt_vtx, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 3));
-    glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 5));
-    glDrawArrays(GL_TRIANGLES, 0, _size);
-    
-    glDisableVertexAttribArray(GlState::ATTR_TEXT_VERTEX);
-    glDisableVertexAttribArray(GlState::ATTR_TEXCOORD1);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    GetGlState()->setModeColor();
 }
 
 IDrawHook * GlDrawable::buf_hook = nullptr;
