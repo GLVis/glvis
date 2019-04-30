@@ -1,0 +1,4 @@
+*.o
+*.bc
+lib/libglvis.js
+lib/libglvis.a

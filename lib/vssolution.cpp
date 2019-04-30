@@ -1013,15 +1013,15 @@ void DrawTriangle(gl3::GlDrawable& buff,
    {
       return;
    }
-   
+
    float rgba[3][4];
    std::array<float, 2> texcoord[3];
    std::array<float, 3> fpts[3];
    std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
 
    for (int i = 0; i < 3; i++) {
-      
-      texcoord[i] = { GetColorCoord(cv[i], minv, maxv), 1.0 };
+
+      texcoord[i] = { static_cast<float>(GetColorCoord(cv[i], minv, maxv)), 1.0 };
       MySetColor(cv[i], minv, maxv, rgba[i]);
       fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
    }
@@ -1047,14 +1047,14 @@ void DrawQuad(gl3::GlDrawable& buff,
    {
       return;
    }
-   
+
    std::array<float, 2> texcoord[4];
    float rgba[4][4];
    std::array<float, 3> fpts[4];
    std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
-   
-   for (int i = 0; i < 4; i++) { 
-      texcoord[i] = { GetColorCoord(cv[i], minv, maxv), 1.0 };
+
+   for (int i = 0; i < 4; i++) {
+      texcoord[i] = { static_cast<float>(GetColorCoord(cv[i], minv, maxv)), 1.0 };
       MySetColor(cv[i], minv, maxv, rgba[i]);
       fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
    }
