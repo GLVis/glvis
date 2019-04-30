@@ -346,9 +346,10 @@ void SendExposeEvent()
 
 void MyReshape(GLsizei w, GLsizei h)
 {
-   state->setViewport(w, h);
+   GetGlState()->setViewport(w, h);
 
-   state->projection.identity();
+   GlMatrix projmtx;
+   projmtx.identity();
 
    double ViewCenterX = locscene->ViewCenterX;
    double ViewCenterY = locscene->ViewCenterY;
@@ -358,13 +359,13 @@ void MyReshape(GLsizei w, GLsizei h)
       double scale = locscene->ViewScale;
       if (w <= h)
       {
-         state->projection.ortho(-1.0, 1.0, -double(h)/w, double(h)/w, -10, 10);
+         projmtx.ortho(-1.0, 1.0, -double(h)/w, double(h)/w, -10, 10);
       }
       else
       {
-         state->projection.ortho(-double(w)/h, double(w)/h, -1, 1, -10, 10);
+         projmtx.ortho(-double(w)/h, double(w)/h, -1, 1, -10, 10);
       }
-      state->projection.scale(scale, scale, 1.0);
+      projmtx.scale(scale, scale, 1.0);
    }
    else
    {
@@ -374,9 +375,10 @@ void MyReshape(GLsizei w, GLsizei h)
          ViewAngle = (360.0/M_PI)*atan( tan( ViewAngle*(M_PI/360.0) ) *
                                         double(h)/w );
 
-      state->projection.perspective(ViewAngle, double(w)/h, 0.1, 5.0);
+      projmtx.perspective(ViewAngle, double(w)/h, 0.1, 5.0);
    }
-   state->projection.translate(-ViewCenterX, -ViewCenterY, 0.0);
+   projmtx.translate(-ViewCenterX, -ViewCenterY, 0.0);
+   locscene->SetProjectionMtx(projmtx.mtx);
 }
 
 void MyExpose(GLsizei w, GLsizei h)
@@ -478,7 +480,7 @@ inline void ComputeSphereAngles(int &newx, int &newy,
    double r, x, y, rr;
    const double maxr = 0.996194698091745532295;
 
-   state->getViewport(viewport);
+   GetGlState()->getViewport(viewport);
    r = sqrt(sqr(viewport[2])+sqr(viewport[3]))*M_SQRT1_2;
 
    x = double(newx-viewport[0]-viewport[2]/2) / r;
@@ -530,7 +532,8 @@ void LeftButtonLoc (EventInfo *event)
 
          ComputeSphereAngles(newx, newy, new_sph_u, new_sph_t);
 
-         state->modelView.identity();
+         GlMatrix newrot;
+         newrot.identity();
 
          double scoord[3], ncoord[3], inprod, cross[3];
          scoord[0] = scoord[1] = cos(sph_u);     scoord[2] = sin(sph_u);
@@ -540,10 +543,10 @@ void LeftButtonLoc (EventInfo *event)
          inprod = InnerProd(scoord, ncoord);
          CrossProd(scoord, ncoord, cross);
 
-         state->modelView.mult(locscene->cam.TransposeRotMatrix());
-         state->modelView.rotate(acos(inprod)*(180.0/M_PI), cross[0], cross[1], cross[2]);
-         state->modelView.mult(srot.mtx);
-         locscene->rotmat = state->modelView.mtx;
+         newrot.mult(locscene->cam.TransposeRotMatrix());
+         newrot.rotate(acos(inprod)*(180.0/M_PI), cross[0], cross[1], cross[2]);
+         newrot.mult(srot.mtx);
+         locscene->rotmat = newrot.mtx;
       }
    }
    else if (event->keymod & KMOD_ALT)
@@ -619,7 +622,7 @@ void MiddleButtonLoc (EventInfo *event)
       {
          scale = 0.4142135623730950488/tan(locscene->ViewAngle*(M_PI/360));
       }
-      state->getViewport(vp);
+      GetGlState()->getViewport(vp);
       if (vp[2] < vp[3])
       {
          scale *= vp[2];
@@ -710,7 +713,7 @@ void RightButtonLoc (EventInfo *event)
       }
       cout << "(x,y,z) = (" << x << ',' << y << ',' << z << ')' << endl;
       GLfloat light[] = { float(x), float(y), float(z), 0.0f };
-      state->setLightPosition(0, light);
+      GetGlState()->setLightPosition(0, light);
    }
    else if ( !( event->keymod & KMOD_CTRL ) )
    {
@@ -1357,7 +1360,7 @@ void ShrinkWindow()
 {
    GLint viewport[4];
 
-   state->getViewport(viewport);
+   GetGlState()->getViewport(viewport);
    int w = viewport[2], h = viewport[3];
    w = (int)ceil(w / window_scale_factor);
    h = (int)ceil(h / window_scale_factor);
@@ -1371,7 +1374,7 @@ void EnlargeWindow()
 {
    GLint viewport[4];
 
-   state->getViewport(viewport);
+   GetGlState()->getViewport(viewport);
    int w = viewport[2], h = viewport[3];
    w = (int)ceil(w * window_scale_factor);
    h = (int)ceil(h * window_scale_factor);

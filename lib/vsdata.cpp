@@ -653,9 +653,10 @@ void KeyRPressed()
 {
    locscene -> spinning = 0;
    RemoveIdleFunc(MainLoop);
-   GetGlState()->modelView.identity();
-   locscene->translmat = GetGlState()->modelView.mtx;
-   Set_Light();
+
+   GlMatrix newrot;
+   newrot.identity();
+   locscene->translmat = newrot.mtx;
 
    switch (vsdata -> key_r_state)
    {
@@ -663,33 +664,33 @@ void KeyRPressed()
          break;
 
       case 1:
-         GetGlState()->modelView.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
          break;
 
       case 2:
-         GetGlState()->modelView.rotate(-90.0, 1.0f, 0.0f, 0.0f);
-         GetGlState()->modelView.rotate(-90.0, 0.0f, 0.0f, 1.0f);
+         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         newrot.rotate(-90.0, 0.0f, 0.0f, 1.0f);
          break;
 
       case 3:
-         GetGlState()->modelView.rotate(-90.0, 1.0f, 0.0f, 0.0f);
-         GetGlState()->modelView.rotate(-180.0, 0.0f, 0.0f, 1.0f);
+         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         newrot.rotate(-180.0, 0.0f, 0.0f, 1.0f);
          break;
 
       case 4:
-         GetGlState()->modelView.rotate(-90.0, 1.0f, 0.0f, 0.0f);
-         GetGlState()->modelView.rotate(-270.0, 0.0f, 0.0f, 1.0f);
+         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         newrot.rotate(-270.0, 0.0f, 0.0f, 1.0f);
          break;
 
       case 5:
-         GetGlState()->modelView.rotate(180.0, 1.0f, 0.0f, 0.0f);
+         newrot.rotate(180.0, 1.0f, 0.0f, 0.0f);
          break;
    }
 
    // if (locscene -> view != 2) // make 'R' work the same in 2D and 3D
    vsdata -> key_r_state = (vsdata -> key_r_state+1)%6;
 
-   locscene->rotmat = GetGlState()->modelView.mtx;
+   locscene->rotmat = newrot.mtx;
    SendExposeEvent();
 }
 

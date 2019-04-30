@@ -110,6 +110,8 @@ protected:
 
    SdlWindow * wnd;
    GlState * gl;
+
+   glm::mat4 _projmat;
 public:
    VisualizationScene();
    virtual ~VisualizationScene();
@@ -143,6 +145,8 @@ public:
    void CenterObject2D();
 
    void ModelView();
+
+   void SetProjectionMtx(glm::mat4 projection) { _projmat = projection; }
 
    /// This is set by SetVisualizationScene
    int view;
