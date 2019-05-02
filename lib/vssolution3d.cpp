@@ -3463,25 +3463,26 @@ void VisualizationSceneSolution3d::Draw()
       {
          if (drawlsurf)
          {
-            DrawColorBar(minv,maxv,&level,&levels);
+            PrepareColorBar(minv,maxv,&level,&levels);
          }
          else
          {
-            DrawColorBar(minv,maxv,&level);
+            PrepareColorBar(minv,maxv,&level);
          }
       }
       else
       {
          if (drawlsurf)
          {
-            DrawColorBar(minv,maxv,NULL,&levels);
+            PrepareColorBar(minv,maxv,NULL,&levels);
          }
          else
          {
-            DrawColorBar(minv,maxv);
+            PrepareColorBar(minv,maxv);
          }
       }
    }
+   DrawCommon();
 
    // define and enable the clipping plane
    if (cplane)
@@ -3545,32 +3546,15 @@ void VisualizationSceneSolution3d::Draw()
    if (cplane)
    {
       gl->disableClipPlane();
-      DrawRuler();
       if (cp_drawmesh)
       {
          cplines_buf.draw();
       }
       gl->enableClipPlane();
    }
-   else
-   {
-      DrawRuler();
-   }
    // draw lines
    if (drawmesh)
    {
       line_buf.draw();
-   }
-
-   if (cplane)
-   {
-      gl->disableClipPlane();
-   }
-
-   // draw axes
-   if (drawaxes)
-   {
-      axes_buf.draw();
-      DrawCoordinateCross();
    }
 }

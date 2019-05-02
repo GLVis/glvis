@@ -303,21 +303,10 @@ void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
    builder.glEnd();
 }
 
-void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
+void VisualizationSceneScalarData::PrepareColorBar (double minval, double maxval,
                                                  Array<double> *level,
                                                  Array<double> *levels)
 {
-   /*
-   glMatrixMode(GL_MODELVIEW);
-   glPushMatrix();
-   glLoadIdentity();
-   */
-
-   GlMatrix mv_save = gl->modelView;
-   GlMatrix proj_save = gl->projection;
-
-   gl->modelView.identity();
-   gl->loadMatrixUniforms();
 
    int i;
 
@@ -444,39 +433,13 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       }
    }
    color_bar.buffer();
-
-   bool wasLit = gl->disableLight();
-
-   Set_Black_Material();
-
-   // GLfloat textcol[3] = {0,0,0};
-   // glColor3fv (textcol);
-
-   color_bar.draw();
-
-   if (colorbar == 1) {
-       DrawCaption();
-   }
-   
-   if (wasLit)
-       gl->enableLight();
-
-   // glMultMatrixd (rotmat);
-   // glScaled(xscale, yscale, zscale);
-   // glTranslated(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
-   gl->modelView = mv_save;
-   gl->projection = proj_save;
-   gl->loadMatrixUniforms();
 }
 
 // Draw a centered caption at the top (visible with the colorbar)
-void VisualizationSceneScalarData::DrawCaption()
+void VisualizationSceneScalarData::PrepareCaption()
 {
-   if (plot_caption.empty())
-   {
-      colorbar = 2; // no caption -> switch to "colorbar without caption" mode
-      return;
-   }
+   bool empty = plot_caption.empty();
+   colorbar = (colorbar ? empty+1 : !empty);
 
    string caption(plot_caption);
    if (!extra_caption.empty())
@@ -484,86 +447,10 @@ void VisualizationSceneScalarData::DrawCaption()
       caption += " (" + extra_caption + ")";
    }
 
-   int width = 0, height = 0;
-   
-   gl3::GlDrawable capt_buf;
-   capt_buf.addText(0, 0, 0, caption);
-   capt_buf.buffer();
-   gl3::TextBuffer::getObjectSize(caption, width, height);
-   
-   GlMatrix proj_save = gl->projection;
-   GlMatrix mv_save = gl->modelView;
-
-   gl->projection.identity();
-   gl->modelView.identity();
-
-   GLint viewport[4];
-   gl->getViewport(viewport);
-   
-   gl->modelView.translate(-(double)width/viewport[2],
-                        1.0-5*(double)height/viewport[3], 0.0);
-
-//   gl->modelView.mult(cam.RotMatrix());
-//   gl->modelView.mult(rotmat);
-   gl->loadMatrixUniforms();
-    //glRasterPos3f(0.0f, 0.0f, 0.0f);
-   capt_buf.draw();
-   
-   gl->projection = proj_save;
-   gl->modelView = mv_save;
-   gl->loadMatrixUniforms();
-}
-
-void VisualizationSceneScalarData::DrawCoordinateCross()
-{
-   if (drawaxes == 3)
-   {
-      return;
-   }
-
-   if (!coord_cross_init) {
-       float lenx, leny, lenz;
-       lenx = leny = lenz = 1;
-
-       coord_cross.addLines<gl3::Vertex>({
-           {0, 0, 0}, {0, 0, 0.9},
-           {0, 0, 0}, {0, 0.9, 0},
-           {0, 0, 0}, {0.9, 0, 0}
-       });
-       coord_cross.addCone(0,0,.9,0,0,1);
-       coord_cross.addCone(0,.9,0,0,1,0);
-       coord_cross.addCone(.9,0,0,1,0,0);
-       coord_cross.addText(lenx, 0.0f, 0.0f, a_label_x);
-       coord_cross.addText(0.0f, leny, 0.0f, a_label_y);
-       coord_cross.addText(0.0f, 0.0f, lenz, a_label_z);
-       coord_cross.buffer();
-       coord_cross_init = true;
-   }
-
-   GlMatrix proj_save = gl->projection,
-            mv_save   = gl->modelView;
-
-   GLint viewport[4];
-   gl->getViewport(viewport);
-
-   gl->projection.identity();
-   gl->modelView.identity();
-   gl->modelView.translate(-1, -1, 0.0);
-   gl->modelView.scale(40.0 / viewport[2], 40.0 / viewport[3], 1);
-   gl->modelView.translate(2.0, 2.0, 0.0);
-   gl->modelView.mult(cam.RotMatrix());
-   gl->modelView.mult(rotmat);
-   gl->loadMatrixUniforms();
-
-   // glEnable (GL_COLOR_MATERIAL);
-
-   // glLineWidth (1.0f);
-
-   coord_cross.draw();
-
-   gl->projection = proj_save;
-   gl->modelView = mv_save;
-   gl->loadMatrixUniforms();
+   caption_buf.clear();
+   caption_buf.addText(0, 0, 0, caption);
+   caption_buf.buffer();
+   gl3::TextBuffer::getObjectSize(caption, caption_w, caption_h);
 }
 
 VisualizationSceneScalarData * vsdata;
@@ -579,7 +466,7 @@ void KeyCPressed()
 {
    cout << "Enter new caption: " << flush;
    std::getline(cin, plot_caption);
-   vsdata->UpdateCaption(); // turn on or off the caption
+   vsdata->PrepareCaption(); // turn on or off the caption
    SendExposeEvent();
 }
 
@@ -966,11 +853,13 @@ void VisualizationSceneScalarData::ToggleLogscale(bool print)
    {
       PrintLogscale(true);
    }
+   PrepareRuler();
 }
 
 void VisualizationSceneScalarData::ToggleRuler()
 {
    ruler_on = (ruler_on + 1) % 3;
+   PrepareRuler();
 }
 
 void VisualizationSceneScalarData::RulerPosition()
@@ -1006,87 +895,128 @@ void VisualizationSceneScalarData::RulerPosition()
    }
    cout << "New ruler position: (" << ruler_x << ','
         << ruler_y << ',' << ruler_z << ")" << endl;
+   PrepareRuler();
 }
 
-void VisualizationSceneScalarData::DrawRuler(bool log_z)
+void VisualizationSceneScalarData::PrepareRuler(bool log_z)
 {
+   float pos_z = LogVal(ruler_z, log_z);
+   float x_f[2] = {(float) x[0], (float) x[1]};
+   float y_f[2] = {(float) y[0], (float) y[1]};
+   float z_f[2] = {(float) z[0], (float) z[1]};
+   float ruler_x_f = (float) ruler_x,
+         ruler_y_f = (float) ruler_y;
+   ruler_buf.clear();
+   if (ruler_on == 2)
+   {
+         std::array<uint8_t, 4> color = gl3::ColorU8(0.8, 0.8, 0.8, 1.0);
+         std::array<float, 3> norm = { 0, 0, 1 };
+         ruler_buf.addQuad<gl3::VertexNormColor>(
+            {{x_f[0], y_f[0], pos_z},norm,color}, 
+            {{x_f[1], y_f[0], pos_z},norm,color},
+            {{x_f[1], y_f[1], pos_z},norm,color},
+            {{x_f[0], y_f[1], pos_z},norm,color}
+         );
+
+         std::array<float, 3> norm_2 = { 0, 1, 0 };
+         ruler_buf.addQuad<gl3::VertexNormColor>(
+            {{x_f[0], ruler_y_f, z_f[0]},norm_2,color},
+            {{x_f[0], ruler_y_f, z_f[1]},norm_2,color},
+            {{x_f[1], ruler_y_f, z_f[1]},norm_2,color},
+            {{x_f[1], ruler_y_f, z_f[0]},norm_2,color}
+         );
+
+         std::array<float, 3> norm_3 = { 1, 0, 0 };
+         ruler_buf.addQuad<gl3::VertexNormColor>(
+            {{ruler_x_f, y_f[0], z_f[0]},norm_3,color},
+            {{ruler_x_f, y_f[1], z_f[0]},norm_3,color},
+            {{ruler_x_f, y_f[1], z_f[1]},norm_3,color},
+            {{ruler_x_f, y_f[0], z_f[1]},norm_3,color}
+         );
+
+      ruler_buf.addLines<gl3::Vertex>({
+         {x_f[0], y_f[0], pos_z}, {x_f[1], y_f[0], pos_z},
+         {x_f[1], y_f[0], pos_z}, {x_f[1], y_f[1], pos_z},
+         {x_f[1], y_f[1], pos_z}, {x_f[0], y_f[1], pos_z},
+         {x_f[0], y_f[1], pos_z}, {x_f[0], y_f[0], pos_z},
+
+         {x_f[0], ruler_y_f, z_f[0]}, {x_f[1], ruler_y_f, z_f[0]},
+         {x_f[1], ruler_y_f, z_f[0]}, {x_f[1], ruler_y_f, z_f[1]},
+         {x_f[1], ruler_y_f, z_f[1]}, {x_f[0], ruler_y_f, z_f[1]},
+         {x_f[0], ruler_y_f, z_f[1]}, {x_f[0], ruler_y_f, z_f[0]},
+
+         {ruler_x_f, y_f[0], z_f[0]}, {ruler_x_f, y_f[1], z_f[0]},
+         {ruler_x_f, y_f[1], z_f[0]}, {ruler_x_f, y_f[1], z_f[1]},
+         {ruler_x_f, y_f[1], z_f[1]}, {ruler_x_f, y_f[0], z_f[1]},
+         {ruler_x_f, y_f[0], z_f[1]}, {ruler_x_f, y_f[0], z_f[0]}
+      });
+   }
+
+   ruler_buf.addLines<gl3::Vertex>({
+      {x_f[0], ruler_y_f, pos_z},
+      {x_f[1], ruler_y_f, pos_z},
+      {ruler_x_f, y_f[0], pos_z},
+      {ruler_x_f, y_f[1], pos_z},
+      {ruler_x_f, ruler_y_f, z_f[0]},
+      {ruler_x_f, ruler_y_f, z_f[1]}
+   });
+
+   ruler_buf.buffer();
+}
+
+void VisualizationSceneScalarData::DrawCommon()
+{
+   GlMatrix proj_save = gl->projection;
+   GlMatrix mv_save = gl->modelView;
+   
+   GLint viewport[4];
+   gl->getViewport(viewport);
+   gl->projection.identity();
+   gl->modelView.identity();
+   if (colorbar) // draw colorbar
+   {
+      gl->projection = proj_save;
+      gl->loadMatrixUniforms();
+      color_bar.draw();
+      gl->projection.identity();
+      if (colorbar == 1) // draw caption
+      {
+         gl->modelView.translate(-(double)caption_w / viewport[2],
+                                 1.0 - 5 * (double)caption_h / viewport[3], 0.0);
+         gl->loadMatrixUniforms();
+         caption_buf.draw();
+      }
+   }
+   if (drawaxes && drawaxes != 3) // draw coordinate cross
+   {
+      gl->projection.identity();
+      gl->modelView.identity();
+      gl->modelView.translate(-1, -1, 0.0);
+      gl->modelView.scale(40.0 / viewport[2], 40.0 / viewport[3], 1);
+      gl->modelView.translate(2.0, 2.0, 0.0);
+      gl->modelView.mult(cam.RotMatrix());
+      gl->modelView.mult(rotmat);
+      gl->loadMatrixUniforms();
+      coord_cross_buf.draw();
+   }
+   gl->projection = proj_save;
+   gl->modelView = mv_save;
+   gl->loadMatrixUniforms();
    if (ruler_on)
    {
-      gl3::GlDrawable ruler, ruler_lines;
-      float pos_z = LogVal(ruler_z, log_z);
-      float x_f[2] = {(float) x[0], (float) x[1]};
-      float y_f[2] = {(float) y[0], (float) y[1]};
-      float z_f[2] = {(float) z[0], (float) z[1]};
-      float ruler_x_f = (float) ruler_x,
-            ruler_y_f = (float) ruler_y;
-      if (ruler_on == 2)
-      {
-          std::array<uint8_t, 4> color = gl3::ColorU8(0.8, 0.8, 0.8, 1.0);
-          std::array<float, 3> norm = { 0, 0, 1 };
-          ruler.addQuad<gl3::VertexNormColor>(
-              {{x_f[0], y_f[0], pos_z},norm,color}, 
-              {{x_f[1], y_f[0], pos_z},norm,color},
-              {{x_f[1], y_f[1], pos_z},norm,color},
-              {{x_f[0], y_f[1], pos_z},norm,color}
-          );
-
-          std::array<float, 3> norm_2 = { 0, 1, 0 };
-          ruler.addQuad<gl3::VertexNormColor>(
-              {{x_f[0], ruler_y_f, z_f[0]},norm_2,color},
-              {{x_f[0], ruler_y_f, z_f[1]},norm_2,color},
-              {{x_f[1], ruler_y_f, z_f[1]},norm_2,color},
-              {{x_f[1], ruler_y_f, z_f[0]},norm_2,color}
-          );
-
-          std::array<float, 3> norm_3 = { 1, 0, 0 };
-          ruler.addQuad<gl3::VertexNormColor>(
-              {{ruler_x_f, y_f[0], z_f[0]},norm_3,color},
-              {{ruler_x_f, y_f[1], z_f[0]},norm_3,color},
-              {{ruler_x_f, y_f[1], z_f[1]},norm_3,color},
-              {{ruler_x_f, y_f[0], z_f[1]},norm_3,color}
-          );
-
-         ruler_lines.addLines<gl3::Vertex>({
-            {x_f[0], y_f[0], pos_z}, {x_f[1], y_f[0], pos_z},
-            {x_f[1], y_f[0], pos_z}, {x_f[1], y_f[1], pos_z},
-            {x_f[1], y_f[1], pos_z}, {x_f[0], y_f[1], pos_z},
-            {x_f[0], y_f[1], pos_z}, {x_f[0], y_f[0], pos_z},
-
-            {x_f[0], ruler_y_f, z_f[0]}, {x_f[1], ruler_y_f, z_f[0]},
-            {x_f[1], ruler_y_f, z_f[0]}, {x_f[1], ruler_y_f, z_f[1]},
-            {x_f[1], ruler_y_f, z_f[1]}, {x_f[0], ruler_y_f, z_f[1]},
-            {x_f[0], ruler_y_f, z_f[1]}, {x_f[0], ruler_y_f, z_f[0]},
-
-            {ruler_x_f, y_f[0], z_f[0]}, {ruler_x_f, y_f[1], z_f[0]},
-            {ruler_x_f, y_f[1], z_f[0]}, {ruler_x_f, y_f[1], z_f[1]},
-            {ruler_x_f, y_f[1], z_f[1]}, {ruler_x_f, y_f[0], z_f[1]},
-            {ruler_x_f, y_f[0], z_f[1]}, {ruler_x_f, y_f[0], z_f[0]}
-         });
-      }
-
-      ruler_lines.addLines<gl3::Vertex>({
-          {x_f[0], ruler_y_f, pos_z},
-          {x_f[1], ruler_y_f, pos_z},
-          {ruler_x_f, y_f[0], pos_z},
-          {ruler_x_f, y_f[1], pos_z},
-          {ruler_x_f, ruler_y_f, z_f[0]},
-          {ruler_x_f, ruler_y_f, z_f[1]}
-      });
-
-      ruler.buffer();
-      ruler_lines.buffer();
-      Set_Material();
       if (light)
       {
          gl->enableLight();
       }
-      ruler.draw();
+      ruler_buf.draw();
       if (light)
       {
          gl->disableLight();
       }
-      Set_Black_Material();
-      ruler_lines.draw();
+   }
+   if (drawaxes)
+   {
+      axes_buf.draw();
    }
 }
 
@@ -1138,7 +1068,7 @@ void VisualizationSceneScalarData::Init()
    logscale = false;
    MySetColorLogscale = 0;
    SetLogA();
-   UpdateCaption(); // turn on or off the caption
+   PrepareCaption(); // turn on or off the caption
 
    CuttingPlane = NULL;
 
@@ -1223,6 +1153,8 @@ void VisualizationSceneScalarData::Init()
    ruler_y = 0.5 * (y[0] + y[1]);
    ruler_z = 0.5 * (z[0] + z[1]);
 
+   PrepareRuler();
+
    autoscale = 1;
 }
 
@@ -1282,6 +1214,7 @@ void VisualizationSceneScalarData::SetAxisLabels(const char * a_x,
    a_label_x = a_x;
    a_label_y = a_y;
    a_label_z = a_z;
+   PrepareAxes();
 }
 
 void VisualizationSceneScalarData::PrepareAxes()
@@ -1379,6 +1312,23 @@ void VisualizationSceneScalarData::PrepareAxes()
       axes_buf.addText(x[1], y[1], z[1], buf1.str());
    }
    axes_buf.buffer();
+
+   float lenx, leny, lenz;
+   lenx = leny = lenz = .95;
+
+   coord_cross_buf.clear();
+   coord_cross_buf.addLines<gl3::Vertex>({
+      {0, 0, 0}, {0, 0, 0.9},
+      {0, 0, 0}, {0, 0.9, 0},
+      {0, 0, 0}, {0.9, 0, 0}
+   });
+   coord_cross_buf.addCone(0,0,.9,0,0,1);
+   coord_cross_buf.addCone(0,.9,0,0,1,0);
+   coord_cross_buf.addCone(.9,0,0,1,0,0);
+   coord_cross_buf.addText(lenx, 0.0f, 0.0f, a_label_x);
+   coord_cross_buf.addText(0.0f, leny, 0.0f, a_label_y);
+   coord_cross_buf.addText(0.0f, 0.0f, lenz, a_label_z);
+   coord_cross_buf.buffer();
 }
 
 void VisualizationSceneScalarData::DrawPolygonLevelLines(

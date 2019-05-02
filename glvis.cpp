@@ -1024,7 +1024,7 @@ void ExecuteScriptCommand()
          char delim;
          scr >> ws >> delim;
          getline(scr, plot_caption, delim);
-         vs->UpdateCaption(); // turn on or off the caption
+         vs->PrepareCaption(); // turn on or off the caption
          MyExpose();
       }
       else

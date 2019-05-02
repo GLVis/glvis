@@ -111,6 +111,8 @@ public:
    virtual void FindNewBox(bool prepare);
    virtual void FindNewValueRange(bool prepare);
 
+   virtual void PrepareRuler()
+   { VisualizationSceneScalarData::PrepareRuler(false); }
    virtual void PrepareFlat();
    virtual void PrepareLines();
    virtual void Prepare();

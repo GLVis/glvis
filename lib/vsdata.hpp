@@ -66,9 +66,11 @@ protected:
    int auto_ref_max, auto_ref_max_surf_elem;
 
    gl3::GlDrawable axes_buf;
-   bool coord_cross_init = false,
-        color_bar_init = false;
-   gl3::GlDrawable coord_cross, color_bar;
+   gl3::GlDrawable coord_cross_buf;
+   gl3::GlDrawable color_bar;
+   gl3::GlDrawable ruler_buf;
+   gl3::GlDrawable caption_buf;
+   int caption_w, caption_h;
 
    void Init();
 
@@ -189,11 +191,7 @@ public:
 
    Mesh *GetMesh() { return mesh; }
 
-   void DrawColorBar(double minval, double maxval,
-                     Array<double> * level = NULL,
-                     Array<double> * levels = NULL);
-   void DrawCaption();
-   void DrawCoordinateCross();
+   void DrawCommon();
 
    double &GetMinV() { return minv; }
    double &GetMaxV() { return maxv; }
@@ -227,11 +225,11 @@ public:
    }
 
    // Turn on or off the caption
-   void UpdateCaption()
-   {
-      bool empty = plot_caption.empty();
-      colorbar = (colorbar ? empty+1 : !empty);
-   }
+   void PrepareCaption();
+
+   void PrepareColorBar(double minval, double maxval,
+                     Array<double> * level = NULL,
+                     Array<double> * levels = NULL);
 
    void SetAxisLabels(const char * a_x, const char * a_y, const char * a_z);
 
@@ -252,7 +250,8 @@ public:
 
    void ToggleRuler();
    void RulerPosition();
-   void DrawRuler(bool log_z = false);
+   virtual void PrepareRuler() { PrepareRuler(logscale); }
+   void PrepareRuler(bool log_z);
 
    void ToggleTexture();
 

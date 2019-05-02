@@ -552,7 +552,7 @@ int GLVisCommand::Execute()
       {
          cout << "Command: plot_caption: " << plot_caption << endl;
          ::plot_caption = plot_caption;
-         (*vs)->UpdateCaption(); // turn on or off the caption
+         (*vs)->PrepareCaption(); // turn on or off the caption
          SendExposeEvent();
          break;
       }

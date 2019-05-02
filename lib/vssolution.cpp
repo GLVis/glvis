@@ -2196,24 +2196,19 @@ void VisualizationSceneSolution::Draw()
 
    gl->disableClipPlane();
    gl->disableLight();
-
-#if 0
-   // Testing: moved the drawing of the colorbar at the end. If there are no
-   // undesired effects we can delete this disabled code. See also below.
-
    // draw colorbar
    if (colorbar)
    {
       if (drawmesh == 2)
       {
-         DrawColorBar(minv,maxv,&level);
+         PrepareColorBar(minv,maxv,&level);
       }
       else
       {
-         DrawColorBar(minv,maxv);
+         PrepareColorBar(minv,maxv);
       }
    }
-#endif
+   DrawCommon();
 
    if (draw_cp)
    {
@@ -2253,13 +2248,8 @@ void VisualizationSceneSolution::Draw()
    if (draw_cp)
    {
       gl->disableClipPlane();
-      DrawRuler(logscale);
       cp_buf.draw();
       gl->enableClipPlane();
-   }
-   else
-   {
-      DrawRuler(logscale);
    }
    if (drawbdr)
    {
@@ -2294,29 +2284,4 @@ void VisualizationSceneSolution::Draw()
       gl->disableClipPlane();
    }
 
-   // draw axes
-   if (drawaxes)
-   {
-      axes_buf.draw();
-      DrawCoordinateCross();
-   }
-
-#if 1
-   // Testing: moved the drawing of the colorbar from the beginning. If there
-   // are no undesired effects we can remove this comment and "#if 1". We can
-   // also do the same in vector, 3D, and vector 3D modes.
-
-   // draw colorbar
-   if (colorbar)
-   {
-      if (drawmesh == 2)
-      {
-         DrawColorBar(minv,maxv,&level);
-      }
-      else
-      {
-         DrawColorBar(minv,maxv);
-      }
-   }
-#endif
 }

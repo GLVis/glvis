@@ -1523,17 +1523,18 @@ void VisualizationSceneVector3d::Draw()
    {
       if (drawvector == 4)
       {
-         DrawColorBar(minv,maxv,&dvflevel);
+         PrepareColorBar(minv,maxv,&dvflevel);
       }
       else if (drawmesh == 2 || cp_drawmesh >= 2)
       {
-         DrawColorBar(minv,maxv,&level);
+         PrepareColorBar(minv,maxv,&level);
       }
       else
       {
-         DrawColorBar(minv,maxv);
+         PrepareColorBar(minv,maxv);
       }
    }
+   DrawCommon();
 
    // define and enable the clipping plane
    if (cplane)
@@ -1598,16 +1599,11 @@ void VisualizationSceneVector3d::Draw()
    if (cplane)
    {
       gl->disableClipPlane();
-      DrawRuler();
       if (cp_drawmesh)
       {
          cplines_buf.draw();
       }
       gl->enableClipPlane();
-   }
-   else
-   {
-      DrawRuler();
    }
 
    // draw lines
@@ -1622,17 +1618,5 @@ void VisualizationSceneVector3d::Draw()
       gl->setStaticColor(1.f, 0.f, 0.f);
       displine_buf.draw();
       Set_Black_Material();
-   }
-
-   if (cplane)
-   {
-      gl->disableClipPlane();
-   }
-
-   // draw axes
-   if (drawaxes)
-   {
-      axes_buf.draw();
-      DrawCoordinateCross();
    }
 }

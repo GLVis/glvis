@@ -976,13 +976,15 @@ void VisualizationSceneVector::Draw()
    {
       if (drawmesh == 2)
       {
-         DrawColorBar(minv,maxv,&level);
+         PrepareColorBar(minv,maxv,&level);
       }
       else
       {
-         DrawColorBar(minv,maxv);
+         PrepareColorBar(minv,maxv);
       }
    }
+
+   DrawCommon();
 
    if (draw_cp)
    {
@@ -1028,13 +1030,8 @@ void VisualizationSceneVector::Draw()
    if (draw_cp)
    {
       gl->disableClipPlane();
-      DrawRuler(logscale);
       cp_buf.draw();
       gl->enableClipPlane();
-   }
-   else
-   {
-      DrawRuler(logscale);
    }
 
    if (drawbdr)
@@ -1081,17 +1078,5 @@ void VisualizationSceneVector::Draw()
       {
          Set_Black_Material();
       }
-   }
-
-   if (draw_cp)
-   {
-      gl->disableClipPlane();
-   }
-
-   // draw axes
-   if (drawaxes)
-   {
-      axes_buf.draw();
-      DrawCoordinateCross();
    }
 }
