@@ -114,6 +114,8 @@ VisualizationScene::VisualizationScene()
     ViewScale = 1;
     ViewCenterX = 0.0;
     ViewCenterY = 0.0;
+
+    _background = BG_BLK;
 }
 
 VisualizationScene::~VisualizationScene() {}
@@ -218,4 +220,16 @@ void VisualizationScene::ModelView()
     gl->projection.mtx = _projmat;
     Set_Light();
     gl->loadMatrixUniforms();
+}
+
+glm::mat4 VisualizationScene::GetModelViewMtx()
+{
+   GlMatrix modelView;
+   modelView.identity();
+   modelView.mult(cam.TranslateMatrix());
+   modelView.mult(translmat);
+   modelView.mult(rotmat);
+   modelView.scale(xscale, yscale, zscale);
+   modelView.translate(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
+   return modelView.mtx;
 }

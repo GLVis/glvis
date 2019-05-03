@@ -4,11 +4,11 @@
 namespace gl3
 {
 
-void MeshRenderer::render()
+void MeshRenderer::render(const RenderQueue& queued)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    for (auto& q_elem : _queued) {
-        const MeshRenderingParams& params = q_elem.first;
+    for (auto& q_elem : queued) {
+        const RenderParams& params = q_elem.first;
         _device->setTransformMatrices(params.model_view.mtx, params.projection.mtx);
         _device->setMaterial(params.mesh_material);
         _device->setNumLights(params.num_pt_lights);
@@ -22,7 +22,7 @@ void MeshRenderer::render()
         //aggregate buffers with common parameters
         std::vector<pair<array_layout, IVertexBuffer*>> texture_bufs, no_texture_bufs;
         std::vector<TextBuffer*> text_bufs;
-        for (GlDrawable* batch_elem : q_elem.second) {
+        for (GlDrawable* batch_elem : *(q_elem.second)) {
             for (int i = 0; i < NUM_LAYOUTS; i++) {
                 for (int j = 0; j < GlDrawable::NUM_SHAPES; j++) {
                     if (!batch_elem->buffers[i][j])
@@ -75,12 +75,6 @@ void MeshRenderer::buffer(GlDrawable* buf)
         }
     }
     _device->bufferToDevice(buf->text_buffer);
-}
-
-void MeshRenderer::queueDraw(MeshRenderingParams params,
-                             const std::vector<GlDrawable*>& queue)
-{
-    _queued[params] = queue;
 }
 
 void GLDevice::init()

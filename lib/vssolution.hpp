@@ -124,6 +124,8 @@ public:
 
    virtual void Draw();
 
+   virtual gl3::SceneInfo GetSceneObjs();
+
    void ToggleDrawBdr()
    { drawbdr = !drawbdr; }
 

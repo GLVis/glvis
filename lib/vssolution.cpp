@@ -1241,7 +1241,7 @@ void VisualizationSceneSolution::PrepareWithNormals()
       }
       poly.glEnd();
    }
-   disp_buf.buffer();
+   updated_bufs.emplace_back(&disp_buf);
 }
 
 void VisualizationSceneSolution::PrepareFlat()
@@ -1275,7 +1275,7 @@ void VisualizationSceneSolution::PrepareFlat()
          DrawQuad(disp_buf, pts, col, minv, maxv);
       }
    }
-   disp_buf.buffer();
+   updated_bufs.emplace_back(&disp_buf);
 }
 
 // determines how quads and their level lines are drawn
@@ -1384,7 +1384,7 @@ void VisualizationSceneSolution::PrepareFlat2()
       }
 #endif
    }
-   disp_buf.buffer();
+   updated_bufs.emplace_back(&disp_buf);
 }
 
 void VisualizationSceneSolution::Prepare()
@@ -1494,7 +1494,7 @@ void VisualizationSceneSolution::Prepare()
          }
       }
    }
-   disp_buf.buffer();
+   updated_bufs.emplace_back(&disp_buf);
 }
 
 void VisualizationSceneSolution::PrepareLevelCurves()
@@ -1525,7 +1525,7 @@ void VisualizationSceneSolution::PrepareLevelCurves()
       RG.SetSize(vertices.Size());
       DrawLevelCurves(build, RG, pointmat, values, vertices.Size(), level);
    }
-   lcurve_buf.buffer();
+   updated_bufs.emplace_back(&lcurve_buf);
 }
 
 void VisualizationSceneSolution::DrawLevelCurves(
@@ -1626,7 +1626,7 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
 
       DrawLevelCurves(build, RG, pointmat, values, sides, level);
    }
-   lcurve_buf.buffer();
+   updated_bufs.emplace_back(&lcurve_buf);
 }
 
 void VisualizationSceneSolution::PrepareLines()
@@ -1659,7 +1659,7 @@ void VisualizationSceneSolution::PrepareLines()
       lb.glEnd();
    }
 
-   line_buf.buffer();
+   updated_bufs.emplace_back(&line_buf);
 }
 
 double VisualizationSceneSolution::GetElementLengthScale(int k)
@@ -1751,7 +1751,7 @@ void VisualizationSceneSolution::PrepareElementNumbering1()
       DrawNumberedMarker(e_nums_buf,xx,dx,k);
    }
 
-   e_nums_buf.buffer();
+   updated_bufs.emplace_back(&e_nums_buf);
 }
 
 void VisualizationSceneSolution::PrepareElementNumbering2()
@@ -1782,7 +1782,7 @@ void VisualizationSceneSolution::PrepareElementNumbering2()
       DrawNumberedMarker(e_nums_buf,xx,dx,i);
    }
 
-   e_nums_buf.buffer();
+   updated_bufs.emplace_back(&e_nums_buf);
 }
 
 void VisualizationSceneSolution::PrepareVertexNumbering()
@@ -1840,7 +1840,7 @@ void VisualizationSceneSolution::PrepareVertexNumbering1()
       }
    }
 
-   v_nums_buf.buffer();
+   updated_bufs.emplace_back(&v_nums_buf);
 }
 
 void VisualizationSceneSolution::PrepareVertexNumbering2()
@@ -1878,7 +1878,7 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
       }
    }
 
-   v_nums_buf.buffer();
+   updated_bufs.emplace_back(&v_nums_buf);
 }
 
 void VisualizationSceneSolution::PrepareNumbering()
@@ -1919,7 +1919,7 @@ void VisualizationSceneSolution::PrepareLines2()
       }
    }
 
-   line_buf.buffer();
+   updated_bufs.emplace_back(&line_buf);
 }
 
 void VisualizationSceneSolution::PrepareLines3()
@@ -1953,7 +1953,7 @@ void VisualizationSceneSolution::PrepareLines3()
       lb.glEnd();
    }
 
-   line_buf.buffer();
+   updated_bufs.emplace_back(&line_buf);
 }
 
 void VisualizationSceneSolution::UpdateValueRange(bool prepare)
@@ -2045,7 +2045,7 @@ void VisualizationSceneSolution::PrepareBoundary()
       shrink = shr;
    }
 
-   bdr_buf.buffer();
+   updated_bufs.emplace_back(&bdr_buf);
 }
 
 void VisualizationSceneSolution::PrepareCP()
@@ -2140,7 +2140,7 @@ void VisualizationSceneSolution::PrepareCP()
    }
 
    bld.glEnd();
-   cp_buf.buffer();
+   updated_bufs.emplace_back(&cp_buf);
 }
 
 void VisualizationSceneSolution::DrawCPLine(
@@ -2180,108 +2180,45 @@ void VisualizationSceneSolution::DrawCPLine(
    }
 }
 
-void VisualizationSceneSolution::Draw()
+gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
 {
-   gl->enableDepthTest();
-
-   Set_Background();
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-   // model transformation
-   ModelView();
-
-   glPolygonOffset (1, 1);
-   glEnable (GL_POLYGON_OFFSET_FILL);
-   //glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
-
-   gl->disableClipPlane();
-   gl->disableLight();
-   // draw colorbar
    if (colorbar)
    {
-      if (drawmesh == 2)
-      {
-         PrepareColorBar(minv,maxv,&level);
-      }
-      else
-      {
-         PrepareColorBar(minv,maxv);
-      }
+      // update color bar before we get the base class scene
+      PrepareColorBar(minv, maxv, (drawmesh == 2) ? &level : nullptr );
    }
-   DrawCommon();
-
-   if (draw_cp)
-   {
-      gl->setClipPlane(CuttingPlane->Equation());
-      gl->enableClipPlane();
+   gl3::SceneInfo scene = VisualizationSceneScalarData::GetSceneObjs();
+   gl3::RenderParams params = this->getMeshDrawParams();
+   params.use_clip_plane = draw_cp;
+   double* cp_eqn = CuttingPlane->Equation();
+   params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};
+   params.contains_translucent = MatAlpha < 1.0;
+   if (drawelems) {
+      // draw elements
+      scene.queue.emplace_back(params, &disp_buf);
    }
-
-   Set_Material();
-   if (light)
-   {
-      gl->enableLight();
+   params.mesh_material = VisualizationScene::BLK_MAT;
+   params.static_color = GetLineColor();
+   if (draw_cp) {
+      //draw cutting plane
+      params.use_clip_plane = false;
+      scene.queue.emplace_back(params, &cp_buf);
+      params.use_clip_plane = true;
    }
-
-   if (MatAlpha < 1.0)
-   {
-      Set_Transparency();
+   if (drawbdr) {
+      scene.queue.emplace_back(params, &bdr_buf);
    }
-
-   // draw elements
-   if (drawelems)
-   {
-      disp_buf.draw();
+   //draw lines
+   if (drawmesh == 1) {
+      scene.queue.emplace_back(params, &line_buf);
+   } else if (drawmesh == 2) {
+      scene.queue.emplace_back(params, &lcurve_buf);
    }
-
-   if (MatAlpha < 1.0)
-   {
-      Remove_Transparency();
+   //draw numberings
+   if (drawnums == 1) {
+      scene.queue.emplace_back(params, &e_nums_buf);
+   } else if (drawnums == 2) {
+      scene.queue.emplace_back(params, &v_nums_buf);
    }
-
-   if (light)
-   {
-      gl->disableLight();
-   }
-   Set_Black_Material();
-
-   // ruler may have mixture of polygons and lines
-   if (draw_cp)
-   {
-      gl->disableClipPlane();
-      cp_buf.draw();
-      gl->enableClipPlane();
-   }
-   if (drawbdr)
-   {
-      bdr_buf.draw();
-   }
-
-   // draw lines
-   if (drawmesh == 1)
-   {
-      line_buf.draw();
-   }
-   else if (drawmesh == 2)
-   {
-      lcurve_buf.draw();
-   }
-
-   // draw numberings
-   if (drawnums)
-   {
-      if (1 == drawnums)
-      {
-         e_nums_buf.draw();
-      }
-      else if (2 == drawnums)
-      {
-         v_nums_buf.draw();
-      }
-   }
-
-   if (draw_cp)
-   {
-      gl->disableClipPlane();
-   }
-
+   return scene;
 }

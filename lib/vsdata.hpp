@@ -65,6 +65,7 @@ protected:
    int scaling, colorbar, drawaxes;
    int auto_ref_max, auto_ref_max_surf_elem;
 
+   vector<gl3::GlDrawable*> updated_bufs;
    gl3::GlDrawable axes_buf;
    gl3::GlDrawable coord_cross_buf;
    gl3::GlDrawable color_bar;
@@ -191,7 +192,7 @@ public:
 
    Mesh *GetMesh() { return mesh; }
 
-   void DrawCommon();
+   virtual gl3::SceneInfo GetSceneObjs();
 
    double &GetMinV() { return minv; }
    double &GetMaxV() { return maxv; }

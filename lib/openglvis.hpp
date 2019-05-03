@@ -15,6 +15,9 @@
 #include <cmath>
 #include "sdl.hpp"
 #include "glstate.hpp"
+#include "aux_gl3.hpp"
+#include "renderer.hpp"
+#include "material.hpp"
 
 // Visualization header file
 
@@ -112,6 +115,29 @@ protected:
    GlState * gl;
 
    glm::mat4 _projmat;
+
+   enum {
+      BG_BLK = 0,
+      BG_WHITE = 1
+   } _background;
+
+   std::array<float, 4> GetLineColor() {
+      if (BG_BLK) {
+         return { 1.f, 1.f, 1.f, 1.f };
+      } else {
+         return { 0.f, 0.f, 0.f, 1.f };
+      }
+   }
+
+   const Material BLK_MAT =
+   {
+      { 0.0, 0.0, 0.0, 1.0 },
+      { 0.0, 0.0, 0.0, 1.0 },
+      { 0.0, 0.0, 0.0, 1.0 },
+      0.0
+   };
+
+   gl3::RenderParams getMeshDrawParams();
 public:
    VisualizationScene();
    virtual ~VisualizationScene();
@@ -128,7 +154,7 @@ public:
    glm::mat4 rotmat;
    glm::mat4 translmat;
 
-   virtual void Draw() = 0;
+   virtual gl3::SceneInfo GetSceneObjs() = 0;
 
    void SetView(double theta, double phi);
    void Zoom(double factor);
@@ -147,6 +173,8 @@ public:
    void ModelView();
 
    void SetProjectionMtx(glm::mat4 projection) { _projmat = projection; }
+
+   glm::mat4 GetModelViewMtx();
 
    /// This is set by SetVisualizationScene
    int view;

@@ -80,7 +80,7 @@ namespace gl3
 
 const int LIGHTS_MAX = 3;
 
-struct MeshRenderingParams
+struct RenderParams
 {
     //Transformation matrices
     GlMatrix model_view;
@@ -101,12 +101,19 @@ struct MeshRenderingParams
     bool contains_translucent;
 };
 
+typedef vector<pair<RenderParams, GlDrawable*>> RenderQueue;
+
+struct SceneInfo
+{
+    vector<GlDrawable*> needs_buffering;
+    RenderQueue queue;
+};
+
 class GLDevice;
 
 class MeshRenderer
 {
     unique_ptr<GLDevice> _device;
-    unordered_map<MeshRenderingParams, vector<GlDrawable*>> _queued;
     bool _msaa_enable;
     int _color_tex, _alpha_tex, _font_tex; 
 public:
@@ -137,10 +144,9 @@ public:
     void setClearColor(float r, float g, float b, float a) { glClearColor(r, g, b, a); }
 
     void init();
-    void render();
+    void render(const RenderQueue& queued);
 
     void buffer(GlDrawable* buf);
-    void queueDraw(MeshRenderingParams params, const std::vector<GlDrawable*>& to_draw);
 };
 
 // OpenGL device interface representing rendering capabilities

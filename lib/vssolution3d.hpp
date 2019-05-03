@@ -118,6 +118,8 @@ public:
    virtual void Prepare();
    virtual void Draw();
 
+   virtual gl3::SceneInfo GetSceneObjs();
+
    void ToggleDrawElems()
    { drawelems = !drawelems; Prepare(); }
 

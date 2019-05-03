@@ -833,7 +833,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
       }
    }
 
-   displine_buf.buffer();
+   updated_bufs.emplace_back(&displine_buf);
 }
 
 double new_maxlen;
@@ -951,132 +951,66 @@ void VisualizationSceneVector::PrepareVectorField()
 
    }
    while (rerun);
-   vector_buf.buffer();
+   updated_bufs.emplace_back(&vector_buf);
 }
 
-void VisualizationSceneVector::Draw()
+gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
 {
-   gl->enableDepthTest();
-
-   Set_Background();
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-   // model transformation
-   ModelView();
-
-   // draw colored faces
-   glPolygonOffset (1, 1);
-   glEnable (GL_POLYGON_OFFSET_FILL);
-   //glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
-
-   gl->disableClipPlane();
-   // draw colorbar
-   gl->disableLight();
    if (colorbar)
    {
-      if (drawmesh == 2)
-      {
-         PrepareColorBar(minv,maxv,&level);
-      }
-      else
-      {
-         PrepareColorBar(minv,maxv);
-      }
+      // update color bar before we get the base class scene
+      PrepareColorBar(minv, maxv, (drawmesh == 2) ? &level : nullptr );
    }
-
-   DrawCommon();
-
-   if (draw_cp)
-   {
-      gl->setClipPlane(CuttingPlane->Equation());
-      gl->enableClipPlane();
+   gl3::SceneInfo scene = VisualizationSceneScalarData::GetSceneObjs();
+   gl3::RenderParams params = this->getMeshDrawParams();
+   params.use_clip_plane = draw_cp;
+   double* cp_eqn = CuttingPlane->Equation();
+   params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};
+   params.contains_translucent = false;
+   if (drawvector > 1) {
+      scene.queue.emplace_back(params, &vector_buf);
    }
-
-   Set_Material();
-   if (light)
-   {
-      gl->enableLight();
+   params.contains_translucent = MatAlpha < 1.0;
+   if (drawelems) {
+      scene.queue.emplace_back(params, &disp_buf);
    }
-
-   // draw vector field
-   if (drawvector > 1)
-   {
-       vector_buf.draw();
+   params.contains_translucent = false;
+   params.mesh_material = BLK_MAT;
+   params.static_color = GetLineColor();
+   if (draw_cp) {
+      params.use_clip_plane = false;
+      scene.queue.emplace_back(params, &cp_buf);
+      params.use_clip_plane = true;
    }
-
-   if (MatAlpha < 1.0)
-   {
-      Set_Transparency();
-   }
-
-   // draw elements
-   if (drawelems)
-   {
-      disp_buf.draw();
-   }
-
-   if (MatAlpha < 1.0)
-   {
-      Remove_Transparency();
-   }
-
-   if (light)
-   {
-      gl->disableLight();
-   }
-   Set_Black_Material();
-
-   // ruler may have mixture of polygons and lines
-   if (draw_cp)
-   {
-      gl->disableClipPlane();
-      cp_buf.draw();
-      gl->enableClipPlane();
-   }
-
-   if (drawbdr)
-   {
-      bdr_buf.draw();
+   if (drawbdr) {
+      scene.queue.emplace_back(params, &bdr_buf);
    }
 
    // draw lines
-   if (drawmesh == 1)
-   {
-      line_buf.draw();
-   }
-   else if (drawmesh == 2)
-   {
-      lcurve_buf.draw();
+   if (drawmesh == 1) {
+      scene.queue.emplace_back(params, &line_buf);
+   } else if (drawmesh == 2) {
+      scene.queue.emplace_back(params, &lcurve_buf);
    }
 
    // draw numberings
-   if (drawnums)
-   {
-      if (1 == drawnums)
-      {
-         e_nums_buf.draw();
-      }
-      else if (2 == drawnums)
-      {
-         v_nums_buf.draw();
-      }
+   if (drawnums == 1) {
+      scene.queue.emplace_back(params, &e_nums_buf);
+   } else if (drawnums == 2) {
+      scene.queue.emplace_back(params, &v_nums_buf);
    }
 
-   if (drawvector == 1)
-   {
-      vector_buf.draw();
+   if (drawvector == 1) {
+      scene.queue.emplace_back(params, &vector_buf);
    }
 
    if (drawdisp > 0)
    {
       if (drawmesh == 1)
       {
-         gl->setStaticColor(1, 0, 0);
+         params.static_color = {1.f, 0.f, 0.f, 1.f};
       }
-      displine_buf.draw();
-      if (drawmesh == 1)
-      {
-         Set_Black_Material();
-      }
+      scene.queue.emplace_back(params, &displine_buf);
    }
 }
+

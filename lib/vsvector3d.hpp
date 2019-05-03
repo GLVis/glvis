@@ -66,6 +66,7 @@ public:
    void ToggleDisplacements() {drawdisp = (drawdisp+1)%2;};
 
    virtual void Draw();
+   virtual gl3::SceneInfo GetSceneObjs();
 
    virtual void EventUpdateColors()
    { Prepare(); PrepareVectorField(); PrepareCuttingPlane(); };

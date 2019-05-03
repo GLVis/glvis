@@ -432,7 +432,7 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval, double maxval
          color_bar.addText(maxx+0.02,Y,posz, buf.str());
       }
    }
-   color_bar.buffer();
+   updated_bufs.emplace_back(&color_bar);
 }
 
 // Draw a centered caption at the top (visible with the colorbar)
@@ -449,7 +449,7 @@ void VisualizationSceneScalarData::PrepareCaption()
 
    caption_buf.clear();
    caption_buf.addText(0, 0, 0, caption);
-   caption_buf.buffer();
+   updated_bufs.emplace_back(&caption_buf);
    gl3::TextBuffer::getObjectSize(caption, caption_w, caption_h);
 }
 
@@ -961,63 +961,63 @@ void VisualizationSceneScalarData::PrepareRuler(bool log_z)
       {ruler_x_f, ruler_y_f, z_f[1]}
    });
 
-   ruler_buf.buffer();
+   updated_bufs.emplace_back(&ruler_buf);
 }
 
-void VisualizationSceneScalarData::DrawCommon()
+gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
 {
-   GlMatrix proj_save = gl->projection;
-   GlMatrix mv_save = gl->modelView;
-   
-   GLint viewport[4];
-   gl->getViewport(viewport);
-   gl->projection.identity();
-   gl->modelView.identity();
-   if (colorbar) // draw colorbar
-   {
-      gl->projection = proj_save;
-      gl->loadMatrixUniforms();
-      color_bar.draw();
-      gl->projection.identity();
-      if (colorbar == 1) // draw caption
-      {
-         gl->modelView.translate(-(double)caption_w / viewport[2],
-                                 1.0 - 5 * (double)caption_h / viewport[3], 0.0);
-         gl->loadMatrixUniforms();
-         caption_buf.draw();
-      }
+   int w, h;
+   wnd->getWindowSize(w, h);
+   gl3::SceneInfo scene {};
+   scene.needs_buffering = std::move(updated_bufs);
+   updated_bufs.clear();
+
+   gl3::RenderParams params {};
+   params.model_view.identity();
+   params.projection.identity();
+   params.mesh_material = BLK_MAT;
+   params.num_pt_lights = 0;
+   params.static_color = this->GetLineColor();
+   params.use_clip_plane = false;
+   params.contains_translucent = false;
+
+   if (colorbar) {
+      // add color bar to draw list
+      params.projection.mtx = _projmat;
+      scene.queue.emplace_back(params, &color_bar);
+      params.projection.identity();
    }
-   if (drawaxes && drawaxes != 3) // draw coordinate cross
-   {
-      gl->projection.identity();
-      gl->modelView.identity();
-      gl->modelView.translate(-1, -1, 0.0);
-      gl->modelView.scale(40.0 / viewport[2], 40.0 / viewport[3], 1);
-      gl->modelView.translate(2.0, 2.0, 0.0);
-      gl->modelView.mult(cam.RotMatrix());
-      gl->modelView.mult(rotmat);
-      gl->loadMatrixUniforms();
-      coord_cross_buf.draw();
+   if (colorbar == 1) {
+      // add caption to draw list
+      params.model_view.translate(-(double)caption_w / w,
+                                 1.0 - 5 * (double)caption_h / h, 0.0);
+      scene.queue.emplace_back(params, &caption_buf);
    }
-   gl->projection = proj_save;
-   gl->modelView = mv_save;
-   gl->loadMatrixUniforms();
-   if (ruler_on)
-   {
-      if (light)
-      {
-         gl->enableLight();
-      }
-      ruler_buf.draw();
-      if (light)
-      {
-         gl->disableLight();
-      }
+   if (drawaxes && drawaxes != 3) {
+      // add coordinate cross to draw list
+      params.projection.identity();
+      params.model_view.identity();
+      params.model_view.translate(-1, -1, 0.0);
+      params.model_view.scale(40.0 / w, 40.0 / h, 1);
+      params.model_view.translate(2.0, 2.0, 0.0);
+      params.model_view.mult(cam.RotMatrix());
+      params.model_view.mult(rotmat);
+      scene.queue.emplace_back(params, &coord_cross_buf);
    }
-   if (drawaxes)
-   {
-      axes_buf.draw();
+   params.projection.mtx = _projmat;
+   params.model_view.mtx = GetModelViewMtx();
+   if (drawaxes) {
+      // add axes to draw list
+      scene.queue.emplace_back(params, &axes_buf);
    }
+   if (ruler_on) {
+      // add ruler to draw list
+      params = getMeshDrawParams();
+      params.use_clip_plane = false;
+      params.contains_translucent = false;
+      scene.queue.emplace_back(params, &ruler_buf);
+   }
+   return scene;
 }
 
 void VisualizationSceneScalarData::ToggleTexture()
@@ -1311,7 +1311,7 @@ void VisualizationSceneScalarData::PrepareAxes()
            << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
       axes_buf.addText(x[1], y[1], z[1], buf1.str());
    }
-   axes_buf.buffer();
+   updated_bufs.emplace_back(axes_buf);
 
    float lenx, leny, lenz;
    lenx = leny = lenz = .95;
@@ -1328,7 +1328,7 @@ void VisualizationSceneScalarData::PrepareAxes()
    coord_cross_buf.addText(lenx, 0.0f, 0.0f, a_label_x);
    coord_cross_buf.addText(0.0f, leny, 0.0f, a_label_y);
    coord_cross_buf.addText(0.0f, 0.0f, lenz, a_label_z);
-   coord_cross_buf.buffer();
+   updated_bufs.emplace_back(&coord_cross_buf);
 }
 
 void VisualizationSceneScalarData::DrawPolygonLevelLines(
