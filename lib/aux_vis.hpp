@@ -15,7 +15,6 @@
 #include "platform_gl.hpp"
 
 #include "sdl.hpp"
-#include "glstate.hpp"
 #include "font.hpp"
 #include "openglvis.hpp"
 #include "aux_gl3.hpp"
@@ -42,7 +41,6 @@ void MyExpose();
 void MainLoop();
 
 SdlWindow * GetAppWindow();
-GlState * GetGlState();
 VisualizationScene * GetVisualizationScene();
 
 void AddIdleFunc(void (*Func)(void));

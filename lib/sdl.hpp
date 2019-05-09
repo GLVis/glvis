@@ -16,6 +16,7 @@
 #include <functional>
 #include <map>
 #include "platform_gl.hpp"
+#include "renderer.hpp"
 
 struct EventInfo
 {
@@ -34,6 +35,7 @@ class SdlWindow
 private:
    struct _SdlHandle;
    std::unique_ptr<_SdlHandle> _handle;
+   std::unique_ptr<gl3::MeshRenderer> _renderer;
 
    bool running;
 
@@ -101,6 +103,8 @@ public:
 
    void getWindowSize(int& w, int& h);
    void getDpi(int& wdpi, int& hdpi);
+
+   gl3::MeshRenderer& getRenderer() { return *_renderer.get(); }
 #ifdef GLVIS_X11
    int getXWindow();
 #endif

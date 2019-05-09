@@ -1,3 +1,6 @@
+#ifndef __RENDERER_HPP__
+#define __RENDERER_HPP__
+
 #include <memory>
 #include <set>
 #include <unordered_map>
@@ -79,6 +82,11 @@ namespace gl3
 {
 
 const int LIGHTS_MAX = 3;
+#ifdef GLVIS_MS_LINEWIDTH
+const float LINE_WIDTH_AA = GLVIS_MS_LINEWIDTH
+#else
+const float LINE_WIDTH_AA = 1.4;
+#endif
 
 struct RenderParams
 {
@@ -109,46 +117,6 @@ struct SceneInfo
     RenderQueue queue;
 };
 
-class GLDevice;
-
-class MeshRenderer
-{
-    unique_ptr<GLDevice> _device;
-    bool _msaa_enable;
-    int _color_tex, _alpha_tex, _font_tex; 
-public:
-    void setAntiAliasing(bool aa_status) {
-        if (_msaa_enable != aa_status) {
-            _msaa_enable = aa_status;
-            if (_msaa_enable) {
-                _device->enableMultisample();
-                _device->enableBlend();
-            } else {
-                _device->disableMultisample();
-                _device->disableBlend();
-            }
-        }
-    }
-
-    template<typename TDevice>
-    void setDevice() {
-        _device.reset(new TDevice());
-        _device->init();
-    }
-
-    template<typename TDevice>
-    void setDevice(TDevice&& device) {
-        _device.reset(new TDevice(device));
-    }
-
-    void setClearColor(float r, float g, float b, float a) { glClearColor(r, g, b, a); }
-
-    void init();
-    void render(const RenderQueue& queued);
-
-    void buffer(GlDrawable* buf);
-};
-
 // OpenGL device interface representing rendering capabilities
 class GLDevice
 {
@@ -176,6 +144,7 @@ public:
     void disableDepthWrite() { glDepthMask(GL_FALSE); }
     void enableMultisample() { glEnable(GL_MULTISAMPLE); }
     void disableMultisample() { glDisable(GL_MULTISAMPLE); }
+    void setLineWidth(float w) { glLineWidth(w); }
 
     virtual void init();
     // Sets the window viewport.
@@ -212,6 +181,42 @@ public:
 
     virtual void preRender() = 0;
 };
+
+class MeshRenderer
+{
+    unique_ptr<GLDevice> _device;
+    bool _msaa_enable;
+    int _color_tex, _alpha_tex, _font_tex;
+    float _line_w, _line_w_aa;
+public:
+    template<typename TDevice>
+    void setDevice() {
+        _device.reset(new TDevice());
+        _device->init();
+    }
+
+    template<typename TDevice>
+    void setDevice(TDevice&& device) {
+        _device.reset(new TDevice(device));
+    }
+
+    void setAntialiasing(bool aa_status);
+    bool getAntialiasing() { return _msaa_enable; }
+
+    void setLineWidth(float w);
+    float getLineWidth() { return _line_w; }
+    void setLineWidthMS(float w);
+    float getLineWidthMS() { return _line_w_aa; }
+
+    void setClearColor(float r, float g, float b, float a) { glClearColor(r, g, b, a); }
+	void setViewport(GLsizei w, GLsizei h) { glViewport(0, 0, w, h); }
+
+    void init();
+    void render(const RenderQueue& queued);
+
+    void buffer(GlDrawable* buf);
+};
+
 
 // Render for legacy OpenGL systems with access to only the fixed-function pipeline
 class FFGLDevice : public GLDevice
@@ -280,8 +285,6 @@ private:
         { "fontTex", 0 }
     };
 
-    glm::mat4 _model_view_mtx;
-
     bool compileShaders();
     void initializeShaderState();
 public:
@@ -303,3 +306,5 @@ public:
 };
 
 }
+
+#endif // __RENDERER_HPP__

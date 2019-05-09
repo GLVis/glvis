@@ -21,7 +21,6 @@ using namespace mfem;
 #include "palettes.hpp"
 #include "visual.hpp"
 #include "gl2ps.h"
-#include "gl3print.hpp"
 
 #if defined(GLVIS_USE_LIBTIFF)
 #include "tiffio.h"
@@ -49,16 +48,10 @@ static int glvis_multisample = -1;
 
 //TODO: anything but this
 SdlWindow * wnd = nullptr;
-GlState * state = nullptr;
 
 SdlWindow * GetAppWindow()
 {
     return wnd;
-}
-
-GlState * GetGlState()
-{
-    return state;
 }
 
 VisualizationScene * GetVisualizationScene()
@@ -81,10 +74,10 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
            return 1;
        }
 
-       state = new GlState();
-       if (!state->compileShaders()) {
-           return 1;
-       }
+       //state = new GlState();
+       //if (!state->compileShaders()) {
+       //    return 1;
+       //}
        paletteInit();
    } else {
        wnd->clearEvents();
@@ -346,7 +339,7 @@ void SendExposeEvent()
 
 void MyReshape(GLsizei w, GLsizei h)
 {
-   GetGlState()->setViewport(w, h);
+   wnd->getRenderer().setViewport(w, h);
 
    GlMatrix projmtx;
    projmtx.identity();
@@ -384,7 +377,11 @@ void MyReshape(GLsizei w, GLsizei h)
 void MyExpose(GLsizei w, GLsizei h)
 {
    MyReshape (w, h);
-   locscene -> Draw();
+   gl3::SceneInfo frame = locscene->GetSceneObjs();
+   for (auto drawable_ptr : frame.needs_buffering) {
+      wnd->getRenderer().buffer(drawable_ptr);
+   }
+   wnd->getRenderer().render(frame.queue);
 }
 
 void MyExpose()
@@ -447,12 +444,12 @@ void MainLoop()
       if (!constrained_spinning)
       {
          locscene->Rotate(xang, yang);
-         locscene->Draw();
+         SendExposeEvent();
       }
       else
       {
          locscene->PreRotate(xang, 0.0, 0.0, 1.0);
-         locscene->Draw();
+         SendExposeEvent();
       }
       req.tv_sec  = 0;
       req.tv_nsec = 10000000;
@@ -480,7 +477,7 @@ inline void ComputeSphereAngles(int &newx, int &newy,
    double r, x, y, rr;
    const double maxr = 0.996194698091745532295;
 
-   GetGlState()->getViewport(viewport);
+   wnd->getWindowSize(viewport[2], viewport[3]);
    r = sqrt(sqr(viewport[2])+sqr(viewport[3]))*M_SQRT1_2;
 
    x = double(newx-viewport[0]-viewport[2]/2) / r;
@@ -612,6 +609,7 @@ void MiddleButtonLoc (EventInfo *event)
    if ( !( event->keymod & KMOD_CTRL ) )
    {
       GLint vp[4];
+	  int w, h;
       double TrX, TrY, scale;
 
       if (locscene->OrthogonalProjection)
@@ -622,14 +620,14 @@ void MiddleButtonLoc (EventInfo *event)
       {
          scale = 0.4142135623730950488/tan(locscene->ViewAngle*(M_PI/360));
       }
-      GetGlState()->getViewport(vp);
-      if (vp[2] < vp[3])
+	  wnd->getWindowSize(w, h);
+      if (w < h)
       {
-         scale *= vp[2];
+         scale *= w;
       }
       else
       {
-         scale *= vp[3];
+         scale *= h;
       }
       TrX = 2.0*double(oldx-newx)/scale;
       TrY = 2.0*double(newy-oldy)/scale;
@@ -712,8 +710,7 @@ void RightButtonLoc (EventInfo *event)
          x = 0.; y = 0.; z = -1.;
       }
       cout << "(x,y,z) = (" << x << ',' << y << ',' << z << ')' << endl;
-      GLfloat light[] = { float(x), float(y), float(z), 0.0f };
-      GetGlState()->setLightPosition(0, light);
+      locscene->SetLight0CustomPos({x, y, z, 0.f});
    }
    else if ( !( event->keymod & KMOD_CTRL ) )
    {
@@ -1029,6 +1026,7 @@ void KeyS()
 
 void KeyCtrlP()
 {
+#ifdef 0
 #ifndef __EMSCRIPTEN__
    if (!GetGlState()->renderToFeedback()) {
        cout << "Unable to initialize printing capture pipeline." << endl;
@@ -1068,6 +1066,7 @@ void KeyCtrlP()
    wnd->signalExpose();
 #else
    cout << "Printing disabled" << endl;
+#endif
 #endif
 }
 
@@ -1358,10 +1357,8 @@ const double window_scale_factor = 1.1;
 
 void ShrinkWindow()
 {
-   GLint viewport[4];
-
-   GetGlState()->getViewport(viewport);
-   int w = viewport[2], h = viewport[3];
+   int w, h;
+   wnd->getWindowSize(w, h);
    w = (int)ceil(w / window_scale_factor);
    h = (int)ceil(h / window_scale_factor);
 
@@ -1372,10 +1369,8 @@ void ShrinkWindow()
 
 void EnlargeWindow()
 {
-   GLint viewport[4];
-
-   GetGlState()->getViewport(viewport);
-   int w = viewport[2], h = viewport[3];
+   int w, h;
+   wnd->getWindowSize(w, h);
    w = (int)ceil(w * window_scale_factor);
    h = (int)ceil(h * window_scale_factor);
 
@@ -1629,7 +1624,7 @@ std::string priority_font;
 
 void InitFont()
 {
-    if (priority_font == "") {
+    if (priority_font == std::string("")) {
         SetFont(fc_font_patterns, num_font_patterns, font_size);
     } else {
         if (!glvis_font.LoadFont(priority_font.c_str(), font_size))
@@ -1675,7 +1670,7 @@ bool SetFont(const char *font_patterns[], int num_patterns, int height) {
             FcResult res = FcPatternGetString(fs->fonts[fnt_idx], FC_FILE, 0, &s);
             FcChar8 * fnt = FcNameUnparse(fs->fonts[fnt_idx]);
             cout << fnt << endl;
-            if (res == FcResultMatch && s && font_file == "") {
+            if (res == FcResultMatch && s && font_file == std::string("")) {
                 font_file = (char*) s;
                 font_name = (char*) fnt;
             }
@@ -1683,7 +1678,7 @@ bool SetFont(const char *font_patterns[], int num_patterns, int height) {
         }
         
         FcFontSetDestroy(fs);
-        if (font_file != "") {
+        if (font_file != std::string("")) {
             if (glvis_font.LoadFont(font_file.c_str(), height)) {
 #ifdef GLVIS_DEBUG
                 cout << "Using font: " << font_name << endl;

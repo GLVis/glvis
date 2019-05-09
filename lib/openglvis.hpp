@@ -14,7 +14,6 @@
 
 #include <cmath>
 #include "sdl.hpp"
-#include "glstate.hpp"
 #include "aux_gl3.hpp"
 #include "renderer.hpp"
 #include "material.hpp"
@@ -112,7 +111,6 @@ protected:
    double xscale, yscale, zscale;
 
    SdlWindow * wnd;
-   GlState * gl;
 
    glm::mat4 _projmat;
 
@@ -120,14 +118,6 @@ protected:
       BG_BLK = 0,
       BG_WHITE = 1
    } _background;
-
-   std::array<float, 4> GetLineColor() {
-      if (BG_BLK) {
-         return { 1.f, 1.f, 1.f, 1.f };
-      } else {
-         return { 0.f, 0.f, 0.f, 1.f };
-      }
-   }
 
    const Material BLK_MAT =
    {
@@ -137,7 +127,21 @@ protected:
       0.0
    };
 
-   gl3::RenderParams getMeshDrawParams();
+   std::array<float, 4> _l0_pos;
+   bool _use_cust_l0_pos;
+   int _lm_idx;
+
+   gl3::RenderParams GetMeshDrawParams();
+   glm::mat4 GetModelViewMtx();
+
+   std::array<float, 4> GetLineColor() {
+      if (BG_BLK) {
+         return { 1.f, 1.f, 1.f, 1.f };
+      } else {
+         return { 0.f, 0.f, 0.f, 1.f };
+      }
+   }
+
 public:
    VisualizationScene();
    virtual ~VisualizationScene();
@@ -170,11 +174,19 @@ public:
    void CenterObject();
    void CenterObject2D();
 
-   void ModelView();
-
    void SetProjectionMtx(glm::mat4 projection) { _projmat = projection; }
+   void SetLightMatIdx(unsigned i);
+   int GetLightMatIdx() { return _lm_idx; }
 
-   glm::mat4 GetModelViewMtx();
+   void SetLight0CustomPos(std::array<float, 4> pos);
+   void ToggleBackground()
+   {
+      if (BG_BLK) {
+         _background = BG_WHITE;
+      } else {
+         _background = BG_BLK;
+      }
+   }
 
    /// This is set by SetVisualizationScene
    int view;

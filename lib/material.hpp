@@ -13,44 +13,17 @@
 
 struct Material
 {
-   float ambient[4];
-   float diffuse[4];
-   float specular[4];
+   std::array<float, 4> ambient;
+   std::array<float, 4> diffuse;
+   std::array<float, 4> specular;
    float shininess;
 };
 
 struct Light
 {
-   float position[4];
-   float diffuse[4];
-   float specular[4];
+   std::array<float, 4> position;
+   std::array<float, 4> diffuse;
+   std::array<float, 4> specular;
 };
-
-void Set_Material();
-
-void Set_Light();
-
-int Next_Material_And_Light();
-
-void Set_Material_And_Light(int,int);
-
-float Set_Black_Material();
-
-void Set_Background();
-
-void Toggle_Background();
-
-void Set_Transparency();
-
-void Remove_Transparency();
-
-int  Get_AntiAliasing();
-void Set_AntiAliasing();
-void Remove_AntiAliasing();
-
-double Get_LineWidth();
-void Set_LineWidth(double);
-double Get_MS_LineWidth();
-void Set_MS_LineWidth(double);
 
 #endif

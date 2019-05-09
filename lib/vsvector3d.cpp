@@ -1514,7 +1514,7 @@ gl3::SceneInfo VisualizationSceneVector3d::GetSceneObjs()
       PrepareColorBar(minv, maxv, cb_level);
    }
    gl3::SceneInfo scene = VisualizationSceneScalarData::GetSceneObjs();
-   gl3::RenderParams params = this->getMeshDrawParams();
+   gl3::RenderParams params = GetMeshDrawParams();
    params.use_clip_plane = cplane;
    double* cp_eqn = CuttingPlane->Equation();
    params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};

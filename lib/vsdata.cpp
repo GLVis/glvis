@@ -141,6 +141,7 @@ void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
    glPushMatrix();
    glTranslated(px, py, pz);
 */
+#if 0
    GlMatrix mv_save = gl->modelView;
    gl->modelView.translate(px, py, pz);
 
@@ -173,7 +174,7 @@ void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
 
    gl->modelView = mv_save;
    gl->loadMatrixUniforms();
-
+#endif
 }
 
 void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
@@ -504,14 +505,6 @@ void Key_Mod_a_Pressed(GLenum state)
 void KeylPressed()
 {
    vsdata -> ToggleLight();
-   if (! vsdata -> light)
-   {
-      GetGlState()->disableLight();
-   }
-   else
-   {
-      GetGlState()->enableLight();
-   }
    SendExposeEvent();
 }
 
@@ -709,8 +702,7 @@ void KeyBackslashPressed()
    cin >> w;
 
    GLfloat light[] = { x, y, z, w };
-   // load modelview matrix before calling glLightfv?
-   GetGlState()->setLightPosition(0, light);
+   vsdata->SetLight0CustomPos({x, y, z, w});
    SendExposeEvent();
 }
 
@@ -718,14 +710,15 @@ void KeyTPressed()
 {
    int ml;
 
-   ml = Next_Material_And_Light();
+   ml = vsdata->GetLightMatIdx() + 1;
+   vsdata->SetLightMatIdx(ml);
    SendExposeEvent();
    cout << "New material/light : " << ml << endl;
 }
 
 void KeyGPressed()
 {
-   Toggle_Background();
+   vsdata->ToggleBackground();
    vsdata->PrepareAxes();
    SendExposeEvent();
 }
@@ -769,17 +762,11 @@ void KeyKPressed()
 
 void KeyAPressed()
 {
-   if (!Get_AntiAliasing())
-   {
-      Set_AntiAliasing();
-   }
-   else
-   {
-      Remove_AntiAliasing();
-   }
+   bool curr_aa = GetAppWindow()->getRenderer().getAntialiasing();
+   GetAppWindow()->getRenderer().setAntialiasing(!curr_aa);
 
    cout << "Multisampling/Antialiasing: "
-        << strings_off_on[Get_AntiAliasing() ? 1 : 0] << endl;
+        << strings_off_on[!curr_aa ? 1 : 0] << endl;
 
    // vsdata -> EventUpdateColors();
    SendExposeEvent();
@@ -1012,7 +999,7 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
    }
    if (ruler_on) {
       // add ruler to draw list
-      params = getMeshDrawParams();
+      params = GetMeshDrawParams();
       params.use_clip_plane = false;
       params.contains_translucent = false;
       scene.queue.emplace_back(params, &ruler_buf);
@@ -1123,17 +1110,15 @@ void VisualizationSceneScalarData::Init()
       wnd->setOnKeyDown(SDLK_EXCLAIM, KeyToggleTexture);
    }
 
-   Set_Light();
+   //Set_Light();
 
    //glEnable (GL_COLOR_MATERIAL);
    //glShadeModel (GL_SMOOTH);
    
-   gl->enableLight();
-   gl->enableDepthTest();
+   //gl->enableLight();
+   //gl->enableDepthTest();
    //glEnable(GL_AUTO_NORMAL);
    //glEnable(GL_NORMALIZE);
-
-   glLineWidth(Get_LineWidth());
 
    if (GetMultisample() > 0)
    {
@@ -1219,8 +1204,7 @@ void VisualizationSceneScalarData::SetAxisLabels(const char * a_x,
 
 void VisualizationSceneScalarData::PrepareAxes()
 {
-   float blk_val = Set_Black_Material();
-   GLfloat blk[4] = {blk_val, blk_val, blk_val, 1.0};
+   std::array<float, 4> blk = GetLineColor();
    axes_buf.clear();
    
    gl3::GlBuilder bld = axes_buf.createBuilder();
@@ -1230,13 +1214,13 @@ void VisualizationSceneScalarData::PrepareAxes()
       bld.glBegin(GL_LINES);
       bld.glColor3f(1., 0., 0.);
       bld.glVertex3d(x[0], y[0], z[0]);
-      bld.glColor4fv(blk);
+      bld.glColor4fv(blk.data());
       bld.glVertex3d(x[1], y[0], z[0]);
       bld.glVertex3d(x[0], y[1], z[0]);
       bld.glColor3f(0., 1., 0.);
       bld.glVertex3d(x[0], y[0], z[0]);
       bld.glEnd();
-      bld.glColor4fv(blk);
+      bld.glColor4fv(blk.data());
       //bld.setUseColor(false);
       //bld.glEnable(GL_LINE_STIPPLE);
       bld.glBegin(GL_LINE_STRIP);
@@ -1273,7 +1257,7 @@ void VisualizationSceneScalarData::PrepareAxes()
       bld.glEnd();
       //bld.setUseColor(false);
       //bld.glEnable(GL_LINE_STIPPLE);
-      bld.glColor4fv(blk);
+      bld.glColor4fv(blk.data());
       bld.glBegin(GL_LINES);
    }
    else

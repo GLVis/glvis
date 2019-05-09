@@ -15,6 +15,12 @@
 #include "material.hpp"
 #include "aux_vis.hpp"
 
+const int NUM_MATERIALS;
+extern Material materials[5];
+extern Light lights[];
+extern std::array<float, 4> amb_setting[];
+extern Light lights_4[];
+
 void Camera::Reset()
 {
    static const double cam[9] =
@@ -102,7 +108,6 @@ void Camera::Print()
 
 VisualizationScene::VisualizationScene()
 {
-    gl = GetGlState();
     translmat = glm::mat4(1.0);
     rotmat = glm::mat4(1.0);
     rotmat = glm::rotate(rotmat, glm::radians(-60.f), glm::vec3(1.f, 0.f, 0.f));
@@ -116,9 +121,47 @@ VisualizationScene::VisualizationScene()
     ViewCenterY = 0.0;
 
     _background = BG_BLK;
+    _use_cust_l0_pos = false;
+    _lm_idx = 3;
 }
 
 VisualizationScene::~VisualizationScene() {}
+
+gl3::RenderParams VisualizationScene::GetMeshDrawParams()
+{
+   gl3::RenderParams params = {};
+   params.model_view.mtx = GetModelViewMtx();
+   params.projection.mtx = _projmat;
+   params.mesh_material = materials[_lm_idx];
+   if (_lm_idx == 4) {
+      for (int i = 0; i < 3; i++) {
+         params.lights[i] = lights_4[i];
+      }
+      params.num_pt_lights = 3;
+   } else {
+      params.lights[0] = lights[_lm_idx];
+      params.num_pt_lights = 1;
+   }
+   if (_use_cust_l0_pos) {
+      params.lights[0].position = _l0_pos;
+   }
+   params.light_amb_scene = amb_setting[_lm_idx];
+   params.static_color = GetLineColor();
+}
+
+void VisualizationScene::SetLightMatIdx(unsigned i)
+{
+   if (i < NUM_MATERIALS) {
+      _lm_idx = i;
+      _use_cust_l0_pos = false;
+   }
+}
+
+void VisualizationScene::SetLight0CustomPos(std::array<float, 4> pos)
+{
+   _l0_pos = pos;
+   _use_cust_l0_pos = true;
+}
 
 void VisualizationScene::Rotate(double angle, double x, double y, double z)
 {
@@ -207,19 +250,6 @@ void VisualizationScene::Zoom(double factor)
       double va = ViewAngle * ( M_PI / 360.0 );
       ViewAngle = atan( tan( va ) / factor ) * (360.0 / M_PI);
    }
-}
-
-void VisualizationScene::ModelView()
-{
-    gl->modelView.identity();
-    gl->modelView.mult(cam.TranslateMatrix());
-    gl->modelView.mult(translmat);
-    gl->modelView.mult(rotmat);
-    gl->modelView.scale(xscale, yscale, zscale);
-    gl->modelView.translate(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
-    gl->projection.mtx = _projmat;
-    Set_Light();
-    gl->loadMatrixUniforms();
 }
 
 glm::mat4 VisualizationScene::GetModelViewMtx()

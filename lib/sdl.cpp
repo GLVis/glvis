@@ -117,12 +117,18 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
     std::cerr << "Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor <<
       "." << (int)sdl_ver.patch << std::endl;
 
+    _renderer.reset(new gl3::MeshRenderer);
+    _renderer->init();
 #ifndef __EMSCRIPTEN__
-    if (!GLEW_ARB_vertex_shader ||
-        !GLEW_ARB_fragment_shader ||
-        !GLEW_ARB_shading_language_100) {
-        cerr << "Shader support missing, failed to launch." << endl;
-        return false;
+    if (!GLEW_VERSION_2_0 &&
+        !(GLEW_ARB_vertex_shader
+            && GLEW_ARB_fragment_shader
+            && GLEW_ARB_shading_language_100)) {
+        cerr << "Shader support missing, loading FFGLDevice..." << endl;
+        _renderer->setDevice<gl3::FFGLDevice>();
+    } else {
+        cerr << "Loading CoreGLDevice..." << endl;
+        _renderer->setDevice<gl3::CoreGLDevice>();
     }
 
     if (!GLEW_VERSION_3_0) {
@@ -133,6 +139,8 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
             glEndTransformFeedback      = glEndTransformFeedbackEXT;
         }
     }
+#else
+    _renderer->setDevice<gl3::CoreGlDevice>();
 #endif
 
     return true;

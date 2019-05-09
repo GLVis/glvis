@@ -4,6 +4,35 @@
 namespace gl3
 {
 
+void MeshRenderer::setAntialiasing(bool aa_status) {
+    if (_msaa_enable != aa_status) {
+        _msaa_enable = aa_status;
+        if (_msaa_enable) {
+            _device->enableMultisample();
+            _device->enableBlend();
+            _device->setLineWidth(_line_w_aa);
+        } else {
+            _device->disableMultisample();
+            _device->disableBlend();
+            _device->setLineWidth(_line_w);
+        }
+    }
+}
+
+void MeshRenderer::setLineWidth(float w) {
+    _line_w = w;
+    if (_device && !_msaa_enable) {
+        _device->setLineWidth(_line_w);
+    }
+}
+
+void MeshRenderer::setLineWidthMS(float w) {
+    _line_w_aa = w;
+    if (_device && _msaa_enable) {
+        _device->setLineWidth(_line_w_aa);
+    }
+}
+
 void MeshRenderer::render(const RenderQueue& queued)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
