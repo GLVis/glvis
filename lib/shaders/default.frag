@@ -1,5 +1,6 @@
 R"(
 uniform sampler2D alphaTex;
+uniform sampler2D colorTex;
  
 varying vec3 fNormal; 
 varying vec3 fPosition; 

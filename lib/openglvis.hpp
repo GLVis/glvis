@@ -135,7 +135,7 @@ protected:
    glm::mat4 GetModelViewMtx();
 
    std::array<float, 4> GetLineColor() {
-      if (BG_BLK) {
+      if (_background == BG_BLK) {
          return { 1.f, 1.f, 1.f, 1.f };
       } else {
          return { 0.f, 0.f, 0.f, 1.f };
@@ -179,14 +179,7 @@ public:
    int GetLightMatIdx() { return _lm_idx; }
 
    void SetLight0CustomPos(std::array<float, 4> pos);
-   void ToggleBackground()
-   {
-      if (BG_BLK) {
-         _background = BG_WHITE;
-      } else {
-         _background = BG_BLK;
-      }
-   }
+   void ToggleBackground();
 
    /// This is set by SetVisualizationScene
    int view;

@@ -2,6 +2,7 @@
 #define __RENDERER_HPP__
 
 #include <memory>
+#include <vector>
 #include <set>
 #include <unordered_map>
 
@@ -83,7 +84,7 @@ namespace gl3
 
 const int LIGHTS_MAX = 3;
 #ifdef GLVIS_MS_LINEWIDTH
-const float LINE_WIDTH_AA = GLVIS_MS_LINEWIDTH
+const float LINE_WIDTH_AA = GLVIS_MS_LINEWIDTH;
 #else
 const float LINE_WIDTH_AA = 1.4;
 #endif
@@ -128,6 +129,9 @@ protected:
 
     std::array<float, 4> _static_color;
 public:
+    virtual ~GLDevice() = default;
+    const static int SAMPLER_COLOR = 0;
+    const static int SAMPLER_ALPHA = 1;
 
     void detachTexture(int tex_unit) {
         glActiveTexture(GL_TEXTURE0 + tex_unit);
@@ -178,27 +182,39 @@ public:
     // Draw the data loaded in a device buffer.
     virtual void drawDeviceBuffer(array_layout layout, const IVertexBuffer& buf) = 0;
     virtual void drawDeviceBuffer(const TextBuffer& t_buf) = 0;
-
-    virtual void preRender() = 0;
 };
 
 class MeshRenderer
 {
     unique_ptr<GLDevice> _device;
     bool _msaa_enable;
-    int _color_tex, _alpha_tex, _font_tex;
+    GLuint _color_tex, _alpha_tex, _font_tex;
     float _line_w, _line_w_aa;
 public:
+    MeshRenderer()
+        : _msaa_enable(false)
+        , _line_w(1.f)
+        , _line_w_aa(LINE_WIDTH_AA) { }
+
     template<typename TDevice>
     void setDevice() {
         _device.reset(new TDevice());
+        _device->setLineWidth(_line_w);
         _device->init();
+        _msaa_enable = false;
     }
 
     template<typename TDevice>
     void setDevice(TDevice&& device) {
         _device.reset(new TDevice(device));
     }
+
+    // Sets the texture handle of the color palette.
+    void setColorTexture(GLuint tex_h) { _color_tex = tex_h; }
+    // Sets the texture handle of the alpha texture.
+    void setAlphaTexture(GLuint tex_h) { _alpha_tex = tex_h; }
+    // Sets the texture handle of the font atlas.
+    void setFontTexture(GLuint tex_h) { _font_tex = tex_h; }
 
     void setAntialiasing(bool aa_status);
     bool getAntialiasing() { return _msaa_enable; }
@@ -209,7 +225,7 @@ public:
     float getLineWidthMS() { return _line_w_aa; }
 
     void setClearColor(float r, float g, float b, float a) { glClearColor(r, g, b, a); }
-	void setViewport(GLsizei w, GLsizei h) { glViewport(0, 0, w, h); }
+	void setViewport(GLsizei w, GLsizei h) { _device->setViewport(w, h); }
 
     void init();
     void render(const RenderQueue& queued);
@@ -235,8 +251,6 @@ public:
     virtual void bufferToDevice(TextBuffer& t_buf);
     virtual void drawDeviceBuffer(array_layout layout, const IVertexBuffer& buf);
     virtual void drawDeviceBuffer(const TextBuffer& t_buf);
-
-    virtual void preRender();
 };
 
 // Renderer for OpenGL versions with access to the programmable pipeline
@@ -281,8 +295,7 @@ private:
         { "lights[2].diffuse", 0 },
         { "lights[2].specular", 0 },
         { "colorTex", 0 },
-        { "alphaTex", 0 },
-        { "fontTex", 0 }
+        { "alphaTex", 0 }
     };
 
     bool compileShaders();
@@ -301,8 +314,6 @@ public:
     virtual void bufferToDevice(TextBuffer& t_buf);
     virtual void drawDeviceBuffer(array_layout layout, const IVertexBuffer& buf);
     virtual void drawDeviceBuffer(const TextBuffer& t_buf);
-
-    virtual void preRender();
 };
 
 }

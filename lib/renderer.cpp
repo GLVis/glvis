@@ -4,7 +4,8 @@
 namespace gl3
 {
 
-void MeshRenderer::setAntialiasing(bool aa_status) {
+void MeshRenderer::setAntialiasing(bool aa_status)
+{
     if (_msaa_enable != aa_status) {
         _msaa_enable = aa_status;
         if (_msaa_enable) {
@@ -19,29 +20,35 @@ void MeshRenderer::setAntialiasing(bool aa_status) {
     }
 }
 
-void MeshRenderer::setLineWidth(float w) {
+void MeshRenderer::setLineWidth(float w)
+{
     _line_w = w;
     if (_device && !_msaa_enable) {
         _device->setLineWidth(_line_w);
     }
 }
 
-void MeshRenderer::setLineWidthMS(float w) {
+void MeshRenderer::setLineWidthMS(float w)
+{
     _line_w_aa = w;
     if (_device && _msaa_enable) {
         _device->setLineWidth(_line_w_aa);
     }
 }
 
-void MeshRenderer::render(const RenderQueue& queued)
+void MeshRenderer::init()
+{
+}
+
+void MeshRenderer::render(const RenderQueue& queue)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    for (auto& q_elem : queued) {
+    for (auto& q_elem : queue) {
         const RenderParams& params = q_elem.first;
         _device->setTransformMatrices(params.model_view.mtx, params.projection.mtx);
         _device->setMaterial(params.mesh_material);
         _device->setNumLights(params.num_pt_lights);
-        for (int i = 0; i < LIGHTS_MAX; i++) {
+        for (int i = 0; i < params.num_pt_lights; i++) {
             _device->setPointLight(i, params.lights[i]);
         }
         _device->setAmbientLight(params.light_amb_scene);
@@ -51,32 +58,32 @@ void MeshRenderer::render(const RenderQueue& queued)
         //aggregate buffers with common parameters
         std::vector<pair<array_layout, IVertexBuffer*>> texture_bufs, no_texture_bufs;
         std::vector<TextBuffer*> text_bufs;
-        for (GlDrawable* batch_elem : *(q_elem.second)) {
-            for (int i = 0; i < NUM_LAYOUTS; i++) {
-                for (int j = 0; j < GlDrawable::NUM_SHAPES; j++) {
-                    if (!batch_elem->buffers[i][j])
-                        continue;
-                    if (i == LAYOUT_VTX_TEXTURE0
-                        || i == LAYOUT_VTX_NORMAL_TEXTURE0) {
-                        texture_bufs.emplace_back(i, batch_elem->buffers[i][j].get());
-                    } else {
-                        no_texture_bufs.emplace_back(i, batch_elem->buffers[i][j].get());
-                    }
+        GlDrawable* curr_drawable = q_elem.second;
+        for (int i = 0; i < NUM_LAYOUTS; i++) {
+            for (int j = 0; j < GlDrawable::NUM_SHAPES; j++) {
+                if (!curr_drawable->buffers[i][j])
+                    continue;
+                if (i == LAYOUT_VTX_TEXTURE0
+                    || i == LAYOUT_VTX_NORMAL_TEXTURE0) {
+                    texture_bufs.emplace_back((array_layout) i, curr_drawable->buffers[i][j].get());
+                } else {
+                    no_texture_bufs.emplace_back((array_layout) i, curr_drawable->buffers[i][j].get());
                 }
             }
-            text_bufs.emplace_back(&batch_elem->text_buffer);
         }
+        text_bufs.emplace_back(&curr_drawable->text_buffer);
         if (params.contains_translucent) {
             _device->enableBlend();
-            _device->disableDepthWrite();
+        } else {
+            _device->enableDepthWrite();
         }
-        _device->attachTexture(0, _color_tex);
-        _device->attachTexture(1, _alpha_tex);
+        _device->attachTexture(GLDevice::SAMPLER_COLOR, _color_tex);
+        _device->attachTexture(GLDevice::SAMPLER_ALPHA, _alpha_tex);
         for (auto& buf : texture_bufs) {
             _device->drawDeviceBuffer(buf.first, *buf.second);
         }
-        _device->detachTexture(0);
-        _device->detachTexture(1);
+        _device->detachTexture(GLDevice::SAMPLER_COLOR);
+        _device->detachTexture(GLDevice::SAMPLER_ALPHA);
         for (auto& buf : no_texture_bufs) {
             _device->drawDeviceBuffer(buf.first, *buf.second);
         }
@@ -108,16 +115,20 @@ void MeshRenderer::buffer(GlDrawable* buf)
 
 void GLDevice::init()
 {
-    glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    glLineWidth(Get_LineWidth());
+    glEnable(GL_DEPTH_TEST);
     glPolygonOffset(1,1);
     glEnable(GL_POLYGON_OFFSET_FILL);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // Generate the default texture: a 1x1 texel with color (1, 1, 1, 1)
+    //generate a white default texture
+    //modulation with default texture will just pass through input color
     glBindTexture(GL_TEXTURE_2D, 0);
-    int blk = 0xFFFFFFFF;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &blk);
+    int black_color = 0xFFFFFFFF;
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &black_color);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 }
 
 void GLDevice::setViewport(GLsizei w, GLsizei h)

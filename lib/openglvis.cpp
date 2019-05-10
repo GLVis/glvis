@@ -15,7 +15,7 @@
 #include "material.hpp"
 #include "aux_vis.hpp"
 
-const int NUM_MATERIALS;
+const int NUM_MATERIALS = 5;
 extern Material materials[5];
 extern Light lights[];
 extern std::array<float, 4> amb_setting[];
@@ -120,7 +120,8 @@ VisualizationScene::VisualizationScene()
     ViewCenterX = 0.0;
     ViewCenterY = 0.0;
 
-    _background = BG_BLK;
+    _background = BG_WHITE;
+    GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
     _use_cust_l0_pos = false;
     _lm_idx = 3;
 }
@@ -147,6 +148,7 @@ gl3::RenderParams VisualizationScene::GetMeshDrawParams()
    }
    params.light_amb_scene = amb_setting[_lm_idx];
    params.static_color = GetLineColor();
+   return params;
 }
 
 void VisualizationScene::SetLightMatIdx(unsigned i)
@@ -161,6 +163,17 @@ void VisualizationScene::SetLight0CustomPos(std::array<float, 4> pos)
 {
    _l0_pos = pos;
    _use_cust_l0_pos = true;
+}
+
+void VisualizationScene::ToggleBackground()
+{
+   if (_background == BG_BLK) {
+      _background = BG_WHITE;
+      GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
+   } else {
+      _background = BG_BLK;
+      GetAppWindow()->getRenderer().setClearColor(0.f, 0.f, 0.f, 1.f);
+   }
 }
 
 void VisualizationScene::Rotate(double angle, double x, double y, double z)
@@ -263,3 +276,4 @@ glm::mat4 VisualizationScene::GetModelViewMtx()
    modelView.translate(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
    return modelView.mtx;
 }
+

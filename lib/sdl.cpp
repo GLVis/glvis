@@ -118,7 +118,6 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
       "." << (int)sdl_ver.patch << std::endl;
 
     _renderer.reset(new gl3::MeshRenderer);
-    _renderer->init();
 #ifndef __EMSCRIPTEN__
     if (!GLEW_VERSION_2_0 &&
         !(GLEW_ARB_vertex_shader

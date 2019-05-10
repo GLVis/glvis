@@ -71,7 +71,6 @@ public:
       }
    }
 
-   virtual void Draw();
    virtual gl3::SceneInfo GetSceneObjs();
 
    virtual void EventUpdateColors() { Prepare(); PrepareVectorField(); }

@@ -749,7 +749,7 @@ void ExecuteScriptCommand()
             delete grid_f; grid_f = new_g;
             delete mesh; mesh = new_m;
 
-            vs->Draw();
+            SendExposeEvent();
          }
          else
          {
@@ -786,7 +786,7 @@ void ExecuteScriptCommand()
          scr >> vs->ViewCenterX >> vs->ViewCenterY;
          cout << "Script: viewcenter: "
               << vs->ViewCenterX << ' ' << vs->ViewCenterY << endl;
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word ==  "perspective")
       {
@@ -805,7 +805,7 @@ void ExecuteScriptCommand()
             cout << '?';
          }
          cout << endl;
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word ==  "light")
       {
@@ -824,7 +824,7 @@ void ExecuteScriptCommand()
             cout << '?';
          }
          cout << endl;
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word == "view")
       {
@@ -832,7 +832,7 @@ void ExecuteScriptCommand()
          scr >> theta >> phi;
          cout << "Script: view: " << theta << ' ' << phi << endl;
          vs->SetView(theta, phi);
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word == "zoom")
       {
@@ -840,7 +840,7 @@ void ExecuteScriptCommand()
          scr >> factor;
          cout << "Script: zoom: " << factor << endl;
          vs->Zoom(factor);
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word == "shading")
       {
@@ -863,7 +863,7 @@ void ExecuteScriptCommand()
          {
             vs->SetShading(s, false);
             cout << word << endl;
-            MyExpose();
+            SendExposeEvent();
          }
          else
          {
@@ -877,7 +877,7 @@ void ExecuteScriptCommand()
          cout << "Script: subdivisions: " << flush;
          vs->SetRefineFactors(t, b);
          cout << t << ' ' << b << endl;
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word == "valuerange")
       {
@@ -886,7 +886,7 @@ void ExecuteScriptCommand()
          cout << "Script: valuerange: " << flush;
          vs->SetValueRange(min, max);
          cout << min << ' ' << max << endl;
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word == "autoscale")
       {
@@ -920,7 +920,7 @@ void ExecuteScriptCommand()
          cout << "Script: window: " << window_x << ' ' << window_y
               << ' ' << window_w << ' ' << window_h << endl;
          MoveResizeWindow(window_x, window_y, window_w, window_h);
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word == "keys")
       {
@@ -928,7 +928,7 @@ void ExecuteScriptCommand()
          cout << "Script: keys: '" << keys << "'" << endl;
          // SendKeySequence(keys.c_str());
          CallKeySequence(keys.c_str());
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word == "palette")
       {
@@ -940,7 +940,7 @@ void ExecuteScriptCommand()
          {
             vs->EventUpdateColors();
          }
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word == "palette_repeat")
       {
@@ -951,7 +951,7 @@ void ExecuteScriptCommand()
          {
             vs->EventUpdateColors();
          }
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word == "toggle_attributes")
       {
@@ -973,7 +973,7 @@ void ExecuteScriptCommand()
          scr.get(); // read the end symbol: ';'
          cout << endl;
          vs->ToggleAttributes(attr_list);
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word == "rotmat")
       {
@@ -984,7 +984,7 @@ void ExecuteScriptCommand()
             cout << ' ' << vs->rotmat[i/4][i%4];
          }
          cout << endl;
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word == "camera")
       {
@@ -997,7 +997,7 @@ void ExecuteScriptCommand()
          }
          cout << endl;
          vs->cam.Set(cam);
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word == "scale")
       {
@@ -1007,7 +1007,7 @@ void ExecuteScriptCommand()
          cout << ' ' << scale;
          cout << endl;
          vs->Scale(scale);
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word == "translate")
       {
@@ -1017,7 +1017,7 @@ void ExecuteScriptCommand()
          cout << ' ' << x << ' ' << y << ' ' << z;
          cout << endl;
          vs->Translate(x, y, z);
-         MyExpose();
+         SendExposeEvent();
       }
       else if (word == "plot_caption")
       {
@@ -1025,7 +1025,7 @@ void ExecuteScriptCommand()
          scr >> ws >> delim;
          getline(scr, plot_caption, delim);
          vs->PrepareCaption(); // turn on or off the caption
-         MyExpose();
+         SendExposeEvent();
       }
       else
       {
@@ -1151,8 +1151,8 @@ int main (int argc, char *argv[])
    int         portnum       = 19916;
    bool        secure        = socketstream::secure_default;
    int         multisample   = GetMultisample();
-   double      line_width    = Get_LineWidth();
-   double      ms_line_width = Get_MS_LineWidth();
+   double      line_width    = 1.0;
+   double      ms_line_width = gl3::LINE_WIDTH_AA;
    int         geom_ref_type = Quadrature1D::ClosedUniform;
 
    OptionsParser args(argc, argv);
@@ -1273,6 +1273,7 @@ int main (int argc, char *argv[])
    {
       SetMultisample(multisample);
    }
+   #if 0
    if (line_width != Get_LineWidth())
    {
       Set_LineWidth(line_width);
@@ -1281,6 +1282,7 @@ int main (int argc, char *argv[])
    {
       Set_MS_LineWidth(ms_line_width);
    }
+   #endif
    if (c_plot_caption != string_none)
    {
       plot_caption = c_plot_caption;
@@ -1663,7 +1665,7 @@ int main (int argc, char *argv[])
                   {
                      // paletteSet(4);
                      paletteSet(11);
-                     Set_Material_And_Light(4,3);
+                     //Set_Material_And_Light(4,3);
                   }
                   else
                   {

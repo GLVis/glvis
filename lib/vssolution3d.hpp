@@ -116,7 +116,6 @@ public:
    virtual void PrepareFlat();
    virtual void PrepareLines();
    virtual void Prepare();
-   virtual void Draw();
 
    virtual gl3::SceneInfo GetSceneObjs();
 

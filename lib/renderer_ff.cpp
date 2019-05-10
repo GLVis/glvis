@@ -91,17 +91,17 @@ void FFGLDevice::setNumLights(int i) {
 
 void FFGLDevice::setMaterial(Material mat)
 {
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat.diffuse);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat.ambient);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat.specular);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat.diffuse.data());
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat.ambient.data());
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat.specular.data());
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, mat.shininess);
 }
 
 void FFGLDevice::setPointLight(int i, Light lt)
 {
-    glLightfv(GL_LIGHT0 + i, GL_POSITION, lt.position);
-    glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, lt.diffuse);
-    glLightfv(GL_LIGHT0 + i, GL_SPECULAR, lt.specular);
+    glLightfv(GL_LIGHT0 + i, GL_POSITION, lt.position.data());
+    glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, lt.diffuse.data());
+    glLightfv(GL_LIGHT0 + i, GL_SPECULAR, lt.specular.data());
 }
 
 void FFGLDevice::setAmbientLight(const std::array<float, 4>& amb)

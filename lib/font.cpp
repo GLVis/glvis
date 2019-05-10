@@ -15,8 +15,6 @@
 #include "aux_vis.hpp"
 #include "platform_gl.hpp"
 
-extern void paletteRebind();
-
 struct vert_tex2d {
     float x, y;
     float u, v;
@@ -114,10 +112,4 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
     //glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
     return true;
-}
-
-void GlVisFont::bindFontTex()
-{
-    glActiveTexture(GL_TEXTURE0 + 1);
-    glBindTexture(GL_TEXTURE_2D, font_tex);
 }

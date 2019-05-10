@@ -76,6 +76,6 @@ public:
 
    float getAtlasHeight() { return tex_h; }
 
-   void bindFontTex();
+   unsigned getFontTex() { return font_tex; }
 };
 #endif /* FONT_HPP */

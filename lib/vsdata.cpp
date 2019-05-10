@@ -710,7 +710,7 @@ void KeyTPressed()
 {
    int ml;
 
-   ml = vsdata->GetLightMatIdx() + 1;
+   ml = (vsdata->GetLightMatIdx() + 1) % 5;
    vsdata->SetLightMatIdx(ml);
    SendExposeEvent();
    cout << "New material/light : " << ml << endl;
@@ -1295,7 +1295,7 @@ void VisualizationSceneScalarData::PrepareAxes()
            << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
       axes_buf.addText(x[1], y[1], z[1], buf1.str());
    }
-   updated_bufs.emplace_back(axes_buf);
+   updated_bufs.emplace_back(&axes_buf);
 
    float lenx, leny, lenz;
    lenx = leny = lenz = .95;

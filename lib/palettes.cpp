@@ -12,6 +12,7 @@
 
 #include "palettes.hpp"
 #include "platform_gl.hpp"
+#include "aux_vis.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -4782,11 +4783,9 @@ void _paletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
 }
 
 void paletteRebind() {
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, palette_tex[curr_palette][use_smooth]);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, alpha_tex);
-    glActiveTexture(GL_TEXTURE0);
+   GetAppWindow()->getRenderer()
+      .setColorTexture(palette_tex[curr_palette][use_smooth]);
+   GetAppWindow()->getRenderer().setAlphaTexture(alpha_tex);
 }
 
 void paletteInit()

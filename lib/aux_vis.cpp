@@ -69,26 +69,22 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    cout << "OpenGL Visualization" << endl;
 #endif
    if (!wnd) {
-       wnd = new SdlWindow();
-       if (!wnd->createWindow(name, x, y, w, h)) {
-           return 1;
-       }
+      wnd = new SdlWindow();
+      if (!wnd->createWindow(name, x, y, w, h)) {
+         return 1;
+      }
 
-       //state = new GlState();
-       //if (!state->compileShaders()) {
-       //    return 1;
-       //}
-       paletteInit();
    } else {
        wnd->clearEvents();
+       paletteRebind();
    }
-
-   paletteInit();
-   InitFont();
 
 #ifdef GLVIS_DEBUG
    cout << "Window should be up" << endl;
 #endif
+   paletteInit();
+   InitFont();
+   wnd->getRenderer().setFontTexture(GetFont()->getFontTex());
 
    SetUseTexture(0);
 
@@ -710,7 +706,7 @@ void RightButtonLoc (EventInfo *event)
          x = 0.; y = 0.; z = -1.;
       }
       cout << "(x,y,z) = (" << x << ',' << y << ',' << z << ')' << endl;
-      locscene->SetLight0CustomPos({x, y, z, 0.f});
+      locscene->SetLight0CustomPos({(float)x, (float)y, (float)z, 0.f});
    }
    else if ( !( event->keymod & KMOD_CTRL ) )
    {
@@ -1026,7 +1022,7 @@ void KeyS()
 
 void KeyCtrlP()
 {
-#ifdef 0
+#if 0
 #ifndef __EMSCRIPTEN__
    if (!GetGlState()->renderToFeedback()) {
        cout << "Unable to initialize printing capture pipeline." << endl;
@@ -1604,6 +1600,7 @@ void SetMultisample(int m)
 const char *fc_font_patterns[] =
 {
    "OpenSans:style=Regular",
+   "Helvetica:style=Regular",
    "Ubuntu Light:style=Regular",
    "Ubuntu:style=Regular:weight=80",
    "DejaVu Sans:style=Book:width=Normal",
@@ -1625,7 +1622,9 @@ std::string priority_font;
 void InitFont()
 {
     if (priority_font == std::string("")) {
-        SetFont(fc_font_patterns, num_font_patterns, font_size);
+        if (!SetFont(fc_font_patterns, num_font_patterns, font_size)) {
+           cerr << "Unable to load font." << endl;
+        }
     } else {
         if (!glvis_font.LoadFont(priority_font.c_str(), font_size))
            cout << "Font not found: " << priority_font << endl;

@@ -499,7 +499,6 @@ void drawDeviceBufferImpl(const VertexBuffer<T>& buf)
 
 void CoreGLDevice::drawDeviceBuffer(array_layout layout, const IVertexBuffer &buf)
 {
-    cerr << "CoreGLDevice::drawDeviceBuffer(IVertexBuffer)\n";
     if (buf.get_handle() == 0) { return; }
     if (buf.count() == 0) { return; }
     glBindBuffer(GL_ARRAY_BUFFER, buf.get_handle());
@@ -531,9 +530,9 @@ void CoreGLDevice::drawDeviceBuffer(array_layout layout, const IVertexBuffer &bu
 }
 void CoreGLDevice::drawDeviceBuffer(const TextBuffer& t_buf)
 {
-    cerr << "CoreGLDevice::drawDeviceBuffer(TextBuffer)\n";
-    cerr << "Clear color: "  << _static_color[0] << " a: " << _static_color[3] << endl;
+    if (t_buf.get_handle() == 0) { return; }
     if (t_buf.count() == 0) { return; }
+    glUniform1i(_uniforms["containsText"], GL_TRUE);
     glEnableVertexAttribArray(ATTR_VERTEX);
     glEnableVertexAttribArray(ATTR_TEXT_VERTEX);
     glEnableVertexAttribArray(ATTR_TEXCOORD1);
@@ -547,6 +546,7 @@ void CoreGLDevice::drawDeviceBuffer(const TextBuffer& t_buf)
 
     glDisableVertexAttribArray(ATTR_TEXT_VERTEX);
     glDisableVertexAttribArray(ATTR_TEXCOORD1);
+    glUniform1i(_uniforms["containsText"], GL_FALSE);
 }
 
 }
