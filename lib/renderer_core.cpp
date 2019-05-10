@@ -2,6 +2,7 @@
 #include "aux_vis.hpp"
 
 #include <regex>
+#include <type_traits>
 
 #ifdef __EMSCRIPTEN__
 // TODO: for webgl glsl the version ends in "es": #version GLSL_VER es
@@ -37,6 +38,105 @@ const std::string PRINTING_FS =
 
 namespace gl3
 {
+
+template<typename T>
+struct type_to_gl {
+    static const GLenum value;
+};
+
+template<> const GLenum type_to_gl<float>::value = GL_FLOAT;
+template<> const GLenum type_to_gl<uint8_t>::value = GL_UNSIGNED_BYTE;
+
+struct attr_base
+{
+    static void setup() { }
+    static void clear() { }
+    enum { exists = false };
+};
+
+template<
+    typename TV,
+    typename TAttr,
+    TAttr TV::*Attrib,
+    int AttrIdx,
+    bool AttrNorm = is_integral<typename TAttr::value_type>::value>
+struct attr_exist
+{
+    static void setup()
+    {
+        void* offset = (void*)(&((TV*)0->*Attrib));
+        glEnableVertexAttribArray(AttrIdx);
+        glVertexAttribPointer(AttrIdx,
+                              std::tuple_size<TAttr>::value,
+                              type_to_gl<typename TAttr::value_type>::value,
+                              AttrNorm,
+                              sizeof(TV), offset);
+    }
+    static void clear()
+    {
+        glDisableVertexAttribArray(AttrIdx);
+    }
+    enum { exists = true };
+};
+
+// Default attribute traits for vertex types
+// Provides no-op setup/clear functions if an attribute doesn't exist.
+template<typename TV, typename = int>
+struct attr_coord : attr_base { };
+
+template<typename TV, typename = int>
+struct attr_normal : attr_base { };
+
+template<typename TV, typename = int>
+struct attr_color : attr_base { };
+
+template<typename TV, typename = int>
+struct attr_texcoord : attr_base { };
+
+// Template specializations for attribute traits
+// If an attribute exists in a vertex, generates setup and clear functions
+// which setup OpenGL vertex attributes.
+template<typename TV>
+struct attr_coord<TV, decltype((void)TV::coord, 0)>
+    : attr_exist<TV, decltype(TV::coord), &TV::coord, CoreGLDevice::ATTR_VERTEX>
+{ };
+
+template<typename TV>
+struct attr_normal<TV, decltype((void)TV::norm, 0)>
+    : attr_exist<TV, decltype(TV::norm), &TV::norm, CoreGLDevice::ATTR_NORMAL>
+{ };
+
+template<typename TV>
+struct attr_color<TV, decltype((void)TV::color, 0)>
+    : attr_exist<TV, decltype(TV::color), &TV::color, CoreGLDevice::ATTR_COLOR>
+{ };
+
+template<typename TV>
+struct attr_texcoord<TV, decltype((void)TV::texCoord, 0)>
+    : attr_exist<TV, decltype(TV::texCoord), &TV::texCoord, CoreGLDevice::ATTR_TEXCOORD0>
+{ };
+
+template<typename TVtx>
+void setupVtxAttrLayout()
+{
+    static_assert(attr_coord<TVtx>::exists,
+        "Invalid vertex type, requires at least TVtx::coord to be present.");
+    attr_coord<TVtx>::setup();
+    attr_normal<TVtx>::setup();
+    attr_color<TVtx>::setup();
+    attr_texcoord<TVtx>::setup();
+}
+
+template<typename TVtx>
+void clearVtxAttrLayout()
+{
+    static_assert(attr_coord<TVtx>::exists,
+        "Invalid vertex type, requires at least TVtx::coord to be present.");
+    attr_coord<TVtx>::clear();
+    attr_normal<TVtx>::clear();
+    attr_color<TVtx>::clear();
+    attr_texcoord<TVtx>::clear();
+}
 
 std::string formatShaderString(const std::string &shader_string, GLenum shader_type, int glsl_version)
 {
@@ -225,6 +325,7 @@ bool CoreGLDevice::compileShaders()
         _default_prgm = 0;
         return false;
     }
+    return true;
 }
 
 void CoreGLDevice::initializeShaderState()
@@ -247,11 +348,11 @@ void CoreGLDevice::initializeShaderState()
     }
     glUniform1i(_uniforms["colorTex"], 0);
     glUniform1i(_uniforms["alphaTex"], 1);
-    glUniform1i(_uniforms["fontTex"], 1);
 }
 
 void CoreGLDevice::init()
 {
+    GLDevice::init();
     if (!this->compileShaders())
     {
         std::cerr << "Unable to initialize CoreGLDevice." << std::endl;
@@ -291,7 +392,7 @@ void CoreGLDevice::setNumLights(int i)
 
 void CoreGLDevice::setMaterial(Material mat)
 {
-    glUniform4fv(_uniforms["material.specular"], 1, mat.specular);
+    glUniform4fv(_uniforms["material.specular"], 1, mat.specular.data());
     glUniform1f(_uniforms["material.shininess"], mat.shininess);
 }
 
@@ -302,9 +403,9 @@ void CoreGLDevice::setPointLight(int i, Light lt)
         return;
     }
     std::string lt_index = "lights[" + std::to_string(i) + "]";
-    glUniform3fv(_uniforms[lt_index + ".position"], 1, lt.position);
-    glUniform4fv(_uniforms[lt_index + ".diffuse"], 1, lt.diffuse);
-    glUniform4fv(_uniforms[lt_index + ".specular"], 1, lt.specular);
+    glUniform3fv(_uniforms[lt_index + ".position"], 1, lt.position.data());
+    glUniform4fv(_uniforms[lt_index + ".diffuse"], 1, lt.diffuse.data());
+    glUniform4fv(_uniforms[lt_index + ".specular"], 1, lt.specular.data());
 }
 
 void CoreGLDevice::setAmbientLight(const std::array<float, 4> &amb)
@@ -382,73 +483,66 @@ void CoreGLDevice::bufferToDevice(TextBuffer &t_buf)
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * buf_data.size(), buf_data.data(), GL_STATIC_DRAW);
 }
 
+template<typename T>
+void drawDeviceBufferImpl(const VertexBuffer<T>& buf)
+{
+    if (!attr_normal<T>::exists) {
+        glVertexAttrib3f(CoreGLDevice::ATTR_NORMAL, 0.f, 0.f, 1.f);
+    }
+    if (!attr_color<T>::exists && attr_texcoord<T>::exists) {
+        glVertexAttrib4f(CoreGLDevice::ATTR_COLOR, 1.f, 1.f, 1.f, 1.f);
+    }
+    setupVtxAttrLayout<T>();
+    glDrawArrays(buf.get_shape(), 0, buf.count());
+    clearVtxAttrLayout<T>();
+}
+
 void CoreGLDevice::drawDeviceBuffer(array_layout layout, const IVertexBuffer &buf)
 {
+    cerr << "CoreGLDevice::drawDeviceBuffer(IVertexBuffer)\n";
     if (buf.get_handle() == 0) { return; }
     if (buf.count() == 0) { return; }
     glBindBuffer(GL_ARRAY_BUFFER, buf.get_handle());
+    if (layout == Vertex::layout || layout == VertexNorm::layout) {
+        glVertexAttrib4fv(ATTR_COLOR, _static_color.data());
+    }
     switch (layout) {
-    case Vertex::layout:
-    {
-        Vertex::setupAttribLayout();
-        glVertexAttrib4fv(ATTR_COLOR, _static_color.data());
-        glVertexAttrib3f(ATTR_NORMAL, 0.f, 0.f, 1.f);
-        glDrawArrays(buf.get_shape(), 0, buf.count());
-        Vertex::clearAttribLayout();
-    }
-    break;
-    case VertexColor::layout:
-    {
-        VertexColor::setupAttribLayout();
-        glVertexAttrib3f(ATTR_NORMAL, 0.f, 0.f, 1.f);
-        glDrawArrays(buf.get_shape(), 0, buf.count());
-        VertexColor::clearAttribLayout();
-    }
-    break;
-    case VertexTex::layout:
-    {
-        VertexTex::setupAttribLayout();
-        glVertexAttrib4f(ATTR_COLOR, 1.f, 1.f, 1.f, 1.f);
-        glVertexAttrib3f(ATTR_NORMAL, 0.f, 0.f, 1.f);
-        glDrawArrays(buf.get_shape(), 0, buf.count());
-        VertexTex::clearAttribLayout();
-    }
-    break;
-    case VertexNorm::layout:
-    {
-        VertexNorm::setupAttribLayout();
-        glVertexAttrib4fv(ATTR_COLOR, _static_color.data());
-        glDrawArrays(buf.get_shape(), 0, buf.count());
-        VertexNorm::clearAttribLayout();
-    }
-    break;
-    case VertexNormColor::layout:
-    {
-        VertexNormColor::setupAttribLayout();
-        glDrawArrays(buf.get_shape(), 0, buf.count());
-        VertexNormColor::clearAttribLayout();
-    }
-    break;
-    case VertexNormTex::layout:
-    {
-        VertexNormTex::setupAttribLayout();
-        glVertexAttrib4f(ATTR_COLOR, 1.f, 1.f, 1.f, 1.f);
-        glDrawArrays(buf.get_shape(), 0, buf.count());
-        VertexNormTex::clearAttribLayout();
-    }
-    break;
+        case Vertex::layout:
+            drawDeviceBufferImpl(static_cast<const VertexBuffer<Vertex>&>(buf));
+            break;
+        case VertexColor::layout:
+            drawDeviceBufferImpl(static_cast<const VertexBuffer<VertexColor>&>(buf));
+            break;
+        case VertexTex::layout:
+            drawDeviceBufferImpl(static_cast<const VertexBuffer<VertexTex>&>(buf));
+            break;
+        case VertexNorm::layout:
+            drawDeviceBufferImpl(static_cast<const VertexBuffer<VertexNorm>&>(buf));
+            break;
+        case VertexNormColor::layout:
+            drawDeviceBufferImpl(static_cast<const VertexBuffer<VertexNormColor>&>(buf));
+            break;
+        case VertexNormTex::layout:
+            drawDeviceBufferImpl(static_cast<const VertexBuffer<VertexNormTex>&>(buf));
+            break;
+        default:
+            cerr << "WARNING: Unhandled vertex layout " << layout << endl;
     }
 }
 void CoreGLDevice::drawDeviceBuffer(const TextBuffer& t_buf)
 {
+    cerr << "CoreGLDevice::drawDeviceBuffer(TextBuffer)\n";
+    cerr << "Clear color: "  << _static_color[0] << " a: " << _static_color[3] << endl;
+    if (t_buf.count() == 0) { return; }
     glEnableVertexAttribArray(ATTR_VERTEX);
     glEnableVertexAttribArray(ATTR_TEXT_VERTEX);
     glEnableVertexAttribArray(ATTR_TEXCOORD1);
     glBindBuffer(GL_ARRAY_BUFFER, t_buf.get_handle());
 
+    glVertexAttrib4fv(ATTR_COLOR, _static_color.data());
     glVertexAttribPointer(ATTR_VERTEX, 3, GL_FLOAT, GL_FALSE, t_buf.get_stride(), 0);
-    glVertexAttribPointer(ATTR_VERTEX, 2, GL_FLOAT, GL_FALSE, t_buf.get_stride(), (void*)(sizeof(float) * 3));
-    glVertexAttribPointer(ATTR_VERTEX, 2, GL_FLOAT, GL_FALSE, t_buf.get_stride(), (void*)(sizeof(float) * 5));
+    glVertexAttribPointer(ATTR_TEXT_VERTEX, 2, GL_FLOAT, GL_FALSE, t_buf.get_stride(), (void*)(sizeof(float) * 3));
+    glVertexAttribPointer(ATTR_TEXCOORD1, 2, GL_FLOAT, GL_FALSE, t_buf.get_stride(), (void*)(sizeof(float) * 5));
     glDrawArrays(GL_TRIANGLES, 0, t_buf.count());
 
     glDisableVertexAttribArray(ATTR_TEXT_VERTEX);

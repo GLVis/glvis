@@ -61,12 +61,10 @@ struct alignas(16) Vertex
    std::array<float, 3> coord;
 
    static Vertex create(double * d)
-{
-   return Vertex {(float) d[0], (float) d[1], (float) d[2]};
-}
-static void setupAttribLayout();
-static void clearAttribLayout() { }
-static const int layout = LAYOUT_VTX;
+   {
+      return Vertex {(float) d[0], (float) d[1], (float) d[2]};
+   }
+   static const int layout = LAYOUT_VTX;
 };
 
 struct alignas(16) VertexColor
@@ -74,8 +72,6 @@ struct alignas(16) VertexColor
    std::array<float, 3> coord;
    std::array<uint8_t, 4> color;
 
-   static void setupAttribLayout();
-   static void clearAttribLayout();
    static const int layout = LAYOUT_VTX_COLOR;
 };
 
@@ -84,8 +80,6 @@ struct alignas(16) VertexTex
    std::array<float, 3> coord;
    std::array<float, 2> texCoord;
 
-   static void setupAttribLayout();
-   static void clearAttribLayout();
    static const int layout = LAYOUT_VTX_TEXTURE0;
 };
 
@@ -94,8 +88,6 @@ struct alignas(16) VertexNorm
    std::array<float, 3> coord;
    std::array<float, 3> norm;
 
-   static void setupAttribLayout();
-   static void clearAttribLayout();
    static const int layout = LAYOUT_VTX_NORMAL;
 };
 
@@ -105,8 +97,6 @@ struct alignas(16) VertexNormColor
    std::array<float, 3> norm;
    std::array<uint8_t, 4> color;
 
-   static void setupAttribLayout();
-   static void clearAttribLayout();
    static const int layout = LAYOUT_VTX_NORMAL_COLOR;
 };
 
@@ -116,8 +106,6 @@ struct alignas(16) VertexNormTex
    std::array<float, 3> norm;
    std::array<float, 2> texCoord;
 
-   static void setupAttribLayout();
-   static void clearAttribLayout();
    static const int layout = LAYOUT_VTX_NORMAL_TEXTURE0;
 };
 
@@ -331,6 +319,8 @@ public:
     * Gets the stride between vertices.
     */
    virtual size_t get_stride() const = 0;
+
+   virtual const void* get_data() const = 0;
 };
 
 template<typename T>
@@ -341,7 +331,7 @@ private:
    std::vector<T> _data;
 
 public:
-   typedef std::vector<T>::const_iterator ConstIterator;
+   typedef typename std::vector<T>::const_iterator ConstIterator;
 
    VertexBuffer(GLenum shape) : _shape(shape) { }
    ~VertexBuffer() { }
@@ -356,6 +346,8 @@ public:
 
    ConstIterator begin() const { return _data.begin(); };
    ConstIterator end() const { return _data.end(); };
+
+   virtual const void* get_data() const { return _data.data(); }
 
    /**
     * Add a vertex to the buffer.
@@ -422,10 +414,11 @@ public:
     */
    static void getObjectSize(const std::string& text, int& w, int& h);
 
-   virtual void clear() { _data.clear(); }
+   virtual void clear() { _data.clear(); _num_chars = 0; }
    virtual size_t count() const { return _num_chars * 6; };
    virtual GLenum get_shape() const { return GL_TRIANGLES; };
    virtual size_t get_stride() const { return sizeof(float) * 8; };
+   virtual const void* get_data() const { return nullptr; }
 };
 
 class IDrawHook
