@@ -4736,40 +4736,33 @@ void _paletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
  */
 void _paletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
 {
-   int j;
-   double t;
-   int offset;
+   GLfloat * texture_buf = new GLfloat[4 * plt_size];
 
-   size_t Texture_Size = Max_Texture_Size;
-   GLfloat texture_buf[4 * Texture_Size];
-   for (size_t i = 0; i < Texture_Size; i++)
+   if (RepeatPaletteTimes > 0)
    {
-      t = double(i) / (Texture_Size - 1);
-      t *= 0.999999999 * ( plt_size - 1 ) * abs(RepeatPaletteTimes);
-      j = (int) floor(t);
-      t -= j;
-
-      if (((j / (plt_size-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
-          ((j / (plt_size-1)) % 2 == 1 && RepeatPaletteTimes < 0))
+      for (size_t i = 0; i < plt_size; i++)
       {
-         offset = 3 * ( j % (plt_size-1) );
+         texture_buf[4*i] = palette[3*i];
+         texture_buf[4*i+1] = palette[3*i+1];
+         texture_buf[4*i+2] = palette[3*i+2];
+         texture_buf[4*i+3] = 1.0;
       }
-      else
+   }
+   else
+   {
+      for (size_t i = 0; i < plt_size; i++)
       {
-         offset = 3 * ( (plt_size-2) - j % (plt_size-1) );
-         t = 1.0 - t;
+         texture_buf[4*i+0] = palette[3*(plt_size-1-i)+0];
+         texture_buf[4*i+1] = palette[3*(plt_size-1-i)+1];
+         texture_buf[4*i+2] = palette[3*(plt_size-1-i)+2];
+         texture_buf[4*i+3] = 1.0;
       }
-
-      texture_buf[4*i+0] = (1.0 - t) * palette[offset] + t * palette[offset + 3];
-      texture_buf[4*i+1] = (1.0 - t) * palette[offset + 1] + t * palette[offset + 4];
-      texture_buf[4*i+2] = (1.0 - t) * palette[offset + 2] + t * palette[offset + 5];
-      texture_buf[4*i+3] = 1.0;
    }
    glBindTexture(GL_TEXTURE_2D, tex);
    glTexImage2D(GL_TEXTURE_2D,
                 0,
                 GL_RGBA,
-                Texture_Size,
+                plt_size,
                 1,
                 0,
                 GL_RGBA,
@@ -4778,8 +4771,8 @@ void _paletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
 
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
 void paletteRebind() {
