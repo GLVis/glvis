@@ -12,7 +12,6 @@
 #ifndef GLVIS_COLOR_PALETTES
 #define GLVIS_COLOR_PALETTES
 
-
 /**
  * Initializes the palette textures.
  */

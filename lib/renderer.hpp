@@ -129,6 +129,14 @@ protected:
 
     std::array<float, 4> _static_color;
 public:
+
+    enum DeviceType
+    {
+        NO_DEVICE,
+        FF_DEVICE,
+        CORE_DEVICE
+    };
+
     virtual ~GLDevice() = default;
     const static int SAMPLER_COLOR = 0;
     const static int SAMPLER_ALPHA = 1;
@@ -151,6 +159,7 @@ public:
     void setLineWidth(float w) { glLineWidth(w); }
 
     virtual void init();
+    virtual DeviceType getType() = 0;
     // Sets the window viewport.
     void setViewport(GLsizei w, GLsizei h);
     // Gets the current window viewport.
@@ -209,6 +218,8 @@ public:
         _device.reset(new TDevice(device));
     }
 
+    GLenum getDeviceAlphaChannel();
+
     // Sets the texture handle of the color palette.
     void setColorTexture(GLuint tex_h) { _color_tex = tex_h; }
     // Sets the texture handle of the alpha texture.
@@ -238,6 +249,9 @@ public:
 class FFGLDevice : public GLDevice
 {
 public:
+
+    virtual DeviceType getType() { return GLDevice::FF_DEVICE; }
+
     virtual void init();
     virtual void setTransformMatrices(glm::mat4 model_view, glm::mat4 projection);
     virtual void setNumLights(int i);
@@ -301,6 +315,8 @@ private:
     bool compileShaders();
     void initializeShaderState();
 public:
+    virtual DeviceType getType() { return GLDevice::CORE_DEVICE; }
+
     virtual void init();
     virtual void setTransformMatrices(glm::mat4 model_view, glm::mat4 projection);
     virtual void setNumLights(int i);

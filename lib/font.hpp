@@ -19,6 +19,8 @@
 #include <string>
 #include <iostream>
 
+#include "platform_gl.hpp"
+
 using namespace std;
 
 
@@ -35,6 +37,9 @@ public:
 private:
    bool init;
    bool font_init;
+
+   GLenum alpha_channel;
+
    glyph font_chars[256];
    float tex_w;
    float tex_h;
@@ -77,5 +82,7 @@ public:
    float getAtlasHeight() { return tex_h; }
 
    unsigned getFontTex() { return font_tex; }
+
+   void setAlphaChannel(GLenum alpha) { alpha_channel = alpha; }
 };
 #endif /* FONT_HPP */

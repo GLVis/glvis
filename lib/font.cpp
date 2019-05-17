@@ -67,11 +67,8 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
     glActiveTexture(GL_TEXTURE0 + 1);
     glBindTexture(GL_TEXTURE_2D, font_tex);
     std::vector<uint8_t> zeros(tex_w * tex_h, 0);
-#ifdef __EMSCRIPTEN__
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, tex_w, tex_h, 0, GL_ALPHA, GL_UNSIGNED_BYTE, zeros.data());
-#else
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_w, tex_h, 0, GL_RED, GL_UNSIGNED_BYTE, zeros.data());
-#endif
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_w, tex_h, 0, alpha_channel, GL_UNSIGNED_BYTE, zeros.data());
+
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -90,11 +87,7 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
                         x + 1, 1,
                         face->glyph->bitmap.width,
                         face->glyph->bitmap.rows,
-#ifdef __EMSCRIPTEN__
-                        GL_ALPHA,
-#else
-                        GL_RED,
-#endif
+                        alpha_channel,
                         GL_UNSIGNED_BYTE,
                         face->glyph->bitmap.buffer);
         font_chars[c] = {

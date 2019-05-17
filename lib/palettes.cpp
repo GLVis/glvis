@@ -4788,6 +4788,8 @@ void paletteRebind() {
    GetAppWindow()->getRenderer().setAlphaTexture(alpha_tex);
 }
 
+GLenum alpha_channel;
+
 void paletteInit()
 {
    if (first_init)
@@ -4807,6 +4809,7 @@ void paletteInit()
       glGenTextures(1, &alpha_tex);
       first_init = false;
    }
+   alpha_channel = GetAppWindow()->getRenderer().getDeviceAlphaChannel();
 
    for (int i = 0; i < Num_RGB_Palettes; i++)
    {
@@ -4818,7 +4821,7 @@ void paletteInit()
    std::fill(alphaTexData, alphaTexData + 4096 * 2, 1.0);
    glActiveTexture(GL_TEXTURE1);
    glBindTexture(GL_TEXTURE_2D, alpha_tex);
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 4096, 2, 0, GL_RED, GL_FLOAT, alphaTexData);
+   glTexImage2D(GL_TEXTURE_2D, 0, alpha_channel, 4096, 2, 0, alpha_channel, GL_FLOAT, alphaTexData);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -4870,11 +4873,7 @@ void GenerateAlphaTexture(float matAlpha, float matAlphaCenter) {
    }
    glActiveTexture(GL_TEXTURE1);
    glBindTexture(GL_TEXTURE_2D, alpha_tex);
-#ifdef __EMSCRIPTEN__
-   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 1, 4096, 1, GL_ALPHA, GL_FLOAT, alphaTexData);
-#else
-   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 1, 4096, 1, GL_RED, GL_FLOAT, alphaTexData);
-#endif
+   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 1, 4096, 1, alpha_channel, GL_FLOAT, alphaTexData);
    glActiveTexture(GL_TEXTURE0);
 }
 

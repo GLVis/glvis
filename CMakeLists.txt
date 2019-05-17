@@ -28,6 +28,7 @@ endif()
 enable_language(C)
 enable_language(CXX)
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Default options match the Makefile
 if (NOT CMAKE_BUILD_TYPE)

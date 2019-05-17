@@ -17,7 +17,8 @@ void FFDrawVertexColor(VertexColor vc)
 
 void FFDrawVertexTex(VertexTex vt)
 {
-    glTexCoord2fv(vt.texCoord.data());
+    glMultiTexCoord2fv(GL_TEXTURE0, vt.texCoord.data());
+    glMultiTexCoord2fv(GL_TEXTURE1, vt.texCoord.data());
     glVertex3fv(vt.coord.data());
 }
 
@@ -36,7 +37,8 @@ void FFDrawVertexNormColor(VertexNormColor vnc)
 
 void FFDrawVertexNormTex(VertexNormTex vnc)
 {
-    glTexCoord2fv(vnc.texCoord.data());
+    glMultiTexCoord2fv(GL_TEXTURE0, vnc.texCoord.data());
+    glMultiTexCoord2fv(GL_TEXTURE1, vnc.texCoord.data());
     glNormal3fv(vnc.norm.data());
     glVertex3fv(vnc.coord.data());
 }
@@ -45,13 +47,14 @@ void FFGLDevice::init()
 {
     GLDevice::init();
     // Fixed-function pipeline parameters
+    glEnable(GL_NORMALIZE);
     glShadeModel(GL_SMOOTH);
     glEnable(GL_COLOR_MATERIAL);
     glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
     // Texturing is set up such that the output color is computed as follows:
     // - color_out.rgb = color_in.rgb * tex0.rgb
-    // - color_out.a = tex1.r
+    // - color_out.a = tex1.a
     // Texture unit 0 should contain the color palette, while texture unit 1
     // contains either the transparency alpha channel, or the font texture
     glActiveTexture(GL_TEXTURE0);
@@ -62,7 +65,7 @@ void FFGLDevice::init()
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
     glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
     glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
-    glTexEnvi(GL_TEXTURE_ENV, GL_SRC0_RGB, GL_TEXTURE0);
+    glTexEnvi(GL_TEXTURE_ENV, GL_SRC0_RGB, GL_PREVIOUS);
     glTexEnvi(GL_TEXTURE_ENV, GL_SRC0_ALPHA, GL_TEXTURE);
 }
 
@@ -95,13 +98,24 @@ void FFGLDevice::setMaterial(Material mat)
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat.ambient.data());
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat.specular.data());
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, mat.shininess);
+
+    GLfloat memis[] = { 0.0, 0.0, 0.0, 1.0 };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, memis);
 }
 
 void FFGLDevice::setPointLight(int i, Light lt)
 {
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
     glLightfv(GL_LIGHT0 + i, GL_POSITION, lt.position.data());
+
+    GLfloat lambi[] = { 0.0, 0.0, 0.0, 1.0 };
+    glLightfv(GL_LIGHT0 + i, GL_AMBIENT, lambi);
+
     glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, lt.diffuse.data());
     glLightfv(GL_LIGHT0 + i, GL_SPECULAR, lt.specular.data());
+    glPopMatrix();
 }
 
 void FFGLDevice::setAmbientLight(const std::array<float, 4>& amb)
@@ -174,6 +188,7 @@ void FFGLDevice::bufferToDevice(array_layout layout, IVertexBuffer& buf)
         }
         break;
     }
+    glEnd();
     glEndList();
 }
 
@@ -200,25 +215,35 @@ void FFGLDevice::drawDeviceBuffer(array_layout layout, const IVertexBuffer& buf)
         glNormal3f(0.f, 0.f, 1.f);
     }
     glCallList(buf.get_handle());
+    // reset texturing parameters
+    //glMultiTexCoord2f(GL_TEXTURE0, 0.f, 0.f);
+    //glMultiTexCoord2f(GL_TEXTURE1, 0.f, 0.f);
 }
 
 void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)
 {
     glColor4fv(_static_color.data());
     glNormal3f(0.f, 0.f, 1.f);
+    glMultiTexCoord2f(GL_TEXTURE0, 0.f, 0.f);
     float tex_w = GetFont()->getAtlasWidth();
     float tex_h = GetFont()->getAtlasHeight();
-    glm::mat4 projTextMtx = glm::ortho<float>(0.f, _vp_width,
-                                              0.f, _vp_height,
-                                              -5.f, 5.f);
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadMatrixf(glm::value_ptr(projTextMtx));
+    // Model-view transform:
+    // - scale bounding boxes to relative clip-space/NDC coords
+    // - add z-offset of -0.005 to reduce text hiding by mesh
     glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glScalef(2.f / _vp_width, 2.f / _vp_height, 0.f);
+    glTranslatef(0.f, 0.f, -0.005);
+    glMatrixMode(GL_PROJECTION);
     for (const TextBuffer::Entry& e : buf) {
         glm::vec4 pos(e.rx, e.ry, e.rz, 1.0);
+        // transform text starting position into NDC
         pos = _model_view_mtx * pos;
         pos = _proj_mtx * pos;
+        pos = pos / pos.w;
+        // Projection transform:
+        // - add starting offset in NDC 
         glPushMatrix();
         glLoadIdentity();
         glTranslatef(pos.x, pos.y, pos.z);
@@ -232,19 +257,19 @@ void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)
             if (!g.w || !g.h)
                 continue;
             glBegin(GL_TRIANGLE_STRIP);
+                glMultiTexCoord2f(GL_TEXTURE1, g.tex_x, 0);
                 glVertex2f(cur_x, -cur_y);
-                glTexCoord2f(g.tex_x, 0);
+                glMultiTexCoord2f(GL_TEXTURE1, g.tex_x + g.w / tex_w, 0);
                 glVertex2f(cur_x + g.w, -cur_y);
-                glTexCoord2f(g.tex_x + g.w / tex_w, 0);
-                glVertex2f(cur_x + g.w, -cur_y - g.h);
-                glTexCoord2f(g.tex_x + g.w / tex_w, g.h / tex_h);
+                glMultiTexCoord2f(GL_TEXTURE1, g.tex_x, g.h / tex_h);
                 glVertex2f(cur_x, -cur_y - g.h);
-                glTexCoord2f(g.tex_x, g.h / tex_h);
+                glMultiTexCoord2f(GL_TEXTURE1, g.tex_x + g.w / tex_w, g.h / tex_h);
+                glVertex2f(cur_x + g.w, -cur_y - g.h);
             glEnd();
         }
         glPopMatrix();
     }
-    glMatrixMode(GL_PROJECTION);
+    glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 }
 

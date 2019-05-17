@@ -83,6 +83,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    cout << "Window should be up" << endl;
 #endif
    paletteInit();
+   GetFont()->setAlphaChannel(wnd->getRenderer().getDeviceAlphaChannel());
    InitFont();
    wnd->getRenderer().setFontTexture(GetFont()->getFontTex());
 

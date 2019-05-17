@@ -4,6 +4,20 @@
 namespace gl3
 {
 
+GLenum MeshRenderer::getDeviceAlphaChannel()
+{
+    if (!_device) return GL_NONE;
+#ifdef __EMSCRIPTEN__
+    return GL_ALPHA;
+#else
+    if (_device->getType() == GLDevice::FF_DEVICE) {
+        return GL_ALPHA;
+    } else {
+        return GL_RED;
+    }
+#endif
+}
+
 void MeshRenderer::setAntialiasing(bool aa_status)
 {
     if (_msaa_enable != aa_status) {
@@ -115,11 +129,15 @@ void MeshRenderer::buffer(GlDrawable* buf)
 
 void GLDevice::init()
 {
+    // enable depth testing
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_DEPTH_TEST);
+    // enable polygon offset to expose mesh lines
     glPolygonOffset(1,1);
     glEnable(GL_POLYGON_OFFSET_FILL);
+    // use "over" blending equation
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     //generate a white default texture
     //modulation with default texture will just pass through input color
     glBindTexture(GL_TEXTURE_2D, 0);
