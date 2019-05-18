@@ -240,7 +240,6 @@ bool linkShaders(GLuint prgm, const std::vector<GLuint> &shaders)
     glBindAttribLocation(prgm, CoreGLDevice::ATTR_NORMAL, "normal");
     glBindAttribLocation(prgm, CoreGLDevice::ATTR_COLOR, "color");
     glBindAttribLocation(prgm, CoreGLDevice::ATTR_TEXCOORD0, "texCoord0");
-    glBindAttribLocation(prgm, CoreGLDevice::ATTR_TEXCOORD1, "texCoord1");
 
     for (GLuint i : shaders)
     {
@@ -535,17 +534,17 @@ void CoreGLDevice::drawDeviceBuffer(const TextBuffer& t_buf)
     glUniform1i(_uniforms["containsText"], GL_TRUE);
     glEnableVertexAttribArray(ATTR_VERTEX);
     glEnableVertexAttribArray(ATTR_TEXT_VERTEX);
-    glEnableVertexAttribArray(ATTR_TEXCOORD1);
+    glEnableVertexAttribArray(ATTR_TEXCOORD0);
     glBindBuffer(GL_ARRAY_BUFFER, t_buf.get_handle());
 
     glVertexAttrib4fv(ATTR_COLOR, _static_color.data());
     glVertexAttribPointer(ATTR_VERTEX, 3, GL_FLOAT, GL_FALSE, t_buf.get_stride(), 0);
     glVertexAttribPointer(ATTR_TEXT_VERTEX, 2, GL_FLOAT, GL_FALSE, t_buf.get_stride(), (void*)(sizeof(float) * 3));
-    glVertexAttribPointer(ATTR_TEXCOORD1, 2, GL_FLOAT, GL_FALSE, t_buf.get_stride(), (void*)(sizeof(float) * 5));
+    glVertexAttribPointer(ATTR_TEXCOORD0, 2, GL_FLOAT, GL_FALSE, t_buf.get_stride(), (void*)(sizeof(float) * 5));
     glDrawArrays(GL_TRIANGLES, 0, t_buf.count());
 
     glDisableVertexAttribArray(ATTR_TEXT_VERTEX);
-    glDisableVertexAttribArray(ATTR_TEXCOORD1);
+    glDisableVertexAttribArray(ATTR_TEXCOORD0);
     glUniform1i(_uniforms["containsText"], GL_FALSE);
 }
 

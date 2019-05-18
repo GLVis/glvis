@@ -32,8 +32,6 @@ void TextBuffer::getObjectSize(const std::string& text, int& w, int& h) {
     }
 }
 
-IDrawHook * GlDrawable::buf_hook = nullptr;
-
 void GlDrawable::addCone(float x, float y, float z,
                          float vx, float vy, float vz,
                          float cone_scale) {

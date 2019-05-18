@@ -278,7 +278,6 @@ public:
         ATTR_NORMAL,
         ATTR_COLOR,
         ATTR_TEXCOORD0,
-        ATTR_TEXCOORD1,
         NUM_ATTRS
     };
 

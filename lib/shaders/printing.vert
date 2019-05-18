@@ -4,7 +4,6 @@ attribute vec2 textVertex;
 attribute vec4 color;
 attribute vec3 normal;
 attribute vec2 texCoord0;
-attribute vec2 texCoord1;
 
 uniform bool containsText;
 uniform bool useColorTex;

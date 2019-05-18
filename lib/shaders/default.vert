@@ -4,7 +4,6 @@ attribute vec2 textVertex;
 attribute vec4 color;
 attribute vec3 normal;
 attribute vec2 texCoord0;
-attribute vec2 texCoord1;
 
 uniform bool containsText;
 
@@ -34,7 +33,6 @@ void main()
     gl_Position = pos;
     if (containsText) {
         vec4 textOffset = textProjMatrix * vec4(textVertex, 0.0, 0.0);
-        fTexCoord = texCoord1.xy;
         gl_Position += vec4((textOffset.xy * pos.w), -0.005, 0.0);
     }
 })"

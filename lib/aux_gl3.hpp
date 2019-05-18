@@ -421,20 +421,9 @@ public:
    virtual const void* get_data() const { return nullptr; }
 };
 
-class IDrawHook
-{
-public:
-   virtual void preDraw(const IVertexBuffer *) = 0;
-   virtual void postDraw(const IVertexBuffer *) = 0;
-
-   virtual void preDraw(const TextBuffer&) = 0;
-   virtual void postDraw(const TextBuffer&) = 0;
-};
-
 class GlDrawable
 {
 private:
-   static IDrawHook * buf_hook;
    const static size_t NUM_SHAPES = 2;
    std::unique_ptr<IVertexBuffer> buffers[NUM_LAYOUTS][NUM_SHAPES];
    TextBuffer text_buffer;
@@ -467,11 +456,6 @@ private:
       return buf;
    }
 public:
-   /**
-    * Sets a global draw hook to be called before and after each vertex buffer
-    * draw.
-    */
-   static void setDrawHook(IDrawHook * h) { buf_hook = h; }
 
    /**
     * Adds a string at the given position in object coordinates.
