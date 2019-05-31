@@ -69,7 +69,6 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
     std::vector<uint8_t> zeros(tex_w * tex_h, 0);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_w, tex_h, 0, alpha_channel, GL_UNSIGNED_BYTE, zeros.data());
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 

@@ -1021,24 +1021,61 @@ void KeyS()
    }
 }
 
+GL2PSvertex CreatePrintVtx(glm::vec3 pos, glm::vec4 color)
+{
+   return
+   {
+      {pos.x, pos.y, pos.z},
+      {color.r, color.g, color.b, color.a}
+   };
+}
+
 void KeyCtrlP()
 {
-#if 0
-#ifndef __EMSCRIPTEN__
-   if (!GetGlState()->renderToFeedback()) {
-       cout << "Unable to initialize printing capture pipeline." << endl;
-       return;
-   }
    cout << "Printing the figure to GLVis.pdf... " << flush;
    locscene -> print = 1;
    FILE * fp;
    fp = fopen("GLVis.pdf", "wb");
    GLint viewport[4] = { 0, 0, 0, 0 };
-   GetGlState()->getViewport(viewport);
+   wnd->getWindowSize(viewport[2], viewport[3]);
    {
-       gl3::GL2PSFeedbackHook fb_capture;
-       gl3::GlDrawable::setDrawHook(&fb_capture);
-       gl2psBeginPage ( "GLVis.pdf", "GLVis", viewport,
+      gl3::CaptureCallback primFns;
+      primFns.onPrimitives = [](gl3::GLDevice::XfbVertexCapture& prims) {
+         do {
+            auto verts_in = prims.getShape();
+            if (verts_in.size() == 0)
+               continue;
+            GL2PSvertex verts_out[4];
+            for (int i = 0; i < verts_in.size(); i++) {
+               verts_out[i] = CreatePrintVtx(verts_in[i].position, verts_in[i].color);
+            }
+            if (verts_in.size() == 2) {
+               //line
+               gl2psAddPolyPrimitive(GL2PS_LINE, 2, verts_out, 0, 0.f, 0.f,
+                                    0xFFFF, 1, 0.2, 0, 0, 0);
+            } else if (verts_in.size() == 3) {
+               //triangle
+               gl2psAddPolyPrimitive(GL2PS_TRIANGLE, 3, verts_out, 0, 0.f, 0.f,
+                                    0xFFFF, 1, 1, 0, 0, 0);
+            } else if (verts_in.size() == 4) {
+               //quadrilateral
+               gl2psAddPolyPrimitive(GL2PS_QUADRANGLE, 4, verts_out, 0, 0.f, 0.f,
+                                    0xFFFF, 1, 1, 0, 0, 0);
+            }
+         } while (prims.next());
+      };
+      primFns.onText = [](gl3::GLDevice::XfbTextCapture &text) {
+         for (const auto &entry : text)
+         {
+            GL2PSvertex rpos = CreatePrintVtx(entry.offset, entry.color);
+            gl2psForceRasterPos(&rpos);
+            gl2psText(entry.text.c_str(), "Times", 12);
+         }
+      };
+      gl3::SceneInfo wnd_scn = locscene->GetSceneObjs();
+      for (auto to_buf : wnd_scn.needs_buffering)
+         wnd->getRenderer().buffer(to_buf);
+      gl2psBeginPage ( "GLVis.pdf", "GLVis", viewport,
                         GL2PS_PDF, // or GL2PS_SVG, or GL2PS_EPS
                         GL2PS_BSP_SORT,
                         GL2PS_SIMPLE_LINE_OFFSET |
@@ -1051,20 +1088,13 @@ void KeyCtrlP()
                         GL2PS_NO_BLENDING |
                         GL2PS_NO_OPENGL_CONTEXT,
                         GL_RGBA, 0, NULL, 16, 16, 16, 0, fp, "a" );
-       locscene -> Draw();
-       gl2psEndPage();
-       gl3::GlDrawable::setDrawHook(nullptr);
-       GetGlState()->renderToDefault();
+      wnd->getRenderer().capture(wnd_scn.queue, primFns);
+      gl2psEndPage();
    }
    locscene -> print = 0;
    fclose(fp);
-
    cout << "done" << endl;
    wnd->signalExpose();
-#else
-   cout << "Printing disabled" << endl;
-#endif
-#endif
 }
 
 void KeyQPressed()
@@ -1444,6 +1474,31 @@ double GetColorCoord(double val, double min, double max)
    }
 }
 
+void GetColorFromVal(double val, float * rgba)
+{
+   int palSize = paletteGetSize();
+   val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
+   int i = (int) floor( val );
+   double t = val - i;
+
+   double* pal;
+   if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
+       ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
+   {
+      pal = paletteGet() + 3 * ( i % (palSize-1) );
+   }
+   else
+   {
+      pal = paletteGet() + 3 * ( (palSize-2) -
+                                i % (palSize-1) );
+      t = 1.0 - t;
+   }
+   rgba[0] = (1.0 - t) * pal[0] + t * pal[3];
+   rgba[1] = (1.0 - t) * pal[1] + t * pal[4];
+   rgba[2] = (1.0 - t) * pal[2] + t * pal[5];
+   rgba[3] = 1.f;
+}
+
 void MySetColor (double val, double min, double max, float (&rgba)[4])
 {
    MySetColor(GetColorCoord(val, min, max), rgba);
@@ -1481,25 +1536,8 @@ void MySetColor (double val, float (&rgba)[4])
       }
    }
 
-   val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
-   i = (int) floor( val );
-   t = val - i;
+   GetColorFromVal(val, rgba);
 
-   if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
-       ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
-   {
-      pal = paletteGet() + 3 * ( i % (palSize-1) );
-   }
-   else
-   {
-      pal = paletteGet() + 3 * ( (palSize-2) -
-                                i % (palSize-1) );
-      t = 1.0 - t;
-   }
-
-   rgba[0] = (1.0 - t) * pal[0] + t * pal[3];
-   rgba[1] = (1.0 - t) * pal[1] + t * pal[4];
-   rgba[2] = (1.0 - t) * pal[2] + t * pal[5];
    rgba[3] = MatAlpha < 1.0 ? malpha : 1.0;
 }
 
@@ -1535,27 +1573,12 @@ void MySetColor (gl3::GlBuilder& builder, double val)
          malpha *= exp(-fabs(val-MatAlphaCenter));
       }
    }
-   val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
-   i = (int) floor( val );
-   t = val - i;
 
-   if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
-       ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
-   {
-      pal = paletteGet() + 3 * ( i % (palSize-1) );
-   }
-   else
-   {
-      pal = paletteGet() + 3 * ( (palSize-2) -
-                                i % (palSize-1) );
-      t = 1.0 - t;
-   }
-   float rgba[4] = {
-       (float)((1.0 - t) * pal[0] + t * pal[3]),
-       (float)((1.0 - t) * pal[1] + t * pal[4]),
-       (float)((1.0 - t) * pal[2] + t * pal[5]),
-       (float)(MatAlpha < 1.0 ? malpha : 1.0)
-   };
+   float rgba[4];
+
+   GetColorFromVal(val, rgba);
+   rgba[3] = MatAlpha < 1.0 ? malpha : 1.0;
+
    builder.glColor4fv(rgba);
 }
 

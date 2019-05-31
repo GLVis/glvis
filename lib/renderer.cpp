@@ -1,5 +1,6 @@
 #include "renderer.hpp"
 #include "aux_vis.hpp"
+#include "gl2ps.h"
 
 namespace gl3
 {
@@ -115,6 +116,63 @@ void MeshRenderer::render(const RenderQueue& queue)
     }
 }
 
+void MeshRenderer::capture(const RenderQueue& queue, CaptureCallback cb)
+{
+    for (auto& q_elem : queue) {
+        const RenderParams& params = q_elem.first;
+        _device->setTransformMatrices(params.model_view.mtx, params.projection.mtx);
+        _device->setMaterial(params.mesh_material);
+        _device->setNumLights(params.num_pt_lights);
+        for (int i = 0; i < params.num_pt_lights; i++) {
+            _device->setPointLight(i, params.lights[i]);
+        }
+        _device->setAmbientLight(params.light_amb_scene);
+        _device->setStaticColor(params.static_color);
+        _device->setClipPlaneUse(params.use_clip_plane);
+        _device->setClipPlaneEqn(params.clip_plane_eqn);
+        //aggregate buffers with common parameters
+        std::vector<pair<array_layout, IVertexBuffer*>> texture_bufs, no_texture_bufs;
+        std::vector<TextBuffer*> text_bufs;
+        GlDrawable* curr_drawable = q_elem.second;
+        for (int i = 0; i < NUM_LAYOUTS; i++) {
+            for (int j = 0; j < GlDrawable::NUM_SHAPES; j++) {
+                if (!curr_drawable->buffers[i][j])
+                    continue;
+                if (i == LAYOUT_VTX_TEXTURE0
+                    || i == LAYOUT_VTX_NORMAL_TEXTURE0) {
+                    texture_bufs.emplace_back((array_layout) i, curr_drawable->buffers[i][j].get());
+                } else {
+                    no_texture_bufs.emplace_back((array_layout) i, curr_drawable->buffers[i][j].get());
+                }
+            }
+        }
+        text_bufs.emplace_back(&curr_drawable->text_buffer);
+
+        _device->attachTexture(GLDevice::SAMPLER_COLOR, _color_tex);
+        _device->attachTexture(GLDevice::SAMPLER_ALPHA, _alpha_tex);
+        for (auto& buf : texture_bufs) {
+			auto it = _device->captureXfbBuffer(buf.first, *buf.second);
+			cb.onPrimitives(*it.get());
+        }
+        _device->detachTexture(GLDevice::SAMPLER_COLOR);
+        _device->detachTexture(GLDevice::SAMPLER_ALPHA);
+        for (auto& buf : no_texture_bufs) {
+            auto it = _device->captureXfbBuffer(buf.first, *buf.second);
+			cb.onPrimitives(*it.get());
+        }
+        if (!params.contains_translucent) {
+            _device->enableBlend();
+            _device->disableDepthWrite();
+        }
+        _device->attachTexture(1, _font_tex);
+        _device->setNumLights(0);
+        for (TextBuffer* buf : text_bufs) {
+            auto it = _device->captureXfbBuffer(*buf);
+			cb.onText(it);
+        }
+    }
+}
+
 void MeshRenderer::buffer(GlDrawable* buf)
 {
     for (int i = 0; i < NUM_LAYOUTS; i++) {
@@ -167,6 +225,21 @@ void GLDevice::setTransformMatrices(glm::mat4 model_view, glm::mat4 projection)
 {
     _model_view_mtx = model_view;
     _proj_mtx = projection;
+}
+
+GLDevice::XfbTextCapture GLDevice::captureXfbBuffer(const TextBuffer& t_buf)
+{
+	vector<FeedbackText> data;
+	for (const auto& entry : t_buf)
+	{
+		glm::vec3 raster = glm::project(
+				glm::vec3(entry.rx, entry.ry, entry.rz),
+				_model_view_mtx,
+				_proj_mtx,
+				glm::vec4(0, 0, _vp_width, _vp_height));
+		data.emplace_back(raster, glm::make_vec4(_static_color.data()), entry.text); 
+	}
+	return GLDevice::XfbTextCapture(std::move(data));
 }
 
 }

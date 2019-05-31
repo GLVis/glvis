@@ -1,5 +1,7 @@
-#include "renderer.hpp"
+#include "renderer_ff.hpp"
 #include "aux_vis.hpp"
+#include "palettes.hpp"
+#include "gl2ps.h"
 
 namespace gl3
 {
@@ -271,6 +273,130 @@ void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)
     }
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
+}
+
+unique_ptr<GLDevice::XfbVertexCapture>
+FFGLDevice::captureXfbBuffer(array_layout layout, const IVertexBuffer& buf)
+{
+    GLenum fbType;
+    int fbStride;
+    unique_ptr<GLDevice::XfbVertexCapture> capture;
+    if (layout == VertexTex::layout || layout == VertexNormTex::layout)
+    {
+        //capture texture values too
+        // [ X Y Z ] [ R G B A ] [ U V - - ]
+        fbType = GL_3D_COLOR_TEXTURE;
+        fbStride = 11;
+    } else {
+        // only capture pos and color
+        // [ X Y Z ] [ R G B A ]
+        fbType = GL_3D_COLOR;
+        fbStride = 7;
+    }
+    // compute feedback buffer size
+    int sizebuf = 0;
+    if (buf.get_shape() == GL_LINES) {
+        // for each line: LINE_TOKEN [Vtx] [Vtx]
+        sizebuf = (buf.count() / 2) + buf.count() * fbStride;
+    } else if (buf.get_shape() == GL_TRIANGLES) {
+        // for each tri: POLY_TOKEN 3 [Vtx] [Vtx] [Vtx]
+        // NOTE: when clip plane is enabled, we might get two triangles
+        // or a quad for an input triangle. However, the other clipped
+        // triangles get discarded, so this *should* be enough space.
+        sizebuf = (buf.count() / 3) * (2 + fbStride * 4);
+    } else {
+        std::cerr << "Warning: unhandled primitive type in FFPrinter::preDraw()" << std::endl;
+
+        capture.reset(new VertexCapture(vector<float>(), fbStride));
+        return capture;
+    }
+    // allocate feedback buffer
+    vector<float> xfb_buf;
+    xfb_buf.reserve(sizebuf);
+    glFeedbackBuffer(sizebuf, fbType, xfb_buf.data());
+    // draw with feedback capture
+    glRenderMode(GL_FEEDBACK);
+    drawDeviceBuffer(layout, buf);
+    int result = glRenderMode(GL_RENDER);
+#ifdef GLVIS_DEBUG
+    if (result < 0) {
+        std::cerr << "Warning: feedback data exceeded available buffer size" << std::endl;
+    }
+#endif
+    capture.reset(new VertexCapture(std::move(xfb_buf), fbStride));
+    return capture;
+}
+
+bool FFGLDevice::VertexCapture::next()
+{
+    if (_tok_idx > _xfb_buf.size())
+        return false;
+    switch ((GLuint)_xfb_buf[_tok_idx])
+    {
+        case GL_POINT_TOKEN:
+            //unused
+            _tok_idx += 1 + _stride;
+            break;
+        case GL_LINE_TOKEN:
+            _tok_idx += 1 + _stride * 2;
+            break;
+        case GL_POLYGON_TOKEN:
+        {
+            int num_vtx = _xfb_buf[_tok_idx + 1];
+            _poly_idx++;
+            if (_poly_idx > num_vtx - 3) {
+                _tok_idx += 2 + _stride * num_vtx;
+                _poly_idx = 0;
+            }
+        }
+        break;
+        default:
+            //ignore unused token
+            _tok_idx++;
+        break;
+    }
+}
+
+vector<GLDevice::FeedbackVertex> FFGLDevice::VertexCapture::getShape()
+{
+    vector<FeedbackVertex> shape;
+    switch((GLuint)_xfb_buf[_tok_idx])
+    {
+        case GL_LINE_TOKEN:
+        {
+            glm::vec3 coord0 = glm::make_vec3(&_xfb_buf[_tok_idx + 1]),
+                      coord1 = glm::make_vec3(&_xfb_buf[_tok_idx + 1 + _stride]);
+            glm::vec4 color0 = glm::make_vec4(&_xfb_buf[_tok_idx + 4]),
+                      color1 = glm::make_vec4(&_xfb_buf[_tok_idx + 4 + _stride]);
+            if (_stride == 11) {
+                // get texture
+                GetColorFromVal(_xfb_buf[_tok_idx + 7], glm::value_ptr(color0));
+                GetColorFromVal(_xfb_buf[_tok_idx + 7 + _stride], glm::value_ptr(color1));
+            }
+            shape = {
+                { coord0, color0 },
+                { coord1, color1 }
+            };
+        }
+        break;
+        case GL_POLYGON_TOKEN:
+        {
+            int vtx_ids[3] = { 0, _poly_idx + 1, _poly_idx + 2 };
+            for (int i = 0; i < 3; i++)
+            {
+                int tri_idx = _tok_idx + 1 + vtx_ids[i] * _stride;
+                glm::vec3 coord = glm::make_vec3(&_xfb_buf[tri_idx]);
+                glm::vec4 color = glm::make_vec4(&_xfb_buf[tri_idx + 3]);
+                if (_stride == 11) {
+                    // get texture
+                    GetColorFromVal(_xfb_buf[tri_idx + 7], glm::value_ptr(color));
+                }
+                shape.emplace_back(coord, color);
+            }
+        }
+        break;
+    }
+    return shape;
 }
 
 }

@@ -137,6 +137,18 @@ public:
         CORE_DEVICE
     };
 
+	struct FeedbackVertex;
+	struct FeedbackText;
+
+	class XfbVertexCapture
+	{
+	public:
+		virtual bool next() = 0;
+		virtual vector<FeedbackVertex> getShape() = 0;
+	};
+
+	class XfbTextCapture;
+
     virtual ~GLDevice() = default;
     const static int SAMPLER_COLOR = 0;
     const static int SAMPLER_ALPHA = 1;
@@ -168,6 +180,7 @@ public:
     void setStaticColor(const std::array<float, 4>& rgba) { _static_color = rgba; }
 
     // === Render pipeline functions ===
+
     // Set the current transform matrices.
     virtual void setTransformMatrices(glm::mat4 model_view, glm::mat4 projection);
     // Set the number of lights to use. Setting number of lights to 0 disables lighting.
@@ -191,6 +204,49 @@ public:
     // Draw the data loaded in a device buffer.
     virtual void drawDeviceBuffer(array_layout layout, const IVertexBuffer& buf) = 0;
     virtual void drawDeviceBuffer(const TextBuffer& t_buf) = 0;
+
+    // === Transform feedback functions ===
+
+    // Capture the next drawn vertex buffer to a feedback buffer instead of drawing to screen.
+    virtual unique_ptr<XfbVertexCapture>
+        captureXfbBuffer(array_layout layout, const IVertexBuffer& buf) = 0;
+
+    XfbTextCapture captureXfbBuffer(const TextBuffer& t_buf);
+
+};
+
+struct GLDevice::FeedbackVertex
+{
+    glm::vec3 position;
+    glm::vec4 color;
+};
+
+struct GLDevice::FeedbackText
+{
+    glm::vec3 offset;
+    glm::vec4 color;
+    std::string text;
+};
+
+class GLDevice::XfbTextCapture
+{
+public:
+    XfbTextCapture(vector<FeedbackText>&& data)
+        :_data(data)
+    {
+    }
+    const vector<FeedbackText>::const_iterator
+        begin() const { return _data.begin(); }
+    const vector<FeedbackText>::const_iterator
+        end() const { return _data.end(); }
+private:
+    vector<FeedbackText> _data;
+};
+
+struct CaptureCallback
+{
+    void (*onPrimitives)(GLDevice::XfbVertexCapture& prims);
+    void (*onText)(GLDevice::XfbTextCapture& text);
 };
 
 class MeshRenderer
@@ -236,99 +292,13 @@ public:
     float getLineWidthMS() { return _line_w_aa; }
 
     void setClearColor(float r, float g, float b, float a) { glClearColor(r, g, b, a); }
-	void setViewport(GLsizei w, GLsizei h) { _device->setViewport(w, h); }
+    void setViewport(GLsizei w, GLsizei h) { _device->setViewport(w, h); }
 
     void init();
     void render(const RenderQueue& queued);
+    void capture(const RenderQueue& queued, CaptureCallback cb);
 
     void buffer(GlDrawable* buf);
-};
-
-
-// Render for legacy OpenGL systems with access to only the fixed-function pipeline
-class FFGLDevice : public GLDevice
-{
-public:
-
-    virtual DeviceType getType() { return GLDevice::FF_DEVICE; }
-
-    virtual void init();
-    virtual void setTransformMatrices(glm::mat4 model_view, glm::mat4 projection);
-    virtual void setNumLights(int i);
-    virtual void setMaterial(Material mat);
-    virtual void setPointLight(int i, Light lt);
-    virtual void setAmbientLight(const std::array<float, 4>& amb);
-    virtual void setClipPlaneUse(bool enable);
-    virtual void setClipPlaneEqn(const std::array<double, 4>& eqn);
-
-    virtual void bufferToDevice(array_layout layout, IVertexBuffer& buf);
-    virtual void bufferToDevice(TextBuffer& t_buf);
-    virtual void drawDeviceBuffer(array_layout layout, const IVertexBuffer& buf);
-    virtual void drawDeviceBuffer(const TextBuffer& t_buf);
-};
-
-// Renderer for OpenGL versions with access to the programmable pipeline
-class CoreGLDevice : public GLDevice
-{
-public:
-    enum ShaderAttrib
-    {
-        ATTR_VERTEX = 0,
-        ATTR_TEXT_VERTEX,
-        ATTR_NORMAL,
-        ATTR_COLOR,
-        ATTR_TEXCOORD0,
-        NUM_ATTRS
-    };
-
-
-private:
-    GLuint _default_prgm;
-    GLuint _global_vao;
-
-    std::unordered_map<std::string, GLuint> _uniforms = {
-        { "useClipPlane", 0 },
-        { "clipPlane", 0 },
-        { "containsText", 0 },
-        { "modelViewMatrix", 0 },
-        { "projectionMatrix", 0 },
-        { "textProjMatrix", 0 },
-        { "normalMatrix", 0 },
-        { "num_lights", 0 },
-        { "g_ambient", 0 },
-        { "material.specular", 0 },
-        { "material.shininess", 0 },
-        { "lights[0].position", 0 },
-        { "lights[0].diffuse", 0 },
-        { "lights[0].specular", 0 },
-        { "lights[1].position", 0 },
-        { "lights[1].diffuse", 0 },
-        { "lights[1].specular", 0 },
-        { "lights[2].position", 0 },
-        { "lights[2].diffuse", 0 },
-        { "lights[2].specular", 0 },
-        { "colorTex", 0 },
-        { "alphaTex", 0 }
-    };
-
-    bool compileShaders();
-    void initializeShaderState();
-public:
-    virtual DeviceType getType() { return GLDevice::CORE_DEVICE; }
-
-    virtual void init();
-    virtual void setTransformMatrices(glm::mat4 model_view, glm::mat4 projection);
-    virtual void setNumLights(int i);
-    virtual void setMaterial(Material mat);
-    virtual void setPointLight(int i, Light lt);
-    virtual void setAmbientLight(const std::array<float, 4>& amb);
-    virtual void setClipPlaneUse(bool enable);
-    virtual void setClipPlaneEqn(const std::array<double, 4>& eqn);
-
-    virtual void bufferToDevice(array_layout layout, IVertexBuffer& buf);
-    virtual void bufferToDevice(TextBuffer& t_buf);
-    virtual void drawDeviceBuffer(array_layout layout, const IVertexBuffer& buf);
-    virtual void drawDeviceBuffer(const TextBuffer& t_buf);
 };
 
 }

@@ -15,6 +15,8 @@
 #include "sdl.hpp"
 #include <SDL2/SDL_syswm.h>
 #include "visual.hpp"
+#include "renderer_core.hpp"
+#include "renderer_ff.hpp"
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
