@@ -258,9 +258,10 @@ bool linkShaders(GLuint prgm, const std::vector<GLuint> &shaders)
 
 bool CoreGLDevice::compileShaders()
 {
+    std::string verStr = (char*)glGetString(GL_VERSION);
     int ver_major, ver_minor;
-    SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &ver_major);
-    SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &ver_minor);
+    ver_major = std::stoi(verStr.substr(0, verStr.find_first_of(".")));
+    ver_minor = std::stoi(verStr.substr(verStr.find_first_of(".") + 1, 1));
     int opengl_ver = ver_major * 100 + ver_minor * 10;
     int glsl_ver = -1;
 
@@ -354,18 +355,21 @@ bool CoreGLDevice::compileShaders()
 
 void CoreGLDevice::initializeShaderState(CoreGLDevice::RenderMode mode)
 {
+    GLuint curr_prgm = 0;
     if (mode == RenderMode::Default)
     {
         glUseProgram(_default_prgm);
+        curr_prgm = _default_prgm;
     }
     else if (mode == RenderMode::Feedback)
     {
         glUseProgram(_feedback_prgm);
+        curr_prgm = _feedback_prgm;
     }
 #ifdef GLVIS_DEBUG
     // verify that uniform map is consisted with current shaders
     int num_attribs;
-    glGetProgramiv(_default_prgm, GL_ACTIVE_UNIFORMS, &num_attribs);
+    glGetProgramiv(curr_prgm, GL_ACTIVE_UNIFORMS, &num_attribs);
     if (num_attribs != _uniforms.size())
     {
         std::cerr << "Warning: Unexpected number of uniforms in shader.\n"
@@ -376,7 +380,7 @@ void CoreGLDevice::initializeShaderState(CoreGLDevice::RenderMode mode)
 #endif
     for (auto &uf : _uniforms)
     {
-        uf.second = glGetUniformLocation(_default_prgm, uf.first.c_str());
+        uf.second = glGetUniformLocation(curr_prgm, uf.first.c_str());
     }
     glUniform1i(_uniforms["colorTex"], 0);
     glUniform1i(_uniforms["alphaTex"], 1);
@@ -394,13 +398,10 @@ void CoreGLDevice::init()
     this->initializeShaderState(RenderMode::Default);
     if (GLEW_VERSION_3_0)
     {
-        if (_global_vao == 0)
-        {
-            glGenVertexArrays(1, &_global_vao);
-        }
+        glGenVertexArrays(1, &_global_vao);
         glBindVertexArray(_global_vao);
     }
-	glGenBuffers(1, &_feedback_vbo);
+    glGenBuffers(1, &_feedback_vbo);
 }
 
 void CoreGLDevice::setTransformMatrices(glm::mat4 model_view, glm::mat4 projection)
@@ -733,10 +734,10 @@ void CoreGLDevice::processLineXfbBuffer(CaptureBuffer& cbuf, const vector<Shader
 void CoreGLDevice::captureXfbBuffer(
     CaptureBuffer& cbuf, array_layout layout, const IVertexBuffer& buf)
 {
-	// allocate feedback buffer
-	int buf_size = buf.count() * sizeof(ShaderXfbVertex);
-	glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER,
-				 buf_size, nullptr, GL_STATIC_READ);
+    // allocate feedback buffer
+    int buf_size = buf.count() * sizeof(ShaderXfbVertex);
+    glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER,
+                 buf_size, nullptr, GL_STATIC_READ);
     glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, _feedback_vbo);
     // Draw objects in feedback-only mode
     glBeginTransformFeedback(buf.get_shape());

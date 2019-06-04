@@ -77,6 +77,8 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
     win_flags |= SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE;
 #endif
 
+	//TODO: try to create a core context, then a compatibility context if core creation fails
+    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8);
     SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
@@ -121,23 +123,26 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
 
     _renderer.reset(new gl3::MeshRenderer);
 #ifndef __EMSCRIPTEN__
-    if (!GLEW_VERSION_2_0 &&
-        !(GLEW_ARB_vertex_shader
-            && GLEW_ARB_fragment_shader
-            && GLEW_ARB_shading_language_100)) {
-        cerr << "Shader support missing, loading FFGLDevice..." << endl;
-        _renderer->setDevice<gl3::FFGLDevice>();
-    } else {
+	if (GLEW_EXT_transform_feedback) {
+		glBindBufferBase            = glBindBufferBaseEXT;
+		glTransformFeedbackVaryings = glTransformFeedbackVaryingsEXT;
+		glBeginTransformFeedback    = glBeginTransformFeedbackEXT;
+		glEndTransformFeedback      = glEndTransformFeedbackEXT;
+	}
+    if (GLEW_VERSION_3_0
+        || (GLEW_VERSION_2_0 && GLEW_EXT_transform_feedback)) {
+		// we require both shaders and transform feedback
+		// EXT_transform_feedback was made core in OpenGL 3.0
         cerr << "Loading CoreGLDevice..." << endl;
         _renderer->setDevice<gl3::CoreGLDevice>();
+    } else {
+        cerr << "Shader support missing, loading FFGLDevice..." << endl;
+        _renderer->setDevice<gl3::FFGLDevice>();
     }
 
     if (!GLEW_VERSION_3_0) {
+		cerr << "opengl 2.1 support" << endl;
         if (GLEW_EXT_transform_feedback) {
-            glBindBufferBase            = glBindBufferBaseEXT;
-            glTransformFeedbackVaryings = glTransformFeedbackVaryingsEXT;
-            glBeginTransformFeedback    = glBeginTransformFeedbackEXT;
-            glEndTransformFeedback      = glEndTransformFeedbackEXT;
         }
     }
 #else

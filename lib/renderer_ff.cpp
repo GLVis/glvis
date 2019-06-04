@@ -309,7 +309,7 @@ void FFGLDevice::captureXfbBuffer(
     }
     // allocate feedback buffer
     vector<float> xfb_buf;
-    xfb_buf.reserve(sizebuf);
+    xfb_buf.resize(sizebuf);
     glFeedbackBuffer(sizebuf, fbType, xfb_buf.data());
     // draw with feedback capture
     glRenderMode(GL_FEEDBACK);
@@ -336,8 +336,8 @@ void FFGLDevice::captureXfbBuffer(
                               color1 = glm::make_vec4(&xfb_buf[tok_idx + 3 + fbStride]);
                     if (fbStride == 11) {
                         // get texture
-                        GetColorFromVal(xfb_buf[tok_idx + 6], glm::value_ptr(color0));
-                        GetColorFromVal(xfb_buf[tok_idx + 6 + fbStride], glm::value_ptr(color1));
+                        GetColorFromVal(xfb_buf[tok_idx + 7], glm::value_ptr(color0));
+                        GetColorFromVal(xfb_buf[tok_idx + 7 + fbStride], glm::value_ptr(color1));
                     }
                     cbuf.lines.emplace_back(coord0, color0);
                     cbuf.lines.emplace_back(coord1, color1);
@@ -355,8 +355,8 @@ void FFGLDevice::captureXfbBuffer(
                               color1 = glm::make_vec4(&xfb_buf[tok_idx + 3 + fbStride]);
                     if (fbStride == 11) {
                         // get texture
-                        GetColorFromVal(xfb_buf[tok_idx + 6], glm::value_ptr(color0));
-                        GetColorFromVal(xfb_buf[tok_idx + 6 + fbStride], glm::value_ptr(color1));
+                        GetColorFromVal(xfb_buf[tok_idx + 7], glm::value_ptr(color0));
+                        GetColorFromVal(xfb_buf[tok_idx + 7 + fbStride], glm::value_ptr(color1));
                     }
                     // decompose polygon into n-2 triangles [0 1 2] [0 2 3] ...
                     for (int i = 0; i < n-2; i++)
@@ -366,7 +366,7 @@ void FFGLDevice::captureXfbBuffer(
                         glm::vec3 coord2 = glm::make_vec3(&xfb_buf[tok_idx + vtxStart]);
                         glm::vec4 color2 = glm::make_vec4(&xfb_buf[tok_idx + 3 + vtxStart]);
                         if (fbStride == 11) {
-                            GetColorFromVal(xfb_buf[tok_idx + 6 + vtxStart], glm::value_ptr(color2));
+                            GetColorFromVal(xfb_buf[tok_idx + 7 + vtxStart], glm::value_ptr(color2));
                         }
                         cbuf.triangles.emplace_back(coord0, color0);
                         cbuf.triangles.emplace_back(coord1, color1);
@@ -375,12 +375,14 @@ void FFGLDevice::captureXfbBuffer(
                         coord1 = coord2;
                         color1 = color2;
                     }
+                    tok_idx += n * fbStride;
                 }
                 break;
             case GL_POINT_TOKEN:
             case GL_BITMAP_TOKEN:
             case GL_DRAW_PIXEL_TOKEN:
             case GL_COPY_PIXEL_TOKEN:
+            default:
                 // commands containing the token, plus a single vertex
                 // ignore for now
                 tok_idx += 1 + fbStride;

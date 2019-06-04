@@ -69,6 +69,9 @@ private:
     void processTriangleXfbBuffer(CaptureBuffer& cbuf, const vector<ShaderXfbVertex>& verts);
     void processLineXfbBuffer(CaptureBuffer& cbuf, const vector<ShaderXfbVertex>& verts);
 public:
+	CoreGLDevice()
+		: _default_prgm(0), _feedback_prgm(0), _global_vao(0) { }
+
     DeviceType getType() override { return GLDevice::CORE_DEVICE; }
 
     void init() override;

@@ -122,6 +122,10 @@ struct FeedbackVertex
 {
     glm::vec3 position;
     glm::vec4 color;
+
+    FeedbackVertex() = default;
+    FeedbackVertex(glm::vec3 pos, glm::vec4 c)
+        : position(pos), color(c) { }
 };
 
 struct FeedbackText
@@ -129,6 +133,10 @@ struct FeedbackText
     glm::vec3 offset;
     glm::vec4 color;
     std::string text;
+
+    FeedbackText() = default;
+    FeedbackText(glm::vec3 t_off, glm::vec4 t_color, std::string txt)
+        : offset(t_off), color(t_color), text(std::move(txt)) { }
 };
 
 struct CaptureBuffer
