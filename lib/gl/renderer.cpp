@@ -1,6 +1,4 @@
 #include "renderer.hpp"
-#include "aux_vis.hpp"
-#include "gl2ps.h"
 
 namespace gl3
 {

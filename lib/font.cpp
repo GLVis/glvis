@@ -13,7 +13,6 @@
 
 #include "font.hpp"
 #include "aux_vis.hpp"
-#include "platform_gl.hpp"
 
 struct vert_tex2d {
     float x, y;
@@ -104,4 +103,19 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
     //glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
     return true;
+}
+
+void GlVisFont::getObjectSize(const std::string& text, int& w, int& h) {
+    float x = 0.f;
+    w = 0.f, h = 0.f;
+    for (char c : text) {
+        glyph g = GetTexChar(c);
+        float cur_x = x + g.bear_x;
+        x += g.adv_x;
+        if (!g.w || !g.h) {
+            continue;
+        }
+        w = (int)(cur_x + g.w);
+        h = std::max(h, (int)g.h);
+    }
 }

@@ -9,14 +9,13 @@
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
 
-#include "platform_gl.hpp"
 #include <iostream>
 #include <chrono>
 #include "sdl.hpp"
 #include <SDL2/SDL_syswm.h>
 #include "visual.hpp"
-#include "renderer_core.hpp"
-#include "renderer_ff.hpp"
+#include "gl/renderer_core.hpp"
+#include "gl/renderer_ff.hpp"
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif

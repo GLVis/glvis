@@ -408,12 +408,6 @@ public:
    Iterator end() { return _data.end(); }
    ConstIterator end() const { return _data.end(); }
 
-   /**
-    * Gets the width and height of the bounding box containing the rendered
-    * text.
-    */
-   static void getObjectSize(const std::string& text, int& w, int& h);
-
    virtual void clear() { _data.clear(); _num_chars = 0; }
    virtual size_t count() const { return _num_chars * 6; };
    virtual GLenum get_shape() const { return GL_TRIANGLES; };

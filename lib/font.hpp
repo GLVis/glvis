@@ -19,7 +19,7 @@
 #include <string>
 #include <iostream>
 
-#include "platform_gl.hpp"
+#include "gl/platform_gl.hpp"
 
 using namespace std;
 
@@ -55,6 +55,12 @@ public:
    {
       return font_chars[(uint8_t) c];
    }
+
+   /**
+    * Gets the width and height of the bounding box containing the rendered
+    * text.
+    */
+   void getObjectSize(const std::string& text, int& w, int& h);
 
    GlVisFont()
       : init(false)

@@ -10,7 +10,6 @@
 // Software Foundation) version 2.1 dated February 1999.
 
 #include <iostream>
-#include "platform_gl.hpp"
 #include "openglvis.hpp"
 #include "material.hpp"
 #include "aux_vis.hpp"

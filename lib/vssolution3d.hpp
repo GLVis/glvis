@@ -13,7 +13,7 @@
 #define GLVIS_VSSOLUTION_3D
 
 #include "mfem.hpp"
-#include "aux_gl3.hpp"
+#include "gl/types.hpp"
 #include <map>
 using namespace mfem;
 

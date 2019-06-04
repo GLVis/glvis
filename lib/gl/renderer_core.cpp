@@ -1,5 +1,5 @@
 #include "renderer_core.hpp"
-#include "aux_vis.hpp"
+#include "../aux_vis.hpp"
 
 #include <regex>
 #include <type_traits>

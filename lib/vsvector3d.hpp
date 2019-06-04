@@ -13,7 +13,7 @@
 #define GLVIS_VSVECTOR_3D
 
 #include "mfem.hpp"
-#include "aux_gl3.hpp"
+#include "gl/types.hpp"
 using namespace mfem;
 
 class VisualizationSceneVector3d : public VisualizationSceneSolution3d

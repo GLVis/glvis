@@ -1,14 +1,14 @@
 list(APPEND SOURCES
-  aux_gl3.cpp
   aux_vis.cpp
   font.cpp
   gl2ps.c
   material.cpp
   openglvis.cpp
   palettes.cpp
-  renderer.cpp
-  renderer_core.cpp
-  renderer_ff.cpp
+  gl/types.cpp
+  gl/renderer.cpp
+  gl/renderer_core.cpp
+  gl/renderer_ff.cpp
   sdl.cpp 
   threads.cpp
   vsdata.cpp
@@ -18,17 +18,17 @@ list(APPEND SOURCES
   vsvector.cpp)
 
 list(APPEND HEADERS
-  aux_gl3.hpp
   aux_vis.hpp
   font.hpp
   gl2ps.h
   material.hpp
   openglvis.hpp
   palettes.hpp
-  platform_gl.hpp
-  renderer.hpp
-  renderer_core.hpp
-  renderer_ff.hpp
+  gl/platform_gl.hpp
+  gl/types.hpp
+  gl/renderer.hpp
+  gl/renderer_core.hpp
+  gl/renderer_ff.hpp
   sdl.hpp
   threads.hpp
   visual.hpp

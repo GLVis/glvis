@@ -12,12 +12,12 @@
 #ifndef GLVIS_AUX_VIS
 #define GLVIS_AUX_VIS
 
-#include "platform_gl.hpp"
+#include "gl/platform_gl.hpp"
+#include "gl/types.hpp"
 
 #include "sdl.hpp"
 #include "font.hpp"
 #include "openglvis.hpp"
-#include "aux_gl3.hpp"
 
 extern GLuint fontbase;
 extern float MatAlpha;

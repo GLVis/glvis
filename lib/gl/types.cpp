@@ -9,28 +9,19 @@
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
 
-#include "aux_gl3.hpp"
-#include "aux_vis.hpp"
-#include "openglvis.hpp"
+#include "types.hpp"
 #include <iostream>
 #include <cstddef>
 
+#include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
+#include <glm/gtc/matrix_access.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 using namespace gl3;
 
-void TextBuffer::getObjectSize(const std::string& text, int& w, int& h) {
-    float x = 0.f;
-    w = 0.f, h = 0.f;
-    for (char c : text) {
-        GlVisFont::glyph g = GetFont()->GetTexChar(c);
-        float cur_x = x + g.bear_x;
-        x += g.adv_x;
-        if (!g.w || !g.h) {
-            continue;
-        }
-        w = (int)(cur_x + g.w);
-        h = std::max(h, (int)g.h);
-    }
-}
 
 void GlDrawable::addCone(float x, float y, float z,
                          float vx, float vy, float vz,

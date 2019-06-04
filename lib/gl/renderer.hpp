@@ -7,8 +7,8 @@
 #include <unordered_map>
 
 #include "platform_gl.hpp"
-#include "aux_gl3.hpp"
-#include "material.hpp"
+#include "types.hpp"
+#include "../material.hpp"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>

@@ -13,7 +13,7 @@
 #define GLVIS_VSVECTOR
 
 #include "mfem.hpp"
-#include "aux_gl3.hpp"
+#include "gl/types.hpp"
 using namespace mfem;
 
 class VisualizationSceneVector : public VisualizationSceneSolution

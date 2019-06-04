@@ -11,7 +11,6 @@
 
 
 #include "palettes.hpp"
-#include "platform_gl.hpp"
 #include "aux_vis.hpp"
 
 #include <cmath>

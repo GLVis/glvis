@@ -451,7 +451,7 @@ void VisualizationSceneScalarData::PrepareCaption()
    caption_buf.clear();
    caption_buf.addText(0, 0, 0, caption);
    updated_bufs.emplace_back(&caption_buf);
-   gl3::TextBuffer::getObjectSize(caption, caption_w, caption_h);
+   GetFont()->getObjectSize(caption, caption_w, caption_h);
 }
 
 VisualizationSceneScalarData * vsdata;

@@ -1,7 +1,5 @@
 #include "renderer_ff.hpp"
-#include "aux_vis.hpp"
-#include "palettes.hpp"
-#include "gl2ps.h"
+#include "../aux_vis.hpp"
 
 namespace gl3
 {

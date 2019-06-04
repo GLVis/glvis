@@ -15,8 +15,7 @@
 #include <memory>
 #include <functional>
 #include <map>
-#include "platform_gl.hpp"
-#include "renderer.hpp"
+#include "gl/renderer.hpp"
 
 struct EventInfo
 {
