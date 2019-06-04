@@ -216,14 +216,16 @@ CCC  = $(strip $(CXX) $(GLVIS_FLAGS))
 Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
 # generated with 'echo lib/*.c*'
-COMMON_SOURCE_FILES = lib/aux_vis.cpp lib/aux_gl3.cpp lib/font.cpp lib/sdl.cpp lib/material.cpp \
- lib/openglvis.cpp lib/palettes.cpp lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp \
- lib/vsvector.cpp lib/vsvector3d.cpp lib/glstate.cpp lib/gl3print.cpp
+COMMON_SOURCE_FILES = lib/aux_vis.cpp lib/aux_gl3.cpp lib/font.cpp lib/material.cpp \
+ lib/openglvis.cpp lib/palettes.cpp lib/renderer.cpp lib/renderer_core.cpp \
+ lib/renderer_ff.cpp lib/sdl.cpp lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp \
+ lib/vsvector.cpp lib/vsvector3d.cpp
 
 # generated with 'echo lib/*.h*'
-HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/sdl.hpp lib/material.hpp \
- lib/openglvis.hpp lib/palettes.hpp lib/visual.hpp lib/vsdata.hpp lib/vssolution.hpp \
- lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp lib/glstate.hpp lib/gl3print.hpp
+HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/material.hpp \
+ lib/openglvis.hpp lib/palettes.hpp lib/renderer.hpp lib/renderer_core.hpp \
+ lib/renderer_ff.hpp lib/sdl.hpp lib/visual.hpp lib/vsdata.hpp lib/vssolution.hpp \
+ lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp
 
 DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) lib/threads.cpp lib/gl2ps.c
 WEB_SOURCE_FILES     = $(COMMON_SOURCE_FILES) lib/aux_js.cpp

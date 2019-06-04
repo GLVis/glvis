@@ -27,6 +27,8 @@ list(APPEND HEADERS
   palettes.hpp
   platform_gl.hpp
   renderer.hpp
+  renderer_core.hpp
+  renderer_ff.hpp
   sdl.hpp
   threads.hpp
   visual.hpp
