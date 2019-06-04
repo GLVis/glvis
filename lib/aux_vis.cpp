@@ -338,7 +338,7 @@ void MyReshape(GLsizei w, GLsizei h)
 {
    wnd->getRenderer().setViewport(w, h);
 
-   GlMatrix projmtx;
+   gl3::GlMatrix projmtx;
    projmtx.identity();
 
    double ViewCenterX = locscene->ViewCenterX;
@@ -425,7 +425,7 @@ void RemoveIdleFunc(void (*Func)(void))
 
 
 double xang = 0., yang = 0.;
-GlMatrix srot;
+gl3::GlMatrix srot;
 double sph_t, sph_u;
 static GLint oldx, oldy, startx, starty;
 
@@ -526,7 +526,7 @@ void LeftButtonLoc (EventInfo *event)
 
          ComputeSphereAngles(newx, newy, new_sph_u, new_sph_t);
 
-         GlMatrix newrot;
+         gl3::GlMatrix newrot;
          newrot.identity();
 
          double scoord[3], ncoord[3], inprod, cross[3];

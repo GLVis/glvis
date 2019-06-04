@@ -15,7 +15,6 @@
 #include <cmath>
 #include "sdl.hpp"
 #include "gl/types.hpp"
-#include "gl/renderer.hpp"
 #include "material.hpp"
 
 // Visualization header file

@@ -142,7 +142,7 @@ void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
    glTranslated(px, py, pz);
 */
 #if 0
-   GlMatrix mv_save = gl->modelView;
+   gl3::GlMatrix mv_save = gl->modelView;
    gl->modelView.translate(px, py, pz);
 
    double rhos = sqrt (vx*vx+vy*vy+vz*vz);
@@ -534,7 +534,7 @@ void KeyRPressed()
    locscene -> spinning = 0;
    RemoveIdleFunc(MainLoop);
 
-   GlMatrix newrot;
+   gl3::GlMatrix newrot;
    newrot.identity();
    locscene->translmat = newrot.mtx;
 

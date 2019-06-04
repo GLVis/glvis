@@ -177,7 +177,7 @@ void VisualizationScene::ToggleBackground()
 
 void VisualizationScene::Rotate(double angle, double x, double y, double z)
 {
-    GlMatrix rot_tmp;
+    gl3::GlMatrix rot_tmp;
     rot_tmp.identity();
     rot_tmp.mult(cam.TransposeRotMatrix());
     rot_tmp.rotate(angle, x, y, z);
@@ -193,7 +193,7 @@ void VisualizationScene::PreRotate(double angle, double x, double y, double z)
 
 void VisualizationScene::Rotate(double angley, double anglex)
 {
-    GlMatrix rot_tmp;
+    gl3::GlMatrix rot_tmp;
     rot_tmp.identity();
     rot_tmp.mult(cam.TransposeRotMatrix());
     rot_tmp.rotate(angley, 0.0, 1.0, 0.0);
@@ -206,7 +206,7 @@ void VisualizationScene::Rotate(double angley, double anglex)
 
 void VisualizationScene::Translate(double _x, double _y, double _z)
 {
-    GlMatrix trans_tmp;
+    gl3::GlMatrix trans_tmp;
     trans_tmp.identity();
     trans_tmp.translate(_x, -_y, _z);
     trans_tmp.mult(translmat);
@@ -227,7 +227,7 @@ void VisualizationScene::Scale(double s1, double s2, double s3)
 
 void VisualizationScene::CenterObject()
 {
-    GlMatrix tmp_mtx;
+    gl3::GlMatrix tmp_mtx;
     tmp_mtx.identity();
     translmat = tmp_mtx.mtx;
     tmp_mtx.rotate(-60.f, 1.f, 0.f, 0.f);
@@ -243,7 +243,7 @@ void VisualizationScene::CenterObject2D()
 
 void VisualizationScene::SetView(double theta, double phi)
 {
-    GlMatrix tmp_mtx;
+    gl3::GlMatrix tmp_mtx;
     tmp_mtx.identity();
     translmat = tmp_mtx.mtx;
     tmp_mtx.rotate(-theta, 1.f, 0.f, 0.f);
@@ -266,7 +266,7 @@ void VisualizationScene::Zoom(double factor)
 
 glm::mat4 VisualizationScene::GetModelViewMtx()
 {
-   GlMatrix modelView;
+   gl3::GlMatrix modelView;
    modelView.identity();
    modelView.mult(cam.TranslateMatrix());
    modelView.mult(translmat);

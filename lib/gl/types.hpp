@@ -16,12 +16,82 @@
 #include <iostream>
 #include <memory>
 
+#include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
+#include <glm/gtc/matrix_access.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "platform_gl.hpp"
 
 using namespace std;
 
 namespace gl3
 {
+
+struct GlMatrix
+{
+   glm::mat4 mtx;
+
+   /**
+    * Applies a rotation transform to the matrix.
+    */
+   void rotate(float angle, double x, double y, double z)
+   {
+      mtx = glm::rotate(mtx, glm::radians(angle), glm::vec3(x,y,z));
+   }
+
+   void mult(glm::mat4 rhs)
+   {
+      mtx = mtx * rhs;
+   }
+
+   /**
+    * Applies a translation transform to the matrix.
+    */
+   void translate(double x, double y, double z)
+   {
+      mtx = glm::translate(mtx, glm::vec3(x, y, z));
+   }
+
+   /**
+    * Applies a scale transform to the matrix.
+    */
+   void scale(double x, double y, double z)
+   {
+      mtx = glm::scale(mtx, glm::vec3(x, y, z));
+   }
+
+   /**
+    * Sets the matrix to an orthographic projection.
+    */
+   void ortho(double left,
+              double right,
+              double bottom,
+              double top,
+              double z_near,
+              double z_far)
+   {
+      mtx = glm::ortho(left, right, bottom, top, z_near, z_far);
+   }
+
+   /**
+    * Sets the matrix to a perspective projection.
+    */
+   void perspective(double fov, double aspect, double z_near, double z_far)
+   {
+      mtx = glm::perspective(glm::radians(fov), aspect, z_near, z_far);
+   }
+
+   /**
+    * Sets the matrix to the identity matrix.
+    */
+   void identity()
+   {
+      mtx = glm::mat4(1.0);
+   }
+};
 
 enum array_layout
 {
