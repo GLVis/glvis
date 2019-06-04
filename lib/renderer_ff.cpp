@@ -275,12 +275,11 @@ void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)
     glPopMatrix();
 }
 
-unique_ptr<GLDevice::XfbVertexCapture>
-FFGLDevice::captureXfbBuffer(array_layout layout, const IVertexBuffer& buf)
+void FFGLDevice::captureXfbBuffer(
+    CaptureBuffer& cbuf, array_layout layout, const IVertexBuffer& buf)
 {
     GLenum fbType;
     int fbStride;
-    unique_ptr<GLDevice::XfbVertexCapture> capture;
     if (layout == VertexTex::layout || layout == VertexNormTex::layout)
     {
         //capture texture values too
@@ -306,9 +305,7 @@ FFGLDevice::captureXfbBuffer(array_layout layout, const IVertexBuffer& buf)
         sizebuf = (buf.count() / 3) * (2 + fbStride * 4);
     } else {
         std::cerr << "Warning: unhandled primitive type in FFPrinter::preDraw()" << std::endl;
-
-        capture.reset(new VertexCapture(vector<float>(), fbStride));
-        return capture;
+        return;
     }
     // allocate feedback buffer
     vector<float> xfb_buf;
@@ -323,80 +320,73 @@ FFGLDevice::captureXfbBuffer(array_layout layout, const IVertexBuffer& buf)
         std::cerr << "Warning: feedback data exceeded available buffer size" << std::endl;
     }
 #endif
-    capture.reset(new VertexCapture(std::move(xfb_buf), fbStride));
-    return capture;
-}
-
-bool FFGLDevice::VertexCapture::next()
-{
-    if (_tok_idx > _xfb_buf.size())
-        return false;
-    switch ((GLuint)_xfb_buf[_tok_idx])
+    int tok_idx = 0;
+    // process feedback buffer
+    while (tok_idx < xfb_buf.size())
     {
-        case GL_POINT_TOKEN:
-            //unused
-            _tok_idx += 1 + _stride;
-            break;
-        case GL_LINE_TOKEN:
-            _tok_idx += 1 + _stride * 2;
-            break;
-        case GL_POLYGON_TOKEN:
+        switch ((GLuint)xfb_buf[tok_idx])
         {
-            int num_vtx = _xfb_buf[_tok_idx + 1];
-            _poly_idx++;
-            if (_poly_idx > num_vtx - 3) {
-                _tok_idx += 2 + _stride * num_vtx;
-                _poly_idx = 0;
-            }
-        }
-        break;
-        default:
-            //ignore unused token
-            _tok_idx++;
-        break;
-    }
-}
-
-vector<GLDevice::FeedbackVertex> FFGLDevice::VertexCapture::getShape()
-{
-    vector<FeedbackVertex> shape;
-    switch((GLuint)_xfb_buf[_tok_idx])
-    {
-        case GL_LINE_TOKEN:
-        {
-            glm::vec3 coord0 = glm::make_vec3(&_xfb_buf[_tok_idx + 1]),
-                      coord1 = glm::make_vec3(&_xfb_buf[_tok_idx + 1 + _stride]);
-            glm::vec4 color0 = glm::make_vec4(&_xfb_buf[_tok_idx + 4]),
-                      color1 = glm::make_vec4(&_xfb_buf[_tok_idx + 4 + _stride]);
-            if (_stride == 11) {
-                // get texture
-                GetColorFromVal(_xfb_buf[_tok_idx + 7], glm::value_ptr(color0));
-                GetColorFromVal(_xfb_buf[_tok_idx + 7 + _stride], glm::value_ptr(color1));
-            }
-            shape = {
-                { coord0, color0 },
-                { coord1, color1 }
-            };
-        }
-        break;
-        case GL_POLYGON_TOKEN:
-        {
-            int vtx_ids[3] = { 0, _poly_idx + 1, _poly_idx + 2 };
-            for (int i = 0; i < 3; i++)
-            {
-                int tri_idx = _tok_idx + 1 + vtx_ids[i] * _stride;
-                glm::vec3 coord = glm::make_vec3(&_xfb_buf[tri_idx]);
-                glm::vec4 color = glm::make_vec4(&_xfb_buf[tri_idx + 3]);
-                if (_stride == 11) {
-                    // get texture
-                    GetColorFromVal(_xfb_buf[tri_idx + 7], glm::value_ptr(color));
+            case GL_LINE_TOKEN:
+            case GL_LINE_RESET_TOKEN:
+                {
+                    tok_idx++;
+                    glm::vec3 coord0 = glm::make_vec3(&xfb_buf[tok_idx]),
+                              coord1 = glm::make_vec3(&xfb_buf[tok_idx + fbStride]);
+                    glm::vec4 color0 = glm::make_vec4(&xfb_buf[tok_idx + 3]),
+                              color1 = glm::make_vec4(&xfb_buf[tok_idx + 3 + fbStride]);
+                    if (fbStride == 11) {
+                        // get texture
+                        GetColorFromVal(xfb_buf[tok_idx + 6], glm::value_ptr(color0));
+                        GetColorFromVal(xfb_buf[tok_idx + 6 + fbStride], glm::value_ptr(color1));
+                    }
+                    cbuf.lines.emplace_back(coord0, color0);
+                    cbuf.lines.emplace_back(coord1, color1);
+                    tok_idx += fbStride * 2;
                 }
-                shape.emplace_back(coord, color);
-            }
+                break;
+            case GL_POLYGON_TOKEN:
+                {
+                    int n = xfb_buf[tok_idx + 1];
+                    tok_idx += 2;
+                    // get vertex 0, 1
+                    glm::vec3 coord0 = glm::make_vec3(&xfb_buf[tok_idx]),
+                              coord1 = glm::make_vec3(&xfb_buf[tok_idx + fbStride]);
+                    glm::vec4 color0 = glm::make_vec4(&xfb_buf[tok_idx + 3]),
+                              color1 = glm::make_vec4(&xfb_buf[tok_idx + 3 + fbStride]);
+                    if (fbStride == 11) {
+                        // get texture
+                        GetColorFromVal(xfb_buf[tok_idx + 6], glm::value_ptr(color0));
+                        GetColorFromVal(xfb_buf[tok_idx + 6 + fbStride], glm::value_ptr(color1));
+                    }
+                    // decompose polygon into n-2 triangles [0 1 2] [0 2 3] ...
+                    for (int i = 0; i < n-2; i++)
+                    {
+                        // get last vertex of current triangle
+                        int vtxStart = fbStride * (2 + 3*i);
+                        glm::vec3 coord2 = glm::make_vec3(&xfb_buf[tok_idx + vtxStart]);
+                        glm::vec4 color2 = glm::make_vec4(&xfb_buf[tok_idx + 3 + vtxStart]);
+                        if (fbStride == 11) {
+                            GetColorFromVal(xfb_buf[tok_idx + 6 + vtxStart], glm::value_ptr(color2));
+                        }
+                        cbuf.triangles.emplace_back(coord0, color0);
+                        cbuf.triangles.emplace_back(coord1, color1);
+                        cbuf.triangles.emplace_back(coord2, color2);
+                        // last vertex becomes second vertex of next triangle
+                        coord1 = coord2;
+                        color1 = color2;
+                    }
+                }
+                break;
+            case GL_POINT_TOKEN:
+            case GL_BITMAP_TOKEN:
+            case GL_DRAW_PIXEL_TOKEN:
+            case GL_COPY_PIXEL_TOKEN:
+                // commands containing the token, plus a single vertex
+                // ignore for now
+                tok_idx += 1 + fbStride;
+                break;
         }
-        break;
     }
-    return shape;
 }
 
 }

@@ -18,10 +18,24 @@ public:
         NUM_ATTRS
     };
 
-
+    struct ShaderXfbVertex
+    {
+       float pos[4];
+       float color[4];
+       float clipCoord;
+    };
 private:
     GLuint _default_prgm;
+    GLuint _feedback_prgm;
     GLuint _global_vao;
+
+    GLuint _feedback_vbo;
+
+    enum class RenderMode
+    {
+        Default,
+        Feedback
+    };
 
     std::unordered_map<std::string, GLuint> _uniforms = {
         { "useClipPlane", 0 },
@@ -47,25 +61,45 @@ private:
         { "colorTex", 0 },
         { "alphaTex", 0 }
     };
+    
+    bool _use_clip_plane;
 
     bool compileShaders();
-    void initializeShaderState();
+    void initializeShaderState(RenderMode mode);
+    void processTriangleXfbBuffer(CaptureBuffer& cbuf, const vector<ShaderXfbVertex>& verts);
+    void processLineXfbBuffer(CaptureBuffer& cbuf, const vector<ShaderXfbVertex>& verts);
 public:
-    virtual DeviceType getType() { return GLDevice::CORE_DEVICE; }
+    DeviceType getType() override { return GLDevice::CORE_DEVICE; }
 
-    virtual void init();
-    virtual void setTransformMatrices(glm::mat4 model_view, glm::mat4 projection);
-    virtual void setNumLights(int i);
-    virtual void setMaterial(Material mat);
-    virtual void setPointLight(int i, Light lt);
-    virtual void setAmbientLight(const std::array<float, 4>& amb);
-    virtual void setClipPlaneUse(bool enable);
-    virtual void setClipPlaneEqn(const std::array<double, 4>& eqn);
+    void init() override;
+    void setTransformMatrices(glm::mat4 model_view, glm::mat4 projection) override;
+    void setNumLights(int i) override;
+    void setMaterial(Material mat) override;
+    void setPointLight(int i, Light lt) override;
+    void setAmbientLight(const std::array<float, 4>& amb) override;
+    void setClipPlaneUse(bool enable) override;
+    void setClipPlaneEqn(const std::array<double, 4>& eqn) override;
 
-    virtual void bufferToDevice(array_layout layout, IVertexBuffer& buf);
-    virtual void bufferToDevice(TextBuffer& t_buf);
-    virtual void drawDeviceBuffer(array_layout layout, const IVertexBuffer& buf);
-    virtual void drawDeviceBuffer(const TextBuffer& t_buf);
+    void bufferToDevice(array_layout layout, IVertexBuffer& buf) override;
+    void bufferToDevice(TextBuffer& t_buf) override;
+    void drawDeviceBuffer(array_layout layout, const IVertexBuffer& buf) override;
+    void drawDeviceBuffer(const TextBuffer& t_buf) override;
+
+    void initXfbMode() override
+    {
+	    glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, _feedback_vbo);
+        initializeShaderState(RenderMode::Feedback);
+        glEnable(GL_RASTERIZER_DISCARD);
+    }
+    void exitXfbMode() override
+    {
+        glDisable(GL_RASTERIZER_DISCARD);
+        initializeShaderState(RenderMode::Default);
+	    glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
+    }
+    void captureXfbBuffer(CaptureBuffer& cbuf,
+                          array_layout layout,
+                          const IVertexBuffer& buf) override;
 };
 
 }

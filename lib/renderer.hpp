@@ -118,6 +118,26 @@ struct SceneInfo
     RenderQueue queue;
 };
 
+struct FeedbackVertex
+{
+    glm::vec3 position;
+    glm::vec4 color;
+};
+
+struct FeedbackText
+{
+    glm::vec3 offset;
+    glm::vec4 color;
+    std::string text;
+};
+
+struct CaptureBuffer
+{
+    vector<FeedbackVertex> lines;
+    vector<FeedbackVertex> triangles;
+    vector<FeedbackText> text;
+};
+
 // OpenGL device interface representing rendering capabilities
 class GLDevice
 {
@@ -136,18 +156,6 @@ public:
         FF_DEVICE,
         CORE_DEVICE
     };
-
-	struct FeedbackVertex;
-	struct FeedbackText;
-
-	class XfbVertexCapture
-	{
-	public:
-		virtual bool next() = 0;
-		virtual vector<FeedbackVertex> getShape() = 0;
-	};
-
-	class XfbTextCapture;
 
     virtual ~GLDevice() = default;
     const static int SAMPLER_COLOR = 0;
@@ -206,47 +214,19 @@ public:
     virtual void drawDeviceBuffer(const TextBuffer& t_buf) = 0;
 
     // === Transform feedback functions ===
-
+    
+    // Initializes state needed for transform feedback.
+    virtual void initXfbMode() {}
+    // Prepares state when exiting transform feedback.
+    virtual void exitXfbMode() {}
     // Capture the next drawn vertex buffer to a feedback buffer instead of drawing to screen.
-    virtual unique_ptr<XfbVertexCapture>
-        captureXfbBuffer(array_layout layout, const IVertexBuffer& buf) = 0;
+    virtual void captureXfbBuffer(
+            CaptureBuffer& capture,
+            array_layout layout,
+            const IVertexBuffer& buf) = 0;
+    // Capture the next text buffer instead of drawing to screen.
+    void captureXfbBuffer(CaptureBuffer& capture, const TextBuffer& t_buf);
 
-    XfbTextCapture captureXfbBuffer(const TextBuffer& t_buf);
-
-};
-
-struct GLDevice::FeedbackVertex
-{
-    glm::vec3 position;
-    glm::vec4 color;
-};
-
-struct GLDevice::FeedbackText
-{
-    glm::vec3 offset;
-    glm::vec4 color;
-    std::string text;
-};
-
-class GLDevice::XfbTextCapture
-{
-public:
-    XfbTextCapture(vector<FeedbackText>&& data)
-        :_data(data)
-    {
-    }
-    const vector<FeedbackText>::const_iterator
-        begin() const { return _data.begin(); }
-    const vector<FeedbackText>::const_iterator
-        end() const { return _data.end(); }
-private:
-    vector<FeedbackText> _data;
-};
-
-struct CaptureCallback
-{
-    void (*onPrimitives)(GLDevice::XfbVertexCapture& prims);
-    void (*onText)(GLDevice::XfbTextCapture& text);
 };
 
 class MeshRenderer
@@ -296,7 +276,7 @@ public:
 
     void init();
     void render(const RenderQueue& queued);
-    void capture(const RenderQueue& queued, CaptureCallback cb);
+    CaptureBuffer capture(const RenderQueue& queued);
 
     void buffer(GlDrawable* buf);
 };

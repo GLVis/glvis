@@ -324,11 +324,44 @@ bool CoreGLDevice::compileShaders()
         _default_prgm = 0;
         return false;
     }
+
+#ifndef __ENSCRIPTEN__
+    //TODO: enable a legacy path for opengl2.1 without ext_tranform_feedback?
+    // This program is for rendering to pdf/ps
+    if (GLEW_EXT_transform_feedback || GLEW_VERSION_3_0) {
+        _feedback_prgm = glCreateProgram();
+        const char * xfrm_varyings[] = {
+            "gl_Position",
+            "fColor",
+            "fClipCoord",
+        };
+        glTransformFeedbackVaryings(_feedback_prgm, 3, xfrm_varyings, GL_INTERLEAVED_ATTRIBS);
+
+        GLuint printing_vs = compileRawShaderString(PRINTING_VS, GL_VERTEX_SHADER, glsl_ver);
+        GLuint printing_fs = compileRawShaderString(PRINTING_FS, GL_FRAGMENT_SHADER, glsl_ver);
+
+        if (!linkShaders(_feedback_prgm, {printing_vs, printing_fs})) {
+          std::cerr << "failed to link shaders for the printing program" << std::endl;
+          glDeleteProgram(_feedback_prgm);
+          _feedback_prgm = 0;
+          return false;
+        }
+    }
+#endif
+
     return true;
 }
 
-void CoreGLDevice::initializeShaderState()
+void CoreGLDevice::initializeShaderState(CoreGLDevice::RenderMode mode)
 {
+    if (mode == RenderMode::Default)
+    {
+        glUseProgram(_default_prgm);
+    }
+    else if (mode == RenderMode::Feedback)
+    {
+        glUseProgram(_feedback_prgm);
+    }
 #ifdef GLVIS_DEBUG
     // verify that uniform map is consisted with current shaders
     int num_attribs;
@@ -347,6 +380,7 @@ void CoreGLDevice::initializeShaderState()
     }
     glUniform1i(_uniforms["colorTex"], 0);
     glUniform1i(_uniforms["alphaTex"], 1);
+    _use_clip_plane = false;
 }
 
 void CoreGLDevice::init()
@@ -357,8 +391,7 @@ void CoreGLDevice::init()
         std::cerr << "Unable to initialize CoreGLDevice." << std::endl;
         return;
     }
-    glUseProgram(_default_prgm);
-    this->initializeShaderState();
+    this->initializeShaderState(RenderMode::Default);
     if (GLEW_VERSION_3_0)
     {
         if (_global_vao == 0)
@@ -367,6 +400,7 @@ void CoreGLDevice::init()
         }
         glBindVertexArray(_global_vao);
     }
+	glGenBuffers(1, &_feedback_vbo);
 }
 
 void CoreGLDevice::setTransformMatrices(glm::mat4 model_view, glm::mat4 projection)
@@ -414,6 +448,7 @@ void CoreGLDevice::setAmbientLight(const std::array<float, 4> &amb)
 
 void CoreGLDevice::setClipPlaneUse(bool enable)
 {
+    _use_clip_plane = enable;
     glUniform1i(_uniforms["useClipPlane"], enable);
 }
 
@@ -546,6 +581,183 @@ void CoreGLDevice::drawDeviceBuffer(const TextBuffer& t_buf)
     glDisableVertexAttribArray(ATTR_TEXT_VERTEX);
     glDisableVertexAttribArray(ATTR_TEXCOORD0);
     glUniform1i(_uniforms["containsText"], GL_FALSE);
+}
+
+inline FeedbackVertex XFBPostTransform(CoreGLDevice::ShaderXfbVertex v, float half_w, float half_h)
+{
+    glm::vec3 coord = glm::make_vec3(v.pos);
+    glm::vec4 color = glm::make_vec4(v.color);
+    // clip coords -> ndc
+    coord /= v.pos[3];
+    // ndc -> device coords
+    coord.x = half_w * coord.x + half_w;
+    coord.y = half_h * coord.y + half_h;
+    return { coord, color };
+}
+
+void CoreGLDevice::processTriangleXfbBuffer(CaptureBuffer& cbuf, const vector<ShaderXfbVertex>& verts)
+{
+    float half_w = _vp_width * 0.5f;
+    float half_h = _vp_height * 0.5f;
+    if (!_use_clip_plane)
+    { 
+        // all triangles into capture buf
+        for (int i = 0; i < verts.size(); i++)
+        {
+            cbuf.triangles.emplace_back(XFBPostTransform(verts[i], half_w, half_h));
+        }
+        return;
+    }
+    // clipping needed
+    for (int t_i = 0; t_i < verts.size() / 3; t_i++)
+    {
+        if (verts[t_i*3].clipCoord >= 0.f
+            && verts[t_i*3+1].clipCoord >= 0.f
+            && verts[t_i*3+2].clipCoord >= 0.f)
+        {
+            // triangle fully in the unclipped region
+            for (int vert_i = 0; vert_i < 3; vert_i++) {
+                cbuf.triangles.emplace_back(
+                        XFBPostTransform(verts[t_i*3 + vert_i], half_w, half_h)); 
+            }
+        }
+        else if (verts[3*t_i].clipCoord < 0.f
+            && verts[3*t_i+1].clipCoord < 0.f
+            && verts[3*t_i+2].clipCoord < 0.f)
+        {
+            //triangle fully in clipped region
+            continue;
+        }
+        else
+        {
+            //clip through middle of triangle
+            for (int vert_i = 0; vert_i < 3; vert_i++) {
+                int i_a = 3*t_i+vert_i;
+                int i_b = 3*t_i+((vert_i+1) % 3);
+                int i_c = 3*t_i+((vert_i+2) % 3);
+                // find two points on the same side of clip plane
+                if ((verts[i_a].clipCoord < 0.f) == (verts[i_b].clipCoord < 0.f)) {
+                    //pts a, b are on same side of clip plane, c on other side
+                    //compute clip pts
+                    FeedbackVertex n[2];
+                    //perspective-correct interpolation factors, needed for colors
+                    float c_w_a = verts[i_a].clipCoord / verts[i_a].pos[3];
+                    float c_w_b = verts[i_b].clipCoord / verts[i_b].pos[3];
+                    float c_w_c = verts[i_c].clipCoord / verts[i_c].pos[3];
+                    glm::vec4 pos[2], color[2];
+                    // a --- n_0 --- c
+                    pos[0] = (glm::make_vec4(verts[i_a].pos) * verts[i_c].clipCoord
+                              - glm::make_vec4(verts[i_c].pos) * verts[i_a].clipCoord);
+                    color[0] = (glm::make_vec4(verts[i_a].color) * c_w_c
+                                - glm::make_vec4(verts[i_c].color) * c_w_a)
+                                / (c_w_c - c_w_a);
+                    // b --- n_1 --- c
+                    pos[1] = (glm::make_vec4(verts[i_b].pos) * verts[i_c].clipCoord
+                              - glm::make_vec4(verts[i_c].pos) * verts[i_b].clipCoord);
+                    color[1] = (glm::make_vec4(verts[i_b].color) * c_w_c
+                                - glm::make_vec4(verts[i_c].color) * c_w_b)
+                                / (c_w_c - c_w_b);
+                    for (int i = 0; i < 2; i++)
+                    {
+                        // perform transform to device coords
+                        pos[i] /= pos[i].w;
+                        pos[i].x *= half_w; pos[i].x += half_w;
+                        pos[i].y *= half_h; pos[i].y += half_h;
+                    }
+
+                    if (verts[i_c].clipCoord < 0.f) {
+                        //pts a, b are in clip plane
+                        //create quadrilateral a -- n_0 -- n_1 -- b
+                        cbuf.triangles.emplace_back(XFBPostTransform(verts[i_a], half_w, half_h));
+                        cbuf.triangles.emplace_back(pos[0], color[0]);
+                        cbuf.triangles.emplace_back(pos[1], color[1]);
+                        cbuf.triangles.emplace_back(XFBPostTransform(verts[i_a], half_w, half_h));
+                        cbuf.triangles.emplace_back(pos[1], color[1]);
+                        cbuf.triangles.emplace_back(XFBPostTransform(verts[i_b], half_w, half_h));
+                    } else {
+                        //pt c is in clip plane
+                        //add triangle c -- n_0 -- n_1
+                        cbuf.triangles.emplace_back(XFBPostTransform(verts[i_c], half_w, half_h));
+                        cbuf.triangles.emplace_back(pos[0], color[0]);
+                        cbuf.triangles.emplace_back(pos[1], color[1]);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void CoreGLDevice::processLineXfbBuffer(CaptureBuffer& cbuf, const vector<ShaderXfbVertex>& verts)
+{
+    float half_w = _vp_width * 0.5f;
+    float half_h = _vp_height * 0.5f;
+    for (size_t i = 0; i < verts.size(); i += 2) {
+        if (!_use_clip_plane ||
+            (verts[i].clipCoord >= 0.f && verts[i+1].clipCoord >= 0.f)) {
+            cbuf.lines.emplace_back(XFBPostTransform(verts[i], half_w, half_h));
+            cbuf.lines.emplace_back(XFBPostTransform(verts[i+1], half_w, half_h));
+        } else if (verts[i].clipCoord < 0.f && verts[i+1].clipCoord < 0.f) {
+            //outside of clip plane;
+            continue;
+        } else {
+            int i_a, i_b;
+            if (verts[i].clipCoord < 0.f) {
+                //vertex i lies in clipped region
+                i_a = i+1;
+                i_b = i;
+            } else { //verts[i+1].clipCoord < 0.f
+                //vertex i+1 lies in clipped region
+                i_a = i;
+                i_b = i+1;
+            }
+            //compute new vertex (CbVa - CaVb), where Vb lies in the clipped region
+            ShaderXfbVertex clip_vert;
+            //perspective-correct interpolation factors for color
+            float c_w_a = verts[i_a].clipCoord / verts[i_a].pos[3];
+            float c_w_b = verts[i_b].clipCoord / verts[i_b].pos[3];
+            for (int j = 0; j < 4; j++) {
+                clip_vert.pos[j] = verts[i_a].pos[j] * verts[i_b].clipCoord
+                                    - verts[i_b].pos[j] * verts[i_a].clipCoord;
+                clip_vert.color[j] = (verts[i_a].color[j] * c_w_b
+                                    - verts[i_b].color[j] * c_w_a)
+                                    / (c_w_b - c_w_a);
+            }
+            cbuf.lines.emplace_back(XFBPostTransform(clip_vert, half_w, half_h));
+            cbuf.lines.emplace_back(XFBPostTransform(verts[i_a], half_w, half_h));
+        }
+    }
+}
+
+
+void CoreGLDevice::captureXfbBuffer(
+    CaptureBuffer& cbuf, array_layout layout, const IVertexBuffer& buf)
+{
+	// allocate feedback buffer
+	int buf_size = buf.count() * sizeof(ShaderXfbVertex);
+	glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER,
+				 buf_size, nullptr, GL_STATIC_READ);
+    glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, _feedback_vbo);
+    // Draw objects in feedback-only mode
+    glBeginTransformFeedback(buf.get_shape());
+    drawDeviceBuffer(layout, buf);
+    glEndTransformFeedback();
+    // Read back feedback buffer
+    vector<ShaderXfbVertex> xfbBuf(buf_size);
+    glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, buf_size, xfbBuf.data());
+    if (buf.get_shape() == GL_TRIANGLES)
+    {
+        processTriangleXfbBuffer(cbuf, xfbBuf);
+    }
+    else if (buf.get_shape() == GL_LINES)
+    {
+        processLineXfbBuffer(cbuf, xfbBuf);
+    }
+    else
+    {
+        std::cerr << "Warning: GL_POINTS handling not implemented in transform "
+                  << "feedback processing" << std::endl;
+    }
 }
 
 }

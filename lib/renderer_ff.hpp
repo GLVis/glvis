@@ -9,22 +9,6 @@ namespace gl3
 class FFGLDevice : public GLDevice
 {
 public:
-	class VertexCapture : public GLDevice::XfbVertexCapture
-	{
-	public:
-		VertexCapture() = delete;
-		VertexCapture(vector<float>&& buf, int stride)
-			: _xfb_buf(buf)
-			, _tok_idx(0)
-			, _poly_idx(0) { }
-		bool next() override;
-		vector<FeedbackVertex> getShape() override;
-	private:
-		vector<float> _xfb_buf;
-		int _stride;
-		int _tok_idx;
-		int _poly_idx;
-	};
 
     DeviceType getType() override { return GLDevice::FF_DEVICE; }
 
@@ -41,8 +25,9 @@ public:
     void bufferToDevice(TextBuffer& t_buf) override;
     void drawDeviceBuffer(array_layout layout, const IVertexBuffer& buf) override;
     void drawDeviceBuffer(const TextBuffer& t_buf) override;
-    unique_ptr<XfbVertexCapture>
-        captureXfbBuffer(array_layout layout, const IVertexBuffer& buf) override;
+    void captureXfbBuffer(CaptureBuffer& cbuf,
+                          array_layout layout,
+                          const IVertexBuffer& buf) override;
 };
 
 }

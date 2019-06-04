@@ -1021,13 +1021,45 @@ void KeyS()
    }
 }
 
-GL2PSvertex CreatePrintVtx(glm::vec3 pos, glm::vec4 color)
+inline GL2PSvertex CreatePrintVtx(gl3::FeedbackVertex v)
 {
    return
    {
-      {pos.x, pos.y, pos.z},
-      {color.r, color.g, color.b, color.a}
+      {v.position.x, v.position.y, v.position.z},
+      {v.color.r, v.color.g, v.color.b, v.color.a}
    };
+}
+
+void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
+{
+   //print lines
+   for (int i = 0; i < cbuf.lines.size(); i += 2)
+   {
+       GL2PSvertex lineOut[2] = {
+           CreatePrintVtx(cbuf.lines[i]),
+           CreatePrintVtx(cbuf.lines[i+1])
+       };
+       gl2psAddPolyPrimitive(GL2PS_LINE, 2, lineOut, 0, 0.f, 0.f,
+                             0xFFFF, 1, 0.2, 0, 0, 0);
+   }
+   //print triangles
+   for (int i = 0; i < cbuf.triangles.size(); i += 3)
+   {
+       GL2PSvertex triOut[3] = {
+           CreatePrintVtx(cbuf.triangles[i]),
+           CreatePrintVtx(cbuf.triangles[i+1]),
+           CreatePrintVtx(cbuf.triangles[i+2])
+       };
+       gl2psAddPolyPrimitive(GL2PS_TRIANGLE, 3, triOut, 0, 0.f, 0.f,
+                             0xFFFF, 1, 1, 0, 0, 0);
+   }
+   //print text
+   for (const auto &entry : cbuf.text)
+   {
+      GL2PSvertex rpos = CreatePrintVtx({entry.offset, entry.color});
+      gl2psForceRasterPos(&rpos);
+      gl2psText(entry.text.c_str(), "Times", 12);
+   }
 }
 
 void KeyCtrlP()
@@ -1039,39 +1071,6 @@ void KeyCtrlP()
    GLint viewport[4] = { 0, 0, 0, 0 };
    wnd->getWindowSize(viewport[2], viewport[3]);
    {
-      gl3::CaptureCallback primFns;
-      primFns.onPrimitives = [](gl3::GLDevice::XfbVertexCapture& prims) {
-         do {
-            auto verts_in = prims.getShape();
-            if (verts_in.size() == 0)
-               continue;
-            GL2PSvertex verts_out[4];
-            for (int i = 0; i < verts_in.size(); i++) {
-               verts_out[i] = CreatePrintVtx(verts_in[i].position, verts_in[i].color);
-            }
-            if (verts_in.size() == 2) {
-               //line
-               gl2psAddPolyPrimitive(GL2PS_LINE, 2, verts_out, 0, 0.f, 0.f,
-                                    0xFFFF, 1, 0.2, 0, 0, 0);
-            } else if (verts_in.size() == 3) {
-               //triangle
-               gl2psAddPolyPrimitive(GL2PS_TRIANGLE, 3, verts_out, 0, 0.f, 0.f,
-                                    0xFFFF, 1, 1, 0, 0, 0);
-            } else if (verts_in.size() == 4) {
-               //quadrilateral
-               gl2psAddPolyPrimitive(GL2PS_QUADRANGLE, 4, verts_out, 0, 0.f, 0.f,
-                                    0xFFFF, 1, 1, 0, 0, 0);
-            }
-         } while (prims.next());
-      };
-      primFns.onText = [](gl3::GLDevice::XfbTextCapture &text) {
-         for (const auto &entry : text)
-         {
-            GL2PSvertex rpos = CreatePrintVtx(entry.offset, entry.color);
-            gl2psForceRasterPos(&rpos);
-            gl2psText(entry.text.c_str(), "Times", 12);
-         }
-      };
       gl3::SceneInfo wnd_scn = locscene->GetSceneObjs();
       for (auto to_buf : wnd_scn.needs_buffering)
          wnd->getRenderer().buffer(to_buf);
@@ -1088,7 +1087,8 @@ void KeyCtrlP()
                         GL2PS_NO_BLENDING |
                         GL2PS_NO_OPENGL_CONTEXT,
                         GL_RGBA, 0, NULL, 16, 16, 16, 0, fp, "a" );
-      wnd->getRenderer().capture(wnd_scn.queue, primFns);
+      gl3::CaptureBuffer cbuf = wnd->getRenderer().capture(wnd_scn.queue);
+      PrintCaptureBuffer(cbuf);
       gl2psEndPage();
    }
    locscene -> print = 0;

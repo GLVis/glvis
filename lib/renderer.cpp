@@ -116,8 +116,10 @@ void MeshRenderer::render(const RenderQueue& queue)
     }
 }
 
-void MeshRenderer::capture(const RenderQueue& queue, CaptureCallback cb)
+CaptureBuffer MeshRenderer::capture(const RenderQueue& queue)
 {
+    CaptureBuffer cbuf;
+    _device->initXfbMode();
     for (auto& q_elem : queue) {
         const RenderParams& params = q_elem.first;
         _device->setTransformMatrices(params.model_view.mtx, params.projection.mtx);
@@ -151,14 +153,12 @@ void MeshRenderer::capture(const RenderQueue& queue, CaptureCallback cb)
         _device->attachTexture(GLDevice::SAMPLER_COLOR, _color_tex);
         _device->attachTexture(GLDevice::SAMPLER_ALPHA, _alpha_tex);
         for (auto& buf : texture_bufs) {
-			auto it = _device->captureXfbBuffer(buf.first, *buf.second);
-			cb.onPrimitives(*it.get());
+			_device->captureXfbBuffer(cbuf, buf.first, *buf.second);
         }
         _device->detachTexture(GLDevice::SAMPLER_COLOR);
         _device->detachTexture(GLDevice::SAMPLER_ALPHA);
         for (auto& buf : no_texture_bufs) {
-            auto it = _device->captureXfbBuffer(buf.first, *buf.second);
-			cb.onPrimitives(*it.get());
+            _device->captureXfbBuffer(cbuf, buf.first, *buf.second);
         }
         if (!params.contains_translucent) {
             _device->enableBlend();
@@ -167,10 +167,11 @@ void MeshRenderer::capture(const RenderQueue& queue, CaptureCallback cb)
         _device->attachTexture(1, _font_tex);
         _device->setNumLights(0);
         for (TextBuffer* buf : text_bufs) {
-            auto it = _device->captureXfbBuffer(*buf);
-			cb.onText(it);
+            _device->captureXfbBuffer(cbuf, *buf);
         }
     }
+    _device->exitXfbMode();
+    return cbuf;
 }
 
 void MeshRenderer::buffer(GlDrawable* buf)
@@ -227,9 +228,8 @@ void GLDevice::setTransformMatrices(glm::mat4 model_view, glm::mat4 projection)
     _proj_mtx = projection;
 }
 
-GLDevice::XfbTextCapture GLDevice::captureXfbBuffer(const TextBuffer& t_buf)
+void GLDevice::captureXfbBuffer(CaptureBuffer& capture, const TextBuffer& t_buf)
 {
-	vector<FeedbackText> data;
 	for (const auto& entry : t_buf)
 	{
 		glm::vec3 raster = glm::project(
@@ -237,9 +237,8 @@ GLDevice::XfbTextCapture GLDevice::captureXfbBuffer(const TextBuffer& t_buf)
 				_model_view_mtx,
 				_proj_mtx,
 				glm::vec4(0, 0, _vp_width, _vp_height));
-		data.emplace_back(raster, glm::make_vec4(_static_color.data()), entry.text); 
+		capture.text.emplace_back(raster, glm::make_vec4(_static_color.data()), entry.text); 
 	}
-	return GLDevice::XfbTextCapture(std::move(data));
 }
 
 }
