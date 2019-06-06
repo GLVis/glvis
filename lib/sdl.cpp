@@ -107,9 +107,7 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
     // Try to create core profile context first
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
-    if (_handle->isInitialized()) {
-        cerr << "done." << endl;
-    } else {
+    if (!_handle->isInitialized()) {
         cerr << "failed.\n" << "Trying compatibility profile next..." << flush;
         // Try to create compatibility profile context next
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);

@@ -406,7 +406,7 @@ void CoreGLDevice::init()
 
 void CoreGLDevice::setTransformMatrices(glm::mat4 model_view, glm::mat4 projection)
 {
-    _model_view_mtx = model_view;
+    GLDevice::setTransformMatrices(model_view, projection);
     glm::mat4 proj_text = glm::ortho<float>(0, _vp_width, 0, _vp_height, -5.0, 5.0);
     glm::mat3 inv_normal = glm::inverseTranspose(glm::mat3(model_view));
     glUniformMatrix4fv(_uniforms["modelViewMatrix"], 1, GL_FALSE, glm::value_ptr(model_view));
