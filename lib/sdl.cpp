@@ -26,17 +26,37 @@ using std::endl;
 extern int GetMultisample();
 extern int visualize;
 
-struct SdlWindow::_SdlHandle {
+struct SdlWindow::_SdlHandle
+{
     SDL_Window * hwnd;
     SDL_GLContext gl_ctx;
-    _SdlHandle()
+    _SdlHandle(const std::string& title, int x, int y, int w, int h, Uint32 wndflags)
         : hwnd(nullptr)
-        , gl_ctx(0) { }
+        , gl_ctx(0) {
+        hwnd = SDL_CreateWindow(title.c_str(), x, y, w, h, wndflags);
+        if (!hwnd) {
+#ifdef GLVIS_DEBUG
+            cerr << "SDL window creation failed with error: " << SDL_GetError() << endl;
+#endif
+            return;
+        }
+        gl_ctx = SDL_GL_CreateContext(hwnd);
+#ifdef GLVIS_DEBUG
+        if (!gl_ctx) {
+            cerr << "OpenGL context creation failed with error: " << SDL_GetError() << endl;
+        }
+#endif
+    }
 
     ~_SdlHandle() {
         if (gl_ctx)
             SDL_GL_DeleteContext(gl_ctx);
-        SDL_DestroyWindow(hwnd);
+        if (hwnd)
+            SDL_DestroyWindow(hwnd);
+    }
+
+    bool isInitialized() {
+        return (hwnd != nullptr && gl_ctx != 0);
     }
 };
 
@@ -56,13 +76,13 @@ SdlWindow::SdlWindow()
 bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
     if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
-            cerr << "Failed to initialize SDL: " << SDL_GetError() << endl;
+            cerr << "FATAL: Failed to initialize SDL: " << SDL_GetError() << endl;
             return false;
         }
     }
 
     //destroy any existing SDL window
-    _handle.reset(new _SdlHandle);
+    _handle.reset();
 
     // If we want to use WebGL 2:
     // #ifdef __EMSCRIPTEN__
@@ -75,9 +95,6 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
 #ifndef __EMSCRIPTEN__
     win_flags |= SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE;
 #endif
-
-	//TODO: try to create a core context, then a compatibility context if core creation fails
-    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8);
     SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
@@ -85,20 +102,31 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
         SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);
         SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
     }
-
-    SDL_Window * win = SDL_CreateWindow(title, x, y, w, h, win_flags);
-    if (!win) {
-      std::cerr << "fatal: unable to create sdl window: " << SDL_GetError() << endl;
-      return false;
+#ifndef __EMSCRIPTEN__
+    cerr << "Creating window with OpenGL core profile..." << flush;
+    // Try to create core profile context first
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
+    if (_handle->isInitialized()) {
+        cerr << "done." << endl;
+    } else {
+        cerr << "failed.\n" << "Trying compatibility profile next..." << flush;
+        // Try to create compatibility profile context next
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+        _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
     }
-    _handle->hwnd = win;
-
-    SDL_GLContext context = SDL_GL_CreateContext(_handle->hwnd);
-    if (!context) {
-        cerr << "Failed to create an OpenGL context: " << SDL_GetError() << endl;
+#else
+    cerr << "Creating window..." << flush;
+    _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
+#endif
+    // at this point, window should be up
+    if (!_handle->isInitialized()) {
+        cerr << "failed." << endl;
+        cerr << "FATAL: window and/or OpenGL context creation failed." << endl;
         return false;
+    } else {
+        cerr << "done." << endl;
     }
-    _handle->gl_ctx = context;
 
 #ifndef __EMSCRIPTEN__
     SDL_GL_SetSwapInterval(0);
@@ -107,7 +135,7 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
 
     GLenum err = glewInit();
     if (err != GLEW_OK) {
-        cerr << "Failed to initialize GLEW: " << glewGetErrorString(err) << endl;
+        cerr << "FATAL: Failed to initialize GLEW: " << glewGetErrorString(err) << endl;
         return false;
     }
 
@@ -139,13 +167,8 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
         _renderer->setDevice<gl3::FFGLDevice>();
     }
 
-    if (!GLEW_VERSION_3_0) {
-		cerr << "opengl 2.1 support" << endl;
-        if (GLEW_EXT_transform_feedback) {
-        }
-    }
 #else
-    _renderer->setDevice<gl3::CoreGlDevice>();
+    _renderer->setDevice<gl3::CoreGLDevice>();
 #endif
 
     return true;

@@ -95,7 +95,7 @@ GLVIS_OPTS ?=
 GLVIS_LDFLAGS ?=
 
 # emcc is used when building the wasm/js version
-EMCC      ?= emcc
+EMCC      ?= emcc -std=c++11
 FONT_FILE ?= OpenSans.ttf
 EMCC_OPTS ?= -s USE_SDL=2 -s USE_FREETYPE=1
 EMCC_LIBS ?= -s USE_SDL=2 --bind -s ALLOW_MEMORY_GROWTH=1 -s SINGLE_FILE=1 --no-heap-copy \
@@ -159,8 +159,8 @@ SDL_SEARCH_FILE = include/SDL2/SDL.h
 SDL_DIR ?= $(call find_dir,$(SDL_SEARCH_FILE),$(SDL_SEARCH_PATHS))
 SDL_LIBS = -lSDL2
 
-GLM_SEARCH_PATHS = /usr /usr/local
-GLM_SEARCH_FILE = include/glm/glm.hpp
+GLM_SEARCH_PATHS = /usr/include /usr/local/include
+GLM_SEARCH_FILE = glm/glm.hpp
 GLM_DIR ?= $(call find_dir,$(GLM_SEARCH_FILE),$(GLM_SEARCH_PATHS))
 
 OPENGL_SEARCH_PATHS = /usr /usr/local /opt/local
@@ -175,7 +175,7 @@ OPENGL_LIBS = $(if $(NOTMAC),-lGL,-framework OpenGL)
 GL_OPTS ?= $(if $(FREETYPE_DIR),-I$(FREETYPE_DIR)/include/freetype2) \
  $(if $(SDL_DIR),-I$(SDL_DIR)/include) \
  $(if $(GLEW_DIR),-I$(GLEW_DIR)/include) \
- $(if $(GLM_DIR),-I$(GLM_DIR)/include) \
+ $(if $(GLM_DIR),-I$(GLM_DIR)) \
  $(if $(OPENGL_DIR),-I$(OPENGL_DIR)/include)
 
 rpath=-Wl,-rpath,
@@ -186,7 +186,7 @@ GL_LIBS ?= $(if $(FREETYPE_DIR),-L$(FREETYPE_DIR)/lib) \
  $(if $(GLM_DIR),-L$(GLM_DIR)/lib) \
  $(FREETYPE_LIBS) $(SDL_LIBS) $(GLEW_LIBS) $(OPENGL_LIBS)
 
-EMCC_OPTS += $(if $(GLM_DIR),-I$(GLM_DIR)/include)
+EMCC_OPTS += $(if $(GLM_DIR),-I$(GLM_DIR))
 
 GLVIS_FLAGS += $(GL_OPTS)
 GLVIS_LIBS  += $(GL_LIBS)
@@ -216,16 +216,18 @@ CCC  = $(strip $(CXX) $(GLVIS_FLAGS))
 Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
 # generated with 'echo lib/*.c*'
-COMMON_SOURCE_FILES = lib/aux_vis.cpp lib/aux_gl3.cpp lib/font.cpp lib/material.cpp \
- lib/openglvis.cpp lib/palettes.cpp lib/renderer.cpp lib/renderer_core.cpp \
- lib/renderer_ff.cpp lib/sdl.cpp lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp \
- lib/vsvector.cpp lib/vsvector3d.cpp
+COMMON_SOURCE_FILES = \
+ lib/gl/types.cpp lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp \
+ lib/aux_vis.cpp lib/font.cpp lib/material.cpp lib/openglvis.cpp lib/palettes.cpp \
+ lib/sdl.cpp lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp \
+ lib/vsvector3d.cpp
 
 # generated with 'echo lib/*.h*'
-HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/material.hpp \
- lib/openglvis.hpp lib/palettes.hpp lib/renderer.hpp lib/renderer_core.hpp \
- lib/renderer_ff.hpp lib/sdl.hpp lib/visual.hpp lib/vsdata.hpp lib/vssolution.hpp \
- lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp
+HEADER_FILES = \
+ lib/gl/platform_gl.hpp lib/gl/types.hpp lib/gl/renderer.hpp lib/gl/renderer_core.hpp \
+ lib/gl/renderer_ff.hpp lib/aux_vis.hpp lib/font.hpp lib/material.hpp lib/openglvis.hpp \
+ lib/palettes.hpp lib/sdl.hpp lib/threads.hpp lib/visual.hpp lib/vsdata.hpp \
+ lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp
 
 DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) lib/threads.cpp lib/gl2ps.c
 WEB_SOURCE_FILES     = $(COMMON_SOURCE_FILES) lib/aux_js.cpp
@@ -238,14 +240,14 @@ BYTECODE_FILES       = $(WEB_SOURCE_FILES:.cpp=.bc)
 
 .SUFFIXES: .c .cpp .o
 
-.cpp.o:
-	cd $(<D); $(CCC) -c $(<F)
+%.o: %.cpp
+	$(CCC) -o $@ -c $<
 
-.c.o:
-	cd $(<D); $(Ccc) -c $(<F)
+%.o: %.c %.h
+	$(Ccc) -o $@ -c $<
 
 %.bc: %.cpp
-	$(EMCC) $(EMCC_OPTS) -c lib/$(<F) -o lib/$(*F).bc
+	$(EMCC) $(EMCC_OPTS) -c $< -o $@
 
 glvis: override MFEM_DIR = $(MFEM_DIR1)
 glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
@@ -267,14 +269,14 @@ $(OBJECT_FILES): override MFEM_DIR = $(MFEM_DIR2)
 $(OBJECT_FILES): $(HEADER_FILES) $(CONFIG_MK)
 
 lib/libglvis.a: $(OBJECT_FILES)
-	cd lib;	$(AR) $(ARFLAGS) libglvis.a *.o; $(RANLIB) libglvis.a
+	$(AR) $(ARFLAGS) lib/libglvis.a $^; $(RANLIB) lib/libglvis.a
 
 js: lib/libglvis.js
 lib/libglvis.js: $(BYTECODE_FILES) $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(EMCC) -o $@ $(BYTECODE_FILES) $(EMCC_LIBS) --embed-file $(FONT_FILE)
 
 clean:
-	rm -rf lib/*.o lib/*.bc lib/*~ *~ glvis lib/libglvis.a lib/libglvis.js *.dSYM
+	rm -rf lib/*.o lib/*.bc lib/gl/*.o lib/gl/*.bc lib/*~ *~ glvis lib/libglvis.a lib/libglvis.js *.dSYM
 
 distclean: clean
 	rm -rf bin/

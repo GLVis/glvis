@@ -396,7 +396,7 @@ void CoreGLDevice::init()
         return;
     }
     this->initializeShaderState(RenderMode::Default);
-    if (GLEW_VERSION_3_0)
+    if (GLEW_VERSION_3_0 || GLEW_ARB_vertex_array_object)
     {
         glGenVertexArrays(1, &_global_vao);
         glBindVertexArray(_global_vao);

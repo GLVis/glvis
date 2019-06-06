@@ -369,6 +369,7 @@ class IVertexBuffer
 private:
    GLuint _handle;
 public:
+   IVertexBuffer() : _handle(0) { }
    virtual ~IVertexBuffer() { }
 
    GLuint get_handle() const { return _handle; }

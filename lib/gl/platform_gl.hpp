@@ -13,7 +13,12 @@
 #define PLATFORM_GL_HPP
 
 #include <GL/glew.h>
+#ifndef __EMSCRIPTEN__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
+#else
+#include <SDL.h>
+#include <SDL_opengl.h>
+#endif
 
 #endif

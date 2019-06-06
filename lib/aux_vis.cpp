@@ -1064,6 +1064,9 @@ void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
 
 void KeyCtrlP()
 {
+#ifdef __EMSCRIPTEN__
+   cerr << "Printing in WebGL is not supported at this time." << endl;
+#else
    cout << "Printing the figure to GLVis.pdf... " << flush;
    locscene -> print = 1;
    FILE * fp;
@@ -1095,6 +1098,7 @@ void KeyCtrlP()
    fclose(fp);
    cout << "done" << endl;
    wnd->signalExpose();
+#endif
 }
 
 void KeyQPressed()
