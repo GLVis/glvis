@@ -743,7 +743,7 @@ void KeykPressed()
    {
       MatAlpha = 0.0;
    }
-   //vsdata -> EventUpdateColors();
+   if (!GetUseTexture()) { vsdata -> EventUpdateColors(); }
    GenerateAlphaTexture(MatAlpha, MatAlphaCenter);
    SendExposeEvent();
 }
@@ -755,7 +755,7 @@ void KeyKPressed()
    {
       MatAlpha = 1.0;
    }
-   //vsdata -> EventUpdateColors();
+   if (!GetUseTexture()) { vsdata -> EventUpdateColors(); }
    GenerateAlphaTexture(MatAlpha, MatAlphaCenter);
    SendExposeEvent();
 }
