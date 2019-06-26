@@ -71,7 +71,6 @@ set(_glvis_compile_opts)
 set(_glvis_include_dirs)
 set(_glvis_libraries)
 
-
 list(APPEND _glvis_compile_defs "GLVIS_MULTISAMPLE=${GLVIS_MULTISAMPLE}")
 list(APPEND _glvis_compile_defs "GLVIS_MS_LINEWIDTH=${GLVIS_MS_LINEWIDTH}")
 
@@ -84,6 +83,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MFEM_CXX_FLAGS}")
 list(APPEND _glvis_include_dirs "${MFEM_INCLUDE_DIRS}")
 list(APPEND _glvis_libraries "${MFEM_LIBRARIES}")
 
+if (NOT EMSCRIPTEN)
 # Find X11. Only need libX11.
 find_package(X11 REQUIRED)
 list(APPEND _glvis_include_dirs "${X11_X11_INCLUDE_PATH}")
@@ -93,6 +93,7 @@ list(APPEND _glvis_libraries "${X11_X11_LIB}")
 find_package(OpenGL REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(GLEW REQUIRED)
+find_package(glm REQUIRED)
 
 list(APPEND _glvis_include_dirs "${OPENGL_INCLUDE_DIR}")
 list(APPEND _glvis_libraries "${OPENGL_LIBRARIES}")
@@ -100,6 +101,8 @@ list(APPEND _glvis_include_dirs "${SDL2_INCLUDE_DIRS}")
 list(APPEND _glvis_libraries "${SDL2_LIBRARIES}")
 list(APPEND _glvis_include_dirs "${GLEW_INCLUDE_DIRS}")
 list(APPEND _glvis_libraries "${GLEW_LIBRARIES}")
+list(APPEND _glvis_include_dirs "${GLM_INCLUDE_DIRS}")
+
 
 # Find TIFF
 if (GLVIS_USE_LIBTIFF)
@@ -127,29 +130,29 @@ if (GLVIS_USE_LIBPNG)
   endif (PNG_FOUND)
 endif (GLVIS_USE_LIBPNG)
 
-# Find FreeType and Fontconfig.
+
+# Find FreeType.
 find_package(Freetype)
 if (NOT FREETYPE_FOUND)
     message(FATAL_ERROR "FreeType not found.")
-else()
-  # Find FontConfig
-  find_library(FONTCONFIG_LIBRARY fontconfig
-    HINTS ${FONTCONFIG_DIR} $ENV{FONTCONFIG_DIR}
-    DOC "The fontconfig library for use with FreeType."
-    NO_DEFAULT_PATH)
-  find_library(FONTCONFIG_LIBRARY fontconfig)
-  if (FONTCONFIG_LIBRARY)
-    list(APPEND _glvis_compile_defs "GLVIS_USE_FREETYPE")
-    list(APPEND _glvis_include_dirs "${FREETYPE_INCLUDE_DIRS}")
-    list(APPEND _glvis_libraries "${FREETYPE_LIBRARIES}")
-    # Need FONTCONFIG_INCLUDE_DIRS?
-    list(APPEND _glvis_libraries "${FONTCONFIG_LIBRARY}")
-    message(STATUS "Found Fontconfig: ${FONTCONFIG_LIBRARY}")
-  else()
-    message(STATUS "Fontconfig not found. Please set FONTCONFIG_DIR.")
-	message(FATAL_ERROR "Fontconfig not found.")
-  endif (FONTCONFIG_LIBRARY)
 endif (NOT FREETYPE_FOUND)
+# Find FontConfig
+find_library(FONTCONFIG_LIBRARY fontconfig
+HINTS ${FONTCONFIG_DIR} $ENV{FONTCONFIG_DIR}
+DOC "The fontconfig library for use with FreeType."
+NO_DEFAULT_PATH)
+find_library(FONTCONFIG_LIBRARY fontconfig)
+if (FONTCONFIG_LIBRARY)
+  list(APPEND _glvis_compile_defs "GLVIS_USE_FREETYPE")
+  list(APPEND _glvis_include_dirs "${FREETYPE_INCLUDE_DIRS}")
+  list(APPEND _glvis_libraries "${FREETYPE_LIBRARIES}")
+  # Need FONTCONFIG_INCLUDE_DIRS?
+  list(APPEND _glvis_libraries "${FONTCONFIG_LIBRARY}")
+  message(STATUS "Found Fontconfig: ${FONTCONFIG_LIBRARY}")
+else()
+  message(STATUS "Fontconfig not found. Please set FONTCONFIG_DIR.")
+  message(FATAL_ERROR "Fontconfig not found.")
+endif (FONTCONFIG_LIBRARY)
 
 # Find threading library
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
@@ -160,8 +163,33 @@ else()
   list(APPEND _glvis_libraries "${CMAKE_THREAD_LIBS_INIT}")
 endif()
 
+else()
+  find_package(glm REQUIRED)
+  list(APPEND _glvis_include_dirs "${GLM_INCLUDE_DIRS}")
+  set(_emscripten_opts)
+  # Enable embind
+  list(APPEND _emscripten_opts "--bind")
+
+  # OpenGL, SDL2, and GLEW are provided by the Emscripten runtime
+  # Enable SDL2
+  list(APPEND _emscripten_opts "-s USE_SDL=2")
+
+  # Set WebGL options
+  list(APPEND _emscripten_opts "-s GL_ASSERTIONS=1 -s GL_DEBUG=1 -s USE_WEBGL2=1")
+
+  # Enable Freetype port
+  list(APPEND _emscripten_opts "-s USE_FREETYPE=1")
+
+  # Since we don't have access to fontconfig, embed a font
+  if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/OpenSans.ttf")
+    message(FATAL_ERROR "Preload font file \"OpenSans.ttf\" not found.")
+  endif()
+  list(APPEND _glvis_libraries "--embed-file OpenSans.ttf")
+
+endif(NOT EMSCRIPTEN)
+
 message(STATUS "GLVis build type: CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
-message(STATUS "GLVis defines: ${_glvis_compile_defs}")
+# message(STATUS "GLVis defines: ${_glvis_compile_defs}")
 # message(STATUS "GLVis opts: ${_glvis_compile_opts}")
 # message(STATUS "GLVis include dirs: ${_glvis_include_dirs}")
 # message(STATUS "GLVis libraries: ${_glvis_libraries}")
@@ -174,9 +202,9 @@ message(STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
 
 add_subdirectory(lib)
 
+if(NOT EMSCRIPTEN)
 #
 # Setup the GLVis executable
-
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "")
 set(CMAKE_INSTALL_RPATH "${MFEM_LIBRARY_DIR}" CACHE PATH "")
 
@@ -195,3 +223,5 @@ if (MFEM_USE_GNUTLS)
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
       GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 endif (MFEM_USE_GNUTLS)
+
+endif(NOT EMSCRIPTEN)

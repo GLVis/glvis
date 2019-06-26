@@ -584,6 +584,7 @@ void CoreGLDevice::drawDeviceBuffer(const TextBuffer& t_buf)
     glUniform1i(_uniforms["containsText"], GL_FALSE);
 }
 
+#ifndef __EMSCRIPTEN__
 inline FeedbackVertex XFBPostTransform(CoreGLDevice::ShaderXfbVertex v, float half_w, float half_h)
 {
     glm::vec3 coord = glm::make_vec3(v.pos);
@@ -760,5 +761,12 @@ void CoreGLDevice::captureXfbBuffer(
                   << "feedback processing" << std::endl;
     }
 }
-
+#else
+void CoreGLDevice::captureXfbBuffer(
+    CaptureBuffer& cbuf, array_layout layout, const IVertexBuffer& buf)
+{
+    std::cerr << "CoreGLDevice::captureXfbBuffer: "
+              << "Not implemented for WebGL." << std::endl;
+}
+#endif // __EMSCRIPTEN__
 }
