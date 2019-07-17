@@ -1625,7 +1625,7 @@ void SetMultisample(int m)
 // Use the command:
 //    fc-list "pattern" file style
 // to find the font files that match the "pattern".
-const char *fc_font_patterns[] =
+vector<string> fc_font_patterns =
 {
    "OpenSans:style=Regular",
    "Helvetica:style=Regular",
@@ -1640,9 +1640,11 @@ const char *fc_font_patterns[] =
    "DejaVu LGC Sans Mono:style=Book"
 };
 
-const int num_font_patterns = sizeof(fc_font_patterns)/sizeof(char *);
-
+#ifdef __EMSCRIPTEN__
+int font_size = 14;
+#else
 int font_size = 12;
+#endif
 
 GlVisFont glvis_font;
 std::string priority_font;
@@ -1650,11 +1652,11 @@ std::string priority_font;
 void InitFont()
 {
     if (priority_font == std::string("")) {
-        if (!SetFont(fc_font_patterns, num_font_patterns, font_size)) {
+        if (!SetFont(fc_font_patterns, font_size)) {
            cerr << "Unable to load font." << endl;
         }
     } else {
-        if (!glvis_font.LoadFont(priority_font.c_str(), font_size))
+        if (!glvis_font.LoadFont(priority_font, font_size))
            cout << "Font not found: " << priority_font << endl;
     }
 }
@@ -1663,7 +1665,7 @@ GlVisFont * GetFont() {
    return &glvis_font;
 }
 
-bool SetFont(const char *font_patterns[], int num_patterns, int height) {
+bool SetFont(const vector<std::string>& font_patterns, int height) {
 #ifdef __EMSCRIPTEN__
     return glvis_font.LoadFont("OpenSans.ttf", height);
 #else
@@ -1673,8 +1675,8 @@ bool SetFont(const char *font_patterns[], int num_patterns, int height) {
 
     FcObjectSet * os = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, nullptr);
 
-    for (int i = 0; i < num_patterns; i++) {
-        FcPattern * pat = FcNameParse((FcChar8*)font_patterns[i]);
+    for (const string& pattern : font_patterns) {
+        FcPattern * pat = FcNameParse((FcChar8*)pattern.c_str());
         if (!pat) {
             continue;
         }
@@ -1686,7 +1688,7 @@ bool SetFont(const char *font_patterns[], int num_patterns, int height) {
         }
 #ifdef GLVIS_DEBUG
         if (fs->nfont > 1) {
-            cout << "Font pattern '" << font_patterns[i]
+            cout << "Font pattern '" << pattern
                  << "' matched multiple fonts:\n";
         }
 #endif
@@ -1706,7 +1708,7 @@ bool SetFont(const char *font_patterns[], int num_patterns, int height) {
         
         FcFontSetDestroy(fs);
         if (font_file != std::string("")) {
-            if (glvis_font.LoadFont(font_file.c_str(), height)) {
+            if (glvis_font.LoadFont(font_file, height)) {
 #ifdef GLVIS_DEBUG
                 cout << "Using font: " << font_name << endl;
 #endif
@@ -1724,7 +1726,7 @@ bool SetFont(const char *font_patterns[], int num_patterns, int height) {
 #endif
 }
 
-void SetFont(const char *fn)
+void SetFont(const std::string& fn)
 {
    priority_font = fn;
    size_t pos = priority_font.rfind('-');

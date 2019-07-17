@@ -260,8 +260,9 @@ bool CoreGLDevice::compileShaders()
 {
     std::string verStr = (char*)glGetString(GL_VERSION);
     int ver_major, ver_minor;
-    ver_major = std::stoi(verStr.substr(0, verStr.find_first_of(".")));
-    ver_minor = std::stoi(verStr.substr(verStr.find_first_of(".") + 1, 1));
+    int vs_idx = verStr.find_first_of(".");
+    ver_major = std::stoi(verStr.substr(vs_idx - 1, vs_idx));
+    ver_minor = std::stoi(verStr.substr(vs_idx + 1, 1));
     int opengl_ver = ver_major * 100 + ver_minor * 10;
     int glsl_ver = -1;
 

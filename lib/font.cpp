@@ -24,7 +24,7 @@ struct vert_tex2d {
 
 
 const int font_scale = 72;
-bool GlVisFont::LoadFont(const char* path, int font_size) {
+bool GlVisFont::LoadFont(const std::string& path, int font_size) {
     if (!init) {
         return false;
     }
@@ -33,7 +33,7 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
         FT_Done_Face(face);
         font_init = false;
     }
-    if (FT_New_Face(library, path, 0, &face)) {
+    if (FT_New_Face(library, path.c_str(), 0, &face)) {
         cout << "GLVis: Cannot open font file: " << path << endl;
         return false;
     }
@@ -66,7 +66,7 @@ bool GlVisFont::LoadFont(const char* path, int font_size) {
     glActiveTexture(GL_TEXTURE0 + 1);
     glBindTexture(GL_TEXTURE_2D, font_tex);
     std::vector<uint8_t> zeros(tex_w * tex_h, 0);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_w, tex_h, 0, alpha_channel, GL_UNSIGNED_BYTE, zeros.data());
+    glTexImage2D(GL_TEXTURE_2D, 0, alpha_channel, tex_w, tex_h, 0, alpha_channel, GL_UNSIGNED_BYTE, zeros.data());
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);

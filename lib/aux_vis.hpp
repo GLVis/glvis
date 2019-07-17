@@ -128,7 +128,7 @@ void SetMultisample(int m);
 
 void InitFont();
 GlVisFont * GetFont();
-bool SetFont(const char *font_patterns[], int num_patterns, int height);
-void SetFont(const char *fn);
+bool SetFont(const vector<std::string>& patterns, int height);
+void SetFont(const std::string& fn);
 
 #endif

@@ -49,7 +49,7 @@ private:
    FT_Face     face;
 public:
 
-   bool LoadFont(const char* path, int font_size);
+   bool LoadFont(const std::string& path, int font_size);
 
    glyph GetTexChar(char c)
    {

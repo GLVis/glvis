@@ -179,12 +179,22 @@ else()
 
   # Enable Freetype port
   list(APPEND _emscripten_opts "-s USE_FREETYPE=1")
+  
+  # Module export options
+  list(APPEND _emscripten_opts "-s ENVIRONMENT=web")
+  list(APPEND _emscripten_opts "-s MODULARIZE=1")
+  list(APPEND _emscripten_opts "-s EXPORT_NAME=glvis")
+
+  # Other emscripten options
+  list(APPEND _emscripten_opts "-s ALLOW_MEMORY_GROWTH=1")
+  list(APPEND _emscripten_opts "-s SINGLE_FILE=1")
+  list(APPEND _emscripten_opts "--no-heap-copy")
 
   # Since we don't have access to fontconfig, embed a font
   if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/OpenSans.ttf")
     message(FATAL_ERROR "Preload font file \"OpenSans.ttf\" not found.")
   endif()
-  list(APPEND _glvis_libraries "--embed-file OpenSans.ttf")
+  list(APPEND _emscripten_opts "--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/OpenSans.ttf@OpenSans.ttf")
 
 endif(NOT EMSCRIPTEN)
 
