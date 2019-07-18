@@ -1,46 +1,38 @@
 #include "renderer_ff.hpp"
+#include "attr_traits.hpp"
 #include "../aux_vis.hpp"
 
 namespace gl3
 {
 
-void FFDrawVertex(Vertex v)
+template<typename TVtx>
+void setupFFVertexArray(TVtx* buffer)
 {
-    glVertex3fv(v.coord.data());
+    static_assert(attr_coord<TVtx>::exists,
+        "Invalid vertex type, requires at least TVtx::coord to be present.");
+    attr_coord<TVtx>::setup_legacy(buffer);
+    attr_normal<TVtx>::setup_legacy(buffer);
+    attr_color<TVtx>::setup_legacy(buffer);
+    attr_texcoord<TVtx>::setup_legacy(buffer);
 }
 
-void FFDrawVertexColor(VertexColor vc)
+template<typename TVtx>
+void clearFFVertexArray()
 {
-    glColor4ubv(vc.color.data());
-    glVertex3fv(vc.coord.data());
+    attr_coord<TVtx>::clear_legacy();
+    attr_normal<TVtx>::clear_legacy();
+    attr_color<TVtx>::clear_legacy();
+    attr_texcoord<TVtx>::clear_legacy();
 }
 
-void FFDrawVertexTex(VertexTex vt)
+template<typename TVtx>
+void bufferFFDeviceImpl(const VertexBuffer<TVtx>& buf)
 {
-    glMultiTexCoord2fv(GL_TEXTURE0, vt.texCoord.data());
-    glMultiTexCoord2fv(GL_TEXTURE1, vt.texCoord.data());
-    glVertex3fv(vt.coord.data());
-}
-
-void FFDrawVertexNorm(VertexNorm vn)
-{
-    glNormal3fv(vn.norm.data());
-    glVertex3fv(vn.coord.data());
-}
-
-void FFDrawVertexNormColor(VertexNormColor vnc)
-{
-    glColor4ubv(vnc.color.data());
-    glNormal3fv(vnc.norm.data());
-    glVertex3fv(vnc.coord.data());
-}
-
-void FFDrawVertexNormTex(VertexNormTex vnc)
-{
-    glMultiTexCoord2fv(GL_TEXTURE0, vnc.texCoord.data());
-    glMultiTexCoord2fv(GL_TEXTURE1, vnc.texCoord.data());
-    glNormal3fv(vnc.norm.data());
-    glVertex3fv(vnc.coord.data());
+    glNewList(buf.get_handle(), GL_COMPILE);
+    setupFFVertexArray((TVtx*)buf.get_data());
+    glDrawArrays(buf.get_shape(), 0, buf.count());
+    glEndList();
+    clearFFVertexArray<TVtx>();
 }
 
 void FFGLDevice::init()
@@ -141,55 +133,29 @@ void FFGLDevice::bufferToDevice(array_layout layout, IVertexBuffer& buf)
         int new_hnd = glGenLists(1);
         buf.set_handle(new_hnd);
     }
-    glNewList(buf.get_handle(), GL_COMPILE);
-    glBegin(buf.get_shape());
 
-    switch(layout) {
-        case LAYOUT_VTX:
-        {
-            for (const Vertex& v : static_cast<VertexBuffer<Vertex>&>(buf)) {
-                FFDrawVertex(v);
-            }
-        }
-        break;
-        case LAYOUT_VTX_COLOR:
-        {
-            for (const VertexColor& v : static_cast<VertexBuffer<VertexColor>&>(buf)) {
-                FFDrawVertexColor(v);
-            }
-        }
-        break;
-        case LAYOUT_VTX_TEXTURE0:
-        {
-            for (const VertexTex& v : static_cast<VertexBuffer<VertexTex>&>(buf)) {
-                FFDrawVertexTex(v);
-            }
-        }
-        break;
-        case LAYOUT_VTX_NORMAL:
-        {
-            for (const VertexNorm& v : static_cast<VertexBuffer<VertexNorm>&>(buf)) {
-                FFDrawVertexNorm(v);
-            }
-        }
-        break;
-        case LAYOUT_VTX_NORMAL_COLOR:
-        {
-            for (const VertexNormColor& v : static_cast<VertexBuffer<VertexNormColor>&>(buf)) {
-                FFDrawVertexNormColor(v);
-            }
-        }
-        break;
-        case LAYOUT_VTX_NORMAL_TEXTURE0:
-        {
-            for (const VertexNormTex& v : static_cast<VertexBuffer<VertexNormTex>&>(buf)) {
-                FFDrawVertexNormTex(v);
-            }
-        }
-        break;
+    switch (layout) {
+        case Vertex::layout:
+            bufferFFDeviceImpl(static_cast<const VertexBuffer<Vertex>&>(buf));
+            break;
+        case VertexColor::layout:
+            bufferFFDeviceImpl(static_cast<const VertexBuffer<VertexColor>&>(buf));
+            break;
+        case VertexTex::layout:
+            bufferFFDeviceImpl(static_cast<const VertexBuffer<VertexTex>&>(buf));
+            break;
+        case VertexNorm::layout:
+            bufferFFDeviceImpl(static_cast<const VertexBuffer<VertexNorm>&>(buf));
+            break;
+        case VertexNormColor::layout:
+            bufferFFDeviceImpl(static_cast<const VertexBuffer<VertexNormColor>&>(buf));
+            break;
+        case VertexNormTex::layout:
+            bufferFFDeviceImpl(static_cast<const VertexBuffer<VertexNormTex>&>(buf));
+            break;
+        default:
+            cerr << "WARNING: Unhandled vertex layout " << layout << endl;
     }
-    glEnd();
-    glEndList();
 }
 
 void FFGLDevice::bufferToDevice(TextBuffer& buf)

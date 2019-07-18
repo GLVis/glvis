@@ -1,3 +1,4 @@
+#include "attr_traits.hpp"
 #include "renderer_core.hpp"
 #include "../aux_vis.hpp"
 
@@ -38,83 +39,6 @@ const std::string PRINTING_FS =
 
 namespace gl3
 {
-
-template<typename T>
-struct type_to_gl {
-    static const GLenum value;
-};
-
-template<> const GLenum type_to_gl<float>::value = GL_FLOAT;
-template<> const GLenum type_to_gl<uint8_t>::value = GL_UNSIGNED_BYTE;
-
-struct attr_base
-{
-    static void setup() { }
-    static void clear() { }
-    enum { exists = false };
-};
-
-template<
-    typename TV,
-    typename TAttr,
-    TAttr TV::*Attrib,
-    int AttrIdx,
-    bool AttrNorm = is_integral<typename TAttr::value_type>::value>
-struct attr_exist
-{
-    static void setup()
-    {
-        void* offset = (void*)(&((TV*)0->*Attrib));
-        glEnableVertexAttribArray(AttrIdx);
-        glVertexAttribPointer(AttrIdx,
-                              std::tuple_size<TAttr>::value,
-                              type_to_gl<typename TAttr::value_type>::value,
-                              AttrNorm,
-                              sizeof(TV), offset);
-    }
-    static void clear()
-    {
-        glDisableVertexAttribArray(AttrIdx);
-    }
-    enum { exists = true };
-};
-
-// Default attribute traits for vertex types
-// Provides no-op setup/clear functions if an attribute doesn't exist.
-template<typename TV, typename = int>
-struct attr_coord : attr_base { };
-
-template<typename TV, typename = int>
-struct attr_normal : attr_base { };
-
-template<typename TV, typename = int>
-struct attr_color : attr_base { };
-
-template<typename TV, typename = int>
-struct attr_texcoord : attr_base { };
-
-// Template specializations for attribute traits
-// If an attribute exists in a vertex, generates setup and clear functions
-// which setup OpenGL vertex attributes.
-template<typename TV>
-struct attr_coord<TV, decltype((void)TV::coord, 0)>
-    : attr_exist<TV, decltype(TV::coord), &TV::coord, CoreGLDevice::ATTR_VERTEX>
-{ };
-
-template<typename TV>
-struct attr_normal<TV, decltype((void)TV::norm, 0)>
-    : attr_exist<TV, decltype(TV::norm), &TV::norm, CoreGLDevice::ATTR_NORMAL>
-{ };
-
-template<typename TV>
-struct attr_color<TV, decltype((void)TV::color, 0)>
-    : attr_exist<TV, decltype(TV::color), &TV::color, CoreGLDevice::ATTR_COLOR>
-{ };
-
-template<typename TV>
-struct attr_texcoord<TV, decltype((void)TV::texCoord, 0)>
-    : attr_exist<TV, decltype(TV::texCoord), &TV::texCoord, CoreGLDevice::ATTR_TEXCOORD0>
-{ };
 
 template<typename TVtx>
 void setupVtxAttrLayout()

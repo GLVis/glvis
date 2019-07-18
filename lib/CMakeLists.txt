@@ -15,6 +15,7 @@ list(APPEND SOURCES
   vsvector3d.cpp)
 
 list(APPEND HEADERS
+  gl/attr_traits.hpp
   gl/platform_gl.hpp
   gl/types.hpp
   gl/renderer.hpp
