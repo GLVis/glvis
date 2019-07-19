@@ -1131,37 +1131,54 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
       }
    }
 
-   if (n == 3)
-   {
-      poly.glBegin(GL_TRIANGLES);
-   }
-   else
-   {
-      poly.glBegin(GL_QUADS);
-   }
    if (normals_opt != 0 && normals_opt != -1)
    {
+      std::vector<gl3::VertexNormTex> vertices;
+      std::vector<int> indices;
+      vertices.reserve(pts.Size());
+      indices.reserve(ind.Size());
+      for (int i = 0; i < pts.Width(); i++)
+      {
+         vertices.emplace_back(
+            gl3::VertexNormTex{
+               {(float) pts(0, i), (float) pts(1, i), (float) pts(2, i)},
+               {(float) normals(0, i), (float) normals(1, i), (float) normals(2, i)},
+               {(float) GetColorCoord(vals(i), minv, maxv), 1.0 }
+            });
+      }
       if (normals_opt > 0)
       {
          for (int i = 0; i < ind.Size(); i++)
          {
-            poly.glNormal3dv(&normals(0, ind[i]));
-            MySetColor(poly, vals(ind[i]), minv, maxv);
-            poly.glVertex3dv(&pts(0, ind[i]));
+            indices.emplace_back(ind[i]);
          }
       }
       else
       {
          for (int i = ind.Size()-1; i >= 0; i--)
          {
-            poly.glNormal3dv(&normals(0, ind[i]));
-            MySetColor(poly, vals(ind[i]), minv, maxv);
-            poly.glVertex3dv(&pts(0, ind[i]));
+            indices.emplace_back(ind[i]);
          }
+      }
+      if (n == 3)
+      {
+         drawable.addTriangleIndexed(vertices, indices);
+      }
+      else
+      {
+         drawable.addQuadIndexed(vertices, indices);
       }
    }
    else
    {
+      if (n == 3)
+      {
+         poly.glBegin(GL_TRIANGLES);
+      }
+      else
+      {
+         poly.glBegin(GL_QUADS);
+      }
       for (int i = 0; i < ind.Size(); i += n)
       {
          int j;
@@ -1193,8 +1210,8 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
             }
          }
       }
+      poly.glEnd();
    }
-   poly.glEnd();
 }
 
 

@@ -26,11 +26,21 @@ void clearFFVertexArray()
 }
 
 template<typename TVtx>
-void bufferFFDeviceImpl(const VertexBuffer<TVtx>& buf)
+void FFGLDevice::bufferFFDeviceImpl(const VertexBuffer<TVtx>& buf)
 {
-    glNewList(buf.get_handle(), GL_COMPILE);
+    glNewList(disp_lists[buf.get_handle()].list, GL_COMPILE);
     setupFFVertexArray((TVtx*)buf.get_data());
     glDrawArrays(buf.get_shape(), 0, buf.count());
+    glEndList();
+    clearFFVertexArray<TVtx>();
+}
+
+template<typename TVtx>
+void FFGLDevice::bufferFFDeviceImpl(const IndexedVertexBuffer<TVtx>& buf)
+{
+    glNewList(disp_lists[buf.get_handle()].list, GL_COMPILE);
+    setupFFVertexArray((TVtx*)buf.get_data());
+    glDrawElements(buf.get_shape(), buf.getIndices().size(), GL_UNSIGNED_INT, buf.getIndices().data());
     glEndList();
     clearFFVertexArray<TVtx>();
 }
@@ -130,8 +140,11 @@ void FFGLDevice::bufferToDevice(array_layout layout, IVertexBuffer& buf)
 {
     if (buf.count() == 0) { return; }
     if (buf.get_handle() == 0) {
-        int new_hnd = glGenLists(1);
-        buf.set_handle(new_hnd);
+        GLuint new_hnd = glGenLists(1);
+        buf.set_handle(disp_lists.size());
+        disp_lists.emplace_back(DispList_{new_hnd, buf.get_shape(), buf.count(), layout});
+    } else {
+        disp_lists[buf.get_handle()].count = buf.count();
     }
 
     switch (layout) {
@@ -158,29 +171,62 @@ void FFGLDevice::bufferToDevice(array_layout layout, IVertexBuffer& buf)
     }
 }
 
+void FFGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
+{
+    if (buf.count() == 0) { return; }
+    if (buf.get_handle() == 0) {
+        GLuint new_hnd = glGenLists(1);
+        buf.set_handle(disp_lists.size());
+        disp_lists.emplace_back(DispList_{new_hnd, buf.get_shape(), buf.getIndices().size(), layout});
+    } else {
+        disp_lists[buf.get_handle()].count = buf.getIndices().size();
+    }
+
+    switch (layout) {
+        case Vertex::layout:
+            bufferFFDeviceImpl(static_cast<const IndexedVertexBuffer<Vertex>&>(buf));
+            break;
+        case VertexColor::layout:
+            bufferFFDeviceImpl(static_cast<const IndexedVertexBuffer<VertexColor>&>(buf));
+            break;
+        case VertexTex::layout:
+            bufferFFDeviceImpl(static_cast<const IndexedVertexBuffer<VertexTex>&>(buf));
+            break;
+        case VertexNorm::layout:
+            bufferFFDeviceImpl(static_cast<const IndexedVertexBuffer<VertexNorm>&>(buf));
+            break;
+        case VertexNormColor::layout:
+            bufferFFDeviceImpl(static_cast<const IndexedVertexBuffer<VertexNormColor>&>(buf));
+            break;
+        case VertexNormTex::layout:
+            bufferFFDeviceImpl(static_cast<const IndexedVertexBuffer<VertexNormTex>&>(buf));
+            break;
+        default:
+            cerr << "WARNING: Unhandled vertex layout " << layout << endl;
+    }
+}
+
 void FFGLDevice::bufferToDevice(TextBuffer& buf)
 {
     // we can't really do anything here
     // can only compute offset matrix at draw
 }
 
-void FFGLDevice::drawDeviceBuffer(array_layout layout, const IVertexBuffer& buf)
+void FFGLDevice::drawDeviceBuffer(int hnd)
 {
-    if (buf.get_handle() == 0)
-        return;
-    if (buf.count() == 0)
-        return;
-    if (layout == Vertex::layout || layout == VertexNorm::layout) {
+    if (hnd == 0) return;
+    if (disp_lists[hnd].layout == Vertex::layout
+        || disp_lists[hnd].layout == VertexNorm::layout) {
         glColor4fv(_static_color.data());
     } else {
         glColor4f(1.f, 1.f, 1.f, 1.f);
     }
-    if (!(layout == VertexNorm::layout
-        || layout == VertexNormColor::layout
-        || layout == VertexNormTex::layout)) {
+    if (!( disp_lists[hnd].layout == VertexNorm::layout
+        || disp_lists[hnd].layout == VertexNormColor::layout
+        || disp_lists[hnd].layout == VertexNormTex::layout)) {
         glNormal3f(0.f, 0.f, 1.f);
     }
-    glCallList(buf.get_handle());
+    glCallList(disp_lists[hnd].list);
     // reset texturing parameters
     //glMultiTexCoord2f(GL_TEXTURE0, 0.f, 0.f);
     //glMultiTexCoord2f(GL_TEXTURE1, 0.f, 0.f);
@@ -239,12 +285,12 @@ void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)
     glPopMatrix();
 }
 
-void FFGLDevice::captureXfbBuffer(
-    CaptureBuffer& cbuf, array_layout layout, const IVertexBuffer& buf)
+void FFGLDevice::captureXfbBuffer(CaptureBuffer& cbuf, int hnd)
 {
     GLenum fbType;
     int fbStride;
-    if (layout == VertexTex::layout || layout == VertexNormTex::layout)
+    if (disp_lists[hnd].layout == VertexTex::layout
+        || disp_lists[hnd].layout == VertexNormTex::layout)
     {
         //capture texture values too
         // [ X Y Z ] [ R G B A ] [ U V - - ]
@@ -258,15 +304,15 @@ void FFGLDevice::captureXfbBuffer(
     }
     // compute feedback buffer size
     int sizebuf = 0;
-    if (buf.get_shape() == GL_LINES) {
+    if (disp_lists[hnd].shape == GL_LINES) {
         // for each line: LINE_TOKEN [Vtx] [Vtx]
-        sizebuf = (buf.count() / 2) + buf.count() * fbStride;
-    } else if (buf.get_shape() == GL_TRIANGLES) {
+        sizebuf = (disp_lists[hnd].count / 2) + disp_lists[hnd].count * fbStride;
+    } else if (disp_lists[hnd].shape == GL_TRIANGLES) {
         // for each tri: POLY_TOKEN 3 [Vtx] [Vtx] [Vtx]
         // NOTE: when clip plane is enabled, we might get two triangles
         // or a quad for an input triangle. However, the other clipped
         // triangles get discarded, so this *should* be enough space.
-        sizebuf = (buf.count() / 3) * (2 + fbStride * 4);
+        sizebuf = (disp_lists[hnd].count / 3) * (2 + fbStride * 4);
     } else {
         std::cerr << "Warning: unhandled primitive type in FFPrinter::preDraw()" << std::endl;
         return;
@@ -277,7 +323,7 @@ void FFGLDevice::captureXfbBuffer(
     glFeedbackBuffer(sizebuf, fbType, xfb_buf.data());
     // draw with feedback capture
     glRenderMode(GL_FEEDBACK);
-    drawDeviceBuffer(layout, buf);
+    drawDeviceBuffer(hnd);
     int result = glRenderMode(GL_RENDER);
 #ifdef GLVIS_DEBUG
     if (result < 0) {

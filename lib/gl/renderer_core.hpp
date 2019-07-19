@@ -63,9 +63,23 @@ private:
     };
     
     bool _use_clip_plane;
+    struct VBOHandle_
+    {
+        GLuint vert_buf;
+        GLuint elem_buf;
+        GLenum shape;
+        size_t count;
+        array_layout layout;
+    };
+
+    std::vector<VBOHandle_> _vbos;
 
     bool compileShaders();
     void initializeShaderState(RenderMode mode);
+
+    template<typename T>
+    void drawDeviceBufferImpl(GLenum shape, int count, bool indexed);
+
     void processTriangleXfbBuffer(CaptureBuffer& cbuf, const vector<ShaderXfbVertex>& verts);
     void processLineXfbBuffer(CaptureBuffer& cbuf, const vector<ShaderXfbVertex>& verts);
 public:
@@ -84,8 +98,9 @@ public:
     void setClipPlaneEqn(const std::array<double, 4>& eqn) override;
 
     void bufferToDevice(array_layout layout, IVertexBuffer& buf) override;
+    void bufferToDevice(array_layout layout, IIndexedBuffer& buf) override;
     void bufferToDevice(TextBuffer& t_buf) override;
-    void drawDeviceBuffer(array_layout layout, const IVertexBuffer& buf) override;
+    void drawDeviceBuffer(int hnd) override;
     void drawDeviceBuffer(const TextBuffer& t_buf) override;
 
     void initXfbMode() override
@@ -100,9 +115,7 @@ public:
         initializeShaderState(RenderMode::Default);
 	    glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
     }
-    void captureXfbBuffer(CaptureBuffer& cbuf,
-                          array_layout layout,
-                          const IVertexBuffer& buf) override;
+    void captureXfbBuffer(CaptureBuffer& cbuf, int hnd) override;
 };
 
 }

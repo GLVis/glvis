@@ -387,20 +387,48 @@ void CoreGLDevice::setClipPlaneEqn(const std::array<double, 4> &eqn)
 
 void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
 {
-    if (buf.count() == 0)
-    {
-        return;
-    }
+    if (buf.count() == 0) { return; }
     if (buf.get_handle() == 0)
     {
         GLuint handle;
         glGenBuffers(1, &handle);
-        buf.set_handle(handle);
+        buf.set_handle(_vbos.size());
+        _vbos.emplace_back(VBOHandle_{handle, 0, buf.get_shape(), buf.count(), layout});
     }
-    glBindBuffer(GL_ARRAY_BUFFER, buf.get_handle());
+    else
+    {
+        _vbos[buf.get_handle()].count = buf.count();
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, _vbos[buf.get_handle()].vert_buf);
     glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
     glBufferData(GL_ARRAY_BUFFER, buf.count() * buf.get_stride(),
                  buf.get_data(), GL_STATIC_DRAW);
+}
+
+void CoreGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
+{
+    if (buf.count() == 0) { return; }
+    if (buf.get_handle() == 0)
+    {
+        GLuint handle[2];
+        glGenBuffers(2, &handle[0]);
+        buf.set_handle(_vbos.size());
+        _vbos.emplace_back(VBOHandle_{handle[0], handle[1], buf.get_shape(), buf.getIndices().size(), layout});
+    }
+    else
+    {
+        _vbos[buf.get_handle()].count = buf.getIndices().size();
+    }
+    // Buffer vertex array
+    glBindBuffer(GL_ARRAY_BUFFER, _vbos[buf.get_handle()].vert_buf);
+    glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, buf.count() * buf.get_stride(),
+                 buf.get_data(), GL_STATIC_DRAW);
+    // Buffer element array
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _vbos[buf.get_handle()].elem_buf);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, buf.getIndices().size() * sizeof(int),
+                 buf.getIndices().data(), GL_STATIC_DRAW);
 }
 
 void CoreGLDevice::bufferToDevice(TextBuffer &t_buf)
@@ -444,7 +472,7 @@ void CoreGLDevice::bufferToDevice(TextBuffer &t_buf)
 }
 
 template<typename T>
-void drawDeviceBufferImpl(const VertexBuffer<T>& buf)
+void CoreGLDevice::drawDeviceBufferImpl(GLenum shape, int count, bool indexed)
 {
     if (!attr_normal<T>::exists) {
         glVertexAttrib3f(CoreGLDevice::ATTR_NORMAL, 0.f, 0.f, 1.f);
@@ -453,39 +481,51 @@ void drawDeviceBufferImpl(const VertexBuffer<T>& buf)
         glVertexAttrib4f(CoreGLDevice::ATTR_COLOR, 1.f, 1.f, 1.f, 1.f);
     }
     setupVtxAttrLayout<T>();
-    glDrawArrays(buf.get_shape(), 0, buf.count());
+    if (indexed) {
+        glDrawElements(shape, count, GL_UNSIGNED_INT, (void*)0);
+    } else {
+        glDrawArrays(shape, 0, count);
+    }
     clearVtxAttrLayout<T>();
 }
 
-void CoreGLDevice::drawDeviceBuffer(array_layout layout, const IVertexBuffer &buf)
+void CoreGLDevice::drawDeviceBuffer(int hnd)
 {
-    if (buf.get_handle() == 0) { return; }
-    if (buf.count() == 0) { return; }
-    glBindBuffer(GL_ARRAY_BUFFER, buf.get_handle());
-    if (layout == Vertex::layout || layout == VertexNorm::layout) {
+    if (hnd == 0) { return; }
+    glBindBuffer(GL_ARRAY_BUFFER, _vbos[hnd].vert_buf);
+    bool indexed = false;
+    if (_vbos[hnd].elem_buf != 0)
+    {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _vbos[hnd].elem_buf);
+        indexed = true;
+    }
+    if (_vbos[hnd].layout == Vertex::layout
+        || _vbos[hnd].layout == VertexNorm::layout) {
         glVertexAttrib4fv(ATTR_COLOR, _static_color.data());
     }
-    switch (layout) {
+    GLenum shape = _vbos[hnd].shape;
+    int count = _vbos[hnd].count;
+    switch (_vbos[hnd].layout) {
         case Vertex::layout:
-            drawDeviceBufferImpl(static_cast<const VertexBuffer<Vertex>&>(buf));
+            drawDeviceBufferImpl<Vertex>(shape, count, indexed);
             break;
         case VertexColor::layout:
-            drawDeviceBufferImpl(static_cast<const VertexBuffer<VertexColor>&>(buf));
+            drawDeviceBufferImpl<VertexColor>(shape, count, indexed);
             break;
         case VertexTex::layout:
-            drawDeviceBufferImpl(static_cast<const VertexBuffer<VertexTex>&>(buf));
+            drawDeviceBufferImpl<VertexTex>(shape, count, indexed);
             break;
         case VertexNorm::layout:
-            drawDeviceBufferImpl(static_cast<const VertexBuffer<VertexNorm>&>(buf));
+            drawDeviceBufferImpl<VertexNorm>(shape, count, indexed);
             break;
         case VertexNormColor::layout:
-            drawDeviceBufferImpl(static_cast<const VertexBuffer<VertexNormColor>&>(buf));
+            drawDeviceBufferImpl<VertexNormColor>(shape, count, indexed);
             break;
         case VertexNormTex::layout:
-            drawDeviceBufferImpl(static_cast<const VertexBuffer<VertexNormTex>&>(buf));
+            drawDeviceBufferImpl<VertexNormTex>(shape, count, indexed);
             break;
         default:
-            cerr << "WARNING: Unhandled vertex layout " << layout << endl;
+            cerr << "WARNING: Unhandled vertex layout " << _vbos[hnd].layout << endl;
     }
 }
 void CoreGLDevice::drawDeviceBuffer(const TextBuffer& t_buf)
@@ -658,25 +698,25 @@ void CoreGLDevice::processLineXfbBuffer(CaptureBuffer& cbuf, const vector<Shader
 
 
 void CoreGLDevice::captureXfbBuffer(
-    CaptureBuffer& cbuf, array_layout layout, const IVertexBuffer& buf)
+    CaptureBuffer& cbuf, int hnd)
 {
     // allocate feedback buffer
-    int buf_size = buf.count() * sizeof(ShaderXfbVertex);
+    int buf_size = _vbos[hnd].count * sizeof(ShaderXfbVertex);
     glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER,
                  buf_size, nullptr, GL_STATIC_READ);
     glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, _feedback_vbo);
     // Draw objects in feedback-only mode
-    glBeginTransformFeedback(buf.get_shape());
-    drawDeviceBuffer(layout, buf);
+    glBeginTransformFeedback(_vbos[hnd].shape);
+    drawDeviceBuffer(hnd);
     glEndTransformFeedback();
     // Read back feedback buffer
     vector<ShaderXfbVertex> xfbBuf(buf_size);
     glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, buf_size, xfbBuf.data());
-    if (buf.get_shape() == GL_TRIANGLES)
+    if (_vbos[hnd].shape == GL_TRIANGLES)
     {
         processTriangleXfbBuffer(cbuf, xfbBuf);
     }
-    else if (buf.get_shape() == GL_LINES)
+    else if (_vbos[hnd].shape == GL_LINES)
     {
         processLineXfbBuffer(cbuf, xfbBuf);
     }
@@ -688,7 +728,7 @@ void CoreGLDevice::captureXfbBuffer(
 }
 #else
 void CoreGLDevice::captureXfbBuffer(
-    CaptureBuffer& cbuf, array_layout layout, const IVertexBuffer& buf)
+    CaptureBuffer& cbuf, int hnd)
 {
     std::cerr << "CoreGLDevice::captureXfbBuffer: "
               << "Not implemented for WebGL." << std::endl;

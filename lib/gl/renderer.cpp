@@ -69,18 +69,26 @@ void MeshRenderer::render(const RenderQueue& queue)
         _device->setClipPlaneUse(params.use_clip_plane);
         _device->setClipPlaneEqn(params.clip_plane_eqn);
         //aggregate buffers with common parameters
-        std::vector<pair<array_layout, IVertexBuffer*>> texture_bufs, no_texture_bufs;
+        std::vector<int> tex_bufs, no_tex_bufs;
         std::vector<TextBuffer*> text_bufs;
         GlDrawable* curr_drawable = q_elem.second;
         for (int i = 0; i < NUM_LAYOUTS; i++) {
             for (int j = 0; j < GlDrawable::NUM_SHAPES; j++) {
-                if (!curr_drawable->buffers[i][j])
-                    continue;
-                if (i == LAYOUT_VTX_TEXTURE0
-                    || i == LAYOUT_VTX_NORMAL_TEXTURE0) {
-                    texture_bufs.emplace_back((array_layout) i, curr_drawable->buffers[i][j].get());
-                } else {
-                    no_texture_bufs.emplace_back((array_layout) i, curr_drawable->buffers[i][j].get());
+                if (curr_drawable->buffers[i][j])
+                {
+                    if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0) {
+                        tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->get_handle());
+                    } else {
+                        no_tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->get_handle());
+                    }
+                }
+                if (curr_drawable->indexed_buffers[i][j])
+                {
+                    if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0) {
+                        tex_bufs.emplace_back(curr_drawable->indexed_buffers[i][j].get()->get_handle());
+                    } else {
+                        no_tex_bufs.emplace_back(curr_drawable->indexed_buffers[i][j].get()->get_handle());
+                    }
                 }
             }
         }
@@ -92,13 +100,13 @@ void MeshRenderer::render(const RenderQueue& queue)
         }
         _device->attachTexture(GLDevice::SAMPLER_COLOR, _color_tex);
         _device->attachTexture(GLDevice::SAMPLER_ALPHA, _alpha_tex);
-        for (auto& buf : texture_bufs) {
-            _device->drawDeviceBuffer(buf.first, *buf.second);
+        for (auto buf : tex_bufs) {
+            _device->drawDeviceBuffer(buf);
         }
         _device->detachTexture(GLDevice::SAMPLER_COLOR);
         _device->detachTexture(GLDevice::SAMPLER_ALPHA);
-        for (auto& buf : no_texture_bufs) {
-            _device->drawDeviceBuffer(buf.first, *buf.second);
+        for (auto buf : no_tex_bufs) {
+            _device->drawDeviceBuffer(buf);
         }
         if (!params.contains_translucent) {
             _device->enableBlend();
@@ -131,18 +139,26 @@ CaptureBuffer MeshRenderer::capture(const RenderQueue& queue)
         _device->setClipPlaneUse(params.use_clip_plane);
         _device->setClipPlaneEqn(params.clip_plane_eqn);
         //aggregate buffers with common parameters
-        std::vector<pair<array_layout, IVertexBuffer*>> texture_bufs, no_texture_bufs;
+        std::vector<int> tex_bufs, no_tex_bufs;
         std::vector<TextBuffer*> text_bufs;
         GlDrawable* curr_drawable = q_elem.second;
         for (int i = 0; i < NUM_LAYOUTS; i++) {
             for (int j = 0; j < GlDrawable::NUM_SHAPES; j++) {
-                if (!curr_drawable->buffers[i][j])
-                    continue;
-                if (i == LAYOUT_VTX_TEXTURE0
-                    || i == LAYOUT_VTX_NORMAL_TEXTURE0) {
-                    texture_bufs.emplace_back((array_layout) i, curr_drawable->buffers[i][j].get());
-                } else {
-                    no_texture_bufs.emplace_back((array_layout) i, curr_drawable->buffers[i][j].get());
+                if (curr_drawable->buffers[i][j])
+                {
+                    if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0) {
+                        tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->get_handle());
+                    } else {
+                        no_tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->get_handle());
+                    }
+                }
+                if (curr_drawable->indexed_buffers[i][j])
+                {
+                    if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0) {
+                        tex_bufs.emplace_back(curr_drawable->indexed_buffers[i][j].get()->get_handle());
+                    } else {
+                        no_tex_bufs.emplace_back(curr_drawable->indexed_buffers[i][j].get()->get_handle());
+                    }
                 }
             }
         }
@@ -150,13 +166,13 @@ CaptureBuffer MeshRenderer::capture(const RenderQueue& queue)
 
         _device->attachTexture(GLDevice::SAMPLER_COLOR, _color_tex);
         _device->attachTexture(GLDevice::SAMPLER_ALPHA, _alpha_tex);
-        for (auto& buf : texture_bufs) {
-			_device->captureXfbBuffer(cbuf, buf.first, *buf.second);
+        for (auto buf : tex_bufs) {
+			_device->captureXfbBuffer(cbuf, buf);
         }
         _device->detachTexture(GLDevice::SAMPLER_COLOR);
         _device->detachTexture(GLDevice::SAMPLER_ALPHA);
-        for (auto& buf : no_texture_bufs) {
-            _device->captureXfbBuffer(cbuf, buf.first, *buf.second);
+        for (auto buf : no_tex_bufs) {
+            _device->captureXfbBuffer(cbuf, buf);
         }
         if (!params.contains_translucent) {
             _device->enableBlend();
@@ -176,9 +192,10 @@ void MeshRenderer::buffer(GlDrawable* buf)
 {
     for (int i = 0; i < NUM_LAYOUTS; i++) {
         for (int j = 0; j < GlDrawable::NUM_SHAPES; j++) {
-            if (!buf->buffers[i][j])
-                continue;
-            _device->bufferToDevice((array_layout) i, *(buf->buffers[i][j].get()));
+            if (buf->buffers[i][j])
+                _device->bufferToDevice((array_layout) i, *(buf->buffers[i][j].get()));
+            if (buf->indexed_buffers[i][j])
+                _device->bufferToDevice((array_layout) i, *(buf->indexed_buffers[i][j].get()));
         }
     }
     _device->bufferToDevice(buf->text_buffer);

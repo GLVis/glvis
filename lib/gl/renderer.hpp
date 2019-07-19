@@ -147,9 +147,10 @@ public:
 
     // Load a client-side vertex buffer into a device buffer.
     virtual void bufferToDevice(array_layout layout, IVertexBuffer& buf) = 0;
+    virtual void bufferToDevice(array_layout layout, IIndexedBuffer& buf) = 0;
     virtual void bufferToDevice(TextBuffer& t_buf) = 0;
     // Draw the data loaded in a device buffer.
-    virtual void drawDeviceBuffer(array_layout layout, const IVertexBuffer& buf) = 0;
+    virtual void drawDeviceBuffer(int hnd) = 0;
     virtual void drawDeviceBuffer(const TextBuffer& t_buf) = 0;
 
     // === Transform feedback functions ===
@@ -159,10 +160,7 @@ public:
     // Prepares state when exiting transform feedback.
     virtual void exitXfbMode() {}
     // Capture the next drawn vertex buffer to a feedback buffer instead of drawing to screen.
-    virtual void captureXfbBuffer(
-            CaptureBuffer& capture,
-            array_layout layout,
-            const IVertexBuffer& buf) = 0;
+    virtual void captureXfbBuffer(CaptureBuffer& capture, int hnd) = 0;
     // Capture the next text buffer instead of drawing to screen.
     void captureXfbBuffer(CaptureBuffer& capture, const TextBuffer& t_buf);
 

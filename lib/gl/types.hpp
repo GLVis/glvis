@@ -15,6 +15,8 @@
 #include <array>
 #include <iostream>
 #include <memory>
+#include <iterator>
+#include <algorithm>
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -178,6 +180,7 @@ struct alignas(16) VertexNormTex
 
    static const int layout = LAYOUT_VTX_NORMAL_TEXTURE0;
 };
+
 
 
 class GlDrawable;
@@ -367,13 +370,13 @@ public:
 class IVertexBuffer
 {
 private:
-   GLuint _handle;
+   int _handle;
 public:
    IVertexBuffer() : _handle(0) { }
    virtual ~IVertexBuffer() { }
 
-   GLuint get_handle() const { return _handle; }
-   void set_handle(GLuint dev_hnd) { _handle = dev_hnd; }
+   int get_handle() const { return _handle; }
+   void set_handle(int dev_hnd) { _handle = dev_hnd; }
    /**
     * Clears the data stored in the vertex buffer.
     */
@@ -407,11 +410,9 @@ public:
    VertexBuffer(GLenum shape) : _shape(shape) { }
    ~VertexBuffer() { }
 
-   VertexBuffer(VertexBuffer&&) = default;
-   VertexBuffer& operator = (VertexBuffer&&) = default;
-
    virtual void clear() { _data.clear(); }
    virtual size_t count() const { return _data.size(); }
+
    virtual GLenum get_shape() const { return _shape; }
    virtual size_t get_stride() const { return sizeof(T); }
 
@@ -434,6 +435,55 @@ public:
    void addVertices(const std::vector<T>& verts)
    {
       _data.insert(_data.end(), verts.begin(), verts.end());
+   }
+};
+
+class IIndexedBuffer : public IVertexBuffer
+{
+public:
+    virtual const std::vector<int>& getIndices() const = 0;
+};
+
+template<typename T>
+class IndexedVertexBuffer : public IIndexedBuffer
+{
+private:
+    GLenum _shape;
+    std::vector<T> _data;
+    std::vector<int> _indices;
+
+public:
+   typedef typename std::vector<T>::const_iterator ConstIterator;
+   IndexedVertexBuffer(GLenum shape) : _shape(shape) { }
+   ~IndexedVertexBuffer() { }
+   virtual void clear()
+   {
+       _data.clear();
+       _indices.clear();
+   }
+
+   virtual size_t count() const { return _data.size(); }
+
+   virtual GLenum get_shape() const { return _shape; }
+   virtual size_t get_stride() const { return sizeof(T); }
+
+   ConstIterator begin() const { return _data.begin(); };
+   ConstIterator end() const { return _data.end(); };
+
+   virtual const void* get_data() const { return _data.data(); }
+
+   const std::vector<int>& getIndices() const { return _indices; }
+
+   void addVertices(const std::vector<T>& verts, const std::vector<int>& ids)
+   {
+      int index_offset = _data.size();
+      std::copy(verts.begin(), verts.end(), std::back_inserter(_data));
+      int old_end = _indices.size();
+      std::copy(ids.begin(), ids.end(), std::back_inserter(_indices));
+      for (int i = old_end; i < _indices.size(); i++)
+      {
+         _indices[i] += index_offset;
+      }
    }
 };
 
@@ -491,6 +541,7 @@ class GlDrawable
 private:
    const static size_t NUM_SHAPES = 2;
    std::unique_ptr<IVertexBuffer> buffers[NUM_LAYOUTS][NUM_SHAPES];
+   std::unique_ptr<IIndexedBuffer> indexed_buffers[NUM_LAYOUTS][NUM_SHAPES];
    TextBuffer text_buffer;
 
    friend class GlBuilder;
@@ -519,6 +570,31 @@ private:
       VertexBuffer<Vert> * buf = static_cast<VertexBuffer<Vert>*>
                                  (buffers[Vert::layout][idx].get());
       return buf;
+   }
+
+   template<typename Vert>
+   IndexedVertexBuffer<Vert> * getIndexedBuffer(GLenum shape)
+   {
+      int idx = -1;
+      if (shape == GL_LINES)
+      {
+         idx = 0;
+      }
+      else if (shape == GL_TRIANGLES)
+      {
+         idx = 1;
+      }
+      else
+      {
+         return nullptr;
+      }
+      if (!indexed_buffers[Vert::layout][idx])
+      {
+         indexed_buffers[Vert::layout][idx]
+             .reset(new IndexedVertexBuffer<Vert>(shape));
+      }
+      return static_cast<IndexedVertexBuffer<Vert>*>
+                (indexed_buffers[Vert::layout][idx].get());
    }
 public:
 
@@ -562,6 +638,27 @@ public:
       getBuffer<Vert>(GL_TRIANGLES)->addVertex(v4);
    }
 
+   template<typename Vert>
+   void addTriangleIndexed(const std::vector<Vert>& verts, const std::vector<int>& inds)
+   {
+       getIndexedBuffer<Vert>(GL_TRIANGLES)->addVertices(verts, inds);
+   }
+
+   template<typename Vert>
+   void addQuadIndexed(const std::vector<Vert>& verts, const std::vector<int>& inds)
+   {
+       std::vector<int> new_inds;
+       for (int i = 0; i < inds.size() / 4; i++) {
+           new_inds.emplace_back(inds[4*i]);
+           new_inds.emplace_back(inds[4*i + 1]);
+           new_inds.emplace_back(inds[4*i + 2]);
+           new_inds.emplace_back(inds[4*i]);
+           new_inds.emplace_back(inds[4*i + 2]);
+           new_inds.emplace_back(inds[4*i + 3]);
+       }
+       getIndexedBuffer<Vert>(GL_TRIANGLES)->addVertices(verts, new_inds);
+   }
+
    void addCone(float x, float y, float z,
                 float vx, float vy, float vz,
                 float cone_scale = 0.075);
@@ -583,6 +680,10 @@ public:
             if (buffers[i][j])
             {
                buffers[i][j]->clear();
+            }
+            if (indexed_buffers[i][j])
+            {
+                indexed_buffers[i][j]->clear();
             }
          }
       }
