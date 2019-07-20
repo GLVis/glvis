@@ -1566,7 +1566,7 @@ gl3::SceneInfo VisualizationSceneVector3d::GetSceneObjs()
       params.static_color = GetLineColor();
    }
    // ruler may have mixture of polygons and lines
-   if (cplane)
+   if (cp_drawmesh)
    {
       params.use_clip_plane = false;
       scene.queue.emplace_back(params, &cplines_buf);
