@@ -138,8 +138,8 @@ void FFGLDevice::setClipPlaneEqn(const std::array<double, 4>& eqn)
 
 void FFGLDevice::bufferToDevice(array_layout layout, IVertexBuffer& buf)
 {
-    if (buf.count() == 0) { return; }
     if (buf.get_handle() == 0) {
+        if (buf.count() == 0) { return; }
         GLuint new_hnd = glGenLists(1);
         buf.set_handle(disp_lists.size());
         disp_lists.emplace_back(DispList_{new_hnd, buf.get_shape(), buf.count(), layout});
@@ -173,8 +173,8 @@ void FFGLDevice::bufferToDevice(array_layout layout, IVertexBuffer& buf)
 
 void FFGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
 {
-    if (buf.count() == 0) { return; }
     if (buf.get_handle() == 0) {
+        if (buf.count() == 0) { return; }
         GLuint new_hnd = glGenLists(1);
         buf.set_handle(disp_lists.size());
         disp_lists.emplace_back(DispList_{new_hnd, buf.get_shape(), buf.getIndices().size(), layout});
@@ -214,7 +214,8 @@ void FFGLDevice::bufferToDevice(TextBuffer& buf)
 
 void FFGLDevice::drawDeviceBuffer(int hnd)
 {
-    if (hnd == 0) return;
+    if (hnd == 0) { return; }
+    if (disp_lists[hnd].count == 0) { return; }
     if (disp_lists[hnd].layout == Vertex::layout
         || disp_lists[hnd].layout == VertexNorm::layout) {
         glColor4fv(_static_color.data());

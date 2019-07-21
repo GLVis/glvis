@@ -387,9 +387,9 @@ void CoreGLDevice::setClipPlaneEqn(const std::array<double, 4> &eqn)
 
 void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
 {
-    if (buf.count() == 0) { return; }
     if (buf.get_handle() == 0)
     {
+        if (buf.count() == 0) { return; }
         GLuint handle;
         glGenBuffers(1, &handle);
         buf.set_handle(_vbos.size());
@@ -407,9 +407,9 @@ void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
 
 void CoreGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
 {
-    if (buf.count() == 0) { return; }
     if (buf.get_handle() == 0)
     {
+        if (buf.count() == 0) { return; }
         GLuint handle[2];
         glGenBuffers(2, &handle[0]);
         buf.set_handle(_vbos.size());
@@ -492,6 +492,7 @@ void CoreGLDevice::drawDeviceBufferImpl(GLenum shape, int count, bool indexed)
 void CoreGLDevice::drawDeviceBuffer(int hnd)
 {
     if (hnd == 0) { return; }
+    if (_vbos[hnd].count == 0) { return; }
     glBindBuffer(GL_ARRAY_BUFFER, _vbos[hnd].vert_buf);
     bool indexed = false;
     if (_vbos[hnd].elem_buf != 0)
