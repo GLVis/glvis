@@ -1195,7 +1195,7 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
                poly.glNormal3dv(na);
                for ( ; j < n; j++)
                {
-                  MySetColor(poly, vals(ind[i]), minv, maxv);
+                  MySetColor(poly, vals(ind[i+j]), minv, maxv);
                   poly.glVertex3dv(&pts(0, ind[i+j]));
                }
             }
@@ -1204,7 +1204,7 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
                poly.glNormal3d(-na[0], -na[1], -na[2]);
                for (j = n-1; j >= 0; j--)
                {
-                  MySetColor(poly, vals(ind[i]), minv, maxv);
+                  MySetColor(poly, vals(ind[i+j]), minv, maxv);
                   poly.glVertex3dv(&pts(0, ind[i+j]));
                }
             }
