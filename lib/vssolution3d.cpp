@@ -645,7 +645,7 @@ void VisualizationSceneSolution3d::Init()
    node_pos = new double[mesh->GetNV()];
 
    paletteSet(12); // use the 'vivid' palette in 3D
-   SetUseTexture(1);
+   SetUseTexture(0);
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
    CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*x[0]+(0.5+eps)*x[1]);

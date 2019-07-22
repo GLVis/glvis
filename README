@@ -159,8 +159,6 @@ k/K - Adjust the transparency level.
     The options are: -> use discrete texture, the number of colors used depends
                         on the current palette
                      -> use smooth texture (interpolated from current palette)
-                     -> do not use texture; colors are set at the vertices;
-                        color interpolation may be bad
 
 F3/F4 - Shrink/Zoom each element towards its center, to better visualize the
         different element shapes

@@ -74,6 +74,7 @@ void VisualizationSceneScalarData::DoAutoscaleValue(bool prepare)
    }
 }
 
+#if 0
 // Draw an arrow starting at point (px, py, pz) with orientation (vx, vy, vz)
 // and length "length".
 void VisualizationSceneScalarData::Arrow3(double px, double py, double pz,
@@ -176,7 +177,7 @@ void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
    gl->loadMatrixUniforms();
 #endif
 }
-
+#endif
 void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
                                          double px, double py, double pz,
                                          double vx, double vy, double vz,
@@ -341,25 +342,12 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval, double maxval
        const double a_hi = double(i) / nquads;
        Y_lo = (1.0 - a_lo) * miny + a_lo * maxy;
        Y_hi = (1.0 - a_hi) * miny + a_hi * maxy;
-       if (GetUseTexture()) {
-           color_bar.addQuad<gl3::VertexTex>(
-               {{minx, Y_lo, posz},{(float) a_lo, 0.f}},
-               {{maxx, Y_lo, posz},{(float) a_lo, 0.f}},
-               {{maxx, Y_hi, posz},{(float) a_hi, 0.f}},
-               {{minx, Y_hi, posz},{(float) a_hi, 0.f}}
-           );
-       } else {
-           MySetColor(a_lo, rgba_lo);
-           MySetColor(a_hi, rgba_hi);
-           auto lo_color = gl3::ColorU8(rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0);
-           auto hi_color = gl3::ColorU8(rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0);
-           color_bar.addQuad<gl3::VertexColor>(
-               {{minx, Y_lo, posz}, lo_color},
-               {{maxx, Y_lo, posz}, lo_color},
-               {{maxx, Y_hi, posz}, hi_color},
-               {{minx, Y_hi, posz}, hi_color}
-           );
-       }
+       color_bar.addQuad<gl3::VertexTex>(
+           {{minx, Y_lo, posz},{(float) a_lo, 0.f}},
+           {{maxx, Y_lo, posz},{(float) a_lo, 0.f}},
+           {{maxx, Y_hi, posz},{(float) a_hi, 0.f}},
+           {{minx, Y_hi, posz},{(float) a_hi, 0.f}}
+       );
    }
 
    static const int border = 1;
@@ -583,10 +571,6 @@ void KeypPressed(GLenum state)
    else
    {
       Next_RGB_Palette();
-      if (!GetUseTexture())
-      {
-         vsdata->EventUpdateColors();
-      }
       SendExposeEvent();
    }
 }
@@ -594,10 +578,6 @@ void KeypPressed(GLenum state)
 void KeyPPressed()
 {
    Prev_RGB_Palette();
-   if (!GetUseTexture())
-   {
-      vsdata->EventUpdateColors();
-   }
    SendExposeEvent();
 }
 
@@ -634,11 +614,6 @@ void KeyF6Pressed()
 
    paletteInit();
    Select_New_RGB_Palette();
-
-   if (!GetUseTexture())
-   {
-      vsdata->EventUpdateColors();
-   }
    SendExposeEvent();
 }
 
@@ -743,7 +718,6 @@ void KeykPressed()
    {
       MatAlpha = 0.0;
    }
-   if (!GetUseTexture()) { vsdata -> EventUpdateColors(); }
    GenerateAlphaTexture(MatAlpha, MatAlphaCenter);
    SendExposeEvent();
 }
@@ -755,7 +729,6 @@ void KeyKPressed()
    {
       MatAlpha = 1.0;
    }
-   if (!GetUseTexture()) { vsdata -> EventUpdateColors(); }
    GenerateAlphaTexture(MatAlpha, MatAlphaCenter);
    SendExposeEvent();
 }
@@ -1009,14 +982,9 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
 
 void VisualizationSceneScalarData::ToggleTexture()
 {
-   SetUseTexture((GetUseTexture()+1)%3);
-   if (GetUseTexture() != 2)
-   {
-      EventUpdateColors();
-   }
+   SetUseTexture((GetUseTexture()+1)%2);
 
-   static const char *texture_type[3] =
-   {"no texture", "discrete", "smooth"};
+   static const char *texture_type[2] = {"discrete", "smooth"};
    cout << "Texture type : " << texture_type[GetUseTexture()] << endl;
 }
 

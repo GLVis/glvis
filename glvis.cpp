@@ -936,10 +936,6 @@ void ExecuteScriptCommand()
          scr >> pal;
          cout << "Script: palette: " << pal << endl;
          paletteSet(pal-1);
-         if (!GetUseTexture())
-         {
-            vs->EventUpdateColors();
-         }
          SendExposeEvent();
       }
       else if (word == "palette_repeat")
@@ -947,10 +943,6 @@ void ExecuteScriptCommand()
          scr >> RepeatPaletteTimes;
          cout << "Script: palette_repeat: " << RepeatPaletteTimes << endl;
          paletteInit();
-         if (!GetUseTexture())
-         {
-            vs->EventUpdateColors();
-         }
          SendExposeEvent();
       }
       else if (word == "toggle_attributes")

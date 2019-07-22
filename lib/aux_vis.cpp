@@ -1426,32 +1426,6 @@ void SetWindowTitle(const char *title)
     wnd->setWindowTitle(title);
 }
 
-
-// Draw a cone of radius 1 with base in the x-y plane and center at (0,0,2)
-void Cone()
-{
-   const int n = 8;
-   const double step = 2*M_PI/n;
-   const double nz = (1.0/4.0);
-   double point = step;
-   int i;
-
-   glBegin(GL_TRIANGLE_FAN);
-   glNormal3d(0.0, 0.0, 1.0);
-   glVertex3d(0, 0, 0);
-   glNormal3d(1.0, 0.0, nz);
-   glVertex3d(1, 0, -4);
-   for (i = 1; i < n; i++)
-   {
-      glNormal3d(cos(point), sin(point), nz);
-      glVertex3d(cos(point), sin(point), -4);
-      point += step;
-   }
-   glNormal3d(1.0, 0.0, nz);
-   glVertex3d(1, 0, -4);
-   glEnd();
-}
-
 int MySetColorLogscale = 0;
 extern int RepeatPaletteTimes;
 int UseTexture         = 0;
@@ -1503,87 +1477,17 @@ void GetColorFromVal(double val, float * rgba)
    rgba[3] = 1.f;
 }
 
-void MySetColor (double val, double min, double max, float (&rgba)[4])
-{
-   MySetColor(GetColorCoord(val, min, max), rgba);
-}
-
 void MySetColor (gl3::GlBuilder& builder, double val, double min, double max)
 {
    MySetColor(builder, GetColorCoord(val, min, max));
 }
 
-void MySetColor (double val, float (&rgba)[4])
-{
-   int i;
-   double t, *pal;
-
-   int palSize = paletteGetSize();
-
-   if (val < 0.0) { val = 0.0; }
-   if (val > 1.0) { val = 1.0; }
-
-   double malpha = MatAlpha;
-   if (malpha < 1.0)
-   {
-      if (MatAlphaCenter > 1.0)
-      {
-         malpha *= exp(-(MatAlphaCenter)*fabs(val-1.0));
-      }
-      else if (MatAlphaCenter < 0.0)
-      {
-         malpha *= exp((MatAlphaCenter-1.0)*fabs(val-0.0));
-      }
-      else
-      {
-         malpha *= exp(-fabs(val-MatAlphaCenter));
-      }
-   }
-
-   GetColorFromVal(val, rgba);
-
-   rgba[3] = MatAlpha < 1.0 ? malpha : 1.0;
-}
-
 void MySetColor (gl3::GlBuilder& builder, double val)
 {
-   int i;
-   double t, *pal;
-
-   int palSize = paletteGetSize();
-
    if (val < 0.0) { val = 0.0; }
    if (val > 1.0) { val = 1.0; }
 
-   if (UseTexture)
-   {
-      builder.glTexCoord2f(val, 1.0);
-      return;
-   }
-
-   double malpha = MatAlpha;
-   if (malpha < 1.0)
-   {
-      if (MatAlphaCenter > 1.0)
-      {
-         malpha *= exp(-(MatAlphaCenter)*fabs(val-1.0));
-      }
-      else if (MatAlphaCenter < 0.0)
-      {
-         malpha *= exp((MatAlphaCenter-1.0)*fabs(val-0.0));
-      }
-      else
-      {
-         malpha *= exp(-fabs(val-MatAlphaCenter));
-      }
-   }
-
-   float rgba[4];
-
-   GetColorFromVal(val, rgba);
-   rgba[3] = MatAlpha < 1.0 ? malpha : 1.0;
-
-   builder.glColor4fv(rgba);
+   builder.glTexCoord2f(val, 1.0);
 }
 
 int GetUseTexture()
@@ -1596,7 +1500,7 @@ void SetUseTexture(int ut)
    if (UseTexture != ut)
    {
       UseTexture = ut;
-      if (UseTexture == 1)
+      if (UseTexture == 0)
           paletteUseDiscrete();
       else
           paletteUseSmooth();
@@ -1653,11 +1557,12 @@ void InitFont()
 {
     if (priority_font == std::string("")) {
         if (!SetFont(fc_font_patterns, font_size)) {
-           cerr << "Unable to load font." << endl;
+           cerr << "InitFont(): No fonts found matching the built-in patterns." << endl
+                << "Use the -fn option or edit 'fc_font_patterns' in lib/aux_vis.cpp" << endl;
         }
     } else {
         if (!glvis_font.LoadFont(priority_font, font_size))
-           cout << "Font not found: " << priority_font << endl;
+           cout << "InitFont(): Font not found: " << priority_font << endl;
     }
 }
 

@@ -459,7 +459,7 @@ void VisualizationSceneSolution::Init()
 
    VisualizationSceneScalarData::Init();  // Calls FindNewBox() !!!
 
-   SetUseTexture(1);
+   SetUseTexture(0);
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
    CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*x[0]+(0.5+eps)*x[1]);
@@ -1014,7 +1014,6 @@ void DrawTriangle(gl3::GlDrawable& buff,
       return;
    }
 
-   float rgba[3][4];
    std::array<float, 2> texcoord[3];
    std::array<float, 3> fpts[3];
    std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
@@ -1022,20 +1021,12 @@ void DrawTriangle(gl3::GlDrawable& buff,
    for (int i = 0; i < 3; i++) {
 
       texcoord[i] = { static_cast<float>(GetColorCoord(cv[i], minv, maxv)), 1.0 };
-      MySetColor(cv[i], minv, maxv, rgba[i]);
       fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
    }
-   if (GetUseTexture()) {
-      buff.addTriangle<gl3::VertexNormTex>(
-         {fpts[0], fnorm, texcoord[0]},
-         {fpts[1], fnorm, texcoord[1]},
-         {fpts[2], fnorm, texcoord[2]});
-   } else {
-      buff.addTriangle<gl3::VertexNormColor>(
-         {fpts[0], fnorm, gl3::ColorU8(rgba[0])},
-         {fpts[1], fnorm, gl3::ColorU8(rgba[1])},
-         {fpts[2], fnorm, gl3::ColorU8(rgba[2])});
-   }
+   buff.addTriangle<gl3::VertexNormTex>(
+      {fpts[0], fnorm, texcoord[0]},
+      {fpts[1], fnorm, texcoord[1]},
+      {fpts[2], fnorm, texcoord[2]});
 }
 
 void DrawQuad(gl3::GlDrawable& buff,
@@ -1049,28 +1040,18 @@ void DrawQuad(gl3::GlDrawable& buff,
    }
 
    std::array<float, 2> texcoord[4];
-   float rgba[4][4];
    std::array<float, 3> fpts[4];
    std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
 
    for (int i = 0; i < 4; i++) {
       texcoord[i] = { static_cast<float>(GetColorCoord(cv[i], minv, maxv)), 1.0 };
-      MySetColor(cv[i], minv, maxv, rgba[i]);
       fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
    }
-   if (GetUseTexture()) {
-      buff.addQuad<gl3::VertexNormTex>(
-         {fpts[0], fnorm, texcoord[0]},
-         {fpts[1], fnorm, texcoord[1]},
-         {fpts[2], fnorm, texcoord[2]},
-         {fpts[3], fnorm, texcoord[3]});
-   } else {
-      buff.addQuad<gl3::VertexNormColor>(
-         {fpts[0], fnorm, gl3::ColorU8(rgba[0])},
-         {fpts[1], fnorm, gl3::ColorU8(rgba[1])},
-         {fpts[2], fnorm, gl3::ColorU8(rgba[2])},
-         {fpts[3], fnorm, gl3::ColorU8(rgba[3])});
-   }
+   buff.addQuad<gl3::VertexNormTex>(
+      {fpts[0], fnorm, texcoord[0]},
+      {fpts[1], fnorm, texcoord[1]},
+      {fpts[2], fnorm, texcoord[2]},
+      {fpts[3], fnorm, texcoord[3]});
 }
 
 void RemoveFPErrors(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
