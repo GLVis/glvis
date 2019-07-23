@@ -1265,16 +1265,14 @@ int main (int argc, char *argv[])
    {
       SetMultisample(multisample);
    }
-   #if 0
-   if (line_width != Get_LineWidth())
+   if (line_width != GetLineWidth())
    {
-      Set_LineWidth(line_width);
+      SetLineWidth(line_width);
    }
-   if (ms_line_width != Get_MS_LineWidth())
+   if (ms_line_width != GetLineWidthMS())
    {
-      Set_MS_LineWidth(ms_line_width);
+      SetLineWidthMS(ms_line_width);
    }
-   #endif
    if (c_plot_caption != string_none)
    {
       plot_caption = c_plot_caption;

@@ -387,45 +387,45 @@ void CoreGLDevice::setClipPlaneEqn(const std::array<double, 4> &eqn)
 
 void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
 {
-    if (buf.get_handle() == 0)
+    if (buf.getHandle() == 0)
     {
         if (buf.count() == 0) { return; }
         GLuint handle;
         glGenBuffers(1, &handle);
-        buf.set_handle(_vbos.size());
-        _vbos.emplace_back(VBOHandle_{handle, 0, buf.get_shape(), buf.count(), layout});
+        buf.setHandle(_vbos.size());
+        _vbos.emplace_back(VBOHandle_{handle, 0, buf.getShape(), buf.count(), layout});
     }
     else
     {
-        _vbos[buf.get_handle()].count = buf.count();
+        _vbos[buf.getHandle()].count = buf.count();
     }
-    glBindBuffer(GL_ARRAY_BUFFER, _vbos[buf.get_handle()].vert_buf);
+    glBindBuffer(GL_ARRAY_BUFFER, _vbos[buf.getHandle()].vert_buf);
     glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, buf.count() * buf.get_stride(),
-                 buf.get_data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, buf.count() * buf.getStride(),
+                 buf.getData(), GL_STATIC_DRAW);
 }
 
 void CoreGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
 {
-    if (buf.get_handle() == 0)
+    if (buf.getHandle() == 0)
     {
         if (buf.count() == 0) { return; }
         GLuint handle[2];
         glGenBuffers(2, &handle[0]);
-        buf.set_handle(_vbos.size());
-        _vbos.emplace_back(VBOHandle_{handle[0], handle[1], buf.get_shape(), buf.getIndices().size(), layout});
+        buf.setHandle(_vbos.size());
+        _vbos.emplace_back(VBOHandle_{handle[0], handle[1], buf.getShape(), buf.getIndices().size(), layout});
     }
     else
     {
-        _vbos[buf.get_handle()].count = buf.getIndices().size();
+        _vbos[buf.getHandle()].count = buf.getIndices().size();
     }
     // Buffer vertex array
-    glBindBuffer(GL_ARRAY_BUFFER, _vbos[buf.get_handle()].vert_buf);
+    glBindBuffer(GL_ARRAY_BUFFER, _vbos[buf.getHandle()].vert_buf);
     glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, buf.count() * buf.get_stride(),
-                 buf.get_data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, buf.count() * buf.getStride(),
+                 buf.getData(), GL_STATIC_DRAW);
     // Buffer element array
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _vbos[buf.get_handle()].elem_buf);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _vbos[buf.getHandle()].elem_buf);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, buf.getIndices().size() * sizeof(int),
                  buf.getIndices().data(), GL_STATIC_DRAW);
@@ -461,13 +461,13 @@ void CoreGLDevice::bufferToDevice(TextBuffer &t_buf)
         }
     }
     if (buf_data.size() == 0) { return; }
-    if (t_buf.get_handle() == 0)
+    if (t_buf.getHandle() == 0)
     {
         GLuint handle;
         glGenBuffers(1, &handle);
-        t_buf.set_handle(handle);
+        t_buf.setHandle(handle);
     }
-    glBindBuffer(GL_ARRAY_BUFFER, t_buf.get_handle());
+    glBindBuffer(GL_ARRAY_BUFFER, t_buf.getHandle());
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * buf_data.size(), buf_data.data(), GL_STATIC_DRAW);
 }
 
@@ -531,18 +531,18 @@ void CoreGLDevice::drawDeviceBuffer(int hnd)
 }
 void CoreGLDevice::drawDeviceBuffer(const TextBuffer& t_buf)
 {
-    if (t_buf.get_handle() == 0) { return; }
+    if (t_buf.getHandle() == 0) { return; }
     if (t_buf.count() == 0) { return; }
     glUniform1i(_uniforms["containsText"], GL_TRUE);
     glEnableVertexAttribArray(ATTR_VERTEX);
     glEnableVertexAttribArray(ATTR_TEXT_VERTEX);
     glEnableVertexAttribArray(ATTR_TEXCOORD0);
-    glBindBuffer(GL_ARRAY_BUFFER, t_buf.get_handle());
+    glBindBuffer(GL_ARRAY_BUFFER, t_buf.getHandle());
 
     glVertexAttrib4fv(ATTR_COLOR, _static_color.data());
-    glVertexAttribPointer(ATTR_VERTEX, 3, GL_FLOAT, GL_FALSE, t_buf.get_stride(), 0);
-    glVertexAttribPointer(ATTR_TEXT_VERTEX, 2, GL_FLOAT, GL_FALSE, t_buf.get_stride(), (void*)(sizeof(float) * 3));
-    glVertexAttribPointer(ATTR_TEXCOORD0, 2, GL_FLOAT, GL_FALSE, t_buf.get_stride(), (void*)(sizeof(float) * 5));
+    glVertexAttribPointer(ATTR_VERTEX, 3, GL_FLOAT, GL_FALSE, t_buf.getStride(), 0);
+    glVertexAttribPointer(ATTR_TEXT_VERTEX, 2, GL_FLOAT, GL_FALSE, t_buf.getStride(), (void*)(sizeof(float) * 3));
+    glVertexAttribPointer(ATTR_TEXCOORD0, 2, GL_FLOAT, GL_FALSE, t_buf.getStride(), (void*)(sizeof(float) * 5));
     glDrawArrays(GL_TRIANGLES, 0, t_buf.count());
 
     glDisableVertexAttribArray(ATTR_TEXT_VERTEX);

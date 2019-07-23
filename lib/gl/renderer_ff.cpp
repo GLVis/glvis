@@ -28,9 +28,9 @@ void clearFFVertexArray()
 template<typename TVtx>
 void FFGLDevice::bufferFFDeviceImpl(const VertexBuffer<TVtx>& buf)
 {
-    glNewList(disp_lists[buf.get_handle()].list, GL_COMPILE);
-    setupFFVertexArray((TVtx*)buf.get_data());
-    glDrawArrays(buf.get_shape(), 0, buf.count());
+    glNewList(disp_lists[buf.getHandle()].list, GL_COMPILE);
+    setupFFVertexArray((TVtx*)buf.getData());
+    glDrawArrays(buf.getShape(), 0, buf.count());
     glEndList();
     clearFFVertexArray<TVtx>();
 }
@@ -38,9 +38,9 @@ void FFGLDevice::bufferFFDeviceImpl(const VertexBuffer<TVtx>& buf)
 template<typename TVtx>
 void FFGLDevice::bufferFFDeviceImpl(const IndexedVertexBuffer<TVtx>& buf)
 {
-    glNewList(disp_lists[buf.get_handle()].list, GL_COMPILE);
-    setupFFVertexArray((TVtx*)buf.get_data());
-    glDrawElements(buf.get_shape(), buf.getIndices().size(), GL_UNSIGNED_INT, buf.getIndices().data());
+    glNewList(disp_lists[buf.getHandle()].list, GL_COMPILE);
+    setupFFVertexArray((TVtx*)buf.getData());
+    glDrawElements(buf.getShape(), buf.getIndices().size(), GL_UNSIGNED_INT, buf.getIndices().data());
     glEndList();
     clearFFVertexArray<TVtx>();
 }
@@ -138,13 +138,13 @@ void FFGLDevice::setClipPlaneEqn(const std::array<double, 4>& eqn)
 
 void FFGLDevice::bufferToDevice(array_layout layout, IVertexBuffer& buf)
 {
-    if (buf.get_handle() == 0) {
+    if (buf.getHandle() == 0) {
         if (buf.count() == 0) { return; }
         GLuint new_hnd = glGenLists(1);
-        buf.set_handle(disp_lists.size());
-        disp_lists.emplace_back(DispList_{new_hnd, buf.get_shape(), buf.count(), layout});
+        buf.setHandle(disp_lists.size());
+        disp_lists.emplace_back(DispList_{new_hnd, buf.getShape(), buf.count(), layout});
     } else {
-        disp_lists[buf.get_handle()].count = buf.count();
+        disp_lists[buf.getHandle()].count = buf.count();
     }
 
     switch (layout) {
@@ -173,13 +173,13 @@ void FFGLDevice::bufferToDevice(array_layout layout, IVertexBuffer& buf)
 
 void FFGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
 {
-    if (buf.get_handle() == 0) {
+    if (buf.getHandle() == 0) {
         if (buf.count() == 0) { return; }
         GLuint new_hnd = glGenLists(1);
-        buf.set_handle(disp_lists.size());
-        disp_lists.emplace_back(DispList_{new_hnd, buf.get_shape(), buf.getIndices().size(), layout});
+        buf.setHandle(disp_lists.size());
+        disp_lists.emplace_back(DispList_{new_hnd, buf.getShape(), buf.getIndices().size(), layout});
     } else {
-        disp_lists[buf.get_handle()].count = buf.getIndices().size();
+        disp_lists[buf.getHandle()].count = buf.getIndices().size();
     }
 
     switch (layout) {

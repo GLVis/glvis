@@ -77,17 +77,17 @@ void MeshRenderer::render(const RenderQueue& queue)
                 if (curr_drawable->buffers[i][j])
                 {
                     if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0) {
-                        tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->get_handle());
+                        tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->getHandle());
                     } else {
-                        no_tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->get_handle());
+                        no_tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->getHandle());
                     }
                 }
                 if (curr_drawable->indexed_buffers[i][j])
                 {
                     if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0) {
-                        tex_bufs.emplace_back(curr_drawable->indexed_buffers[i][j].get()->get_handle());
+                        tex_bufs.emplace_back(curr_drawable->indexed_buffers[i][j].get()->getHandle());
                     } else {
-                        no_tex_bufs.emplace_back(curr_drawable->indexed_buffers[i][j].get()->get_handle());
+                        no_tex_bufs.emplace_back(curr_drawable->indexed_buffers[i][j].get()->getHandle());
                     }
                 }
             }
@@ -147,17 +147,17 @@ CaptureBuffer MeshRenderer::capture(const RenderQueue& queue)
                 if (curr_drawable->buffers[i][j])
                 {
                     if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0) {
-                        tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->get_handle());
+                        tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->getHandle());
                     } else {
-                        no_tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->get_handle());
+                        no_tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->getHandle());
                     }
                 }
                 if (curr_drawable->indexed_buffers[i][j])
                 {
                     if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0) {
-                        tex_bufs.emplace_back(curr_drawable->indexed_buffers[i][j].get()->get_handle());
+                        tex_bufs.emplace_back(curr_drawable->indexed_buffers[i][j].get()->getHandle());
                     } else {
-                        no_tex_bufs.emplace_back(curr_drawable->indexed_buffers[i][j].get()->get_handle());
+                        no_tex_bufs.emplace_back(curr_drawable->indexed_buffers[i][j].get()->getHandle());
                     }
                 }
             }

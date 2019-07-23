@@ -375,8 +375,8 @@ public:
    IVertexBuffer() : _handle(0) { }
    virtual ~IVertexBuffer() { }
 
-   int get_handle() const { return _handle; }
-   void set_handle(int dev_hnd) { _handle = dev_hnd; }
+   int getHandle() const { return _handle; }
+   void setHandle(int dev_hnd) { _handle = dev_hnd; }
    /**
     * Clears the data stored in the vertex buffer.
     */
@@ -388,13 +388,13 @@ public:
    /**
     * Gets the primitive type contained by the vertex buffer.
     */
-   virtual GLenum get_shape() const = 0;
+   virtual GLenum getShape() const = 0;
    /**
     * Gets the stride between vertices.
     */
-   virtual size_t get_stride() const = 0;
+   virtual size_t getStride() const = 0;
 
-   virtual const void* get_data() const = 0;
+   virtual const void* getData() const = 0;
 };
 
 template<typename T>
@@ -413,13 +413,13 @@ public:
    virtual void clear() { _data.clear(); }
    virtual size_t count() const { return _data.size(); }
 
-   virtual GLenum get_shape() const { return _shape; }
-   virtual size_t get_stride() const { return sizeof(T); }
+   virtual GLenum getShape() const { return _shape; }
+   virtual size_t getStride() const { return sizeof(T); }
 
    ConstIterator begin() const { return _data.begin(); };
    ConstIterator end() const { return _data.end(); };
 
-   virtual const void* get_data() const { return _data.data(); }
+   virtual const void* getData() const { return _data.data(); }
 
    /**
     * Add a vertex to the buffer.
@@ -464,13 +464,13 @@ public:
 
    virtual size_t count() const { return _data.size(); }
 
-   virtual GLenum get_shape() const { return _shape; }
-   virtual size_t get_stride() const { return sizeof(T); }
+   virtual GLenum getShape() const { return _shape; }
+   virtual size_t getStride() const { return sizeof(T); }
 
    ConstIterator begin() const { return _data.begin(); };
    ConstIterator end() const { return _data.end(); };
 
-   virtual const void* get_data() const { return _data.data(); }
+   virtual const void* getData() const { return _data.data(); }
 
    const std::vector<int>& getIndices() const { return _indices; }
 
@@ -531,9 +531,9 @@ public:
 
    virtual void clear() { _data.clear(); _num_chars = 0; }
    virtual size_t count() const { return _num_chars * 6; };
-   virtual GLenum get_shape() const { return GL_TRIANGLES; };
-   virtual size_t get_stride() const { return sizeof(float) * 8; };
-   virtual const void* get_data() const { return nullptr; }
+   virtual GLenum getShape() const { return GL_TRIANGLES; };
+   virtual size_t getStride() const { return sizeof(float) * 8; };
+   virtual const void* getData() const { return nullptr; }
 };
 
 class GlDrawable

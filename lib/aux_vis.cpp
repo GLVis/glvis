@@ -45,6 +45,8 @@ static int glvis_multisample = GLVIS_MULTISAMPLE;
 static int glvis_multisample = -1;
 #endif
 
+float line_w = 1.f;
+float line_w_aa = gl3::LINE_WIDTH_AA;
 
 //TODO: anything but this
 SdlWindow * wnd = nullptr;
@@ -83,9 +85,9 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    cout << "Window should be up" << endl;
 #endif
    paletteInit();
-   GetFont()->setAlphaChannel(wnd->getRenderer().getDeviceAlphaChannel());
    InitFont();
-   wnd->getRenderer().setFontTexture(GetFont()->getFontTex());
+   wnd->getRenderer().setLineWidth(line_w);
+   wnd->getRenderer().setLineWidthMS(line_w_aa);
 
    SetUseTexture(0);
 
@@ -1524,6 +1526,35 @@ void SetMultisample(int m)
    }
 }
 
+void SetLineWidth(float width)
+{
+    line_w = width;
+    if (wnd)
+    {
+        wnd->getRenderer().setLineWidth(line_w);
+    }
+}
+
+void SetLineWidthMS(float width_ms)
+{
+    line_w_aa = width_ms;
+    if (!wnd)
+    {
+        wnd->getRenderer().setLineWidthMS(line_w_aa);
+    }
+
+}
+
+float GetLineWidth()
+{
+    return line_w;
+}
+
+float GetLineWidthMS()
+{
+    return line_w_aa;
+}
+
 
 // Fontconfig patterns to use for finding a font file.
 // Use the command:
@@ -1555,6 +1586,7 @@ std::string priority_font;
 
 void InitFont()
 {
+    glvis_font.setAlphaChannel(wnd->getRenderer().getDeviceAlphaChannel());
     if (priority_font == std::string("")) {
         if (!SetFont(fc_font_patterns, font_size)) {
            cerr << "InitFont(): No fonts found matching the built-in patterns." << endl
@@ -1564,6 +1596,7 @@ void InitFont()
         if (!glvis_font.LoadFont(priority_font, font_size))
            cout << "InitFont(): Font not found: " << priority_font << endl;
     }
+    wnd->getRenderer().setFontTexture(glvis_font.getFontTex());
 }
 
 GlVisFont * GetFont() {

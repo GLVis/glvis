@@ -84,10 +84,6 @@ list(APPEND _glvis_include_dirs "${MFEM_INCLUDE_DIRS}")
 list(APPEND _glvis_libraries "${MFEM_LIBRARIES}")
 
 if (NOT EMSCRIPTEN)
-# Find X11. Only need libX11.
-find_package(X11 REQUIRED)
-list(APPEND _glvis_include_dirs "${X11_X11_INCLUDE_PATH}")
-list(APPEND _glvis_libraries "${X11_X11_LIB}")
 
 # Find OpenGL
 find_package(OpenGL REQUIRED)

@@ -110,8 +110,6 @@ void SendKeySequence(const char *seq);
 // update the visualization window.
 void CallKeySequence(const char *seq);
 
-void Cone();
-
 extern int MySetColorLogscale;
 double GetColorCoord(double val, double min, double max);
 void GetColorFromVal(double val, float * rgba);
@@ -123,6 +121,11 @@ int GetUseTexture();
 void Set_Texture_Image();
 int GetMultisample();
 void SetMultisample(int m);
+
+void SetLineWidth(float width);
+float GetLineWidth();
+void SetLineWidthMS(float width_ms);
+float GetLineWidthMS();
 
 void InitFont();
 GlVisFont * GetFont();
