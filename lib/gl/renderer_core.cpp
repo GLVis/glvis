@@ -43,23 +43,23 @@ namespace gl3
 template<typename TVtx>
 void setupVtxAttrLayout()
 {
-    static_assert(attr_coord<TVtx>::exists,
+    static_assert(AttrCoord<TVtx>::exists,
         "Invalid vertex type, requires at least TVtx::coord to be present.");
-    attr_coord<TVtx>::setup();
-    attr_normal<TVtx>::setup();
-    attr_color<TVtx>::setup();
-    attr_texcoord<TVtx>::setup();
+    AttrCoord<TVtx>::setup();
+    AttrNormal<TVtx>::setup();
+    AttrColor<TVtx>::setup();
+    AttrTexcoord<TVtx>::setup();
 }
 
 template<typename TVtx>
 void clearVtxAttrLayout()
 {
-    static_assert(attr_coord<TVtx>::exists,
+    static_assert(AttrCoord<TVtx>::exists,
         "Invalid vertex type, requires at least TVtx::coord to be present.");
-    attr_coord<TVtx>::clear();
-    attr_normal<TVtx>::clear();
-    attr_color<TVtx>::clear();
-    attr_texcoord<TVtx>::clear();
+    AttrCoord<TVtx>::clear();
+    AttrNormal<TVtx>::clear();
+    AttrColor<TVtx>::clear();
+    AttrTexcoord<TVtx>::clear();
 }
 
 std::string formatShaderString(const std::string &shader_string, GLenum shader_type, int glsl_version)
@@ -474,10 +474,10 @@ void CoreGLDevice::bufferToDevice(TextBuffer &t_buf)
 template<typename T>
 void CoreGLDevice::drawDeviceBufferImpl(GLenum shape, int count, bool indexed)
 {
-    if (!attr_normal<T>::exists) {
+    if (!AttrNormal<T>::exists) {
         glVertexAttrib3f(CoreGLDevice::ATTR_NORMAL, 0.f, 0.f, 1.f);
     }
-    if (!attr_color<T>::exists && attr_texcoord<T>::exists) {
+    if (!AttrColor<T>::exists && AttrTexcoord<T>::exists) {
         glVertexAttrib4f(CoreGLDevice::ATTR_COLOR, 1.f, 1.f, 1.f, 1.f);
     }
     setupVtxAttrLayout<T>();

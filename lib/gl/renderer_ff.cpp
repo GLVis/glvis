@@ -8,21 +8,21 @@ namespace gl3
 template<typename TVtx>
 void setupFFVertexArray(TVtx* buffer)
 {
-    static_assert(attr_coord<TVtx>::exists,
+    static_assert(AttrCoord<TVtx>::exists,
         "Invalid vertex type, requires at least TVtx::coord to be present.");
-    attr_coord<TVtx>::setup_legacy(buffer);
-    attr_normal<TVtx>::setup_legacy(buffer);
-    attr_color<TVtx>::setup_legacy(buffer);
-    attr_texcoord<TVtx>::setup_legacy(buffer);
+    AttrCoord<TVtx>::setupLegacy(buffer);
+    AttrNormal<TVtx>::setupLegacy(buffer);
+    AttrColor<TVtx>::setupLegacy(buffer);
+    AttrTexcoord<TVtx>::setupLegacy(buffer);
 }
 
 template<typename TVtx>
 void clearFFVertexArray()
 {
-    attr_coord<TVtx>::clear_legacy();
-    attr_normal<TVtx>::clear_legacy();
-    attr_color<TVtx>::clear_legacy();
-    attr_texcoord<TVtx>::clear_legacy();
+    AttrCoord<TVtx>::clearLegacy();
+    AttrNormal<TVtx>::clearLegacy();
+    AttrColor<TVtx>::clearLegacy();
+    AttrTexcoord<TVtx>::clearLegacy();
 }
 
 template<typename TVtx>

@@ -5,53 +5,60 @@
 namespace gl3
 {
 
-struct attr_base
+struct AttrNone
 {
     static void setup() { }
-    static void setup_legacy(void* buffer) { }
+    static void setupLegacy(void* buffer) { }
     static void clear() { }
-    static void clear_legacy() { }
+    static void clearLegacy() { }
     enum { exists = false };
 };
 
+// Base class to generate vertex attribute setup functions.
 template<
     typename TV, typename TAttr, TAttr TV::*Attrib, typename TAttrInfo>
-struct attr_exist
+struct AttrBase
 {
-    constexpr static TAttr* get_attrib_offset()
+    constexpr static bool NormalizeAttr =
+        std::is_integral<typename TAttr::value_type>::value;
+    
+    constexpr static TAttr* getAttrOffset()
     {
         return &(((TV*)0)->*Attrib);
     }
+
     // Sets up vertex attributes in the currently-bound buffer object.
     static void setup()
     {
-        glEnableVertexAttribArray(TAttrInfo::AttrIdx);
-        glVertexAttribPointer(TAttrInfo::AttrIdx,
+        glEnableVertexAttribArray(TAttrInfo::ShaderIdx);
+        glVertexAttribPointer(TAttrInfo::ShaderIdx,
                               std::tuple_size<TAttr>::value,
                               TAttrInfo::AttrGLType,
-                              TAttrInfo::AttrNormalize,
+                              NormalizeAttr,
                               sizeof(TV),
-                              (void*) get_attrib_offset());
+                              (void*) getAttrOffset());
     }
 
     // Sets up client-side vertex pointers for the given buffer.
-    static void setup_legacy(TV* buffer)
+    static void setupLegacy(TV* buffer)
     {
-        glEnableClientState(TAttrInfo::AttrGLArray);
-        TAttrInfo::AttrFuncPtr(std::tuple_size<TAttr>::value,
+        glEnableClientState(TAttrInfo::FFArrayIdx);
+        TAttrInfo::FFSetupFunc(std::tuple_size<TAttr>::value,
                     TAttrInfo::AttrGLType,
                     sizeof(TV),
-                    (char*) buffer + (size_t)get_attrib_offset());
+                    (char*) buffer + (size_t) getAttrOffset());
     }
 
+    // Disables the attribute array.
     static void clear()
     {
-        glDisableVertexAttribArray(TAttrInfo::AttrIdx);
+        glDisableVertexAttribArray(TAttrInfo::ShaderIdx);
     }
 
-    static void clear_legacy()
+    // Disables the client-side vertex array.
+    static void clearLegacy()
     {
-        glDisableClientState(TAttrInfo::AttrGLArray);
+        glDisableClientState(TAttrInfo::FFArrayIdx);
     }
     
     enum { exists = true };
@@ -60,73 +67,74 @@ struct attr_exist
 // Default attribute traits for vertex types
 // Provides no-op setup/clear functions if an attribute doesn't exist.
 template<typename TV, typename = int>
-struct attr_coord : attr_base { };
+struct AttrCoord : AttrNone { };
 
 template<typename TV, typename = int>
-struct attr_normal : attr_base { };
+struct AttrNormal : AttrNone { };
 
 template<typename TV, typename = int>
-struct attr_color : attr_base { };
+struct AttrColor : AttrNone { };
 
 template<typename TV, typename = int>
-struct attr_texcoord : attr_base { };
+struct AttrTexcoord : AttrNone { };
 
 // Template specializations for attribute traits
 // If an attribute exists in a vertex, generates setup and clear functions
 // which setup OpenGL vertex attributes.
+//
+// Each attribute specialization defines static parameters which are passed to
+// the AttrBase base class via CRTP to generate the attribute setup functions:
+//  - AttrGLType: the OpenGL type of the attribute data
+//  - ShaderIdx: the index of the generic vertex attribute
+//  - FFArrayIdx: the index of the client-side vertex attribute array
+//  - FFSetupFunc: the function to use when setting up the FF array pointer;
+//      this can either be a direct pointer to a gl*Pointer function or a custom
+//      function
 template<typename TV>
-struct attr_coord<TV, decltype((void)TV::coord, 0)>
-    : attr_exist<TV, decltype(TV::coord), &TV::coord,
-                 attr_coord<TV, decltype((void)TV::coord, 0)>>
+struct AttrCoord<TV, decltype((void)TV::coord, 0)>
+    : AttrBase<TV, decltype(TV::coord), &TV::coord,
+                 AttrCoord<TV, decltype((void)TV::coord, 0)>>
 {
-    const static int AttrIdx = CoreGLDevice::ATTR_VERTEX;
-    const static bool AttrNormalize = false;
-
     const static GLenum AttrGLType = GL_FLOAT;
-    const static GLenum AttrGLArray = GL_VERTEX_ARRAY;
-    constexpr static auto AttrFuncPtr = &glVertexPointer;
+    const static int ShaderIdx = CoreGLDevice::ATTR_VERTEX;
+    const static GLenum FFArrayIdx = GL_VERTEX_ARRAY;
+    constexpr static auto FFSetupFunc = glVertexPointer;
 };
 
 template<typename TV>
-struct attr_normal<TV, decltype((void)TV::norm, 0)>
-    : attr_exist<TV, decltype(TV::norm), &TV::norm,
-                 attr_normal<TV, decltype((void)TV::norm, 0)>>
+struct AttrNormal<TV, decltype((void)TV::norm, 0)>
+    : AttrBase<TV, decltype(TV::norm), &TV::norm,
+                 AttrNormal<TV, decltype((void)TV::norm, 0)>>
 {
-    const static int AttrIdx = CoreGLDevice::ATTR_NORMAL;
-    const static bool AttrNormalize = false;
-
     const static GLenum AttrGLType = GL_FLOAT;
-    const static GLenum AttrGLArray = GL_NORMAL_ARRAY;
-    static void AttrFuncPtr(GLint size, GLenum type, GLsizei stride, const GLvoid* ptr)
+    const static int ShaderIdx = CoreGLDevice::ATTR_NORMAL;
+    const static GLenum FFArrayIdx = GL_NORMAL_ARRAY;
+    static void FFSetupFunc(GLint size, GLenum type, GLsizei stride, const GLvoid* ptr)
     {
         glNormalPointer(type, stride, ptr);
     }
 };
 
 template<typename TV>
-struct attr_color<TV, decltype((void)TV::color, 0)>
-    : attr_exist<TV, decltype(TV::color), &TV::color,
-                 attr_color<TV, decltype((void)TV::color, 0)>>
+struct AttrColor<TV, decltype((void)TV::color, 0)>
+    : AttrBase<TV, decltype(TV::color), &TV::color,
+                 AttrColor<TV, decltype((void)TV::color, 0)>>
 {
-    const static int AttrIdx = CoreGLDevice::ATTR_COLOR;
-    const static bool AttrNormalize = true;
-
     const static GLenum AttrGLType = GL_UNSIGNED_BYTE;
-    const static GLenum AttrGLArray = GL_COLOR_ARRAY;
-    constexpr static auto AttrFuncPtr = &glColorPointer;
+    const static int ShaderIdx = CoreGLDevice::ATTR_COLOR;
+    const static GLenum FFArrayIdx = GL_COLOR_ARRAY;
+    constexpr static auto FFSetupFunc = glColorPointer;
 };
 
 template<typename TV>
-struct attr_texcoord<TV, decltype((void)TV::texCoord, 0)>
-    : attr_exist<TV, decltype(TV::texCoord), &TV::texCoord,
-                 attr_texcoord<TV, decltype((void)TV::texCoord, 0)>>
+struct AttrTexcoord<TV, decltype((void)TV::texCoord, 0)>
+    : AttrBase<TV, decltype(TV::texCoord), &TV::texCoord,
+               AttrTexcoord<TV, decltype((void)TV::texCoord, 0)>>
 {
-    const static int AttrIdx = CoreGLDevice::ATTR_TEXCOORD0;
-    const static bool AttrNormalize = false;
-
     const static GLenum AttrGLType = GL_FLOAT;
-    const static GLenum AttrGLArray = GL_TEXTURE_COORD_ARRAY;
-    static void AttrFuncPtr(GLint size, GLenum type, GLsizei stride, const GLvoid* ptr)
+    const static int ShaderIdx = CoreGLDevice::ATTR_TEXCOORD0;
+    const static GLenum FFArrayIdx = GL_TEXTURE_COORD_ARRAY;
+    static void FFSetupFunc(GLint size, GLenum type, GLsizei stride, const GLvoid* ptr)
     {
         glClientActiveTexture(GL_TEXTURE0);
         glTexCoordPointer(size, type, stride, ptr);

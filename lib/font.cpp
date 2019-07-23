@@ -34,13 +34,13 @@ bool GlVisFont::LoadFont(const std::string& path, int font_size) {
         font_init = false;
     }
     if (FT_New_Face(library, path.c_str(), 0, &face)) {
-        cout << "GLVis: Cannot open font file: " << path << endl;
+        cout << "GlVisFont::LoadFont(): Cannot open font file: " << path << endl;
         return false;
     }
     int ppi_w, ppi_h;
     GetAppWindow()->getDpi(ppi_w, ppi_h);
     if (FT_Set_Char_Size(face, 0, font_size*font_scale, ppi_w, ppi_h)) {
-        cout << "GLVis: Cannot set font height: " << font_size << " pts"
+        cout << "GlVisFont::LoadFont(): Cannot set font height: " << font_size << " pts"
              << endl;
         FT_Done_Face(face);
         return false;
@@ -50,7 +50,7 @@ bool GlVisFont::LoadFont(const std::string& path, int font_size) {
     int w = 0, h = 0;
     for (int c = 32; c < 128; c++) {
         if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
-            cout << "GLVis: Cannot load glyph: " << (char) c << endl;
+            cout << "GlVisFont::LoadFont(): Cannot load glyph: " << (char) c << endl;
             continue;
         }
         w += face->glyph->bitmap.width + 2;
@@ -77,7 +77,7 @@ bool GlVisFont::LoadFont(const std::string& path, int font_size) {
     int x = 0;
     for (int c = 32; c < 128; c++) {
         if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
-            cout << "GLVis: Cannot load glyph: " << (char) c << endl;
+            cout << "GlVisFont::LoadFont(): Cannot load glyph: " << (char) c << endl;
             continue;
         }
         glTexSubImage2D(GL_TEXTURE_2D,
