@@ -334,8 +334,6 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval, double maxval
    }
    color_bar.clear();
    const int nquads = 256;
-   float rgba_lo[4];
-   float rgba_hi[4];
    float Y_hi, Y_lo;
    for (int i = 1; i <= nquads; i++) {
        const double a_lo = double(i - 1) / nquads;
@@ -639,7 +637,6 @@ void KeyBackslashPressed()
    cout << "w = " << flush;
    cin >> w;
 
-   GLfloat light[] = { x, y, z, w };
    vsdata->SetLight0CustomPos({x, y, z, w});
    SendExposeEvent();
 }

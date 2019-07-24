@@ -4818,7 +4818,11 @@ void paletteInit()
    if (first_init)
    {
       glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MaxTextureSize);
-      MaxTextureSize = std::max(MaxTextureSize, 4096);
+      if (MaxTextureSize < 4096)
+      {
+          cerr << "Warning: GL_MAX_TEXTURE_SIZE is less than 4096." << endl;
+      }
+      MaxTextureSize = std::min(MaxTextureSize, 4096);
       Init_Palettes();
       //generate a black default texture
       //modulation with default texture will just pass through input color

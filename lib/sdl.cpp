@@ -129,7 +129,7 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
 #endif
     // at this point, window should be up
     if (!_handle->isInitialized()) {
-        PRINT_DEBUG(cerr << "failed." << endl);
+        PRINT_DEBUG("failed." << endl);
         cerr << "FATAL: window and/or OpenGL context creation failed." << endl;
         return false;
     } else {

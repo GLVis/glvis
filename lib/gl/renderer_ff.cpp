@@ -206,7 +206,7 @@ void FFGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
     }
 }
 
-void FFGLDevice::bufferToDevice(TextBuffer& buf)
+void FFGLDevice::bufferToDevice(TextBuffer&)
 {
     // we can't really do anything here
     // can only compute offset matrix at draw
@@ -331,7 +331,7 @@ void FFGLDevice::captureXfbBuffer(CaptureBuffer& cbuf, int hnd)
         std::cerr << "Warning: feedback data exceeded available buffer size" << std::endl;
     }
 #endif
-    int tok_idx = 0;
+    size_t tok_idx = 0;
     // process feedback buffer
     while (tok_idx < xfb_buf.size())
     {

@@ -79,7 +79,7 @@ public:
 
    void setOnKeyDown(int key, Delegate func)
    {
-      onKeyDown[key] = [func](GLenum e) { func(); };
+      onKeyDown[key] = [func](GLenum) { func(); };
    }
    void setOnKeyDown(int key, KeyDelegate func) { onKeyDown[key] = func; }
 

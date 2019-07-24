@@ -480,7 +480,7 @@ public:
       std::copy(verts.begin(), verts.end(), std::back_inserter(_data));
       int old_end = _indices.size();
       std::copy(ids.begin(), ids.end(), std::back_inserter(_indices));
-      for (int i = old_end; i < _indices.size(); i++)
+      for (size_t i = old_end; i < _indices.size(); i++)
       {
          _indices[i] += index_offset;
       }
@@ -648,7 +648,7 @@ public:
    void addQuadIndexed(const std::vector<Vert>& verts, const std::vector<int>& inds)
    {
        std::vector<int> new_inds;
-       for (int i = 0; i < inds.size() / 4; i++) {
+       for (size_t i = 0; i < inds.size() / 4; i++) {
            new_inds.emplace_back(inds[4*i]);
            new_inds.emplace_back(inds[4*i + 1]);
            new_inds.emplace_back(inds[4*i + 2]);

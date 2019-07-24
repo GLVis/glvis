@@ -118,7 +118,7 @@ std::string formatShaderString(const std::string &shader_string, GLenum shader_t
     return formatted;
 }
 
-GLuint compileShaderString(const std::string &shader_str, GLenum shader_type, int glsl_version)
+GLuint compileShaderString(const std::string &shader_str, GLenum shader_type)
 {
     int shader_len = shader_str.length();
     const char *shader_cstr = shader_str.c_str();
@@ -148,7 +148,7 @@ GLuint compileRawShaderString(const std::string &shader_string, GLenum shader_ty
 {
     std::string formatted = formatShaderString(shader_string, shader_type, glsl_version);
     //std::cout << "compiling '''" << formatted << "...";
-    GLuint shader_ref = compileShaderString(formatted, shader_type, glsl_version);
+    GLuint shader_ref = compileShaderString(formatted, shader_type);
     //if (shader_ref != 0) { std::cerr << "successfully compiled shader" << std::endl; }
     return shader_ref;
 }
@@ -570,14 +570,14 @@ void CoreGLDevice::processTriangleXfbBuffer(CaptureBuffer& cbuf, const vector<Sh
     if (!_use_clip_plane)
     { 
         // all triangles into capture buf
-        for (int i = 0; i < verts.size(); i++)
+        for (size_t i = 0; i < verts.size(); i++)
         {
             cbuf.triangles.emplace_back(XFBPostTransform(verts[i], half_w, half_h));
         }
         return;
     }
     // clipping needed
-    for (int t_i = 0; t_i < verts.size() / 3; t_i++)
+    for (size_t t_i = 0; t_i < verts.size() / 3; t_i++)
     {
         if (verts[t_i*3].clipCoord >= 0.f
             && verts[t_i*3+1].clipCoord >= 0.f
@@ -606,12 +606,11 @@ void CoreGLDevice::processTriangleXfbBuffer(CaptureBuffer& cbuf, const vector<Sh
                 // find two points on the same side of clip plane
                 if ((verts[i_a].clipCoord < 0.f) == (verts[i_b].clipCoord < 0.f)) {
                     //pts a, b are on same side of clip plane, c on other side
-                    //compute clip pts
-                    FeedbackVertex n[2];
                     //perspective-correct interpolation factors, needed for colors
                     float c_w_a = verts[i_a].clipCoord / verts[i_a].pos[3];
                     float c_w_b = verts[i_b].clipCoord / verts[i_b].pos[3];
                     float c_w_c = verts[i_c].clipCoord / verts[i_c].pos[3];
+                    //compute clip pts
                     glm::vec4 pos[2], color[2];
                     // a --- n_0 --- c
                     pos[0] = (glm::make_vec4(verts[i_a].pos) * verts[i_c].clipCoord

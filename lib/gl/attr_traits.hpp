@@ -8,7 +8,7 @@ namespace gl3
 struct AttrNone
 {
     static void setup() { }
-    static void setupLegacy(void* buffer) { }
+    static void setupLegacy(void*) { }
     static void clear() { }
     static void clearLegacy() { }
     enum { exists = false };
@@ -109,7 +109,7 @@ struct AttrNormal<TV, decltype((void)TV::norm, 0)>
     const static GLenum AttrGLType = GL_FLOAT;
     const static int ShaderIdx = CoreGLDevice::ATTR_NORMAL;
     const static GLenum FFArrayIdx = GL_NORMAL_ARRAY;
-    static void FFSetupFunc(GLint size, GLenum type, GLsizei stride, const GLvoid* ptr)
+    static void FFSetupFunc(GLint /*size*/, GLenum type, GLsizei stride, const GLvoid* ptr)
     {
         glNormalPointer(type, stride, ptr);
     }

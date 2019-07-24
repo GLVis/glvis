@@ -607,7 +607,6 @@ void MiddleButtonLoc (EventInfo *event)
 
    if ( !( event->keymod & KMOD_CTRL ) )
    {
-      GLint vp[4];
 	  int w, h;
       double TrX, TrY, scale;
 
@@ -669,7 +668,7 @@ void MiddleButtonLoc (EventInfo *event)
    oldy = newy;
 }
 
-void MiddleButtonUp (EventInfo *event)
+void MiddleButtonUp (EventInfo*)
 {}
 
 void RightButtonDown (EventInfo *event)
@@ -726,7 +725,7 @@ void RightButtonLoc (EventInfo *event)
    oldy = newy;
 }
 
-void RightButtonUp (EventInfo *event)
+void RightButtonUp (EventInfo*)
 {}
 
 #if defined(GLVIS_USE_LIBTIFF)
@@ -1035,7 +1034,7 @@ inline GL2PSvertex CreatePrintVtx(gl3::FeedbackVertex v)
 void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
 {
    //print lines
-   for (int i = 0; i < cbuf.lines.size(); i += 2)
+   for (size_t i = 0; i < cbuf.lines.size(); i += 2)
    {
        GL2PSvertex lineOut[2] = {
            CreatePrintVtx(cbuf.lines[i]),
@@ -1045,7 +1044,7 @@ void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
                              0xFFFF, 1, 0.2, 0, 0, 0);
    }
    //print triangles
-   for (int i = 0; i < cbuf.triangles.size(); i += 3)
+   for (size_t i = 0; i < cbuf.triangles.size(); i += 3)
    {
        GL2PSvertex triOut[3] = {
            CreatePrintVtx(cbuf.triangles[i]),

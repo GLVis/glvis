@@ -73,7 +73,7 @@ void MeshRenderer::render(const RenderQueue& queue)
         std::vector<TextBuffer*> text_bufs;
         GlDrawable* curr_drawable = q_elem.second;
         for (int i = 0; i < NUM_LAYOUTS; i++) {
-            for (int j = 0; j < GlDrawable::NUM_SHAPES; j++) {
+            for (size_t j = 0; j < GlDrawable::NUM_SHAPES; j++) {
                 if (curr_drawable->buffers[i][j])
                 {
                     if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0) {
@@ -143,7 +143,7 @@ CaptureBuffer MeshRenderer::capture(const RenderQueue& queue)
         std::vector<TextBuffer*> text_bufs;
         GlDrawable* curr_drawable = q_elem.second;
         for (int i = 0; i < NUM_LAYOUTS; i++) {
-            for (int j = 0; j < GlDrawable::NUM_SHAPES; j++) {
+            for (size_t j = 0; j < GlDrawable::NUM_SHAPES; j++) {
                 if (curr_drawable->buffers[i][j])
                 {
                     if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0) {
@@ -191,7 +191,7 @@ CaptureBuffer MeshRenderer::capture(const RenderQueue& queue)
 void MeshRenderer::buffer(GlDrawable* buf)
 {
     for (int i = 0; i < NUM_LAYOUTS; i++) {
-        for (int j = 0; j < GlDrawable::NUM_SHAPES; j++) {
+        for (size_t j = 0; j < GlDrawable::NUM_SHAPES; j++) {
             if (buf->buffers[i][j])
                 _device->bufferToDevice((array_layout) i, *(buf->buffers[i][j].get()));
             if (buf->indexed_buffers[i][j])
