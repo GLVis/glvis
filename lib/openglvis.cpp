@@ -123,6 +123,7 @@ VisualizationScene::VisualizationScene()
     GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
     _use_cust_l0_pos = false;
     _lm_idx = 3;
+    _use_light = true;
 }
 
 VisualizationScene::~VisualizationScene() {}
@@ -133,14 +134,17 @@ gl3::RenderParams VisualizationScene::GetMeshDrawParams()
    params.model_view.mtx = GetModelViewMtx();
    params.projection.mtx = _projmat;
    params.mesh_material = materials[_lm_idx];
-   if (_lm_idx == 4) {
-      for (int i = 0; i < 3; i++) {
-         params.lights[i] = lights_4[i];
-      }
-      params.num_pt_lights = 3;
-   } else {
-      params.lights[0] = lights[_lm_idx];
-      params.num_pt_lights = 1;
+   params.num_pt_lights = 0;
+   if (_use_light) {
+       if (_lm_idx == 4) {
+          for (int i = 0; i < 3; i++) {
+             params.lights[i] = lights_4[i];
+          }
+          params.num_pt_lights = 3;
+       } else {
+          params.lights[0] = lights[_lm_idx];
+          params.num_pt_lights = 1;
+       }
    }
    if (_use_cust_l0_pos) {
       params.lights[0].position = _l0_pos;

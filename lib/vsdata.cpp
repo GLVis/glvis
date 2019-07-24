@@ -519,46 +519,9 @@ void KeyrPressed()
 
 void KeyRPressed()
 {
-   locscene -> spinning = 0;
+   locscene->spinning = 0;
    RemoveIdleFunc(MainLoop);
-
-   gl3::GlMatrix newrot;
-   newrot.identity();
-   locscene->translmat = newrot.mtx;
-
-   switch (vsdata -> key_r_state)
-   {
-      case 0:
-         break;
-
-      case 1:
-         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
-         break;
-
-      case 2:
-         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
-         newrot.rotate(-90.0, 0.0f, 0.0f, 1.0f);
-         break;
-
-      case 3:
-         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
-         newrot.rotate(-180.0, 0.0f, 0.0f, 1.0f);
-         break;
-
-      case 4:
-         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
-         newrot.rotate(-270.0, 0.0f, 0.0f, 1.0f);
-         break;
-
-      case 5:
-         newrot.rotate(180.0, 1.0f, 0.0f, 0.0f);
-         break;
-   }
-
-   // if (locscene -> view != 2) // make 'R' work the same in 2D and 3D
-   vsdata -> key_r_state = (vsdata -> key_r_state+1)%6;
-
-   locscene->rotmat = newrot.mtx;
+   vsdata->Toggle2DView();
    SendExposeEvent();
 }
 
@@ -924,6 +887,47 @@ void VisualizationSceneScalarData::PrepareRuler(bool log_z)
    updated_bufs.emplace_back(&ruler_buf);
 }
 
+void VisualizationSceneScalarData::Toggle2DView()
+{
+   gl3::GlMatrix newrot;
+   newrot.identity();
+   translmat = newrot.mtx;
+
+   switch (key_r_state)
+   {
+      case 0:
+         break;
+
+      case 1:
+         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         break;
+
+      case 2:
+         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         newrot.rotate(-90.0, 0.0f, 0.0f, 1.0f);
+         break;
+
+      case 3:
+         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         newrot.rotate(-180.0, 0.0f, 0.0f, 1.0f);
+         break;
+
+      case 4:
+         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         newrot.rotate(-270.0, 0.0f, 0.0f, 1.0f);
+         break;
+
+      case 5:
+         newrot.rotate(180.0, 1.0f, 0.0f, 0.0f);
+         break;
+   }
+
+   // if (locscene -> view != 2) // make 'R' work the same in 2D and 3D
+   key_r_state = (key_r_state+1)%6;
+
+   rotmat = newrot.mtx;
+}
+
 gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
 {
    int w, h;
@@ -1014,7 +1018,6 @@ void VisualizationSceneScalarData::Init()
 
    arrow_type = arrow_scaling_type = 0;
    scaling = 0;
-   light   = 1;
    drawaxes = colorbar = 0;
    auto_ref_max = 16;
    auto_ref_max_surf_elem = 20000;
@@ -1368,7 +1371,7 @@ void VisualizationSceneScalarData::SetLevelLines (
 
 void VisualizationSceneScalarData::PrintState()
 {
-   cout << "\nlight " << strings_off_on[light ? 1 : 0]
+   cout << "\nlight " << strings_off_on[_use_light ? 1 : 0]
         << "\nperspective " << strings_off_on[OrthogonalProjection ? 0 : 1]
         << "\nviewcenter " << ViewCenterX << ' ' << ViewCenterY
         << "\nzoom " << (OrthogonalProjection ? ViewScale :

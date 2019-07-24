@@ -151,10 +151,14 @@ static void KeyrPressed()
 
 static void KeyRPressed()
 {
+   locscene->spinning = 0;
+   RemoveIdleFunc(MainLoop);
    vsvector3d -> ianim = vsvector3d -> ianimd = 0;
    vsvector3d -> Prepare();
    vsvector3d -> PrepareLines();
    vsvector3d -> PrepareDisplacedMesh();
+   vsvector3d->Toggle2DView();
+   SendExposeEvent();
 }
 
 void VisualizationSceneVector3d::NPressed()

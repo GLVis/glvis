@@ -126,7 +126,6 @@ protected:
 
 public:
    Plane *CuttingPlane;
-   int light;
    int key_r_state;
    /** Shrink factor with respect to the center of each element (2D) or the
        center of each boundary attribute (3D) */
@@ -215,7 +214,8 @@ public:
    void DrawPolygonLevelLines(gl3::GlBuilder& builder, double *point, int n,
                               Array<double> &level, bool log_vals);
 
-   void ToggleLight() { light = !light; }
+   void ToggleLight() { _use_light = !_use_light; }
+   void SetLight(bool light_set) { _use_light = light_set; }
 
    void ToggleDrawColorbar()
    {
@@ -255,6 +255,8 @@ public:
    void PrepareRuler(bool log_z);
 
    void ToggleTexture();
+
+   void Toggle2DView();
 
    // Emscripten UI control functions
    void SetColorbar(int newColorbar) { colorbar = newColorbar % 3; }

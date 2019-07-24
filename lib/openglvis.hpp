@@ -129,6 +129,7 @@ protected:
    std::array<float, 4> _l0_pos;
    bool _use_cust_l0_pos;
    int _lm_idx;
+   bool _use_light;
 
    gl3::RenderParams GetMeshDrawParams();
    glm::mat4 GetModelViewMtx();

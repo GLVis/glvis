@@ -397,7 +397,7 @@ void StartVisualization(int field_type)
          if (field_type == 2)
          {
             vs->OrthogonalProjection = 1;
-            vs->light = 0;
+            vs->SetLight(false);
             vs->Zoom(1.8);
          }
       }
@@ -813,11 +813,11 @@ void ExecuteScriptCommand()
          cout << "Script: light: " << word;
          if (word == "off")
          {
-            vs->light = 0;
+            vs->SetLight(false);
          }
          else if (word == "on")
          {
-            vs->light = 1;
+            vs->SetLight(true);
          }
          else
          {
@@ -1607,7 +1607,7 @@ int main (int argc, char *argv[])
                if ((input & 4) == 0)
                {
                   vs->OrthogonalProjection = 1;
-                  vs->light = 0;
+                  vs->SetLight(false);
                   vs->Zoom(1.8);
                   if (grid_f)
                   {
