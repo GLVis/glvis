@@ -300,7 +300,7 @@ public:
             saved[count] = curr;
          }
       }
-      else
+      else if (render_as != GL_NONE)
       {
          //TriangleStrip, TriangleFan, Polygon
          if (count >= 2)

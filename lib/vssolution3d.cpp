@@ -1669,7 +1669,7 @@ void VisualizationSceneSolution3d::Prepare()
             mesh->GetElementVertices(elem[i], vertices);
          }
          
-         GLenum elemType;
+         GLenum elemType = GL_NONE;
          switch ((dim == 3) ? mesh->GetBdrElementType(elem[i]) :
                  mesh->GetElementType(elem[i]))
          {

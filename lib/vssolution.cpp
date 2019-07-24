@@ -1464,7 +1464,7 @@ void VisualizationSceneSolution::Prepare()
       {
          if (mesh -> GetAttribute(i) == mesh -> attributes[d])
          {
-            GLenum shape;
+            GLenum shape = GL_NONE;
             switch (mesh->GetElementType(i))
             {
                case Element::TRIANGLE:
