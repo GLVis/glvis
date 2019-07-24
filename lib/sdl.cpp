@@ -23,6 +23,12 @@
 using std::cerr;
 using std::endl;
 
+#ifdef GLVIS_DEBUG
+#define PRINT_DEBUG(s) std::cerr << s
+#else
+#define PRINT_DEBUG(s) {}
+#endif
+
 extern int GetMultisample();
 extern int visualize;
 
@@ -35,17 +41,13 @@ struct SdlWindow::_SdlHandle
         , gl_ctx(0) {
         hwnd = SDL_CreateWindow(title.c_str(), x, y, w, h, wndflags);
         if (!hwnd) {
-#ifdef GLVIS_DEBUG
-            cerr << "SDL window creation failed with error: " << SDL_GetError() << endl;
-#endif
+            PRINT_DEBUG("SDL window creation failed with error: " << SDL_GetError() << endl);
             return;
         }
         gl_ctx = SDL_GL_CreateContext(hwnd);
-#ifdef GLVIS_DEBUG
         if (!gl_ctx) {
-            cerr << "OpenGL context creation failed with error: " << SDL_GetError() << endl;
+            PRINT_DEBUG("OpenGL context creation failed with error: " << SDL_GetError() << endl);
         }
-#endif
     }
 
     ~_SdlHandle() {
@@ -103,14 +105,22 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
         SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
     }
 #ifndef __EMSCRIPTEN__
-    cerr << "Creating window with OpenGL core profile..." << flush;
+    PRINT_DEBUG("Creating window with OpenGL core profile..." << flush);
     // Try to create core profile context first
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
+
     if (!_handle->isInitialized()) {
-        cerr << "failed.\n" << "Falling back to legacy OpenGL..." << flush;
+        PRINT_DEBUG("failed." << endl << "Falling back to the default profile..." << flush);
         // Unset core profile flag, which should give us a legacy OpenGL context
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 0);
+        _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
+    }
+
+    if (!_handle->isInitialized()) {
+        PRINT_DEBUG("failed." << endl << "Falling back to legacy OpenGL..." << flush);
+        // Unset core profile flag, which should give us a legacy OpenGL context
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
         _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
     }
 #else
@@ -119,11 +129,11 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
 #endif
     // at this point, window should be up
     if (!_handle->isInitialized()) {
-        cerr << "failed." << endl;
+        PRINT_DEBUG(cerr << "failed." << endl);
         cerr << "FATAL: window and/or OpenGL context creation failed." << endl;
         return false;
     } else {
-        cerr << "done." << endl;
+        PRINT_DEBUG("done." << endl);
     }
 
 #ifndef __EMSCRIPTEN__
@@ -138,13 +148,13 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
     }
 
     // print verisons
-    cerr << "Using GLEW " << glewGetString(GLEW_VERSION) << std::endl;
-    cerr << "Using GL " << glGetString(GL_VERSION) << std::endl;
+    PRINT_DEBUG("Using GLEW " << glewGetString(GLEW_VERSION) << std::endl);
+    PRINT_DEBUG("Using GL " << glGetString(GL_VERSION) << std::endl);
 
     SDL_version sdl_ver;
     SDL_GetVersion(&sdl_ver);
-    std::cerr << "Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor <<
-      "." << (int)sdl_ver.patch << std::endl;
+    PRINT_DEBUG("Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor <<
+      "." << (int)sdl_ver.patch << std::endl);
 
     _renderer.reset(new gl3::MeshRenderer);
 #ifndef __EMSCRIPTEN__
@@ -158,10 +168,10 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
         || (GLEW_VERSION_2_0 && GLEW_EXT_transform_feedback)) {
 		// we require both shaders and transform feedback
 		// EXT_transform_feedback was made core in OpenGL 3.0
-        cerr << "Loading CoreGLDevice..." << endl;
+        PRINT_DEBUG("Loading CoreGLDevice..." << endl);
         _renderer->setDevice<gl3::CoreGLDevice>();
     } else {
-        cerr << "Shader support missing, loading FFGLDevice..." << endl;
+        PRINT_DEBUG("Shader support missing, loading FFGLDevice..." << endl);
         _renderer->setDevice<gl3::FFGLDevice>();
     }
 
@@ -366,14 +376,14 @@ void SdlWindow::getDpi(int& w, int& h) {
     if (_handle) {
         int disp = SDL_GetWindowDisplayIndex(_handle->hwnd);
         if (disp < 0) {
-          std::cerr << "warning: problem getting display index: " << SDL_GetError() << std::endl;
+          PRINT_DEBUG("warning: problem getting display index: " << SDL_GetError() << endl);
           return;
         }
 
         float f_w, f_h;
         if (SDL_GetDisplayDPI(disp, NULL, &f_w, &f_h)) {
-          std::cerr << "warning: problem getting dpi, setting to " << default_dpi << ": " <<
-            SDL_GetError() << std::endl;
+          PRINT_DEBUG("warning: problem getting dpi, setting to " << default_dpi << ": " <<
+            SDL_GetError() << endl);
           w = default_dpi;
           h = default_dpi;
         }
@@ -383,7 +393,7 @@ void SdlWindow::getDpi(int& w, int& h) {
         }
     }
     else {
-      std::cerr << "warning: unable to get dpi: handle is null" << std::endl;
+      PRINT_DEBUG("warning: unable to get dpi: handle is null" << endl);
     }
 }
 

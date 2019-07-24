@@ -1636,7 +1636,9 @@ bool SetFont(const vector<std::string>& font_patterns, int height) {
             FcChar8 * s;
             FcResult res = FcPatternGetString(fs->fonts[fnt_idx], FC_FILE, 0, &s);
             FcChar8 * fnt = FcNameUnparse(fs->fonts[fnt_idx]);
+#ifdef GLVIS_DEBUG
             cout << fnt << endl;
+#endif
             if (res == FcResultMatch && s && font_file == std::string("")) {
                 font_file = (char*) s;
                 font_name = (char*) fnt;
