@@ -112,15 +112,14 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
 
     if (!_handle->isInitialized()) {
         PRINT_DEBUG("failed." << endl << "Falling back to the default profile..." << flush);
-        // Unset core profile flag, which should give us a legacy OpenGL context
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 0);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
         _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
     }
 
     if (!_handle->isInitialized()) {
         PRINT_DEBUG("failed." << endl << "Falling back to legacy OpenGL..." << flush);
         // Unset core profile flag, which should give us a legacy OpenGL context
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 0);
         _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
     }
 #else
