@@ -37,30 +37,9 @@ private:
         Feedback
     };
 
-    std::unordered_map<std::string, GLuint> _uniforms = {
-        { "useClipPlane", 0 },
-        { "clipPlane", 0 },
-        { "containsText", 0 },
-        { "modelViewMatrix", 0 },
-        { "projectionMatrix", 0 },
-        { "textProjMatrix", 0 },
-        { "normalMatrix", 0 },
-        { "num_lights", 0 },
-        { "g_ambient", 0 },
-        { "material.specular", 0 },
-        { "material.shininess", 0 },
-        { "lights[0].position", 0 },
-        { "lights[0].diffuse", 0 },
-        { "lights[0].specular", 0 },
-        { "lights[1].position", 0 },
-        { "lights[1].diffuse", 0 },
-        { "lights[1].specular", 0 },
-        { "lights[2].position", 0 },
-        { "lights[2].diffuse", 0 },
-        { "lights[2].specular", 0 },
-        { "colorTex", 0 },
-        { "alphaTex", 0 }
-    };
+    const static std::vector<std::string> _unif_list;
+
+    std::unordered_map<std::string, GLuint> _uniforms;
     
     bool _use_clip_plane;
     struct VBOHandle_

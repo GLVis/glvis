@@ -40,6 +40,31 @@ const std::string PRINTING_FS =
 namespace gl3
 {
 
+const std::vector<std::string> CoreGLDevice::_unif_list = {
+    "useClipPlane",
+    "clipPlane",
+    "containsText",
+    "modelViewMatrix",
+    "projectionMatrix",
+    "textProjMatrix",
+    "normalMatrix",
+    "num_lights",
+    "g_ambient",
+    "material.specular",
+    "material.shininess",
+    "lights[0].position",
+    "lights[0].diffuse",
+    "lights[0].specular",
+    "lights[1].position",
+    "lights[1].diffuse",
+    "lights[1].specular",
+    "lights[2].position",
+    "lights[2].diffuse",
+    "lights[2].specular",
+    "colorTex",
+    "alphaTex"
+};
+
 template<typename TVtx>
 void setupVtxAttrLayout()
 {
@@ -291,21 +316,50 @@ void CoreGLDevice::initializeShaderState(CoreGLDevice::RenderMode mode)
         glUseProgram(_feedback_prgm);
         curr_prgm = _feedback_prgm;
     }
-#ifdef GLVIS_DEBUG
-    // verify that uniform map is consisted with current shaders
-    int num_attribs;
-    glGetProgramiv(curr_prgm, GL_ACTIVE_UNIFORMS, &num_attribs);
-    if (num_attribs != _uniforms.size())
+    _uniforms.clear();
+    // initialize uniform map
+    int num_unifs;
+    glGetProgramiv(curr_prgm, GL_ACTIVE_UNIFORMS, &num_unifs);
+    std::unordered_map<std::string, bool> uniform_query{};
+    for (const auto& uf : _unif_list)
     {
-        std::cerr << "Warning: Unexpected number of uniforms in shader.\n"
-                  << "Expected " << _uniforms.size() << " uniforms, got "
-                  << num_attribs << std::endl;
+        uniform_query.emplace(uf, false);
     }
-
-#endif
-    for (auto &uf : _uniforms)
+    for (int i = 0; i < num_unifs; i++)
     {
-        uf.second = glGetUniformLocation(curr_prgm, uf.first.c_str());
+        const size_t max_length = 100;
+        char unif_name[max_length];
+        GLsizei name_length;
+        GLint gl_size;
+        GLenum gl_type;
+        glGetActiveUniform(curr_prgm, i, max_length, &name_length, &gl_size, &gl_type, unif_name);
+        auto it = uniform_query.find(std::string(unif_name, name_length));
+        if (it == uniform_query.end())
+        {
+#ifdef GLVIS_DEBUG
+            std::cerr << "Warning: unexpected uniform \""
+                      << std::string(unif_name, name_length)
+                      << "\" found in shader." << std::endl;
+#endif
+        }
+        else
+        {
+            it->second = true;
+            GLuint uf_idx = glGetUniformLocation(curr_prgm, it->first.c_str());
+            _uniforms.emplace(it->first, uf_idx);
+        }
+    }
+    for (const auto& uf : uniform_query)
+    {
+        if (!uf.second)
+        {
+#ifdef GLVIS_DEBUG
+            std::cerr << "Uniform \"" << uf.first
+                      << "\" missing in shader, ignoring." << std::endl;
+#endif
+            // set uniform index to -1 so glUniform ignores data
+            _uniforms.emplace(uf.first, -1);
+        }
     }
     glUniform1i(_uniforms["colorTex"], 0);
     glUniform1i(_uniforms["alphaTex"], 1);
