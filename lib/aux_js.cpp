@@ -396,7 +396,7 @@ bool startVisualization(std::string input, std::string data_type, int w, int h) 
             if (glvis_data.field_type == 2)
             {
                 vs->OrthogonalProjection = 1;
-                vs->light = 0;
+                vs->SetLight(0);
                 vs->Zoom(1.8);
             }
         }

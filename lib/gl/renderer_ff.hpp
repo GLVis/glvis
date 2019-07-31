@@ -8,14 +8,14 @@ namespace gl3
 // Render for legacy OpenGL systems with access to only the fixed-function pipeline
 class FFGLDevice : public GLDevice
 {
-    struct DispList_
+    struct DispListData_
     {
-        GLuint list;
+        DispListHandle_ list;
         GLenum shape;
         size_t count;
         array_layout layout;
     };
-    std::vector<DispList_> disp_lists;
+    std::vector<DispListData_> disp_lists;
     
     template<typename TVtx>
     void bufferFFDeviceImpl(const VertexBuffer<TVtx>& buf);

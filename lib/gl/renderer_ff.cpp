@@ -142,7 +142,7 @@ void FFGLDevice::bufferToDevice(array_layout layout, IVertexBuffer& buf)
         if (buf.count() == 0) { return; }
         GLuint new_hnd = glGenLists(1);
         buf.setHandle(disp_lists.size());
-        disp_lists.emplace_back(DispList_{new_hnd, buf.getShape(), buf.count(), layout});
+        disp_lists.emplace_back(DispListData_{new_hnd, buf.getShape(), buf.count(), layout});
     } else {
         disp_lists[buf.getHandle()].count = buf.count();
     }
@@ -177,7 +177,7 @@ void FFGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
         if (buf.count() == 0) { return; }
         GLuint new_hnd = glGenLists(1);
         buf.setHandle(disp_lists.size());
-        disp_lists.emplace_back(DispList_{new_hnd, buf.getShape(), buf.getIndices().size(), layout});
+        disp_lists.emplace_back(DispListData_{new_hnd, buf.getShape(), buf.getIndices().size(), layout});
     } else {
         disp_lists[buf.getHandle()].count = buf.getIndices().size();
     }

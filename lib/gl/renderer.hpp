@@ -87,6 +87,52 @@ protected:
     glm::mat4 _proj_mtx;
 
     std::array<float, 4> _static_color;
+
+    // RAII scope guard for OpenGL handles.
+    template<void(*GLFinalizer)(GLuint)>
+    class Handle_
+    {
+        GLuint _hnd;
+    public:
+        Handle_() : _hnd{0} {}
+        Handle_(GLuint h) : _hnd{h} {}
+        ~Handle_() { if (_hnd) { GLFinalizer(_hnd); } }
+        Handle_(Handle_&& other)
+            : _hnd{other._hnd} { other._hnd = 0; }
+        Handle_& operator = (Handle_&& other) noexcept
+        {
+            _hnd = other._hnd;
+            other._hnd = 0;
+            return *this;
+        }
+        operator GLuint() { return _hnd; }
+    };
+
+    static void _boCleanup(GLuint vbo_hnd)
+    {
+        glDeleteBuffers(1, &vbo_hnd);
+    }
+
+    static void _dspListCleanup(GLuint dlist)
+    {
+        glDeleteLists(dlist, 1);
+    }
+
+    static void _prgmCleanup(GLuint prgm)
+    {
+        glDeleteProgram(prgm);
+    }
+
+    static void _vaoCleanup(GLuint vao)
+    {
+        glDeleteVertexArrays(1, &vao);
+    }
+
+    using BufObjHandle_ = Handle_<_boCleanup>;
+    using DispListHandle_ = Handle_<_dspListCleanup>;
+    using VtxArrayHandle_ = Handle_<_vaoCleanup>;
+    using ShaderPrgmHandle_ = Handle_<_prgmCleanup>;
+
 public:
 
     enum DeviceType

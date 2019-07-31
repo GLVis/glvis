@@ -377,10 +377,14 @@ void CoreGLDevice::init()
     this->initializeShaderState(RenderMode::Default);
     if (GLEW_VERSION_3_0 || GLEW_ARB_vertex_array_object)
     {
-        glGenVertexArrays(1, &_global_vao);
+        GLuint hnd_vao;
+        glGenVertexArrays(1, &hnd_vao);
+        _global_vao = VtxArrayHandle_(hnd_vao);
         glBindVertexArray(_global_vao);
     }
-    glGenBuffers(1, &_feedback_vbo);
+    GLuint hnd_fb_buf;
+    glGenBuffers(1, &hnd_fb_buf);
+    _feedback_vbo = BufObjHandle_(hnd_fb_buf);
 }
 
 void CoreGLDevice::setTransformMatrices(glm::mat4 model_view, glm::mat4 projection)
@@ -447,7 +451,7 @@ void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
         GLuint handle;
         glGenBuffers(1, &handle);
         buf.setHandle(_vbos.size());
-        _vbos.emplace_back(VBOHandle_{handle, 0, buf.getShape(), buf.count(), layout});
+        _vbos.emplace_back(VBOData_{handle, 0, buf.getShape(), buf.count(), layout});
     }
     else
     {
@@ -467,7 +471,7 @@ void CoreGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
         GLuint handle[2];
         glGenBuffers(2, &handle[0]);
         buf.setHandle(_vbos.size());
-        _vbos.emplace_back(VBOHandle_{handle[0], handle[1], buf.getShape(), buf.getIndices().size(), layout});
+        _vbos.emplace_back(VBOData_{handle[0], handle[1], buf.getShape(), buf.getIndices().size(), layout});
     }
     else
     {

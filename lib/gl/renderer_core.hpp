@@ -25,11 +25,11 @@ public:
        float clipCoord;
     };
 private:
-    GLuint _default_prgm;
-    GLuint _feedback_prgm;
-    GLuint _global_vao;
+    ShaderPrgmHandle_ _default_prgm;
+    ShaderPrgmHandle_ _feedback_prgm;
+    VtxArrayHandle_ _global_vao;
 
-    GLuint _feedback_vbo;
+    BufObjHandle_ _feedback_vbo;
 
     enum class RenderMode
     {
@@ -42,16 +42,17 @@ private:
     std::unordered_map<std::string, GLuint> _uniforms;
     
     bool _use_clip_plane;
-    struct VBOHandle_
+
+    struct VBOData_
     {
-        GLuint vert_buf;
-        GLuint elem_buf;
+        BufObjHandle_ vert_buf;
+        BufObjHandle_ elem_buf;
         GLenum shape;
         size_t count;
         array_layout layout;
     };
 
-    std::vector<VBOHandle_> _vbos;
+    std::vector<VBOData_> _vbos;
 
     bool compileShaders();
     void initializeShaderState(RenderMode mode);
