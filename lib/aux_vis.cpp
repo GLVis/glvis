@@ -326,6 +326,7 @@ void CallKeySequence(const char *seq)
       }
       else
       {
+         key++;
          switch (*key)
          {
             case 'l': // left arrow
