@@ -13,6 +13,9 @@ void setupFFVertexArray(TVtx* buffer)
     AttrCoord<TVtx>::setupLegacy(buffer);
     AttrNormal<TVtx>::setupLegacy(buffer);
     AttrColor<TVtx>::setupLegacy(buffer);
+    glClientActiveTexture(GL_TEXTURE0);
+    AttrTexcoord<TVtx>::setupLegacy(buffer);
+    glClientActiveTexture(GL_TEXTURE1);
     AttrTexcoord<TVtx>::setupLegacy(buffer);
 }
 
@@ -22,6 +25,9 @@ void clearFFVertexArray()
     AttrCoord<TVtx>::clearLegacy();
     AttrNormal<TVtx>::clearLegacy();
     AttrColor<TVtx>::clearLegacy();
+    glClientActiveTexture(GL_TEXTURE0);
+    AttrTexcoord<TVtx>::clearLegacy();
+    glClientActiveTexture(GL_TEXTURE1);
     AttrTexcoord<TVtx>::clearLegacy();
 }
 

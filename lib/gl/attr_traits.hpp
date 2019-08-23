@@ -134,12 +134,6 @@ struct AttrTexcoord<TV, decltype((void)TV::texCoord, 0)>
     const static GLenum AttrGLType = GL_FLOAT;
     const static int ShaderIdx = CoreGLDevice::ATTR_TEXCOORD0;
     const static GLenum FFArrayIdx = GL_TEXTURE_COORD_ARRAY;
-    static void FFSetupFunc(GLint size, GLenum type, GLsizei stride, const GLvoid* ptr)
-    {
-        glClientActiveTexture(GL_TEXTURE0);
-        glTexCoordPointer(size, type, stride, ptr);
-        glClientActiveTexture(GL_TEXTURE1);
-        glTexCoordPointer(size, type, stride, ptr);
-    }
+    constexpr static auto FFSetupFunc = glTexCoordPointer;
 };
 }
