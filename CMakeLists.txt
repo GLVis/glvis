@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.8.12)
 
+set(CMAKE_CXX_STANDARD 11)
+
 # Prohibit in-source builds
 if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(FATAL_ERROR "In-source builds are prohibited.")
