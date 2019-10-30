@@ -14,12 +14,12 @@ void main()
 {
     fragmentClipPlane();
     vec4 color = fColor * texture2D(colorTex, vec2(fTexCoord));
+    color = blinnPhong(fPosition, fNormal, color);
 #ifdef GL_ES
     color.a *= texture2D(alphaTex, vec2(fTexCoord)).a;
 #else
     color.a *= texture2D(alphaTex, vec2(fTexCoord)).r;
 #endif
-    color = blinnPhong(fPosition, fNormal, color);
     gl_FragColor = color;
 }
 )"

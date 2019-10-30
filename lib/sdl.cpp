@@ -311,9 +311,8 @@ bool SdlWindow::mainIter() {
                 running = false;
         }
         useIdle = !useIdle;
-    }
-    else {
-      if (glvis_command->Execute() < 0) { running = false; }
+    } else if (glvis_command && visualize == 1) {
+        if (glvis_command->Execute() < 0) { running = false; }
     }
 #else
     if (onIdle) {

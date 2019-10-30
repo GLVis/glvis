@@ -1655,7 +1655,7 @@ int main (int argc, char *argv[])
                   {
                      // paletteSet(4);
                      paletteSet(11);
-                     //Set_Material_And_Light(4,3);
+                     vss->SetLightMatIdx(4);
                   }
                   else
                   {
