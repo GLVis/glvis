@@ -23,10 +23,11 @@ protected:
    Vector *v_normals;
    GridFunction *rsol;
 
-   int drawmesh, drawelems, drawnums;
+   int drawmesh, drawelems, drawnums, draworder;
    int displlist, linelist, lcurvelist;
    int bdrlist, drawbdr, draw_cp, cp_list;
    int e_nums_list, v_nums_list;
+   int order_list, order_list_noarrow;
 
    void Init();
 
@@ -98,6 +99,9 @@ public:
 
    void PrepareBoundary();
 
+   void PrepareOrderingCurve();
+   void PrepareOrderingCurve1(int list, bool arrows);
+
    void PrepareNumbering();
    void PrepareElementNumbering();
    void PrepareElementNumbering1();
@@ -117,6 +121,10 @@ public:
 
    void ToggleDrawMesh() { drawmesh = (drawmesh+1)%3; }
 
+   // 0 - none, 1 - with arrows, 2 - no arrows
+   void ToggleDrawOrdering() {  draworder = (draworder+1)%3; }
+
+   // 0 - none, 1 - elements, 2 - vertices
    void ToggleDrawNumberings() { drawnums = (drawnums+1)%3; }
 
    virtual void SetShading(int, bool);

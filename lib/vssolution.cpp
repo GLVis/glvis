@@ -233,6 +233,12 @@ static void KeyNPressed()
    SendExposeEvent();
 }
 
+static void KeyOPressed()
+{
+   vssol -> ToggleDrawOrdering();
+   SendExposeEvent();
+}
+
 static void KeyEPressed()
 {
    vssol -> ToggleDrawElems();
@@ -361,6 +367,7 @@ static void KeyF3Pressed()
       vssol->PrepareLines();
       vssol->PrepareLevelCurves();
       vssol->PrepareNumbering();
+      vssol->PrepareOrderingCurve();
       SendExposeEvent();
    }
 }
@@ -439,6 +446,7 @@ void VisualizationSceneSolution::Init()
 
    drawelems = shading = 1;
    drawmesh  = 0;
+   draworder = 0;
    drawnums  = 0;
 
    shrink = 1.0;
@@ -479,6 +487,9 @@ void VisualizationSceneSolution::Init()
       auxKeyFunc (AUX_n, KeyNPressed);
       auxKeyFunc (AUX_N, KeyNPressed);
 
+      auxKeyFunc (AUX_o, KeyOPressed);
+      auxKeyFunc (AUX_O, KeyOPressed);
+
       auxKeyFunc (AUX_e, KeyEPressed);
       auxKeyFunc (AUX_E, KeyEPressed);
 
@@ -510,12 +521,15 @@ void VisualizationSceneSolution::Init()
    cp_list    = glGenLists (1);
    e_nums_list  = glGenLists (1);
    v_nums_list  = glGenLists (1);
+   order_list = glGenLists (1);
+   order_list_noarrow = glGenLists (1);
 
    Prepare();
    PrepareLines();
    PrepareLevelCurves();
    PrepareBoundary();
    PrepareNumbering();
+   PrepareOrderingCurve();
 }
 
 VisualizationSceneSolution::~VisualizationSceneSolution()
@@ -527,6 +541,8 @@ VisualizationSceneSolution::~VisualizationSceneSolution()
    glDeleteLists (cp_list, 1);
    glDeleteLists (e_nums_list, 1);
    glDeleteLists (v_nums_list, 1);
+   glDeleteLists (order_list, 1);
+   glDeleteLists (order_list_noarrow, 1);
 }
 
 void VisualizationSceneSolution::ToggleDrawElems()
@@ -745,6 +761,7 @@ void VisualizationSceneSolution::SetShading(int s, bool print)
          PrepareLevelCurves();
          PrepareCP();
          PrepareNumbering();
+         PrepareOrderingCurve();
       }
       else
       {
@@ -1883,6 +1900,79 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
    glEndList();
 }
 
+void VisualizationSceneSolution::PrepareOrderingCurve()
+{
+   PrepareOrderingCurve1(order_list, true);
+   PrepareOrderingCurve1(order_list_noarrow, false);
+}
+
+void VisualizationSceneSolution::PrepareOrderingCurve1(int list, bool arrows)
+{
+   glNewList(list, GL_COMPILE);
+
+   DenseMatrix pointmat;
+   Array<int> vertices;
+
+   DenseMatrix pointmat1;
+   Array<int> vertices1;
+
+   int ne = mesh->GetNE();
+   for (int k = 0; k < ne-1; k++)
+   {
+      mesh->GetPointMatrix (k, pointmat);
+      mesh->GetElementVertices (k, vertices);
+      mesh->GetPointMatrix (k+1, pointmat1);
+      mesh->GetElementVertices (k+1, vertices1);
+      int nv = vertices.Size();
+      int nv1 = vertices1.Size();
+
+      ShrinkPoints(pointmat, k, 0, 0);
+      ShrinkPoints(pointmat1, k+1, 0, 0);
+
+      double xs = 0.0;
+      double ys = 0.0;
+      double us = 0.0;
+      for (int j = 0; j < nv; j++)
+      {
+         xs += pointmat(0,j);
+         ys += pointmat(1,j);
+         us += LogVal((*sol)(vertices[j]));
+      }
+      xs /= nv;
+      ys /= nv;
+      us /= nv;
+
+      double xs1 = 0.0;
+      double ys1 = 0.0;
+      double us1 = 0.0;
+      for (int j = 0; j < nv1; j++)
+      {
+         xs1 += pointmat1(0,j);
+         ys1 += pointmat1(1,j);
+         us1 += LogVal((*sol)(vertices1[j]));
+      }
+      xs1 /= nv1;
+      ys1 /= nv1;
+      us1 /= nv1;
+
+      double dx = xs1-xs;
+      double dy = ys1-ys;
+      double ds = sqrt(dx*dx+dy*dy);
+      if (arrows) {
+         Arrow3(xs,ys,LogVal(maxv),
+                dx,dy,0.0,
+                ds);
+      }
+      else {
+         Arrow3(xs,ys,LogVal(maxv),
+                dx,dy,0.0,
+                ds, 0.0);
+      }
+   }
+
+   glEndList();
+}
+
 void VisualizationSceneSolution::PrepareNumbering()
 {
    PrepareElementNumbering();
@@ -2297,6 +2387,19 @@ void VisualizationSceneSolution::Draw()
          glCallList(v_nums_list);
       }
    }
+
+   // draw ordering
+   if (draworder)
+   {
+      if (1 == draworder) {
+         glCallList(order_list);
+      }
+      else if (2 == draworder) {
+         glCallList(order_list_noarrow);
+      }
+
+   }
+
 
    if (draw_cp)
    {
