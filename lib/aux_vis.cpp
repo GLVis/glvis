@@ -1537,7 +1537,7 @@ void SetLineWidth(float width)
 void SetLineWidthMS(float width_ms)
 {
     line_w_aa = width_ms;
-    if (!wnd)
+    if (wnd)
     {
         wnd->getRenderer().setLineWidthMS(line_w_aa);
     }

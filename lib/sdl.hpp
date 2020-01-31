@@ -98,7 +98,11 @@ public:
       onMouseMove.clear();
    }
 
-   void callKeyDown(SDL_Keycode k) { onKeyDown[k](0); }
+   void callKeyDown(SDL_Keycode k)
+   {
+      if (onKeyDown[k])
+         onKeyDown[k](0);
+   }
 
    void getWindowSize(int& w, int& h);
    void getDpi(int& wdpi, int& hdpi);

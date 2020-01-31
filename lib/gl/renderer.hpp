@@ -159,8 +159,14 @@ public:
     void disableBlend() { glDisable(GL_BLEND); }
     void enableDepthWrite() { glDepthMask(GL_TRUE); }
     void disableDepthWrite() { glDepthMask(GL_FALSE); }
-    void enableMultisample() { glEnable(GL_MULTISAMPLE); }
-    void disableMultisample() { glDisable(GL_MULTISAMPLE); }
+    void enableMultisample() {
+        glEnable(GL_MULTISAMPLE);
+        glEnable(GL_LINE_SMOOTH);
+    }
+    void disableMultisample() {
+        glDisable(GL_MULTISAMPLE);
+        glDisable(GL_LINE_SMOOTH);
+    }
     void setLineWidth(float w) { glLineWidth(w); }
 
     virtual void init();
