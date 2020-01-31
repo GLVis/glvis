@@ -125,7 +125,7 @@ SO_EXT = $(if $(NOTMAC),so,dylib)
 
 # Default multisampling mode and multisampling line-width
 GLVIS_MULTISAMPLE  ?= 4
-GLVIS_MS_LINEWIDTH ?= $(if $(NOTMAC),1.4,0.01)
+GLVIS_MS_LINEWIDTH ?= $(if $(NOTMAC),1.4,1.0)
 DEFINES = -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
  -DGLVIS_MS_LINEWIDTH=$(GLVIS_MS_LINEWIDTH)\
  -DGLVIS_OGL3
