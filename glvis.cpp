@@ -1146,6 +1146,7 @@ int main (int argc, char *argv[])
    double      line_width    = 1.0;
    double      ms_line_width = gl3::LINE_WIDTH_AA;
    int         geom_ref_type = Quadrature1D::ClosedUniform;
+   bool        legacy_gl_ctx = false;
 
    OptionsParser args(argc, argv);
 
@@ -1208,6 +1209,9 @@ int main (int argc, char *argv[])
                   "Set the line width (multisampling off).");
    args.AddOption(&ms_line_width, "-mslw", "--multisample-line-width",
                   "Set the line width (multisampling on).");
+   args.AddOption(&legacy_gl_ctx, "-oldgl", "--legacy-gl",
+                  "-anygl", "--any-gl",
+                  "Only try to create a legacy OpenGL (< 2.1) context.");
 
    cout << endl
         << "       _/_/_/  _/      _/      _/  _/"          << endl
@@ -1276,6 +1280,10 @@ int main (int argc, char *argv[])
    if (c_plot_caption != string_none)
    {
       plot_caption = c_plot_caption;
+   }
+   if (legacy_gl_ctx == true)
+   {
+       SetLegacyGLOnly(legacy_gl_ctx);
    }
 
    GLVisGeometryRefiner.SetType(geom_ref_type);

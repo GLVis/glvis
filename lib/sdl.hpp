@@ -66,7 +66,8 @@ public:
     * Creates a new OpenGL window.
     * Returns false if SDL or OpenGL intialization fails.
     */
-   bool createWindow(const char * title, int x, int y, int w, int h);
+   bool createWindow(const char * title, int x, int y, int w, int h,
+                     bool legacyGlOnly);
    /**
     * Runs the window loop.
     */

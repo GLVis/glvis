@@ -43,6 +43,8 @@ void MainLoop();
 SdlWindow * GetAppWindow();
 VisualizationScene * GetVisualizationScene();
 
+void SetLegacyGLOnly(bool status);
+
 void AddIdleFunc(void (*Func)(void));
 void RemoveIdleFunc(void (*Func)(void));
 

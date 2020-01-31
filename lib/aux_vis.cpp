@@ -50,6 +50,7 @@ float line_w_aa = gl3::LINE_WIDTH_AA;
 
 //TODO: anything but this
 SdlWindow * wnd = nullptr;
+bool wndLegacyGl = false;
 
 SdlWindow * GetAppWindow()
 {
@@ -59,6 +60,11 @@ SdlWindow * GetAppWindow()
 VisualizationScene * GetVisualizationScene()
 {
     return locscene;
+}
+
+void SetLegacyGLOnly(bool status)
+{
+    wndLegacyGl = true;
 }
 
 void MyExpose(GLsizei w, GLsizei h);
@@ -72,7 +78,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 #endif
    if (!wnd) {
       wnd = new SdlWindow();
-      if (!wnd->createWindow(name, x, y, w, h)) {
+      if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl)) {
          return 1;
       }
 

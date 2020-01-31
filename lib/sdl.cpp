@@ -75,7 +75,7 @@ SdlWindow::SdlWindow()
     , takeScreenshot(false) {
 }
 
-bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
+bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h, bool legacyGlOnly) {
     if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
             cerr << "FATAL: Failed to initialize SDL: " << SDL_GetError() << endl;
@@ -105,22 +105,27 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h) {
         SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
     }
 #ifndef __EMSCRIPTEN__
-    PRINT_DEBUG("Creating window with OpenGL core profile..." << flush);
-    // Try to create core profile context first
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
-
-    if (!_handle->isInitialized()) {
-        PRINT_DEBUG("failed." << endl << "Falling back to the default profile..." << flush);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
-        _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
-    }
-
-    if (!_handle->isInitialized()) {
-        PRINT_DEBUG("failed." << endl << "Falling back to legacy OpenGL..." << flush);
-        // Unset core profile flag, which should give us a legacy OpenGL context
+    if (legacyGlOnly) {
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 0);
         _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
+    } else {
+        PRINT_DEBUG("Creating window with OpenGL core profile..." << flush);
+        // Try to create core profile context first
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+        _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
+
+        if (!_handle->isInitialized()) {
+            PRINT_DEBUG("failed." << endl << "Falling back to the default profile..." << flush);
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+            _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
+        }
+
+        if (!_handle->isInitialized()) {
+            PRINT_DEBUG("failed." << endl << "Falling back to legacy OpenGL..." << flush);
+            // Unset core profile flag, which should give us a legacy OpenGL context
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 0);
+            _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
+        }
     }
 #else
     cerr << "Creating window..." << flush;
