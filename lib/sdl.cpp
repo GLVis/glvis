@@ -376,27 +376,27 @@ void SdlWindow::getWindowSize(int& w, int& h) {
 
 const int default_dpi = 72;
 void SdlWindow::getDpi(int& w, int& h) {
-    if (_handle) {
-        int disp = SDL_GetWindowDisplayIndex(_handle->hwnd);
-        if (disp < 0) {
-          PRINT_DEBUG("warning: problem getting display index: " << SDL_GetError() << endl);
-          return;
-        }
-
-        float f_w, f_h;
-        if (SDL_GetDisplayDPI(disp, NULL, &f_w, &f_h)) {
-          PRINT_DEBUG("warning: problem getting dpi, setting to " << default_dpi << ": " <<
-            SDL_GetError() << endl);
-          w = default_dpi;
-          h = default_dpi;
-        }
-        else {
-          w = f_w;
-          h = f_h;
-        }
-    }
-    else {
+    w = default_dpi;
+    h = default_dpi;
+    if (!_handle) {
       PRINT_DEBUG("warning: unable to get dpi: handle is null" << endl);
+      return;
+    }
+    int disp = SDL_GetWindowDisplayIndex(_handle->hwnd);
+    if (disp < 0) {
+      PRINT_DEBUG("warning: problem getting display index: " << SDL_GetError() << endl);
+      PRINT_DEBUG("returning default dpi of " << default_dpi << endl);
+      return;
+    }
+
+    float f_w, f_h;
+    if (SDL_GetDisplayDPI(disp, NULL, &f_w, &f_h)) {
+      PRINT_DEBUG("warning: problem getting dpi, setting to " << default_dpi << ": " <<
+        SDL_GetError() << endl);
+    } else {
+      PRINT_DEBUG("Screen DPI: w = " << f_w << " ppi, h = " << f_h << " ppi" << endl);
+      w = f_w;
+      h = f_h;
     }
 }
 

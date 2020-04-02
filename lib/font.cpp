@@ -61,6 +61,11 @@ bool GlVisFont::LoadFont(const std::string& path, int font_size) {
     tex_w = w;
     tex_h = h + 2;
 
+#ifdef GLVIS_DEBUG
+    cout << "GlVisFont::LoadFont(): font texture dimensions are ("
+         << tex_w << ", " << tex_h << ")" << endl;
+#endif
+
     glGenTextures(1, &font_tex);
 
     glActiveTexture(GL_TEXTURE0 + 1);
