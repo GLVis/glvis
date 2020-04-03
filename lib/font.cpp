@@ -23,7 +23,7 @@ struct vert_tex2d {
 };
 
 
-const int font_scale = 72;
+const int font_scale = 64;
 bool GlVisFont::LoadFont(const std::string& path, int font_size) {
     if (!init) {
         return false;

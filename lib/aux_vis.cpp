@@ -1616,10 +1616,11 @@ bool SetFont(const vector<std::string>& font_patterns, int height) {
         return false;
     }
 
-    FcObjectSet * os = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, nullptr);
+    FcObjectSet * os = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, FC_SCALABLE, nullptr);
 
     for (const string& pattern : font_patterns) {
-        FcPattern * pat = FcNameParse((FcChar8*)pattern.c_str());
+        string patternScale = pattern + ":scalable=True";
+        FcPattern * pat = FcNameParse((FcChar8*)patternScale.c_str());
         if (!pat) {
             continue;
         }
@@ -1630,19 +1631,22 @@ bool SetFont(const vector<std::string>& font_patterns, int height) {
             continue;
         }
 #ifdef GLVIS_DEBUG
-        if (fs->nfont > 1) {
-            cout << "Font pattern '" << pattern
-                 << "' matched multiple fonts:\n";
+        if (fs->nfont >= 1) {
+            cout << "Font pattern '" << pattern << "' matched fonts:\n";
+        } else {
+            cout << "Font pattern '" << pattern << "' matched no fonts.\n";
         }
 #endif
         std::string font_file = "";
         std::string font_name = "";
         for (int fnt_idx = 0; fnt_idx < fs->nfont; fnt_idx++) {
             FcChar8 * s;
+            FcBool scalable;
+            FcPatternGetBool(fs->fonts[fnt_idx], FC_SCALABLE, 0, &scalable);
             FcResult res = FcPatternGetString(fs->fonts[fnt_idx], FC_FILE, 0, &s);
             FcChar8 * fnt = FcNameUnparse(fs->fonts[fnt_idx]);
 #ifdef GLVIS_DEBUG
-            cout << fnt << endl;
+            cout << " - " << fnt << endl;
 #endif
             if (res == FcResultMatch && s && font_file == std::string("")) {
                 font_file = (char*) s;
@@ -1655,7 +1659,7 @@ bool SetFont(const vector<std::string>& font_patterns, int height) {
         if (font_file != std::string("")) {
             if (glvis_font.LoadFont(font_file, height)) {
 #ifdef GLVIS_DEBUG
-                cout << "Using font: " << font_name << endl;
+                cout << "Loaded font: " << font_name << endl;
 #endif
                 break;
             }
