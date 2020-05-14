@@ -1957,16 +1957,24 @@ void VisualizationSceneSolution::PrepareOrderingCurve1(int list, bool arrows)
 
       double dx = xs1-xs;
       double dy = ys1-ys;
-      double ds = sqrt(dx*dx+dy*dy);
-      if (arrows) {
-         Arrow3(xs,ys,LogVal(maxv),
-                dx,dy,0.0,
-                ds);
+      double du = us1-us;
+      double ds = sqrt(dx*dx+dy*dy+du*du);
+
+      SetUseTexture(0);
+      double a = minv+double(k)/ne*(maxv-minv);
+      MySetColor(a, minv, maxv);
+
+      if (arrows)
+      {
+	 Arrow3(xs,ys,us,
+		dx,dy,du,
+		ds);
       }
-      else {
-         Arrow3(xs,ys,LogVal(maxv),
-                dx,dy,0.0,
-                ds, 0.0);
+      else
+      {
+	 Arrow3(xs,ys,us,
+		dx,dy,du,
+		ds,0.0);
       }
    }
 
@@ -2392,10 +2400,10 @@ void VisualizationSceneSolution::Draw()
    if (draworder)
    {
       if (1 == draworder) {
-         glCallList(order_list);
+         glCallList(order_list_noarrow);
       }
       else if (2 == draworder) {
-         glCallList(order_list_noarrow);
+         glCallList(order_list);
       }
 
    }

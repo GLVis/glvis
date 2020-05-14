@@ -121,7 +121,7 @@ public:
 
    void ToggleDrawMesh() { drawmesh = (drawmesh+1)%3; }
 
-   // 0 - none, 1 - with arrows, 2 - no arrows
+   // 0 - none, 1 - no arrows, 2 - with arrows
    void ToggleDrawOrdering() {  draworder = (draworder+1)%3; }
 
    // 0 - none, 1 - elements, 2 - vertices
