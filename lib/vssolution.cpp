@@ -2408,7 +2408,6 @@ void VisualizationSceneSolution::Draw()
       else if (2 == draworder) {
          glCallList(order_list);
       }
-
    }
 
 
