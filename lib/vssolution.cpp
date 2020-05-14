@@ -233,10 +233,13 @@ static void KeyNPressed()
    SendExposeEvent();
 }
 
-static void KeyOPressed()
+static void KeyOPressed(GLenum state)
 {
-   vssol -> ToggleDrawOrdering();
-   SendExposeEvent();
+   if (state & ControlMask)
+   {
+      vssol -> ToggleDrawOrdering();
+      SendExposeEvent();
+   }
 }
 
 static void KeyEPressed()
@@ -487,8 +490,8 @@ void VisualizationSceneSolution::Init()
       auxKeyFunc (AUX_n, KeyNPressed);
       auxKeyFunc (AUX_N, KeyNPressed);
 
-      auxKeyFunc (AUX_o, KeyOPressed);
-      auxKeyFunc (AUX_O, KeyOPressed);
+      auxModKeyFunc (AUX_o, KeyOPressed);
+      auxModKeyFunc (AUX_O, KeyOPressed);
 
       auxKeyFunc (AUX_e, KeyEPressed);
       auxKeyFunc (AUX_E, KeyEPressed);
