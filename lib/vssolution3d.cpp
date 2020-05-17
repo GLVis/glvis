@@ -68,6 +68,7 @@ static void Solution3dKeyHPressed()
         << "| y/Y  Rotate clipping plane (theta) |" << endl
         << "| z/Z  Translate clipping plane      |" << endl
         << "| Ctrl+p - Print to a PDF file       |" << endl
+        << "| Ctrl+o - Element ordering curve    |" << endl
         << "+------------------------------------+" << endl
         << "| Function keys                      |" << endl
         << "+------------------------------------+" << endl
@@ -118,15 +119,17 @@ static void KeyIPressed()
 
 void VisualizationSceneSolution3d::PrepareOrderingCurve()
 {
-   PrepareOrderingCurve1(order_list, true);
-   PrepareOrderingCurve1(order_list_noarrow, false);
+   bool color = draworder < 3;
+   PrepareOrderingCurve1(order_list, true, color);
+   PrepareOrderingCurve1(order_list_noarrow, false, color);
 }
 
 
-void VisualizationSceneSolution3d::PrepareOrderingCurve1(int list, bool arrows)
+void VisualizationSceneSolution3d::PrepareOrderingCurve1(int list, bool arrows, bool color)
 {
    glNewList(list, GL_COMPILE);
-   glLineWidth(3.0f);
+   glLineWidth(2.0f);
+
    DenseMatrix pointmat;
    Array<int> vertices;
 
@@ -177,15 +180,18 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve1(int list, bool arrows)
       double dz = zs1-zs;
       double ds = sqrt(dx*dx+dy*dy+dz*dz);
 
-      SetUseTexture(0);
-      double a = minv+double(k)/ne*(maxv-minv);
-      MySetColor(a, minv, maxv);
+      if (color)
+      {
+         SetUseTexture(0);
+         double a = minv+double(k)/ne*(maxv-minv);
+         MySetColor(a, minv, maxv);
+      }
 
       if (arrows)
       {
 	 Arrow3(xs,ys,zs,
 		dx,dy,dz,
-		ds);
+		ds,0.05);
       }
       else
       {
@@ -298,6 +304,7 @@ static void KeyoPressed(GLenum state)
    if (state & ControlMask)
    {
       vssol3d -> ToggleDrawOrdering();
+      vssol3d -> PrepareOrderingCurve();
       SendExposeEvent();
    }
    else {
@@ -1065,7 +1072,6 @@ void VisualizationSceneSolution3d::EventUpdateColors()
    {
       PrepareLines();
    }
-   
 }
 
 void VisualizationSceneSolution3d::UpdateValueRange(bool prepare)
@@ -3671,10 +3677,12 @@ void VisualizationSceneSolution3d::Draw()
    // draw ordering curve
    if (draworder)
    {
-      if (1 == draworder) {
+      if (1 == draworder || 3 == draworder)
+      {
          glCallList(order_list_noarrow);
       }
-      else if (2 == draworder) {
+      else if (2 == draworder || 4 == draworder)
+      {
          glCallList(order_list);
       }
    }

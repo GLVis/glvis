@@ -105,7 +105,7 @@ public:
    virtual void PrepareLines();
    virtual void Prepare();
    virtual void PrepareOrderingCurve();
-   virtual void PrepareOrderingCurve1(int list, bool arrows);
+   virtual void PrepareOrderingCurve1(int list, bool arrows, bool color);
    virtual void Draw();
 
    void ToggleDrawElems()
@@ -113,8 +113,9 @@ public:
 
    void ToggleDrawMesh();
 
-   // 0 - none, 1 - no arrows, 2 - with arrows
-   void ToggleDrawOrdering() {  draworder = (draworder+1)%3; }
+   // 0 - none, 1 - no arrows (color), 2 - with arrows (color),
+   //           3 - no arrows (black), 4 - with arrows (black)
+   void ToggleDrawOrdering() { draworder = (draworder+1)%5; }
 
    void ToggleShading();
    int GetShading() { return shading; };

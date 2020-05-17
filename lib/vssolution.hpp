@@ -82,6 +82,8 @@ public:
    virtual void FindMeshBox(bool prepare);
 
    virtual void ToggleLogscale(bool print);
+   virtual void EventUpdateBackground();
+   virtual void EventUpdateColors();
    virtual void UpdateLevelLines() { PrepareLevelCurves(); }
    virtual void UpdateValueRange(bool prepare);
 
@@ -100,7 +102,7 @@ public:
    void PrepareBoundary();
 
    void PrepareOrderingCurve();
-   void PrepareOrderingCurve1(int list, bool arrows);
+   void PrepareOrderingCurve1(int list, bool arrows, bool color);
 
    void PrepareNumbering();
    void PrepareElementNumbering();
@@ -121,8 +123,9 @@ public:
 
    void ToggleDrawMesh() { drawmesh = (drawmesh+1)%3; }
 
-   // 0 - none, 1 - no arrows, 2 - with arrows
-   void ToggleDrawOrdering() {  draworder = (draworder+1)%3; }
+   // 0 - none, 1 - no arrows (color), 2 - with arrows (color),
+   //           3 - no arrows (black), 4 - with arrows (black)
+   void ToggleDrawOrdering() { draworder = (draworder+1)%5; }
 
    // 0 - none, 1 - elements, 2 - vertices
    void ToggleDrawNumberings() { drawnums = (drawnums+1)%3; }

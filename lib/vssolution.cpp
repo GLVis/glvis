@@ -82,6 +82,7 @@ static void SolutionKeyHPressed()
         << "| z/Z  Move the clipping plane       |" << endl
         << "| \\ -  Set light source position     |" << endl
         << "| Ctrl+p - Print to a PDF file       |" << endl
+        << "| Ctrl+o - Element ordering curve    |" << endl
         << "+------------------------------------+" << endl
         << "| Function keys                      |" << endl
         << "+------------------------------------+" << endl
@@ -238,6 +239,7 @@ static void KeyOPressed(GLenum state)
    if (state & ControlMask)
    {
       vssol -> ToggleDrawOrdering();
+      vssol -> PrepareOrderingCurve();
       SendExposeEvent();
    }
 }
@@ -606,6 +608,7 @@ void VisualizationSceneSolution::NewMeshAndSolution(
    PrepareLevelCurves();
    PrepareBoundary();
    PrepareCP();
+   PrepareOrderingCurve();
 }
 
 
@@ -1023,6 +1026,17 @@ void VisualizationSceneSolution::ToggleLogscale(bool print)
    {
       PrintLogscale(true);
    }
+}
+
+void VisualizationSceneSolution::EventUpdateColors()
+{
+   Prepare();
+   PrepareOrderingCurve();
+}
+
+void VisualizationSceneSolution::EventUpdateBackground()
+{
+   PrepareNumbering();
 }
 
 void DrawNumberedMarker(const double x[3], double dx, int n)
@@ -1905,11 +1919,12 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
 
 void VisualizationSceneSolution::PrepareOrderingCurve()
 {
-   PrepareOrderingCurve1(order_list, true);
-   PrepareOrderingCurve1(order_list_noarrow, false);
+   bool color = draworder < 3;
+   PrepareOrderingCurve1(order_list, true, color);
+   PrepareOrderingCurve1(order_list_noarrow, false, color);
 }
 
-void VisualizationSceneSolution::PrepareOrderingCurve1(int list, bool arrows)
+void VisualizationSceneSolution::PrepareOrderingCurve1(int list, bool arrows, bool color)
 {
    glNewList(list, GL_COMPILE);
 
@@ -1939,7 +1954,7 @@ void VisualizationSceneSolution::PrepareOrderingCurve1(int list, bool arrows)
       {
          xs += pointmat(0,j);
          ys += pointmat(1,j);
-         us += LogVal((*sol)(vertices[j]));
+         us += maxv + double(k)/ne*(maxv-minv);
       }
       xs /= nv;
       ys /= nv;
@@ -1952,7 +1967,7 @@ void VisualizationSceneSolution::PrepareOrderingCurve1(int list, bool arrows)
       {
          xs1 += pointmat1(0,j);
          ys1 += pointmat1(1,j);
-         us1 += LogVal((*sol)(vertices1[j]));
+         us1 += maxv + double(k+1)/ne*(maxv-minv);
       }
       xs1 /= nv1;
       ys1 /= nv1;
@@ -1963,15 +1978,18 @@ void VisualizationSceneSolution::PrepareOrderingCurve1(int list, bool arrows)
       double du = us1-us;
       double ds = sqrt(dx*dx+dy*dy+du*du);
 
-      SetUseTexture(0);
-      double a = minv+double(k)/ne*(maxv-minv);
-      MySetColor(a, minv, maxv);
+      if (color)
+      {
+         SetUseTexture(0);
+         double a = minv+double(k)/ne*(maxv-minv);
+         MySetColor(a, minv, maxv);
+      }
 
       if (arrows)
       {
 	 Arrow3(xs,ys,us,
 		dx,dy,du,
-		ds);
+		ds,0.05);
       }
       else
       {
@@ -2402,14 +2420,15 @@ void VisualizationSceneSolution::Draw()
    // draw ordering
    if (draworder)
    {
-      if (1 == draworder) {
+      if (1 == draworder || 3 == draworder)
+      {
          glCallList(order_list_noarrow);
       }
-      else if (2 == draworder) {
+      else if (2 == draworder || 4 == draworder)
+      {
          glCallList(order_list);
       }
    }
-
 
    if (draw_cp)
    {
