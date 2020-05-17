@@ -125,7 +125,8 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve()
 }
 
 
-void VisualizationSceneSolution3d::PrepareOrderingCurve1(int list, bool arrows, bool color)
+void VisualizationSceneSolution3d::PrepareOrderingCurve1(int list, bool arrows,
+                                                         bool color)
 {
    glNewList(list, GL_COMPILE);
    glLineWidth(2.0f);
@@ -189,15 +190,15 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve1(int list, bool arrows, 
 
       if (arrows)
       {
-	 Arrow3(xs,ys,zs,
-		dx,dy,dz,
-		ds,0.05);
+         Arrow3(xs,ys,zs,
+                dx,dy,dz,
+                ds,0.05);
       }
       else
       {
-	 Arrow3(xs,ys,zs,
-		dx,dy,dz,
-		ds,0.0);
+         Arrow3(xs,ys,zs,
+                dx,dy,dz,
+                ds,0.0);
       }
    }
 
@@ -307,19 +308,20 @@ static void KeyoPressed(GLenum state)
       vssol3d -> PrepareOrderingCurve();
       SendExposeEvent();
    }
-   else {
+   else
+   {
       if (vssol3d -> TimesToRefine < 32)
       {
-	 cout << "Subdivision factor = " << ++vssol3d->TimesToRefine << endl;
-	 if (vssol3d -> GetShading() == 2)
-	 {
-	    vssol3d->DoAutoscale(false);
-	    vssol3d -> Prepare();
-	    vssol3d -> PrepareLines();
-	    vssol3d -> CPPrepare();
-	    vssol3d -> PrepareLevelSurf();
-	    SendExposeEvent();
-	 }
+         cout << "Subdivision factor = " << ++vssol3d->TimesToRefine << endl;
+         if (vssol3d -> GetShading() == 2)
+         {
+            vssol3d->DoAutoscale(false);
+            vssol3d -> Prepare();
+            vssol3d -> PrepareLines();
+            vssol3d -> CPPrepare();
+            vssol3d -> PrepareLevelSurf();
+            SendExposeEvent();
+         }
       }
    }
 }

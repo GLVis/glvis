@@ -1924,7 +1924,8 @@ void VisualizationSceneSolution::PrepareOrderingCurve()
    PrepareOrderingCurve1(order_list_noarrow, false, color);
 }
 
-void VisualizationSceneSolution::PrepareOrderingCurve1(int list, bool arrows, bool color)
+void VisualizationSceneSolution::PrepareOrderingCurve1(int list, bool arrows,
+                                                       bool color)
 {
    glNewList(list, GL_COMPILE);
 
@@ -1987,15 +1988,15 @@ void VisualizationSceneSolution::PrepareOrderingCurve1(int list, bool arrows, bo
 
       if (arrows)
       {
-	 Arrow3(xs,ys,us,
-		dx,dy,du,
-		ds,0.05);
+         Arrow3(xs,ys,us,
+                dx,dy,du,
+                ds,0.05);
       }
       else
       {
-	 Arrow3(xs,ys,us,
-		dx,dy,du,
-		ds,0.0);
+         Arrow3(xs,ys,us,
+                dx,dy,du,
+                ds,0.0);
       }
    }
 
