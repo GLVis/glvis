@@ -1568,7 +1568,6 @@ float GetLineWidthMS()
 vector<string> fc_font_patterns =
 {
    "OpenSans:style=Regular",
-   "Helvetica:style=Regular",
    "Ubuntu Light:style=Regular",
    "Ubuntu:style=Regular:weight=80",
    "DejaVu Sans:style=Book:width=Normal",
@@ -1577,7 +1576,8 @@ vector<string> fc_font_patterns =
    "FreeSans:style=Medium",
    "Ubuntu Mono:style=Regular",
    "DejaVu Sans Mono:style=Book",
-   "DejaVu LGC Sans Mono:style=Book"
+   "DejaVu LGC Sans Mono:style=Book",
+   "Helvetica:style=Regular",
 };
 
 #ifdef __EMSCRIPTEN__

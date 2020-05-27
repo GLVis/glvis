@@ -145,8 +145,6 @@ public:
    virtual void SetDrawMesh(int i) { drawmesh = i % 3; }
    virtual int GetShading() { return shading; }
    virtual int GetDrawMesh() { return drawmesh; }
-   //virtual bool GetDrawCPCfg() { return draw_cp; }
-   //virtual bool GetDrawBdrCfg() { return drawbdr; }
 };
 
 void DrawNumberedMarker(gl3::GlDrawable& buff, const double x[3], double dx,
