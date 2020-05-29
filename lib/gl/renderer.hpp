@@ -57,6 +57,8 @@ struct FeedbackVertex
     FeedbackVertex() = default;
     FeedbackVertex(glm::vec3 pos, glm::vec4 c)
         : position(pos), color(c) { }
+    FeedbackVertex(glm::vec4 pos, glm::vec4 c)
+        : position(pos), color(c) { }
 };
 
 struct FeedbackText

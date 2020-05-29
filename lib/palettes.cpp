@@ -4744,7 +4744,8 @@ void _paletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
    vector<array<float,4>> texture_buf(MaxTextureSize);
    glBindTexture(GL_TEXTURE_2D, tex);
 
-   if (plt_size * abs(RepeatPaletteTimes) <= MaxTextureSize)
+   size_t textureSize = MaxTextureSize;
+   if (plt_size * abs(RepeatPaletteTimes) <= textureSize)
    {
        int flip_start = RepeatPaletteTimes < 0;
        for (int rpt = 0; rpt < abs(RepeatPaletteTimes); rpt++)
@@ -4768,7 +4769,6 @@ void _paletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
    }
    else
    {
-       size_t textureSize = MaxTextureSize;
        for (size_t i = 0; i < textureSize; i++)
        {
            double t = double(i) / textureSize - 1;
