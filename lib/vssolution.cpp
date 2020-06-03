@@ -1981,9 +1981,8 @@ void VisualizationSceneSolution::PrepareOrderingCurve1(int list, bool arrows,
 
       if (color)
       {
-         SetUseTexture(0);
-         double a = minv+double(k)/ne*(maxv-minv);
-         MySetColor(a, minv, maxv);
+         double cval = minv+double(k)/ne*(maxv-minv);
+         MySetColor(cval, minv, maxv);
       }
 
       if (arrows)
@@ -2340,7 +2339,7 @@ void VisualizationSceneSolution::Draw()
       glEnable(GL_CLIP_PLANE0);
    }
 
-   Set_Material();
+   Set_Material(); // color section
    if (light)
    {
       glEnable(GL_LIGHTING);
@@ -2351,19 +2350,34 @@ void VisualizationSceneSolution::Draw()
       Set_Transparency();
    }
 
+   if (GetUseTexture())
+   {
+      glEnable (GL_TEXTURE_1D);
+      glColor4d(1, 1, 1, 1); // default color
+   }
+
    // draw elements
    if (drawelems)
    {
-      if (GetUseTexture())
-      {
-         glEnable (GL_TEXTURE_1D);
-         glColor4d(1, 1, 1, 1);
-      }
       glCallList(displlist);
-      if (GetUseTexture())
+   }
+
+   // draw ordering -- color modes
+   if (draworder)
+   {
+      if (1 == draworder)
       {
-         glDisable (GL_TEXTURE_1D);
+         glCallList(order_list_noarrow);
       }
+      else if (2 == draworder)
+      {
+         glCallList(order_list);
+      }
+   }
+
+   if (GetUseTexture())
+   {
+      glDisable (GL_TEXTURE_1D);
    }
 
    if (MatAlpha < 1.0)
@@ -2375,7 +2389,7 @@ void VisualizationSceneSolution::Draw()
    {
       glDisable(GL_LIGHTING);
    }
-   Set_Black_Material();
+   Set_Black_Material(); // everything below will be drawn in "black"
 
    // ruler may have mixture of polygons and lines
    if (draw_cp)
@@ -2418,14 +2432,14 @@ void VisualizationSceneSolution::Draw()
       }
    }
 
-   // draw ordering
+   // draw ordering -- black&white modes
    if (draworder)
    {
-      if (1 == draworder || 3 == draworder)
+      if (3 == draworder)
       {
          glCallList(order_list_noarrow);
       }
-      else if (2 == draworder || 4 == draworder)
+      else if (4 == draworder)
       {
          glCallList(order_list);
       }
