@@ -3699,16 +3699,13 @@ void VisualizationSceneSolution3d::Draw()
    }
 
    // draw ordering -- color modes
-   if (draworder)
+   if (draworder == 1)
    {
-      if (1 == draworder)
-      {
-         glCallList(order_list_noarrow);
-      }
-      else if (2 == draworder)
-      {
-         glCallList(order_list);
-      }
+      glCallList(order_list_noarrow);
+   }
+   else if (draworder == 2)
+   {
+      glCallList(order_list);
    }
 
    if (cplane && cp_drawelems)
@@ -3762,16 +3759,13 @@ void VisualizationSceneSolution3d::Draw()
    }
 
    // draw ordering -- "black" modes
-   if (draworder)
+   if (draworder == 3)
    {
-      if (3 == draworder)
-      {
-         glCallList(order_list_noarrow);
-      }
-      else if (4 == draworder)
-      {
-         glCallList(order_list);
-      }
+      glCallList(order_list_noarrow);
+   }
+   else if (draworder == 4)
+   {
+      glCallList(order_list);
    }
 
    // draw axes
