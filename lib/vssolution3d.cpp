@@ -129,7 +129,21 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve1(int list, bool arrows,
                                                          bool color)
 {
    glNewList(list, GL_COMPILE);
-   glLineWidth(2.0f);
+
+   // make the lines of the ordering curve thicker
+   double ThicknessFactor = 2.0;
+   double MS_Thickness = 2.0;
+   double LineWidth;
+   if (Get_AntiAliasing())
+   {
+      LineWidth = Get_MS_LineWidth();
+      Set_MS_LineWidth(MS_Thickness);
+   }
+   else
+   {
+      LineWidth = Get_LineWidth();
+      Set_LineWidth(ThicknessFactor*LineWidth);
+   }
 
    DenseMatrix pointmat;
    Array<int> vertices;
@@ -183,9 +197,8 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve1(int list, bool arrows,
 
       if (color)
       {
-         SetUseTexture(0);
-         double a = minv+double(k)/ne*(maxv-minv);
-         MySetColor(a, minv, maxv);
+         double cval = minv+double(k)/ne*(maxv-minv);
+         MySetColor(cval, minv, maxv);
       }
 
       if (arrows)
@@ -202,7 +215,15 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve1(int list, bool arrows,
       }
    }
 
-   glLineWidth(1.0f);
+   if (Get_AntiAliasing())
+   {
+      Set_MS_LineWidth(LineWidth);
+   }
+   else
+   {
+      Set_LineWidth(LineWidth);
+   }
+
    glEndList();
 }
 
@@ -710,6 +731,7 @@ void VisualizationSceneSolution3d::Init()
 
    drawelems = shading = 1;
    drawmesh = 0;
+   draworder = 0;
    scaling = 0;
 
    shrink = 1.0;
@@ -3645,7 +3667,7 @@ void VisualizationSceneSolution3d::Draw()
       glEnable(GL_CLIP_PLANE0);
    }
 
-   Set_Material();
+   Set_Material(); // color section
    if (light)
    {
       glEnable(GL_LIGHTING);
@@ -3659,7 +3681,7 @@ void VisualizationSceneSolution3d::Draw()
    if (GetUseTexture())
    {
       glEnable (GL_TEXTURE_1D);
-      glColor4d(1, 1, 1, 1);
+      glColor4d(1, 1, 1, 1); // default color
    }
 
    if (drawlsurf)
@@ -3676,17 +3698,14 @@ void VisualizationSceneSolution3d::Draw()
       glCallList(displlist);
    }
 
-   // draw ordering curve
-   if (draworder)
+   // draw ordering -- color modes
+   if (draworder == 1)
    {
-      if (1 == draworder || 3 == draworder)
-      {
-         glCallList(order_list_noarrow);
-      }
-      else if (2 == draworder || 4 == draworder)
-      {
-         glCallList(order_list);
-      }
+      glCallList(order_list_noarrow);
+   }
+   else if (draworder == 2)
+   {
+      glCallList(order_list);
    }
 
    if (cplane && cp_drawelems)
@@ -3710,7 +3729,7 @@ void VisualizationSceneSolution3d::Draw()
    {
       glDisable(GL_LIGHTING);
    }
-   Set_Black_Material();
+   Set_Black_Material(); // everything below will be drawn in "black"
 
    // ruler may have mixture of polygons and lines
    if (cplane)
@@ -3737,6 +3756,16 @@ void VisualizationSceneSolution3d::Draw()
    if (cplane)
    {
       glDisable(GL_CLIP_PLANE0);
+   }
+
+   // draw ordering -- "black" modes
+   if (draworder == 3)
+   {
+      glCallList(order_list_noarrow);
+   }
+   else if (draworder == 4)
+   {
+      glCallList(order_list);
    }
 
    // draw axes
