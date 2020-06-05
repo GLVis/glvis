@@ -8,8 +8,8 @@
 
                               http://glvis.org
 
-GLVis is an X11 application and can be built on Linux/Unix systems including
-Mac OS X using the X11/XQuarz app and under Windows using Cygwin/X.
+GLVis is a multiplatform OpenGL application and can be built on Linux/Unix
+systems, including Mac OS X, and under Windows.
 
 Besides a C++ compiler, GLVis depends on the following external packages:
 
@@ -26,14 +26,14 @@ Besides a C++ compiler, GLVis depends on the following external packages:
 - the FreeType 2 and Fontconfig libraries; used for font rendering
   http://www.freetype.org, http://www.fontconfig.org
 
-- the XQuarz app (on Mac OS X)
+- the XQuartz app (on Mac OS X, if running remotely)
   http://www.xquartz.org/
 
 - the libpng or libtiff library; used for taking screenshots (optional)
   http://www.libpng.org, http://www.libtiff.org
 
-- Cygwin/X (on Windows); install the packages xinit, libpng-devel,
-  fontconfig-devel, libGLU-devel.
+- Cygwin/X (on Windows); install the packages xinit, libSDL2-devel, glm-devel,
+  libGLEW-devel, libfreetype-devel, libpng-devel, fontconfig-devel.
   https://cygwin.com, https://x.cygwin.com
 
 There are two build systems, one based on GNU make and one based on CMake, as
@@ -115,9 +115,16 @@ Some building considerations
 ============================
 
 - On most Linux distributions, the required dependencies (except MFEM) can be
-  installed via a package manager. Usually it is sufficient to install the
-  packages: libGLU-dev, libpng-dev, and fontconfig-dev with their dependencies
-  (actual packages names may vary).
+  installed via a package manager.
+
+  On Ubuntu/Debian, the required dependencies can be installed by running:
+    apt-get install libfontconfig1-dev libfreetype-dev libsdl2-dev libglew-dev
+    libglm-dev
+
+  On Fedora/RHEL, the required dependencies can be installed by running:
+    dnf install fontconfig-devel freetype-devel SDL2-devel glew-devel glm-devel
+
+  Package names in other distributions may vary.
 
 - To adjust the anti-aliasing settings for your hardware:
 
