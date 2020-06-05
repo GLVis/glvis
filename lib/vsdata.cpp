@@ -99,7 +99,8 @@ void VisualizationSceneScalarData::Cone(gl3::GlBuilder& builder,
    for (i = 1; i < n; i++)
    {
       glm::vec3 baseVtx = glm::vec3(xfrm * glm::vec4(cos(point), sin(point), -4, 1));
-      glm::vec3 baseNorm = glm::vec3(normXfrm * glm::vec3(cos(point), sin(point), nz));
+      glm::vec3 baseNorm = glm::vec3(normXfrm * glm::vec3(cos(point), sin(point),
+                                                          nz));
       builder.glNormal3d(baseNorm[0], baseNorm[1], baseNorm[2]);
       builder.glVertex3d(baseVtx[0], baseVtx[1], baseVtx[2]);
       point += step;
@@ -185,7 +186,7 @@ void VisualizationSceneScalarData::Arrow2(gl3::GlBuilder& builder,
 
    xfrm = glm::rotate(xfrm, theta, glm::vec3(0, 0, 1));
    xfrm = glm::rotate(xfrm, phi, glm::vec3(0, 1, 0));
-   
+
    xfrm = glm::scale(xfrm, glm::vec3(length));
 
    glm::vec4 pt1 = xfrm * glm::vec4(0, 0, 0, 1);
@@ -329,9 +330,10 @@ void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
    builder.glEnd();
 }
 
-void VisualizationSceneScalarData::PrepareColorBar (double minval, double maxval,
-                                                 Array<double> *level,
-                                                 Array<double> *levels)
+void VisualizationSceneScalarData::PrepareColorBar (double minval,
+                                                    double maxval,
+                                                    Array<double> *level,
+                                                    Array<double> *levels)
 {
 
    int i;
@@ -359,31 +361,36 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval, double maxval
    color_bar.clear();
    const int nquads = 256;
    float Y_hi, Y_lo;
-   for (int i = 1; i <= nquads; i++) {
-       const double a_lo = double(i - 1) / nquads;
-       const double a_hi = double(i) / nquads;
-       Y_lo = (1.0 - a_lo) * miny + a_lo * maxy;
-       Y_hi = (1.0 - a_hi) * miny + a_hi * maxy;
-       color_bar.addQuad<gl3::VertexTex>(
-           {{minx, Y_lo, posz},{(float) a_lo, 0.f}},
-           {{maxx, Y_lo, posz},{(float) a_lo, 0.f}},
-           {{maxx, Y_hi, posz},{(float) a_hi, 0.f}},
-           {{minx, Y_hi, posz},{(float) a_hi, 0.f}}
-       );
+   for (int i = 1; i <= nquads; i++)
+   {
+      const double a_lo = double(i - 1) / nquads;
+      const double a_hi = double(i) / nquads;
+      Y_lo = (1.0 - a_lo) * miny + a_lo * maxy;
+      Y_hi = (1.0 - a_hi) * miny + a_hi * maxy;
+      color_bar.addQuad<gl3::VertexTex>(
+         {{minx, Y_lo, posz},{(float) a_lo, 0.f}},
+         {{maxx, Y_lo, posz},{(float) a_lo, 0.f}},
+         {{maxx, Y_hi, posz},{(float) a_hi, 0.f}},
+         {{minx, Y_hi, posz},{(float) a_hi, 0.f}}
+      );
    }
 
    static const int border = 1;
 
-   if (border == 1) {
-       color_bar.addLines<gl3::Vertex>({
-           {minx, miny, posz}, {maxx, miny, posz},
-           {maxx, miny, posz}, {maxx, maxy, posz},
-           {maxx, maxy, posz}, {minx, maxy, posz},
-           {minx, maxy, posz}, {minx, miny, posz}
-       });
-   } else if (border == 2) {
-       color_bar.addLine<gl3::Vertex>({minx, miny, posz}, {maxx, miny, posz});
-       color_bar.addLine<gl3::Vertex>({maxx, maxy, posz}, {minx, maxy, posz});
+   if (border == 1)
+   {
+      color_bar.addLines<gl3::Vertex>(
+      {
+         {minx, miny, posz}, {maxx, miny, posz},
+         {maxx, miny, posz}, {maxx, maxy, posz},
+         {maxx, maxy, posz}, {minx, maxy, posz},
+         {minx, maxy, posz}, {minx, miny, posz}
+      });
+   }
+   else if (border == 2)
+   {
+      color_bar.addLine<gl3::Vertex>({minx, miny, posz}, {maxx, miny, posz});
+      color_bar.addLine<gl3::Vertex>({maxx, maxy, posz}, {minx, maxy, posz});
    }
 
    if (levels)
@@ -854,32 +861,33 @@ void VisualizationSceneScalarData::PrepareRuler(bool log_z)
    ruler_buf.clear();
    if (ruler_on == 2)
    {
-         std::array<uint8_t, 4> color = gl3::ColorU8(0.8, 0.8, 0.8, 1.0);
-         std::array<float, 3> norm = { 0, 0, 1 };
-         ruler_buf.addQuad<gl3::VertexNormColor>(
-            {{x_f[0], y_f[0], pos_z},norm,color}, 
-            {{x_f[1], y_f[0], pos_z},norm,color},
-            {{x_f[1], y_f[1], pos_z},norm,color},
-            {{x_f[0], y_f[1], pos_z},norm,color}
-         );
+      std::array<uint8_t, 4> color = gl3::ColorU8(0.8, 0.8, 0.8, 1.0);
+      std::array<float, 3> norm = { 0, 0, 1 };
+      ruler_buf.addQuad<gl3::VertexNormColor>(
+         {{x_f[0], y_f[0], pos_z},norm,color},
+         {{x_f[1], y_f[0], pos_z},norm,color},
+         {{x_f[1], y_f[1], pos_z},norm,color},
+         {{x_f[0], y_f[1], pos_z},norm,color}
+      );
 
-         std::array<float, 3> norm_2 = { 0, 1, 0 };
-         ruler_buf.addQuad<gl3::VertexNormColor>(
-            {{x_f[0], ruler_y_f, z_f[0]},norm_2,color},
-            {{x_f[0], ruler_y_f, z_f[1]},norm_2,color},
-            {{x_f[1], ruler_y_f, z_f[1]},norm_2,color},
-            {{x_f[1], ruler_y_f, z_f[0]},norm_2,color}
-         );
+      std::array<float, 3> norm_2 = { 0, 1, 0 };
+      ruler_buf.addQuad<gl3::VertexNormColor>(
+         {{x_f[0], ruler_y_f, z_f[0]},norm_2,color},
+         {{x_f[0], ruler_y_f, z_f[1]},norm_2,color},
+         {{x_f[1], ruler_y_f, z_f[1]},norm_2,color},
+         {{x_f[1], ruler_y_f, z_f[0]},norm_2,color}
+      );
 
-         std::array<float, 3> norm_3 = { 1, 0, 0 };
-         ruler_buf.addQuad<gl3::VertexNormColor>(
-            {{ruler_x_f, y_f[0], z_f[0]},norm_3,color},
-            {{ruler_x_f, y_f[1], z_f[0]},norm_3,color},
-            {{ruler_x_f, y_f[1], z_f[1]},norm_3,color},
-            {{ruler_x_f, y_f[0], z_f[1]},norm_3,color}
-         );
+      std::array<float, 3> norm_3 = { 1, 0, 0 };
+      ruler_buf.addQuad<gl3::VertexNormColor>(
+         {{ruler_x_f, y_f[0], z_f[0]},norm_3,color},
+         {{ruler_x_f, y_f[1], z_f[0]},norm_3,color},
+         {{ruler_x_f, y_f[1], z_f[1]},norm_3,color},
+         {{ruler_x_f, y_f[0], z_f[1]},norm_3,color}
+      );
 
-      ruler_buf.addLines<gl3::Vertex>({
+      ruler_buf.addLines<gl3::Vertex>(
+      {
          {x_f[0], y_f[0], pos_z}, {x_f[1], y_f[0], pos_z},
          {x_f[1], y_f[0], pos_z}, {x_f[1], y_f[1], pos_z},
          {x_f[1], y_f[1], pos_z}, {x_f[0], y_f[1], pos_z},
@@ -897,7 +905,8 @@ void VisualizationSceneScalarData::PrepareRuler(bool log_z)
       });
    }
 
-   ruler_buf.addLines<gl3::Vertex>({
+   ruler_buf.addLines<gl3::Vertex>(
+   {
       {x_f[0], ruler_y_f, pos_z},
       {x_f[1], ruler_y_f, pos_z},
       {ruler_x_f, y_f[0], pos_z},
@@ -967,19 +976,22 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
    params.use_clip_plane = false;
    params.contains_translucent = false;
 
-   if (colorbar) {
+   if (colorbar)
+   {
       // add color bar to draw list
       params.projection.mtx = _projmat;
       scene.queue.emplace_back(params, &color_bar);
       params.projection.identity();
    }
-   if (colorbar == 1) {
+   if (colorbar == 1)
+   {
       // add caption to draw list
       params.model_view.translate(-(double)caption_w / w,
-                                 1.0 - 5 * (double)caption_h / h, 0.0);
+                                  1.0 - 5 * (double)caption_h / h, 0.0);
       scene.queue.emplace_back(params, &caption_buf);
    }
-   if (drawaxes && drawaxes != 3) {
+   if (drawaxes && drawaxes != 3)
+   {
       // add coordinate cross to draw list
       params.projection.identity();
       params.model_view.identity();
@@ -992,11 +1004,13 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
    }
    params.projection.mtx = _projmat;
    params.model_view.mtx = GetModelViewMtx();
-   if (drawaxes) {
+   if (drawaxes)
+   {
       // add axes to draw list
       scene.queue.emplace_back(params, &axes_buf);
    }
-   if (ruler_on) {
+   if (ruler_on)
+   {
       // add ruler to draw list
       params = GetMeshDrawParams();
       params.use_clip_plane = false;
@@ -1036,7 +1050,7 @@ VisualizationSceneScalarData::VisualizationSceneScalarData(
 void VisualizationSceneScalarData::Init()
 {
    vsdata = this;
-   wnd = GetAppWindow(); 
+   wnd = GetAppWindow();
 
    arrow_type = arrow_scaling_type = 0;
    scaling = 0;
@@ -1107,7 +1121,7 @@ void VisualizationSceneScalarData::Init()
 
    //glEnable (GL_COLOR_MATERIAL);
    //glShadeModel (GL_SMOOTH);
-   
+
    //gl->enableLight();
    //gl->enableDepthTest();
    //glEnable(GL_AUTO_NORMAL);
@@ -1199,7 +1213,7 @@ void VisualizationSceneScalarData::PrepareAxes()
 {
    std::array<float, 4> blk = GetLineColor();
    axes_buf.clear();
-   
+
    gl3::GlBuilder bld = axes_buf.createBuilder();
    if (drawaxes == 3)
    {
@@ -1231,7 +1245,7 @@ void VisualizationSceneScalarData::PrepareAxes()
       bld.glVertex3d(x[1], y[1], z[0]);
       bld.glVertex3d(x[0], y[1], z[0]);
       bld.glEnd();
-   }  
+   }
    bld.glBegin(GL_LINE_LOOP);
    bld.glVertex3d(x[0], y[0], z[1]);
    bld.glVertex3d(x[1], y[0], z[1]);
@@ -1294,7 +1308,8 @@ void VisualizationSceneScalarData::PrepareAxes()
    lenx = leny = lenz = .95;
 
    coord_cross_buf.clear();
-   coord_cross_buf.addLines<gl3::Vertex>({
+   coord_cross_buf.addLines<gl3::Vertex>(
+   {
       {0, 0, 0}, {0, 0, 0.9},
       {0, 0, 0}, {0, 0.9, 0},
       {0, 0, 0}, {0.9, 0, 0}
@@ -1309,7 +1324,8 @@ void VisualizationSceneScalarData::PrepareAxes()
 }
 
 void VisualizationSceneScalarData::DrawPolygonLevelLines(
-   gl3::GlBuilder& builder, double * point, int n, Array<double> &level, bool log_vals)
+   gl3::GlBuilder& builder, double * point, int n, Array<double> &level,
+   bool log_vals)
 {
    int l, k, k1;
    double curve, t;

@@ -22,254 +22,260 @@ const float LINE_WIDTH_AA = 1.4;
 
 struct RenderParams
 {
-    //Transformation matrices
-    GlMatrix model_view;
-    GlMatrix projection;
+   //Transformation matrices
+   GlMatrix model_view;
+   GlMatrix projection;
 
-    //Lighting settings
-    Material mesh_material;
-    int num_pt_lights;
-    std::array<Light, LIGHTS_MAX> lights;
-    std::array<float, 4> light_amb_scene;
-    std::array<float, 4> static_color;
+   //Lighting settings
+   Material mesh_material;
+   int num_pt_lights;
+   std::array<Light, LIGHTS_MAX> lights;
+   std::array<float, 4> light_amb_scene;
+   std::array<float, 4> static_color;
 
-    //Clip plane params
-    bool use_clip_plane;
-    std::array<double, 4> clip_plane_eqn;
+   //Clip plane params
+   bool use_clip_plane;
+   std::array<double, 4> clip_plane_eqn;
 
-    //If true, batch contains translucent drawables
-    bool contains_translucent;
+   //If true, batch contains translucent drawables
+   bool contains_translucent;
 };
 
 typedef vector<pair<RenderParams, GlDrawable*>> RenderQueue;
 
 struct SceneInfo
 {
-    vector<GlDrawable*> needs_buffering;
-    RenderQueue queue;
+   vector<GlDrawable*> needs_buffering;
+   RenderQueue queue;
 };
 
 struct FeedbackVertex
 {
-    glm::vec3 position;
-    glm::vec4 color;
+   glm::vec3 position;
+   glm::vec4 color;
 
-    FeedbackVertex() = default;
-    FeedbackVertex(glm::vec3 pos, glm::vec4 c)
-        : position(pos), color(c) { }
-    FeedbackVertex(glm::vec4 pos, glm::vec4 c)
-        : position(pos), color(c) { }
+   FeedbackVertex() = default;
+   FeedbackVertex(glm::vec3 pos, glm::vec4 c)
+      : position(pos), color(c) { }
+   FeedbackVertex(glm::vec4 pos, glm::vec4 c)
+      : position(pos), color(c) { }
 };
 
 struct FeedbackText
 {
-    glm::vec3 offset;
-    glm::vec4 color;
-    std::string text;
+   glm::vec3 offset;
+   glm::vec4 color;
+   std::string text;
 
-    FeedbackText() = default;
-    FeedbackText(glm::vec3 t_off, glm::vec4 t_color, std::string txt)
-        : offset(t_off), color(t_color), text(std::move(txt)) { }
+   FeedbackText() = default;
+   FeedbackText(glm::vec3 t_off, glm::vec4 t_color, std::string txt)
+      : offset(t_off), color(t_color), text(std::move(txt)) { }
 };
 
 struct CaptureBuffer
 {
-    vector<FeedbackVertex> lines;
-    vector<FeedbackVertex> triangles;
-    vector<FeedbackText> text;
+   vector<FeedbackVertex> lines;
+   vector<FeedbackVertex> triangles;
+   vector<FeedbackText> text;
 };
 
 // OpenGL device interface representing rendering capabilities
 class GLDevice
 {
 protected:
-    int _vp_width;
-    int _vp_height;
-    glm::mat4 _model_view_mtx;
-    glm::mat4 _proj_mtx;
+   int _vp_width;
+   int _vp_height;
+   glm::mat4 _model_view_mtx;
+   glm::mat4 _proj_mtx;
 
-    std::array<float, 4> _static_color;
+   std::array<float, 4> _static_color;
 
-    // RAII scope guard for OpenGL handles.
-    template<void(*GLFinalizer)(GLuint)>
-    class Handle_
-    {
-        GLuint _hnd;
-    public:
-        Handle_() : _hnd{0} {}
-        Handle_(GLuint h) : _hnd{h} {}
-        ~Handle_() { if (_hnd) { GLFinalizer(_hnd); } }
-        Handle_(Handle_&& other)
-            : _hnd{other._hnd} { other._hnd = 0; }
-        Handle_& operator = (Handle_&& other) noexcept
-        {
-            _hnd = other._hnd;
-            other._hnd = 0;
-            return *this;
-        }
-        operator GLuint() { return _hnd; }
-    };
+   // RAII scope guard for OpenGL handles.
+   template<void(*GLFinalizer)(GLuint)>
+   class Handle_
+   {
+      GLuint _hnd;
+   public:
+      Handle_() : _hnd{0} {}
+      Handle_(GLuint h) : _hnd{h} {}
+      ~Handle_() { if (_hnd) { GLFinalizer(_hnd); } }
+      Handle_(Handle_&& other)
+         : _hnd{other._hnd} { other._hnd = 0; }
+      Handle_& operator = (Handle_&& other) noexcept
+      {
+         _hnd = other._hnd;
+         other._hnd = 0;
+         return *this;
+      }
+      operator GLuint() { return _hnd; }
+   };
 
-    static void _boCleanup(GLuint vbo_hnd)
-    {
-        glDeleteBuffers(1, &vbo_hnd);
-    }
+   static void _boCleanup(GLuint vbo_hnd)
+   {
+      glDeleteBuffers(1, &vbo_hnd);
+   }
 
-    static void _dspListCleanup(GLuint dlist)
-    {
-        glDeleteLists(dlist, 1);
-    }
+   static void _dspListCleanup(GLuint dlist)
+   {
+      glDeleteLists(dlist, 1);
+   }
 
-    static void _prgmCleanup(GLuint prgm)
-    {
-        glDeleteProgram(prgm);
-    }
+   static void _prgmCleanup(GLuint prgm)
+   {
+      glDeleteProgram(prgm);
+   }
 
-    static void _vaoCleanup(GLuint vao)
-    {
-        glDeleteVertexArrays(1, &vao);
-    }
+   static void _vaoCleanup(GLuint vao)
+   {
+      glDeleteVertexArrays(1, &vao);
+   }
 
-    using BufObjHandle_ = Handle_<_boCleanup>;
-    using DispListHandle_ = Handle_<_dspListCleanup>;
-    using VtxArrayHandle_ = Handle_<_vaoCleanup>;
-    using ShaderPrgmHandle_ = Handle_<_prgmCleanup>;
+   using BufObjHandle_ = Handle_<_boCleanup>;
+   using DispListHandle_ = Handle_<_dspListCleanup>;
+   using VtxArrayHandle_ = Handle_<_vaoCleanup>;
+   using ShaderPrgmHandle_ = Handle_<_prgmCleanup>;
 
 public:
 
-    enum DeviceType
-    {
-        NO_DEVICE,
-        FF_DEVICE,
-        CORE_DEVICE
-    };
+   enum DeviceType
+   {
+      NO_DEVICE,
+      FF_DEVICE,
+      CORE_DEVICE
+   };
 
-    virtual ~GLDevice() = default;
-    const static int SAMPLER_COLOR = 0;
-    const static int SAMPLER_ALPHA = 1;
+   virtual ~GLDevice() = default;
+   const static int SAMPLER_COLOR = 0;
+   const static int SAMPLER_ALPHA = 1;
 
-    void detachTexture(int tex_unit) {
-        glActiveTexture(GL_TEXTURE0 + tex_unit);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-    void attachTexture(int tex_unit, int tex_id) {
-        glActiveTexture(GL_TEXTURE0 + tex_unit);
-        glBindTexture(GL_TEXTURE_2D, tex_id);
-    };
+   void detachTexture(int tex_unit)
+   {
+      glActiveTexture(GL_TEXTURE0 + tex_unit);
+      glBindTexture(GL_TEXTURE_2D, 0);
+   }
+   void attachTexture(int tex_unit, int tex_id)
+   {
+      glActiveTexture(GL_TEXTURE0 + tex_unit);
+      glBindTexture(GL_TEXTURE_2D, tex_id);
+   };
 
-    void enableBlend() { glEnable(GL_BLEND); }
-    void disableBlend() { glDisable(GL_BLEND); }
-    void enableDepthWrite() { glDepthMask(GL_TRUE); }
-    void disableDepthWrite() { glDepthMask(GL_FALSE); }
-    void enableMultisample() {
-        glEnable(GL_MULTISAMPLE);
-        glEnable(GL_LINE_SMOOTH);
-    }
-    void disableMultisample() {
-        glDisable(GL_MULTISAMPLE);
-        glDisable(GL_LINE_SMOOTH);
-    }
-    void setLineWidth(float w) { glLineWidth(w); }
+   void enableBlend() { glEnable(GL_BLEND); }
+   void disableBlend() { glDisable(GL_BLEND); }
+   void enableDepthWrite() { glDepthMask(GL_TRUE); }
+   void disableDepthWrite() { glDepthMask(GL_FALSE); }
+   void enableMultisample()
+   {
+      glEnable(GL_MULTISAMPLE);
+      glEnable(GL_LINE_SMOOTH);
+   }
+   void disableMultisample()
+   {
+      glDisable(GL_MULTISAMPLE);
+      glDisable(GL_LINE_SMOOTH);
+   }
+   void setLineWidth(float w) { glLineWidth(w); }
 
-    virtual void init();
-    virtual DeviceType getType() = 0;
-    // Sets the window viewport.
-    void setViewport(GLsizei w, GLsizei h);
-    // Gets the current window viewport.
-    void getViewport(GLint (&vp)[4]);
-    // Set the color to use, if a color attribute is not provided.
-    void setStaticColor(const std::array<float, 4>& rgba) { _static_color = rgba; }
+   virtual void init();
+   virtual DeviceType getType() = 0;
+   // Sets the window viewport.
+   void setViewport(GLsizei w, GLsizei h);
+   // Gets the current window viewport.
+   void getViewport(GLint (&vp)[4]);
+   // Set the color to use, if a color attribute is not provided.
+   void setStaticColor(const std::array<float, 4>& rgba) { _static_color = rgba; }
 
-    // === Render pipeline functions ===
+   // === Render pipeline functions ===
 
-    // Set the current transform matrices.
-    virtual void setTransformMatrices(glm::mat4 model_view, glm::mat4 projection);
-    // Set the number of lights to use. Setting number of lights to 0 disables lighting.
-    virtual void setNumLights(int i) = 0;
-    // Set the parameters to use for the mesh material.
-    virtual void setMaterial(Material mat) = 0;
-    // Set the array of parameters to use for each light.
-    virtual void setPointLight(int i, Light lt) = 0;
-    // Set the color value of the global ambient light.
-    virtual void setAmbientLight(const std::array<float, 4>& amb) = 0;
-    // Set whether to enable or disable the clip plane.
-    virtual void setClipPlaneUse(bool enable) = 0;
-    // Set the equation to use for the clip plane.
-    virtual void setClipPlaneEqn(const std::array<double, 4>& eqn) = 0;
+   // Set the current transform matrices.
+   virtual void setTransformMatrices(glm::mat4 model_view, glm::mat4 projection);
+   // Set the number of lights to use. Setting number of lights to 0 disables lighting.
+   virtual void setNumLights(int i) = 0;
+   // Set the parameters to use for the mesh material.
+   virtual void setMaterial(Material mat) = 0;
+   // Set the array of parameters to use for each light.
+   virtual void setPointLight(int i, Light lt) = 0;
+   // Set the color value of the global ambient light.
+   virtual void setAmbientLight(const std::array<float, 4>& amb) = 0;
+   // Set whether to enable or disable the clip plane.
+   virtual void setClipPlaneUse(bool enable) = 0;
+   // Set the equation to use for the clip plane.
+   virtual void setClipPlaneEqn(const std::array<double, 4>& eqn) = 0;
 
-    // === Buffer management functions ===
+   // === Buffer management functions ===
 
-    // Load a client-side vertex buffer into a device buffer.
-    virtual void bufferToDevice(array_layout layout, IVertexBuffer& buf) = 0;
-    virtual void bufferToDevice(array_layout layout, IIndexedBuffer& buf) = 0;
-    virtual void bufferToDevice(TextBuffer& t_buf) = 0;
-    // Draw the data loaded in a device buffer.
-    virtual void drawDeviceBuffer(int hnd) = 0;
-    virtual void drawDeviceBuffer(const TextBuffer& t_buf) = 0;
+   // Load a client-side vertex buffer into a device buffer.
+   virtual void bufferToDevice(array_layout layout, IVertexBuffer& buf) = 0;
+   virtual void bufferToDevice(array_layout layout, IIndexedBuffer& buf) = 0;
+   virtual void bufferToDevice(TextBuffer& t_buf) = 0;
+   // Draw the data loaded in a device buffer.
+   virtual void drawDeviceBuffer(int hnd) = 0;
+   virtual void drawDeviceBuffer(const TextBuffer& t_buf) = 0;
 
-    // === Transform feedback functions ===
-    
-    // Initializes state needed for transform feedback.
-    virtual void initXfbMode() {}
-    // Prepares state when exiting transform feedback.
-    virtual void exitXfbMode() {}
-    // Capture the next drawn vertex buffer to a feedback buffer instead of drawing to screen.
-    virtual void captureXfbBuffer(CaptureBuffer& capture, int hnd) = 0;
-    // Capture the next text buffer instead of drawing to screen.
-    void captureXfbBuffer(CaptureBuffer& capture, const TextBuffer& t_buf);
+   // === Transform feedback functions ===
+
+   // Initializes state needed for transform feedback.
+   virtual void initXfbMode() {}
+   // Prepares state when exiting transform feedback.
+   virtual void exitXfbMode() {}
+   // Capture the next drawn vertex buffer to a feedback buffer instead of drawing to screen.
+   virtual void captureXfbBuffer(CaptureBuffer& capture, int hnd) = 0;
+   // Capture the next text buffer instead of drawing to screen.
+   void captureXfbBuffer(CaptureBuffer& capture, const TextBuffer& t_buf);
 
 };
 
 class MeshRenderer
 {
-    unique_ptr<GLDevice> _device;
-    bool _msaa_enable;
-    GLuint _color_tex, _alpha_tex, _font_tex;
-    float _line_w, _line_w_aa;
+   unique_ptr<GLDevice> _device;
+   bool _msaa_enable;
+   GLuint _color_tex, _alpha_tex, _font_tex;
+   float _line_w, _line_w_aa;
 public:
-    MeshRenderer()
-        : _msaa_enable(false)
-        , _line_w(1.f)
-        , _line_w_aa(LINE_WIDTH_AA) { }
+   MeshRenderer()
+      : _msaa_enable(false)
+      , _line_w(1.f)
+      , _line_w_aa(LINE_WIDTH_AA) { }
 
-    template<typename TDevice>
-    void setDevice() {
-        _device.reset(new TDevice());
-        _device->setLineWidth(_line_w);
-        _device->init();
-        _msaa_enable = false;
-    }
+   template<typename TDevice>
+   void setDevice()
+   {
+      _device.reset(new TDevice());
+      _device->setLineWidth(_line_w);
+      _device->init();
+      _msaa_enable = false;
+   }
 
-    template<typename TDevice>
-    void setDevice(TDevice&& device) {
-        _device.reset(new TDevice(device));
-    }
+   template<typename TDevice>
+   void setDevice(TDevice&& device)
+   {
+      _device.reset(new TDevice(device));
+   }
 
-    GLenum getDeviceAlphaChannel();
+   GLenum getDeviceAlphaChannel();
 
-    // Sets the texture handle of the color palette.
-    void setColorTexture(GLuint tex_h) { _color_tex = tex_h; }
-    // Sets the texture handle of the alpha texture.
-    void setAlphaTexture(GLuint tex_h) { _alpha_tex = tex_h; }
-    // Sets the texture handle of the font atlas.
-    void setFontTexture(GLuint tex_h) { _font_tex = tex_h; }
+   // Sets the texture handle of the color palette.
+   void setColorTexture(GLuint tex_h) { _color_tex = tex_h; }
+   // Sets the texture handle of the alpha texture.
+   void setAlphaTexture(GLuint tex_h) { _alpha_tex = tex_h; }
+   // Sets the texture handle of the font atlas.
+   void setFontTexture(GLuint tex_h) { _font_tex = tex_h; }
 
-    void setAntialiasing(bool aa_status);
-    bool getAntialiasing() { return _msaa_enable; }
+   void setAntialiasing(bool aa_status);
+   bool getAntialiasing() { return _msaa_enable; }
 
-    void setLineWidth(float w);
-    float getLineWidth() { return _line_w; }
-    void setLineWidthMS(float w);
-    float getLineWidthMS() { return _line_w_aa; }
+   void setLineWidth(float w);
+   float getLineWidth() { return _line_w; }
+   void setLineWidthMS(float w);
+   float getLineWidthMS() { return _line_w_aa; }
 
-    void setClearColor(float r, float g, float b, float a) { glClearColor(r, g, b, a); }
-    void setViewport(GLsizei w, GLsizei h) { _device->setViewport(w, h); }
+   void setClearColor(float r, float g, float b, float a) { glClearColor(r, g, b, a); }
+   void setViewport(GLsizei w, GLsizei h) { _device->setViewport(w, h); }
 
-    void init();
-    void render(const RenderQueue& queued);
-    CaptureBuffer capture(const RenderQueue& queued);
+   void init();
+   void render(const RenderQueue& queued);
+   CaptureBuffer capture(const RenderQueue& queued);
 
-    void buffer(GlDrawable* buf);
+   void buffer(GlDrawable* buf);
 };
 
 }

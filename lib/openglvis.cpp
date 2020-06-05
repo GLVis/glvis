@@ -71,10 +71,10 @@ glm::mat4 Camera::RotMatrix()
    double mat[16] =
    {
       -left[0], up[0], -dir[0], 0.0,
-      -left[1], up[1], -dir[1], 0.0,
-      -left[2], up[2], -dir[2], 0.0,
-      0.0, 0.0, 0.0, 1.0
-   };
+         -left[1], up[1], -dir[1], 0.0,
+         -left[2], up[2], -dir[2], 0.0,
+         0.0, 0.0, 0.0, 1.0
+      };
    return glm::make_mat4(mat);
 }
 
@@ -84,16 +84,17 @@ glm::mat4 Camera::TransposeRotMatrix()
    double mat_t[16] =
    {
       -left[0], -left[1], -left[2], 0.0,
-       up[0],    up[1],    up[2],   0.0,
-      -dir[0],  -dir[1],  -dir[2],  0.0,
-      0.0, 0.0, 0.0, 1.0
-   };
+         up[0],    up[1],    up[2],   0.0,
+         -dir[0],  -dir[1],  -dir[2],  0.0,
+         0.0, 0.0, 0.0, 1.0
+      };
    return glm::make_mat4(mat_t);
 }
 
-glm::mat4 Camera::TranslateMatrix() {
-    glm::mat4 rotmtx = RotMatrix();
-    return glm::translate(rotmtx, glm::vec3(-eye[0], -eye[1], -eye[2]));
+glm::mat4 Camera::TranslateMatrix()
+{
+   glm::mat4 rotmtx = RotMatrix();
+   return glm::translate(rotmtx, glm::vec3(-eye[0], -eye[1], -eye[2]));
 }
 
 void Camera::Print()
@@ -107,23 +108,23 @@ void Camera::Print()
 
 VisualizationScene::VisualizationScene()
 {
-    translmat = glm::mat4(1.0);
-    rotmat = glm::mat4(1.0);
-    rotmat = glm::rotate(rotmat, glm::radians(-60.f), glm::vec3(1.f, 0.f, 0.f));
-    rotmat = glm::rotate(rotmat, glm::radians(-40.f), glm::vec3(0.f, 0.f, 1.f));
-    xscale = yscale = zscale = 1;
-    spinning = print = movie = 0;
-    OrthogonalProjection = 0;
-    ViewAngle = 45;
-    ViewScale = 1;
-    ViewCenterX = 0.0;
-    ViewCenterY = 0.0;
+   translmat = glm::mat4(1.0);
+   rotmat = glm::mat4(1.0);
+   rotmat = glm::rotate(rotmat, glm::radians(-60.f), glm::vec3(1.f, 0.f, 0.f));
+   rotmat = glm::rotate(rotmat, glm::radians(-40.f), glm::vec3(0.f, 0.f, 1.f));
+   xscale = yscale = zscale = 1;
+   spinning = print = movie = 0;
+   OrthogonalProjection = 0;
+   ViewAngle = 45;
+   ViewScale = 1;
+   ViewCenterX = 0.0;
+   ViewCenterY = 0.0;
 
-    _background = BG_WHITE;
-    GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
-    _use_cust_l0_pos = false;
-    _lm_idx = 3;
-    _use_light = true;
+   _background = BG_WHITE;
+   GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
+   _use_cust_l0_pos = false;
+   _lm_idx = 3;
+   _use_light = true;
 }
 
 VisualizationScene::~VisualizationScene() {}
@@ -135,18 +136,24 @@ gl3::RenderParams VisualizationScene::GetMeshDrawParams()
    params.projection.mtx = _projmat;
    params.mesh_material = materials[_lm_idx];
    params.num_pt_lights = 0;
-   if (_use_light) {
-       if (_lm_idx == 4) {
-          for (int i = 0; i < 3; i++) {
-             params.lights[i] = lights_4[i];
-          }
-          params.num_pt_lights = 3;
-       } else {
-          params.lights[0] = lights[_lm_idx];
-          params.num_pt_lights = 1;
-       }
+   if (_use_light)
+   {
+      if (_lm_idx == 4)
+      {
+         for (int i = 0; i < 3; i++)
+         {
+            params.lights[i] = lights_4[i];
+         }
+         params.num_pt_lights = 3;
+      }
+      else
+      {
+         params.lights[0] = lights[_lm_idx];
+         params.num_pt_lights = 1;
+      }
    }
-   if (_use_cust_l0_pos) {
+   if (_use_cust_l0_pos)
+   {
       params.lights[0].position = _l0_pos;
    }
    params.light_amb_scene = amb_setting[_lm_idx];
@@ -156,7 +163,8 @@ gl3::RenderParams VisualizationScene::GetMeshDrawParams()
 
 void VisualizationScene::SetLightMatIdx(unsigned i)
 {
-   if (i < NUM_MATERIALS) {
+   if (i < NUM_MATERIALS)
+   {
       _lm_idx = i;
       _use_cust_l0_pos = false;
    }
@@ -170,10 +178,13 @@ void VisualizationScene::SetLight0CustomPos(std::array<float, 4> pos)
 
 void VisualizationScene::ToggleBackground()
 {
-   if (_background == BG_BLK) {
+   if (_background == BG_BLK)
+   {
       _background = BG_WHITE;
       GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
-   } else {
+   }
+   else
+   {
       _background = BG_BLK;
       GetAppWindow()->getRenderer().setClearColor(0.f, 0.f, 0.f, 1.f);
    }
@@ -181,40 +192,40 @@ void VisualizationScene::ToggleBackground()
 
 void VisualizationScene::Rotate(double angle, double x, double y, double z)
 {
-    gl3::GlMatrix rot_tmp;
-    rot_tmp.identity();
-    rot_tmp.mult(cam.TransposeRotMatrix());
-    rot_tmp.rotate(angle, x, y, z);
-    rot_tmp.mult(cam.RotMatrix());
-    rot_tmp.mult(rotmat);
-    rotmat = rot_tmp.mtx;
+   gl3::GlMatrix rot_tmp;
+   rot_tmp.identity();
+   rot_tmp.mult(cam.TransposeRotMatrix());
+   rot_tmp.rotate(angle, x, y, z);
+   rot_tmp.mult(cam.RotMatrix());
+   rot_tmp.mult(rotmat);
+   rotmat = rot_tmp.mtx;
 }
 
 void VisualizationScene::PreRotate(double angle, double x, double y, double z)
 {
-    rotmat = glm::rotate<float>(rotmat, glm::radians(angle), glm::vec3(x,y,z));
+   rotmat = glm::rotate<float>(rotmat, glm::radians(angle), glm::vec3(x,y,z));
 }
 
 void VisualizationScene::Rotate(double angley, double anglex)
 {
-    gl3::GlMatrix rot_tmp;
-    rot_tmp.identity();
-    rot_tmp.mult(cam.TransposeRotMatrix());
-    rot_tmp.rotate(angley, 0.0, 1.0, 0.0);
-    rot_tmp.rotate(anglex, 1.0, 0.0, 0.0);
-    rot_tmp.mult(cam.RotMatrix());
-    rot_tmp.mult(rotmat);
-    rotmat = rot_tmp.mtx;
+   gl3::GlMatrix rot_tmp;
+   rot_tmp.identity();
+   rot_tmp.mult(cam.TransposeRotMatrix());
+   rot_tmp.rotate(angley, 0.0, 1.0, 0.0);
+   rot_tmp.rotate(anglex, 1.0, 0.0, 0.0);
+   rot_tmp.mult(cam.RotMatrix());
+   rot_tmp.mult(rotmat);
+   rotmat = rot_tmp.mtx;
 
 }
 
 void VisualizationScene::Translate(double _x, double _y, double _z)
 {
-    gl3::GlMatrix trans_tmp;
-    trans_tmp.identity();
-    trans_tmp.translate(_x, -_y, _z);
-    trans_tmp.mult(translmat);
-    translmat = trans_tmp.mtx;
+   gl3::GlMatrix trans_tmp;
+   trans_tmp.identity();
+   trans_tmp.translate(_x, -_y, _z);
+   trans_tmp.mult(translmat);
+   translmat = trans_tmp.mtx;
 }
 
 void VisualizationScene::Scale(double s)
@@ -231,28 +242,28 @@ void VisualizationScene::Scale(double s1, double s2, double s3)
 
 void VisualizationScene::CenterObject()
 {
-    gl3::GlMatrix tmp_mtx;
-    tmp_mtx.identity();
-    translmat = tmp_mtx.mtx;
-    tmp_mtx.rotate(-60.f, 1.f, 0.f, 0.f);
-    tmp_mtx.rotate(-40.f, 0.f, 0.f, 1.f);
-    rotmat = tmp_mtx.mtx; 
+   gl3::GlMatrix tmp_mtx;
+   tmp_mtx.identity();
+   translmat = tmp_mtx.mtx;
+   tmp_mtx.rotate(-60.f, 1.f, 0.f, 0.f);
+   tmp_mtx.rotate(-40.f, 0.f, 0.f, 1.f);
+   rotmat = tmp_mtx.mtx;
 }
 
 void VisualizationScene::CenterObject2D()
 {
-    translmat = glm::mat4(1.0);
-    rotmat = glm::mat4(1.0);
+   translmat = glm::mat4(1.0);
+   rotmat = glm::mat4(1.0);
 }
 
 void VisualizationScene::SetView(double theta, double phi)
 {
-    gl3::GlMatrix tmp_mtx;
-    tmp_mtx.identity();
-    translmat = tmp_mtx.mtx;
-    tmp_mtx.rotate(-theta, 1.f, 0.f, 0.f);
-    tmp_mtx.rotate(-phi, 0.f, 0.f, 1.f);
-    rotmat = tmp_mtx.mtx;
+   gl3::GlMatrix tmp_mtx;
+   tmp_mtx.identity();
+   translmat = tmp_mtx.mtx;
+   tmp_mtx.rotate(-theta, 1.f, 0.f, 0.f);
+   tmp_mtx.rotate(-phi, 0.f, 0.f, 1.f);
+   rotmat = tmp_mtx.mtx;
 }
 
 void VisualizationScene::Zoom(double factor)

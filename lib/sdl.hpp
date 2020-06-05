@@ -102,7 +102,9 @@ public:
    void callKeyDown(SDL_Keycode k)
    {
       if (onKeyDown[k])
+      {
          onKeyDown[k](0);
+      }
    }
 
    void getWindowSize(int& w, int& h);

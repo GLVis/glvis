@@ -113,12 +113,14 @@ protected:
 
    glm::mat4 _projmat;
 
-   enum {
+   enum
+   {
       BG_BLK = 0,
       BG_WHITE = 1
    } _background;
 
-   const Material BLK_MAT = {
+   const Material BLK_MAT =
+   {
       {{ 0.0, 0.0, 0.0, 1.0 }},
       {{ 0.0, 0.0, 0.0, 1.0 }},
       {{ 0.0, 0.0, 0.0, 1.0 }},
@@ -133,10 +135,14 @@ protected:
    gl3::RenderParams GetMeshDrawParams();
    glm::mat4 GetModelViewMtx();
 
-   std::array<float, 4> GetLineColor() {
-      if (_background == BG_BLK) {
+   std::array<float, 4> GetLineColor()
+   {
+      if (_background == BG_BLK)
+      {
          return { 1.f, 1.f, 1.f, 1.f };
-      } else {
+      }
+      else
+      {
          return { 0.f, 0.f, 0.f, 1.f };
       }
    }

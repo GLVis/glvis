@@ -1020,18 +1020,19 @@ void VisualizationSceneSolution::EventUpdateBackground()
    PrepareNumbering();
 }
 
-void DrawNumberedMarker(gl3::GlDrawable& buff, const double x[3], double dx, int n)
+void DrawNumberedMarker(gl3::GlDrawable& buff, const double x[3], double dx,
+                        int n)
 {
-    gl3::GlBuilder bld = buff.createBuilder();
-    bld.glBegin(GL_LINES);
-    // glColor4d(0, 0, 0, 0);
-    bld.glVertex3d(x[0]-dx, x[1]-dx, x[2]);
-    bld.glVertex3d(x[0]+dx, x[1]+dx, x[2]);
-    bld.glVertex3d(x[0]+dx, x[1]-dx, x[2]);
-    bld.glVertex3d(x[0]-dx, x[1]+dx, x[2]);
-    bld.glEnd();
+   gl3::GlBuilder bld = buff.createBuilder();
+   bld.glBegin(GL_LINES);
+   // glColor4d(0, 0, 0, 0);
+   bld.glVertex3d(x[0]-dx, x[1]-dx, x[2]);
+   bld.glVertex3d(x[0]+dx, x[1]+dx, x[2]);
+   bld.glVertex3d(x[0]+dx, x[1]-dx, x[2]);
+   bld.glVertex3d(x[0]-dx, x[1]+dx, x[2]);
+   bld.glEnd();
 
-    buff.addText(x[0], x[1], x[2], std::to_string(n));
+   buff.addText(x[0], x[1], x[2], std::to_string(n));
 }
 
 void DrawTriangle(gl3::GlDrawable& buff,
@@ -1048,7 +1049,8 @@ void DrawTriangle(gl3::GlDrawable& buff,
    std::array<float, 3> fpts[3];
    std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
 
-   for (int i = 0; i < 3; i++) {
+   for (int i = 0; i < 3; i++)
+   {
 
       texcoord[i] = { static_cast<float>(GetColorCoord(cv[i], minv, maxv)), 1.0 };
       fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
@@ -1073,7 +1075,8 @@ void DrawQuad(gl3::GlDrawable& buff,
    std::array<float, 3> fpts[4];
    std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
 
-   for (int i = 0; i < 4; i++) {
+   for (int i = 0; i < 4; i++)
+   {
       texcoord[i] = { static_cast<float>(GetColorCoord(cv[i], minv, maxv)), 1.0 };
       fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
    }
@@ -1113,7 +1116,8 @@ void RemoveFPErrors(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
    f_ind.SetSize(o);
 }
 
-void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
+void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals,
+               DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
                const double maxv, const int normals_opt)
 {
@@ -1151,7 +1155,8 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
       for (int i = 0; i < pts.Width(); i++)
       {
          vertices.emplace_back(
-            gl3::VertexNormTex{
+            gl3::VertexNormTex
+            {
                {(float) pts(0, i), (float) pts(1, i), (float) pts(2, i)},
                {(float) normals(0, i), (float) normals(1, i), (float) normals(2, i)},
                {(float) GetColorCoord(vals(i), minv, maxv), 1.0 }
@@ -1683,7 +1688,7 @@ void VisualizationSceneSolution::PrepareLines()
 
       for (j = 0; j < pointmat.Size(); j++)
          lb.glVertex3d(pointmat(0, j), pointmat(1, j),
-                    LogVal((*sol)(vertices[j])));
+                       LogVal((*sol)(vertices[j])));
       lb.glEnd();
    }
 
@@ -1920,7 +1925,8 @@ void VisualizationSceneSolution::PrepareOrderingCurve()
    updated_bufs.emplace_back(&order_noarrow_buf);
 }
 
-void VisualizationSceneSolution::PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows,
+void VisualizationSceneSolution::PrepareOrderingCurve1(gl3::GlDrawable& buf,
+                                                       bool arrows,
                                                        bool color)
 {
    gl3::GlBuilder builder = buf.createBuilder();
@@ -2029,8 +2035,8 @@ void VisualizationSceneSolution::PrepareLines2()
 
          for (j = 0; j < sides; j++)
             lb.glVertex3d(pointmat(0, RG[sides*k+j]),
-                       pointmat(1, RG[sides*k+j]),
-                       values(RG[sides*k+j]));
+                          pointmat(1, RG[sides*k+j]),
+                          values(RG[sides*k+j]));
          lb.glEnd();
       }
    }
@@ -2060,11 +2066,11 @@ void VisualizationSceneSolution::PrepareLines3()
       for (k = 0; k < RE.Size()/2; k++)
       {
          lb.glVertex3d (pointmat(0, RE[2*k]),
-                     pointmat(1, RE[2*k]),
-                     values(RE[2*k]));
+                        pointmat(1, RE[2*k]),
+                        values(RE[2*k]));
          lb.glVertex3d (pointmat(0, RE[2*k+1]),
-                     pointmat(1, RE[2*k+1]),
-                     values(RE[2*k+1]));
+                        pointmat(1, RE[2*k+1]),
+                        values(RE[2*k+1]));
       }
       lb.glEnd();
    }
@@ -2114,7 +2120,7 @@ void VisualizationSceneSolution::PrepareBoundary()
          mesh->GetBdrPointMatrix(i, pointmat);
          for (j = 0; j < pointmat.Size(); j++)
             bl.glVertex3d(pointmat(0, j), pointmat(1, j),
-                       LogVal((*sol)(vertices[j])));
+                          LogVal((*sol)(vertices[j])));
       }
       bl.glEnd();
    }
@@ -2280,8 +2286,8 @@ void VisualizationSceneSolution::DrawCPLine(
          double a = fabs(s) / (fabs(s) + fabs(t));
 
          bld.glVertex3d((1.-a) * xs + a * xt,
-                    (1.-a) * ys + a * yt,
-                    (1.-a) * values(ind[js]) + a * values(ind[j]));
+                        (1.-a) * ys + a * yt,
+                        (1.-a) * values(ind[js]) + a * values(ind[j]));
          n++;
       }
       s = t;
@@ -2309,51 +2315,60 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    double* cp_eqn = CuttingPlane->Equation();
    params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};
    params.contains_translucent = MatAlpha < 1.0;
-   if (drawelems) {
+   if (drawelems)
+   {
       // draw elements
       scene.queue.emplace_back(params, &disp_buf);
    }
    // draw orderings -- color modes
    if (draworder == 1)
    {
-       scene.queue.emplace_back(params, &order_noarrow_buf);
+      scene.queue.emplace_back(params, &order_noarrow_buf);
    }
    else if (draworder == 2)
    {
-       scene.queue.emplace_back(params, &order_buf);
+      scene.queue.emplace_back(params, &order_buf);
    }
    params.mesh_material = VisualizationScene::BLK_MAT;
    // everything below will be drawn in "black"
    params.static_color = GetLineColor();
-   if (draw_cp) {
+   if (draw_cp)
+   {
       //draw cutting plane
       params.use_clip_plane = false;
       scene.queue.emplace_back(params, &cp_buf);
       params.use_clip_plane = true;
    }
-   if (drawbdr) {
+   if (drawbdr)
+   {
       scene.queue.emplace_back(params, &bdr_buf);
    }
    //draw lines
-   if (drawmesh == 1) {
+   if (drawmesh == 1)
+   {
       scene.queue.emplace_back(params, &line_buf);
-   } else if (drawmesh == 2) {
+   }
+   else if (drawmesh == 2)
+   {
       scene.queue.emplace_back(params, &lcurve_buf);
    }
    //draw numberings
-   if (drawnums == 1) {
+   if (drawnums == 1)
+   {
       scene.queue.emplace_back(params, &e_nums_buf);
-   } else if (drawnums == 2) {
+   }
+   else if (drawnums == 2)
+   {
       scene.queue.emplace_back(params, &v_nums_buf);
    }
    // draw orderings -- "black" modes
    if (draworder == 3)
    {
-       scene.queue.emplace_back(params, &order_noarrow_buf);
+      scene.queue.emplace_back(params, &order_noarrow_buf);
    }
    else if (draworder == 4)
    {
-       scene.queue.emplace_back(params, &order_buf);
+      scene.queue.emplace_back(params, &order_buf);
    }
    return scene;
 }

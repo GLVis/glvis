@@ -127,7 +127,8 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve()
 }
 
 
-void VisualizationSceneSolution3d::PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows,
+void VisualizationSceneSolution3d::PrepareOrderingCurve1(gl3::GlDrawable& buf,
+                                                         bool arrows,
                                                          bool color)
 {
    gl3::GlBuilder builder = buf.createBuilder();
@@ -1430,7 +1431,7 @@ void VisualizationSceneSolution3d::DrawRefinedSurfEdges(
       int RE = RefEdges[k];
 
       line.glVertex3d (pointmat(0, RE), pointmat(1, RE),
-                  pointmat(2, RE));
+                       pointmat(2, RE));
    }
    line.glEnd();
 }
@@ -1441,7 +1442,7 @@ void VisualizationSceneSolution3d::DrawRefinedSurfLevelLines(
    int j, k;
    int *RG;
    double point[4][4];
-   
+
    gl3::GlBuilder line = cplines_buf.createBuilder();
 
    for (k = 0; k < RefGeoms.Size()/n; k++)
@@ -1516,11 +1517,11 @@ void VisualizationSceneSolution3d::PrepareFlat()
       }
       if (j == 3)
       {
-          DrawTriangle(disp_buf, p, c, minv, maxv);
+         DrawTriangle(disp_buf, p, c, minv, maxv);
       }
       else
       {
-          DrawQuad(disp_buf, p, c, minv, maxv);
+         DrawQuad(disp_buf, p, c, minv, maxv);
       }
    }
    updated_bufs.emplace_back(&disp_buf);
@@ -1548,25 +1549,33 @@ void VisualizationSceneSolution3d::PrepareFlat2()
 
    vmin = numeric_limits<double>::infinity();
    vmax = -vmin;
-   for (i = 0; i < nbe; i++) {
-      if (dim == 3) {
+   for (i = 0; i < nbe; i++)
+   {
+      if (dim == 3)
+      {
          if (!bdr_attr_to_show[mesh->GetBdrAttribute(i)-1]) { continue; }
 
-         if (cplane == 2) {
+         if (cplane == 2)
+         {
             // for cplane == 2, get vertices of the volume element, not bdr
             int f, o, e1, e2;
             mesh->GetBdrElementFace(i, &f, &o);
             mesh->GetFaceElements(f, &e1, &e2);
             mesh->GetElementVertices(e1, vertices);
-         } else {
+         }
+         else
+         {
             mesh->GetBdrElementVertices(i, vertices);
          }
-      } else {
+      }
+      else
+      {
          if (!bdr_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
          mesh->GetElementVertices(i, vertices);
       }
       if (cplane == 2 && CheckPositions(vertices)) { continue; }
-      if (dim == 3) {
+      if (dim == 3)
+      {
          mesh -> GetBdrElementFace (i, &fn, &fo);
          RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceBaseGeometry (fn),
                                             TimesToRefine);
@@ -1574,21 +1583,25 @@ void VisualizationSceneSolution3d::PrepareFlat2()
 
          // this assumes the interior boundary faces are properly oriented ...
          di = fo % 2;
-         if (di == 1 && !mesh->FaceIsInterior(fn)) {
+         if (di == 1 && !mesh->FaceIsInterior(fn))
+         {
             di = 0;
          }
          GridF -> GetFaceValues (fn, di, RefG->RefPts, values, pointmat);
          GetFaceNormals(fn, di, RefG->RefPts, normals);
          have_normals = 1;
          ShrinkPoints(pointmat, i, fn, di);
-      } else {
+      }
+      else
+      {
          RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
                                             TimesToRefine);
          const IntegrationRule &ir = RefG->RefPts;
          GridF->GetValues(i, ir, values, pointmat);
          normals.SetSize(3, values.Size());
          mesh->GetElementTransformation(i, &T);
-         for (int j = 0; j < values.Size(); j++) {
+         for (int j = 0; j < values.Size(); j++)
+         {
             T.SetIntPoint(&ir.IntPoint(j));
             const DenseMatrix &J = T.Jacobian();
             normals.GetColumnReference(j, normal);
@@ -1669,19 +1682,19 @@ void VisualizationSceneSolution3d::Prepare()
 
    switch (shading)
    {
-       case 0:
-           PrepareFlat();
-           return;
-       case 2:
-           PrepareFlat2();
-           return;
-       default:
-           break;
+      case 0:
+         PrepareFlat();
+         return;
+      case 2:
+         PrepareFlat2();
+         return;
+      default:
+         break;
    }
 
    disp_buf.clear();
    gl3::GlBuilder poly = disp_buf.createBuilder();
-   
+
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
    int nv = mesh -> GetNV();
@@ -1798,7 +1811,7 @@ void VisualizationSceneSolution3d::Prepare()
          {
             mesh->GetElementVertices(elem[i], vertices);
          }
-         
+
          GLenum elemType = GL_NONE;
          switch ((dim == 3) ? mesh->GetBdrElementType(elem[i]) :
                  mesh->GetElementType(elem[i]))
@@ -2603,7 +2616,7 @@ void VisualizationSceneSolution3d::CutRefinedFace(
             }
          }
       }
-      
+
       target.addLine(gl3::Vertex::create(pts[0]), gl3::Vertex::create(pts[1]));
       if (n == 4)
       {
@@ -2614,7 +2627,7 @@ void VisualizationSceneSolution3d::CutRefinedFace(
 
 void VisualizationSceneSolution3d::PrepareCuttingPlane()
 {
-    cplane_buf.clear();
+   cplane_buf.clear();
    if (cp_drawelems && cplane && mesh->Dimension() == 3)
    {
       if (cplane == 2)
@@ -3574,7 +3587,7 @@ gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
    if (colorbar)
    {
       Array<double>* cb_level = nullptr,
-                   * cb_levels = nullptr;
+                     * cb_levels = nullptr;
       if (drawlsurf) { cb_levels = &levels; }
       if (drawmesh == 2 || cp_drawmesh >= 2) { cb_level = &level; }
       PrepareColorBar(minv, maxv, cb_level, cb_levels);
@@ -3586,20 +3599,22 @@ gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
    params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};
    params.contains_translucent = MatAlpha < 1.0;
 
-   if (drawlsurf) {
+   if (drawlsurf)
+   {
       scene.queue.emplace_back(params, &lsurf_buf);
    }
-   if (drawelems) {
+   if (drawelems)
+   {
       scene.queue.emplace_back(params, &disp_buf);
    }
    // draw orderings -- color modes
    if (draworder == 1)
    {
-       scene.queue.emplace_back(params, &order_noarrow_buf);
+      scene.queue.emplace_back(params, &order_noarrow_buf);
    }
    else if (draworder == 2)
    {
-       scene.queue.emplace_back(params, &order_buf);
+      scene.queue.emplace_back(params, &order_buf);
    }
    if (cplane && cp_drawelems)
    {
@@ -3611,21 +3626,23 @@ gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
    params.mesh_material = VisualizationScene::BLK_MAT;
    // everything below will be drawn in "black"
    params.static_color = GetLineColor();
-   if (drawmesh) {
+   if (drawmesh)
+   {
       scene.queue.emplace_back(params, &line_buf);
    }
-   if (cp_drawmesh) {
+   if (cp_drawmesh)
+   {
       params.use_clip_plane = false;
       scene.queue.emplace_back(params, &cplines_buf);
    }
    // draw orderings -- "black" modes
    if (draworder == 3)
    {
-       scene.queue.emplace_back(params, &order_noarrow_buf);
+      scene.queue.emplace_back(params, &order_noarrow_buf);
    }
    else if (draworder == 4)
    {
-       scene.queue.emplace_back(params, &order_buf);
+      scene.queue.emplace_back(params, &order_buf);
    }
    return scene;
 }

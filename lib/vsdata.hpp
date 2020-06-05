@@ -234,8 +234,8 @@ public:
    void PrepareCaption();
 
    void PrepareColorBar(double minval, double maxval,
-                     Array<double> * level = NULL,
-                     Array<double> * levels = NULL);
+                        Array<double> * level = NULL,
+                        Array<double> * levels = NULL);
 
    void SetAxisLabels(const char * a_x, const char * a_y, const char * a_z);
 

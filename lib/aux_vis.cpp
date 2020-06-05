@@ -54,17 +54,17 @@ bool wndLegacyGl = false;
 
 SdlWindow * GetAppWindow()
 {
-    return wnd;
+   return wnd;
 }
 
 VisualizationScene * GetVisualizationScene()
 {
-    return locscene;
+   return locscene;
 }
 
 void SetLegacyGLOnly(bool status)
 {
-    wndLegacyGl = true;
+   wndLegacyGl = true;
 }
 
 void MyExpose(GLsizei w, GLsizei h);
@@ -76,15 +76,19 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 #ifdef GLVIS_DEBUG
    cout << "OpenGL Visualization" << endl;
 #endif
-   if (!wnd) {
+   if (!wnd)
+   {
       wnd = new SdlWindow();
-      if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl)) {
+      if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
+      {
          return 1;
       }
 
-   } else {
-       wnd->clearEvents();
-       paletteRebind();
+   }
+   else
+   {
+      wnd->clearEvents();
+      paletteRebind();
    }
 
 #ifdef GLVIS_DEBUG
@@ -177,68 +181,80 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
 
    if (locscene)
-       delete locscene;
+   {
+      delete locscene;
+   }
 #endif
    locscene = nullptr;
 
    return 0;
 }
 
-void SendKeySequence(const char *seq) {
-    for (const char* key = seq; *key != '\0'; key++) {
-        if (*key == '~') {
-            key++;
-            switch (*key)
-            {
-               case 'e': // expose event
-                  SendExposeEvent();
-                  break;
-               case 'l': // left arrow
-                  wnd->signalKeyDown(SDLK_LEFT);
-                  break;
-               case 'r': // right arrow
-                  wnd->signalKeyDown(SDLK_RIGHT);
-                  break;
-               case 'u': // up arrow
-                  wnd->signalKeyDown(SDLK_UP);
-                  break;
-               case 'd': // down arrow
-                  wnd->signalKeyDown(SDLK_DOWN);
-                  break;
-               case '3': // F3
-                  wnd->signalKeyDown(SDLK_F3);
-                  break;
-               case '5': // F5
-                  wnd->signalKeyDown(SDLK_F5);
-                  break;
-               case '6': // F6
-                  wnd->signalKeyDown(SDLK_F6);
-                  break;
-               case '7': // F7
-                  wnd->signalKeyDown(SDLK_F7);
-                  break;
-               case '.': // Keypad ./Del
-                  wnd->signalKeyDown(SDLK_PERIOD);
-                  break;
-               case 'E': // Keypad Enter
-                  wnd->signalKeyDown(SDLK_RETURN);
-                  break;
-            }
-            continue;
-        } else if (*key == '*') {
-            wnd->signalKeyDown(SDLK_KP_MULTIPLY);
-        } else if (*key == '/') {
-            wnd->signalKeyDown(SDLK_KP_DIVIDE);
-        } else {
-            if (*key == '('
-                || *key == ')'
-                || *key == '!'
-                || isupper(*key)) {
-                wnd->signalKeyDown(*key, KMOD_LSHIFT);
-            }
+void SendKeySequence(const char *seq)
+{
+   for (const char* key = seq; *key != '\0'; key++)
+   {
+      if (*key == '~')
+      {
+         key++;
+         switch (*key)
+         {
+            case 'e': // expose event
+               SendExposeEvent();
+               break;
+            case 'l': // left arrow
+               wnd->signalKeyDown(SDLK_LEFT);
+               break;
+            case 'r': // right arrow
+               wnd->signalKeyDown(SDLK_RIGHT);
+               break;
+            case 'u': // up arrow
+               wnd->signalKeyDown(SDLK_UP);
+               break;
+            case 'd': // down arrow
+               wnd->signalKeyDown(SDLK_DOWN);
+               break;
+            case '3': // F3
+               wnd->signalKeyDown(SDLK_F3);
+               break;
+            case '5': // F5
+               wnd->signalKeyDown(SDLK_F5);
+               break;
+            case '6': // F6
+               wnd->signalKeyDown(SDLK_F6);
+               break;
+            case '7': // F7
+               wnd->signalKeyDown(SDLK_F7);
+               break;
+            case '.': // Keypad ./Del
+               wnd->signalKeyDown(SDLK_PERIOD);
+               break;
+            case 'E': // Keypad Enter
+               wnd->signalKeyDown(SDLK_RETURN);
+               break;
+         }
+         continue;
+      }
+      else if (*key == '*')
+      {
+         wnd->signalKeyDown(SDLK_KP_MULTIPLY);
+      }
+      else if (*key == '/')
+      {
+         wnd->signalKeyDown(SDLK_KP_DIVIDE);
+      }
+      else
+      {
+         if (*key == '('
+             || *key == ')'
+             || *key == '!'
+             || isupper(*key))
+         {
             wnd->signalKeyDown(*key, KMOD_LSHIFT);
-        }
-    }
+         }
+         wnd->signalKeyDown(*key, KMOD_LSHIFT);
+      }
+   }
 }
 
 
@@ -384,7 +400,8 @@ void MyExpose(GLsizei w, GLsizei h)
 {
    MyReshape (w, h);
    gl3::SceneInfo frame = locscene->GetSceneObjs();
-   for (auto drawable_ptr : frame.needs_buffering) {
+   for (auto drawable_ptr : frame.needs_buffering)
+   {
       wnd->getRenderer().buffer(drawable_ptr);
    }
    wnd->getRenderer().render(frame.queue);
@@ -614,7 +631,7 @@ void MiddleButtonLoc (EventInfo *event)
 
    if ( !( event->keymod & KMOD_CTRL ) )
    {
-	  int w, h;
+      int w, h;
       double TrX, TrY, scale;
 
       if (locscene->OrthogonalProjection)
@@ -625,7 +642,7 @@ void MiddleButtonLoc (EventInfo *event)
       {
          scale = 0.4142135623730950488/tan(locscene->ViewAngle*(M_PI/360));
       }
-	  wnd->getWindowSize(w, h);
+      wnd->getWindowSize(w, h);
       if (w < h)
       {
          scale *= w;
@@ -747,15 +764,15 @@ const char *glvis_screenshot_ext = ".bmp";
 
 // https://wiki.libsdl.org/SDL_CreateRGBSurfaceFrom
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-  Uint32 rmask = 0xff000000;
-  Uint32 gmask = 0x00ff0000;
-  Uint32 bmask = 0x0000ff00:
-  Uint32 amask = 0x000000ff;
+Uint32 rmask = 0xff000000;
+Uint32 gmask = 0x00ff0000;
+Uint32 bmask = 0x0000ff00:
+               Uint32 amask = 0x000000ff;
 #else // little endian, like x86
-  Uint32 rmask = 0x000000ff;
-  Uint32 gmask = 0x0000ff00;
-  Uint32 bmask = 0x00ff0000;
-  Uint32 amask = 0xff000000;
+Uint32 rmask = 0x000000ff;
+Uint32 gmask = 0x0000ff00;
+Uint32 bmask = 0x00ff0000;
+Uint32 amask = 0xff000000;
 #endif
 
 // https://halfgeek.org/wiki/Vertically_invert_a_surface_in_SDL
@@ -764,54 +781,58 @@ const char *glvis_screenshot_ext = ".bmp";
 
 int invert_surface_vertical(SDL_Surface *surface)
 {
-    Uint8 *t, *a, *b, *last;
-    Uint16 pitch;
+   Uint8 *t, *a, *b, *last;
+   Uint16 pitch;
 
-    if( SDL_LOCKIFMUST(surface) < 0 ) {
-        return -2;
-    }
+   if ( SDL_LOCKIFMUST(surface) < 0 )
+   {
+      return -2;
+   }
 
-    /* do nothing unless at least two lines */
-    if(surface->h < 2) {
-        SDL_UNLOCKIFMUST(surface);
-        return 0;
-    }
+   /* do nothing unless at least two lines */
+   if (surface->h < 2)
+   {
+      SDL_UNLOCKIFMUST(surface);
+      return 0;
+   }
 
-    /* get a place to store a line */
-    pitch = surface->pitch;
-    t = (Uint8*)malloc(pitch);
+   /* get a place to store a line */
+   pitch = surface->pitch;
+   t = (Uint8*)malloc(pitch);
 
-    if(t == NULL) {
-        SDL_UNLOCKIFMUST(surface);
-        return -2;
-    }
+   if (t == NULL)
+   {
+      SDL_UNLOCKIFMUST(surface);
+      return -2;
+   }
 
-    /* get first line; it's about to be trampled */
-    memcpy(t,surface->pixels,pitch);
+   /* get first line; it's about to be trampled */
+   memcpy(t,surface->pixels,pitch);
 
-    /* now, shuffle the rest so it's almost correct */
-    a = (Uint8*)surface->pixels;
-    last = a + pitch * (surface->h - 1);
-    b = last;
+   /* now, shuffle the rest so it's almost correct */
+   a = (Uint8*)surface->pixels;
+   last = a + pitch * (surface->h - 1);
+   b = last;
 
-    while(a < b) {
-        memcpy(a,b,pitch);
-        a += pitch;
-        memcpy(b,a,pitch);
-        b -= pitch;
-    }
+   while (a < b)
+   {
+      memcpy(a,b,pitch);
+      a += pitch;
+      memcpy(b,a,pitch);
+      b -= pitch;
+   }
 
-    /* in this shuffled state, the bottom slice is too far down */
-    memmove( b, b+pitch, last-b );
+   /* in this shuffled state, the bottom slice is too far down */
+   memmove( b, b+pitch, last-b );
 
-    /* now we can put back that first row--in the last place */
-    memcpy(last,t,pitch);
+   /* now we can put back that first row--in the last place */
+   memcpy(last,t,pitch);
 
-    /* everything is in the right place; close up. */
-    free(t);
-    SDL_UNLOCKIFMUST(surface);
+   /* everything is in the right place; close up. */
+   free(t);
+   SDL_UNLOCKIFMUST(surface);
 
-    return 0;
+   return 0;
 }
 
 int Screenshot(const char *fname, bool convert)
@@ -963,21 +984,27 @@ int Screenshot(const char *fname, bool convert)
    unsigned char * pixels = new unsigned char[w*h*4]; // 4 bytes for RGBA
    glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
-   SDL_Surface * surf = SDL_CreateRGBSurfaceFrom(pixels, w, h, 8*4, w*4, rmask, gmask, bmask, amask);
-   if (surf == nullptr) {
-     std::cerr << "unable to take screenshot: " << SDL_GetError() << std::endl;
+   SDL_Surface * surf = SDL_CreateRGBSurfaceFrom(pixels, w, h, 8*4, w*4, rmask,
+                                                 gmask, bmask, amask);
+   if (surf == nullptr)
+   {
+      std::cerr << "unable to take screenshot: " << SDL_GetError() << std::endl;
    }
-   else {
-     if (invert_surface_vertical(surf)) {
-       std::cerr << "failed to invert surface, you're screenshot may be upside down" << std::endl;
-     }
-     SDL_SaveBMP(surf, filename.c_str());
-     SDL_FreeSurface(surf);
-     // automatically convert to png if not being used
-     if (!call_convert) {
-       call_convert = true;
-       convert_name += ".png";
-     }
+   else
+   {
+      if (invert_surface_vertical(surf))
+      {
+         std::cerr << "failed to invert surface, you're screenshot may be upside down" <<
+                   std::endl;
+      }
+      SDL_SaveBMP(surf, filename.c_str());
+      SDL_FreeSurface(surf);
+      // automatically convert to png if not being used
+      if (!call_convert)
+      {
+         call_convert = true;
+         convert_name += ".png";
+      }
    }
    delete [] pixels;
 #else
@@ -1043,23 +1070,25 @@ void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
    //print lines
    for (size_t i = 0; i < cbuf.lines.size(); i += 2)
    {
-       GL2PSvertex lineOut[2] = {
-           CreatePrintVtx(cbuf.lines[i]),
-           CreatePrintVtx(cbuf.lines[i+1])
-       };
-       gl2psAddPolyPrimitive(GL2PS_LINE, 2, lineOut, 0, 0.f, 0.f,
-                             0xFFFF, 1, 0.2, 0, 0, 0);
+      GL2PSvertex lineOut[2] =
+      {
+         CreatePrintVtx(cbuf.lines[i]),
+         CreatePrintVtx(cbuf.lines[i+1])
+      };
+      gl2psAddPolyPrimitive(GL2PS_LINE, 2, lineOut, 0, 0.f, 0.f,
+                            0xFFFF, 1, 0.2, 0, 0, 0);
    }
    //print triangles
    for (size_t i = 0; i < cbuf.triangles.size(); i += 3)
    {
-       GL2PSvertex triOut[3] = {
-           CreatePrintVtx(cbuf.triangles[i]),
-           CreatePrintVtx(cbuf.triangles[i+1]),
-           CreatePrintVtx(cbuf.triangles[i+2])
-       };
-       gl2psAddPolyPrimitive(GL2PS_TRIANGLE, 3, triOut, 0, 0.f, 0.f,
-                             0xFFFF, 1, 1, 0, 0, 0);
+      GL2PSvertex triOut[3] =
+      {
+         CreatePrintVtx(cbuf.triangles[i]),
+         CreatePrintVtx(cbuf.triangles[i+1]),
+         CreatePrintVtx(cbuf.triangles[i+2])
+      };
+      gl2psAddPolyPrimitive(GL2PS_TRIANGLE, 3, triOut, 0, 0.f, 0.f,
+                            0xFFFF, 1, 1, 0, 0, 0);
    }
    //print text
    for (const auto &entry : cbuf.text)
@@ -1084,20 +1113,22 @@ void KeyCtrlP()
    {
       gl3::SceneInfo wnd_scn = locscene->GetSceneObjs();
       for (auto to_buf : wnd_scn.needs_buffering)
+      {
          wnd->getRenderer().buffer(to_buf);
+      }
       gl2psBeginPage ( "GLVis.pdf", "GLVis", viewport,
-                        GL2PS_PDF, // or GL2PS_SVG, or GL2PS_EPS
-                        GL2PS_BSP_SORT,
-                        GL2PS_SIMPLE_LINE_OFFSET |
-                        // GL2PS_NO_PS3_SHADING |
-                        // GL2PS_NO_BLENDING |
-                        // GL2PS_OCCLUSION_CULL |
-                        // GL2PS_BEST_ROOT |
-                        GL2PS_SILENT |
-                        //GL2PS_DRAW_BACKGROUND |
-                        GL2PS_NO_BLENDING |
-                        GL2PS_NO_OPENGL_CONTEXT,
-                        GL_RGBA, 0, NULL, 16, 16, 16, 0, fp, "a" );
+                       GL2PS_PDF, // or GL2PS_SVG, or GL2PS_EPS
+                       GL2PS_BSP_SORT,
+                       GL2PS_SIMPLE_LINE_OFFSET |
+                       // GL2PS_NO_PS3_SHADING |
+                       // GL2PS_NO_BLENDING |
+                       // GL2PS_OCCLUSION_CULL |
+                       // GL2PS_BEST_ROOT |
+                       GL2PS_SILENT |
+                       //GL2PS_DRAW_BACKGROUND |
+                       GL2PS_NO_BLENDING |
+                       GL2PS_NO_OPENGL_CONTEXT,
+                       GL_RGBA, 0, NULL, 16, 16, 16, 0, fp, "a" );
       gl3::CaptureBuffer cbuf = wnd->getRenderer().capture(wnd_scn.queue);
       PrintCaptureBuffer(cbuf);
       gl2psEndPage();
@@ -1420,18 +1451,18 @@ void EnlargeWindow()
 
 void MoveResizeWindow(int x, int y, int w, int h)
 {
-    wnd->setWindowSize(w, h);
-    wnd->setWindowPos(x, y);
+   wnd->setWindowSize(w, h);
+   wnd->setWindowPos(x, y);
 }
 
 void ResizeWindow(int w, int h)
 {
-    wnd->setWindowSize(w, h);
+   wnd->setWindowSize(w, h);
 }
 
 void SetWindowTitle(const char *title)
 {
-    wnd->setWindowTitle(title);
+   wnd->setWindowTitle(title);
 }
 
 int MySetColorLogscale = 0;
@@ -1476,7 +1507,7 @@ void GetColorFromVal(double val, float * rgba)
    else
    {
       pal = paletteGet() + 3 * ( (palSize-2) -
-                                i % (palSize-1) );
+                                 i % (palSize-1) );
       t = 1.0 - t;
    }
    rgba[0] = (1.0 - t) * pal[0] + t * pal[3];
@@ -1509,9 +1540,13 @@ void SetUseTexture(int ut)
    {
       UseTexture = ut;
       if (UseTexture == 0)
-          paletteUseDiscrete();
+      {
+         paletteUseDiscrete();
+      }
       else
-          paletteUseSmooth();
+      {
+         paletteUseSmooth();
+      }
    }
 }
 
@@ -1534,31 +1569,31 @@ void SetMultisample(int m)
 
 void SetLineWidth(float width)
 {
-    line_w = width;
-    if (wnd)
-    {
-        wnd->getRenderer().setLineWidth(line_w);
-    }
+   line_w = width;
+   if (wnd)
+   {
+      wnd->getRenderer().setLineWidth(line_w);
+   }
 }
 
 void SetLineWidthMS(float width_ms)
 {
-    line_w_aa = width_ms;
-    if (wnd)
-    {
-        wnd->getRenderer().setLineWidthMS(line_w_aa);
-    }
+   line_w_aa = width_ms;
+   if (wnd)
+   {
+      wnd->getRenderer().setLineWidthMS(line_w_aa);
+   }
 
 }
 
 float GetLineWidth()
 {
-    return line_w;
+   return line_w;
 }
 
 float GetLineWidthMS()
 {
-    return line_w_aa;
+   return line_w_aa;
 }
 
 
@@ -1592,87 +1627,109 @@ std::string priority_font;
 
 void InitFont()
 {
-    glvis_font.setAlphaChannel(wnd->getRenderer().getDeviceAlphaChannel());
-    if (priority_font == std::string("")) {
-        if (!SetFont(fc_font_patterns, font_size)) {
-           cerr << "InitFont(): No fonts found matching the built-in patterns." << endl
-                << "Use the -fn option or edit 'fc_font_patterns' in lib/aux_vis.cpp" << endl;
-        }
-    } else {
-        if (!glvis_font.LoadFont(priority_font, font_size))
-           cout << "InitFont(): Font not found: " << priority_font << endl;
-    }
-    wnd->getRenderer().setFontTexture(glvis_font.getFontTex());
+   glvis_font.setAlphaChannel(wnd->getRenderer().getDeviceAlphaChannel());
+   if (priority_font == std::string(""))
+   {
+      if (!SetFont(fc_font_patterns, font_size))
+      {
+         cerr << "InitFont(): No fonts found matching the built-in patterns." << endl
+              << "Use the -fn option or edit 'fc_font_patterns' in lib/aux_vis.cpp" << endl;
+      }
+   }
+   else
+   {
+      if (!glvis_font.LoadFont(priority_font, font_size))
+      {
+         cout << "InitFont(): Font not found: " << priority_font << endl;
+      }
+   }
+   wnd->getRenderer().setFontTexture(glvis_font.getFontTex());
 }
 
-GlVisFont * GetFont() {
+GlVisFont * GetFont()
+{
    return &glvis_font;
 }
 
-bool SetFont(const vector<std::string>& font_patterns, int height) {
+bool SetFont(const vector<std::string>& font_patterns, int height)
+{
 #ifdef __EMSCRIPTEN__
-    return glvis_font.LoadFont("OpenSans.ttf", height);
+   return glvis_font.LoadFont("OpenSans.ttf", height);
 #else
-    if (!FcInit()) {
-        return false;
-    }
+   if (!FcInit())
+   {
+      return false;
+   }
 
-    FcObjectSet * os = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, FC_SCALABLE, nullptr);
+   FcObjectSet * os = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, FC_SCALABLE,
+                                       nullptr);
 
-    for (const string& pattern : font_patterns) {
-        string patternScale = pattern + ":scalable=True";
-        FcPattern * pat = FcNameParse((FcChar8*)patternScale.c_str());
-        if (!pat) {
-            continue;
-        }
+   for (const string& pattern : font_patterns)
+   {
+      string patternScale = pattern + ":scalable=True";
+      FcPattern * pat = FcNameParse((FcChar8*)patternScale.c_str());
+      if (!pat)
+      {
+         continue;
+      }
 
-        FcFontSet * fs = FcFontList(0, pat, os);
-        if (!fs) {
-            FcPatternDestroy(pat);
-            continue;
-        }
+      FcFontSet * fs = FcFontList(0, pat, os);
+      if (!fs)
+      {
+         FcPatternDestroy(pat);
+         continue;
+      }
 #ifdef GLVIS_DEBUG
-        if (fs->nfont >= 1) {
-            cout << "Font pattern '" << pattern << "' matched fonts:\n";
-        } else {
-            cout << "Font pattern '" << pattern << "' matched no fonts.\n";
-        }
+      if (fs->nfont >= 1)
+      {
+         cout << "Font pattern '" << pattern << "' matched fonts:\n";
+      }
+      else
+      {
+         cout << "Font pattern '" << pattern << "' matched no fonts.\n";
+      }
 #endif
-        std::string font_file = "";
-        std::string font_name = "";
-        for (int fnt_idx = 0; fnt_idx < fs->nfont; fnt_idx++) {
-            FcChar8 * s;
-            FcBool scalable;
-            FcPatternGetBool(fs->fonts[fnt_idx], FC_SCALABLE, 0, &scalable);
-            FcResult res = FcPatternGetString(fs->fonts[fnt_idx], FC_FILE, 0, &s);
-            FcChar8 * fnt = FcNameUnparse(fs->fonts[fnt_idx]);
+      std::string font_file = "";
+      std::string font_name = "";
+      for (int fnt_idx = 0; fnt_idx < fs->nfont; fnt_idx++)
+      {
+         FcChar8 * s;
+         FcBool scalable;
+         FcPatternGetBool(fs->fonts[fnt_idx], FC_SCALABLE, 0, &scalable);
+         FcResult res = FcPatternGetString(fs->fonts[fnt_idx], FC_FILE, 0, &s);
+         FcChar8 * fnt = FcNameUnparse(fs->fonts[fnt_idx]);
 #ifdef GLVIS_DEBUG
-            cout << " - " << fnt << endl;
+         cout << " - " << fnt << endl;
 #endif
-            if (res == FcResultMatch && s && font_file == std::string("")) {
-                font_file = (char*) s;
-                font_name = (char*) fnt;
-            }
-            free(fnt);
-        }
-        
-        FcFontSetDestroy(fs);
-        if (font_file != std::string("")) {
-            if (glvis_font.LoadFont(font_file, height)) {
+         if (res == FcResultMatch && s && font_file == std::string(""))
+         {
+            font_file = (char*) s;
+            font_name = (char*) fnt;
+         }
+         free(fnt);
+      }
+
+      FcFontSetDestroy(fs);
+      if (font_file != std::string(""))
+      {
+         if (glvis_font.LoadFont(font_file, height))
+         {
 #ifdef GLVIS_DEBUG
-                cout << "Loaded font: " << font_name << endl;
+            cout << "Loaded font: " << font_name << endl;
 #endif
-                break;
-            }
-        }
-    }
+            break;
+         }
+      }
+   }
 
-    if (os)
-        FcObjectSetDestroy(os);
+   if (os)
+   {
+      FcObjectSetDestroy(os);
+   }
 
-    FcFini();
+   FcFini();
 
-    return glvis_font.isFontLoaded();
+   return glvis_font.isFontLoaded();
 #endif
 }
 

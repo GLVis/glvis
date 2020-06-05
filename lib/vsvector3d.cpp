@@ -1471,7 +1471,7 @@ void VisualizationSceneVector3d::PrepareCuttingPlane()
                builder.glBegin (GL_POLYGON);
                for (j=0; j<n; j++)
                {
-                  MySetColor ( builder, point[j][3] , maxv , minv);
+                  MySetColor ( builder, point[j][3], maxv, minv);
                   builder.glNormal3dv (CuttingPlane -> Equation());
                   builder.glVertex3d (point[j][0],point[j][1],point[j][2]);
                }
@@ -1489,7 +1489,7 @@ void VisualizationSceneVector3d::PrepareCuttingPlane()
                builder.glBegin (GL_POLYGON);
                for (j=n-1; j>=0; j--)
                {
-                  MySetColor ( builder, point[j][3] , minv , maxv);
+                  MySetColor ( builder, point[j][3], minv, maxv);
                   builder.glNormal3dv (CuttingPlane -> Equation());
                   builder.glVertex3d (point[j][0],point[j][1],point[j][2]);
                }
@@ -1510,9 +1510,12 @@ gl3::SceneInfo VisualizationSceneVector3d::GetSceneObjs()
    if (colorbar)
    {
       Array<double>* cb_level = nullptr;
-      if (drawvector == 4) {
+      if (drawvector == 4)
+      {
          cb_level = &dvflevel;
-      } else if (drawmesh == 2 || cp_drawmesh >= 2) {
+      }
+      else if (drawmesh == 2 || cp_drawmesh >= 2)
+      {
          cb_level = &level;
       }
       PrepareColorBar(minv, maxv, cb_level);

@@ -118,7 +118,8 @@ public:
    virtual void PrepareLines();
    virtual void Prepare();
    virtual void PrepareOrderingCurve();
-   virtual void PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows, bool color);
+   virtual void PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows,
+                                      bool color);
    virtual gl3::SceneInfo GetSceneObjs();
 
    void ToggleDrawElems()

@@ -8,94 +8,96 @@ namespace gl3
 class CoreGLDevice : public GLDevice
 {
 public:
-    enum ShaderAttrib
-    {
-        ATTR_VERTEX = 0,
-        ATTR_TEXT_VERTEX,
-        ATTR_NORMAL,
-        ATTR_COLOR,
-        ATTR_TEXCOORD0,
-        NUM_ATTRS
-    };
+   enum ShaderAttrib
+   {
+      ATTR_VERTEX = 0,
+      ATTR_TEXT_VERTEX,
+      ATTR_NORMAL,
+      ATTR_COLOR,
+      ATTR_TEXCOORD0,
+      NUM_ATTRS
+   };
 
-    struct ShaderXfbVertex
-    {
-       float pos[4];
-       float color[4];
-       float clipCoord;
-    };
+   struct ShaderXfbVertex
+   {
+      float pos[4];
+      float color[4];
+      float clipCoord;
+   };
 private:
-    ShaderPrgmHandle_ _default_prgm;
-    ShaderPrgmHandle_ _feedback_prgm;
-    VtxArrayHandle_ _global_vao;
+   ShaderPrgmHandle_ _default_prgm;
+   ShaderPrgmHandle_ _feedback_prgm;
+   VtxArrayHandle_ _global_vao;
 
-    BufObjHandle_ _feedback_vbo;
+   BufObjHandle_ _feedback_vbo;
 
-    enum class RenderMode
-    {
-        Default,
-        Feedback
-    };
+   enum class RenderMode
+   {
+      Default,
+      Feedback
+   };
 
-    const static std::vector<std::string> _unif_list;
+   const static std::vector<std::string> _unif_list;
 
-    std::unordered_map<std::string, GLuint> _uniforms;
-    
-    bool _use_clip_plane;
+   std::unordered_map<std::string, GLuint> _uniforms;
 
-    struct VBOData_
-    {
-        BufObjHandle_ vert_buf;
-        BufObjHandle_ elem_buf;
-        GLenum shape;
-        size_t count;
-        array_layout layout;
-    };
+   bool _use_clip_plane;
 
-    std::vector<VBOData_> _vbos;
+   struct VBOData_
+   {
+      BufObjHandle_ vert_buf;
+      BufObjHandle_ elem_buf;
+      GLenum shape;
+      size_t count;
+      array_layout layout;
+   };
 
-    bool compileShaders();
-    void initializeShaderState(RenderMode mode);
+   std::vector<VBOData_> _vbos;
 
-    template<typename T>
-    void drawDeviceBufferImpl(GLenum shape, int count, bool indexed);
+   bool compileShaders();
+   void initializeShaderState(RenderMode mode);
 
-    void processTriangleXfbBuffer(CaptureBuffer& cbuf, const vector<ShaderXfbVertex>& verts);
-    void processLineXfbBuffer(CaptureBuffer& cbuf, const vector<ShaderXfbVertex>& verts);
+   template<typename T>
+   void drawDeviceBufferImpl(GLenum shape, int count, bool indexed);
+
+   void processTriangleXfbBuffer(CaptureBuffer& cbuf,
+                                 const vector<ShaderXfbVertex>& verts);
+   void processLineXfbBuffer(CaptureBuffer& cbuf,
+                             const vector<ShaderXfbVertex>& verts);
 public:
-	CoreGLDevice()
-		: _default_prgm(0), _feedback_prgm(0), _global_vao(0) { }
+   CoreGLDevice()
+      : _default_prgm(0), _feedback_prgm(0), _global_vao(0) { }
 
-    DeviceType getType() override { return GLDevice::CORE_DEVICE; }
+   DeviceType getType() override { return GLDevice::CORE_DEVICE; }
 
-    void init() override;
-    void setTransformMatrices(glm::mat4 model_view, glm::mat4 projection) override;
-    void setNumLights(int i) override;
-    void setMaterial(Material mat) override;
-    void setPointLight(int i, Light lt) override;
-    void setAmbientLight(const std::array<float, 4>& amb) override;
-    void setClipPlaneUse(bool enable) override;
-    void setClipPlaneEqn(const std::array<double, 4>& eqn) override;
+   void init() override;
+   void setTransformMatrices(glm::mat4 model_view, glm::mat4 projection) override;
+   void setNumLights(int i) override;
+   void setMaterial(Material mat) override;
+   void setPointLight(int i, Light lt) override;
+   void setAmbientLight(const std::array<float, 4>& amb) override;
+   void setClipPlaneUse(bool enable) override;
+   void setClipPlaneEqn(const std::array<double, 4>& eqn) override;
 
-    void bufferToDevice(array_layout layout, IVertexBuffer& buf) override;
-    void bufferToDevice(array_layout layout, IIndexedBuffer& buf) override;
-    void bufferToDevice(TextBuffer& t_buf) override;
-    void drawDeviceBuffer(int hnd) override;
-    void drawDeviceBuffer(const TextBuffer& t_buf) override;
+   void bufferToDevice(array_layout layout, IVertexBuffer& buf) override;
+   void bufferToDevice(array_layout layout, IIndexedBuffer& buf) override;
+   void bufferToDevice(TextBuffer& t_buf) override;
+   void drawDeviceBuffer(int hnd) override;
+   void drawDeviceBuffer(const TextBuffer& t_buf) override;
 
-    void initXfbMode() override
-    {
-	    glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, _feedback_vbo);
-        initializeShaderState(RenderMode::Feedback);
-        glEnable(GL_RASTERIZER_DISCARD);
-    }
-    void exitXfbMode() override
-    {
-        glDisable(GL_RASTERIZER_DISCARD);
-        initializeShaderState(RenderMode::Default);
-	    glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
-    }
-    void captureXfbBuffer(CaptureBuffer& cbuf, int hnd) override;
+   void initXfbMode() override
+   {
+      glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, _feedback_vbo);
+      initializeShaderState(RenderMode::Feedback);
+      glEnable(GL_RASTERIZER_DISCARD);
+   }
+   void exitXfbMode() override
+   {
+      glDisable(GL_RASTERIZER_DISCARD);
+      initializeShaderState(RenderMode::Default);
+      glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
+   }
+   void captureXfbBuffer(CaptureBuffer& cbuf, int hnd) override;
 };
 
 }

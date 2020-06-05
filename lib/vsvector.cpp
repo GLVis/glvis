@@ -665,15 +665,16 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
          mesh->GetPointMatrix (i, pointmat);
          mesh->GetElementVertices (i, vertices);
 
-         for (j = 0; j < pointmat.Size(); j++) {
+         for (j = 0; j < pointmat.Size(); j++)
+         {
             build.glVertex3d (
-                        pointmat.Elem(0, j)+
-                        (*solx)(vertices[j])*(ianim)/ianimmax,
-                        pointmat.Elem(1, j)+
-                        (*soly)(vertices[j])*(ianim)/ianimmax,
-                        zc);
-        }
-        build.glEnd();
+               pointmat.Elem(0, j)+
+               (*solx)(vertices[j])*(ianim)/ianimmax,
+               pointmat.Elem(1, j)+
+               (*soly)(vertices[j])*(ianim)/ianimmax,
+               zc);
+         }
+         build.glEnd();
       }
    }
    else if (drawdisp < 2)
@@ -693,15 +694,15 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
          for (int k = 0; k+1 < RE.Size(); k++)
          {
             build.glVertex3d (
-                        pm(0, RE[k]) + sc * vvals(0, RE[k]),
-                        pm(1, RE[k]) + sc * vvals(1, RE[k]), zc);
+               pm(0, RE[k]) + sc * vvals(0, RE[k]),
+               pm(1, RE[k]) + sc * vvals(1, RE[k]), zc);
             k++;
             build.glVertex3d (
-                        pm(0, RE[k]) + sc * vvals(0, RE[k]),
-                        pm(1, RE[k]) + sc * vvals(1, RE[k]), zc);
+               pm(0, RE[k]) + sc * vvals(0, RE[k]),
+               pm(1, RE[k]) + sc * vvals(1, RE[k]), zc);
          }
-        build.glEnd();
-        }
+         build.glEnd();
+      }
    }
    else
    {
@@ -967,40 +968,51 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
    double* cp_eqn = CuttingPlane->Equation();
    params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};
    params.contains_translucent = false;
-   if (drawvector > 1) {
+   if (drawvector > 1)
+   {
       scene.queue.emplace_back(params, &vector_buf);
    }
    params.contains_translucent = MatAlpha < 1.0;
-   if (drawelems) {
+   if (drawelems)
+   {
       scene.queue.emplace_back(params, &disp_buf);
    }
    params.contains_translucent = false;
    params.mesh_material = BLK_MAT;
    params.static_color = GetLineColor();
-   if (draw_cp) {
+   if (draw_cp)
+   {
       params.use_clip_plane = false;
       scene.queue.emplace_back(params, &cp_buf);
       params.use_clip_plane = true;
    }
-   if (drawbdr) {
+   if (drawbdr)
+   {
       scene.queue.emplace_back(params, &bdr_buf);
    }
 
    // draw lines
-   if (drawmesh == 1) {
+   if (drawmesh == 1)
+   {
       scene.queue.emplace_back(params, &line_buf);
-   } else if (drawmesh == 2) {
+   }
+   else if (drawmesh == 2)
+   {
       scene.queue.emplace_back(params, &lcurve_buf);
    }
 
    // draw numberings
-   if (drawnums == 1) {
+   if (drawnums == 1)
+   {
       scene.queue.emplace_back(params, &e_nums_buf);
-   } else if (drawnums == 2) {
+   }
+   else if (drawnums == 2)
+   {
       scene.queue.emplace_back(params, &v_nums_buf);
    }
 
-   if (drawvector == 1) {
+   if (drawvector == 1)
+   {
       scene.queue.emplace_back(params, &vector_buf);
    }
 
