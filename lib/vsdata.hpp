@@ -172,6 +172,7 @@ public:
    virtual void PrepareLines() = 0;
 
    void UpdateBoundingBox() { SetNewScalingFromBox(); PrepareAxes(); }
+   virtual void EventUpdateBackground() { };
    virtual void EventUpdateColors() { Prepare(); }
    virtual void UpdateLevelLines() = 0;
    virtual void UpdateValueRange(bool prepare) = 0;

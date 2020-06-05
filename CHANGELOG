@@ -26,6 +26,7 @@ Version 3.4.1 (development)
 
 - Added a key for setting the bounding box from the terminal (Shift+F7).
 
+- Add support to visualize the element ordering curve with 'Ctrl+o'.
 
 Version 3.4, released on May 29, 2018
 =====================================

@@ -82,6 +82,7 @@ static void SolutionKeyHPressed()
         << "| z/Z  Move the clipping plane       |" << endl
         << "| \\ -  Set light source position     |" << endl
         << "| Ctrl+p - Print to a PDF file       |" << endl
+        << "| Ctrl+o - Element ordering curve    |" << endl
         << "+------------------------------------+" << endl
         << "| Function keys                      |" << endl
         << "+------------------------------------+" << endl
@@ -233,6 +234,16 @@ static void KeyNPressed()
    SendExposeEvent();
 }
 
+static void KeyOPressed(GLenum state)
+{
+   if (state & ControlMask)
+   {
+      vssol -> ToggleDrawOrdering();
+      vssol -> PrepareOrderingCurve();
+      SendExposeEvent();
+   }
+}
+
 static void KeyEPressed()
 {
    vssol -> ToggleDrawElems();
@@ -361,6 +372,7 @@ static void KeyF3Pressed()
       vssol->PrepareLines();
       vssol->PrepareLevelCurves();
       vssol->PrepareNumbering();
+      vssol->PrepareOrderingCurve();
       SendExposeEvent();
    }
 }
@@ -439,6 +451,7 @@ void VisualizationSceneSolution::Init()
 
    drawelems = shading = 1;
    drawmesh  = 0;
+   draworder = 0;
    drawnums  = 0;
 
    shrink = 1.0;
@@ -479,6 +492,9 @@ void VisualizationSceneSolution::Init()
       wnd->setOnKeyDown('n', KeyNPressed);
       wnd->setOnKeyDown('N', KeyNPressed);
 
+      auxModKeyFunc (AUX_o, KeyOPressed);
+      auxModKeyFunc (AUX_O, KeyOPressed);
+
       wnd->setOnKeyDown('e', KeyEPressed);
       wnd->setOnKeyDown('E', KeyEPressed);
 
@@ -508,6 +524,7 @@ void VisualizationSceneSolution::Init()
    PrepareLevelCurves();
    PrepareBoundary();
    PrepareNumbering();
+   PrepareOrderingCurve();
 }
 
 VisualizationSceneSolution::~VisualizationSceneSolution()
@@ -572,6 +589,7 @@ void VisualizationSceneSolution::NewMeshAndSolution(
    PrepareLevelCurves();
    PrepareBoundary();
    PrepareCP();
+   PrepareOrderingCurve();
 }
 
 
@@ -730,6 +748,7 @@ void VisualizationSceneSolution::SetShading(int s, bool print)
          PrepareLevelCurves();
          PrepareCP();
          PrepareNumbering();
+         PrepareOrderingCurve();
       }
       else
       {
@@ -988,6 +1007,17 @@ void VisualizationSceneSolution::ToggleLogscale(bool print)
    {
       PrintLogscale(true);
    }
+}
+
+void VisualizationSceneSolution::EventUpdateColors()
+{
+   Prepare();
+   PrepareOrderingCurve();
+}
+
+void VisualizationSceneSolution::EventUpdateBackground()
+{
+   PrepareNumbering();
 }
 
 void DrawNumberedMarker(gl3::GlDrawable& buff, const double x[3], double dx, int n)
@@ -1877,6 +1907,91 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
    }
 
    updated_bufs.emplace_back(&v_nums_buf);
+}
+
+void VisualizationSceneSolution::PrepareOrderingCurve()
+{
+   bool color = draworder < 3;
+   PrepareOrderingCurve1(order_list, true, color);
+   PrepareOrderingCurve1(order_list_noarrow, false, color);
+}
+
+void VisualizationSceneSolution::PrepareOrderingCurve1(int list, bool arrows,
+                                                       bool color)
+{
+   glNewList(list, GL_COMPILE);
+
+   DenseMatrix pointmat;
+   Array<int> vertices;
+
+   DenseMatrix pointmat1;
+   Array<int> vertices1;
+
+   int ne = mesh->GetNE();
+   for (int k = 0; k < ne-1; k++)
+   {
+      mesh->GetPointMatrix (k, pointmat);
+      mesh->GetElementVertices (k, vertices);
+      mesh->GetPointMatrix (k+1, pointmat1);
+      mesh->GetElementVertices (k+1, vertices1);
+      int nv = vertices.Size();
+      int nv1 = vertices1.Size();
+
+      ShrinkPoints(pointmat, k, 0, 0);
+      ShrinkPoints(pointmat1, k+1, 0, 0);
+
+      double xs = 0.0;
+      double ys = 0.0;
+      double us = 0.0;
+      for (int j = 0; j < nv; j++)
+      {
+         xs += pointmat(0,j);
+         ys += pointmat(1,j);
+         us += maxv + double(k)/ne*(maxv-minv);
+      }
+      xs /= nv;
+      ys /= nv;
+      us /= nv;
+
+      double xs1 = 0.0;
+      double ys1 = 0.0;
+      double us1 = 0.0;
+      for (int j = 0; j < nv1; j++)
+      {
+         xs1 += pointmat1(0,j);
+         ys1 += pointmat1(1,j);
+         us1 += maxv + double(k+1)/ne*(maxv-minv);
+      }
+      xs1 /= nv1;
+      ys1 /= nv1;
+      us1 /= nv1;
+
+      double dx = xs1-xs;
+      double dy = ys1-ys;
+      double du = us1-us;
+      double ds = sqrt(dx*dx+dy*dy+du*du);
+
+      if (color)
+      {
+         double cval = minv+double(k)/ne*(maxv-minv);
+         MySetColor(cval, minv, maxv);
+      }
+
+      if (arrows)
+      {
+         Arrow3(xs,ys,us,
+                dx,dy,du,
+                ds,0.05);
+      }
+      else
+      {
+         Arrow3(xs,ys,us,
+                dx,dy,du,
+                ds,0.0);
+      }
+   }
+
+   glEndList();
 }
 
 void VisualizationSceneSolution::PrepareNumbering()

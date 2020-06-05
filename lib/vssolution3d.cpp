@@ -66,6 +66,7 @@ static void Solution3dKeyHPressed()
         << "| y/Y  Rotate clipping plane (theta) |" << endl
         << "| z/Z  Translate clipping plane      |" << endl
         << "| Ctrl+p - Print to a PDF file       |" << endl
+        << "| Ctrl+o - Element ordering curve    |" << endl
         << "+------------------------------------+" << endl
         << "| Function keys                      |" << endl
         << "+------------------------------------+" << endl
@@ -112,6 +113,116 @@ static void KeyIPressed()
 {
    vssol3d -> ToggleCPAlgorithm();
    SendExposeEvent();
+}
+
+void VisualizationSceneSolution3d::PrepareOrderingCurve()
+{
+   bool color = draworder < 3;
+   PrepareOrderingCurve1(order_list, true, color);
+   PrepareOrderingCurve1(order_list_noarrow, false, color);
+}
+
+
+void VisualizationSceneSolution3d::PrepareOrderingCurve1(int list, bool arrows,
+                                                         bool color)
+{
+   glNewList(list, GL_COMPILE);
+
+   // make the lines of the ordering curve thicker
+   double ThicknessFactor = 2.0;
+   double MS_Thickness = 2.0;
+   double LineWidth;
+   if (Get_AntiAliasing())
+   {
+      LineWidth = Get_MS_LineWidth();
+      Set_MS_LineWidth(MS_Thickness);
+   }
+   else
+   {
+      LineWidth = Get_LineWidth();
+      Set_LineWidth(ThicknessFactor*LineWidth);
+   }
+
+   DenseMatrix pointmat;
+   Array<int> vertices;
+
+   DenseMatrix pointmat1;
+   Array<int> vertices1;
+
+   int ne = mesh->GetNE();
+   for (int k = 0; k < ne-1; k++)
+   {
+      mesh->GetPointMatrix (k, pointmat);
+      mesh->GetElementVertices (k, vertices);
+      mesh->GetPointMatrix (k+1, pointmat1);
+      mesh->GetElementVertices (k+1, vertices1);
+      int nv = vertices.Size();
+      int nv1 = vertices1.Size();
+
+      ShrinkPoints(pointmat, k, 0, 0);
+      ShrinkPoints(pointmat1, k+1, 0, 0);
+
+      double xs = 0.0;
+      double ys = 0.0;
+      double zs = 0.0;
+      for (int j = 0; j < nv; j++)
+      {
+         xs += pointmat(0,j);
+         ys += pointmat(1,j);
+         zs += pointmat(2,j);
+      }
+      xs /= nv;
+      ys /= nv;
+      zs /= nv;
+
+      double xs1 = 0.0;
+      double ys1 = 0.0;
+      double zs1 = 0.0;
+      for (int j = 0; j < nv1; j++)
+      {
+         xs1 += pointmat1(0,j);
+         ys1 += pointmat1(1,j);
+         zs1 += pointmat1(2,j);
+      }
+      xs1 /= nv1;
+      ys1 /= nv1;
+      zs1 /= nv1;
+
+      double dx = xs1-xs;
+      double dy = ys1-ys;
+      double dz = zs1-zs;
+      double ds = sqrt(dx*dx+dy*dy+dz*dz);
+
+      if (color)
+      {
+         double cval = minv+double(k)/ne*(maxv-minv);
+         MySetColor(cval, minv, maxv);
+      }
+
+      if (arrows)
+      {
+         Arrow3(xs,ys,zs,
+                dx,dy,dz,
+                ds,0.05);
+      }
+      else
+      {
+         Arrow3(xs,ys,zs,
+                dx,dy,dz,
+                ds,0.0);
+      }
+   }
+
+   if (Get_AntiAliasing())
+   {
+      Set_MS_LineWidth(LineWidth);
+   }
+   else
+   {
+      Set_LineWidth(LineWidth);
+   }
+
+   glEndList();
 }
 
 void VisualizationSceneSolution3d::CPPrepare()
@@ -208,19 +319,28 @@ static void KeyFPressed()
    SendExposeEvent();
 }
 
-static void KeyoPressed()
+static void KeyoPressed(GLenum state)
 {
-   if (vssol3d -> TimesToRefine < 32)
+   if (state & ControlMask)
    {
-      cout << "Subdivision factor = " << ++vssol3d->TimesToRefine << endl;
-      if (vssol3d -> GetShading() == 2)
+      vssol3d -> ToggleDrawOrdering();
+      vssol3d -> PrepareOrderingCurve();
+      SendExposeEvent();
+   }
+   else
+   {
+      if (vssol3d -> TimesToRefine < 32)
       {
-         vssol3d->DoAutoscale(false);
-         vssol3d -> Prepare();
-         vssol3d -> PrepareLines();
-         vssol3d -> CPPrepare();
-         vssol3d -> PrepareLevelSurf();
-         SendExposeEvent();
+         cout << "Subdivision factor = " << ++vssol3d->TimesToRefine << endl;
+         if (vssol3d -> GetShading() == 2)
+         {
+            vssol3d->DoAutoscale(false);
+            vssol3d -> Prepare();
+            vssol3d -> PrepareLines();
+            vssol3d -> CPPrepare();
+            vssol3d -> PrepareLevelSurf();
+            SendExposeEvent();
+         }
       }
    }
 }
@@ -608,6 +728,7 @@ void VisualizationSceneSolution3d::Init()
 
    drawelems = shading = 1;
    drawmesh = 0;
+   draworder = 0;
    scaling = 0;
 
    shrink = 1.0;
@@ -707,6 +828,7 @@ void VisualizationSceneSolution3d::Init()
    PrepareLines();
    CPPrepare();
    PrepareLevelSurf();
+   PrepareOrderingCurve();
 }
 
 VisualizationSceneSolution3d::~VisualizationSceneSolution3d()
@@ -746,6 +868,7 @@ void VisualizationSceneSolution3d::NewMeshAndSolution(
    PrepareLines();
    CPPrepare();
    PrepareLevelSurf();
+   PrepareOrderingCurve();
 }
 
 void VisualizationSceneSolution3d::SetShading(int s, bool print)
@@ -805,6 +928,7 @@ void VisualizationSceneSolution3d::SetRefineFactors(int f, int ignored)
       Prepare();
       PrepareLines();
       CPPrepare();
+      PrepareOrderingCurve();
    }
 }
 
@@ -949,6 +1073,7 @@ void VisualizationSceneSolution3d::EventUpdateColors()
    Prepare();
    PrepareCuttingPlane();
    PrepareLevelSurf();
+   PrepareOrderingCurve();
    if (shading == 2 && drawmesh != 0 && FaceShiftScale != 0.0)
    {
       PrepareLines();
@@ -1000,6 +1125,7 @@ void VisualizationSceneSolution3d::ToggleCuttingPlane()
    {
       Prepare();
       PrepareLines();
+      PrepareOrderingCurve();
    }
 }
 

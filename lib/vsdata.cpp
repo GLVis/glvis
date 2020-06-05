@@ -655,6 +655,7 @@ void KeyGPressed()
 {
    vsdata->ToggleBackground();
    vsdata->PrepareAxes();
+   vsdata->EventUpdateBackground();
    SendExposeEvent();
 }
 

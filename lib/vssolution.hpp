@@ -28,8 +28,9 @@ protected:
    Vector *v_normals;
    GridFunction *rsol;
 
-   int drawmesh, drawelems, drawnums;
+   int drawmesh, drawelems, drawnums, draworder;
    int drawbdr, draw_cp;
+   int order_list, order_list_noarrow;
 
    gl3::GlDrawable disp_buf;
 
@@ -95,6 +96,8 @@ public:
    virtual void FindMeshBox(bool prepare);
 
    virtual void ToggleLogscale(bool print);
+   virtual void EventUpdateBackground();
+   virtual void EventUpdateColors();
    virtual void UpdateLevelLines() { PrepareLevelCurves(); }
    virtual void UpdateValueRange(bool prepare);
 
@@ -111,6 +114,9 @@ public:
    void PrepareLevelCurves2();
 
    void PrepareBoundary();
+
+   void PrepareOrderingCurve();
+   void PrepareOrderingCurve1(int list, bool arrows, bool color);
 
    void PrepareNumbering();
    void PrepareElementNumbering();
@@ -131,6 +137,11 @@ public:
 
    void ToggleDrawMesh() { drawmesh = (drawmesh+1)%3; }
 
+   // 0 - none, 1 - no arrows (color), 2 - with arrows (color),
+   //           3 - no arrows (black), 4 - with arrows (black)
+   void ToggleDrawOrdering() { draworder = (draworder+1)%5; }
+
+   // 0 - none, 1 - elements, 2 - vertices
    void ToggleDrawNumberings() { drawnums = (drawnums+1)%3; }
 
    virtual void SetShading(int, bool);
