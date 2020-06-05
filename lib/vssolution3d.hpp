@@ -22,8 +22,6 @@ class VisualizationSceneSolution3d : public VisualizationSceneScalarData
 protected:
 
    int drawmesh, drawelems, shading, draworder;
-   int displlist, linelist;
-   int order_list, order_list_noarrow;
    int cplane;
    int cp_drawmesh, cp_drawelems, drawlsurf;
    // Algorithm used to draw the cutting plane when shading is 2 and cplane is 1
@@ -37,6 +35,7 @@ protected:
    gl3::GlDrawable cplines_buf;
    gl3::GlDrawable lsurf_buf;
    gl3::GlDrawable other_buf;
+   gl3::GlDrawable order_buf, order_noarrow_buf;
 
    double *node_pos;
 
@@ -119,7 +118,7 @@ public:
    virtual void PrepareLines();
    virtual void Prepare();
    virtual void PrepareOrderingCurve();
-   virtual void PrepareOrderingCurve1(int list, bool arrows, bool color);
+   virtual void PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows, bool color);
    virtual gl3::SceneInfo GetSceneObjs();
 
    void ToggleDrawElems()

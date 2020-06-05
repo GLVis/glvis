@@ -236,7 +236,7 @@ static void KeyNPressed()
 
 static void KeyOPressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       vssol -> ToggleDrawOrdering();
       vssol -> PrepareOrderingCurve();
@@ -492,8 +492,8 @@ void VisualizationSceneSolution::Init()
       wnd->setOnKeyDown('n', KeyNPressed);
       wnd->setOnKeyDown('N', KeyNPressed);
 
-      auxModKeyFunc (AUX_o, KeyOPressed);
-      auxModKeyFunc (AUX_O, KeyOPressed);
+      wnd->setOnKeyDown('o', KeyOPressed);
+      wnd->setOnKeyDown('O', KeyOPressed);
 
       wnd->setOnKeyDown('e', KeyEPressed);
       wnd->setOnKeyDown('E', KeyEPressed);
@@ -1912,15 +1912,18 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
 void VisualizationSceneSolution::PrepareOrderingCurve()
 {
    bool color = draworder < 3;
-   PrepareOrderingCurve1(order_list, true, color);
-   PrepareOrderingCurve1(order_list_noarrow, false, color);
+   order_buf.clear();
+   order_noarrow_buf.clear();
+   PrepareOrderingCurve1(order_buf, true, color);
+   PrepareOrderingCurve1(order_noarrow_buf, false, color);
+   updated_bufs.emplace_back(&order_buf);
+   updated_bufs.emplace_back(&order_noarrow_buf);
 }
 
-void VisualizationSceneSolution::PrepareOrderingCurve1(int list, bool arrows,
+void VisualizationSceneSolution::PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows,
                                                        bool color)
 {
-   glNewList(list, GL_COMPILE);
-
+   gl3::GlBuilder builder = buf.createBuilder();
    DenseMatrix pointmat;
    Array<int> vertices;
 
@@ -1974,24 +1977,24 @@ void VisualizationSceneSolution::PrepareOrderingCurve1(int list, bool arrows,
       if (color)
       {
          double cval = minv+double(k)/ne*(maxv-minv);
-         MySetColor(cval, minv, maxv);
+         MySetColor(builder, cval, minv, maxv);
       }
 
       if (arrows)
       {
-         Arrow3(xs,ys,us,
+         Arrow3(builder,
+                xs,ys,us,
                 dx,dy,du,
                 ds,0.05);
       }
       else
       {
-         Arrow3(xs,ys,us,
+         Arrow3(builder,
+                xs,ys,us,
                 dx,dy,du,
                 ds,0.0);
       }
    }
-
-   glEndList();
 }
 
 void VisualizationSceneSolution::PrepareNumbering()
@@ -2310,7 +2313,17 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
       // draw elements
       scene.queue.emplace_back(params, &disp_buf);
    }
+   // draw orderings -- color modes
+   if (draworder == 1)
+   {
+       scene.queue.emplace_back(params, &order_noarrow_buf);
+   }
+   else if (draworder == 2)
+   {
+       scene.queue.emplace_back(params, &order_buf);
+   }
    params.mesh_material = VisualizationScene::BLK_MAT;
+   // everything below will be drawn in "black"
    params.static_color = GetLineColor();
    if (draw_cp) {
       //draw cutting plane
@@ -2332,6 +2345,15 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
       scene.queue.emplace_back(params, &e_nums_buf);
    } else if (drawnums == 2) {
       scene.queue.emplace_back(params, &v_nums_buf);
+   }
+   // draw orderings -- "black" modes
+   if (draworder == 3)
+   {
+       scene.queue.emplace_back(params, &order_noarrow_buf);
+   }
+   else if (draworder == 4)
+   {
+       scene.queue.emplace_back(params, &order_buf);
    }
    return scene;
 }

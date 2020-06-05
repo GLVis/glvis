@@ -74,21 +74,55 @@ void VisualizationSceneScalarData::DoAutoscaleValue(bool prepare)
    }
 }
 
-#if 0
+void VisualizationSceneScalarData::Cone(gl3::GlBuilder& builder,
+                                        glm::mat4 xfrm)
+{
+   const int n = 8;
+   const double step = 2*M_PI/n;
+   const double nz = (1.0/4.0);
+   double point = step;
+   int i;
+
+   glm::mat3 normXfrm = glm::inverseTranspose(glm::mat3(xfrm));
+
+   glm::vec3 start1vtx = glm::vec3(xfrm * glm::vec4(0, 0, 0, 1));
+   glm::vec3 start1norm = glm::vec3(normXfrm * glm::vec3(0, 0, 1));
+   glm::vec3 start2vtx = glm::vec3(xfrm * glm::vec4(1, 0, -4, 1));
+   glm::vec3 start2norm = glm::vec3(normXfrm * glm::vec3(1, 0, nz));
+
+   builder.glBegin(GL_TRIANGLE_FAN);
+   builder.glNormal3d(start1norm[0], start1norm[1], start1norm[2]);
+   builder.glVertex3d(start1vtx[0], start1vtx[1], start1vtx[2]);
+   builder.glNormal3d(start2norm[0], start2norm[1], start2norm[2]);
+   builder.glVertex3d(start2vtx[0], start2vtx[1], start2vtx[2]);
+
+   for (i = 1; i < n; i++)
+   {
+      glm::vec3 baseVtx = glm::vec3(xfrm * glm::vec4(cos(point), sin(point), -4, 1));
+      glm::vec3 baseNorm = glm::vec3(normXfrm * glm::vec3(cos(point), sin(point), nz));
+      builder.glNormal3d(baseNorm[0], baseNorm[1], baseNorm[2]);
+      builder.glVertex3d(baseVtx[0], baseVtx[1], baseVtx[2]);
+      point += step;
+   }
+   builder.glNormal3d(start2norm[0], start2norm[1], start2norm[2]);
+   builder.glVertex3d(start2vtx[0], start2vtx[1], start2vtx[2]);
+   builder.glEnd();
+}
+
 // Draw an arrow starting at point (px, py, pz) with orientation (vx, vy, vz)
 // and length "length".
-void VisualizationSceneScalarData::Arrow3(double px, double py, double pz,
+void VisualizationSceneScalarData::Arrow3(gl3::GlBuilder& builder,
+                                          double px, double py, double pz,
                                           double vx, double vy, double vz,
                                           double length,
                                           double cone_scale)
 {
-   glPushMatrix();
-
    double xc = 0.5*(x[0]+x[1]);
    double yc = 0.5*(y[0]+y[1]);
    double zc = 0.5*(z[0]+z[1]);
-   glTranslated(xc, yc, zc);
-   glScaled(1.0/xscale, 1.0/yscale, 1.0/zscale);
+   glm::mat4 xfrm(1.0);
+   xfrm = glm::translate(xfrm, glm::vec3(xc, yc, zc));
+   xfrm = glm::scale(xfrm, glm::vec3(1.0/xscale, 1.0/yscale, 1.0/zscale));
 
    double rlen = length/sqrt(vx*vx+vy*vy+vz*vz);
    px = (px-xc)*xscale;
@@ -103,81 +137,71 @@ void VisualizationSceneScalarData::Arrow3(double px, double py, double pz,
       length = sqrt(vx*vx+vy*vy+vz*vz);
    }
 
-   glTranslated(px, py, pz);
+   xfrm = glm::translate(xfrm, glm::vec3(px, py, pz));
 
    double rhos = sqrt (vx*vx+vy*vy+vz*vz);
-   double phi   = acos(vz/rhos);
-   double theta;
+   float phi   = acos(vz/rhos);
+   float theta;
    theta = atan2 (vy, vx);
 
-   glRotatef(theta*180/M_PI, 0.0f, 0.0f, 1.0f);
-   glRotatef(phi*180/M_PI, 0.0f, 1.0f, 0.0f);
+   xfrm = glm::rotate(xfrm, theta, glm::vec3(0, 0, 1));
+   xfrm = glm::rotate(xfrm, phi, glm::vec3(0, 1, 0));
 
-   glScaled (length, length, length);
+   xfrm = glm::scale(xfrm, glm::vec3(length));
+
 
    if (arrow_type == 1)
    {
-      glTranslated (0, 0, -0.5);
+      xfrm = glm::translate(xfrm, glm::vec3(0, 0, -0.5));
    }
 
-   glBegin(GL_LINES);
-   glVertex3f(0, 0, 0);
-   glVertex3f(0, 0, 1);
-   glEnd();
+   glm::vec4 pt1 = xfrm * glm::vec4(0, 0, 0, 1);
+   glm::vec4 pt2 = xfrm * glm::vec4(0, 0, 1, 1);
 
-   glTranslated (0, 0, 1);
-   glScaled (cone_scale, cone_scale, cone_scale);
+   builder.glBegin(GL_LINES);
+   builder.glVertex3d(pt1[0], pt1[1], pt1[2]);
+   builder.glVertex3d(pt2[0], pt2[1], pt2[2]);
+   builder.glEnd();
 
-   Cone();
+   xfrm = glm::translate(xfrm, glm::vec3(0, 0, 1));
+   xfrm = glm::scale(xfrm, glm::vec3(cone_scale));
 
-   glPopMatrix();
+   Cone(builder, xfrm);
 }
 
-void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
+void VisualizationSceneScalarData::Arrow2(gl3::GlBuilder& builder,
+                                          double px, double py, double pz,
                                           double vx, double vy, double vz,
                                           double length,
                                           double cone_scale)
 {
-/*
-   glPushMatrix();
-   glTranslated(px, py, pz);
-*/
-#if 0
-   gl3::GlMatrix mv_save = gl->modelView;
-   gl->modelView.translate(px, py, pz);
+   glm::mat4 xfrm(1.0);
+   xfrm = glm::translate(xfrm, glm::vec3(px, py, pz));
 
    double rhos = sqrt (vx*vx+vy*vy+vz*vz);
-   double phi   = acos(vz/rhos);
-   double theta;
+   float phi   = acos(vz/rhos);
+   float theta;
    theta = atan2 (vy, vx);
 
-   /*
-   glRotatef(theta*180/M_PI, 0.0f, 0.0f, 1.0f);
-   glRotatef(phi*180/M_PI, 0.0f, 1.0f, 0.0f);
+   xfrm = glm::rotate(xfrm, theta, glm::vec3(0, 0, 1));
+   xfrm = glm::rotate(xfrm, phi, glm::vec3(0, 1, 0));
+   
+   xfrm = glm::scale(xfrm, glm::vec3(length));
 
-   glScaled (length, length, length);
-   */
-   gl->modelView.rotate(theta*180/M_PI, 0.0f, 0.0f, 1.0f);
-   gl->modelView.rotate(phi*180/M_PI, 0.0f, 1.0f, 0.0f);
-   gl->modelView.scale(length, length, length);
-   gl->loadMatrixUniforms();
+   glm::vec4 pt1 = xfrm * glm::vec4(0, 0, 0, 1);
+   glm::vec4 pt2 = xfrm * glm::vec4(0, 0, 1, 1);
 
-   glBegin(GL_LINES);
-   glVertex3f(0, 0, 0);
-   glVertex3f(0, 0, 1);
-   glEnd();
+   builder.glBegin(GL_LINES);
+   builder.glVertex3d(pt1[0], pt1[1], pt1[2]);
+   builder.glVertex3d(pt2[0], pt2[1], pt2[2]);
+   builder.glEnd();
 
-   gl->modelView.translate(0, 0, 1);
-   gl->modelView.scale(cone_scale, cone_scale, cone_scale);
-   gl->loadMatrixUniforms();
+   xfrm = glm::translate(xfrm, glm::vec3(0, 0, 1));
+   xfrm = glm::scale(xfrm, glm::vec3(cone_scale));
 
-   Cone();
-
-   gl->modelView = mv_save;
-   gl->loadMatrixUniforms();
-#endif
+   Cone(builder, xfrm);
 }
-#endif
+
 void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
                                          double px, double py, double pz,
                                          double vx, double vy, double vz,

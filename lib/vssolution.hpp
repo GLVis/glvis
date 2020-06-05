@@ -30,7 +30,6 @@ protected:
 
    int drawmesh, drawelems, drawnums, draworder;
    int drawbdr, draw_cp;
-   int order_list, order_list_noarrow;
 
    gl3::GlDrawable disp_buf;
 
@@ -41,6 +40,9 @@ protected:
    gl3::GlDrawable line_buf;
    gl3::GlDrawable bdr_buf;
    gl3::GlDrawable cp_buf;
+
+   gl3::GlDrawable order_buf;
+   gl3::GlDrawable order_noarrow_buf;
 
    void Init();
 
@@ -116,7 +118,7 @@ public:
    void PrepareBoundary();
 
    void PrepareOrderingCurve();
-   void PrepareOrderingCurve1(int list, bool arrows, bool color);
+   void PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows, bool color);
 
    void PrepareNumbering();
    void PrepareElementNumbering();

@@ -118,29 +118,33 @@ static void KeyIPressed()
 void VisualizationSceneSolution3d::PrepareOrderingCurve()
 {
    bool color = draworder < 3;
-   PrepareOrderingCurve1(order_list, true, color);
-   PrepareOrderingCurve1(order_list_noarrow, false, color);
+   order_buf.clear();
+   order_noarrow_buf.clear();
+   PrepareOrderingCurve1(order_buf, true, color);
+   PrepareOrderingCurve1(order_noarrow_buf, false, color);
+   updated_bufs.emplace_back(&order_buf);
+   updated_bufs.emplace_back(&order_noarrow_buf);
 }
 
 
-void VisualizationSceneSolution3d::PrepareOrderingCurve1(int list, bool arrows,
+void VisualizationSceneSolution3d::PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows,
                                                          bool color)
 {
-   glNewList(list, GL_COMPILE);
+   gl3::GlBuilder builder = buf.createBuilder();
 
    // make the lines of the ordering curve thicker
    double ThicknessFactor = 2.0;
    double MS_Thickness = 2.0;
    double LineWidth;
-   if (Get_AntiAliasing())
+   if (GetMultisample())
    {
-      LineWidth = Get_MS_LineWidth();
-      Set_MS_LineWidth(MS_Thickness);
+      LineWidth = GetLineWidthMS();
+      SetLineWidthMS(MS_Thickness);
    }
    else
    {
-      LineWidth = Get_LineWidth();
-      Set_LineWidth(ThicknessFactor*LineWidth);
+      LineWidth = GetLineWidth();
+      SetLineWidth(ThicknessFactor*LineWidth);
    }
 
    DenseMatrix pointmat;
@@ -196,33 +200,33 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve1(int list, bool arrows,
       if (color)
       {
          double cval = minv+double(k)/ne*(maxv-minv);
-         MySetColor(cval, minv, maxv);
+         MySetColor(builder, cval, minv, maxv);
       }
 
       if (arrows)
       {
-         Arrow3(xs,ys,zs,
+         Arrow3(builder,
+                xs,ys,zs,
                 dx,dy,dz,
                 ds,0.05);
       }
       else
       {
-         Arrow3(xs,ys,zs,
+         Arrow3(builder,
+                xs,ys,zs,
                 dx,dy,dz,
                 ds,0.0);
       }
    }
 
-   if (Get_AntiAliasing())
+   if (GetMultisample())
    {
-      Set_MS_LineWidth(LineWidth);
+      SetLineWidthMS(LineWidth);
    }
    else
    {
-      Set_LineWidth(LineWidth);
+      SetLineWidth(LineWidth);
    }
-
-   glEndList();
 }
 
 void VisualizationSceneSolution3d::CPPrepare()
@@ -321,7 +325,7 @@ static void KeyFPressed()
 
 static void KeyoPressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       vssol3d -> ToggleDrawOrdering();
       vssol3d -> PrepareOrderingCurve();
@@ -3588,6 +3592,15 @@ gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
    if (drawelems) {
       scene.queue.emplace_back(params, &disp_buf);
    }
+   // draw orderings -- color modes
+   if (draworder == 1)
+   {
+       scene.queue.emplace_back(params, &order_noarrow_buf);
+   }
+   else if (draworder == 2)
+   {
+       scene.queue.emplace_back(params, &order_buf);
+   }
    if (cplane && cp_drawelems)
    {
       params.use_clip_plane = false;
@@ -3596,6 +3609,7 @@ gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
    }
    params.contains_translucent = false;
    params.mesh_material = VisualizationScene::BLK_MAT;
+   // everything below will be drawn in "black"
    params.static_color = GetLineColor();
    if (drawmesh) {
       scene.queue.emplace_back(params, &line_buf);
@@ -3603,6 +3617,15 @@ gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
    if (cp_drawmesh) {
       params.use_clip_plane = false;
       scene.queue.emplace_back(params, &cplines_buf);
+   }
+   // draw orderings -- "black" modes
+   if (draworder == 3)
+   {
+       scene.queue.emplace_back(params, &order_noarrow_buf);
+   }
+   else if (draworder == 4)
+   {
+       scene.queue.emplace_back(params, &order_buf);
    }
    return scene;
 }

@@ -124,6 +124,8 @@ protected:
 
    void FixValueRange();
 
+   void Cone(gl3::GlBuilder& builder, glm::mat4 transform);
+
 public:
    Plane *CuttingPlane;
    int key_r_state;
@@ -203,11 +205,13 @@ public:
               double px, double py, double pz,
               double vx, double vy, double vz, double length,
               double cone_scale = 0.075);
-   void Arrow2(double px, double py, double pz,
+   void Arrow2(gl3::GlBuilder& builder,
+               double px, double py, double pz,
                double vx, double vy, double vz,
                double length,
                double cone_scale = 0.075);
-   void Arrow3(double px, double py, double pz,
+   void Arrow3(gl3::GlBuilder& builder,
+               double px, double py, double pz,
                double vx, double vy, double vz,
                double length,
                double cone_scale = 0.075);
