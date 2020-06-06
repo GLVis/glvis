@@ -779,7 +779,7 @@ Uint32 amask = 0xff000000;
 #define SDL_LOCKIFMUST(s) (SDL_MUSTLOCK(s) ? SDL_LockSurface(s) : 0)
 #define SDL_UNLOCKIFMUST(s) { if(SDL_MUSTLOCK(s)) SDL_UnlockSurface(s); }
 
-int invert_surface_vertical(SDL_Surface *surface)
+int InvertSurfaceVertical(SDL_Surface *surface)
 {
    Uint8 *t, *a, *b, *last;
    Uint16 pitch;
@@ -992,9 +992,9 @@ int Screenshot(const char *fname, bool convert)
    }
    else
    {
-      if (invert_surface_vertical(surf))
+      if (InvertSurfaceVertical(surf))
       {
-         std::cerr << "failed to invert surface, you're screenshot may be upside down" <<
+         std::cerr << "failed to invert surface, your screenshot may be upside down" <<
                    std::endl;
       }
       SDL_SaveBMP(surf, filename.c_str());
