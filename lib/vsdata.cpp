@@ -979,7 +979,7 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
    if (colorbar)
    {
       // add color bar to draw list
-      params.projection.mtx = _projmat;
+      params.projection.mtx = proj_mtx;
       scene.queue.emplace_back(params, &color_bar);
       params.projection.identity();
    }
@@ -1002,7 +1002,7 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
       params.model_view.mult(rotmat);
       scene.queue.emplace_back(params, &coord_cross_buf);
    }
-   params.projection.mtx = _projmat;
+   params.projection.mtx = proj_mtx;
    params.model_view.mtx = GetModelViewMtx();
    if (drawaxes)
    {
@@ -1409,7 +1409,7 @@ void VisualizationSceneScalarData::SetLevelLines (
 
 void VisualizationSceneScalarData::PrintState()
 {
-   cout << "\nlight " << strings_off_on[_use_light ? 1 : 0]
+   cout << "\nlight " << strings_off_on[use_light ? 1 : 0]
         << "\nperspective " << strings_off_on[OrthogonalProjection ? 0 : 1]
         << "\nviewcenter " << ViewCenterX << ' ' << ViewCenterY
         << "\nzoom " << (OrthogonalProjection ? ViewScale :

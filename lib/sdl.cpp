@@ -32,11 +32,11 @@ using std::endl;
 extern int GetMultisample();
 extern int visualize;
 
-struct SdlWindow::_SdlHandle
+struct SdlWindow::Handle
 {
    SDL_Window * hwnd;
    SDL_GLContext gl_ctx;
-   _SdlHandle(const std::string& title, int x, int y, int w, int h,
+   Handle(const std::string& title, int x, int y, int w, int h,
               Uint32 wndflags)
       : hwnd(nullptr)
       , gl_ctx(0)
@@ -56,7 +56,7 @@ struct SdlWindow::_SdlHandle
       }
    }
 
-   ~_SdlHandle()
+   ~Handle()
    {
       if (gl_ctx)
       {
@@ -76,7 +76,7 @@ struct SdlWindow::_SdlHandle
 
 bool SdlWindow::isGlInitialized()
 {
-   return (_handle->gl_ctx != 0);
+   return (handle->gl_ctx != 0);
 }
 
 SdlWindow::SdlWindow()
@@ -102,7 +102,7 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    }
 
    //destroy any existing SDL window
-   _handle.reset();
+   handle.reset();
 
    // If we want to use WebGL 2:
    // #ifdef __EMSCRIPTEN__
@@ -127,38 +127,38 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    if (legacyGlOnly)
    {
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 0);
-      _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
+      handle.reset(new Handle(title, x, y, w, h, win_flags));
    }
    else
    {
       PRINT_DEBUG("Creating window with OpenGL core profile..." << flush);
       // Try to create core profile context first
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-      _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
+      handle.reset(new Handle(title, x, y, w, h, win_flags));
 
-      if (!_handle->isInitialized())
+      if (!handle->isInitialized())
       {
          PRINT_DEBUG("failed." << endl << "Falling back to the default profile..." <<
                      flush);
          SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
                              SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
-         _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
+         handle.reset(new Handle(title, x, y, w, h, win_flags));
       }
 
-      if (!_handle->isInitialized())
+      if (!handle->isInitialized())
       {
          PRINT_DEBUG("failed." << endl << "Falling back to legacy OpenGL..." << flush);
          // Unset core profile flag, which should give us a legacy OpenGL context
          SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 0);
-         _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
+         handle.reset(new Handle(title, x, y, w, h, win_flags));
       }
    }
 #else
    cerr << "Creating window..." << flush;
-   _handle.reset(new _SdlHandle(title, x, y, w, h, win_flags));
+   handle.reset(new Handle(title, x, y, w, h, win_flags));
 #endif
    // at this point, window should be up
-   if (!_handle->isInitialized())
+   if (!handle->isInitialized())
    {
       PRINT_DEBUG("failed." << endl);
       cerr << "FATAL: window and/or OpenGL context creation failed." << endl;
@@ -190,7 +190,7 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    PRINT_DEBUG("Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor <<
                "." << (int)sdl_ver.patch << std::endl);
 
-   _renderer.reset(new gl3::MeshRenderer);
+   renderer.reset(new gl3::MeshRenderer);
 #ifndef __EMSCRIPTEN__
    if (GLEW_EXT_transform_feedback)
    {
@@ -205,22 +205,22 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
       // we require both shaders and transform feedback
       // EXT_transform_feedback was made core in OpenGL 3.0
       PRINT_DEBUG("Loading CoreGLDevice..." << endl);
-      _renderer->setDevice<gl3::CoreGLDevice>();
+      renderer->setDevice<gl3::CoreGLDevice>();
    }
    else
    {
       PRINT_DEBUG("Shader support missing, loading FFGLDevice..." << endl);
-      _renderer->setDevice<gl3::FFGLDevice>();
+      renderer->setDevice<gl3::FFGLDevice>();
    }
 
 #else
-   _renderer->setDevice<gl3::CoreGLDevice>();
+   renderer->setDevice<gl3::CoreGLDevice>();
 #endif
 
    return true;
 }
 
-// defined here because the _SdlHandle destructor needs to be visable
+// defined here because the Handle destructor needs to be visable
 SdlWindow::~SdlWindow() {};
 
 void SdlWindow::windowEvent(SDL_WindowEvent& ew)
@@ -429,7 +429,7 @@ void SdlWindow::mainLoop()
       bool glSwap = mainIter();
       if (glSwap)
       {
-         SDL_GL_SwapWindow(_handle->hwnd);
+         SDL_GL_SwapWindow(handle->hwnd);
       }
       if (takeScreenshot)
       {
@@ -444,7 +444,7 @@ void SdlWindow::mainLoop()
 
 void SdlWindow::getWindowSize(int& w, int& h)
 {
-   if (_handle)
+   if (handle)
    {
 #ifdef __EMSCRIPTEN__
       int is_fullscreen;
@@ -457,7 +457,7 @@ void SdlWindow::getWindowSize(int& w, int& h)
       }
       */
 #else
-      SDL_GL_GetDrawableSize(_handle->hwnd, &w, &h);
+      SDL_GL_GetDrawableSize(handle->hwnd, &w, &h);
 #endif
    }
 }
@@ -467,12 +467,12 @@ void SdlWindow::getDpi(int& w, int& h)
 {
    w = default_dpi;
    h = default_dpi;
-   if (!_handle)
+   if (!handle)
    {
       PRINT_DEBUG("warning: unable to get dpi: handle is null" << endl);
       return;
    }
-   int disp = SDL_GetWindowDisplayIndex(_handle->hwnd);
+   int disp = SDL_GetWindowDisplayIndex(handle->hwnd);
    if (disp < 0)
    {
       PRINT_DEBUG("warning: problem getting display index: " << SDL_GetError() <<
@@ -519,25 +519,25 @@ void SdlWindow::setWindowTitle(std::string& title)
 
 void SdlWindow::setWindowTitle(const char * title)
 {
-   if (_handle)
+   if (handle)
    {
-      SDL_SetWindowTitle(_handle->hwnd, title);
+      SDL_SetWindowTitle(handle->hwnd, title);
    }
 }
 
 void SdlWindow::setWindowSize(int w, int h)
 {
-   if (_handle)
+   if (handle)
    {
-      SDL_SetWindowSize(_handle->hwnd, w, h);
+      SDL_SetWindowSize(handle->hwnd, w, h);
    }
 }
 
 void SdlWindow::setWindowPos(int x, int y)
 {
-   if (_handle)
+   if (handle)
    {
-      SDL_SetWindowPosition(_handle->hwnd, x, y);
+      SDL_SetWindowPosition(handle->hwnd, x, y);
    }
 }
 
@@ -552,6 +552,6 @@ void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
 
 void SdlWindow::swapBuffer()
 {
-   SDL_GL_SwapWindow(_handle->hwnd);
+   SDL_GL_SwapWindow(handle->hwnd);
 }
 

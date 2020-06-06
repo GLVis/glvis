@@ -219,8 +219,8 @@ public:
    void DrawPolygonLevelLines(gl3::GlBuilder& builder, double *point, int n,
                               Array<double> &level, bool log_vals);
 
-   void ToggleLight() { _use_light = !_use_light; }
-   void SetLight(bool light_set) { _use_light = light_set; }
+   void ToggleLight() { use_light = !use_light; }
+   void SetLight(bool light_set) { use_light = light_set; }
 
    void ToggleDrawColorbar()
    {

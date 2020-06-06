@@ -120,11 +120,11 @@ VisualizationScene::VisualizationScene()
    ViewCenterX = 0.0;
    ViewCenterY = 0.0;
 
-   _background = BG_WHITE;
+   background = BG_WHITE;
    GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
    _use_cust_l0_pos = false;
-   _lm_idx = 3;
-   _use_light = true;
+   light_mat_idx = 3;
+   use_light = true;
 }
 
 VisualizationScene::~VisualizationScene() {}
@@ -133,12 +133,12 @@ gl3::RenderParams VisualizationScene::GetMeshDrawParams()
 {
    gl3::RenderParams params = {};
    params.model_view.mtx = GetModelViewMtx();
-   params.projection.mtx = _projmat;
-   params.mesh_material = materials[_lm_idx];
+   params.projection.mtx = proj_mtx;
+   params.mesh_material = materials[light_mat_idx];
    params.num_pt_lights = 0;
-   if (_use_light)
+   if (use_light)
    {
-      if (_lm_idx == 4)
+      if (light_mat_idx == 4)
       {
          for (int i = 0; i < 3; i++)
          {
@@ -148,7 +148,7 @@ gl3::RenderParams VisualizationScene::GetMeshDrawParams()
       }
       else
       {
-         params.lights[0] = lights[_lm_idx];
+         params.lights[0] = lights[light_mat_idx];
          params.num_pt_lights = 1;
       }
    }
@@ -156,7 +156,7 @@ gl3::RenderParams VisualizationScene::GetMeshDrawParams()
    {
       params.lights[0].position = _l0_pos;
    }
-   params.light_amb_scene = amb_setting[_lm_idx];
+   params.light_amb_scene = amb_setting[light_mat_idx];
    params.static_color = GetLineColor();
    return params;
 }
@@ -165,7 +165,7 @@ void VisualizationScene::SetLightMatIdx(unsigned i)
 {
    if (i < NUM_MATERIALS)
    {
-      _lm_idx = i;
+      light_mat_idx = i;
       _use_cust_l0_pos = false;
    }
 }
@@ -178,14 +178,14 @@ void VisualizationScene::SetLight0CustomPos(std::array<float, 4> pos)
 
 void VisualizationScene::ToggleBackground()
 {
-   if (_background == BG_BLK)
+   if (background == BG_BLK)
    {
-      _background = BG_WHITE;
+      background = BG_WHITE;
       GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
    }
    else
    {
-      _background = BG_BLK;
+      background = BG_BLK;
       GetAppWindow()->getRenderer().setClearColor(0.f, 0.f, 0.f, 1.f);
    }
 }

@@ -111,13 +111,13 @@ protected:
 
    SdlWindow * wnd;
 
-   glm::mat4 _projmat;
+   glm::mat4 proj_mtx;
 
    enum
    {
       BG_BLK = 0,
       BG_WHITE = 1
-   } _background;
+   } background;
 
    const Material BLK_MAT =
    {
@@ -129,15 +129,15 @@ protected:
 
    std::array<float, 4> _l0_pos;
    bool _use_cust_l0_pos;
-   int _lm_idx;
-   bool _use_light;
+   int light_mat_idx;
+   bool use_light;
 
    gl3::RenderParams GetMeshDrawParams();
    glm::mat4 GetModelViewMtx();
 
    std::array<float, 4> GetLineColor()
    {
-      if (_background == BG_BLK)
+      if (background == BG_BLK)
       {
          return { 1.f, 1.f, 1.f, 1.f };
       }
@@ -179,9 +179,9 @@ public:
    void CenterObject();
    void CenterObject2D();
 
-   void SetProjectionMtx(glm::mat4 projection) { _projmat = projection; }
+   void SetProjectionMtx(glm::mat4 projection) { proj_mtx = projection; }
    void SetLightMatIdx(unsigned i);
-   int GetLightMatIdx() { return _lm_idx; }
+   int GetLightMatIdx() { return light_mat_idx; }
 
    void SetLight0CustomPos(std::array<float, 4> pos);
    void ToggleBackground();

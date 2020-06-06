@@ -32,9 +32,9 @@ typedef void (*Delegate)();
 class SdlWindow
 {
 private:
-   struct _SdlHandle;
-   std::unique_ptr<_SdlHandle> _handle;
-   std::unique_ptr<gl3::MeshRenderer> _renderer;
+   struct Handle;
+   std::unique_ptr<Handle> handle;
+   std::unique_ptr<gl3::MeshRenderer> renderer;
 
    bool running;
 
@@ -110,7 +110,7 @@ public:
    void getWindowSize(int& w, int& h);
    void getDpi(int& wdpi, int& hdpi);
 
-   gl3::MeshRenderer& getRenderer() { return *_renderer.get(); }
+   gl3::MeshRenderer& getRenderer() { return *renderer.get(); }
 #ifdef GLVIS_X11
    int getXWindow();
 #endif
@@ -131,8 +131,8 @@ public:
 
    void swapBuffer();
 
-   operator bool() { return (bool) _handle ; }
-   bool isWindowInitialized() { return (bool) _handle; }
+   operator bool() { return (bool) handle ; }
+   bool isWindowInitialized() { return (bool) handle; }
    /**
     * Returns true if the OpenGL context was successfully initialized.
     */

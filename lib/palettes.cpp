@@ -4689,7 +4689,7 @@ int MaxTextureSize;
 /* *
  * Generates a discrete texture from the given palette.
  */
-void _paletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
+void PaletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
 {
    vector<array<float,4>> texture_buf(plt_size);
 
@@ -4739,7 +4739,7 @@ void _paletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
 /* *
  * Generates a smooth texture from the given palette.
  */
-void _paletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
+void PaletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
 {
    vector<array<float,4>> texture_buf(MaxTextureSize);
    glBindTexture(GL_TEXTURE_2D, tex);
@@ -4845,9 +4845,9 @@ void paletteInit()
 
    for (int i = 0; i < Num_RGB_Palettes; i++)
    {
-      _paletteToTextureDiscrete(RGB_Palettes[i], RGB_Palettes_Sizes[i],
+      PaletteToTextureDiscrete(RGB_Palettes[i], RGB_Palettes_Sizes[i],
                                 palette_tex[i][0]);
-      _paletteToTextureSmooth(RGB_Palettes[i], RGB_Palettes_Sizes[i],
+      PaletteToTextureSmooth(RGB_Palettes[i], RGB_Palettes_Sizes[i],
                               palette_tex[i][1]);
    }
    // set alpha texture to 1.0
