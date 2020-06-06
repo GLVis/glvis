@@ -83,57 +83,60 @@ struct CaptureBuffer
 class GLDevice
 {
 protected:
-   int _vp_width;
-   int _vp_height;
-   glm::mat4 _model_view_mtx;
-   glm::mat4 _proj_mtx;
+   int vp_width;
+   int vp_height;
+   glm::mat4 model_view_mtx;
+   glm::mat4 proj_mtx;
 
-   std::array<float, 4> _static_color;
+   std::array<float, 4> static_color;
 
    // RAII scope guard for OpenGL handles.
    template<void(*GLFinalizer)(GLuint)>
-   class Handle_
+   class Handle
    {
-      GLuint _hnd;
+      GLuint hnd;
    public:
-      Handle_() : _hnd{0} {}
-      Handle_(GLuint h) : _hnd{h} {}
-      ~Handle_() { if (_hnd) { GLFinalizer(_hnd); } }
-      Handle_(Handle_&& other)
-         : _hnd{other._hnd} { other._hnd = 0; }
-      Handle_& operator = (Handle_&& other) noexcept
+      Handle() : hnd{0} {}
+      Handle(GLuint h) : hnd{h} {}
+      ~Handle() { if (hnd) { GLFinalizer(hnd); } }
+      Handle(Handle&& other)
+         : hnd{other.hnd} { other.hnd = 0; }
+      Handle& operator = (Handle&& other) noexcept
       {
-         _hnd = other._hnd;
-         other._hnd = 0;
+         if (this != &other)
+         {
+            hnd = other.hnd;
+            other.hnd = 0;
+         }
          return *this;
       }
-      operator GLuint() { return _hnd; }
+      operator GLuint() { return hnd; }
    };
 
-   static void _boCleanup(GLuint vbo_hnd)
+   static void boCleanup(GLuint vbo_hnd)
    {
       glDeleteBuffers(1, &vbo_hnd);
    }
 
-   static void _dspListCleanup(GLuint dlist)
+   static void dspListCleanup(GLuint dlist)
    {
       glDeleteLists(dlist, 1);
    }
 
-   static void _prgmCleanup(GLuint prgm)
+   static void prgmCleanup(GLuint prgm)
    {
       glDeleteProgram(prgm);
    }
 
-   static void _vaoCleanup(GLuint vao)
+   static void vaoCleanup(GLuint vao)
    {
       glDeleteVertexArrays(1, &vao);
    }
 
-   using BufObjHandle_ = Handle_<_boCleanup>;
-   using DispListHandle_ = Handle_<_dspListCleanup>;
-   using VtxArrayHandle_ = Handle_<_vaoCleanup>;
-   using ShaderPrgmHandle_ = Handle_<_prgmCleanup>;
+   using BufObjHandle = Handle<boCleanup>;
+   using DispListHandle = Handle<dspListCleanup>;
+   using VtxArrayHandle = Handle<vaoCleanup>;
+   using ShaderPrgmHandle = Handle<prgmCleanup>;
 
 public:
 
@@ -182,7 +185,7 @@ public:
    // Gets the current window viewport.
    void getViewport(GLint (&vp)[4]);
    // Set the color to use, if a color attribute is not provided.
-   void setStaticColor(const std::array<float, 4>& rgba) { _static_color = rgba; }
+   void setStaticColor(const std::array<float, 4>& rgba) { static_color = rgba; }
 
    // === Render pipeline functions ===
 
@@ -226,50 +229,50 @@ public:
 
 class MeshRenderer
 {
-   unique_ptr<GLDevice> _device;
-   bool _msaa_enable;
-   GLuint _color_tex, _alpha_tex, _font_tex;
-   float _line_w, _line_w_aa;
+   unique_ptr<GLDevice> device;
+   bool msaa_enable;
+   GLuint color_tex, alpha_tex, font_tex;
+   float line_w, line_w_aa;
 public:
    MeshRenderer()
-      : _msaa_enable(false)
-      , _line_w(1.f)
-      , _line_w_aa(LINE_WIDTH_AA) { }
+      : msaa_enable(false)
+      , line_w(1.f)
+      , line_w_aa(LINE_WIDTH_AA) { }
 
    template<typename TDevice>
    void setDevice()
    {
-      _device.reset(new TDevice());
-      _device->setLineWidth(_line_w);
-      _device->init();
-      _msaa_enable = false;
+      device.reset(new TDevice());
+      device->setLineWidth(line_w);
+      device->init();
+      msaa_enable = false;
    }
 
    template<typename TDevice>
    void setDevice(TDevice&& device)
    {
-      _device.reset(new TDevice(device));
+      device.reset(new TDevice(device));
    }
 
    GLenum getDeviceAlphaChannel();
 
    // Sets the texture handle of the color palette.
-   void setColorTexture(GLuint tex_h) { _color_tex = tex_h; }
+   void setColorTexture(GLuint tex_h) { color_tex = tex_h; }
    // Sets the texture handle of the alpha texture.
-   void setAlphaTexture(GLuint tex_h) { _alpha_tex = tex_h; }
+   void setAlphaTexture(GLuint tex_h) { alpha_tex = tex_h; }
    // Sets the texture handle of the font atlas.
-   void setFontTexture(GLuint tex_h) { _font_tex = tex_h; }
+   void setFontTexture(GLuint tex_h) { font_tex = tex_h; }
 
    void setAntialiasing(bool aa_status);
-   bool getAntialiasing() { return _msaa_enable; }
+   bool getAntialiasing() { return msaa_enable; }
 
    void setLineWidth(float w);
-   float getLineWidth() { return _line_w; }
+   float getLineWidth() { return line_w; }
    void setLineWidthMS(float w);
-   float getLineWidthMS() { return _line_w_aa; }
+   float getLineWidthMS() { return line_w_aa; }
 
    void setClearColor(float r, float g, float b, float a) { glClearColor(r, g, b, a); }
-   void setViewport(GLsizei w, GLsizei h) { _device->setViewport(w, h); }
+   void setViewport(GLsizei w, GLsizei h) { device->setViewport(w, h); }
 
    void init();
    void render(const RenderQueue& queued);

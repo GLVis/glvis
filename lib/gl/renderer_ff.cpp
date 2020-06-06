@@ -240,7 +240,7 @@ void FFGLDevice::drawDeviceBuffer(int hnd)
    if (disp_lists[hnd].layout == Vertex::layout
        || disp_lists[hnd].layout == VertexNorm::layout)
    {
-      glColor4fv(_static_color.data());
+      glColor4fv(static_color.data());
    }
    else
    {
@@ -260,7 +260,7 @@ void FFGLDevice::drawDeviceBuffer(int hnd)
 
 void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)
 {
-   glColor4fv(_static_color.data());
+   glColor4fv(static_color.data());
    glNormal3f(0.f, 0.f, 1.f);
    glMultiTexCoord2f(GL_TEXTURE0, 0.f, 0.f);
    float tex_w = GetFont()->getAtlasWidth();
@@ -271,15 +271,15 @@ void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)
    glMatrixMode(GL_MODELVIEW);
    glPushMatrix();
    glLoadIdentity();
-   glScalef(2.f / _vp_width, 2.f / _vp_height, 0.f);
+   glScalef(2.f / vp_width, 2.f / vp_height, 0.f);
    glTranslatef(0.f, 0.f, -0.005);
    glMatrixMode(GL_PROJECTION);
    for (const TextBuffer::Entry& e : buf)
    {
       glm::vec4 pos(e.rx, e.ry, e.rz, 1.0);
       // transform text starting position into NDC
-      pos = _model_view_mtx * pos;
-      pos = _proj_mtx * pos;
+      pos = model_view_mtx * pos;
+      pos = proj_mtx * pos;
       pos = pos / pos.w;
       // Projection transform:
       // - add starting offset in NDC

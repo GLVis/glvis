@@ -93,7 +93,7 @@ void GlDrawable::addCone(float x, float y, float z,
    }
 }
 
-void GlBuilder::saveVertex(const GlBuilder::_vertex& v)
+void GlBuilder::saveVertex(const GlBuilder::FFState& v)
 {
    GLenum dst_buf = is_line ? GL_LINES : GL_TRIANGLES;
    if (!use_norm)

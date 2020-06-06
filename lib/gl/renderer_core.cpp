@@ -40,7 +40,7 @@ const std::string PRINTING_FS =
 namespace gl3
 {
 
-const std::vector<std::string> CoreGLDevice::_unif_list =
+const std::vector<std::string> CoreGLDevice::unif_list =
 {
    "useClipPlane",
    "clipPlane",
@@ -278,13 +278,13 @@ bool CoreGLDevice::compileShaders()
    GLuint default_fs = compileRawShaderString(DEFAULT_FS, GL_FRAGMENT_SHADER,
                                               glsl_ver);
 
-   _default_prgm = glCreateProgram();
-   if (!linkShaders(_default_prgm, {default_vs, default_fs}))
+   default_prgm = glCreateProgram();
+   if (!linkShaders(default_prgm, {default_vs, default_fs}))
    {
       std::cerr << "Failed to link shaders for the default shader program" <<
                 std::endl;
-      glDeleteProgram(_default_prgm);
-      _default_prgm = 0;
+      glDeleteProgram(default_prgm);
+      default_prgm = 0;
       return false;
    }
 
@@ -293,14 +293,14 @@ bool CoreGLDevice::compileShaders()
    // This program is for rendering to pdf/ps
    if (GLEW_EXT_transform_feedback || GLEW_VERSION_3_0)
    {
-      _feedback_prgm = glCreateProgram();
+      feedback_prgm = glCreateProgram();
       const char * xfrm_varyings[] =
       {
          "gl_Position",
          "fColor",
          "fClipCoord",
       };
-      glTransformFeedbackVaryings(_feedback_prgm, 3, xfrm_varyings,
+      glTransformFeedbackVaryings(feedback_prgm, 3, xfrm_varyings,
                                   GL_INTERLEAVED_ATTRIBS);
 
       GLuint printing_vs = compileRawShaderString(PRINTING_VS, GL_VERTEX_SHADER,
@@ -308,11 +308,11 @@ bool CoreGLDevice::compileShaders()
       GLuint printing_fs = compileRawShaderString(PRINTING_FS, GL_FRAGMENT_SHADER,
                                                   glsl_ver);
 
-      if (!linkShaders(_feedback_prgm, {printing_vs, printing_fs}))
+      if (!linkShaders(feedback_prgm, {printing_vs, printing_fs}))
       {
          std::cerr << "failed to link shaders for the printing program" << std::endl;
-         glDeleteProgram(_feedback_prgm);
-         _feedback_prgm = 0;
+         glDeleteProgram(feedback_prgm);
+         feedback_prgm = 0;
          return false;
       }
    }
@@ -326,20 +326,20 @@ void CoreGLDevice::initializeShaderState(CoreGLDevice::RenderMode mode)
    GLuint curr_prgm = 0;
    if (mode == RenderMode::Default)
    {
-      glUseProgram(_default_prgm);
-      curr_prgm = _default_prgm;
+      glUseProgram(default_prgm);
+      curr_prgm = default_prgm;
    }
    else if (mode == RenderMode::Feedback)
    {
-      glUseProgram(_feedback_prgm);
-      curr_prgm = _feedback_prgm;
+      glUseProgram(feedback_prgm);
+      curr_prgm = feedback_prgm;
    }
-   _uniforms.clear();
+   uniforms.clear();
    // initialize uniform map
    int num_unifs;
    glGetProgramiv(curr_prgm, GL_ACTIVE_UNIFORMS, &num_unifs);
    std::unordered_map<std::string, bool> uniform_query{};
-   for (const auto& uf : _unif_list)
+   for (const auto& uf : unif_list)
    {
       uniform_query.emplace(uf, false);
    }
@@ -365,7 +365,7 @@ void CoreGLDevice::initializeShaderState(CoreGLDevice::RenderMode mode)
       {
          it->second = true;
          GLuint uf_idx = glGetUniformLocation(curr_prgm, it->first.c_str());
-         _uniforms.emplace(it->first, uf_idx);
+         uniforms.emplace(it->first, uf_idx);
       }
    }
    for (const auto& uf : uniform_query)
@@ -377,12 +377,12 @@ void CoreGLDevice::initializeShaderState(CoreGLDevice::RenderMode mode)
                    << "\" missing in shader, ignoring." << std::endl;
 #endif
          // set uniform index to -1 so glUniform ignores data
-         _uniforms.emplace(uf.first, -1);
+         uniforms.emplace(uf.first, -1);
       }
    }
-   glUniform1i(_uniforms["colorTex"], 0);
-   glUniform1i(_uniforms["alphaTex"], 1);
-   _use_clip_plane = false;
+   glUniform1i(uniforms["colorTex"], 0);
+   glUniform1i(uniforms["alphaTex"], 1);
+   use_clip_plane = false;
 }
 
 void CoreGLDevice::init()
@@ -398,27 +398,27 @@ void CoreGLDevice::init()
    {
       GLuint hnd_vao;
       glGenVertexArrays(1, &hnd_vao);
-      _global_vao = VtxArrayHandle_(hnd_vao);
-      glBindVertexArray(_global_vao);
+      global_vao = VtxArrayHandle(hnd_vao);
+      glBindVertexArray(global_vao);
    }
    GLuint hnd_fb_buf;
    glGenBuffers(1, &hnd_fb_buf);
-   _feedback_vbo = BufObjHandle_(hnd_fb_buf);
+   feedback_vbo = BufObjHandle(hnd_fb_buf);
 }
 
 void CoreGLDevice::setTransformMatrices(glm::mat4 model_view,
                                         glm::mat4 projection)
 {
    GLDevice::setTransformMatrices(model_view, projection);
-   glm::mat4 proj_text = glm::ortho<float>(0, _vp_width, 0, _vp_height, -5.0, 5.0);
+   glm::mat4 proj_text = glm::ortho<float>(0, vp_width, 0, vp_height, -5.0, 5.0);
    glm::mat3 inv_normal = glm::inverseTranspose(glm::mat3(model_view));
-   glUniformMatrix4fv(_uniforms["modelViewMatrix"], 1, GL_FALSE,
+   glUniformMatrix4fv(uniforms["modelViewMatrix"], 1, GL_FALSE,
                       glm::value_ptr(model_view));
-   glUniformMatrix4fv(_uniforms["projectionMatrix"], 1, GL_FALSE,
+   glUniformMatrix4fv(uniforms["projectionMatrix"], 1, GL_FALSE,
                       glm::value_ptr(projection));
-   glUniformMatrix4fv(_uniforms["textProjMatrix"], 1, GL_FALSE,
+   glUniformMatrix4fv(uniforms["textProjMatrix"], 1, GL_FALSE,
                       glm::value_ptr(proj_text));
-   glUniformMatrix3fv(_uniforms["normalMatrix"], 1, GL_FALSE,
+   glUniformMatrix3fv(uniforms["normalMatrix"], 1, GL_FALSE,
                       glm::value_ptr(inv_normal));
 }
 
@@ -428,13 +428,13 @@ void CoreGLDevice::setNumLights(int i)
    {
       return;
    }
-   glUniform1i(_uniforms["num_lights"], i);
+   glUniform1i(uniforms["num_lights"], i);
 }
 
 void CoreGLDevice::setMaterial(Material mat)
 {
-   glUniform4fv(_uniforms["material.specular"], 1, mat.specular.data());
-   glUniform1f(_uniforms["material.shininess"], mat.shininess);
+   glUniform4fv(uniforms["material.specular"], 1, mat.specular.data());
+   glUniform1f(uniforms["material.shininess"], mat.shininess);
 }
 
 void CoreGLDevice::setPointLight(int i, Light lt)
@@ -444,27 +444,27 @@ void CoreGLDevice::setPointLight(int i, Light lt)
       return;
    }
    std::string lt_index = "lights[" + std::to_string(i) + "]";
-   glUniform3fv(_uniforms[lt_index + ".position"], 1, lt.position.data());
-   glUniform4fv(_uniforms[lt_index + ".diffuse"], 1, lt.diffuse.data());
-   glUniform4fv(_uniforms[lt_index + ".specular"], 1, lt.specular.data());
+   glUniform3fv(uniforms[lt_index + ".position"], 1, lt.position.data());
+   glUniform4fv(uniforms[lt_index + ".diffuse"], 1, lt.diffuse.data());
+   glUniform4fv(uniforms[lt_index + ".specular"], 1, lt.specular.data());
 }
 
 void CoreGLDevice::setAmbientLight(const std::array<float, 4> &amb)
 {
-   glUniform4fv(_uniforms["g_ambient"], 1, amb.data());
+   glUniform4fv(uniforms["g_ambient"], 1, amb.data());
 }
 
 void CoreGLDevice::setClipPlaneUse(bool enable)
 {
-   _use_clip_plane = enable;
-   glUniform1i(_uniforms["useClipPlane"], enable);
+   use_clip_plane = enable;
+   glUniform1i(uniforms["useClipPlane"], enable);
 }
 
 void CoreGLDevice::setClipPlaneEqn(const std::array<double, 4> &eqn)
 {
    glm::vec4 clip_plane(eqn[0], eqn[1], eqn[2], eqn[3]);
-   clip_plane = glm::inverseTranspose(_model_view_mtx) * clip_plane;
-   glUniform4fv(_uniforms["clipPlane"], 1, glm::value_ptr(clip_plane));
+   clip_plane = glm::inverseTranspose(model_view_mtx) * clip_plane;
+   glUniform4fv(uniforms["clipPlane"], 1, glm::value_ptr(clip_plane));
 }
 
 void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
@@ -474,14 +474,14 @@ void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
       if (buf.count() == 0) { return; }
       GLuint handle;
       glGenBuffers(1, &handle);
-      buf.setHandle(_vbos.size());
-      _vbos.emplace_back(VBOData_{handle, 0, buf.getShape(), buf.count(), layout});
+      buf.setHandle(vbos.size());
+      vbos.emplace_back(VBOData{handle, 0, buf.getShape(), buf.count(), layout});
    }
    else
    {
-      _vbos[buf.getHandle()].count = buf.count();
+      vbos[buf.getHandle()].count = buf.count();
    }
-   glBindBuffer(GL_ARRAY_BUFFER, _vbos[buf.getHandle()].vert_buf);
+   glBindBuffer(GL_ARRAY_BUFFER, vbos[buf.getHandle()].vert_buf);
    glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
    glBufferData(GL_ARRAY_BUFFER, buf.count() * buf.getStride(),
                 buf.getData(), GL_STATIC_DRAW);
@@ -494,20 +494,20 @@ void CoreGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
       if (buf.count() == 0) { return; }
       GLuint handle[2];
       glGenBuffers(2, &handle[0]);
-      buf.setHandle(_vbos.size());
-      _vbos.emplace_back(VBOData_{handle[0], handle[1], buf.getShape(), buf.getIndices().size(), layout});
+      buf.setHandle(vbos.size());
+      vbos.emplace_back(VBOData{handle[0], handle[1], buf.getShape(), buf.getIndices().size(), layout});
    }
    else
    {
-      _vbos[buf.getHandle()].count = buf.getIndices().size();
+      vbos[buf.getHandle()].count = buf.getIndices().size();
    }
    // Buffer vertex array
-   glBindBuffer(GL_ARRAY_BUFFER, _vbos[buf.getHandle()].vert_buf);
+   glBindBuffer(GL_ARRAY_BUFFER, vbos[buf.getHandle()].vert_buf);
    glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
    glBufferData(GL_ARRAY_BUFFER, buf.count() * buf.getStride(),
                 buf.getData(), GL_STATIC_DRAW);
    // Buffer element array
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _vbos[buf.getHandle()].elem_buf);
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos[buf.getHandle()].elem_buf);
    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
    glBufferData(GL_ELEMENT_ARRAY_BUFFER, buf.getIndices().size() * sizeof(int),
                 buf.getIndices().data(), GL_STATIC_DRAW);
@@ -582,22 +582,22 @@ void CoreGLDevice::drawDeviceBufferImpl(GLenum shape, int count, bool indexed)
 void CoreGLDevice::drawDeviceBuffer(int hnd)
 {
    if (hnd == 0) { return; }
-   if (_vbos[hnd].count == 0) { return; }
-   glBindBuffer(GL_ARRAY_BUFFER, _vbos[hnd].vert_buf);
+   if (vbos[hnd].count == 0) { return; }
+   glBindBuffer(GL_ARRAY_BUFFER, vbos[hnd].vert_buf);
    bool indexed = false;
-   if (_vbos[hnd].elem_buf != 0)
+   if (vbos[hnd].elem_buf != 0)
    {
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _vbos[hnd].elem_buf);
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos[hnd].elem_buf);
       indexed = true;
    }
-   if (_vbos[hnd].layout == Vertex::layout
-       || _vbos[hnd].layout == VertexNorm::layout)
+   if (vbos[hnd].layout == Vertex::layout
+       || vbos[hnd].layout == VertexNorm::layout)
    {
-      glVertexAttrib4fv(ATTR_COLOR, _static_color.data());
+      glVertexAttrib4fv(ATTR_COLOR, static_color.data());
    }
-   GLenum shape = _vbos[hnd].shape;
-   int count = _vbos[hnd].count;
-   switch (_vbos[hnd].layout)
+   GLenum shape = vbos[hnd].shape;
+   int count = vbos[hnd].count;
+   switch (vbos[hnd].layout)
    {
       case Vertex::layout:
          drawDeviceBufferImpl<Vertex>(shape, count, indexed);
@@ -618,20 +618,20 @@ void CoreGLDevice::drawDeviceBuffer(int hnd)
          drawDeviceBufferImpl<VertexNormTex>(shape, count, indexed);
          break;
       default:
-         cerr << "WARNING: Unhandled vertex layout " << _vbos[hnd].layout << endl;
+         cerr << "WARNING: Unhandled vertex layout " << vbos[hnd].layout << endl;
    }
 }
 void CoreGLDevice::drawDeviceBuffer(const TextBuffer& t_buf)
 {
    if (t_buf.getHandle() == 0) { return; }
    if (t_buf.count() == 0) { return; }
-   glUniform1i(_uniforms["containsText"], GL_TRUE);
+   glUniform1i(uniforms["containsText"], GL_TRUE);
    glEnableVertexAttribArray(ATTR_VERTEX);
    glEnableVertexAttribArray(ATTR_TEXT_VERTEX);
    glEnableVertexAttribArray(ATTR_TEXCOORD0);
    glBindBuffer(GL_ARRAY_BUFFER, t_buf.getHandle());
 
-   glVertexAttrib4fv(ATTR_COLOR, _static_color.data());
+   glVertexAttrib4fv(ATTR_COLOR, static_color.data());
    glVertexAttribPointer(ATTR_VERTEX, 3, GL_FLOAT, GL_FALSE, t_buf.getStride(), 0);
    glVertexAttribPointer(ATTR_TEXT_VERTEX, 2, GL_FLOAT, GL_FALSE,
                          t_buf.getStride(), (void*)(sizeof(float) * 3));
@@ -641,7 +641,7 @@ void CoreGLDevice::drawDeviceBuffer(const TextBuffer& t_buf)
 
    glDisableVertexAttribArray(ATTR_TEXT_VERTEX);
    glDisableVertexAttribArray(ATTR_TEXCOORD0);
-   glUniform1i(_uniforms["containsText"], GL_FALSE);
+   glUniform1i(uniforms["containsText"], GL_FALSE);
 }
 
 #ifndef __EMSCRIPTEN__
@@ -661,9 +661,9 @@ inline FeedbackVertex XFBPostTransform(CoreGLDevice::ShaderXfbVertex v,
 void CoreGLDevice::processTriangleXfbBuffer(CaptureBuffer& cbuf,
                                             const vector<ShaderXfbVertex>& verts)
 {
-   float half_w = _vp_width * 0.5f;
-   float half_h = _vp_height * 0.5f;
-   if (!_use_clip_plane)
+   float half_w = vp_width * 0.5f;
+   float half_h = vp_height * 0.5f;
+   if (!use_clip_plane)
    {
       // all triangles into capture buf
       for (size_t i = 0; i < verts.size(); i++)
@@ -760,11 +760,11 @@ void CoreGLDevice::processTriangleXfbBuffer(CaptureBuffer& cbuf,
 void CoreGLDevice::processLineXfbBuffer(CaptureBuffer& cbuf,
                                         const vector<ShaderXfbVertex>& verts)
 {
-   float half_w = _vp_width * 0.5f;
-   float half_h = _vp_height * 0.5f;
+   float half_w = vp_width * 0.5f;
+   float half_h = vp_height * 0.5f;
    for (size_t i = 0; i < verts.size(); i += 2)
    {
-      if (!_use_clip_plane ||
+      if (!use_clip_plane ||
           (verts[i].clipCoord >= 0.f && verts[i+1].clipCoord >= 0.f))
       {
          cbuf.lines.emplace_back(XFBPostTransform(verts[i], half_w, half_h));
@@ -814,22 +814,22 @@ void CoreGLDevice::captureXfbBuffer(
    CaptureBuffer& cbuf, int hnd)
 {
    // allocate feedback buffer
-   int buf_size = _vbos[hnd].count * sizeof(ShaderXfbVertex);
+   int buf_size = vbos[hnd].count * sizeof(ShaderXfbVertex);
    glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER,
                 buf_size, nullptr, GL_STATIC_READ);
-   glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, _feedback_vbo);
+   glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, feedback_vbo);
    // Draw objects in feedback-only mode
-   glBeginTransformFeedback(_vbos[hnd].shape);
+   glBeginTransformFeedback(vbos[hnd].shape);
    drawDeviceBuffer(hnd);
    glEndTransformFeedback();
    // Read back feedback buffer
    vector<ShaderXfbVertex> xfbBuf(buf_size);
    glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, buf_size, xfbBuf.data());
-   if (_vbos[hnd].shape == GL_TRIANGLES)
+   if (vbos[hnd].shape == GL_TRIANGLES)
    {
       processTriangleXfbBuffer(cbuf, xfbBuf);
    }
-   else if (_vbos[hnd].shape == GL_LINES)
+   else if (vbos[hnd].shape == GL_LINES)
    {
       processLineXfbBuffer(cbuf, xfbBuf);
    }

@@ -25,11 +25,11 @@ public:
       float clipCoord;
    };
 private:
-   ShaderPrgmHandle_ _default_prgm;
-   ShaderPrgmHandle_ _feedback_prgm;
-   VtxArrayHandle_ _global_vao;
+   ShaderPrgmHandle default_prgm;
+   ShaderPrgmHandle feedback_prgm;
+   VtxArrayHandle global_vao;
 
-   BufObjHandle_ _feedback_vbo;
+   BufObjHandle feedback_vbo;
 
    enum class RenderMode
    {
@@ -37,22 +37,22 @@ private:
       Feedback
    };
 
-   const static std::vector<std::string> _unif_list;
+   const static std::vector<std::string> unif_list;
 
-   std::unordered_map<std::string, GLuint> _uniforms;
+   std::unordered_map<std::string, GLuint> uniforms;
 
-   bool _use_clip_plane;
+   bool use_clip_plane;
 
-   struct VBOData_
+   struct VBOData
    {
-      BufObjHandle_ vert_buf;
-      BufObjHandle_ elem_buf;
+      BufObjHandle vert_buf;
+      BufObjHandle elem_buf;
       GLenum shape;
       size_t count;
       array_layout layout;
    };
 
-   std::vector<VBOData_> _vbos;
+   std::vector<VBOData> vbos;
 
    bool compileShaders();
    void initializeShaderState(RenderMode mode);
@@ -66,7 +66,7 @@ private:
                              const vector<ShaderXfbVertex>& verts);
 public:
    CoreGLDevice()
-      : _default_prgm(0), _feedback_prgm(0), _global_vao(0) { }
+      : default_prgm(0), feedback_prgm(0), global_vao(0) { }
 
    DeviceType getType() override { return GLDevice::CORE_DEVICE; }
 
@@ -87,7 +87,7 @@ public:
 
    void initXfbMode() override
    {
-      glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, _feedback_vbo);
+      glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, feedback_vbo);
       initializeShaderState(RenderMode::Feedback);
       glEnable(GL_RASTERIZER_DISCARD);
    }

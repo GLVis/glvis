@@ -5,11 +5,11 @@ namespace gl3
 
 GLenum MeshRenderer::getDeviceAlphaChannel()
 {
-   if (!_device) { return GL_NONE; }
+   if (!device) { return GL_NONE; }
 #ifdef __EMSCRIPTEN__
    return GL_ALPHA;
 #else
-   if (_device->getType() == GLDevice::FF_DEVICE)
+   if (device->getType() == GLDevice::FF_DEVICE)
    {
       return GL_ALPHA;
    }
@@ -22,39 +22,39 @@ GLenum MeshRenderer::getDeviceAlphaChannel()
 
 void MeshRenderer::setAntialiasing(bool aa_status)
 {
-   if (_msaa_enable != aa_status)
+   if (msaa_enable != aa_status)
    {
-      _msaa_enable = aa_status;
-      if (_msaa_enable)
+      msaa_enable = aa_status;
+      if (msaa_enable)
       {
-         _device->enableMultisample();
-         _device->enableBlend();
-         _device->setLineWidth(_line_w_aa);
+         device->enableMultisample();
+         device->enableBlend();
+         device->setLineWidth(line_w_aa);
       }
       else
       {
-         _device->disableMultisample();
-         _device->disableBlend();
-         _device->setLineWidth(_line_w);
+         device->disableMultisample();
+         device->disableBlend();
+         device->setLineWidth(line_w);
       }
    }
 }
 
 void MeshRenderer::setLineWidth(float w)
 {
-   _line_w = w;
-   if (_device && !_msaa_enable)
+   line_w = w;
+   if (device && !msaa_enable)
    {
-      _device->setLineWidth(_line_w);
+      device->setLineWidth(line_w);
    }
 }
 
 void MeshRenderer::setLineWidthMS(float w)
 {
-   _line_w_aa = w;
-   if (_device && _msaa_enable)
+   line_w_aa = w;
+   if (device && msaa_enable)
    {
-      _device->setLineWidth(_line_w_aa);
+      device->setLineWidth(line_w_aa);
    }
 }
 
@@ -75,17 +75,17 @@ void MeshRenderer::render(const RenderQueue& queue)
    for (auto& q_elem : queue)
    {
       const RenderParams& params = q_elem.first;
-      _device->setTransformMatrices(params.model_view.mtx, params.projection.mtx);
-      _device->setMaterial(params.mesh_material);
-      _device->setNumLights(params.num_pt_lights);
+      device->setTransformMatrices(params.model_view.mtx, params.projection.mtx);
+      device->setMaterial(params.mesh_material);
+      device->setNumLights(params.num_pt_lights);
       for (int i = 0; i < params.num_pt_lights; i++)
       {
-         _device->setPointLight(i, params.lights[i]);
+         device->setPointLight(i, params.lights[i]);
       }
-      _device->setAmbientLight(params.light_amb_scene);
-      _device->setStaticColor(params.static_color);
-      _device->setClipPlaneUse(params.use_clip_plane);
-      _device->setClipPlaneEqn(params.clip_plane_eqn);
+      device->setAmbientLight(params.light_amb_scene);
+      device->setStaticColor(params.static_color);
+      device->setClipPlaneUse(params.use_clip_plane);
+      device->setClipPlaneEqn(params.clip_plane_eqn);
       //aggregate buffers with common parameters
       std::vector<int> tex_bufs, no_tex_bufs;
       std::vector<TextBuffer*> text_bufs;
@@ -122,58 +122,58 @@ void MeshRenderer::render(const RenderQueue& queue)
       text_bufs.emplace_back(&curr_drawable->text_buffer);
       if (params.contains_translucent)
       {
-         _device->enableBlend();
+         device->enableBlend();
       }
       else
       {
-         _device->enableDepthWrite();
+         device->enableDepthWrite();
       }
-      _device->attachTexture(GLDevice::SAMPLER_COLOR, _color_tex);
-      _device->attachTexture(GLDevice::SAMPLER_ALPHA, _alpha_tex);
+      device->attachTexture(GLDevice::SAMPLER_COLOR, color_tex);
+      device->attachTexture(GLDevice::SAMPLER_ALPHA, alpha_tex);
       for (auto buf : tex_bufs)
       {
-         _device->drawDeviceBuffer(buf);
+         device->drawDeviceBuffer(buf);
       }
-      _device->detachTexture(GLDevice::SAMPLER_COLOR);
-      _device->detachTexture(GLDevice::SAMPLER_ALPHA);
+      device->detachTexture(GLDevice::SAMPLER_COLOR);
+      device->detachTexture(GLDevice::SAMPLER_ALPHA);
       for (auto buf : no_tex_bufs)
       {
-         _device->drawDeviceBuffer(buf);
+         device->drawDeviceBuffer(buf);
       }
       if (!params.contains_translucent)
       {
-         _device->enableBlend();
-         _device->disableDepthWrite();
+         device->enableBlend();
+         device->disableDepthWrite();
       }
-      _device->attachTexture(1, _font_tex);
-      _device->setNumLights(0);
+      device->attachTexture(1, font_tex);
+      device->setNumLights(0);
       for (TextBuffer* buf : text_bufs)
       {
-         _device->drawDeviceBuffer(*buf);
+         device->drawDeviceBuffer(*buf);
       }
-      _device->enableDepthWrite();
-      if (!_msaa_enable) { _device->disableBlend(); }
+      device->enableDepthWrite();
+      if (!msaa_enable) { device->disableBlend(); }
    }
 }
 
 CaptureBuffer MeshRenderer::capture(const RenderQueue& queue)
 {
    CaptureBuffer cbuf;
-   _device->initXfbMode();
+   device->initXfbMode();
    for (auto& q_elem : queue)
    {
       const RenderParams& params = q_elem.first;
-      _device->setTransformMatrices(params.model_view.mtx, params.projection.mtx);
-      _device->setMaterial(params.mesh_material);
-      _device->setNumLights(params.num_pt_lights);
+      device->setTransformMatrices(params.model_view.mtx, params.projection.mtx);
+      device->setMaterial(params.mesh_material);
+      device->setNumLights(params.num_pt_lights);
       for (int i = 0; i < params.num_pt_lights; i++)
       {
-         _device->setPointLight(i, params.lights[i]);
+         device->setPointLight(i, params.lights[i]);
       }
-      _device->setAmbientLight(params.light_amb_scene);
-      _device->setStaticColor(params.static_color);
-      _device->setClipPlaneUse(params.use_clip_plane);
-      _device->setClipPlaneEqn(params.clip_plane_eqn);
+      device->setAmbientLight(params.light_amb_scene);
+      device->setStaticColor(params.static_color);
+      device->setClipPlaneUse(params.use_clip_plane);
+      device->setClipPlaneEqn(params.clip_plane_eqn);
       //aggregate buffers with common parameters
       std::vector<int> tex_bufs, no_tex_bufs;
       std::vector<TextBuffer*> text_bufs;
@@ -209,31 +209,31 @@ CaptureBuffer MeshRenderer::capture(const RenderQueue& queue)
       }
       text_bufs.emplace_back(&curr_drawable->text_buffer);
 
-      _device->attachTexture(GLDevice::SAMPLER_COLOR, _color_tex);
-      _device->attachTexture(GLDevice::SAMPLER_ALPHA, _alpha_tex);
+      device->attachTexture(GLDevice::SAMPLER_COLOR, color_tex);
+      device->attachTexture(GLDevice::SAMPLER_ALPHA, alpha_tex);
       for (auto buf : tex_bufs)
       {
-         _device->captureXfbBuffer(cbuf, buf);
+         device->captureXfbBuffer(cbuf, buf);
       }
-      _device->detachTexture(GLDevice::SAMPLER_COLOR);
-      _device->detachTexture(GLDevice::SAMPLER_ALPHA);
+      device->detachTexture(GLDevice::SAMPLER_COLOR);
+      device->detachTexture(GLDevice::SAMPLER_ALPHA);
       for (auto buf : no_tex_bufs)
       {
-         _device->captureXfbBuffer(cbuf, buf);
+         device->captureXfbBuffer(cbuf, buf);
       }
       if (!params.contains_translucent)
       {
-         _device->enableBlend();
-         _device->disableDepthWrite();
+         device->enableBlend();
+         device->disableDepthWrite();
       }
-      _device->attachTexture(1, _font_tex);
-      _device->setNumLights(0);
+      device->attachTexture(1, font_tex);
+      device->setNumLights(0);
       for (TextBuffer* buf : text_bufs)
       {
-         _device->captureXfbBuffer(cbuf, *buf);
+         device->captureXfbBuffer(cbuf, *buf);
       }
    }
-   _device->exitXfbMode();
+   device->exitXfbMode();
    return cbuf;
 }
 
@@ -245,15 +245,15 @@ void MeshRenderer::buffer(GlDrawable* buf)
       {
          if (buf->buffers[i][j])
          {
-            _device->bufferToDevice((array_layout) i, *(buf->buffers[i][j].get()));
+            device->bufferToDevice((array_layout) i, *(buf->buffers[i][j].get()));
          }
          if (buf->indexed_buffers[i][j])
          {
-            _device->bufferToDevice((array_layout) i, *(buf->indexed_buffers[i][j].get()));
+            device->bufferToDevice((array_layout) i, *(buf->indexed_buffers[i][j].get()));
          }
       }
    }
-   _device->bufferToDevice(buf->text_buffer);
+   device->bufferToDevice(buf->text_buffer);
 }
 
 void GLDevice::init()
@@ -281,22 +281,22 @@ void GLDevice::init()
 
 void GLDevice::setViewport(GLsizei w, GLsizei h)
 {
-   _vp_width = w;
-   _vp_height = h;
+   vp_width = w;
+   vp_height = h;
    glViewport(0, 0, w, h);
 }
 
 void GLDevice::getViewport(GLint (&vp)[4])
 {
    vp[0] = vp[1] = 0;
-   vp[2] = _vp_width;
-   vp[3] = _vp_height;
+   vp[2] = vp_width;
+   vp[3] = vp_height;
 }
 
 void GLDevice::setTransformMatrices(glm::mat4 model_view, glm::mat4 projection)
 {
-   _model_view_mtx = model_view;
-   _proj_mtx = projection;
+   model_view_mtx = model_view;
+   proj_mtx = projection;
 }
 
 void GLDevice::captureXfbBuffer(CaptureBuffer& capture, const TextBuffer& t_buf)
@@ -305,10 +305,10 @@ void GLDevice::captureXfbBuffer(CaptureBuffer& capture, const TextBuffer& t_buf)
    {
       glm::vec3 raster = glm::project(
                             glm::vec3(entry.rx, entry.ry, entry.rz),
-                            _model_view_mtx,
-                            _proj_mtx,
-                            glm::vec4(0, 0, _vp_width, _vp_height));
-      capture.text.emplace_back(raster, glm::make_vec4(_static_color.data()),
+                            model_view_mtx,
+                            proj_mtx,
+                            glm::vec4(0, 0, vp_width, vp_height));
+      capture.text.emplace_back(raster, glm::make_vec4(static_color.data()),
                                 entry.text);
    }
 }

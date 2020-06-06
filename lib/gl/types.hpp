@@ -200,7 +200,7 @@ class GlBuilder
    bool use_color;
    bool use_tex;
 
-   struct _vertex
+   struct FFState
    {
       std::array<float, 3> coords;
       std::array<float, 3> norm;
@@ -208,10 +208,10 @@ class GlBuilder
       std::array<float, 2> texcoord;
    };
 
-   _vertex saved[3];
-   _vertex curr;
+   FFState saved[3];
+   FFState curr;
 
-   void saveVertex(const _vertex& v);
+   void saveVertex(const FFState& v);
 
 public:
    GlBuilder(GlDrawable * buf)
@@ -370,13 +370,13 @@ public:
 class IVertexBuffer
 {
 private:
-   int _handle;
+   int handle;
 public:
-   IVertexBuffer() : _handle(0) { }
+   IVertexBuffer() : handle(0) { }
    virtual ~IVertexBuffer() { }
 
-   int getHandle() const { return _handle; }
-   void setHandle(int dev_hnd) { _handle = dev_hnd; }
+   int getHandle() const { return handle; }
+   void setHandle(int dev_hnd) { handle = dev_hnd; }
    /**
     * Clears the data stored in the vertex buffer.
     */
@@ -401,32 +401,32 @@ template<typename T>
 class VertexBuffer : public IVertexBuffer
 {
 private:
-   GLenum _shape;
-   std::vector<T> _data;
+   GLenum primitive;
+   std::vector<T> vertex_data;
 
 public:
    typedef typename std::vector<T>::const_iterator ConstIterator;
 
-   VertexBuffer(GLenum shape) : _shape(shape) { }
+   VertexBuffer(GLenum shape) : primitive(shape) { }
    ~VertexBuffer() { }
 
-   virtual void clear() { _data.clear(); }
-   virtual size_t count() const { return _data.size(); }
+   virtual void clear() { vertex_data.clear(); }
+   virtual size_t count() const { return vertex_data.size(); }
 
-   virtual GLenum getShape() const { return _shape; }
+   virtual GLenum getShape() const { return primitive; }
    virtual size_t getStride() const { return sizeof(T); }
 
-   ConstIterator begin() const { return _data.begin(); };
-   ConstIterator end() const { return _data.end(); };
+   ConstIterator begin() const { return vertex_data.begin(); };
+   ConstIterator end() const { return vertex_data.end(); };
 
-   virtual const void* getData() const { return _data.data(); }
+   virtual const void* getData() const { return vertex_data.data(); }
 
    /**
     * Add a vertex to the buffer.
     */
    void addVertex(const T& vertex)
    {
-      _data.emplace_back(vertex);
+      vertex_data.emplace_back(vertex);
    }
 
    /**
@@ -434,7 +434,7 @@ public:
     */
    void addVertices(const std::vector<T>& verts)
    {
-      _data.insert(_data.end(), verts.begin(), verts.end());
+      vertex_data.insert(vertex_data.end(), verts.begin(), verts.end());
    }
 };
 
@@ -448,41 +448,41 @@ template<typename T>
 class IndexedVertexBuffer : public IIndexedBuffer
 {
 private:
-   GLenum _shape;
-   std::vector<T> _data;
-   std::vector<int> _indices;
+   GLenum primitive;
+   std::vector<T> vertex_data;
+   std::vector<int> vertex_indices;
 
 public:
    typedef typename std::vector<T>::const_iterator ConstIterator;
-   IndexedVertexBuffer(GLenum shape) : _shape(shape) { }
+   IndexedVertexBuffer(GLenum shape) : primitive(shape) { }
    ~IndexedVertexBuffer() { }
    virtual void clear()
    {
-      _data.clear();
-      _indices.clear();
+      vertex_data.clear();
+      vertex_indices.clear();
    }
 
-   virtual size_t count() const { return _data.size(); }
+   virtual size_t count() const { return vertex_data.size(); }
 
-   virtual GLenum getShape() const { return _shape; }
+   virtual GLenum getShape() const { return primitive; }
    virtual size_t getStride() const { return sizeof(T); }
 
-   ConstIterator begin() const { return _data.begin(); };
-   ConstIterator end() const { return _data.end(); };
+   ConstIterator begin() const { return vertex_data.begin(); };
+   ConstIterator end() const { return vertex_data.end(); };
 
-   virtual const void* getData() const { return _data.data(); }
+   virtual const void* getData() const { return vertex_data.data(); }
 
-   const std::vector<int>& getIndices() const { return _indices; }
+   const std::vector<int>& getIndices() const { return vertex_indices; }
 
    void addVertices(const std::vector<T>& verts, const std::vector<int>& ids)
    {
-      int index_offset = _data.size();
-      std::copy(verts.begin(), verts.end(), std::back_inserter(_data));
-      int old_end = _indices.size();
-      std::copy(ids.begin(), ids.end(), std::back_inserter(_indices));
-      for (size_t i = old_end; i < _indices.size(); i++)
+      int index_offset = vertex_data.size();
+      std::copy(verts.begin(), verts.end(), std::back_inserter(vertex_data));
+      int old_end = vertex_indices.size();
+      std::copy(ids.begin(), ids.end(), std::back_inserter(vertex_indices));
+      for (size_t i = old_end; i < vertex_indices.size(); i++)
       {
-         _indices[i] += index_offset;
+         vertex_indices[i] += index_offset;
       }
    }
 };
@@ -501,11 +501,11 @@ public:
    typedef std::vector<Entry>::iterator Iterator;
    typedef std::vector<Entry>::const_iterator ConstIterator;
 private:
-   std::vector<Entry> _data;
-   size_t _num_chars;
+   std::vector<Entry> vertex_data;
+   size_t num_chars;
 
 public:
-   TextBuffer() : _num_chars(0) { }
+   TextBuffer() : num_chars(0) { }
    ~TextBuffer() { }
 
    /**
@@ -513,24 +513,24 @@ public:
     */
    void addText(float x, float y, float z, const std::string& text)
    {
-      _data.emplace_back(x, y, z, text);
-      _num_chars += text.length();
+      vertex_data.emplace_back(x, y, z, text);
+      num_chars += text.length();
    }
 
    /**
     * Gets an iterator referencing the first text entry.
     */
-   Iterator begin() { return _data.begin(); }
-   ConstIterator begin() const { return _data.begin(); }
+   Iterator begin() { return vertex_data.begin(); }
+   ConstIterator begin() const { return vertex_data.begin(); }
 
    /**
     * Gets an iterator pointing to the last text entry.
     */
-   Iterator end() { return _data.end(); }
-   ConstIterator end() const { return _data.end(); }
+   Iterator end() { return vertex_data.end(); }
+   ConstIterator end() const { return vertex_data.end(); }
 
-   virtual void clear() { _data.clear(); _num_chars = 0; }
-   virtual size_t count() const { return _num_chars * 6; };
+   virtual void clear() { vertex_data.clear(); num_chars = 0; }
+   virtual size_t count() const { return num_chars * 6; };
    virtual GLenum getShape() const { return GL_TRIANGLES; };
    virtual size_t getStride() const { return sizeof(float) * 8; };
    virtual const void* getData() const { return nullptr; }
