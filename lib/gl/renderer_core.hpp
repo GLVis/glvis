@@ -66,7 +66,10 @@ private:
                              const vector<ShaderXfbVertex>& verts);
 public:
    CoreGLDevice()
-      : default_prgm(0), feedback_prgm(0), global_vao(0) { }
+      : default_prgm(0), feedback_prgm(0), global_vao(0)
+   {
+       vbos.emplace_back(VBOData{}); // dummy for index 0
+   }
 
    DeviceType getType() override { return GLDevice::CORE_DEVICE; }
 

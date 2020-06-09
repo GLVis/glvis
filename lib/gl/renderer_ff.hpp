@@ -23,6 +23,10 @@ class FFGLDevice : public GLDevice
    template<typename TVtx>
    void bufferFFDeviceImpl(const IndexedVertexBuffer<TVtx>& buf);
 public:
+   FFGLDevice()
+   {
+       disp_lists.emplace_back(DispListData_{}); // dummy for index 0
+   }
 
    DeviceType getType() override { return GLDevice::FF_DEVICE; }
 

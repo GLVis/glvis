@@ -317,6 +317,8 @@ void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)
 
 void FFGLDevice::captureXfbBuffer(CaptureBuffer& cbuf, int hnd)
 {
+   if (hnd == 0) { return; }
+   if (disp_lists[hnd].count == 0) { return; }
    GLenum fbType;
    int fbStride;
    if (disp_lists[hnd].layout == VertexTex::layout

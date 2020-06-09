@@ -813,6 +813,8 @@ void CoreGLDevice::processLineXfbBuffer(CaptureBuffer& cbuf,
 void CoreGLDevice::captureXfbBuffer(
    CaptureBuffer& cbuf, int hnd)
 {
+   if (hnd == 0) { return; }
+   if (vbos[hnd].count == 0) { return; }
    // allocate feedback buffer
    int buf_size = vbos[hnd].count * sizeof(ShaderXfbVertex);
    glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER,

@@ -199,8 +199,8 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
       glBeginTransformFeedback    = glBeginTransformFeedbackEXT;
       glEndTransformFeedback      = glEndTransformFeedbackEXT;
    }
-   if (GLEW_VERSION_3_0
-       || (GLEW_VERSION_2_0 && GLEW_EXT_transform_feedback))
+   if (!legacyGlOnly && (GLEW_VERSION_3_0
+       || (GLEW_VERSION_2_0 && GLEW_EXT_transform_feedback)))
    {
       // we require both shaders and transform feedback
       // EXT_transform_feedback was made core in OpenGL 3.0
