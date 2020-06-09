@@ -21,8 +21,6 @@ varying float fClipCoord;
 uniform sampler2D colorTex;
 uniform sampler2D alphaTex;
 
-vec4 blinnPhong(in vec3 pos, in vec3 norm, in vec4 color);
- 
 void main() 
 { 
     vec4 pos = modelViewMatrix * vec4(vertex, 1.0);

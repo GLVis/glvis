@@ -7,8 +7,14 @@ varying vec3 fPosition;
 varying vec4 fColor; 
 varying vec2 fTexCoord;
 
-void fragmentClipPlane();
-vec4 blinnPhong(in vec3 pos, in vec3 norm, in vec4 color);
+uniform bool useClipPlane;
+varying float fClipVal;
+
+void fragmentClipPlane() {
+    if (useClipPlane && fClipVal < 0.0) {
+        discard;
+    }
+}
 
 void main() 
 {

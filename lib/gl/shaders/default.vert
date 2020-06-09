@@ -19,7 +19,11 @@ varying vec3 fPosition;
 varying vec4 fColor; 
 varying vec2 fTexCoord; 
 
-void setupClipPlane(in float dist);
+varying float fClipVal;
+
+void setupClipPlane(in float dist) {
+    fClipVal = dist;
+}
 
 void main() 
 { 

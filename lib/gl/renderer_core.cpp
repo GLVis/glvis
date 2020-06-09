@@ -12,30 +12,24 @@ const std::string GLSL_HEADER = "precision mediump float;\n";
 const std::string GLSL_HEADER = "#version GLSL_VER\n";
 #endif
 // weird but loads them inline
-const std::string CLIP_PLANE_VS =
-#include "shaders/clip_plane.vert"
-   ;
-
-const std::string CLIP_PLANE_FS =
-#include "shaders/clip_plane.frag"
-   ;
 
 const std::string BLINN_PHONG_FS =
 #include "shaders/lighting.glsl"
-   ;
-
+;
 const std::string DEFAULT_VS =
 #include "shaders/default.vert"
-   ;
+;
 const std::string DEFAULT_FS =
+BLINN_PHONG_FS +
 #include "shaders/default.frag"
-   ;
+;
 const std::string PRINTING_VS =
+BLINN_PHONG_FS +
 #include "shaders/printing.vert"
-   ;
+;
 const std::string PRINTING_FS =
 #include "shaders/printing.frag"
-   ;
+;
 
 namespace gl3
 {
@@ -91,19 +85,7 @@ void clearVtxAttrLayout()
 std::string formatShaderString(const std::string &shader_string,
                                GLenum shader_type, int glsl_version)
 {
-   // webgl does not allow name resolution across shaders, we have to substitute them in here
-   // add lighting
-   std::string formatted = std::regex_replace(shader_string,
-                                              std::regex(R"(vec4 blinnPhong\(in vec3 pos, in vec3 norm, in vec4 color\);)"),
-                                              BLINN_PHONG_FS);
-
-   // add clip plane
-   formatted = std::regex_replace(formatted,
-                                  std::regex(R"(void fragmentClipPlane\(\);)"),
-                                  CLIP_PLANE_FS);
-   formatted = std::regex_replace(formatted,
-                                  std::regex(R"(void setupClipPlane\(in float dist\);)"),
-                                  CLIP_PLANE_VS);
+   std::string formatted = shader_string;
 
    // replace some identifiers depending on the verions of glsl we're using
    if (glsl_version >= 130)
