@@ -72,7 +72,7 @@ void MeshRenderer::render(const RenderQueue& queue)
    {
       return !renderPair.first.contains_translucent;
    });
-   for (auto& q_elem : queue)
+   for (auto& q_elem : sorted_queue)
    {
       const RenderParams& params = q_elem.first;
       device->setTransformMatrices(params.model_view.mtx, params.projection.mtx);

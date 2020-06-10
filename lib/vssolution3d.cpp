@@ -3607,6 +3607,13 @@ gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &disp_buf);
    }
+   if (cplane && cp_drawelems)
+   {
+      params.use_clip_plane = false;
+      scene.queue.emplace_back(params, &cplane_buf);
+      params.use_clip_plane = true;
+   }
+   params.contains_translucent = false;
    // draw orderings -- color modes
    if (draworder == 1)
    {
@@ -3616,13 +3623,6 @@ gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &order_buf);
    }
-   if (cplane && cp_drawelems)
-   {
-      params.use_clip_plane = false;
-      scene.queue.emplace_back(params, &cplane_buf);
-      params.use_clip_plane = true;
-   }
-   params.contains_translucent = false;
    params.mesh_material = VisualizationScene::BLK_MAT;
    // everything below will be drawn in "black"
    params.static_color = GetLineColor();

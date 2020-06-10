@@ -2321,6 +2321,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
       scene.queue.emplace_back(params, &disp_buf);
    }
    // draw orderings -- color modes
+   params.contains_translucent = false;
    if (draworder == 1)
    {
       scene.queue.emplace_back(params, &order_noarrow_buf);
@@ -2329,6 +2330,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &order_buf);
    }
+   params.contains_translucent = MatAlpha < 1.0;
    params.mesh_material = VisualizationScene::BLK_MAT;
    // everything below will be drawn in "black"
    params.static_color = GetLineColor();
