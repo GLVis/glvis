@@ -859,14 +859,27 @@ void KeyF6Pressed()
 {
    cout << "Palette is repeated " << RepeatPaletteTimes << " times.\n"
         << "(Negative value means the palette is flipped.)\n"
-        << "Enter new value : " << flush;
+        << "Enter new value: " << flush;
    cin >> RepeatPaletteTimes;
    if (RepeatPaletteTimes == 0)
    {
       RepeatPaletteTimes = 1;
    }
    cout << "Palette will be repeated " << RepeatPaletteTimes
-        << " times now." << endl;
+        << " times now.\n\n";
+
+   int colors_used = PaletteNumColors ?  PaletteNumColors : RGB_Palette_Size;
+   cout << "Palette is using " << colors_used << "/" << RGB_Palette_Size
+        << " colors.\n";
+   cout << "Enter new value (0=original): " << flush;
+   cin >> PaletteNumColors;
+   if (PaletteNumColors == 1)
+   {
+      PaletteNumColors = 0;
+   }
+   colors_used = PaletteNumColors ?  PaletteNumColors : RGB_Palette_Size;
+   cout << "Palette will be using " << colors_used << "/" << RGB_Palette_Size
+        << " colors now.\n\n";
 
    Select_New_RGB_Palette();
 
