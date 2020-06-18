@@ -868,20 +868,21 @@ void KeyF6Pressed()
    cout << "Palette will be repeated " << RepeatPaletteTimes
         << " times now.\n\n";
 
+   int pal = Choose_Palette();
+
    int colors_used = PaletteNumColors ?  PaletteNumColors : RGB_Palette_Size;
-   cout << "Palette is using " << colors_used << "/" << RGB_Palette_Size
-        << " colors.\n";
-   cout << "Enter new value (0=original): " << flush;
+   cout << "\nPalette is using " << colors_used << " colors.\n"
+        << "Enter new value (0 = use original " << RGB_Palette_Size
+        << " colors): " << flush;
    cin >> PaletteNumColors;
    if (PaletteNumColors == 1)
    {
       PaletteNumColors = 0;
    }
    colors_used = PaletteNumColors ?  PaletteNumColors : RGB_Palette_Size;
-   cout << "Palette will be using " << colors_used << "/" << RGB_Palette_Size
-        << " colors now.\n\n";
+   cout << "Palette will be using " << colors_used << " colors now.\n";
 
-   Select_New_RGB_Palette();
+   Set_Palette(pal);
 
    if (!GetUseTexture())
    {

@@ -7519,7 +7519,7 @@ void Prev_RGB_Palette()
                Default_RGB_Palette - 1);
 }
 
-int Select_New_RGB_Palette()
+int Choose_Palette()
 {
    const int buflen = 256;
    char buffer[buflen];
@@ -7556,7 +7556,14 @@ int Select_New_RGB_Palette()
       pal = Num_RGB_Palettes;
    }
 
-   Set_Palette (pal-1);
-
    return pal-1;
+}
+
+int Select_New_RGB_Palette()
+{
+   int pal = Choose_Palette();
+
+   Set_Palette(pal);
+
+   return pal;
 }

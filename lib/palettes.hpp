@@ -16,9 +16,10 @@ extern int RGB_Palette_Size;
 extern double * RGB_Palette;
 
 void Init_Palettes();
-void Set_Palette (int num);
+void Set_Palette(int num);
 void Next_RGB_Palette();
 void Prev_RGB_Palette();
+int Choose_Palette();
 int Select_New_RGB_Palette();
 
 #endif
