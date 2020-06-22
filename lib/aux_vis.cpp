@@ -1424,6 +1424,7 @@ void Cone()
 
 int MySetColorLogscale = 0;
 int RepeatPaletteTimes = 1;
+int PaletteNumColors   = 0;
 int UseTexture         = 0;
 
 void MySetColor (double val, double min, double max)
@@ -1571,6 +1572,42 @@ void Make_Texture_From_Palette_2()
          Texture_Image[3*i+0] = RGB_Palette[3*(Texture_Size-1-i)+0];
          Texture_Image[3*i+1] = RGB_Palette[3*(Texture_Size-1-i)+1];
          Texture_Image[3*i+2] = RGB_Palette[3*(Texture_Size-1-i)+2];
+      }
+   }
+
+   if (PaletteNumColors && (Texture_Size > PaletteNumColors))
+   {
+      double h = 1.0/PaletteNumColors;
+      double t = (double)PaletteNumColors/(Texture_Size-1);
+
+      for (int i = 0; i < Texture_Size; i++)
+      {
+         int j;
+         int e = floor(i*t);
+
+         // discretize the palette by using the end colors in the first and
+         // last interval and mid-point colors in interior intervals
+         if (e == 0)
+         {
+            j = 0;
+         }
+         else if (e >= PaletteNumColors-1)
+         {
+            j = Texture_Size-1;
+         }
+         else
+         {
+            j = (Texture_Size-1)*(e+0.5)*h;
+         }
+
+         if (RepeatPaletteTimes < 0)
+         {
+            j = Texture_Size-1-j;
+         }
+
+         Texture_Image[3*i+0] = RGB_Palette[3*j+0];
+         Texture_Image[3*i+1] = RGB_Palette[3*j+1];
+         Texture_Image[3*i+2] = RGB_Palette[3*j+2];
       }
    }
 }
