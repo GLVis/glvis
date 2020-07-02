@@ -457,9 +457,14 @@ void SdlWindow::getWindowSize(int& w, int& h)
       }
       */
 #else
-      SDL_GL_GetDrawableSize(handle->hwnd, &w, &h);
+      SDL_GetWindowSize(handle->hwnd, &w, &h);
 #endif
    }
+}
+
+void SdlWindow::getGLDrawSize(int& w, int& h)
+{
+   SDL_GL_GetDrawableSize(handle->hwnd, &w, &h);
 }
 
 const int default_dpi = 72;

@@ -108,6 +108,7 @@ public:
    }
 
    void getWindowSize(int& w, int& h);
+   void getGLDrawSize(int& w, int& h);
    void getDpi(int& wdpi, int& hdpi);
 
    gl3::MeshRenderer& getRenderer() { return *renderer.get(); }

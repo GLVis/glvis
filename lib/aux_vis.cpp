@@ -410,7 +410,7 @@ void MyExpose(GLsizei w, GLsizei h)
 void MyExpose()
 {
    int w, h;
-   wnd->getWindowSize(w, h);
+   wnd->getGLDrawSize(w, h);
    MyExpose(w, h);
 }
 
@@ -500,7 +500,7 @@ inline void ComputeSphereAngles(int &newx, int &newy,
    double r, x, y, rr;
    const double maxr = 0.996194698091745532295;
 
-   wnd->getWindowSize(viewport[2], viewport[3]);
+   wnd->getGLDrawSize(viewport[2], viewport[3]);
    r = sqrt(sqr(viewport[2])+sqr(viewport[3]))*M_SQRT1_2;
 
    x = double(newx-viewport[0]-viewport[2]/2) / r;
@@ -642,7 +642,7 @@ void MiddleButtonLoc (EventInfo *event)
       {
          scale = 0.4142135623730950488/tan(locscene->ViewAngle*(M_PI/360));
       }
-      wnd->getWindowSize(w, h);
+      wnd->getGLDrawSize(w, h);
       if (w < h)
       {
          scale *= w;
@@ -866,7 +866,7 @@ int Screenshot(const char *fname, bool convert)
    }
 
    int w, h;
-   wnd->getWindowSize(w, h);
+   wnd->getGLDrawSize(w, h);
    glReadBuffer(GL_FRONT);
 #if defined(GLVIS_USE_LIBTIFF)
    // Save a TIFF image. This requires the libtiff library, see www.libtiff.org
@@ -1109,7 +1109,7 @@ void KeyCtrlP()
    FILE * fp;
    fp = fopen("GLVis.pdf", "wb");
    GLint viewport[4] = { 0, 0, 0, 0 };
-   wnd->getWindowSize(viewport[2], viewport[3]);
+   wnd->getGLDrawSize(viewport[2], viewport[3]);
    {
       gl3::SceneInfo wnd_scn = locscene->GetSceneObjs();
       for (auto to_buf : wnd_scn.needs_buffering)

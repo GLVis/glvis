@@ -978,7 +978,7 @@ void VisualizationSceneScalarData::Toggle2DView()
 gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
 {
    int w, h;
-   wnd->getWindowSize(w, h);
+   wnd->getGLDrawSize(w, h);
    gl3::SceneInfo scene {};
    scene.needs_buffering = std::move(updated_bufs);
    updated_bufs.clear();
