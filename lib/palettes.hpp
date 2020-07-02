@@ -43,6 +43,7 @@ void GenerateAlphaTexture(float matAlpha, float matAlphaCenter);
 
 void Next_RGB_Palette();
 void Prev_RGB_Palette();
+int Choose_Palette();
 int Select_New_RGB_Palette();
 
 #endif

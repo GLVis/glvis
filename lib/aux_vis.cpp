@@ -1467,6 +1467,7 @@ void SetWindowTitle(const char *title)
 
 int MySetColorLogscale = 0;
 extern int RepeatPaletteTimes;
+int PaletteNumColors   = 0;
 int UseTexture         = 0;
 
 double GetColorCoord(double val, double min, double max)

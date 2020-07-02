@@ -595,17 +595,35 @@ void KeyF6Pressed()
 {
    cout << "Palette is repeated " << RepeatPaletteTimes << " times.\n"
         << "(Negative value means the palette is flipped.)\n"
-        << "Enter new value : " << flush;
+        << "Enter new value: " << flush;
    cin >> RepeatPaletteTimes;
    if (RepeatPaletteTimes == 0)
    {
       RepeatPaletteTimes = 1;
    }
    cout << "Palette will be repeated " << RepeatPaletteTimes
-        << " times now." << endl;
+        << " times now.\n\n";
 
-   paletteInit();
-   Select_New_RGB_Palette();
+   int pal = Choose_Palette();
+
+   int colors_used = PaletteNumColors ?  PaletteNumColors : RGB_Palette_Size;
+   cout << "\nPalette is using " << colors_used << " colors.\n"
+        << "Enter new value (0 = use original " << RGB_Palette_Size
+        << " colors): " << flush;
+   cin >> PaletteNumColors;
+   if (PaletteNumColors == 1)
+   {
+      PaletteNumColors = 0;
+   }
+   colors_used = PaletteNumColors ?  PaletteNumColors : RGB_Palette_Size;
+   cout << "Palette will be using " << colors_used << " colors now.\n";
+
+   Set_Palette(pal);
+
+   if (!GetUseTexture())
+   {
+      vsdata->EventUpdateColors();
+   }
    SendExposeEvent();
 }
 

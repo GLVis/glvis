@@ -12,6 +12,17 @@
 Version 3.4.1 (development)
 ===========================
 
+- Added several perceptually uniform colormaps "turbo", "viridis", "plasma",
+  "fusion", "iceburn", "viola", "pride" and "ocean" from
+   + Google AI: https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
+   + Matplotlib: https://bids.github.io/colormap/
+   + CMasher: https://github.com/1313e/CMasher
+
+- Added the ability to discretize a palette, i.e. to use just a prescribed
+  number of its colors, see the new "number of colors" input of the F6 key.
+
+- Replaced the "deep sea" palette with "ocean".
+
 - Added new palette: gray.
 
 - Added new script and socket command: "palette_repeat" which can be used to

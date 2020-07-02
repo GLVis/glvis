@@ -23,6 +23,7 @@ extern GLuint fontbase;
 extern float MatAlpha;
 extern float MatAlphaCenter;
 extern int RepeatPaletteTimes;
+extern int PaletteNumColors;
 
 /// Initializes the visualization and some keys.
 int InitVisualization(const char name[], int x, int y, int w, int h);
