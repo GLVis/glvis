@@ -37,7 +37,7 @@ double * paletteGet();
  */
 void paletteRebind();
 
-int paletteGetSize();
+int paletteGetSize(int pal = -1);
 
 void GenerateAlphaTexture(float matAlpha, float matAlphaCenter);
 

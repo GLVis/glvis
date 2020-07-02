@@ -606,24 +606,22 @@ void KeyF6Pressed()
 
    int pal = Choose_Palette();
 
-   int colors_used = PaletteNumColors ?  PaletteNumColors : RGB_Palette_Size;
+   int colors_used = PaletteNumColors ?  PaletteNumColors : paletteGetSize(pal);
    cout << "\nPalette is using " << colors_used << " colors.\n"
-        << "Enter new value (0 = use original " << RGB_Palette_Size
+        << "Enter new value (0 = use original " << paletteGetSize(pal)
         << " colors): " << flush;
    cin >> PaletteNumColors;
    if (PaletteNumColors == 1)
    {
       PaletteNumColors = 0;
    }
-   colors_used = PaletteNumColors ?  PaletteNumColors : RGB_Palette_Size;
+   colors_used = PaletteNumColors ?  PaletteNumColors : paletteGetSize();
    cout << "Palette will be using " << colors_used << " colors now.\n";
 
-   Set_Palette(pal);
+   paletteInit();
+   paletteSet(pal);
 
-   if (!GetUseTexture())
-   {
-      vsdata->EventUpdateColors();
-   }
+   vsdata->EventUpdateColors();
    SendExposeEvent();
 }
 

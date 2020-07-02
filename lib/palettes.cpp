@@ -7538,8 +7538,6 @@ int Choose_Palette()
       pal = Num_RGB_Palettes;
    }
 
-   paletteSet(pal-1);
-
    return pal-1;
 }
 
@@ -7579,6 +7577,30 @@ void PaletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
             1.0
          };
       }
+   }
+   if (PaletteNumColors && (plt_size > PaletteNumColors))
+   {
+      texture_buf.resize(PaletteNumColors);
+      for (int i = 0; i < PaletteNumColors; i++)
+      {
+         int plt_i = i * plt_size / (PaletteNumColors-1);
+         if (i >= PaletteNumColors - 1)
+         {
+            plt_i = plt_size - 1;
+         }
+         if (RepeatPaletteTimes  < 0)
+         {
+            plt_i = plt_size-1-plt_i;
+         }
+         texture_buf[i] =
+         {
+            (float) palette[3*plt_i],
+            (float) palette[3*plt_i+1],
+            (float) palette[3*plt_i+2],
+            1.0
+         };
+      }
+      plt_size = PaletteNumColors;
    }
    glBindTexture(GL_TEXTURE_2D, tex);
    glTexImage2D(GL_TEXTURE_2D,
@@ -7750,8 +7772,12 @@ double * paletteGet()
    return RGB_Palettes[curr_palette];
 }
 
-int paletteGetSize()
+int paletteGetSize(int pal)
 {
+   if (pal == -1)
+   {
+      return RGB_Palettes_Sizes[curr_palette];
+   }
    return RGB_Palettes_Sizes[curr_palette];
 }
 
@@ -7800,16 +7826,11 @@ void Prev_RGB_Palette()
               curr_palette - 1);
 }
 
-void Set_Palette (int num)
-{
-   paletteSet(num);
-}
-
 int Select_New_RGB_Palette()
 {
    int pal = Choose_Palette();
 
-   Set_Palette(pal);
+   paletteSet(pal);
 
    return pal;
 }
