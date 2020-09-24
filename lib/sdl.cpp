@@ -125,7 +125,7 @@ int SdlWindow::probeGLContextSupport()
       }
    }
    PRINT_DEBUG("failed." << endl);
-   PRINT_DEBUG("No profile flags were accepted.");
+   PRINT_DEBUG("No profile flags were accepted." << endl);
    return 0;
 }
 
@@ -168,6 +168,7 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
       win_gl_ctx = probeGLContextSupport();
    }
 #endif
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, win_gl_ctx);
    if (GetMultisample() > 0)
    {
       SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);
