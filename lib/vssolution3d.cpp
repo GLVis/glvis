@@ -137,7 +137,7 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve1(gl3::GlDrawable& buf,
    double ThicknessFactor = 2.0;
    double MS_Thickness = 2.0;
    double LineWidth;
-   if (GetMultisample())
+   if (GetMultisample() > 0)
    {
       LineWidth = GetLineWidthMS();
       SetLineWidthMS(MS_Thickness);
@@ -220,7 +220,7 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve1(gl3::GlDrawable& buf,
       }
    }
 
-   if (GetMultisample())
+   if (GetMultisample() > 0)
    {
       SetLineWidthMS(LineWidth);
    }
