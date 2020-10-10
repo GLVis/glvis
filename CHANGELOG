@@ -39,6 +39,9 @@ Version 3.4.1 (development)
 
 - Add support to visualize the element ordering curve with 'Ctrl+o'.
 
+- Improved the opening of parallel meshes/solutions.
+
+
 Version 3.4, released on May 29, 2018
 =====================================
 
