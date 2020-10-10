@@ -25,7 +25,7 @@ class FFGLDevice : public GLDevice
 public:
    FFGLDevice()
    {
-       disp_lists.emplace_back(DispListData_{}); // dummy for index 0
+      disp_lists.emplace_back(DispListData_{}); // dummy for index 0
    }
 
    DeviceType getType() override { return GLDevice::FF_DEVICE; }

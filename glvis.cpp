@@ -1283,7 +1283,7 @@ int main (int argc, char *argv[])
    }
    if (legacy_gl_ctx == true)
    {
-       SetLegacyGLOnly(legacy_gl_ctx);
+      SetLegacyGLOnly(legacy_gl_ctx);
    }
 
    GLVisGeometryRefiner.SetType(geom_ref_type);

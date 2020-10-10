@@ -7729,9 +7729,9 @@ void paletteInit()
    for (int i = 0; i < Num_RGB_Palettes; i++)
    {
       PaletteToTextureDiscrete(RGB_Palettes[i], RGB_Palettes_Sizes[i],
-                                palette_tex[i][0]);
+                               palette_tex[i][0]);
       PaletteToTextureSmooth(RGB_Palettes[i], RGB_Palettes_Sizes[i],
-                              palette_tex[i][1]);
+                             palette_tex[i][1]);
    }
    // set alpha texture to 1.0
    float alphaTexData[MaxTextureSize * 2];
