@@ -66,11 +66,6 @@ CONFIG_MK ?= $(MFEM_DIR)/config/config.mk
 # MFEM_DIR = ../mfem/mfem
 # CONFIG_MK = $(MFEM_DIR)/config.mk
 
-# Use two relative paths to MFEM: first one for compilation in '.' and second
-# one for compilation in 'lib'.
-MFEM_DIR1 := $(MFEM_DIR)
-MFEM_DIR2 := $(realpath $(MFEM_DIR))
-
 # Use the compiler used by MFEM. Get the compiler and the options for compiling
 # and linking from MFEM's config.mk. (Skip this if the target does not require
 # building.)
@@ -78,13 +73,10 @@ ifeq (,$(filter help clean distclean style,$(MAKECMDGOALS)))
    -include $(CONFIG_MK)
 endif
 
+# GLVis requires c++11 which is also required by MFEM version >= 4.0
 CXX = $(MFEM_CXX)
 CPPFLAGS = $(MFEM_CPPFLAGS)
 CXXFLAGS = $(MFEM_CXXFLAGS)
-
-ifeq ($(findstring -std=c++11,$(CXX)),)
-   CXX += -std=c++11
-endif
 
 # MFEM config does not define C compiler
 CC     ?= gcc
@@ -98,12 +90,14 @@ GLVIS_LDFLAGS ?=
 EMCC      ?= emcc -std=c++11
 FONT_FILE ?= OpenSans.ttf
 EMCC_OPTS ?= -s USE_SDL=2 -s USE_FREETYPE=1
-EMCC_LIBS ?= -s USE_SDL=2 --bind -s ALLOW_MEMORY_GROWTH=1 -s SINGLE_FILE=1 --no-heap-copy \
+EMCC_LIBS ?= -s USE_SDL=2 --bind -s ALLOW_MEMORY_GROWTH=1 -s SINGLE_FILE=1 \
  --no-heap-copy -s ENVIRONMENT=web -s MODULARIZE=1 -s EXPORT_NAME=glvis \
  -s GL_ASSERTIONS=1 -s GL_DEBUG=1 -s USE_FREETYPE=1 -s USE_WEBGL2=1
 
-OPTIM_OPTS = -O3
-DEBUG_OPTS = -g -Wall
+# Flags used when $(GLVIS_DEBUG) is not the same as $(MFEM_DEBUG)
+CXX11FLAG ?= -std=c++11
+OPTIM_OPTS ?= $(CXX11FLAG) -O3
+DEBUG_OPTS ?= $(CXX11FLAG) -g -Wall
 GLVIS_DEBUG ?= $(MFEM_DEBUG)
 ifneq ($(GLVIS_DEBUG),$(MFEM_DEBUG))
    ifeq ($(GLVIS_DEBUG),YES)
@@ -121,7 +115,6 @@ ifeq ($(GLVIS_DEBUG),YES)
 endif
 
 NOTMAC := $(subst Darwin,,$(shell uname -s))
-SO_EXT = $(if $(NOTMAC),so,dylib)
 
 # Default multisampling mode and multisampling line-width
 GLVIS_MULTISAMPLE  ?= 4
@@ -143,23 +136,25 @@ define find_dir
 $(patsubst %/$(1),%,$(firstword $(wildcard $(foreach d,$(2),$(d)/$(1)))))
 endef
 
-FREETYPE_SEARCH_PATHS = /usr /opt/X11
+BREW_PREFIX := $(if $(NOTMAC),,$(shell brew --prefix 2> /dev/null))
+
+FREETYPE_SEARCH_PATHS = /usr /opt/X11 $(BREW_PREFIX)
 FREETYPE_SEARCH_FILE = include/freetype2/ft2build.h
 FREETYPE_DIR = $(call find_dir,$(FREETYPE_SEARCH_FILE),$(FREETYPE_SEARCH_PATHS))
 FREETYPE_LIBS = -lfreetype -lfontconfig
 
-GLEW_SEARCH_PATHS = /usr /usr/local
+GLEW_SEARCH_PATHS = /usr /usr/local $(BREW_PREFIX)
 GLEW_SEARCH_FILE = include/GL/glew.h
 GLEW_DIR ?= $(call find_dir,$(GLEW_SEARCH_FILE),$(GLEW_SEARCH_PATHS))
 GLEW_LIB_DIR = $(call find_dir,libGLEW.a,$(GLEW_DIR)/lib64 $(GLEW_DIR)/lib)
 GLEW_LIBS = -lGLEW
 
-SDL_SEARCH_PATHS := /usr /usr/local
+SDL_SEARCH_PATHS := /usr /usr/local $(BREW_PREFIX)
 SDL_SEARCH_FILE = include/SDL2/SDL.h
 SDL_DIR ?= $(call find_dir,$(SDL_SEARCH_FILE),$(SDL_SEARCH_PATHS))
 SDL_LIBS = -lSDL2
 
-GLM_SEARCH_PATHS = /usr/include /usr/local/include
+GLM_SEARCH_PATHS = /usr/include /usr/local/include $(BREW_PREFIX)/include
 GLM_SEARCH_FILE = glm/glm.hpp
 GLM_DIR ?= $(call find_dir,$(GLM_SEARCH_FILE),$(GLM_SEARCH_PATHS))
 
@@ -183,7 +178,6 @@ GL_LIBS ?= $(if $(FREETYPE_DIR),-L$(FREETYPE_DIR)/lib) \
  $(if $(SDL_DIR),-L$(SDL_DIR)/lib) \
  $(if $(NOTMAC),$(if $(OPENGL_DIR),-L$(OPENGL_DIR)/lib $(rpath)$(OPENGL_DIR)/lib)) \
  $(if $(GLEW_LIB_DIR),-L$(GLEW_LIB_DIR) $(rpath)$(GLEW_LIB_DIR)) \
- $(if $(GLM_DIR),-L$(GLM_DIR)/lib) \
  $(FREETYPE_LIBS) $(SDL_LIBS) $(GLEW_LIBS) $(OPENGL_LIBS)
 
 EMCC_OPTS += $(if $(GLM_DIR),-I$(GLM_DIR))
@@ -215,22 +209,28 @@ LIBS = $(strip $(GLVIS_LIBS) $(GLVIS_LDFLAGS))
 CCC  = $(strip $(CXX) $(GLVIS_FLAGS))
 Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
-# generated with 'echo lib/*.c*'
-COMMON_SOURCE_FILES = \
- lib/gl/types.cpp lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp \
- lib/aux_vis.cpp lib/font.cpp lib/material.cpp lib/openglvis.cpp lib/palettes.cpp \
- lib/sdl.cpp lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp \
- lib/vsvector3d.cpp
+# generated with 'echo lib/gl/*.c* lib/*.c*'
+ALL_SOURCE_FILES = \
+ lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp \
+ lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp lib/font.cpp lib/gl2ps.c \
+ lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp \
+ lib/threads.cpp lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp \
+ lib/vsvector.cpp lib/vsvector3d.cpp
+DESKTOP_ONLY_SOURCE_FILES = lib/threads.cpp lib/gl2ps.c
+WEB_ONLY_SOURCE_FILES = lib/aux_js.cpp
+COMMON_SOURCE_FILES = $(filter-out \
+ $(DESKTOP_ONLY_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES),$(ALL_SOURCE_FILES))
 
-# generated with 'echo lib/*.h*'
+# generated with 'echo lib/gl/*.h* lib/*.h*'
 HEADER_FILES = \
- lib/gl/platform_gl.hpp lib/gl/types.hpp lib/gl/renderer.hpp lib/gl/renderer_core.hpp \
- lib/gl/renderer_ff.hpp lib/aux_vis.hpp lib/font.hpp lib/material.hpp lib/openglvis.hpp \
+ lib/gl/attr_traits.hpp lib/gl/platform_gl.hpp lib/gl/renderer.hpp \
+ lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp lib/gl/types.hpp \
+ lib/aux_vis.hpp lib/font.hpp lib/gl2ps.h lib/material.hpp lib/openglvis.hpp \
  lib/palettes.hpp lib/sdl.hpp lib/threads.hpp lib/visual.hpp lib/vsdata.hpp \
  lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp
 
-DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) lib/threads.cpp lib/gl2ps.c
-WEB_SOURCE_FILES     = $(COMMON_SOURCE_FILES) lib/aux_js.cpp
+DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) $(DESKTOP_ONLY_SOURCE_FILES)
+WEB_SOURCE_FILES     = $(COMMON_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES)
 OBJECT_FILES1        = $(DESKTOP_SOURCE_FILES:.cpp=.o)
 OBJECT_FILES         = $(OBJECT_FILES1:.c=.o)
 BYTECODE_FILES       = $(WEB_SOURCE_FILES:.cpp=.bc)
@@ -249,7 +249,6 @@ BYTECODE_FILES       = $(WEB_SOURCE_FILES:.cpp=.bc)
 %.bc: %.cpp
 	$(EMCC) $(EMCC_OPTS) -c $< -o $@
 
-glvis: override MFEM_DIR = $(MFEM_DIR1)
 glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(CCC) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
 
@@ -265,18 +264,18 @@ opt:
 debug:
 	$(MAKE) "GLVIS_DEBUG=YES"
 
-$(OBJECT_FILES): override MFEM_DIR = $(MFEM_DIR2)
 $(OBJECT_FILES): $(HEADER_FILES) $(CONFIG_MK)
 
 lib/libglvis.a: $(OBJECT_FILES)
-	$(AR) $(ARFLAGS) lib/libglvis.a $^; $(RANLIB) lib/libglvis.a
+	$(AR) $(ARFLAGS) $@ $^; $(RANLIB) $@
 
 js: lib/libglvis.js
 lib/libglvis.js: $(BYTECODE_FILES) $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(EMCC) -o $@ $(BYTECODE_FILES) $(EMCC_LIBS) --embed-file $(FONT_FILE)
 
 clean:
-	rm -rf lib/*.o lib/*.bc lib/gl/*.o lib/gl/*.bc lib/*~ *~ glvis lib/libglvis.a lib/libglvis.js *.dSYM
+	rm -rf lib/*.o lib/*.bc lib/gl/*.o lib/gl/*.bc lib/*~ *~ glvis
+	rm -rf lib/libglvis.a lib/libglvis.js *.dSYM
 
 distclean: clean
 	rm -rf bin/
@@ -301,10 +300,18 @@ status info:
 	$(info PREFIX      = $(PREFIX))
 	@true
 
-ASTYLE = astyle --options=$(MFEM_DIR1)/config/mfem.astylerc
-ALL_FILES = ./glvis.cpp $(SOURCE_FILES) $(HEADER_FILES)
-EXT_FILES = lib/aux_gl.cpp lib/aux_gl.hpp lib/gl2ps.c lib/gl2ps.h \
-  lib/tk.cpp lib/tk.h
+# Print the contents of a makefile variable, e.g.: 'make print-MFEM_LIBS'.
+print-%:
+	$(info [ variable name]: $*)
+	$(info [        origin]: $(origin $*))
+	$(info [         value]: $(value $*))
+	$(info [expanded value]: $($*))
+	$(info )
+	@true
+
+ASTYLE = astyle --options=$(MFEM_DIR)/config/mfem.astylerc
+ALL_FILES = ./glvis.cpp $(ALL_SOURCE_FILES) $(HEADER_FILES)
+EXT_FILES = lib/gl2ps.c lib/gl2ps.h
 FORMAT_FILES := $(filter-out $(EXT_FILES), $(ALL_FILES))
 
 style:

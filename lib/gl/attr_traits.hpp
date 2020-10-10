@@ -111,9 +111,9 @@ AttrNormal<TV, decltype((void)TV::norm, 0)>>
    const static GLenum FFArrayIdx = GL_NORMAL_ARRAY;
    static void FFSetupFunc(GLint /*size*/, GLenum type, GLsizei stride,
                            const GLvoid* ptr)
-   {
-      glNormalPointer(type, stride, ptr);
-   }
+{
+   glNormalPointer(type, stride, ptr);
+}
 };
 
 template<typename TV>

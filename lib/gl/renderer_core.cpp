@@ -15,21 +15,21 @@ const std::string GLSL_HEADER = "#version GLSL_VER\n";
 
 const std::string BLINN_PHONG_FS =
 #include "shaders/lighting.glsl"
-;
+   ;
 const std::string DEFAULT_VS =
 #include "shaders/default.vert"
-;
+   ;
 const std::string DEFAULT_FS =
-BLINN_PHONG_FS +
+   BLINN_PHONG_FS +
 #include "shaders/default.frag"
-;
+   ;
 const std::string PRINTING_VS =
-BLINN_PHONG_FS +
+   BLINN_PHONG_FS +
 #include "shaders/printing.vert"
-;
+   ;
 const std::string PRINTING_FS =
 #include "shaders/printing.frag"
-;
+   ;
 
 namespace gl3
 {

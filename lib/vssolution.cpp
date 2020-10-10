@@ -1056,9 +1056,9 @@ void DrawTriangle(gl3::GlDrawable& buff,
       fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
    }
    buff.addTriangle<gl3::VertexNormTex>(
-      {fpts[0], fnorm, texcoord[0]},
-      {fpts[1], fnorm, texcoord[1]},
-      {fpts[2], fnorm, texcoord[2]});
+   {fpts[0], fnorm, texcoord[0]},
+   {fpts[1], fnorm, texcoord[1]},
+   {fpts[2], fnorm, texcoord[2]});
 }
 
 void DrawQuad(gl3::GlDrawable& buff,
@@ -1081,10 +1081,10 @@ void DrawQuad(gl3::GlDrawable& buff,
       fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
    }
    buff.addQuad<gl3::VertexNormTex>(
-      {fpts[0], fnorm, texcoord[0]},
-      {fpts[1], fnorm, texcoord[1]},
-      {fpts[2], fnorm, texcoord[2]},
-      {fpts[3], fnorm, texcoord[3]});
+   {fpts[0], fnorm, texcoord[0]},
+   {fpts[1], fnorm, texcoord[1]},
+   {fpts[2], fnorm, texcoord[2]},
+   {fpts[3], fnorm, texcoord[3]});
 }
 
 void RemoveFPErrors(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
@@ -1156,11 +1156,11 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals,
       {
          vertices.emplace_back(
             gl3::VertexNormTex
-            {
-               {(float) pts(0, i), (float) pts(1, i), (float) pts(2, i)},
-               {(float) normals(0, i), (float) normals(1, i), (float) normals(2, i)},
-               {(float) GetColorCoord(vals(i), minv, maxv), 1.0 }
-            });
+         {
+            {(float) pts(0, i), (float) pts(1, i), (float) pts(2, i)},
+            {(float) normals(0, i), (float) normals(1, i), (float) normals(2, i)},
+            {(float) GetColorCoord(vals(i), minv, maxv), 1.0 }
+         });
       }
       if (normals_opt > 0)
       {

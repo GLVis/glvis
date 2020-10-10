@@ -368,10 +368,10 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
       Y_lo = (1.0 - a_lo) * miny + a_lo * maxy;
       Y_hi = (1.0 - a_hi) * miny + a_hi * maxy;
       color_bar.addQuad<gl3::VertexTex>(
-         {{minx, Y_lo, posz},{(float) a_lo, 0.f}},
-         {{maxx, Y_lo, posz},{(float) a_lo, 0.f}},
-         {{maxx, Y_hi, posz},{(float) a_hi, 0.f}},
-         {{minx, Y_hi, posz},{(float) a_hi, 0.f}}
+      {{minx, Y_lo, posz},{(float) a_lo, 0.f}},
+      {{maxx, Y_lo, posz},{(float) a_lo, 0.f}},
+      {{maxx, Y_hi, posz},{(float) a_hi, 0.f}},
+      {{minx, Y_hi, posz},{(float) a_hi, 0.f}}
       );
    }
 
@@ -880,26 +880,26 @@ void VisualizationSceneScalarData::PrepareRuler(bool log_z)
       std::array<uint8_t, 4> color = gl3::ColorU8(0.8, 0.8, 0.8, 1.0);
       std::array<float, 3> norm = { 0, 0, 1 };
       ruler_buf.addQuad<gl3::VertexNormColor>(
-         {{x_f[0], y_f[0], pos_z},norm,color},
-         {{x_f[1], y_f[0], pos_z},norm,color},
-         {{x_f[1], y_f[1], pos_z},norm,color},
-         {{x_f[0], y_f[1], pos_z},norm,color}
+      {{x_f[0], y_f[0], pos_z},norm,color},
+      {{x_f[1], y_f[0], pos_z},norm,color},
+      {{x_f[1], y_f[1], pos_z},norm,color},
+      {{x_f[0], y_f[1], pos_z},norm,color}
       );
 
       std::array<float, 3> norm_2 = { 0, 1, 0 };
       ruler_buf.addQuad<gl3::VertexNormColor>(
-         {{x_f[0], ruler_y_f, z_f[0]},norm_2,color},
-         {{x_f[0], ruler_y_f, z_f[1]},norm_2,color},
-         {{x_f[1], ruler_y_f, z_f[1]},norm_2,color},
-         {{x_f[1], ruler_y_f, z_f[0]},norm_2,color}
+      {{x_f[0], ruler_y_f, z_f[0]},norm_2,color},
+      {{x_f[0], ruler_y_f, z_f[1]},norm_2,color},
+      {{x_f[1], ruler_y_f, z_f[1]},norm_2,color},
+      {{x_f[1], ruler_y_f, z_f[0]},norm_2,color}
       );
 
       std::array<float, 3> norm_3 = { 1, 0, 0 };
       ruler_buf.addQuad<gl3::VertexNormColor>(
-         {{ruler_x_f, y_f[0], z_f[0]},norm_3,color},
-         {{ruler_x_f, y_f[1], z_f[0]},norm_3,color},
-         {{ruler_x_f, y_f[1], z_f[1]},norm_3,color},
-         {{ruler_x_f, y_f[0], z_f[1]},norm_3,color}
+      {{ruler_x_f, y_f[0], z_f[0]},norm_3,color},
+      {{ruler_x_f, y_f[1], z_f[0]},norm_3,color},
+      {{ruler_x_f, y_f[1], z_f[1]},norm_3,color},
+      {{ruler_x_f, y_f[0], z_f[1]},norm_3,color}
       );
 
       ruler_buf.addLines<gl3::Vertex>(
