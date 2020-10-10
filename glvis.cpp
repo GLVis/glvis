@@ -1941,28 +1941,36 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                                const char *sol_prefix, Mesh **mesh_p,
                                GridFunction **sol_p, int keep_attr)
 {
-   Array<Mesh *> mesh_array;
-   Array<named_ifgzstream *> meshfiles;
+   *mesh_p = NULL;
 
-   mesh_array.SetSize(np);
-   meshfiles.SetSize(np);
+   // are the solutions bundled together with the mesh files?
+   bool same_file = false;
+   if (sol_prefix && sol_p)
+   {
+      same_file = !strcmp(sol_prefix, mesh_prefix);
+      *sol_p = NULL;
+   }
+
+   Array<Mesh *> mesh_array(np);
+   Array<GridFunction *> gf_array(np);
+   mesh_array = NULL;
+   gf_array = NULL;
+
+   int err = 0;
    for (int p = 0; p < np; p++)
    {
       ostringstream fname;
       fname << mesh_prefix << '.' << setfill('0') << setw(pad_digits) << p;
-      meshfiles[p] = new named_ifgzstream(fname.str().c_str());
-      if (!(*meshfiles[p]))
+      named_ifgzstream meshfile(fname.str().c_str());
+      if (!meshfile)
       {
-         cerr << "Can not open mesh file: " << fname.str().c_str()
-              << '!' << endl;
-         for (p--; p >= 0; p--)
-         {
-            delete mesh_array[p];
-            delete meshfiles[p];
-         }
-         return 1;
+         cerr << "Could not open mesh file: " << fname.str() << '!' << endl;
+         err = 1;
+         break;
       }
-      mesh_array[p] = new Mesh(*meshfiles[p], 1, 0, fix_elem_orient);
+
+      mesh_array[p] = new Mesh(meshfile, 1, 0, fix_elem_orient);
+
       if (!keep_attr)
       {
          // set element and boundary attributes to be the processor number + 1
@@ -1975,59 +1983,49 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
             mesh_array[p]->GetBdrElement(i)->SetAttribute(p+1);
          }
       }
-   }
-   *mesh_p = new Mesh(mesh_array, np);
 
-   if (sol_prefix && sol_p)
-   {
-      Array<GridFunction *> gf_array(np);
-      bool samefile = !strcmp(sol_prefix,mesh_prefix);
-      for (int p = 0; p < np; p++)
+      // read the solution
+      if (sol_prefix && sol_p)
       {
-         if (!samefile)
+         if (!same_file)
          {
             ostringstream fname;
             fname << sol_prefix << '.' << setfill('0') << setw(pad_digits) << p;
             ifgzstream solfile(fname.str().c_str());
             if (!solfile)
             {
-               cerr << "Can not open solution file " << fname.str().c_str()
-                    << '!' << endl;
-               for (p--; p >= 0; p--)
-               {
-                  delete gf_array[p];
-               }
-               delete *mesh_p;
-               *mesh_p = NULL;
-               for (p = 0; p < np; p++)
-               {
-                  delete mesh_array[np-1-p];
-                  delete meshfiles[np-1-p];
-               }
-               return 2;
+               cerr << "Could not open solution file "
+                    << fname.str() << '!' << endl;
+               err = 2;
+               break;
             }
+
             gf_array[p] = new GridFunction(mesh_array[p], solfile);
          }
          else  // mesh and solution in the same file
          {
-            gf_array[p] = new GridFunction(mesh_array[p], *meshfiles[p]);
+            gf_array[p] = new GridFunction(mesh_array[p], meshfile);
          }
       }
-      *sol_p = new GridFunction(*mesh_p, gf_array, np);
+   }
 
-      for (int p = 0; p < np; p++)
+   if (!err)
+   {
+      // create the combined mesh and gf
+      *mesh_p = new Mesh(mesh_array, np);
+      if (sol_prefix && sol_p)
       {
-         delete gf_array[np-1-p];
+         *sol_p = new GridFunction(*mesh_p, gf_array, np);
       }
    }
 
    for (int p = 0; p < np; p++)
    {
+      delete gf_array[np-1-p];
       delete mesh_array[np-1-p];
-      delete meshfiles[np-1-p];
    }
 
-   return 0;
+   return err;
 }
 
 int ReadInputStreams()
