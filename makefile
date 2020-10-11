@@ -182,10 +182,6 @@ EMCC_OPTS += $(if $(GLM_DIR),-I$(GLM_DIR))
 GLVIS_FLAGS += $(GL_OPTS)
 GLVIS_LIBS  += $(GL_LIBS)
 
-# Older versions of GLEW require the flag '-fpermissive'
-PERMISSIVE_FLAG ?= -fpermissive
-GLVIS_FLAGS += $(PERMISSIVE_FLAG)
-
 # Take screenshots internally with libtiff, libpng, or externally with xwd?
 GLVIS_USE_LIBTIFF ?= NO
 GLVIS_USE_LIBPNG  ?= NO

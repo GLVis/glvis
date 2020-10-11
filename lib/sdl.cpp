@@ -225,7 +225,10 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    if (GLEW_EXT_transform_feedback)
    {
       glBindBufferBase            = glBindBufferBaseEXT;
-      glTransformFeedbackVaryings = glTransformFeedbackVaryingsEXT;
+      // Use an explicit typecast to suppress an error from inconsistent types
+      // that are present in older versions of GLEW.
+      glTransformFeedbackVaryings =
+         (PFNGLTRANSFORMFEEDBACKVARYINGSPROC)glTransformFeedbackVaryingsEXT;
       glBeginTransformFeedback    = glBeginTransformFeedbackEXT;
       glEndTransformFeedback      = glEndTransformFeedbackEXT;
    }

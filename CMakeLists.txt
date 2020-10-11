@@ -119,11 +119,6 @@ if (NOT EMSCRIPTEN)
   # Find GLEW
   find_package(GLEW REQUIRED)
   list(APPEND _glvis_libraries GLEW::GLEW)
-  # Some older versions of GLEW require the flag '-fpermissive'
-  if (NOT PERMISSIVE_FLAG)
-    set(PERMISSIVE_FLAG "-fpermissive")
-  endif()
-  list(APPEND _glvis_compile_opts ${PERMISSIVE_FLAG})
 
   # Find 'glm' which is not part of the CMake standard modules
   find_package(glm QUIET)
