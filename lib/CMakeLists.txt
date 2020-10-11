@@ -1,7 +1,7 @@
 list(APPEND SOURCES
-  gl/types.cpp
   gl/renderer.cpp
   gl/renderer_core.cpp
+  gl/types.cpp
   aux_vis.cpp
   font.cpp
   material.cpp
@@ -17,9 +17,9 @@ list(APPEND SOURCES
 list(APPEND HEADERS
   gl/attr_traits.hpp
   gl/platform_gl.hpp
-  gl/types.hpp
   gl/renderer.hpp
   gl/renderer_core.hpp
+  gl/types.hpp
   aux_vis.hpp
   font.hpp
   material.hpp
@@ -56,7 +56,8 @@ else()
   list(APPEND HEADERS gl/renderer_ff.hpp threads.hpp gl2ps.h)
   add_library(glvis ${SOURCES} ${HEADERS})
   target_compile_definitions(glvis PUBLIC "${_glvis_compile_defs}")
-  target_compile_options(glvis PUBLIC "${_glvis_compile_opts}")
+  target_compile_options(glvis PUBLIC
+    "$<$<COMPILE_LANGUAGE:CXX>:${_glvis_compile_opts}>")
   target_include_directories(glvis SYSTEM PUBLIC "${_glvis_include_dirs}")
   target_link_libraries(glvis PUBLIC "${_glvis_libraries}")
 endif(EMSCRIPTEN)
