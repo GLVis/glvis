@@ -2095,7 +2095,10 @@ public:
                image[off + 0] = (unsigned char)(col[0]*255);
                image[off + 1] = (unsigned char)(col[1]*255);
                image[off + 2] = (unsigned char)(col[2]*255);
-               image[off + 3] = val;
+               // Blend the alpha channels since glyph bitmaps can overlap
+               const unsigned char old_val = image[off + 3];
+               image[off + 3] = val + old_val - (val*old_val)/255;
+               // note that: max(val,old_val) <= new_val <= 255
             }
          }
 
