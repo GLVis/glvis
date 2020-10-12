@@ -426,7 +426,7 @@ void CoreGLDevice::setPointLight(int i, Light lt)
       return;
    }
    std::string lt_index = "lights[" + std::to_string(i) + "]";
-   glUniform3fv(uniforms[lt_index + ".position"], 1, lt.position.data());
+   glUniform4fv(uniforms[lt_index + ".position"], 1, lt.position.data());
    glUniform4fv(uniforms[lt_index + ".diffuse"], 1, lt.diffuse.data());
    glUniform4fv(uniforms[lt_index + ".specular"], 1, lt.specular.data());
 }

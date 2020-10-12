@@ -5,7 +5,7 @@ struct Material {
 };
 
 struct PointLight { 
-    vec3 position;
+    vec4 position;
     vec4 diffuse;
     vec4 specular;
 };
@@ -26,14 +26,23 @@ vec4 blinnPhong(in vec3 pos, in vec3 norm, in vec4 color) {
     {
         if (i >= num_lights)
             break;
-        vec3 light_dir = normalize(lights[i].position - pos);
+        vec3 light_dir;
+        if (lights[i].position.w == 0.0)
+        {
+            // directional light - no attenuation
+            light_dir = normalize(lights[i].position.xyz);
+        }
+        else
+        {
+            light_dir = normalize(lights[i].position.xyz - pos);
+        }
         
         //calculate diffuse
-        lit_color += lights[i].diffuse * color * max(abs(dot(norm, light_dir)), 0.0);
+        lit_color += lights[i].diffuse * color * max(dot(norm, light_dir), 0.0);
 
         //calculate specular
         vec3 half_v = normalize(light_dir - pos);
-        float specular_factor = max(abs(dot(half_v, norm)), 0.0);
+        float specular_factor = max(dot(half_v, norm), 0.0);
         lit_color += lights[i].specular * material.specular * pow(specular_factor, material.shininess);
     }
     return lit_color;
