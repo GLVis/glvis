@@ -213,7 +213,7 @@ ALL_SOURCE_FILES = \
  lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp \
  lib/threads.cpp lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp \
  lib/vsvector.cpp lib/vsvector3d.cpp
-DESKTOP_ONLY_SOURCE_FILES = lib/threads.cpp lib/gl2ps.c
+DESKTOP_ONLY_SOURCE_FILES = lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c
 WEB_ONLY_SOURCE_FILES = lib/aux_js.cpp
 COMMON_SOURCE_FILES = $(filter-out \
  $(DESKTOP_ONLY_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES),$(ALL_SOURCE_FILES))
