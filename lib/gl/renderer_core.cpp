@@ -502,14 +502,16 @@ void CoreGLDevice::bufferToDevice(TextBuffer &t_buf)
    float tex_h = GetFont()->getAtlasHeight();
    for (auto &e : t_buf)
    {
-      float x = 0.f, y = 0.f;
+      float pen_x = 0.f, pen_y = 0.f;
+      char prev_c = '\0';
       for (char c : e.text)
       {
          GlVisFont::glyph g = GetFont()->GetTexChar(c);
-         float cur_x = x + g.bear_x;
-         float cur_y = -y - g.bear_y;
-         x += g.adv_x;
-         y += g.adv_y;
+         pen_x += GetFont()->GetKerning(prev_c, c);
+         float cur_x = pen_x + g.bear_x;
+         float cur_y = -pen_y - g.bear_y;
+         pen_x += g.adv_x;
+         pen_y += g.adv_y;
          if (!g.w || !g.h)
          {
             continue;
@@ -524,6 +526,7 @@ void CoreGLDevice::bufferToDevice(TextBuffer &t_buf)
             e.rx, e.ry, e.rz, cur_x + g.w, -cur_y - g.h, g.tex_x + g.w / tex_w, g.h / tex_h, 0
          };
          buf_data.insert(buf_data.end(), tris, tris + 8 * 6);
+         prev_c = c;
       }
    }
    if (buf_data.size() == 0) { return; }

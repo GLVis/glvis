@@ -42,6 +42,7 @@ bool GlVisFont::LoadFont(const std::string& path, int font_size)
       cout << "GlVisFont::LoadFont(): Cannot open font file: " << path << endl;
       return false;
    }
+   face_has_kerning = FT_HAS_KERNING(face);
    int ppi_w, ppi_h;
    GetAppWindow()->getDpi(ppi_w, ppi_h);
    if (FT_Set_Char_Size(face, 0, font_size*font_scale, ppi_w, ppi_h))
@@ -111,9 +112,9 @@ bool GlVisFont::LoadFont(const std::string& path, int font_size)
          (unsigned)(face->glyph->bitmap.rows + 2),
          face->glyph->bitmap_left,
          face->glyph->bitmap_top,
-         (int)(face->glyph->advance.x >> 6),
-         (int)(face->glyph->advance.y >> 6),
-         (float) x / w
+         face->glyph->advance.x / 64.f,
+         face->glyph->advance.y / 64.f,
+         x / (float) w
       };
       x += face->glyph->bitmap.width + 2;
    }

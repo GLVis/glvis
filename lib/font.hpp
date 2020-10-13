@@ -31,7 +31,7 @@ public:
    {
       uint32_t w, h;
       int32_t bear_x, bear_y;
-      int32_t adv_x, adv_y;
+      float adv_x, adv_y;
       float tex_x;
    };
 private:
@@ -47,6 +47,7 @@ private:
 
    FT_Library  library;
    FT_Face     face;
+   bool        face_has_kerning;
 public:
 
    bool LoadFont(const std::string& path, int font_size);
@@ -65,6 +66,7 @@ public:
    GlVisFont()
       : init(false)
       , font_init(false)
+      , face_has_kerning(false)
    {
       if (FT_Init_FreeType(&library))
       {
@@ -79,6 +81,20 @@ public:
       {
          FT_Done_FreeType(library);
       }
+   }
+
+   float GetKerning(char cprev, char c) {
+       if (!face_has_kerning || cprev == '\0')
+       {
+           return 0;
+       }
+       FT_UInt glyph_prev = FT_Get_Char_Index(face, cprev);
+       FT_UInt glyph_curr = FT_Get_Char_Index(face, c);
+
+       FT_Vector delta;
+       FT_Get_Kerning(face, glyph_prev, glyph_curr,
+                      FT_KERNING_DEFAULT, &delta);
+       return delta.x / 64.f;
    }
 
    bool isFontLoaded() { return font_init; }

@@ -286,14 +286,16 @@ void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)
       glPushMatrix();
       glLoadIdentity();
       glTranslatef(pos.x, pos.y, pos.z);
-      float x = 0.f, y = 0.f;
+      float pen_x = 0.f, pen_y = 0.f;
+      char prev_c = '\0';
       for (char c : e.text)
       {
          GlVisFont::glyph g = GetFont()->GetTexChar(c);
-         float cur_x = x + g.bear_x;
-         float cur_y = -y - g.bear_y;
-         x += g.adv_x;
-         y += g.adv_y;
+         pen_x += GetFont()->GetKerning(prev_c, c);
+         float cur_x = pen_x + g.bear_x;
+         float cur_y = -pen_y - g.bear_y;
+         pen_x += g.adv_x;
+         pen_y += g.adv_y;
          if (!g.w || !g.h)
          {
             continue;

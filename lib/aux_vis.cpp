@@ -1639,9 +1639,12 @@ void InitFont()
    }
    else
    {
-      if (!glvis_font.LoadFont(priority_font, font_size))
+      if (!SetFont({priority_font}, font_size))
       {
-         cout << "InitFont(): Font not found: " << priority_font << endl;
+         if (!glvis_font.LoadFont(priority_font, font_size))
+         {
+            cout << "InitFont(): Font not found: " << priority_font << endl;
+         }
       }
    }
    wnd->getRenderer().setFontTexture(glvis_font.getFontTex());
