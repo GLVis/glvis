@@ -1202,7 +1202,8 @@ int main (int argc, char *argv[])
    args.AddOption(&c_plot_caption, "-c", "--plot-caption",
                   "Set the plot caption (visible when colorbar is visible).");
    args.AddOption(&font_name, "-fn", "--font",
-                  "Set the font: <font-name>[-<font-size>].");
+                  "Set the font: <font-name>[:style=<style>][-<font-size>], e.g."
+                  " -fn \"Helvetica:style=Bold-16\".");
    args.AddOption(&multisample, "-ms", "--multisample",
                   "Set the multisampling mode (toggled with the 'A' key).");
    args.AddOption(&line_width, "-lw", "--line-width",
