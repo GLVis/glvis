@@ -83,18 +83,19 @@ public:
       }
    }
 
-   float GetKerning(char cprev, char c) {
-       if (!face_has_kerning || cprev == '\0')
-       {
-           return 0;
-       }
-       FT_UInt glyph_prev = FT_Get_Char_Index(face, cprev);
-       FT_UInt glyph_curr = FT_Get_Char_Index(face, c);
+   float GetKerning(char cprev, char c)
+   {
+      if (!face_has_kerning || cprev == '\0')
+      {
+         return 0;
+      }
+      FT_UInt glyph_prev = FT_Get_Char_Index(face, cprev);
+      FT_UInt glyph_curr = FT_Get_Char_Index(face, c);
 
-       FT_Vector delta;
-       FT_Get_Kerning(face, glyph_prev, glyph_curr,
-                      FT_KERNING_DEFAULT, &delta);
-       return delta.x / 64.f;
+      FT_Vector delta;
+      FT_Get_Kerning(face, glyph_prev, glyph_curr,
+                     FT_KERNING_DEFAULT, &delta);
+      return delta.x / 64.f;
    }
 
    bool isFontLoaded() { return font_init; }
