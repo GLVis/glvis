@@ -1001,9 +1001,13 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
    }
    if (colorbar == 1)
    {
+      // caption size is in screen pixels and needs to be centered with
+      // GL pixel size
+      int gl_w, gl_h;
+      wnd->getGLDrawSize(gl_w, gl_h);
       // add caption to draw list
-      params.model_view.translate(-(double)caption_w / w,
-                                  1.0 - 5 * (double)caption_h / h, 0.0);
+      params.model_view.translate(-(double)caption_w / gl_w,
+                                  1.0 - 5 * (double)caption_h / gl_h, 0.0);
       scene.queue.emplace_back(params, &caption_buf);
    }
    if (drawaxes && drawaxes != 3)
