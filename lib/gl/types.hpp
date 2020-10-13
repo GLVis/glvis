@@ -11,6 +11,7 @@
 
 #ifndef GLVIS_AUX_GL3
 #define GLVIS_AUX_GL3
+
 #include <vector>
 #include <array>
 #include <iostream>
@@ -36,9 +37,7 @@ struct GlMatrix
 {
    glm::mat4 mtx;
 
-   /**
-    * Applies a rotation transform to the matrix.
-    */
+   /// Applies a rotation transform to the matrix.
    void rotate(float angle, double x, double y, double z)
    {
       mtx = glm::rotate(mtx, glm::radians(angle), glm::vec3(x,y,z));
@@ -49,25 +48,19 @@ struct GlMatrix
       mtx = mtx * rhs;
    }
 
-   /**
-    * Applies a translation transform to the matrix.
-    */
+   /// Applies a translation transform to the matrix.
    void translate(double x, double y, double z)
    {
       mtx = glm::translate(mtx, glm::vec3(x, y, z));
    }
 
-   /**
-    * Applies a scale transform to the matrix.
-    */
+   /// Applies a scale transform to the matrix.
    void scale(double x, double y, double z)
    {
       mtx = glm::scale(mtx, glm::vec3(x, y, z));
    }
 
-   /**
-    * Sets the matrix to an orthographic projection.
-    */
+   /// Sets the matrix to an orthographic projection.
    void ortho(double left,
               double right,
               double bottom,
@@ -78,17 +71,13 @@ struct GlMatrix
       mtx = glm::ortho(left, right, bottom, top, z_near, z_far);
    }
 
-   /**
-    * Sets the matrix to a perspective projection.
-    */
+   /// Sets the matrix to a perspective projection.
    void perspective(double fov, double aspect, double z_near, double z_far)
    {
       mtx = glm::perspective(glm::radians(fov), aspect, z_near, z_far);
    }
 
-   /**
-    * Sets the matrix to the identity matrix.
-    */
+   /// Sets the matrix to the identity matrix.
    void identity()
    {
       mtx = glm::mat4(1.0);
@@ -185,9 +174,7 @@ struct alignas(16) VertexNormTex
 
 class GlDrawable;
 
-/**
- * Crude fixed-function OpenGL emulation helper.
- */
+/// Crude fixed-function OpenGL emulation helper.
 class GlBuilder
 {
    GlDrawable * parent_buf;
@@ -238,7 +225,7 @@ public:
 
    void glEnd()
    {
-      //create degenerate primitives if necessary
+      // create degenerate primitives if necessary
       if (render_as == GL_LINES && count % 2 != 0)
       {
          saveVertex(curr);
@@ -252,7 +239,7 @@ public:
       }
       if (render_as == GL_LINE_LOOP && count > 2)
       {
-         //link first and last vertex
+         // link first and last vertex
          saveVertex(saved[0]);
          saveVertex(saved[1]);
       }
@@ -264,13 +251,13 @@ public:
       curr.coords = { (float) x, (float) y, (float) z };
       if (render_as == GL_LINES || render_as == GL_TRIANGLES)
       {
-         //Lines and triangles are stored as-is
+         // Lines and triangles are stored as-is
          saveVertex(curr);
       }
       else if (is_line)
       {
-         //LINE_LOOP and LINE_STRIP: each vertex creates a new line with the
-         //previous vertex
+         // LINE_LOOP and LINE_STRIP: each vertex creates a new line with the
+         // previous vertex
          if (count == 0)
          {
             saved[0] = curr;
@@ -286,7 +273,7 @@ public:
       {
          if (count % 4 == 3)
          {
-            //split on 0-2 diagonal
+            // split on 0-2 diagonal
             saveVertex(saved[0]);
             saveVertex(saved[1]);
             saveVertex(saved[2]);
@@ -302,7 +289,7 @@ public:
       }
       else if (render_as != GL_NONE)
       {
-         //TriangleStrip, TriangleFan, Polygon
+         // TriangleStrip, TriangleFan, Polygon
          if (count >= 2)
          {
             saveVertex(saved[0]);
@@ -310,7 +297,7 @@ public:
             saveVertex(curr);
             if (render_as == GL_TRIANGLE_STRIP)
             {
-               //pop earliest vertex
+               // pop earliest vertex
                saved[0] = saved[1];
             }
             saved[1] = curr;
@@ -377,21 +364,13 @@ public:
 
    int getHandle() const { return handle; }
    void setHandle(int dev_hnd) { handle = dev_hnd; }
-   /**
-    * Clears the data stored in the vertex buffer.
-    */
+   /// Clears the data stored in the vertex buffer.
    virtual void clear() = 0;
-   /**
-    * Gets the number of vertices contained in the buffer.
-    */
+   /// Gets the number of vertices contained in the buffer.
    virtual size_t count() const = 0;
-   /**
-    * Gets the primitive type contained by the vertex buffer.
-    */
+   /// Gets the primitive type contained by the vertex buffer.
    virtual GLenum getShape() const = 0;
-   /**
-    * Gets the stride between vertices.
-    */
+   /// Gets the stride between vertices.
    virtual size_t getStride() const = 0;
 
    virtual const void* getData() const = 0;
@@ -421,17 +400,13 @@ public:
 
    virtual const void* getData() const { return vertex_data.data(); }
 
-   /**
-    * Add a vertex to the buffer.
-    */
+   /// Add a vertex to the buffer.
    void addVertex(const T& vertex)
    {
       vertex_data.emplace_back(vertex);
    }
 
-   /**
-    * Add vertices to a buffer.
-    */
+   /// Add vertices to a buffer.
    void addVertices(const std::vector<T>& verts)
    {
       vertex_data.insert(vertex_data.end(), verts.begin(), verts.end());
@@ -508,24 +483,19 @@ public:
    TextBuffer() : num_chars(0) { }
    ~TextBuffer() { }
 
-   /**
-    * Adds a text element at the specified local space (pre-transform) coordinates.
-    */
+   /// Adds a text element at the specified local space (pre-transform)
+   /// coordinates.
    void addText(float x, float y, float z, const std::string& text)
    {
       vertex_data.emplace_back(x, y, z, text);
       num_chars += text.length();
    }
 
-   /**
-    * Gets an iterator referencing the first text entry.
-    */
+   /// Gets an iterator referencing the first text entry.
    Iterator begin() { return vertex_data.begin(); }
    ConstIterator begin() const { return vertex_data.begin(); }
 
-   /**
-    * Gets an iterator pointing to the last text entry.
-    */
+   /// Gets an iterator pointing to the last text entry.
    Iterator end() { return vertex_data.end(); }
    ConstIterator end() const { return vertex_data.end(); }
 
@@ -598,9 +568,7 @@ private:
    }
 public:
 
-   /**
-    * Adds a string at the given position in object coordinates.
-    */
+   /// Adds a string at the given position in object coordinates.
    void addText(float x, float y, float z, const std::string& text)
    {
       text_buffer.addText(x, y, z, text);
@@ -671,9 +639,7 @@ public:
       return GlBuilder(this);
    }
 
-   /**
-    * Clears the drawable object.
-    */
+   /// Clears the drawable object.
    void clear()
    {
       for (int i = 0; i < NUM_LAYOUTS; i++)

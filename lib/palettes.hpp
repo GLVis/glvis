@@ -12,29 +12,17 @@
 #ifndef GLVIS_COLOR_PALETTES
 #define GLVIS_COLOR_PALETTES
 
-/**
- * Initializes the palette textures.
- */
+/// Initializes the palette textures.
 void paletteInit();
-/**
- * Binds the discrete version of the current palette texture.
- */
+/// Binds the discrete version of the current palette texture.
 void paletteUseDiscrete();
-/**
- * Binds the smooth version of the current palette texture.
- */
+/// Binds the smooth version of the current palette texture.
 void paletteUseSmooth();
-/**
- * Sets the palette texture to bind.
- */
+/// Sets the palette texture to bind.
 void paletteSet(int num);
-/**
- * Gets the palette color array.
- */
+/// Gets the palette color array.
 double * paletteGet();
-/**
- * Rebind the color and alpha textures to their texture units.
- */
+/// Rebind the color and alpha textures to their texture units.
 void paletteRebind();
 
 int paletteGetSize(int pal = -1);

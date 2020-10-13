@@ -1,3 +1,14 @@
+// Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
+// the Lawrence Livermore National Laboratory. LLNL-CODE-443271. All Rights
+// reserved. See file COPYRIGHT for details.
+//
+// This file is part of the GLVis visualization tool and library. For more
+// information and source code availability see http://glvis.org.
+//
+// GLVis is free software; you can redistribute it and/or modify it under the
+// terms of the GNU Lesser General Public License (as published by the Free
+// Software Foundation) version 2.1 dated February 1999.
+
 #include "renderer_ff.hpp"
 #include "attr_traits.hpp"
 #include "../aux_vis.hpp"
@@ -229,8 +240,7 @@ void FFGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
 
 void FFGLDevice::bufferToDevice(TextBuffer&)
 {
-   // we can't really do anything here
-   // can only compute offset matrix at draw
+   // we can't really do anything here can only compute offset matrix at draw
 }
 
 void FFGLDevice::drawDeviceBuffer(int hnd)
@@ -440,8 +450,7 @@ void FFGLDevice::captureXfbBuffer(CaptureBuffer& cbuf, int hnd)
          case GL_DRAW_PIXEL_TOKEN:
          case GL_COPY_PIXEL_TOKEN:
          default:
-            // commands containing the token, plus a single vertex
-            // ignore for now
+            // commands containing the token + a single vertex ignore for now
             tok_idx += 1 + fbStride;
             break;
       }

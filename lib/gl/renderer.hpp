@@ -1,3 +1,14 @@
+// Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
+// the Lawrence Livermore National Laboratory. LLNL-CODE-443271. All Rights
+// reserved. See file COPYRIGHT for details.
+//
+// This file is part of the GLVis visualization tool and library. For more
+// information and source code availability see http://glvis.org.
+//
+// GLVis is free software; you can redistribute it and/or modify it under the
+// terms of the GNU Lesser General Public License (as published by the Free
+// Software Foundation) version 2.1 dated February 1999.
+
 #ifndef __RENDERER_HPP__
 #define __RENDERER_HPP__
 
@@ -22,22 +33,22 @@ const float LINE_WIDTH_AA = 1.4;
 
 struct RenderParams
 {
-   //Transformation matrices
+   // Transformation matrices
    GlMatrix model_view;
    GlMatrix projection;
 
-   //Lighting settings
+   // Lighting settings
    Material mesh_material;
    int num_pt_lights;
    std::array<Light, LIGHTS_MAX> lights;
    std::array<float, 4> light_amb_scene;
    std::array<float, 4> static_color;
 
-   //Clip plane params
+   // Clip plane params
    bool use_clip_plane;
    std::array<double, 4> clip_plane_eqn;
 
-   //If true, batch contains translucent drawables
+   // If true, batch contains translucent drawables
    bool contains_translucent;
 };
 
@@ -191,7 +202,8 @@ public:
 
    // Set the current transform matrices.
    virtual void setTransformMatrices(glm::mat4 model_view, glm::mat4 projection);
-   // Set the number of lights to use. Setting number of lights to 0 disables lighting.
+   // Set the number of lights to use. Setting number of lights to 0 disables
+   // lighting.
    virtual void setNumLights(int i) = 0;
    // Set the parameters to use for the mesh material.
    virtual void setMaterial(Material mat) = 0;
@@ -220,7 +232,8 @@ public:
    virtual void initXfbMode() {}
    // Prepares state when exiting transform feedback.
    virtual void exitXfbMode() {}
-   // Capture the next drawn vertex buffer to a feedback buffer instead of drawing to screen.
+   // Capture the next drawn vertex buffer to a feedback buffer instead of
+   // drawing to screen.
    virtual void captureXfbBuffer(CaptureBuffer& capture, int hnd) = 0;
    // Capture the next text buffer instead of drawing to screen.
    void captureXfbBuffer(CaptureBuffer& capture, const TextBuffer& t_buf);

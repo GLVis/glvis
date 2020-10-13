@@ -121,7 +121,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    wnd->setOnKeyDown ('S', KeyS);
 
    wnd->setOnKeyDown (SDLK_q, KeyQPressed);
-   //wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
+   // wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
 
    wnd->setOnKeyDown (SDLK_LEFT, KeyLeftPressed);
    wnd->setOnKeyDown (SDLK_RIGHT, KeyRightPressed);
@@ -164,7 +164,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    wnd->setOnKeyDown (SDLK_EQUALS, KeyPlusPressed);
 
    wnd->setOnKeyDown (SDLK_j, KeyJPressed);
-   //wnd->setOnKeyDown (AUX_J, KeyJPressed);
+   // wnd->setOnKeyDown (AUX_J, KeyJPressed);
 
    wnd->setOnKeyDown (SDLK_KP_MULTIPLY, ZoomIn);
    wnd->setOnKeyDown (SDLK_KP_DIVIDE, ZoomOut);
@@ -339,7 +339,7 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
       SendKeySequence(keys);
    }
 
-   //auxMainLoop(NULL);
+   // auxMainLoop(NULL);
 #ifndef __EMSCRIPTEN__
    wnd->mainLoop();
 #endif
@@ -1078,7 +1078,7 @@ void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
       gl2psAddPolyPrimitive(GL2PS_LINE, 2, lineOut, 0, 0.f, 0.f,
                             0xFFFF, 1, 0.2, 0, 0, 0);
    }
-   //print triangles
+   // print triangles
    for (size_t i = 0; i < cbuf.triangles.size(); i += 3)
    {
       GL2PSvertex triOut[3] =
@@ -1090,7 +1090,7 @@ void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
       gl2psAddPolyPrimitive(GL2PS_TRIANGLE, 3, triOut, 0, 0.f, 0.f,
                             0xFFFF, 1, 1, 0, 0, 0);
    }
-   //print text
+   // print text
    for (const auto &entry : cbuf.text)
    {
       GL2PSvertex rpos = CreatePrintVtx({entry.offset, entry.color});

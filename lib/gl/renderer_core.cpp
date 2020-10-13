@@ -1,3 +1,14 @@
+// Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
+// the Lawrence Livermore National Laboratory. LLNL-CODE-443271. All Rights
+// reserved. See file COPYRIGHT for details.
+//
+// This file is part of the GLVis visualization tool and library. For more
+// information and source code availability see http://glvis.org.
+//
+// GLVis is free software; you can redistribute it and/or modify it under the
+// terms of the GNU Lesser General Public License (as published by the Free
+// Software Foundation) version 2.1 dated February 1999.
+
 #include "attr_traits.hpp"
 #include "renderer_core.hpp"
 #include "../aux_vis.hpp"
@@ -163,16 +174,16 @@ GLuint compileRawShaderString(const std::string &shader_string,
 {
    std::string formatted = formatShaderString(shader_string, shader_type,
                                               glsl_version);
-   //std::cout << "compiling '''" << formatted << "...";
+   // std::cout << "compiling '''" << formatted << "...";
    GLuint shader_ref = compileShaderString(formatted, shader_type);
-   //if (shader_ref != 0) { std::cerr << "successfully compiled shader" << std::endl; }
+   // if (shader_ref != 0) { std::cerr << "successfully compiled shader" << std::endl; }
    return shader_ref;
 }
 
 bool linkShaders(GLuint prgm, const std::vector<GLuint> &shaders)
 {
-   // explicitly specify attrib positions so we don't have to reset VAO
-   // bindings when switching programs
+   // explicitly specify attrib positions so we don't have to reset VAO bindings
+   // when switching programs
 
    // for OSX, attrib 0 must be bound to render an object
    glBindAttribLocation(prgm, CoreGLDevice::ATTR_VERTEX, "vertex");
@@ -207,9 +218,8 @@ bool CoreGLDevice::compileShaders()
    int glsl_ver = -1;
 
 #ifndef __EMSCRIPTEN__
-   // The GLSL verion is the same as the OpenGL version
-   // when the OpenGL version is >= 3.30, otherwise
-   // it is:
+   // The GLSL verion is the same as the OpenGL version when the OpenGL
+   // version is >= 3.30, otherwise it is:
    //
    // GL Version | GLSL Version
    // -------------------------
@@ -271,7 +281,7 @@ bool CoreGLDevice::compileShaders()
    }
 
 #ifndef __ENSCRIPTEN__
-   //TODO: enable a legacy path for opengl2.1 without ext_tranform_feedback?
+   // TODO: enable a legacy path for opengl2.1 without ext_tranform_feedback?
    // This program is for rendering to pdf/ps
    if (GLEW_EXT_transform_feedback || GLEW_VERSION_3_0)
    {
@@ -675,12 +685,12 @@ void CoreGLDevice::processTriangleXfbBuffer(CaptureBuffer& cbuf,
                && verts[3*t_i+1].clipCoord < 0.f
                && verts[3*t_i+2].clipCoord < 0.f)
       {
-         //triangle fully in clipped region
+         // triangle fully in clipped region
          continue;
       }
       else
       {
-         //clip through middle of triangle
+         // clip through middle of triangle
          for (int vert_i = 0; vert_i < 3; vert_i++)
          {
             int i_a = 3*t_i+vert_i;
@@ -689,12 +699,12 @@ void CoreGLDevice::processTriangleXfbBuffer(CaptureBuffer& cbuf,
             // find two points on the same side of clip plane
             if ((verts[i_a].clipCoord < 0.f) == (verts[i_b].clipCoord < 0.f))
             {
-               //pts a, b are on same side of clip plane, c on other side
-               //perspective-correct interpolation factors, needed for colors
+               // pts a, b are on same side of clip plane, c on other side
+               // perspective-correct interpolation factors, needed for colors
                float c_w_a = verts[i_a].clipCoord / verts[i_a].pos[3];
                float c_w_b = verts[i_b].clipCoord / verts[i_b].pos[3];
                float c_w_c = verts[i_c].clipCoord / verts[i_c].pos[3];
-               //compute clip pts
+               // compute clip pts
                glm::vec4 pos[2], color[2];
                // a --- n_0 --- c
                pos[0] = (glm::make_vec4(verts[i_a].pos) * verts[i_c].clipCoord
@@ -718,8 +728,8 @@ void CoreGLDevice::processTriangleXfbBuffer(CaptureBuffer& cbuf,
 
                if (verts[i_c].clipCoord < 0.f)
                {
-                  //pts a, b are in clip plane
-                  //create quadrilateral a -- n_0 -- n_1 -- b
+                  // pts a, b are in clip plane
+                  // create quadrilateral a -- n_0 -- n_1 -- b
                   cbuf.triangles.emplace_back(XFBPostTransform(verts[i_a], half_w, half_h));
                   cbuf.triangles.emplace_back(pos[0], color[0]);
                   cbuf.triangles.emplace_back(pos[1], color[1]);
@@ -729,8 +739,8 @@ void CoreGLDevice::processTriangleXfbBuffer(CaptureBuffer& cbuf,
                }
                else
                {
-                  //pt c is in clip plane
-                  //add triangle c -- n_0 -- n_1
+                  // pt c is in clip plane
+                  // add triangle c -- n_0 -- n_1
                   cbuf.triangles.emplace_back(XFBPostTransform(verts[i_c], half_w, half_h));
                   cbuf.triangles.emplace_back(pos[0], color[0]);
                   cbuf.triangles.emplace_back(pos[1], color[1]);
@@ -757,7 +767,7 @@ void CoreGLDevice::processLineXfbBuffer(CaptureBuffer& cbuf,
       }
       else if (verts[i].clipCoord < 0.f && verts[i+1].clipCoord < 0.f)
       {
-         //outside of clip plane;
+         // outside of clip plane;
          continue;
       }
       else
@@ -765,19 +775,19 @@ void CoreGLDevice::processLineXfbBuffer(CaptureBuffer& cbuf,
          int i_a, i_b;
          if (verts[i].clipCoord < 0.f)
          {
-            //vertex i lies in clipped region
+            // vertex i lies in clipped region
             i_a = i+1;
             i_b = i;
          }
-         else     //verts[i+1].clipCoord < 0.f
+         else     // verts[i+1].clipCoord < 0.f
          {
-            //vertex i+1 lies in clipped region
+            // vertex i+1 lies in clipped region
             i_a = i;
             i_b = i+1;
          }
-         //compute new vertex (CbVa - CaVb), where Vb lies in the clipped region
+         // compute new vertex (CbVa - CaVb), where Vb lies in the clipped region
          ShaderXfbVertex clip_vert;
-         //perspective-correct interpolation factors for color
+         // perspective-correct interpolation factors for color
          float c_w_a = verts[i_a].clipCoord / verts[i_a].pos[3];
          float c_w_b = verts[i_b].clipCoord / verts[i_b].pos[3];
          for (int j = 0; j < 4; j++)
@@ -833,5 +843,6 @@ void CoreGLDevice::captureXfbBuffer(
    std::cerr << "CoreGLDevice::captureXfbBuffer: "
              << "Not implemented for WebGL." << std::endl;
 }
+
 #endif // __EMSCRIPTEN__
 }

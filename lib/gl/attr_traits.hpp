@@ -1,3 +1,14 @@
+// Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
+// the Lawrence Livermore National Laboratory. LLNL-CODE-443271. All Rights
+// reserved. See file COPYRIGHT for details.
+//
+// This file is part of the GLVis visualization tool and library. For more
+// information and source code availability see http://glvis.org.
+//
+// GLVis is free software; you can redistribute it and/or modify it under the
+// terms of the GNU Lesser General Public License (as published by the Free
+// Software Foundation) version 2.1 dated February 1999.
+
 #include "types.hpp"
 #include "renderer_core.hpp"
 #include <type_traits>
@@ -64,8 +75,8 @@ struct AttrBase
    enum { exists = true };
 };
 
-// Default attribute traits for vertex types
-// Provides no-op setup/clear functions if an attribute doesn't exist.
+// Default attribute traits for vertex types. Provides no-op setup/clear
+// functions if an attribute doesn't exist.
 template<typename TV, typename = int>
 struct AttrCoord : AttrNone { };
 
@@ -78,9 +89,9 @@ struct AttrColor : AttrNone { };
 template<typename TV, typename = int>
 struct AttrTexcoord : AttrNone { };
 
-// Template specializations for attribute traits
-// If an attribute exists in a vertex, generates setup and clear functions
-// which setup OpenGL vertex attributes.
+// Template specializations for attribute traits. If an attribute exists in a
+// vertex, generates setup and clear functions which setup OpenGL vertex
+// attributes.
 //
 // Each attribute specialization defines static parameters which are passed to
 // the AttrBase base class via CRTP to generate the attribute setup functions:

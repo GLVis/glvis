@@ -277,7 +277,7 @@ public:
          }
       }
    }
-   //virtual void SetShadingCfg(int, bool);
+   // virtual void SetShadingCfg(int, bool);
    virtual void SetDrawMesh(int i) = 0;
 
    int GetColorbar() { return colorbar; }
@@ -285,8 +285,8 @@ public:
    int GetDrawAxes() { return drawaxes; }
    virtual int GetShading() = 0;
    virtual int GetDrawMesh() = 0;
-   //virtual bool GetDrawCPCfg() = 0;
-   //virtual bool GetDrawBdrCfg() = 0;
+   // virtual bool GetDrawCPCfg() = 0;
+   // virtual bool GetDrawBdrCfg() = 0;
 
 
    void SetAutoscale(int _autoscale);

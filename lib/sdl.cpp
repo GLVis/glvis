@@ -141,7 +141,7 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
       }
    }
 
-   //destroy any existing SDL window
+   // destroy any existing SDL window
    handle.reset();
 
    // If we want to use WebGL 2:
@@ -162,9 +162,8 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
 #ifndef __EMSCRIPTEN__
    if (!legacyGlOnly)
    {
-      // Try and probe for a core/compatibility context.
-      // Needed for Mac OS X, which will only support OpenGL 2.1 if
-      // you don't create a core context.
+      // Try and probe for a core/compatibility context. Needed for Mac OS X,
+      // which will only support OpenGL 2.1 if you don't create a core context.
       win_gl_ctx = probeGLContextSupport();
    }
 #endif
@@ -211,7 +210,7 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
       return false;
    }
 
-   // print verisons
+   // print versions
    PRINT_DEBUG("Using GLEW " << glewGetString(GLEW_VERSION) << std::endl);
    PRINT_DEBUG("Using GL " << glGetString(GL_VERSION) << std::endl);
 
@@ -235,8 +234,8 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    if (!legacyGlOnly && (GLEW_VERSION_3_0
                          || (GLEW_VERSION_2_0 && GLEW_EXT_transform_feedback)))
    {
-      // we require both shaders and transform feedback
-      // EXT_transform_feedback was made core in OpenGL 3.0
+      // We require both shaders and transform feedback EXT_transform_feedback
+      // was made core in OpenGL 3.0
       PRINT_DEBUG("Loading CoreGLDevice..." << endl);
       renderer->setDevice<gl3::CoreGLDevice>();
    }
@@ -253,7 +252,7 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    return true;
 }
 
-// defined here because the Handle destructor needs to be visable
+// defined here because the Handle destructor needs to be visible
 SdlWindow::~SdlWindow() {};
 
 void SdlWindow::windowEvent(SDL_WindowEvent& ew)
@@ -592,4 +591,3 @@ void SdlWindow::swapBuffer()
 {
    SDL_GL_SwapWindow(handle->hwnd);
 }
-

@@ -53,7 +53,7 @@ bool GlVisFont::LoadFont(const std::string& path, int font_size)
       return false;
    }
 
-   //generate atlas
+   // generate atlas
    size_t w = 0, h = 0;
    for (int c = 32; c < 128; c++)
    {
@@ -119,7 +119,7 @@ bool GlVisFont::LoadFont(const std::string& path, int font_size)
       x += face->glyph->bitmap.width + 2;
    }
    font_init = true;
-   //glEnable(GL_TEXTURE_2D);
+   // glEnable(GL_TEXTURE_2D);
    glActiveTexture(GL_TEXTURE0);
    return true;
 }

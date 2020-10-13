@@ -53,7 +53,7 @@ private:
    std::string screenshot_file;
 
    int probeGLContextSupport();
-   //internal event handlers
+   // internal event handlers
    void windowEvent(SDL_WindowEvent& ew);
    void motionEvent(SDL_MouseMotionEvent& em);
    void mouseEventDown(SDL_MouseButtonEvent& eb);
@@ -64,15 +64,11 @@ public:
    SdlWindow();
    ~SdlWindow();
 
-   /**
-    * Creates a new OpenGL window.
-    * Returns false if SDL or OpenGL intialization fails.
-    */
+   /// Creates a new OpenGL window. Returns false if SDL or OpenGL intialization
+   /// fails.
    bool createWindow(const char * title, int x, int y, int w, int h,
                      bool legacyGlOnly);
-   /**
-    * Runs the window loop.
-    */
+   /// Runs the window loop.
    void mainLoop();
    bool mainIter();
 
@@ -136,9 +132,7 @@ public:
 
    operator bool() { return (bool) handle ; }
    bool isWindowInitialized() { return (bool) handle; }
-   /**
-    * Returns true if the OpenGL context was successfully initialized.
-    */
+   /// Returns true if the OpenGL context was successfully initialized.
    bool isGlInitialized();
 };
 

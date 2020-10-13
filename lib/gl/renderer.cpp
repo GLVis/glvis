@@ -1,3 +1,14 @@
+// Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
+// the Lawrence Livermore National Laboratory. LLNL-CODE-443271. All Rights
+// reserved. See file COPYRIGHT for details.
+//
+// This file is part of the GLVis visualization tool and library. For more
+// information and source code availability see http://glvis.org.
+//
+// GLVis is free software; you can redistribute it and/or modify it under the
+// terms of the GNU Lesser General Public License (as published by the Free
+// Software Foundation) version 2.1 dated February 1999.
+
 #include "renderer.hpp"
 
 namespace gl3
@@ -86,7 +97,7 @@ void MeshRenderer::render(const RenderQueue& queue)
       device->setStaticColor(params.static_color);
       device->setClipPlaneUse(params.use_clip_plane);
       device->setClipPlaneEqn(params.clip_plane_eqn);
-      //aggregate buffers with common parameters
+      // aggregate buffers with common parameters
       std::vector<int> tex_bufs, no_tex_bufs;
       std::vector<TextBuffer*> text_bufs;
       GlDrawable* curr_drawable = q_elem.second;
@@ -174,7 +185,7 @@ CaptureBuffer MeshRenderer::capture(const RenderQueue& queue)
       device->setStaticColor(params.static_color);
       device->setClipPlaneUse(params.use_clip_plane);
       device->setClipPlaneEqn(params.clip_plane_eqn);
-      //aggregate buffers with common parameters
+      // aggregate buffers with common parameters
       std::vector<int> tex_bufs, no_tex_bufs;
       std::vector<TextBuffer*> text_bufs;
       GlDrawable* curr_drawable = q_elem.second;
@@ -267,8 +278,8 @@ void GLDevice::init()
    // use "over" blending equation
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-   //generate a white default texture
-   //modulation with default texture will just pass through input color
+   // generate a white default texture modulation with default texture will just
+   // pass through input color
    glBindTexture(GL_TEXTURE_2D, 0);
    int black_color = 0xFFFFFFFF;
    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE,

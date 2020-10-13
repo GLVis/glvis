@@ -57,10 +57,7 @@ public:
       return font_chars[(uint8_t) c];
    }
 
-   /**
-    * Gets the width and height of the bounding box containing the rendered
-    * text.
-    */
+   /// Get the width and height of the bounding box containing the rendered text
    void getObjectSize(const std::string& text, int& w, int& h);
 
    GlVisFont()
@@ -108,4 +105,5 @@ public:
 
    void setAlphaChannel(GLenum alpha) { alpha_channel = alpha; }
 };
+
 #endif /* FONT_HPP */
