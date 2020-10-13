@@ -93,35 +93,49 @@ if (NOT EMSCRIPTEN)
   list(APPEND _glvis_libraries OpenGL::GL)
 
   # Find 'SDL2' which is not part of the CMake standard modules
-  find_package(SDL2 QUIET)
-  if (TARGET SDL2::SDL2)
-    list(APPEND _glvis_libraries SDL2::SDL2)
-    message(STATUS "SDL2 found: SDL2::SDL2")
+  list(APPEND SDL2_DIR "../SDL2")
+  set(SDL2_DIR_SAVE ${SDL2_DIR})
+  find_package(SDL2 QUIET HINTS ${SDL2_DIR})
+  # The SDL2 target 'SDL2::SDL2' is not always defined, so instead we use
+  # directly 'SDL2_INCLUDE_DIRS' and 'SDL2_LIBRARIES'.
+  if (SDL2_INCLUDE_DIRS AND SDL2_LIBRARIES)
+    # SDL2_INCLUDE_DIRS is defined with 'SDL2' at the end of the path we need to
+    # strip that.
+    set(new_list_)
+    foreach (path IN LISTS SDL2_INCLUDE_DIRS)
+      string(REGEX REPLACE "/include/SDL2$" "/include" new_path_ "${path}")
+      list(APPEND new_list_ "${new_path_}")
+    endforeach()
+    set(SDL2_INCLUDE_DIRS ${new_list_})
   else()
+    # find_package() did not work; try more direct approach.
+    set(SDL2_DIR ${SDL2_DIR_SAVE})
+    find_path(SDL2_INCLUDE_DIRS "SDL2/SDL.h"
+      HINTS ${SDL2_DIR} ENV SDL2_DIR
+      PATH_SUFFIXES "include"
+      DOC "SDL2 include path.")
+    find_library(SDL2_LIBRARIES "SDL2"
+      HINTS ${SDL2_DIR} ENV SDL2_DIR
+      PATH_SUFFIXES "lib"
+      DOC "SDL2 library.")
     if (NOT (SDL2_INCLUDE_DIRS AND SDL2_LIBRARIES))
-      find_path(SDL2_INCLUDE_DIRS "SDL2/SDL.h"
-        HINTS ${SDL2_DIR} ENV SDL2_DIR
-        PATH_SUFFIXES "include"
-        DOC "SDL2 include path.")
-      find_library(SDL2_LIBRARIES "SDL2"
-        HINTS ${SDL2_DIR} ENV SDL2_DIR
-        PATH_SUFFIXES "lib"
-        DOC "SDL2 library.")
-      if (NOT (SDL2_INCLUDE_DIRS AND SDL2_LIBRARIES))
-        message(FATAL_ERROR "SDL2 library not found. Please set SDL2_DIR.")
-      endif()
+      message(FATAL_ERROR "SDL2 library not found. Please set SDL2_DIR.")
     endif()
-    list(APPEND _glvis_include_dirs "${SDL2_INCLUDE_DIRS}")
-    list(APPEND _glvis_libraries "${SDL2_LIBRARIES}")
-    message(STATUS "SDL2 found: ${SDL2_LIBRARIES}")
   endif()
+  list(APPEND _glvis_include_dirs "${SDL2_INCLUDE_DIRS}")
+  list(APPEND _glvis_libraries "${SDL2_LIBRARIES}")
+  message(STATUS "SDL2 found: ${SDL2_LIBRARIES}")
+  message(STATUS "SDL2_INCLUDE_DIRS = ${SDL2_INCLUDE_DIRS}")
 
   # Find GLEW
+  # GLEW search path can be set using CMAKE_PREFIX_PATH
+  list(APPEND CMAKE_PREFIX_PATH "../glew")
   find_package(GLEW REQUIRED)
   list(APPEND _glvis_libraries GLEW::GLEW)
 
   # Find 'glm' which is not part of the CMake standard modules
-  find_package(glm QUIET)
+  list(APPEND GLM_DIR "../glm")
+  find_package(glm QUIET HINTS ${GLM_DIR})
   if (NOT GLM_INCLUDE_DIRS)
     find_path(GLM_INCLUDE_DIRS "glm/glm.hpp"
       HINTS ${GLM_DIR} ENV GLM_DIR
@@ -207,7 +221,7 @@ else(NOT EMSCRIPTEN)
 
   # Enable Freetype port
   list(APPEND _emscripten_opts "-s USE_FREETYPE=1")
-  
+
   # Module export options
   list(APPEND _emscripten_opts "-s ENVIRONMENT=web")
   list(APPEND _emscripten_opts "-s MODULARIZE=1")

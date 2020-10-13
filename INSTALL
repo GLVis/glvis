@@ -103,7 +103,7 @@ Some important variables for CMake are:
 - CMAKE_INSTALL_PREFIX: Top-level directory for the install. GLVis will be
      installed to ${CMAKE_INSTALL_PREFIX}/bin. Default is "/usr/local".
 
-- GLVIS_USE_LIBPNG: Use libpng for creating screenshots. Default is "ON".
+- GLVIS_USE_LIBPNG: Use libpng for creating screenshots. Default is "OFF".
 
 - GLVIS_USE_LIBTIFF: Use libtiff for creating screenshots. Default is "OFF".
 
@@ -120,12 +120,15 @@ Some building considerations
 On Ubuntu/Debian, the required dependencies can be installed by running:
 
      apt-get install libfontconfig1-dev libfreetype-dev libsdl2-dev libglew-dev libglm-dev
- 
+
 On Fedora/RHEL, the required dependencies can be installed by running:
 
      dnf install fontconfig-devel freetype-devel SDL2-devel glew-devel glm-devel
 
   Package names in other distributions may vary.
+
+- In case packaged versions of the needed libraries are not available, download
+  and build instructions are included below for GLM, GLEW, and SDL2.
 
 - To adjust the anti-aliasing settings for your hardware:
 
@@ -141,17 +144,10 @@ On Fedora/RHEL, the required dependencies can be installed by running:
   3) The above options and some other built-in defaults can be overwritten with
      command line options, see glvis -h for short help.
 
-- If your X11 server does not support GLX 1.3, you can build GLVis to only use
-  GLX 1.0 calls, by specifying the GLVIS_GLX10 define. Note that the X11.app
-  in OS X may complain about GLX 1.3 support, but in practice works fine with
-  GLVis. To define this in CMake, pass "-D GLVIS_USE_GLX10=ON" to cmake.
-
 - GLVis can be built without libpng/libtiff/ by setting the makefile variables
   USE_LIBPNG/USE_LIBTIFF/ to NO or by passing GLVIS_USE_LIBPNG/GLVIS_USE_LIBTIFF
-  to cmake.
-
-- On Mac OS X, it is better to start manually the XQuarz app, before starting
-  GLVis, in order to avoid the wait for establishing the first X11 connection.
+  to cmake. This is now the default and in this case GLVis uses SDL to take
+  screenshots.
 
 - Support for secure sockets using the GnuTLS library through MFEM can be
   enabled by configuring and compiling MFEM with the option MFEM_USE_GNUTLS=YES,
@@ -160,3 +156,56 @@ On Fedora/RHEL, the required dependencies can be installed by running:
   similar to ssh keys. The script 'glvis-keygen.sh' can be used to do that:
 
      bash glvis-keygen.sh ["Your Name"] ["Your Email"]
+
+
+Dependency building instructions
+================================
+Note that using the build locations given below will let the GLVis build systems
+(GNU make and CMake) find these libraries automatically.
+
+-----
+ GLM
+-----
+From the directory containing the 'glvis' directory run the command:
+
+git clone https://github.com/g-truc/glm.git
+
+or the sequence of commands:
+
+wget "https://github.com/g-truc/glm/archive/0.9.9.8.tar.gz"
+mv 0.9.9.8.tar.gz glm-0.9.9.8.tar.gz
+tar zxf glm-0.9.9.8.tar.gz
+ln -s glm-0.9.9.8 glm
+
+GLM is a header-only library, no building is necessary.
+
+------
+ GLEW
+------
+From the directory containing the 'glvis' directory run the commands:
+
+wget "https://github.com/nigels-com/glew/releases/download/glew-2.1.0/glew-2.1.0.tgz"
+tar zxf glew-2.1.0.tgz
+ln -s glew-2.1.0 glew
+
+To build the library run the commands (see also glew/README.md):
+
+cd glew
+make -j 4
+cd ..
+
+------
+ SDL2
+------
+From the directory containing the 'glvis' directory run the commands:
+
+wget "https://www.libsdl.org/release/SDL2-2.0.12.tar.gz"
+tar zxf SDL2-2.0.12.tar.gz
+
+To build the library run the commands (see also SDL2-2.0.12/INSTALL.txt):
+
+cd SDL2-2.0.12
+./configure --prefix=`dirname $PWD`/SDL2
+make -j 4
+make install
+cd ..

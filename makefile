@@ -143,18 +143,19 @@ FREETYPE_SEARCH_FILE = include/freetype2/ft2build.h
 FREETYPE_DIR = $(call find_dir,$(FREETYPE_SEARCH_FILE),$(FREETYPE_SEARCH_PATHS))
 FREETYPE_LIBS = -lfreetype -lfontconfig
 
-GLEW_SEARCH_PATHS = /usr /usr/local $(BREW_PREFIX)
+GLEW_SEARCH_PATHS = /usr /usr/local $(BREW_PREFIX) $(abspath ../glew)
 GLEW_SEARCH_FILE = include/GL/glew.h
 GLEW_DIR ?= $(call find_dir,$(GLEW_SEARCH_FILE),$(GLEW_SEARCH_PATHS))
 GLEW_LIB_DIR = $(call find_dir,libGLEW.a,$(GLEW_DIR)/lib64 $(GLEW_DIR)/lib)
 GLEW_LIBS = -lGLEW
 
-SDL_SEARCH_PATHS := /usr /usr/local $(BREW_PREFIX)
+SDL_SEARCH_PATHS := /usr /usr/local $(BREW_PREFIX) $(abspath ../SDL2)
 SDL_SEARCH_FILE = include/SDL2/SDL.h
 SDL_DIR ?= $(call find_dir,$(SDL_SEARCH_FILE),$(SDL_SEARCH_PATHS))
 SDL_LIBS = -lSDL2
 
-GLM_SEARCH_PATHS = /usr/include /usr/local/include $(BREW_PREFIX)/include
+GLM_SEARCH_PATHS = /usr/include /usr/local/include \
+ $(if $(BREW_PREFIX),$(BREW_PREFIX)/include) $(abspath ../glm)
 GLM_SEARCH_FILE = glm/glm.hpp
 GLM_DIR ?= $(call find_dir,$(GLM_SEARCH_FILE),$(GLM_SEARCH_PATHS))
 
@@ -172,7 +173,7 @@ GL_OPTS ?= $(if $(FREETYPE_DIR),-I$(FREETYPE_DIR)/include/freetype2) \
 
 rpath=-Wl,-rpath,
 GL_LIBS ?= $(if $(FREETYPE_DIR),-L$(FREETYPE_DIR)/lib) \
- $(if $(SDL_DIR),-L$(SDL_DIR)/lib) \
+ $(if $(SDL_DIR),-L$(SDL_DIR)/lib $(rpath)$(SDL_DIR)/lib) \
  $(if $(NOTMAC),$(if $(OPENGL_DIR),-L$(OPENGL_DIR)/lib $(rpath)$(OPENGL_DIR)/lib)) \
  $(if $(GLEW_LIB_DIR),-L$(GLEW_LIB_DIR) $(rpath)$(GLEW_LIB_DIR)) \
  $(FREETYPE_LIBS) $(SDL_LIBS) $(GLEW_LIBS) $(OPENGL_LIBS)
