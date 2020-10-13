@@ -1641,7 +1641,7 @@ void InitFont()
    {
       if (!SetFont({priority_font}, font_size))
       {
-         if (!glvis_font.LoadFont(priority_font, font_size))
+         if (!glvis_font.LoadFont(priority_font, 0, font_size))
          {
             cout << "InitFont(): Font not found: " << priority_font << endl;
          }
@@ -1665,8 +1665,8 @@ bool SetFont(const vector<std::string>& font_patterns, int height)
       return false;
    }
 
-   FcObjectSet * os = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, FC_SCALABLE,
-                                       nullptr);
+   FcObjectSet * os = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE,
+                                       FC_SCALABLE, FC_INDEX, nullptr);
 
    for (const string& pattern : font_patterns)
    {
@@ -1695,13 +1695,16 @@ bool SetFont(const vector<std::string>& font_patterns, int height)
 #endif
       std::string font_file = "";
       std::string font_name = "";
-      for (int fnt_idx = 0; fnt_idx < fs->nfont; fnt_idx++)
+      int font_index = 0;
+      for (int match_idx = 0; match_idx < fs->nfont; match_idx++)
       {
          FcChar8 * s;
          FcBool scalable;
-         FcPatternGetBool(fs->fonts[fnt_idx], FC_SCALABLE, 0, &scalable);
-         FcResult res = FcPatternGetString(fs->fonts[fnt_idx], FC_FILE, 0, &s);
-         FcChar8 * fnt = FcNameUnparse(fs->fonts[fnt_idx]);
+         int curr_font_idx;
+         FcPatternGetBool(fs->fonts[match_idx], FC_SCALABLE, 0, &scalable);
+         FcPatternGetInteger(fs->fonts[match_idx], FC_INDEX, 0, &curr_font_idx);
+         FcResult res = FcPatternGetString(fs->fonts[match_idx], FC_FILE, 0, &s);
+         FcChar8 * fnt = FcNameUnparse(fs->fonts[match_idx]);
 #ifdef GLVIS_DEBUG
          cout << " - " << fnt << endl;
 #endif
@@ -1709,6 +1712,7 @@ bool SetFont(const vector<std::string>& font_patterns, int height)
          {
             font_file = (char*) s;
             font_name = (char*) fnt;
+            font_index = curr_font_idx;
          }
          free(fnt);
       }
@@ -1716,7 +1720,7 @@ bool SetFont(const vector<std::string>& font_patterns, int height)
       FcFontSetDestroy(fs);
       if (font_file != std::string(""))
       {
-         if (glvis_font.LoadFont(font_file, height))
+         if (glvis_font.LoadFont(font_file, font_index, height))
          {
 #ifdef GLVIS_DEBUG
             cout << "Loaded font: " << font_name << endl;

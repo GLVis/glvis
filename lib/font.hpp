@@ -50,7 +50,7 @@ private:
    bool        face_has_kerning;
 public:
 
-   bool LoadFont(const std::string& path, int font_size);
+   bool LoadFont(const std::string& path, int font_index, int font_size);
 
    glyph GetTexChar(char c)
    {

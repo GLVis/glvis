@@ -25,7 +25,7 @@ struct vert_tex2d
 
 
 const int font_scale = 64;
-bool GlVisFont::LoadFont(const std::string& path, int font_size)
+bool GlVisFont::LoadFont(const std::string& path, int font_index, int font_size)
 {
    if (!init)
    {
@@ -37,7 +37,7 @@ bool GlVisFont::LoadFont(const std::string& path, int font_size)
       FT_Done_Face(face);
       font_init = false;
    }
-   if (FT_New_Face(library, path.c_str(), 0, &face))
+   if (FT_New_Face(library, path.c_str(), font_index, &face))
    {
       cout << "GlVisFont::LoadFont(): Cannot open font file: " << path << endl;
       return false;
