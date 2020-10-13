@@ -117,12 +117,13 @@ Some building considerations
 - On most Linux distributions, the required dependencies (except MFEM) can be
   installed via a package manager.
 
-  On Ubuntu/Debian, the required dependencies can be installed by running:
-    apt-get install libfontconfig1-dev libfreetype-dev libsdl2-dev libglew-dev
-    libglm-dev
+On Ubuntu/Debian, the required dependencies can be installed by running:
 
-  On Fedora/RHEL, the required dependencies can be installed by running:
-    dnf install fontconfig-devel freetype-devel SDL2-devel glew-devel glm-devel
+     apt-get install libfontconfig1-dev libfreetype-dev libsdl2-dev libglew-dev libglm-dev
+ 
+On Fedora/RHEL, the required dependencies can be installed by running:
+
+     dnf install fontconfig-devel freetype-devel SDL2-devel glew-devel glm-devel
 
   Package names in other distributions may vary.
 
@@ -145,9 +146,9 @@ Some building considerations
   in OS X may complain about GLX 1.3 support, but in practice works fine with
   GLVis. To define this in CMake, pass "-D GLVIS_USE_GLX10=ON" to cmake.
 
-- GLVis can be built without libpng/libtiff/ by setting
-  the makefile variables USE_LIBPNG/USE_LIBTIFF/ to NO or by
-  passing GLVIS_USE_LIBPNG/GLVIS_USE_LIBTIFF to cmake.
+- GLVis can be built without libpng/libtiff/ by setting the makefile variables
+  USE_LIBPNG/USE_LIBTIFF/ to NO or by passing GLVIS_USE_LIBPNG/GLVIS_USE_LIBTIFF
+  to cmake.
 
 - On Mac OS X, it is better to start manually the XQuarz app, before starting
   GLVis, in order to avoid the wait for establishing the first X11 connection.
