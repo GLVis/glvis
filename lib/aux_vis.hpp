@@ -100,7 +100,7 @@ void MoveResizeWindow(int x, int y, int w, int h);
 void ResizeWindow(int w, int h);
 void SetWindowTitle(const char *title);
 
-/// Take a screenshot using libtiff, libpng or xwd
+/// Take a screenshot using libtiff, libpng or sdl2
 int Screenshot(const char *fname, bool convert = false);
 
 /// Send a sequence of keystrokes to the visualization window

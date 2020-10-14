@@ -44,15 +44,15 @@ struct SdlWindow::Handle
       hwnd = SDL_CreateWindow(title.c_str(), x, y, w, h, wndflags);
       if (!hwnd)
       {
-         PRINT_DEBUG("SDL window creation failed with error: " << SDL_GetError() <<
-                     endl);
+         PRINT_DEBUG("SDL window creation failed with error: "
+                     << SDL_GetError() << endl);
          return;
       }
       gl_ctx = SDL_GL_CreateContext(hwnd);
       if (!gl_ctx)
       {
-         PRINT_DEBUG("OpenGL context creation failed with error: " << SDL_GetError() <<
-                     endl);
+         PRINT_DEBUG("OpenGL context creation failed with error: "
+                     << SDL_GetError() << endl);
       }
    }
 
@@ -109,8 +109,7 @@ int SdlWindow::probeGLContextSupport()
 
    PRINT_DEBUG("failed." << endl);
    PRINT_DEBUG("Testing if OpenGL compatibility profile window can be created..."
-               <<
-               flush);
+               << flush);
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
                        SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
    {
@@ -206,7 +205,8 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    GLenum err = glewInit();
    if (err != GLEW_OK)
    {
-      cerr << "FATAL: Failed to initialize GLEW: " << glewGetErrorString(err) << endl;
+      cerr << "FATAL: Failed to initialize GLEW: "
+           << glewGetErrorString(err) << endl;
       return false;
    }
 
@@ -216,8 +216,8 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
 
    SDL_version sdl_ver;
    SDL_GetVersion(&sdl_ver);
-   PRINT_DEBUG("Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor <<
-               "." << (int)sdl_ver.patch << std::endl);
+   PRINT_DEBUG("Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor
+               << "." << (int)sdl_ver.patch << std::endl);
 
    renderer.reset(new gl3::MeshRenderer);
 #ifndef __EMSCRIPTEN__
@@ -253,7 +253,7 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
 }
 
 // defined here because the Handle destructor needs to be visible
-SdlWindow::~SdlWindow() {};
+SdlWindow::~SdlWindow() {}
 
 void SdlWindow::windowEvent(SDL_WindowEvent& ew)
 {
@@ -533,19 +533,20 @@ void SdlWindow::getDpi(int& w, int& h)
    }
 }
 
-#ifdef GLVIS_X11
+#if defined(SDL_VIDEO_DRIVER_X11)
 Window SdlWindow::getXWindow()
 {
    SDL_SysWMinfo info;
    SDL_VERSION(&info.version);
 
-   if (SDL_GetWindowWMInfo(window, &info))
+   if (SDL_GetWindowWMInfo(handle->hwnd, &info))
    {
       if (info.subsystem == SDL_SYSWM_X11)
       {
-         return info.x11.window;
+         return info.info.x11.window;
       }
    }
+   return 0;
 }
 #endif
 

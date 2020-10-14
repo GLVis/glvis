@@ -185,7 +185,7 @@ GLVIS_LIBS  += $(GL_LIBS)
 
 # Take screenshots internally with libtiff, libpng, or externally with xwd?
 GLVIS_USE_LIBTIFF ?= NO
-GLVIS_USE_LIBPNG  ?= NO
+GLVIS_USE_LIBPNG  ?= YES
 TIFF_OPTS = -DGLVIS_USE_LIBTIFF -I/sw/include
 TIFF_LIBS = -L/sw/lib -ltiff
 PNG_OPTS = -DGLVIS_USE_LIBPNG
@@ -197,7 +197,7 @@ else ifeq ($(GLVIS_USE_LIBPNG),YES)
    GLVIS_FLAGS += $(PNG_OPTS)
    GLVIS_LIBS  += $(PNG_LIBS)
 else
-   GLVIS_FLAGS += -DSDL_SCREENSHOTS
+   # no flag --> SDL screenshots
 endif
 
 PTHREAD_LIB = -lpthread

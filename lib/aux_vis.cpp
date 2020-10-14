@@ -756,9 +756,7 @@ void RightButtonUp (EventInfo*)
 const char *glvis_screenshot_ext = ".tif";
 #elif defined(GLVIS_USE_LIBPNG)
 const char *glvis_screenshot_ext = ".png";
-#elif defined(GLVIS_X11)
-const char *glvis_screenshot_ext = ".xwd";
-#elif defined(SDL_SCREENSHOTS)
+#else
 const char *glvis_screenshot_ext = ".bmp";
 #endif
 
@@ -968,18 +966,9 @@ int Screenshot(const char *fname, bool convert)
    png_destroy_write_struct(&png_ptr, &info_ptr);
    delete [] pixels;
 
-#elif defined(GLVIS_X11)
-   // Use the external X Window Dump (xwd) tool.
-   // Note that xwd does not work on OS X!
-   ostringstream cmd;
-   cmd << "xwd -silent -out " << filename << " -nobdrs -id " << wnd->getXWindow();
-   if (system(cmd.str().c_str()))
-   {
-      return 1;
-   }
-   // View with xwud -in GLVis_s*.xwd, or use convert GLVis_s*.xwd
-   // GLVis_s*.{jpg,gif}
-#elif defined(SDL_SCREENSHOTS)
+#else
+   // use SDL for screenshots
+
    // https://stackoverflow.com/questions/20233469/how-do-i-take-and-save-a-bmp-screenshot-in-sdl-2
    unsigned char * pixels = new unsigned char[w*h*4]; // 4 bytes for RGBA
    glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
@@ -1007,9 +996,6 @@ int Screenshot(const char *fname, bool convert)
       }
    }
    delete [] pixels;
-#else
-   cerr << "No method for taking screenshots detected!" << endl;
-   return 0;
 #endif
 
    if (call_convert)

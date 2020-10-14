@@ -103,7 +103,7 @@ Some important variables for CMake are:
 - CMAKE_INSTALL_PREFIX: Top-level directory for the install. GLVis will be
      installed to ${CMAKE_INSTALL_PREFIX}/bin. Default is "/usr/local".
 
-- GLVIS_USE_LIBPNG: Use libpng for creating screenshots. Default is "OFF".
+- GLVIS_USE_LIBPNG: Use libpng for creating screenshots. Default is "ON".
 
 - GLVIS_USE_LIBTIFF: Use libtiff for creating screenshots. Default is "OFF".
 
@@ -144,10 +144,10 @@ On Fedora/RHEL, the required dependencies can be installed by running:
   3) The above options and some other built-in defaults can be overwritten with
      command line options, see glvis -h for short help.
 
-- GLVis can be built without libpng/libtiff/ by setting the makefile variables
-  USE_LIBPNG/USE_LIBTIFF/ to NO or by passing GLVIS_USE_LIBPNG/GLVIS_USE_LIBTIFF
-  to cmake. This is now the default and in this case GLVis uses SDL to take
-  screenshots.
+- GLVis can be built without libpng/libtiff by setting the makefile variables
+  GLVIS_USE_LIBPNG/GLVIS_USE_LIBTIFF to NO or setting the same variable to OFF
+  during cmake configuration. In this case, GLVis uses SDL to take screenshots
+  in .bmp format, which are then converted to .png using `convert`.
 
 - Support for secure sockets using the GnuTLS library through MFEM can be
   enabled by configuring and compiling MFEM with the option MFEM_USE_GNUTLS=YES,

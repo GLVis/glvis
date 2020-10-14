@@ -110,8 +110,8 @@ public:
    void getDpi(int& wdpi, int& hdpi);
 
    gl3::MeshRenderer& getRenderer() { return *renderer.get(); }
-#ifdef GLVIS_X11
-   int getXWindow();
+#if defined(SDL_VIDEO_DRIVER_X11)
+   Window getXWindow();
 #endif
    void setWindowTitle(std::string& title);
    void setWindowTitle(const char* title);

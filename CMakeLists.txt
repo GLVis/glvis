@@ -55,7 +55,7 @@ option(GLVIS_USE_LIBTIFF
 
 option(GLVIS_USE_LIBPNG
   "Use libpng for taking screenshots internally"
-  OFF)
+  ON)
 
 #
 # Handle a few other definitions
@@ -182,10 +182,6 @@ if (NOT EMSCRIPTEN)
       set(GLVIS_USE_LIBPNG OFF)
     endif (PNG_FOUND)
   endif (GLVIS_USE_LIBPNG)
-
-  if (NOT (GLVIS_USE_LIBTIFF OR GLVIS_USE_LIBPNG))
-    list(APPEND _glvis_compile_defs "SDL_SCREENSHOTS")
-  endif()
 
   # Find FreeType.
   find_package(Freetype REQUIRED)
