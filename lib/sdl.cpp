@@ -12,7 +12,6 @@
 #include <iostream>
 #include <chrono>
 #include "sdl.hpp"
-#include <SDL2/SDL_syswm.h>
 #include "visual.hpp"
 #include "gl/renderer_core.hpp"
 #include "gl/renderer_ff.hpp"
@@ -512,8 +511,8 @@ void SdlWindow::getDpi(int& w, int& h)
    int disp = SDL_GetWindowDisplayIndex(handle->hwnd);
    if (disp < 0)
    {
-      PRINT_DEBUG("warning: problem getting display index: " << SDL_GetError() <<
-                  endl);
+      PRINT_DEBUG("warning: problem getting display index: " << SDL_GetError()
+                  << endl);
       PRINT_DEBUG("returning default dpi of " << default_dpi << endl);
       return;
    }
@@ -521,34 +520,17 @@ void SdlWindow::getDpi(int& w, int& h)
    float f_w, f_h;
    if (SDL_GetDisplayDPI(disp, NULL, &f_w, &f_h))
    {
-      PRINT_DEBUG("warning: problem getting dpi, setting to " << default_dpi << ": "
-                  <<
-                  SDL_GetError() << endl);
+      PRINT_DEBUG("warning: problem getting dpi, setting to " << default_dpi
+                  << ": " << SDL_GetError() << endl);
    }
    else
    {
-      PRINT_DEBUG("Screen DPI: w = " << f_w << " ppi, h = " << f_h << " ppi" << endl);
+      PRINT_DEBUG("Screen DPI: w = " << f_w << " ppi, h = " << f_h << " ppi"
+                  << endl);
       w = f_w;
       h = f_h;
    }
 }
-
-#if defined(SDL_VIDEO_DRIVER_X11)
-Window SdlWindow::getXWindow()
-{
-   SDL_SysWMinfo info;
-   SDL_VERSION(&info.version);
-
-   if (SDL_GetWindowWMInfo(handle->hwnd, &info))
-   {
-      if (info.subsystem == SDL_SYSWM_X11)
-      {
-         return info.info.x11.window;
-      }
-   }
-   return 0;
-}
-#endif
 
 void SdlWindow::setWindowTitle(std::string& title)
 {
