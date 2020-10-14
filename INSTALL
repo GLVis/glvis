@@ -15,19 +15,16 @@ Besides a C++ compiler, GLVis depends on the following external packages:
 
 - the MFEM library (use the latest release) plus any libraries that MFEM was
   built to depend on
-  http://mfem.org
+  https://mfem.org
 
 - the GL, GLM, and GLEW libraries
-  http://www.opengl.org, https://glm.g-truc.net, http://glew.sourceforge.net
+  https://www.opengl.org, https://glm.g-truc.net, http://glew.sourceforge.net
 
 - the SDL2 library
-  https://www.libsdl.org/index.php
+  https://www.libsdl.org
 
 - the FreeType 2 and Fontconfig libraries; used for font rendering
-  http://www.freetype.org, http://www.fontconfig.org
-
-- the XQuartz app (on Mac OS X, if running remotely)
-  http://www.xquartz.org/
+  https://www.freetype.org, https://www.fontconfig.org
 
 - the libpng or libtiff library; used for taking screenshots (optional)
   http://www.libpng.org, http://www.libtiff.org
@@ -36,12 +33,15 @@ Besides a C++ compiler, GLVis depends on the following external packages:
   libGLEW-devel, libfreetype-devel, libpng-devel, fontconfig-devel.
   https://cygwin.com, https://x.cygwin.com
 
+- the XQuartz app (on Mac OS X, if running GLVis remotely through ssh)
+  https://www.xquartz.org
+
 There are two build systems, one based on GNU make and one based on CMake, as
 described below. Choose the one that matches the build system you used to
 build MFEM.
 
 In addition to the native build systems, a GLVis package is also available
-in the Spack package manager, https://github.com/LLNL/spack.
+in the Spack package manager, https://github.com/spack/spack.
 
 
 Building with GNU make
@@ -119,11 +119,13 @@ Some building considerations
 
 On Ubuntu/Debian, the required dependencies can be installed by running:
 
-     apt-get install libfontconfig1-dev libfreetype-dev libsdl2-dev libglew-dev libglm-dev
+     apt-get install libfontconfig1-dev libfreetype-dev libsdl2-dev \
+        libglew-dev libglm-dev libpng-dev
 
 On Fedora/RHEL, the required dependencies can be installed by running:
 
-     dnf install fontconfig-devel freetype-devel SDL2-devel glew-devel glm-devel
+     dnf install fontconfig-devel freetype-devel SDL2-devel glew-devel \
+        glm-devel libpng-devel
 
   Package names in other distributions may vary.
 
@@ -145,7 +147,7 @@ On Fedora/RHEL, the required dependencies can be installed by running:
      command line options, see glvis -h for short help.
 
 - GLVis can be built without libpng/libtiff by setting the makefile variables
-  GLVIS_USE_LIBPNG/GLVIS_USE_LIBTIFF to NO or setting the same variable to OFF
+  GLVIS_USE_LIBPNG/GLVIS_USE_LIBTIFF to NO or setting the same variables to OFF
   during cmake configuration. In this case, GLVis uses SDL to take screenshots
   in .bmp format, which are then converted to .png using `convert`.
 

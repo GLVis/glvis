@@ -183,7 +183,7 @@ EMCC_OPTS += $(if $(GLM_DIR),-I$(GLM_DIR))
 GLVIS_FLAGS += $(GL_OPTS)
 GLVIS_LIBS  += $(GL_LIBS)
 
-# Take screenshots internally with libtiff, libpng, or externally with xwd?
+# Take screenshots internally with libtiff, libpng, or sdl2?
 GLVIS_USE_LIBTIFF ?= NO
 GLVIS_USE_LIBPNG  ?= YES
 TIFF_OPTS = -DGLVIS_USE_LIBTIFF -I/sw/include
