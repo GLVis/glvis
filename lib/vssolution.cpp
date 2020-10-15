@@ -2341,6 +2341,8 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
       scene.queue.emplace_back(params, &cp_buf);
       params.use_clip_plane = true;
    }
+   // disable lighting for objects below
+   params.num_pt_lights = 0;
    if (drawbdr)
    {
       scene.queue.emplace_back(params, &bdr_buf);

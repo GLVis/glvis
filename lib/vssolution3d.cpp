@@ -3626,6 +3626,7 @@ gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
    params.mesh_material = VisualizationScene::BLK_MAT;
    // everything below will be drawn in "black"
    params.static_color = GetLineColor();
+   params.num_pt_lights = 0;
    if (drawmesh)
    {
       scene.queue.emplace_back(params, &line_buf);

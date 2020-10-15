@@ -1545,6 +1545,7 @@ gl3::SceneInfo VisualizationSceneVector3d::GetSceneObjs()
    }
 
    params.contains_translucent = false;
+   params.num_pt_lights = 0;
 
    if (drawvector > 3)
    {
