@@ -280,9 +280,7 @@ bool CoreGLDevice::compileShaders()
       return false;
    }
 
-#ifndef __ENSCRIPTEN__
-   // TODO: enable a legacy path for opengl2.1 without ext_tranform_feedback?
-   // This program is for rendering to pdf/ps
+#ifndef __EMSCRIPTEN__
    if (GLEW_EXT_transform_feedback || GLEW_VERSION_3_0)
    {
       feedback_prgm = glCreateProgram();

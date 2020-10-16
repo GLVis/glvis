@@ -48,7 +48,6 @@ static int glvis_multisample = -1;
 float line_w = 1.f;
 float line_w_aa = gl3::LINE_WIDTH_AA;
 
-//TODO: anything but this
 SdlWindow * wnd = nullptr;
 bool wndLegacyGl = false;
 
