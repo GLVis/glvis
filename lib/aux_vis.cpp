@@ -244,14 +244,7 @@ void SendKeySequence(const char *seq)
       }
       else
       {
-         if (*key == '('
-             || *key == ')'
-             || *key == '!'
-             || isupper(*key))
-         {
-            wnd->signalKeyDown(*key, KMOD_LSHIFT);
-         }
-         wnd->signalKeyDown(*key, KMOD_LSHIFT);
+         wnd->signalKeyDown(*key);
       }
    }
 }

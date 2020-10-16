@@ -564,9 +564,17 @@ void SdlWindow::setWindowPos(int x, int y)
 void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
 {
    SDL_Event event;
-   event.type = SDL_KEYDOWN;
-   event.key.keysym.sym = k;
-   event.key.keysym.mod = m;
+   if (k >= 32 && k < 128)
+   {
+      event.type = SDL_TEXTINPUT;
+      event.text.text[0] = k;
+   }
+   else
+   {
+      event.type = SDL_KEYDOWN;
+      event.key.keysym.sym = k;
+      event.key.keysym.mod = m;
+   }
    SDL_PushEvent(&event);
 }
 
