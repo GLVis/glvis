@@ -1582,9 +1582,9 @@ float GetLineWidthMS()
 // to find the font files that match the "pattern".
 vector<string> fc_font_patterns =
 {
-   "OpenSans:style=Regular",
    "Ubuntu Light:style=Regular",
    "Ubuntu:style=Regular:weight=80",
+   "OpenSans:style=Regular",
    "DejaVu Sans:style=Book:width=Normal",
    "DejaVu LGC Sans:style=Book:width=Normal",
    "Bitstream Vera Sans:style=Roman",
@@ -1596,33 +1596,49 @@ vector<string> fc_font_patterns =
 };
 
 #ifdef __EMSCRIPTEN__
-int font_size = 14;
+int default_font_size = 14;
+int default_high_dpi_font_size = 12;
 #else
-int font_size = 12;
+int default_font_size = 12;
+int default_high_dpi_font_size = 9;
 #endif
+int font_size = default_font_size;
+bool use_default_font_size = true;
 
 GlVisFont glvis_font;
 std::string priority_font;
 
 void InitFont()
 {
+   // This function is called after the window is created, so wnd->isHighDpi()
+   // is set.
+   if (use_default_font_size)
+   {
+      font_size = wnd->isHighDpi() ?
+                  default_high_dpi_font_size : default_font_size;
+   }
    glvis_font.setAlphaChannel(wnd->getRenderer().getDeviceAlphaChannel());
-   if (priority_font == std::string(""))
+   bool try_fc_patterns = true;
+   if (!priority_font.empty())
+   {
+      if (SetFont({priority_font}, font_size) ||
+          glvis_font.LoadFont(priority_font, 0, font_size))
+      {
+         try_fc_patterns = false;
+      }
+      else
+      {
+         cerr << "InitFont(): Font not found: " << priority_font << endl;
+      }
+   }
+   if (try_fc_patterns)
    {
       if (!SetFont(fc_font_patterns, font_size))
       {
-         cerr << "InitFont(): No fonts found matching the built-in patterns." << endl
-              << "Use the -fn option or edit 'fc_font_patterns' in lib/aux_vis.cpp" << endl;
-      }
-   }
-   else
-   {
-      if (!SetFont({priority_font}, font_size))
-      {
-         if (!glvis_font.LoadFont(priority_font, 0, font_size))
-         {
-            cout << "InitFont(): Font not found: " << priority_font << endl;
-         }
+         cerr <<
+              "InitFont(): No fonts found matching the built-in patterns.\n"
+              "Use the -fn option or edit 'fc_font_patterns' in lib/aux_vis.cpp"
+              << endl;
       }
    }
    wnd->getRenderer().setFontTexture(glvis_font.getFontTex());
@@ -1644,7 +1660,8 @@ bool SetFont(const vector<std::string>& font_patterns, int height)
    }
 
    FcObjectSet * os = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE,
-                                       FC_SCALABLE, FC_INDEX, nullptr);
+                                       FC_SCALABLE, FC_INDEX, FC_WEIGHT,
+                                       nullptr);
 
    for (const string& pattern : font_patterns)
    {
@@ -1701,7 +1718,8 @@ bool SetFont(const vector<std::string>& font_patterns, int height)
          if (glvis_font.LoadFont(font_file, font_index, height))
          {
 #ifdef GLVIS_DEBUG
-            cout << "Loaded font: " << font_name << endl;
+            cout << "Loaded font: " << font_name << ", height: " << height
+                 << endl;
 #endif
             break;
          }
@@ -1725,11 +1743,15 @@ void SetFont(const std::string& fn)
    size_t pos = priority_font.rfind('-');
    if (pos != string::npos)
    {
+      use_default_font_size = false;
       font_size = std::stoi(priority_font.substr(pos + 1));
       priority_font.erase(pos);
    }
 #ifdef GLVIS_DEBUG
-   cout << "SetFont: name = '" << priority_font << "', height = " << font_size
+   cout << "SetFont: name = '"
+        << (priority_font.empty() ? "(default)" : priority_font)
+        << "', height = "
+        << (use_default_font_size ? "(default)" : std::to_string(font_size))
         << endl;
 #endif
 }

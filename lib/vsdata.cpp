@@ -359,23 +359,14 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
       maxx =  1.3;
    }
    color_bar.clear();
-   const int nquads = 256;
-   float Y_hi, Y_lo;
-   for (int i = 1; i <= nquads; i++)
-   {
-      const double a_lo = double(i - 1) / nquads;
-      const double a_hi = double(i) / nquads;
-      Y_lo = (1.0 - a_lo) * miny + a_lo * maxy;
-      Y_hi = (1.0 - a_hi) * miny + a_hi * maxy;
-      color_bar.addQuad<gl3::VertexTex>(
-      {{minx, Y_lo, posz},{(float) a_lo, 0.f}},
-      {{maxx, Y_lo, posz},{(float) a_lo, 0.f}},
-      {{maxx, Y_hi, posz},{(float) a_hi, 0.f}},
-      {{minx, Y_hi, posz},{(float) a_hi, 0.f}}
-      );
-   }
+   color_bar.addQuad<gl3::VertexTex>(
+   {{minx, miny, posz},{0.f, 0.f}},
+   {{maxx, miny, posz},{0.f, 0.f}},
+   {{maxx, maxy, posz},{1.f, 0.f}},
+   {{minx, maxy, posz},{1.f, 0.f}}
+   );
 
-   static const int border = 1;
+   static const int border = 2;
 
    if (border == 1)
    {
@@ -389,8 +380,8 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
    }
    else if (border == 2)
    {
-      color_bar.addLine<gl3::Vertex>({minx, miny, posz}, {maxx, miny, posz});
-      color_bar.addLine<gl3::Vertex>({maxx, maxy, posz}, {minx, maxy, posz});
+      color_bar.addLine<gl3::Vertex>({minx, miny, posz}, {minx, maxy, posz});
+      color_bar.addLine<gl3::Vertex>({maxx, miny, posz}, {maxx, maxy, posz});
    }
 
    if (levels)
@@ -410,6 +401,7 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
       }
    }
 
+   const double text_x = maxx + 0.4*(maxx-minx);
    double val;
    double Y;
    if (!level)
@@ -422,7 +414,7 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
 
          ostringstream buf;
          buf << setprecision(4) << val;
-         color_bar.addText(maxx+0.02,Y,posz, buf.str());
+         color_bar.addText(text_x,Y,posz, buf.str());
       }
    }
    else
@@ -434,7 +426,7 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
 
          ostringstream buf;
          buf << setprecision(4) << val;
-         color_bar.addText(maxx+0.02,Y,posz, buf.str());
+         color_bar.addText(text_x,Y,posz, buf.str());
       }
    }
 
@@ -447,7 +439,7 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
 
          ostringstream buf;
          buf << setprecision(4) << val;
-         color_bar.addText(maxx+0.02,Y,posz, buf.str());
+         color_bar.addText(text_x,Y,posz, buf.str());
       }
    }
    updated_bufs.emplace_back(&color_bar);
@@ -796,8 +788,10 @@ void KeyToggleTexture()
 void VisualizationSceneScalarData::PrintLogscale(bool warn)
 {
    if (warn)
+   {
       cout << "The range [" << minv << ',' << maxv
            << "] is not appropriate for logarithmic scale!" << endl;
+   }
    cout << "Logarithmic scale: " << strings_off_on[logscale ? 1 : 0]
         << endl;
 }
@@ -1006,14 +1000,16 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
       int gl_w, gl_h;
       wnd->getGLDrawSize(gl_w, gl_h);
       // add caption to draw list
+      double v_pos = 2.;
+      double line_h = GetFont()->getFontLineSpacing();
       params.model_view.translate(-(double)caption_w / gl_w,
-                                  1.0 - 5 * (double)caption_h / gl_h, 0.0);
+                                  1.0 - 2 * v_pos * line_h / gl_h, 0.0);
       scene.queue.emplace_back(params, &caption_buf);
    }
    if (drawaxes && drawaxes != 3)
    {
       // add coordinate cross to draw list
-      params.projection.identity();
+      params.projection.ortho(-1.,1.,-1.,1.,-2.,2.);
       params.model_view.identity();
       params.model_view.translate(-1, -1, 0.0);
       params.model_view.scale(40.0 / w, 40.0 / h, 1);
@@ -1312,34 +1308,36 @@ void VisualizationSceneScalarData::PrepareAxes()
 
    if (drawaxes == 1)
    {
+      int desc = GetFont()->getFontDescender();
+      int ox = -desc/2;
+      int oy = -3*desc/2;
       ostringstream buf;
       buf << setprecision(4)
           << "(" << x[0] << "," << y[0] << ","  << z[0] << ")" ;
-      axes_buf.addText(x[0], y[0], z[0], buf.str());
+      axes_buf.addText(x[0], y[0], z[0], ox, oy, buf.str());
 
       ostringstream buf1;
       buf1 << setprecision(4)
            << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
-      axes_buf.addText(x[1], y[1], z[1], buf1.str());
+      axes_buf.addText(x[1], y[1], z[1], ox, oy, buf1.str());
    }
    updated_bufs.emplace_back(&axes_buf);
 
-   float lenx, leny, lenz;
-   lenx = leny = lenz = .95;
-
+   constexpr float len = 1.2f;
+   constexpr float l = .9f, cl = .27f, cb = l-cl;
    coord_cross_buf.clear();
    coord_cross_buf.addLines<gl3::Vertex>(
    {
-      {0, 0, 0}, {0, 0, 0.9},
-      {0, 0, 0}, {0, 0.9, 0},
-      {0, 0, 0}, {0.9, 0, 0}
+      {0, 0, 0}, {0, 0, l},
+      {0, 0, 0}, {0, l, 0},
+      {0, 0, 0}, {l, 0, 0}
    });
-   coord_cross_buf.addCone(0,0,.9,0,0,1);
-   coord_cross_buf.addCone(0,.9,0,0,1,0);
-   coord_cross_buf.addCone(.9,0,0,1,0,0);
-   coord_cross_buf.addText(lenx, 0.0f, 0.0f, a_label_x);
-   coord_cross_buf.addText(0.0f, leny, 0.0f, a_label_y);
-   coord_cross_buf.addText(0.0f, 0.0f, lenz, a_label_z);
+   coord_cross_buf.addCone(0,0,cb,0,0,1, cl);
+   coord_cross_buf.addCone(0,cb,0,0,1,0, cl);
+   coord_cross_buf.addCone(cb,0,0,1,0,0, cl);
+   coord_cross_buf.addText(len, 0.0f, 0.0f, a_label_x);
+   coord_cross_buf.addText(0.0f, len, 0.0f, a_label_y);
+   coord_cross_buf.addText(0.0f, 0.0f, len, a_label_z);
    updated_bufs.emplace_back(&coord_cross_buf);
 }
 

@@ -150,6 +150,8 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    // #endif
 
    Uint32 win_flags = SDL_WINDOW_OPENGL;
+   // Hide window until we adjust its size for high-dpi displays
+   win_flags |= SDL_WINDOW_HIDDEN;
 #ifndef __EMSCRIPTEN__
    win_flags |= SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE;
 #endif
@@ -247,6 +249,47 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
 #else
    renderer->setDevice<gl3::CoreGLDevice>();
 #endif
+
+   // Detect if we are using a high-dpi display and resize the window unless it
+   // was already resized by SDL's underlying backend.
+   {
+      int scr_w, scr_h, pix_w, pix_h, wdpi, hdpi;
+      // SDL_GetWindowSize() -- size in "screen coordinates"
+      SDL_GetWindowSize(handle->hwnd, &scr_w, &scr_h);
+      // SDL_GL_GetDrawableSize() -- size in pixels
+      SDL_GL_GetDrawableSize(handle->hwnd, &pix_w, &pix_h);
+      high_dpi = false;
+      pixel_scale_x = pixel_scale_y = 1.0f;
+      float sdl_pixel_scale_x = 1.0f, sdl_pixel_scale_y = 1.0f;
+      // If "screen" and "pixel" sizes are different, assume high-dpi and no
+      // need to scale the window.
+      if (scr_w == pix_w && scr_h == pix_h)
+      {
+         getDpi(wdpi, hdpi);
+         if (std::max(wdpi, hdpi) >= high_dpi_threshold)
+         {
+            high_dpi = true;
+            pixel_scale_x = pixel_scale_y = 2.0f;
+            // the following two calls use 'pixel_scale_*'
+            setWindowSize(w, h);
+            setWindowPos(x, y);
+         }
+      }
+      else
+      {
+         high_dpi = true;
+         // keep 'pixel_scale_*' = 1, scaling is done inside SDL
+         sdl_pixel_scale_x = float(pix_w)/scr_w;
+         sdl_pixel_scale_y = float(pix_h)/scr_h;
+      }
+      if (high_dpi)
+      {
+         cout << "High-dpi display detected: using window scaling: "
+              << sdl_pixel_scale_x*pixel_scale_x << " x "
+              << sdl_pixel_scale_y*pixel_scale_y << endl;
+      }
+   }
+   SDL_ShowWindow(handle->hwnd);
 
    return true;
 }
@@ -490,6 +533,8 @@ void SdlWindow::getWindowSize(int& w, int& h)
 #else
       SDL_GetWindowSize(handle->hwnd, &w, &h);
 #endif
+      w /= pixel_scale_x;
+      h /= pixel_scale_y;
    }
 }
 
@@ -525,10 +570,10 @@ void SdlWindow::getDpi(int& w, int& h)
    }
    else
    {
-      PRINT_DEBUG("Screen DPI: w = " << f_w << " ppi, h = " << f_h << " ppi"
-                  << endl);
-      w = f_w;
-      h = f_h;
+      PRINT_DEBUG("Screen DPI: w = " << f_w << " ppi, h = " << f_h << " ppi");
+      w = f_w + 0.5f;
+      h = f_h + 0.5f;
+      PRINT_DEBUG(" (" << w << " x " << h << ')' << endl);
    }
 }
 
@@ -549,7 +594,7 @@ void SdlWindow::setWindowSize(int w, int h)
 {
    if (handle)
    {
-      SDL_SetWindowSize(handle->hwnd, w, h);
+      SDL_SetWindowSize(handle->hwnd, pixel_scale_x*w, pixel_scale_y*h);
    }
 }
 
@@ -557,7 +602,13 @@ void SdlWindow::setWindowPos(int x, int y)
 {
    if (handle)
    {
-      SDL_SetWindowPosition(handle->hwnd, x, y);
+      bool uc_x = SDL_WINDOWPOS_ISUNDEFINED(x) ||
+                  SDL_WINDOWPOS_ISCENTERED(x);
+      bool uc_y = SDL_WINDOWPOS_ISUNDEFINED(y) ||
+                  SDL_WINDOWPOS_ISCENTERED(y);
+      SDL_SetWindowPosition(handle->hwnd,
+                            uc_x ? x : pixel_scale_x*x,
+                            uc_y ? y : pixel_scale_y*y);
    }
 }
 

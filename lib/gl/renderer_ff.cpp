@@ -296,14 +296,15 @@ void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)
       glPushMatrix();
       glLoadIdentity();
       glTranslatef(pos.x, pos.y, pos.z);
-      float pen_x = 0.f, pen_y = 0.f;
+      float pen_x = e.ox, pen_y = e.oy;
       char prev_c = '\0';
       for (char c : e.text)
       {
-         GlVisFont::glyph g = GetFont()->GetTexChar(c);
+         const GlVisFont::glyph &g = GetFont()->GetTexChar(c);
          pen_x += GetFont()->GetKerning(prev_c, c);
-         float cur_x = pen_x + g.bear_x;
-         float cur_y = -pen_y - g.bear_y;
+         // note: subract 1 to account for the padding in the texture glyphs
+         float cur_x = pen_x + g.bear_x - 1;
+         float cur_y = -pen_y - g.bear_y - 1;
          pen_x += g.adv_x;
          pen_y += g.adv_y;
          if (!g.w || !g.h)

@@ -52,7 +52,7 @@ public:
 
    bool LoadFont(const std::string& path, int font_index, int font_size);
 
-   glyph GetTexChar(char c)
+   const glyph &GetTexChar(char c) const
    {
       return font_chars[(uint8_t) c];
    }
@@ -96,6 +96,10 @@ public:
    }
 
    bool isFontLoaded() { return font_init; }
+
+   float getFontLineSpacing() const { return face->size->metrics.height/64.f; }
+
+   float getFontDescender() const { return face->size->metrics.descender/64.f; }
 
    float getAtlasWidth() { return tex_w; }
 

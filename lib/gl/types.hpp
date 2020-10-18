@@ -468,10 +468,11 @@ public:
    struct Entry
    {
       float rx, ry, rz;
+      int ox, oy;
       std::string text;
       Entry() = default;
-      Entry(float x, float y, float z, const std::string& txt)
-         : rx(x), ry(y), rz(z), text(txt) { }
+      Entry(float x, float y, float z, int ox, int oy, const std::string& txt)
+         : rx(x), ry(y), rz(z), ox(ox), oy(oy), text(txt) { }
    };
    typedef std::vector<Entry>::iterator Iterator;
    typedef std::vector<Entry>::const_iterator ConstIterator;
@@ -485,9 +486,10 @@ public:
 
    /// Adds a text element at the specified local space (pre-transform)
    /// coordinates.
-   void addText(float x, float y, float z, const std::string& text)
+   void addText(float x, float y, float z, int ox, int oy,
+                const std::string& text)
    {
-      vertex_data.emplace_back(x, y, z, text);
+      vertex_data.emplace_back(x, y, z, ox, oy, text);
       num_chars += text.length();
    }
 
@@ -571,7 +573,15 @@ public:
    /// Adds a string at the given position in object coordinates.
    void addText(float x, float y, float z, const std::string& text)
    {
-      text_buffer.addText(x, y, z, text);
+      text_buffer.addText(x, y, z, 0, 0, text);
+   }
+
+   /** @brief Adds a string at the given position in object coordinates with an
+       offset in pixels. */
+   void addText(float x, float y, float z, int ox, int oy,
+                const std::string& text)
+   {
+      text_buffer.addText(x, y, z, ox, oy, text);
    }
 
    template<typename Vert>

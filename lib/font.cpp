@@ -98,25 +98,30 @@ bool GlVisFont::LoadFont(const std::string& path, int font_index, int font_size)
          cout << "GlVisFont::LoadFont(): Cannot load glyph: " << (char) c << endl;
          continue;
       }
+      FT_GlyphSlot glyph_slot = face->glyph;
       glTexSubImage2D(GL_TEXTURE_2D,
                       0,
                       x + 1, 1,
-                      face->glyph->bitmap.width,
-                      face->glyph->bitmap.rows,
+                      glyph_slot->bitmap.width,
+                      glyph_slot->bitmap.rows,
                       alpha_channel,
                       GL_UNSIGNED_BYTE,
-                      face->glyph->bitmap.buffer);
+                      glyph_slot->bitmap.buffer);
+      // To improve the rendering quality in some cases, we can utilize the
+      // 'lsb_delta' and 'rsb_delta' fields in 'glyph_slot'. These will need to
+      // be stored in the GlVisFont::glyph struct and used in the method
+      // bufferToDevice() of class CoreGLDevice and class FFGLDevice.
       font_chars[c] =
       {
-         (unsigned)(face->glyph->bitmap.width + 2),
-         (unsigned)(face->glyph->bitmap.rows + 2),
-         face->glyph->bitmap_left,
-         face->glyph->bitmap_top,
-         face->glyph->advance.x / 64.f,
-         face->glyph->advance.y / 64.f,
+         (unsigned)(glyph_slot->bitmap.width + 2),
+         (unsigned)(glyph_slot->bitmap.rows + 2),
+         glyph_slot->bitmap_left,
+         glyph_slot->bitmap_top,
+         glyph_slot->advance.x / 64.f,
+         glyph_slot->advance.y / 64.f,
          x / (float) w
       };
-      x += face->glyph->bitmap.width + 2;
+      x += glyph_slot->bitmap.width + 2;
    }
    font_init = true;
    // glEnable(GL_TEXTURE_2D);
@@ -126,18 +131,26 @@ bool GlVisFont::LoadFont(const std::string& path, int font_index, int font_size)
 
 void GlVisFont::getObjectSize(const std::string& text, int& w, int& h)
 {
-   float x = 0.f;
-   w = 0.f, h = 0.f;
+   float pen_x = 0.f, pen_y = 0.f;
+   char prev_c = '\0';
+   int min_x = INT_MAX, max_x = INT_MIN;
+   int min_y = INT_MAX, max_y = INT_MIN;
    for (char c : text)
    {
-      glyph g = GetTexChar(c);
-      float cur_x = x + g.bear_x;
-      x += g.adv_x;
-      if (!g.w || !g.h)
-      {
-         continue;
-      }
-      w = (int)(cur_x + g.w);
-      h = std::max(h, (int)g.h);
+      const glyph &g = GetTexChar(c);
+      if (!g.w || !g.h) { continue; }
+      pen_x += GetKerning(prev_c, c);
+      // note: both g.w and g.h include padding of 2
+      // note: the x-direction bounds are not pixel-tight (include bear_x/adv_x)
+      // note: the y-direction bounds are pixel-tight
+      min_x = std::min(min_x, (int)floorf(pen_x));
+      max_x = std::max(max_x, (int)ceilf (pen_x + g.adv_x));
+      min_y = std::min(min_y, (int)floorf(pen_y + g.bear_y - (g.h - 2)));
+      max_y = std::max(max_y, (int)ceilf (pen_y + g.bear_y));
+      pen_x += g.adv_x;
+      pen_y += g.adv_y;
+      prev_c = c;
    }
+   w = max_x - min_x;
+   h = max_y - min_y;
 }

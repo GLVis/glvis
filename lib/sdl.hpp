@@ -35,6 +35,19 @@ private:
    struct Handle;
    std::unique_ptr<Handle> handle;
    std::unique_ptr<gl3::MeshRenderer> renderer;
+   static const int high_dpi_threshold = 144;
+   // The display is high-dpi when:
+   // - SDL's "screen coordinates" sizes are different from the pixel sizes, or
+   // - either the horizontal or the vertical dpi, as returned by getDpi(),
+   //   is >= high_dpi_threshold, defined above.
+   bool high_dpi = false;
+   // Ratio of SDL's "screen coordinates" to GLVis' "screen coordinates":
+   // - set to 1 on non-high-dpi displays,
+   // - set to 1 on high-dpi displays where SDL's "screen coordinates" sizes are
+   //   different from the pixels sizes (e.g. Mac retina displays),
+   // - set to 2 on other high-dpi displays, so that GLVis can always work with
+   //   scaled "screen coordinates" on all high-dpi displays.
+   float pixel_scale_x = 1.0f, pixel_scale_y = 1.0f;
 
    bool running;
 
@@ -108,6 +121,8 @@ public:
    void getWindowSize(int& w, int& h);
    void getGLDrawSize(int& w, int& h);
    void getDpi(int& wdpi, int& hdpi);
+   /// This property is set by createWindow().
+   bool isHighDpi() const { return high_dpi; }
 
    gl3::MeshRenderer& getRenderer() { return *renderer.get(); }
    void setWindowTitle(std::string& title);

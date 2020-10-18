@@ -26,10 +26,10 @@ void GlDrawable::addCone(float x, float y, float z,
 
    glm::mat4 mtx(1.0);
    mtx = glm::translate(mtx, glm::vec3(x, y, z));
-   mtx = glm::scale(mtx, glm::vec3(cone_scale));
-   mtx = glm::translate(mtx, glm::vec3(x, y, z));
    mtx = glm::rotate(mtx, theta, glm::vec3(0.f, 0.f, 1.f));
    mtx = glm::rotate(mtx, phi, glm::vec3(0.f, 1.f, 0.f));
+   mtx = glm::scale(mtx, glm::vec3(cone_scale/4.));
+   mtx = glm::translate(mtx, glm::vec3(0, 0, 4));
    glm::mat3 norm(mtx);
    norm = glm::inverseTranspose(norm);
 

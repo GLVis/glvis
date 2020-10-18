@@ -7577,7 +7577,7 @@ void PaletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
          };
       }
    }
-   if (PaletteNumColors && (plt_size > PaletteNumColors))
+   if (PaletteNumColors > 1 && (plt_size > (size_t)PaletteNumColors))
    {
       texture_buf.resize(PaletteNumColors);
       for (int i = 0; i < PaletteNumColors; i++)
@@ -7587,7 +7587,7 @@ void PaletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
          {
             plt_i = plt_size - 1;
          }
-         if (RepeatPaletteTimes  < 0)
+         if (RepeatPaletteTimes < 0)
          {
             plt_i = plt_size-1-plt_i;
          }
@@ -7733,12 +7733,12 @@ void paletteInit()
                              palette_tex[i][1]);
    }
    // set alpha texture to 1.0
-   float alphaTexData[MaxTextureSize * 2];
-   std::fill(alphaTexData, alphaTexData + MaxTextureSize * 2, 1.0);
+   std::vector<float> alphaTexData(MaxTextureSize * 2);
+   std::fill(alphaTexData.begin(), alphaTexData.end(), 1.0f);
    glActiveTexture(GL_TEXTURE1);
    glBindTexture(GL_TEXTURE_2D, alpha_tex);
    glTexImage2D(GL_TEXTURE_2D, 0, alpha_channel, MaxTextureSize, 2, 0,
-                alpha_channel, GL_FLOAT, alphaTexData);
+                alpha_channel, GL_FLOAT, alphaTexData.data());
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -7782,11 +7782,11 @@ int paletteGetSize(int pal)
 
 void GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
 {
-   float alphaTexData [MaxTextureSize];
+   std::vector<float> alphaTexData(MaxTextureSize);
    if (matAlpha >= 1.0)
    {
       // transparency off
-      std::fill(alphaTexData, alphaTexData + MaxTextureSize, 1.0);
+      std::fill(alphaTexData.begin(), alphaTexData.end(), 1.0f);
    }
    else
    {
@@ -7810,7 +7810,7 @@ void GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
    glActiveTexture(GL_TEXTURE1);
    glBindTexture(GL_TEXTURE_2D, alpha_tex);
    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 1, MaxTextureSize, 1, alpha_channel,
-                   GL_FLOAT, alphaTexData);
+                   GL_FLOAT, alphaTexData.data());
    glActiveTexture(GL_TEXTURE0);
 }
 
