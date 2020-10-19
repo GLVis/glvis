@@ -1600,27 +1600,18 @@ vector<string> fc_font_patterns =
 };
 
 #ifdef __EMSCRIPTEN__
-int default_font_size = 14;
-int default_high_dpi_font_size = 12;
+constexpr int default_font_size = 14;
 #else
-int default_font_size = 12;
-int default_high_dpi_font_size = 9;
+constexpr int default_font_size = 12;
 #endif
 int font_size = default_font_size;
-bool use_default_font_size = true;
 
 GlVisFont glvis_font;
 std::string priority_font;
 
 void InitFont()
 {
-   // This function is called after the window is created, so wnd->isHighDpi()
-   // is set.
-   if (use_default_font_size)
-   {
-      font_size = wnd->isHighDpi() ?
-                  default_high_dpi_font_size : default_font_size;
-   }
+   // This function is called after the window is created.
    glvis_font.setAlphaChannel(wnd->getRenderer().getDeviceAlphaChannel());
    bool try_fc_patterns = true;
    if (!priority_font.empty())
@@ -1747,15 +1738,12 @@ void SetFont(const std::string& fn)
    size_t pos = priority_font.rfind('-');
    if (pos != string::npos)
    {
-      use_default_font_size = false;
       font_size = std::stoi(priority_font.substr(pos + 1));
       priority_font.erase(pos);
    }
 #ifdef GLVIS_DEBUG
    cout << "SetFont: name = '"
         << (priority_font.empty() ? "(default)" : priority_font)
-        << "', height = "
-        << (use_default_font_size ? "(default)" : std::to_string(font_size))
-        << endl;
+        << "', height = " << font_size << endl;
 #endif
 }
