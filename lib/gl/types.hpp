@@ -671,5 +671,6 @@ public:
 };
 
 }
-#endif
+
+#endif // GLVIS_AUX_GL3
 

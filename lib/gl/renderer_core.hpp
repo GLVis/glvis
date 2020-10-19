@@ -9,8 +9,8 @@
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
 
-#ifndef __RENDERER_CORE_HPP__
-#define __RENDERER_CORE_HPP__
+#ifndef GLVIS_RENDERER_CORE
+#define GLVIS_RENDERER_CORE
 #include "renderer.hpp"
 
 namespace gl3
@@ -35,6 +35,7 @@ public:
       float color[4];
       float clipCoord;
    };
+
 private:
    ShaderPrgmHandle default_prgm;
    ShaderPrgmHandle feedback_prgm;
@@ -75,6 +76,7 @@ private:
                                  const vector<ShaderXfbVertex>& verts);
    void processLineXfbBuffer(CaptureBuffer& cbuf,
                              const vector<ShaderXfbVertex>& verts);
+
 public:
    CoreGLDevice()
       : default_prgm(0), feedback_prgm(0), global_vao(0)
@@ -116,4 +118,4 @@ public:
 
 }
 
-#endif // __RENDERER_CORE_HPP__
+#endif // GLVIS_RENDERER_CORE

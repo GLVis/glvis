@@ -9,8 +9,8 @@
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
 
-#ifndef PLATFORM_GL_HPP
-#define PLATFORM_GL_HPP
+#ifndef GLVIS_PLATFORM_GL
+#define GLVIS_PLATFORM_GL
 
 #include <GL/glew.h>
 #ifndef __EMSCRIPTEN__

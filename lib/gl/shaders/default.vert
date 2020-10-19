@@ -32,22 +32,24 @@ varying vec2 fTexCoord;
 
 varying float fClipVal;
 
-void setupClipPlane(in float dist) {
-    fClipVal = dist;
+void setupClipPlane(in float dist)
+{
+   fClipVal = dist;
 }
 
 void main()
 {
-    vec4 pos = modelViewMatrix * vec4(vertex, 1.0);
-    fPosition = pos.xyz;
-    fNormal = normalize(normalMatrix * normal);
-    fColor = color;
-    fTexCoord = texCoord0.xy;
-    setupClipPlane(dot(vec4(pos.xyz, 1.0), clipPlane));
-    pos = projectionMatrix * pos;
-    gl_Position = pos;
-    if (containsText) {
-	vec4 textOffset = textProjMatrix * vec4(textVertex, 0.0, 0.0);
-	gl_Position += vec4((textOffset.xy * pos.w), -0.005, 0.0);
-    }
+   vec4 pos = modelViewMatrix * vec4(vertex, 1.0);
+   fPosition = pos.xyz;
+   fNormal = normalize(normalMatrix * normal);
+   fColor = color;
+   fTexCoord = texCoord0.xy;
+   setupClipPlane(dot(vec4(pos.xyz, 1.0), clipPlane));
+   pos = projectionMatrix * pos;
+   gl_Position = pos;
+   if (containsText)
+   {
+      vec4 textOffset = textProjMatrix * vec4(textVertex, 0.0, 0.0);
+      gl_Position += vec4((textOffset.xy * pos.w), -0.005, 0.0);
+   }
 })"

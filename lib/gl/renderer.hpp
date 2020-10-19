@@ -9,8 +9,8 @@
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
 
-#ifndef __RENDERER_HPP__
-#define __RENDERER_HPP__
+#ifndef GLVIS_RENDERER
+#define GLVIS_RENDERER
 
 #include <memory>
 #include <vector>
@@ -44,7 +44,7 @@ struct RenderParams
    std::array<float, 4> light_amb_scene;
    std::array<float, 4> static_color;
 
-   // Clip plane params
+   // Clip plane parameters
    bool use_clip_plane;
    std::array<double, 4> clip_plane_eqn;
 
@@ -296,4 +296,4 @@ public:
 
 }
 
-#endif // __RENDERER_HPP__
+#endif // GLVIS_RENDERER

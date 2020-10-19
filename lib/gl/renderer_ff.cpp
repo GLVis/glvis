@@ -302,7 +302,7 @@ void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)
       {
          const GlVisFont::glyph &g = GetFont()->GetTexChar(c);
          pen_x += GetFont()->GetKerning(prev_c, c);
-         // note: subract 1 to account for the padding in the texture glyphs
+         // note: subtract 1 to account for the padding in the texture glyphs
          float cur_x = pen_x + g.bear_x - 1;
          float cur_y = -pen_y - g.bear_y - 1;
          pen_x += g.adv_x;

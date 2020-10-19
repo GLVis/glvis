@@ -98,7 +98,7 @@ std::string formatShaderString(const std::string &shader_string,
 {
    std::string formatted = shader_string;
 
-   // replace some identifiers depending on the verions of glsl we're using
+   // replace some identifiers depending on the version of glsl we're using
    if (glsl_version >= 130)
    {
       if (shader_type == GL_VERTEX_SHADER)
@@ -112,7 +112,7 @@ std::string formatShaderString(const std::string &shader_string,
          formatted = std::regex_replace(formatted, std::regex("varying"), "in");
 
          // requires GL_ARB_explicit_attrib_location extension or GLSL 3.30
-         // although gl_FragColor was depricated in GLSL 1.3
+         // although gl_FragColor was deprecated in GLSL 1.3
          if (glsl_version > 130 && glsl_version < 330)
          {
             formatted = "out vec4 fragColor;\n" + formatted;
@@ -218,7 +218,7 @@ bool CoreGLDevice::compileShaders()
    int glsl_ver = -1;
 
 #ifndef __EMSCRIPTEN__
-   // The GLSL verion is the same as the OpenGL version when the OpenGL
+   // The GLSL version is the same as the OpenGL version when the OpenGL
    // version is >= 3.30, otherwise it is:
    //
    // GL Version | GLSL Version
@@ -516,7 +516,7 @@ void CoreGLDevice::bufferToDevice(TextBuffer &t_buf)
       {
          const GlVisFont::glyph &g = GetFont()->GetTexChar(c);
          pen_x += GetFont()->GetKerning(prev_c, c);
-         // note: subract 1 to account for the padding in the texture glyphs
+         // note: subtract 1 to account for the padding in the texture glyphs
          float cur_x = pen_x + g.bear_x - 1;
          float cur_y = -pen_y - g.bear_y - 1;
          pen_x += g.adv_x;
@@ -639,6 +639,7 @@ void CoreGLDevice::drawDeviceBuffer(const TextBuffer& t_buf)
 }
 
 #ifndef __EMSCRIPTEN__
+
 inline FeedbackVertex XFBPostTransform(CoreGLDevice::ShaderXfbVertex v,
                                        float half_w, float half_h)
 {
@@ -835,7 +836,9 @@ void CoreGLDevice::captureXfbBuffer(
                 << "feedback processing" << std::endl;
    }
 }
+
 #else
+
 void CoreGLDevice::captureXfbBuffer(
    CaptureBuffer& cbuf, int hnd)
 {
@@ -844,4 +847,5 @@ void CoreGLDevice::captureXfbBuffer(
 }
 
 #endif // __EMSCRIPTEN__
+
 }

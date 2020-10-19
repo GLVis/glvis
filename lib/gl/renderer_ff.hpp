@@ -9,13 +9,14 @@
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
 
-#ifndef __RENDERER_FF_HPP__
-#define __RENDERER_FF_HPP__
+#ifndef GLVIS_RENDERER_FF
+#define GLVIS_RENDERER_FF
 
 #include "renderer.hpp"
 
 namespace gl3
 {
+
 // Render for legacy OpenGL systems with access to only the fixed-function
 // pipeline
 class FFGLDevice : public GLDevice
@@ -61,4 +62,4 @@ public:
 
 }
 
-#endif // __RENDERER_FF_HPP__
+#endif // GLVIS_RENDERER_FF

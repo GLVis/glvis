@@ -325,3 +325,4 @@ void GLDevice::captureXfbBuffer(CaptureBuffer& capture, const TextBuffer& t_buf)
 }
 
 }
+
