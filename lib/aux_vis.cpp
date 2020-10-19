@@ -941,6 +941,10 @@ int Screenshot(const char *fname, bool convert)
       return 3;
    }
 
+   png_uint_32 ppi = wnd->isHighDpi() ? 144 : 72; // pixels/inch
+   png_uint_32 ppm = ppi/0.0254 + 0.5;            // pixels/meter
+   png_set_pHYs(png_ptr, info_ptr, ppm, ppm, PNG_RESOLUTION_METER);
+
    png_init_io(png_ptr, fp);
    png_set_IHDR(png_ptr, info_ptr, w, h, 8, PNG_COLOR_TYPE_RGB,
                 PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
