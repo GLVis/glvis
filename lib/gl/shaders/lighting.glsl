@@ -31,6 +31,12 @@ vec4 blinnPhong(in vec3 pos, in vec3 norm, in vec4 color) {
     if (num_lights == 0) {
 	return color;
     }
+    // approximation of gl_FrontFacing from:
+    // https://stackoverflow.com/questions/24375171
+    if (dot(norm, pos) >= 0.0) {
+        // invert normal direction for back-facing polygons
+        norm *= -1.0;
+    }
     // calculate ambient
     vec4 lit_color = g_ambient * color;
     for (int i = 0; i < 3; i++)
