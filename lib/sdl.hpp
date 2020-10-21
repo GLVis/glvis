@@ -73,6 +73,8 @@ private:
    void mouseEventUp(SDL_MouseButtonEvent& eb);
    bool keyEvent(SDL_Keysym& ks);
    bool keyEvent(char c);
+
+   std::string saved_keys;
 public:
    SdlWindow();
    ~SdlWindow();
@@ -133,6 +135,9 @@ public:
    void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE);
    void signalExpose() { requiresExpose = true; }
    void signalQuit() { running = false; }
+
+   /// Returns the keyboard events that have been logged by the window.
+   std::string getSavedKeys() const { return saved_keys; }
 
    void screenshot(std::string filename)
    {

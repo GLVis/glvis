@@ -234,14 +234,6 @@ void SendKeySequence(const char *seq)
          }
          continue;
       }
-      else if (*key == '*')
-      {
-         wnd->signalKeyDown(SDLK_KP_MULTIPLY);
-      }
-      else if (*key == '/')
-      {
-         wnd->signalKeyDown(SDLK_KP_DIVIDE);
-      }
       else
       {
          wnd->signalKeyDown(*key);
