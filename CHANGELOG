@@ -8,6 +8,25 @@
 
                               http://glvis.org
 
+Version 4.0 (development)
+=========================
+
+- Overhauled rendering and window management backend, replacing X Windows with
+  SDL for platform-native window and event handling. This allows for OpenGL 3+
+  and HiDPI support on Mac OS X.
+
+- Two rendering backends are included: one for legacy OpenGL contexts without
+  support for shaders, and one with full support for modern OpenGL 3 features.
+  The modern OpenGL context is preferred by default; a new command-line
+  argument "-oldgl" can be used to only request the legacy backend.
+
+- Transparency and printing in textured coloring modes is now supported, and
+  no-texture coloring has been removed as a result.
+
+- Text on-screen is now rendered using a texture atlas.
+
+- Preliminary support for building GLVis to Javascript/WebAssembly using
+  Emscripten.
 
 Version 3.4.1 (development)
 ===========================

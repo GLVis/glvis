@@ -17,10 +17,16 @@ Besides a C++ compiler, GLVis depends on the following external packages:
   built to depend on
   https://mfem.org
 
-- the GL, GLM, and GLEW libraries
-  https://www.opengl.org, https://glm.g-truc.net, http://glew.sourceforge.net
+- the OpenGL library
+  https://www.opengl.org
 
-- the SDL2 library
+- the GLEW library; used for setting up OpenGL functions and extensions
+  http://glew.sourceforge.net
+
+- the GLM library; used for computing OpenGL-related mathematics
+  https://glm.g-truc.net
+
+- the SDL2 library; used for platform-native window and event management
   https://www.libsdl.org
 
 - the FreeType 2 and Fontconfig libraries; used for font rendering
