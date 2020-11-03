@@ -13,6 +13,7 @@
 #include <chrono>
 #include "sdl.hpp"
 #include "visual.hpp"
+#include "logo.hpp"
 #include "gl/renderer_core.hpp"
 #include "gl/renderer_ff.hpp"
 #ifdef __EMSCRIPTEN__
@@ -197,6 +198,20 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    else
    {
       PRINT_DEBUG("done." << endl);
+   }
+
+   SDL_Surface* iconSurf = SDL_CreateRGBSurfaceFrom(icon_pixels,
+                                                    64, 64, // height, width
+                                                    32,     // depth
+                                                    64 * 4, // pitch
+                                                    0xFF000000,
+                                                    0x00FF0000,
+                                                    0x0000FF00,
+                                                    0x000000FF);
+   if (iconSurf)
+   {
+      SDL_SetWindowIcon(handle->hwnd, iconSurf);
+      SDL_FreeSurface(iconSurf);
    }
 
 #ifndef __EMSCRIPTEN__

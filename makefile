@@ -211,7 +211,7 @@ Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 ALL_SOURCE_FILES = \
  lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp \
  lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp lib/font.cpp lib/gl2ps.c \
- lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp \
+ lib/logo.cpp lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp \
  lib/threads.cpp lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp \
  lib/vsvector.cpp lib/vsvector3d.cpp
 DESKTOP_ONLY_SOURCE_FILES = lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c
@@ -223,9 +223,10 @@ COMMON_SOURCE_FILES = $(filter-out \
 HEADER_FILES = \
  lib/gl/attr_traits.hpp lib/gl/platform_gl.hpp lib/gl/renderer.hpp \
  lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp lib/gl/types.hpp \
- lib/aux_vis.hpp lib/font.hpp lib/gl2ps.h lib/material.hpp lib/openglvis.hpp \
- lib/palettes.hpp lib/sdl.hpp lib/threads.hpp lib/visual.hpp lib/vsdata.hpp \
- lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp
+ lib/aux_vis.hpp lib/font.hpp lib/gl2ps.h lib/logo.hpp lib/material.hpp \
+ lib/openglvis.hpp lib/palettes.hpp lib/sdl.hpp lib/threads.hpp lib/visual.hpp \
+ lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp \
+ lib/vsvector3d.hpp
 
 DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) $(DESKTOP_ONLY_SOURCE_FILES)
 WEB_SOURCE_FILES     = $(COMMON_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES)
