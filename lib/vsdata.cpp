@@ -1247,6 +1247,7 @@ void VisualizationSceneScalarData::PrepareAxes()
       //bld.setUseColor(false);
       //bld.glEnable(GL_LINE_STIPPLE);
       bld.glBegin(GL_LINE_STRIP);
+      bld.glColor3f(0.75, 0.75, 0.75);
       bld.glVertex3d(x[1], y[0], z[0]);
       bld.glVertex3d(x[1], y[1], z[0]);
       bld.glVertex3d(x[0], y[1], z[0]);
@@ -1280,7 +1281,7 @@ void VisualizationSceneScalarData::PrepareAxes()
       bld.glEnd();
       //bld.setUseColor(false);
       //bld.glEnable(GL_LINE_STIPPLE);
-      bld.glColor4fv(blk.data());
+      bld.glColor3f(0.75, 0.75, 0.75);
       bld.glBegin(GL_LINES);
    }
    else
