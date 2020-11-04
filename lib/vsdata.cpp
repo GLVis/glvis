@@ -1006,6 +1006,7 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
                                   1.0 - 2 * v_pos * line_h / gl_h, 0.0);
       scene.queue.emplace_back(params, &caption_buf);
    }
+   params.contains_translucent = true;
    if (drawaxes && drawaxes != 3)
    {
       // add coordinate cross to draw list
@@ -1025,6 +1026,7 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
       // add axes to draw list
       scene.queue.emplace_back(params, &axes_buf);
    }
+   params.contains_translucent = false;
    if (ruler_on)
    {
       // add ruler to draw list
