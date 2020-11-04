@@ -133,6 +133,10 @@ On Fedora/RHEL, the required dependencies can be installed by running:
      dnf install fontconfig-devel freetype-devel SDL2-devel glew-devel \
         glm-devel libpng-devel
 
+On Mac OS X, the required dependencies can be installed with Homebrew:
+
+     brew install fontconfig freetype sdl2 glew glm libpng
+                                                                        
   Package names in other distributions may vary.
 
 - In case packaged versions of the needed libraries are not available, download
