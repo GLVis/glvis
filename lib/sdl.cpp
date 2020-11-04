@@ -395,11 +395,11 @@ bool SdlWindow::keyEvent(SDL_Keysym& ks)
    bool handled = false;
    if (ks.sym >= 128 || ks.sym < 32)
    {
-       if (onKeyDown[ks.sym])
-       {
-           onKeyDown[ks.sym](ks.mod);
-           handled = true;
-       }
+      if (onKeyDown[ks.sym])
+      {
+         onKeyDown[ks.sym](ks.mod);
+         handled = true;
+      }
    }
    else if (ctrlDown)
    {
@@ -418,8 +418,8 @@ bool SdlWindow::keyEvent(SDL_Keysym& ks)
       bool isAlt = ks.mod & (KMOD_ALT);
       bool isCtrl = ks.mod & (KMOD_CTRL);
       saved_keys += "[";
-      if (isCtrl) saved_keys += "C-";
-      if (isAlt) saved_keys += "Alt-";
+      if (isCtrl) { saved_keys += "C-"; }
+      if (isAlt) { saved_keys += "Alt-"; }
       if (std::isalpha(ks.sym))
       {
          //key with corresponding text output
@@ -446,14 +446,14 @@ bool SdlWindow::keyEvent(char c)
       onKeyDown[c](mods);
       if (isAlt || isCtrl)
       {
-          saved_keys += "[";
-          if (isCtrl) saved_keys += "C-";
-          if (isAlt) saved_keys += "Alt-";
+         saved_keys += "[";
+         if (isCtrl) { saved_keys += "C-"; }
+         if (isAlt) { saved_keys += "Alt-"; }
       }
       saved_keys += c;
       if (isAlt || isCtrl)
       {
-          saved_keys += "]";
+         saved_keys += "]";
       }
       return true;
    }

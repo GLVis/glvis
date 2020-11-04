@@ -8,8 +8,8 @@
 
                               http://glvis.org
 
-Version 4.0 (development)
-=========================
+Version 3.4.1 (development)
+===========================
 
 - Overhauled rendering and window management backend, replacing X Windows with
   SDL for platform-native window and event handling. This allows for OpenGL 3+
@@ -17,32 +17,27 @@ Version 4.0 (development)
 
 - Two rendering backends are included: one for legacy OpenGL contexts without
   support for shaders, and one with full support for modern OpenGL 3 features.
-  The modern OpenGL context is preferred by default; a new command-line
-  argument "-oldgl" can be used to only request the legacy backend.
+  The modern OpenGL context is preferred by default; a new command-line argument
+  "-oldgl" can be used to only request the legacy backend.
 
 - Transparency and printing in textured coloring modes is now supported, and
   no-texture coloring has been removed as a result.
 
-- Text on-screen is now rendered using a texture atlas.
+- Text on screen is now rendered using a texture atlas.
 
 - Preliminary support for building GLVis to Javascript/WebAssembly using
   Emscripten.
 
-Version 3.4.1 (development)
-===========================
-
 - Added several perceptually uniform colormaps "turbo", "viridis", "plasma",
   "fusion", "iceburn", "viola", "pride" and "ocean" from
-   + Google AI: https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
-   + Matplotlib: https://bids.github.io/colormap/
-   + CMasher: https://github.com/1313e/CMasher
+  * Google AI: https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
+  * Matplotlib: https://bids.github.io/colormap/
+  * CMasher: https://github.com/1313e/CMasher
 
 - Added the ability to discretize a palette, i.e. to use just a prescribed
   number of its colors, see the new "number of colors" input of the F6 key.
 
-- Replaced the "deep sea" palette with "ocean".
-
-- Added new palette: gray.
+- Replaced the "deep sea" palette with "ocean". Added new palette: gray.
 
 - Added new script and socket command: "palette_repeat" which can be used to
   repeat and reverse/flip the palette - controls the same parameter as the first
