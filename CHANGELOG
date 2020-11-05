@@ -8,8 +8,11 @@
 
                               http://glvis.org
 
+
 Version 3.4.1 (development)
 ===========================
+
+Starting with this version, the GLVis open source license is changed to BSD-3.
 
 - Overhauled rendering and window management backend, replacing X Windows with
   SDL for platform-native window and event handling. This allows for OpenGL 3+
