@@ -377,9 +377,10 @@ void FFGLDevice::captureXfbBuffer(CaptureBuffer& cbuf, int hnd)
    // draw with feedback capture
    glRenderMode(GL_FEEDBACK);
    drawDeviceBuffer(hnd);
-   int result = glRenderMode(GL_RENDER);
-#ifdef GLVIS_DEBUG
-   if (result < 0)
+#ifndef GLVIS_DEBUG
+   glRenderMode(GL_RENDER);
+#else
+   if (glRenderMode(GL_RENDER) < 0)
    {
       std::cerr << "Warning: feedback data exceeded available buffer size" <<
                 std::endl;
