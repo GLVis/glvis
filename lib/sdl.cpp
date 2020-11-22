@@ -251,8 +251,7 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
       {
           glActiveTexture = glActiveTextureARB;
           glClientActiveTexture = glClientActiveTextureARB;
-          glMultiTexCoord2f =
-              (decltype(glMultiTexCoord2f)) glMultiTexCoord2dARB;
+          glMultiTexCoord2f = glMultiTexCoord2fARB;
       }
       else
       {
