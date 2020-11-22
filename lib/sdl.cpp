@@ -158,7 +158,6 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    win_flags |= SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE;
 #endif
    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
-   SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8);
    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
    Uint32 win_gl_ctx = 0;
 #ifndef __EMSCRIPTEN__
@@ -238,7 +237,30 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
 
    renderer.reset(new gl3::MeshRenderer);
 #ifndef __EMSCRIPTEN__
-   if (GLEW_EXT_transform_feedback)
+   if (!GLEW_VERSION_1_1)
+   {
+       cerr << "FATAL: Minimum of OpenGL 1.1 is required." << endl;
+       return false;
+   }
+   if (!GLEW_VERSION_1_3)
+   {
+      // Multitexturing was introduced into the core OpenGL specification in
+      // version 1.3; for versions before, we need to load the functions from
+      // the ARB_multitexture extension.
+      if (GLEW_ARB_multitexture)
+      {
+          glActiveTexture = glActiveTextureARB;
+          glClientActiveTexture = glClientActiveTextureARB;
+          glMultiTexCoord2f =
+              (decltype(glMultiTexCoord2f)) glMultiTexCoord2dARB;
+      }
+      else
+      {
+          cerr << "FATAL: Missing OpenGL multitexture support." << endl;
+          return false;
+      }
+   }
+   if (!GLEW_VERSION_3_0 && GLEW_EXT_transform_feedback)
    {
       glBindBufferBase            = glBindBufferBaseEXT;
       // Use an explicit typecast to suppress an error from inconsistent types
