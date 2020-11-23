@@ -441,7 +441,7 @@ bool SdlWindow::keyEvent(SDL_Keysym& ks)
       saved_keys += "[";
       if (isCtrl) { saved_keys += "C-"; }
       if (isAlt) { saved_keys += "Alt-"; }
-      if (std::isalpha(ks.sym))
+      if (ks.sym < 256 && std::isalpha(ks.sym))
       {
          //key with corresponding text output
          char c = ks.sym;
