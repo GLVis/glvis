@@ -84,7 +84,7 @@ SdlWindow::SdlWindow()
    , onExpose(nullptr)
    , onReshape(nullptr)
    , ctrlDown(false)
-   , requiresExpose(false)
+   , wnd_state(RenderState::Updated)
    , takeScreenshot(false)
    , saved_keys("")
 {
@@ -347,7 +347,7 @@ void SdlWindow::windowEvent(SDL_WindowEvent& ew)
       case SDL_WINDOWEVENT_EXPOSED:
          if (onExpose)
          {
-            requiresExpose = true;
+            wnd_state = RenderState::ExposePending;
          }
          break;
       default:
@@ -411,7 +411,7 @@ void SdlWindow::mouseEventUp(SDL_MouseButtonEvent& eb)
    }
 }
 
-bool SdlWindow::keyEvent(SDL_Keysym& ks)
+void SdlWindow::keyEvent(SDL_Keysym& ks)
 {
    bool handled = false;
    if (ks.sym >= 128 || ks.sym < 32)
@@ -454,10 +454,9 @@ bool SdlWindow::keyEvent(SDL_Keysym& ks)
       }
       saved_keys += "]";
    }
-   return handled;
 }
 
-bool SdlWindow::keyEvent(char c)
+void SdlWindow::keyEvent(char c)
 {
    if (onKeyDown[c])
    {
@@ -476,19 +475,15 @@ bool SdlWindow::keyEvent(char c)
       {
          saved_keys += "]";
       }
-      return true;
    }
-   return false;
 }
 
-bool SdlWindow::mainIter()
+void SdlWindow::mainIter()
 {
    SDL_Event e;
    static bool useIdle = false;
-   bool needsSwap = false;
    while (SDL_PollEvent(&e))
    {
-      bool renderKeyEvent = false;
       switch (e.type)
       {
          case SDL_QUIT:
@@ -498,7 +493,7 @@ bool SdlWindow::mainIter()
             windowEvent(e.window);
             break;
          case SDL_KEYDOWN:
-            renderKeyEvent = keyEvent(e.key.keysym);
+            keyEvent(e.key.keysym);
             break;
          case SDL_KEYUP:
             if (e.key.keysym.sym == SDLK_LCTRL
@@ -508,7 +503,7 @@ bool SdlWindow::mainIter()
             }
             break;
          case SDL_TEXTINPUT:
-            renderKeyEvent = keyEvent(e.text.text[0]);
+            keyEvent(e.text.text[0]);
             break;
          case SDL_MOUSEMOTION:
             motionEvent(e.motion);
@@ -520,10 +515,6 @@ bool SdlWindow::mainIter()
             mouseEventUp(e.button);
             break;
       }
-      if (renderKeyEvent)
-      {
-         break;
-      }
    }
 #ifndef __EMSCRIPTEN__
    if (onIdle)
@@ -531,7 +522,6 @@ bool SdlWindow::mainIter()
       if (glvis_command == NULL || visualize == 2 || useIdle)
       {
          onIdle();
-         needsSwap = true;
       }
       else
       {
@@ -553,13 +543,11 @@ bool SdlWindow::mainIter()
       needsSwap = true;
    }
 #endif
-   if (requiresExpose)
+   if (wnd_state == RenderState::ExposePending)
    {
       onExpose();
-      requiresExpose = false;
-      needsSwap = true;
+      wnd_state = RenderState::SwapPending;
    }
-   return needsSwap;
 }
 
 void SdlWindow::mainLoop()
@@ -574,10 +562,11 @@ void SdlWindow::mainLoop()
    visualize = 1;
    while (running)
    {
-      bool glSwap = mainIter();
-      if (glSwap)
+      mainIter();
+      if (wnd_state == RenderState::SwapPending)
       {
          SDL_GL_SwapWindow(handle->hwnd);
+         wnd_state = RenderState::Updated;
       }
       if (takeScreenshot)
       {

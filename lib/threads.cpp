@@ -486,7 +486,7 @@ int GLVisCommand::Execute()
             delete (*mesh);
             *mesh = new_m;
 
-            SendExposeEvent();
+            MyExpose();
          }
          else
          {
@@ -521,7 +521,7 @@ int GLVisCommand::Execute()
          cout << "Command: keys: '" << key_commands << "'" << endl;
          // SendKeySequence(key_commands.c_str());
          CallKeySequence(key_commands.c_str());
-         SendExposeEvent();
+         MyExpose();
          break;
       }
 
@@ -553,7 +553,7 @@ int GLVisCommand::Execute()
          cout << "Command: plot_caption: " << plot_caption << endl;
          ::plot_caption = plot_caption;
          (*vs)->PrepareCaption(); // turn on or off the caption
-         SendExposeEvent();
+         MyExpose();
          break;
       }
 
@@ -563,7 +563,7 @@ int GLVisCommand::Execute()
               << axis_label_y << "' '" << axis_label_z << "'" << endl;
          (*vs)->SetAxisLabels(axis_label_x.c_str(), axis_label_y.c_str(),
                               axis_label_z.c_str());
-         SendExposeEvent();
+         MyExpose();
          break;
       }
 
@@ -579,7 +579,7 @@ int GLVisCommand::Execute()
          cout << "Command: view: " << view_ang_theta << ' ' << view_ang_phi
               << endl;
          (*vs)->SetView(view_ang_theta, view_ang_phi);
-         SendExposeEvent();
+         MyExpose();
          break;
       }
 
@@ -587,7 +587,7 @@ int GLVisCommand::Execute()
       {
          cout << "Command: zoom: " << zoom_factor << endl;
          (*vs)->Zoom(zoom_factor);
-         SendExposeEvent();
+         MyExpose();
          break;
       }
 
@@ -596,7 +596,7 @@ int GLVisCommand::Execute()
          cout << "Command: subdivisions: " << flush;
          (*vs)->SetRefineFactors(subdiv_tot, subdiv_bdr);
          cout << subdiv_tot << ' ' << subdiv_bdr << endl;
-         SendExposeEvent();
+         MyExpose();
          break;
       }
 
@@ -605,7 +605,7 @@ int GLVisCommand::Execute()
          cout << "Command: valuerange: " << flush;
          (*vs)->SetValueRange(val_min, val_max);
          cout << val_min << ' ' << val_max << endl;
-         SendExposeEvent();
+         MyExpose();
          break;
       }
 
@@ -629,7 +629,7 @@ int GLVisCommand::Execute()
          {
             (*vs)->SetShading(s, false);
             cout << shading << endl;
-            SendExposeEvent();
+            MyExpose();
          }
          else
          {
@@ -644,7 +644,7 @@ int GLVisCommand::Execute()
               << view_center_x << ' ' << view_center_y << endl;
          (*vs)->ViewCenterX = view_center_x;
          (*vs)->ViewCenterY = view_center_y;
-         SendExposeEvent();
+         MyExpose();
          break;
       }
 
@@ -683,7 +683,7 @@ int GLVisCommand::Execute()
          {
             (*vs)->EventUpdateColors();
          }
-         SendExposeEvent();
+         MyExpose();
          break;
       }
 
@@ -697,7 +697,7 @@ int GLVisCommand::Execute()
          {
             (*vs)->EventUpdateColors();
          }
-         SendExposeEvent();
+         MyExpose();
          break;
       }
 
@@ -710,7 +710,7 @@ int GLVisCommand::Execute()
          }
          cout << endl;
          (*vs)->cam.Set(camera);
-         SendExposeEvent();
+         MyExpose();
          break;
       }
 
