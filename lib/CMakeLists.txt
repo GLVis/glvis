@@ -15,7 +15,6 @@ list(APPEND SOURCES
   gl/types.cpp
   aux_vis.cpp
   font.cpp
-  logo.cpp
   material.cpp
   openglvis.cpp
   palettes.cpp

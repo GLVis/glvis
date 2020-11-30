@@ -211,11 +211,13 @@ Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 ALL_SOURCE_FILES = \
  lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp \
  lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp lib/font.cpp lib/gl2ps.c \
- lib/logo.cpp lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp \
+ lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp \
  lib/threads.cpp lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp \
  lib/vsvector.cpp lib/vsvector3d.cpp
 DESKTOP_ONLY_SOURCE_FILES = lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c
 WEB_ONLY_SOURCE_FILES = lib/aux_js.cpp
+LOGO_FILE = share/logo.rgba
+LOGO_FILE_CPP = $(LOGO_FILE).bin.cpp
 COMMON_SOURCE_FILES = $(filter-out \
  $(DESKTOP_ONLY_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES),$(ALL_SOURCE_FILES))
 
@@ -228,7 +230,7 @@ HEADER_FILES = \
  lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp \
  lib/vsvector3d.hpp
 
-DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) $(DESKTOP_ONLY_SOURCE_FILES)
+DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) $(DESKTOP_ONLY_SOURCE_FILES) $(LOGO_FILE_CPP)
 WEB_SOURCE_FILES     = $(COMMON_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES)
 OBJECT_FILES1        = $(DESKTOP_SOURCE_FILES:.cpp=.o)
 OBJECT_FILES         = $(OBJECT_FILES1:.c=.o)
@@ -236,8 +238,6 @@ BYTECODE_FILES       = $(WEB_SOURCE_FILES:.cpp=.bc)
 
 # Targets
 .PHONY: clean distclean install status info opt debug style js
-
-.SUFFIXES: .c .cpp .o
 
 %.o: %.cpp
 	$(CCC) -o $@ -c $<
@@ -250,6 +250,10 @@ BYTECODE_FILES       = $(WEB_SOURCE_FILES:.cpp=.bc)
 
 glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(CCC) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
+
+$(LOGO_FILE_CPP): $(LOGO_FILE)
+	cd $(dir $(LOGO_FILE)) && xxd -i $(notdir $(LOGO_FILE)) > \
+		$(notdir $(LOGO_FILE_CPP))
 
 # Generate an error message if the MFEM library is not built and exit
 $(CONFIG_MK) $(MFEM_LIB_FILE):
@@ -274,6 +278,7 @@ lib/libglvis.js: $(BYTECODE_FILES) $(CONFIG_MK) $(MFEM_LIB_FILE)
 
 clean:
 	rm -rf lib/*.o lib/*.bc lib/gl/*.o lib/gl/*.bc lib/*~ *~ glvis
+	rm -rf $(LOGO_FILE_CPP) share/*.o
 	rm -rf lib/libglvis.a lib/libglvis.js *.dSYM
 
 distclean: clean

@@ -199,18 +199,31 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
       PRINT_DEBUG("done." << endl);
    }
 
-   SDL_Surface* iconSurf = SDL_CreateRGBSurfaceFrom(icon_pixels,
-                                                    64, 64, // height, width
-                                                    32,     // depth
-                                                    64 * 4, // pitch
-                                                    0xFF000000,
-                                                    0x00FF0000,
-                                                    0x0000FF00,
-                                                    0x000000FF);
-   if (iconSurf)
+   const int PixelStride = 4;
+   int stride = (int) sqrt(logo_rgba_len / PixelStride);
+   if (stride * stride * PixelStride != logo_rgba_len)
    {
-      SDL_SetWindowIcon(handle->hwnd, iconSurf);
-      SDL_FreeSurface(iconSurf);
+      cerr << "Unable to set window logo: icon size not square" << endl;
+   }
+   else
+   {
+      SDL_Surface* iconSurf = SDL_CreateRGBSurfaceFrom(logo_rgba,
+              stride, stride, // height, width
+              8 * PixelStride,             // depth
+              stride * PixelStride,     // pitch
+              0x000000FF,
+              0x0000FF00,
+              0x00FF0000,
+              0xFF000000);
+      if (iconSurf)
+      {
+          SDL_SetWindowIcon(handle->hwnd, iconSurf);
+          SDL_FreeSurface(iconSurf);
+      }
+      else
+      {
+          PRINT_DEBUG("Unable to set window logo: " << SDL_GetError() << endl);
+      }
    }
 
 #ifndef __EMSCRIPTEN__
