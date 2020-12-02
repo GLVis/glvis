@@ -1722,10 +1722,6 @@ bool SetFont(const vector<std::string>& font_patterns, int height)
       {
          if (glvis_font.LoadFont(font_file, font_index, height))
          {
-#ifdef GLVIS_DEBUG
-            cout << "Loaded font: " << font_name << ", height: " << height
-                 << endl;
-#endif
             break;
          }
       }

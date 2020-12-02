@@ -100,7 +100,7 @@ public:
    // to be used by the main execution (visualization) thread
    int ReadFD() { return pfd[0]; }
 
-   // to be used worker threads
+   // to be used by worker threads
    bool KeepAttrib() { return *keep_attr; } // may need to sync this
    bool FixElementOrientations() { return *fix_elem_orient; }
 

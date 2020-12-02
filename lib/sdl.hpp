@@ -49,6 +49,9 @@ private:
    //   scaled "screen coordinates" on all high-dpi displays.
    float pixel_scale_x = 1.0f, pixel_scale_y = 1.0f;
 
+   SDL_SysWMinfo sysinfo;
+   static Uint32 glvis_event_type;
+
    bool running;
 
    Delegate onIdle;
@@ -97,6 +100,9 @@ public:
    /// Runs the window loop.
    void mainLoop();
    void mainIter();
+
+   // Called by worker threads in GLVisCommand::signal()
+   void signalLoop();
 
    void setOnIdle(Delegate func) { onIdle = func; }
    void setOnExpose(Delegate func) { onExpose = func; }

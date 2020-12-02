@@ -19,6 +19,12 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
+#if defined(SDL_VIDEO_DRIVER_X11)
+#include <poll.h>
+#if defined(SDL_VIDEO_DRIVER_X11_XINPUT2)
+#include <X11/extensions/XInput2.h>
+#endif
+#endif
 
 using std::cerr;
 using std::endl;
@@ -79,6 +85,9 @@ bool SdlWindow::isGlInitialized()
    return (handle->gl_ctx != 0);
 }
 
+// Initialize static member
+Uint32 SdlWindow::glvis_event_type = (Uint32)(-1);
+
 SdlWindow::SdlWindow()
    : onIdle(nullptr)
    , onExpose(nullptr)
@@ -138,6 +147,16 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
       {
          cerr << "FATAL: Failed to initialize SDL: " << SDL_GetError() << endl;
          return false;
+      }
+      SDL_EnableScreenSaver();
+      if (glvis_event_type == (Uint32)(-1))
+      {
+         glvis_event_type = SDL_RegisterEvents(1);
+         if (glvis_event_type == (Uint32)(-1))
+         {
+            cerr << "SDL_RegisterEvents(1) failed: " << SDL_GetError() << endl;
+            return false;
+         }
       }
    }
 
@@ -252,8 +271,8 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
 #ifndef __EMSCRIPTEN__
    if (!GLEW_VERSION_1_1)
    {
-       cerr << "FATAL: Minimum of OpenGL 1.1 is required." << endl;
-       return false;
+      cerr << "FATAL: Minimum of OpenGL 1.1 is required." << endl;
+      return false;
    }
    if (!GLEW_VERSION_1_3)
    {
@@ -262,14 +281,14 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
       // the ARB_multitexture extension.
       if (GLEW_ARB_multitexture)
       {
-          glActiveTexture = glActiveTextureARB;
-          glClientActiveTexture = glClientActiveTextureARB;
-          glMultiTexCoord2f = glMultiTexCoord2fARB;
+         glActiveTexture = glActiveTextureARB;
+         glClientActiveTexture = glClientActiveTextureARB;
+         glMultiTexCoord2f = glMultiTexCoord2fARB;
       }
       else
       {
-          cerr << "FATAL: Missing OpenGL multitexture support." << endl;
-          return false;
+         cerr << "FATAL: Missing OpenGL multitexture support." << endl;
+         return false;
       }
    }
    if (!GLEW_VERSION_3_0 && GLEW_EXT_transform_feedback)
@@ -340,6 +359,55 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
       }
    }
    SDL_ShowWindow(handle->hwnd);
+
+   SDL_VERSION(&sysinfo.version);
+   if (!SDL_GetWindowWMInfo(handle->hwnd, &sysinfo))
+   {
+      sysinfo.subsystem = SDL_SYSWM_UNKNOWN;
+   }
+#if defined(SDL_VIDEO_DRIVER_X11) && defined(SDL_VIDEO_DRIVER_X11_XINPUT2)
+   if (sysinfo.subsystem == SDL_SYSWM_X11)
+   {
+      // Disable XInput extension events since they are generated even outside
+      // the GLVis window.
+      Display *dpy = sysinfo.info.x11.display;
+      Window win = sysinfo.info.x11.window;
+      Window root_win = DefaultRootWindow(dpy);
+      unsigned char mask[4] = {0,0,0,0};
+      XIEventMask event_mask;
+      event_mask.deviceid = XIAllMasterDevices;
+      event_mask.mask_len = sizeof(mask);
+      event_mask.mask = mask;
+#ifdef SDL_VIDEO_DRIVER_X11_DYNAMIC_XINPUT2
+      typedef int (*XISelectEvents_ptr)(Display *, Window, XIEventMask *, int);
+      static XISelectEvents_ptr XISelectEvents_ = NULL;
+      if (XISelectEvents_ == NULL)
+      {
+         void *lib = SDL_LoadObject(SDL_VIDEO_DRIVER_X11_DYNAMIC_XINPUT2);
+         if (lib != NULL)
+         {
+            XISelectEvents_ =
+               (XISelectEvents_ptr)SDL_LoadFunction(lib, "XISelectEvents");
+         }
+      }
+      if (XISelectEvents_ == NULL)
+      {
+         cerr << "Error accessing XISelectEvents!" << endl;
+         exit(EXIT_FAILURE);
+      }
+#else
+#define XISelectEvents_ XISelectEvents
+#endif
+      if (XISelectEvents_(dpy, root_win, &event_mask, 1) != Success)
+      {
+         cerr << "Failed to disable XInput on the default root window!" << endl;
+      }
+      if (XISelectEvents_(dpy, win, &event_mask, 1) != Success)
+      {
+         cerr << "Failed to disable XInput on the current window!" << endl;
+      }
+   }
+#endif
 
    return true;
 }
@@ -495,7 +563,7 @@ void SdlWindow::mainIter()
 {
    SDL_Event e;
    static bool useIdle = false;
-   while (SDL_PollEvent(&e))
+   if (SDL_PollEvent(&e))
    {
       switch (e.type)
       {
@@ -530,7 +598,7 @@ void SdlWindow::mainIter()
       }
    }
 #ifndef __EMSCRIPTEN__
-   if (onIdle)
+   else if (onIdle)
    {
       if (glvis_command == NULL || visualize == 2 || useIdle)
       {
@@ -545,15 +613,68 @@ void SdlWindow::mainIter()
       }
       useIdle = !useIdle;
    }
-   else if (glvis_command && visualize == 1)
+   else
    {
-      if (glvis_command->Execute() < 0) { running = false; }
+      int status;
+      if (glvis_command && visualize == 1 &&
+          (status = glvis_command->Execute()) != 1)
+      {
+         if (status < 0) { running = false; }
+      }
+      else
+      {
+         // Wait for the next event (without consuming CPU cycles, if possible)
+         // See also: SdlWindow::signalLoop()
+         if (false)
+         {
+            // empty
+         }
+#if defined(SDL_VIDEO_DRIVER_X11)
+         else if (sysinfo.subsystem == SDL_SYSWM_X11)
+         {
+            int nstr, nfd = 1;
+            struct pollfd pfd[2];
+
+            pfd[0].fd     = ConnectionNumber(sysinfo.info.x11.display);
+            pfd[0].events = POLLIN;
+            pfd[0].revents = 0;
+            if (glvis_command && visualize == 1)
+            {
+               pfd[1].fd     = glvis_command->ReadFD();
+               pfd[1].events = POLLIN;
+               pfd[1].revents = 0;
+               nfd = 2;
+            }
+            do
+            {
+               nstr = poll(pfd, nfd, -1);
+            }
+            while (nstr == -1 && errno == EINTR);
+
+            if (nstr == -1) { perror("poll()"); }
+         }
+#endif
+#if defined(SDL_VIDEO_DRIVER_COCOA)
+         else if (false && sysinfo.subsystem == SDL_SYSWM_COCOA)
+         {
+            // TODO
+            // NSWindow *ns_win = sysinfo.info.cocoa.window;
+         }
+#endif
+         else
+         {
+            SDL_WaitEvent(NULL);
+         }
+      }
    }
 #else
-   if (onIdle)
+   else if (onIdle)
    {
       onIdle();
-      needsSwap = true;
+   }
+   else
+   {
+      SDL_WaitEvent(NULL);
    }
 #endif
    if (wnd_state == RenderState::ExposePending)
@@ -586,10 +707,41 @@ void SdlWindow::mainLoop()
          Screenshot(screenshot_file.c_str());
          takeScreenshot = false;
       }
-      // sleep for n milliseconds to avoid pegging CPU at 100%
-      SDL_WaitEventTimeout(NULL, 10);
    }
 #endif
+}
+
+void SdlWindow::signalLoop()
+{
+   // Note: not executed from the main thread
+   if (false)
+   {
+      // empty
+   }
+#if defined(SDL_VIDEO_DRIVER_X11)
+   else if (sysinfo.subsystem == SDL_SYSWM_X11)
+   {
+      // empty
+   }
+#endif
+#if defined(SDL_VIDEO_DRIVER_COCOA)
+   else if (false && sysinfo.subsystem == SDL_SYSWM_COCOA)
+   {
+      // TODO
+      // NSWindow *ns_win = sysinfo.info.cocoa.window;
+   }
+#endif
+   else
+   {
+      SDL_Event event;
+      SDL_memset(&event, 0, sizeof(event));
+      event.type = glvis_event_type;
+      const int glvis_event_code = 1;
+      event.user.code = glvis_event_code;
+      event.user.data1 = nullptr;
+      event.user.data2 = nullptr;
+      SDL_PushEvent(&event);
+   }
 }
 
 void SdlWindow::getWindowSize(int& w, int& h)

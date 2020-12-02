@@ -14,7 +14,6 @@
 #include <cerrno>      // errno, EAGAIN
 #include <cstdio>      // perror
 
-#include "palettes.hpp"
 #include "visual.hpp"
 #include "palettes.hpp"
 
@@ -85,6 +84,13 @@ int GLVisCommand::signal()
    {
       return -1;
    }
+
+   SdlWindow *sdl_window = GetAppWindow();
+   if (sdl_window)
+   {
+      sdl_window->signalLoop();
+   }
+
    return 0;
 }
 
@@ -787,8 +793,10 @@ void GLVisCommand::ToggleAutopause()
 GLVisCommand::~GLVisCommand()
 {
    if (num_waiting > 0)
+   {
       cout << "\nGLVisCommand::~GLVisCommand() : num_waiting = "
            << num_waiting << '\n' << endl;
+   }
    close(pfd[0]);
    close(pfd[1]);
    pthread_cond_destroy(&glvis_cond);

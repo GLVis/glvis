@@ -16,9 +16,11 @@
 #ifndef __EMSCRIPTEN__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_syswm.h>
 #else
 #include <SDL.h>
 #include <SDL_opengl.h>
+#include <SDL_syswm.h>
 #endif
 
 #endif
