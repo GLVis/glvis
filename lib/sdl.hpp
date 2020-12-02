@@ -66,11 +66,12 @@ private:
 
    enum class RenderState
    {
-       Updated, // window displayed is fully current
-                // (no events or backbuffer updates pending)
-       ExposePending, // events issued which may require a call to MyExpose
-       SwapPending, // Back buffer updated by MyExpose, now awaiting swap to
-                    // be displayed on window
+      // window displayed is fully current (no events or backbuffer updates pending)
+      Updated,
+      // events issued which may require a call to MyExpose
+      ExposePending,
+      // back buffer updated by MyExpose, now awaiting swap to be displayed on window
+      SwapPending
    };
 
    RenderState wnd_state;

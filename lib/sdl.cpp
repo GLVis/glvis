@@ -226,22 +226,23 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    }
    else
    {
-      SDL_Surface* iconSurf = SDL_CreateRGBSurfaceFrom(logo_rgba,
-              stride, stride, // height, width
-              8 * PixelStride,             // depth
-              stride * PixelStride,     // pitch
-              0x000000FF,
-              0x0000FF00,
-              0x00FF0000,
-              0xFF000000);
+      SDL_Surface* iconSurf =
+         SDL_CreateRGBSurfaceFrom(logo_rgba,
+                                  stride, stride,       // height, width
+                                  8 * PixelStride,      // depth
+                                  stride * PixelStride, // pitch
+                                  0x000000FF,
+                                  0x0000FF00,
+                                  0x00FF0000,
+                                  0xFF000000);
       if (iconSurf)
       {
-          SDL_SetWindowIcon(handle->hwnd, iconSurf);
-          SDL_FreeSurface(iconSurf);
+         SDL_SetWindowIcon(handle->hwnd, iconSurf);
+         SDL_FreeSurface(iconSurf);
       }
       else
       {
-          PRINT_DEBUG("Unable to set window logo: " << SDL_GetError() << endl);
+         PRINT_DEBUG("Unable to set window logo: " << SDL_GetError() << endl);
       }
    }
 
