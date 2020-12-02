@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <thread>
 #include "sdl.hpp"
 #include "visual.hpp"
 #include "logo.hpp"
@@ -664,7 +665,9 @@ void SdlWindow::mainIter()
 #endif
          else
          {
-            SDL_WaitEvent(NULL);
+            if (!SDL_PollEvent(nullptr)) {
+               std::this_thread::sleep_for(std::chrono::milliseconds(8));
+            }
          }
       }
    }
