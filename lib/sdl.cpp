@@ -668,7 +668,8 @@ void SdlWindow::mainIter()
 #endif
          else
          {
-            if (!SDL_PollEvent(nullptr)) {
+            if (!SDL_PollEvent(nullptr))
+            {
                std::this_thread::sleep_for(std::chrono::milliseconds(8));
             }
          }
