@@ -1657,7 +1657,7 @@ GlVisFont * GetFont()
 bool SetFont(const vector<std::string>& font_patterns, int height)
 {
 #ifdef __EMSCRIPTEN__
-   return glvis_font.LoadFont("OpenSans.ttf", height);
+   return glvis_font.LoadFont("OpenSans.ttf", 0, height);
 #else
    if (!FcInit())
    {

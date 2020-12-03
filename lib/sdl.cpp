@@ -166,13 +166,6 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    // destroy any existing SDL window
    handle.reset();
 
-   // If we want to use WebGL 2:
-   // #ifdef __EMSCRIPTEN__
-   // SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-   // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-   // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-   // #endif
-
    Uint32 win_flags = SDL_WINDOW_OPENGL;
    // Hide window until we adjust its size for high-dpi displays
    win_flags |= SDL_WINDOW_HIDDEN;
@@ -189,6 +182,8 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
       // which will only support OpenGL 2.1 if you don't create a core context.
       win_gl_ctx = probeGLContextSupport();
    }
+#else
+   win_gl_ctx = SDL_GL_CONTEXT_PROFILE_ES;
 #endif
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, win_gl_ctx);
    if (GetMultisample() > 0)
@@ -637,7 +632,9 @@ void SdlWindow::mainIter()
    }
    else
    {
+#ifndef __EMSCRIPTEN__
       SDL_WaitEvent(NULL);
+#endif
    }
 #endif
    if (wnd_state == RenderState::ExposePending)
