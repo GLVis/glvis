@@ -9,11 +9,12 @@
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
 
-
 #include "palettes.hpp"
+#include "aux_vis.hpp"
 
 #include <cmath>
 #include <cstdio>
+#include <cmath>
 #include <iostream>
 #include <iomanip>
 
@@ -7357,10 +7358,6 @@ const char *RGB_Palettes_Names[Num_RGB_Palettes] =
    "iceburn   ", "viola     ", "pride     "
 };
 
-int Default_RGB_Palette = 2;
-int RGB_Palette_Size = RGB_Palettes_Sizes[Default_RGB_Palette];
-double *RGB_Palette = RGB_Palettes[Default_RGB_Palette];
-
 double corr(double a, double x)
 {
    return x / (1.0 + (a * a - 1.0) * (1.0 - x));
@@ -7497,27 +7494,11 @@ void Init_Palettes()
    }
 }
 
-void Set_Texture_Image();
-
-void Set_Palette (int num)
-{
-   Default_RGB_Palette = num;
-   RGB_Palette_Size = RGB_Palettes_Sizes[num];
-   RGB_Palette = RGB_Palettes[num];
-
-   Set_Texture_Image();
-}
-
-void Next_RGB_Palette()
-{
-   Set_Palette((Default_RGB_Palette + 1) % Num_RGB_Palettes);
-}
-
-void Prev_RGB_Palette()
-{
-   Set_Palette((Default_RGB_Palette == 0) ? Num_RGB_Palettes - 1 :
-               Default_RGB_Palette - 1);
-}
+bool first_init = true;
+GLuint palette_tex[Num_RGB_Palettes][2];
+GLuint alpha_tex;
+int curr_palette = 2;
+int use_smooth = 0;
 
 int Choose_Palette()
 {
@@ -7533,7 +7514,7 @@ int Choose_Palette()
          cout << '\n';
       }
    }
-   cout << "\n ---> [" << Default_RGB_Palette+1 << "] " << flush;
+   cout << "\n ---> [" << curr_palette+1 << "] " << flush;
 
    cin.getline (buffer, buflen);
    cin.getline (buffer, buflen);
@@ -7544,7 +7525,7 @@ int Choose_Palette()
    }
    else
    {
-      pal = Default_RGB_Palette+1;
+      pal = curr_palette+1;
    }
 
    if (pal < 1)
@@ -7559,11 +7540,296 @@ int Choose_Palette()
    return pal-1;
 }
 
+
+int RepeatPaletteTimes = 1;
+int MaxTextureSize;
+
+/* *
+ * Generates a discrete texture from the given palette.
+ */
+void PaletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
+{
+   vector<array<float,4>> texture_buf(plt_size);
+
+   if (RepeatPaletteTimes > 0)
+   {
+      for (size_t i = 0; i < plt_size; i++)
+      {
+         texture_buf[i] =
+         {
+            (float) palette[3*i],
+            (float) palette[3*i+1],
+            (float) palette[3*i+2],
+            1.0
+         };
+      }
+   }
+   else
+   {
+      for (size_t i = 0; i < plt_size; i++)
+      {
+         texture_buf[i] =
+         {
+            (float) palette[3*(plt_size-1-i)+0],
+            (float) palette[3*(plt_size-1-i)+1],
+            (float) palette[3*(plt_size-1-i)+2],
+            1.0
+         };
+      }
+   }
+   if (PaletteNumColors > 1 && (plt_size > (size_t)PaletteNumColors))
+   {
+      texture_buf.resize(PaletteNumColors);
+      for (int i = 0; i < PaletteNumColors; i++)
+      {
+         int plt_i = i * plt_size / (PaletteNumColors-1);
+         if (i >= PaletteNumColors - 1)
+         {
+            plt_i = plt_size - 1;
+         }
+         if (RepeatPaletteTimes < 0)
+         {
+            plt_i = plt_size-1-plt_i;
+         }
+         texture_buf[i] =
+         {
+            (float) palette[3*plt_i],
+            (float) palette[3*plt_i+1],
+            (float) palette[3*plt_i+2],
+            1.0
+         };
+      }
+      plt_size = PaletteNumColors;
+   }
+   glBindTexture(GL_TEXTURE_2D, tex);
+   glTexImage2D(GL_TEXTURE_2D,
+                0,
+                GL_RGBA,
+                plt_size,
+                1,
+                0,
+                GL_RGBA,
+                GL_FLOAT,
+                texture_buf.data());
+
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+}
+
+/* *
+ * Generates a smooth texture from the given palette.
+ */
+void PaletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
+{
+   vector<array<float,4>> texture_buf(MaxTextureSize);
+   glBindTexture(GL_TEXTURE_2D, tex);
+
+   size_t textureSize = MaxTextureSize;
+   if (plt_size * abs(RepeatPaletteTimes) <= textureSize)
+   {
+      int flip_start = RepeatPaletteTimes < 0;
+      for (int rpt = 0; rpt < abs(RepeatPaletteTimes); rpt++)
+      {
+         for (size_t i = 0; i < plt_size; i++)
+         {
+            // flip = 0: p_i = i
+            // flip = 1: p_i = plt_size-1-i
+            int p_i = (flip_start + rpt) % 2 == 0 ? i : plt_size - 1 - i;
+            texture_buf[i + plt_size * rpt] =
+            {
+               (float) palette[3*p_i],
+               (float) palette[3*p_i + 1],
+               (float) palette[3*p_i + 2],
+               1.0
+            };
+         }
+      }
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+                   plt_size * abs(RepeatPaletteTimes), 1,
+                   0, GL_RGBA, GL_FLOAT, texture_buf.data());
+   }
+   else
+   {
+      for (size_t i = 0; i < textureSize; i++)
+      {
+         double t = double(i) / textureSize - 1;
+         t *= 0.999999999 * (plt_size - 1) * abs(RepeatPaletteTimes);
+         int j = floor(t);
+         t -= j;
+         int p_i;
+         if (((j / (plt_size-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
+             ((j / (plt_size-1)) % 2 == 1 && RepeatPaletteTimes < 0))
+         {
+            p_i = j % (plt_size - 1);
+         }
+         else
+         {
+            p_i = plt_size - 2 - j % (plt_size - 1);
+            t = 1.0 - t;
+         }
+         texture_buf[i] =
+         {
+            (float)((1.0-t) * palette[3*p_i] + t * palette[3*(p_i+1)]),
+            (float)((1.0-t) * palette[3*p_i+1] + t * palette[3*(p_i+1)+1]),
+            (float)((1.0-t) * palette[3*p_i+2] + t * palette[3*(p_i+1)+2]),
+            1.0
+         };
+      }
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+                   textureSize, 1,
+                   0, GL_RGBA, GL_FLOAT, texture_buf.data());
+   }
+
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+}
+
+void paletteRebind()
+{
+   GetAppWindow()->getRenderer()
+   .setColorTexture(palette_tex[curr_palette][use_smooth]);
+   GetAppWindow()->getRenderer().setAlphaTexture(alpha_tex);
+}
+
+GLenum alpha_channel;
+
+void paletteInit()
+{
+   if (first_init)
+   {
+      glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MaxTextureSize);
+      if (MaxTextureSize < 4096)
+      {
+         cerr << "Warning: GL_MAX_TEXTURE_SIZE is less than 4096." << endl;
+      }
+      MaxTextureSize = std::min(MaxTextureSize, 4096);
+      Init_Palettes();
+      //generate a black default texture
+      //modulation with default texture will just pass through input color
+      glBindTexture(GL_TEXTURE_2D, 0);
+      int black_color = 0xFFFFFFFF;
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                   &black_color);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+      glGenTextures(Num_RGB_Palettes * 2, &(palette_tex[0][0]));
+      glGenTextures(1, &alpha_tex);
+      first_init = false;
+   }
+   alpha_channel = GetAppWindow()->getRenderer().getDeviceAlphaChannel();
+
+   for (int i = 0; i < Num_RGB_Palettes; i++)
+   {
+      PaletteToTextureDiscrete(RGB_Palettes[i], RGB_Palettes_Sizes[i],
+                               palette_tex[i][0]);
+      PaletteToTextureSmooth(RGB_Palettes[i], RGB_Palettes_Sizes[i],
+                             palette_tex[i][1]);
+   }
+   // set alpha texture to 1.0
+   std::vector<float> alphaTexData(MaxTextureSize * 2);
+   std::fill(alphaTexData.begin(), alphaTexData.end(), 1.0f);
+   glActiveTexture(GL_TEXTURE1);
+   glBindTexture(GL_TEXTURE_2D, alpha_tex);
+   glTexImage2D(GL_TEXTURE_2D, 0, alpha_channel, MaxTextureSize, 2, 0,
+                alpha_channel, GL_FLOAT, alphaTexData.data());
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+   glActiveTexture(GL_TEXTURE0);
+   paletteRebind();
+}
+
+void paletteUseDiscrete()
+{
+   use_smooth = 0;
+   paletteRebind();
+}
+
+void paletteUseSmooth()
+{
+   use_smooth = 1;
+   paletteRebind();
+}
+
+void paletteSet(int num)
+{
+   curr_palette = num;
+   paletteRebind();
+}
+
+double * paletteGet()
+{
+   return RGB_Palettes[curr_palette];
+}
+
+int paletteGetSize(int pal)
+{
+   if (pal == -1)
+   {
+      return RGB_Palettes_Sizes[curr_palette];
+   }
+   return RGB_Palettes_Sizes[curr_palette];
+}
+
+void GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
+{
+   std::vector<float> alphaTexData(MaxTextureSize);
+   if (matAlpha >= 1.0)
+   {
+      // transparency off
+      std::fill(alphaTexData.begin(), alphaTexData.end(), 1.0f);
+   }
+   else
+   {
+      for (int i = 0; i < MaxTextureSize; i++)
+      {
+         double val = double(2*i + 1)/(2*MaxTextureSize); // midpoint of texel
+         if (matAlphaCenter > 1.0)
+         {
+            alphaTexData[i] = matAlpha * std::exp(-(matAlphaCenter)*std::abs(val - 1.0));
+         }
+         else if (matAlphaCenter < 0.0)
+         {
+            alphaTexData[i] = matAlpha * std::exp((matAlphaCenter - 1.0)*std::abs(val));
+         }
+         else
+         {
+            alphaTexData[i] = matAlpha * std::exp(-std::abs(val - matAlphaCenter));
+         }
+      }
+   }
+   glActiveTexture(GL_TEXTURE1);
+   glBindTexture(GL_TEXTURE_2D, alpha_tex);
+   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 1, MaxTextureSize, 1, alpha_channel,
+                   GL_FLOAT, alphaTexData.data());
+   glActiveTexture(GL_TEXTURE0);
+}
+
+void Next_RGB_Palette()
+{
+   paletteSet((curr_palette + 1) % Num_RGB_Palettes);
+}
+
+void Prev_RGB_Palette()
+{
+   paletteSet((curr_palette == 0) ? Num_RGB_Palettes - 1 :
+              curr_palette - 1);
+}
+
 int Select_New_RGB_Palette()
 {
    int pal = Choose_Palette();
 
-   Set_Palette(pal);
+   paletteSet(pal);
 
    return pal;
 }

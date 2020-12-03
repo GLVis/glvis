@@ -12,13 +12,11 @@
 #ifndef GLVIS_AUX_VIS
 #define GLVIS_AUX_VIS
 
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glx.h>
+#include "gl/platform_gl.hpp"
+#include "gl/types.hpp"
 
-#include "tk.h"
-#include "aux_gl.hpp"
-
+#include "sdl.hpp"
+#include "font.hpp"
 #include "openglvis.hpp"
 
 extern GLuint fontbase;
@@ -42,18 +40,24 @@ void SendExposeEvent();
 void MyExpose();
 
 void MainLoop();
+
+SdlWindow * GetAppWindow();
+VisualizationScene * GetVisualizationScene();
+
+void SetLegacyGLOnly(bool status);
+
 void AddIdleFunc(void (*Func)(void));
 void RemoveIdleFunc(void (*Func)(void));
 
-void LeftButtonDown  (AUX_EVENTREC *event);
-void LeftButtonLoc   (AUX_EVENTREC *event);
-void LeftButtonUp    (AUX_EVENTREC *event);
-void MiddleButtonDown(AUX_EVENTREC *event);
-void MiddleButtonLoc (AUX_EVENTREC *event);
-void MiddleButtonUp  (AUX_EVENTREC *event);
-void RightButtonDown (AUX_EVENTREC *event);
-void RightButtonLoc  (AUX_EVENTREC *event);
-void RightButtonUp   (AUX_EVENTREC *event);
+void LeftButtonDown  (EventInfo *event);
+void LeftButtonLoc   (EventInfo *event);
+void LeftButtonUp    (EventInfo *event);
+void MiddleButtonDown(EventInfo *event);
+void MiddleButtonLoc (EventInfo *event);
+void MiddleButtonUp  (EventInfo *event);
+void RightButtonDown (EventInfo *event);
+void RightButtonLoc  (EventInfo *event);
+void RightButtonUp   (EventInfo *event);
 
 void KeyCtrlP();
 void KeyS();
@@ -96,7 +100,7 @@ void MoveResizeWindow(int x, int y, int w, int h);
 void ResizeWindow(int w, int h);
 void SetWindowTitle(const char *title);
 
-/// Take a screenshot using libtiff, libpng or xwd
+/// Take a screenshot using libtiff, libpng or sdl2
 int Screenshot(const char *fname, bool convert = false);
 
 /// Send a sequence of keystrokes to the visualization window
@@ -109,25 +113,26 @@ void SendKeySequence(const char *seq);
 // update the visualization window.
 void CallKeySequence(const char *seq);
 
-void Cone();
-
 extern int MySetColorLogscale;
-void MySetColor(double val, double min, double max);
-void MySetColor(double val);
+double GetColorCoord(double val, double min, double max);
+void GetColorFromVal(double val, float * rgba);
+void MySetColor(gl3::GlBuilder& builder, double val);
+void MySetColor(gl3::GlBuilder& builder, double val, double min, double max);
+
 void SetUseTexture(int ut);
 int GetUseTexture();
 void Set_Texture_Image();
 int GetMultisample();
 void SetMultisample(int m);
 
-#ifdef GLVIS_USE_FREETYPE
-int RenderBitmapText(const char *text, int &width, int &heigth);
-void DrawBitmapText(); // Draws the last rendered bitmap text
-void DrawBitmapText(const char *text);
-int SetFontFile(const char *font_file, int height);
-int SetFont(const char *font_patterns[], int num_patterns, int height);
-#endif
+void SetLineWidth(float width);
+float GetLineWidth();
+void SetLineWidthMS(float width_ms);
+float GetLineWidthMS();
 
-void SetFont(const char *fn);
+void InitFont();
+GlVisFont * GetFont();
+bool SetFont(const vector<std::string>& patterns, int height);
+void SetFont(const std::string& fn);
 
 #endif

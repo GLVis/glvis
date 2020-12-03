@@ -13,6 +13,9 @@
 #define GLVIS_OPENGLVIS
 
 #include <cmath>
+#include "sdl.hpp"
+#include "gl/types.hpp"
+#include "material.hpp"
 
 // Visualization header file
 
@@ -93,10 +96,11 @@ public:
    void TurnLeftRight(double angle);
    void TurnUpDown(double angle);
 
-   void GLMultRotMatrix();
-   void GLMultTransposeRotMatrix();
-   void GLMultMatrix();
    void Print();
+
+   glm::mat4 RotMatrix();
+   glm::mat4 TransposeRotMatrix();
+   glm::mat4 TranslateMatrix();
 };
 
 class VisualizationScene
@@ -104,6 +108,44 @@ class VisualizationScene
 protected:
    // How to scale the visualized object(s)
    double xscale, yscale, zscale;
+
+   SdlWindow * wnd;
+
+   glm::mat4 proj_mtx;
+
+   enum
+   {
+      BG_BLK = 0,
+      BG_WHITE = 1
+   } background;
+
+   const Material BLK_MAT =
+   {
+      {{ 0.0, 0.0, 0.0, 1.0 }},
+      {{ 0.0, 0.0, 0.0, 1.0 }},
+      {{ 0.0, 0.0, 0.0, 1.0 }},
+      0.0
+   };
+
+   std::array<float, 4> _l0_pos;
+   bool _use_cust_l0_pos;
+   int light_mat_idx;
+   bool use_light;
+
+   gl3::RenderParams GetMeshDrawParams();
+   glm::mat4 GetModelViewMtx();
+
+   std::array<float, 4> GetLineColor()
+   {
+      if (background == BG_BLK)
+      {
+         return { 1.f, 1.f, 1.f, 1.f };
+      }
+      else
+      {
+         return { 0.f, 0.f, 0.f, 1.f };
+      }
+   }
 
 public:
    VisualizationScene();
@@ -118,10 +160,10 @@ public:
    /// Bounding box.
    double x[2], y[2], z[2];
 
-   double rotmat[16];
-   double translmat[16];
+   glm::mat4 rotmat;
+   glm::mat4 translmat;
 
-   virtual void Draw() = 0;
+   virtual gl3::SceneInfo GetSceneObjs() = 0;
 
    void SetView(double theta, double phi);
    void Zoom(double factor);
@@ -137,7 +179,12 @@ public:
    void CenterObject();
    void CenterObject2D();
 
-   void ModelView();
+   void SetProjectionMtx(glm::mat4 projection) { proj_mtx = projection; }
+   void SetLightMatIdx(unsigned i);
+   int GetLightMatIdx() { return light_mat_idx; }
+
+   void SetLight0CustomPos(std::array<float, 4> pos);
+   void ToggleBackground();
 
    /// This is set by SetVisualizationScene
    int view;

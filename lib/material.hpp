@@ -9,29 +9,23 @@
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
 
-extern void Set_Material();
+#ifndef MATERIAL_HPP
+#define MATERIAL_HPP
+#include <array>
 
-extern void Set_Light();
+struct Material
+{
+   std::array<float, 4> ambient;
+   std::array<float, 4> diffuse;
+   std::array<float, 4> specular;
+   float shininess;
+};
 
-extern int Next_Material_And_Light();
+struct Light
+{
+   std::array<float, 4> position;
+   std::array<float, 4> diffuse;
+   std::array<float, 4> specular;
+};
 
-extern void Set_Material_And_Light(int,int);
-
-extern void Set_Black_Material();
-
-extern void Set_Background();
-
-extern void Toggle_Background();
-
-extern void Set_Transparency();
-
-extern void Remove_Transparency();
-
-extern int  Get_AntiAliasing();
-extern void Set_AntiAliasing();
-extern void Remove_AntiAliasing();
-
-extern double Get_LineWidth();
-extern void Set_LineWidth(double);
-extern double Get_MS_LineWidth();
-extern void Set_MS_LineWidth(double);
+#endif

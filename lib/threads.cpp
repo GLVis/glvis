@@ -14,8 +14,8 @@
 #include <cerrno>      // errno, EAGAIN
 #include <cstdio>      // perror
 
-#include "palettes.hpp"
 #include "visual.hpp"
+#include "palettes.hpp"
 
 using namespace std;
 
@@ -84,6 +84,13 @@ int GLVisCommand::signal()
    {
       return -1;
    }
+
+   SdlWindow *sdl_window = GetAppWindow();
+   if (sdl_window)
+   {
+      sdl_window->signalLoop();
+   }
+
    return 0;
 }
 
@@ -485,7 +492,7 @@ int GLVisCommand::Execute()
             delete (*mesh);
             *mesh = new_m;
 
-            (*vs)->Draw();
+            MyExpose();
          }
          else
          {
@@ -551,7 +558,7 @@ int GLVisCommand::Execute()
       {
          cout << "Command: plot_caption: " << plot_caption << endl;
          ::plot_caption = plot_caption;
-         (*vs)->UpdateCaption(); // turn on or off the caption
+         (*vs)->PrepareCaption(); // turn on or off the caption
          MyExpose();
          break;
       }
@@ -677,7 +684,7 @@ int GLVisCommand::Execute()
       case PALETTE:
       {
          cout << "Command: palette: " << palette << endl;
-         Set_Palette(palette-1);
+         paletteSet(palette-1);
          if (!GetUseTexture())
          {
             (*vs)->EventUpdateColors();
@@ -690,7 +697,8 @@ int GLVisCommand::Execute()
       {
          cout << "Command: palette_repeat: " << palette_repeat << endl;
          RepeatPaletteTimes = palette_repeat;
-         Set_Texture_Image();
+         paletteInit();
+
          if (!GetUseTexture())
          {
             (*vs)->EventUpdateColors();
@@ -785,8 +793,10 @@ void GLVisCommand::ToggleAutopause()
 GLVisCommand::~GLVisCommand()
 {
    if (num_waiting > 0)
+   {
       cout << "\nGLVisCommand::~GLVisCommand() : num_waiting = "
            << num_waiting << '\n' << endl;
+   }
    close(pfd[0]);
    close(pfd[1]);
    pthread_cond_destroy(&glvis_cond);

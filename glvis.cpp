@@ -22,10 +22,10 @@
 #include <ctime>
 #include <csignal>
 
-#include <X11/keysym.h>
 #include <unistd.h>
 
 #include "mfem.hpp"
+#include "lib/palettes.hpp"
 #include "lib/visual.hpp"
 
 using namespace std;
@@ -78,8 +78,6 @@ double scr_min_val, scr_max_val;
 Array<istream *> input_streams;
 
 extern char **environ;
-
-void Set_Palette(int); // defined in palettes.hpp
 
 void PrintSampleUsage(ostream &out);
 
@@ -364,7 +362,7 @@ void StartVisualization(int field_type)
 
    if (input_streams.Size() > 0)
    {
-      auxModKeyFunc(XK_space, ThreadsPauseFunc);
+      GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
       glvis_command = new GLVisCommand(&vs, &mesh, &grid_f, &sol, &keep_attr,
                                        &fix_elem_orient);
       comm_thread = new communication_thread(input_streams);
@@ -382,7 +380,7 @@ void StartVisualization(int field_type)
          VisualizationSceneSolution *vss;
          if (field_type == 2)
          {
-            Set_Palette(4);
+            paletteSet(4);
          }
          if (normals.Size() > 0)
          {
@@ -399,7 +397,7 @@ void StartVisualization(int field_type)
          if (field_type == 2)
          {
             vs->OrthogonalProjection = 1;
-            vs->light = 0;
+            vs->SetLight(false);
             vs->Zoom(1.8);
          }
       }
@@ -415,13 +413,13 @@ void StartVisualization(int field_type)
          {
             if (mesh->Dimension() == 3)
             {
-               Set_Palette(4);
-               // Set_Palette(11);
+               paletteSet(4);
+               // paletteSet(11);
                // Set_Material_And_Light(4,3);
             }
             else
             {
-               Set_Palette(4);
+               paletteSet(4);
             }
             vss->ToggleDrawAxes();
             vss->ToggleDrawMesh();
@@ -751,7 +749,7 @@ void ExecuteScriptCommand()
             delete grid_f; grid_f = new_g;
             delete mesh; mesh = new_m;
 
-            vs->Draw();
+            MyExpose();
          }
          else
          {
@@ -815,11 +813,11 @@ void ExecuteScriptCommand()
          cout << "Script: light: " << word;
          if (word == "off")
          {
-            vs->light = 0;
+            vs->SetLight(false);
          }
          else if (word == "on")
          {
-            vs->light = 1;
+            vs->SetLight(true);
          }
          else
          {
@@ -937,22 +935,14 @@ void ExecuteScriptCommand()
          int pal;
          scr >> pal;
          cout << "Script: palette: " << pal << endl;
-         Set_Palette(pal-1);
-         if (!GetUseTexture())
-         {
-            vs->EventUpdateColors();
-         }
+         paletteSet(pal-1);
          MyExpose();
       }
       else if (word == "palette_repeat")
       {
          scr >> RepeatPaletteTimes;
          cout << "Script: palette_repeat: " << RepeatPaletteTimes << endl;
-         Set_Texture_Image();
-         if (!GetUseTexture())
-         {
-            vs->EventUpdateColors();
-         }
+         paletteInit();
          MyExpose();
       }
       else if (word == "toggle_attributes")
@@ -982,8 +972,8 @@ void ExecuteScriptCommand()
          cout << "Script: rotmat:";
          for (int i = 0; i < 16; i++)
          {
-            scr >> vs->rotmat[i];
-            cout << ' ' << vs->rotmat[i];
+            scr >> vs->rotmat[i/4][i%4];
+            cout << ' ' << vs->rotmat[i/4][i%4];
          }
          cout << endl;
          MyExpose();
@@ -1026,7 +1016,7 @@ void ExecuteScriptCommand()
          char delim;
          scr >> ws >> delim;
          getline(scr, plot_caption, delim);
-         vs->UpdateCaption(); // turn on or off the caption
+         vs->PrepareCaption(); // turn on or off the caption
          MyExpose();
       }
       else
@@ -1127,7 +1117,7 @@ void PlayScript(istream &scr)
    }
 
    scr_level = scr_running = 0;
-   auxKeyFunc(XK_space, ScriptControl);
+   GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
    script = &scr;
    keys.clear();
 
@@ -1153,9 +1143,10 @@ int main (int argc, char *argv[])
    int         portnum       = 19916;
    bool        secure        = socketstream::secure_default;
    int         multisample   = GetMultisample();
-   double      line_width    = Get_LineWidth();
-   double      ms_line_width = Get_MS_LineWidth();
+   double      line_width    = 1.0;
+   double      ms_line_width = gl3::LINE_WIDTH_AA;
    int         geom_ref_type = Quadrature1D::ClosedUniform;
+   bool        legacy_gl_ctx = false;
 
    OptionsParser args(argc, argv);
 
@@ -1211,13 +1202,17 @@ int main (int argc, char *argv[])
    args.AddOption(&c_plot_caption, "-c", "--plot-caption",
                   "Set the plot caption (visible when colorbar is visible).");
    args.AddOption(&font_name, "-fn", "--font",
-                  "Set the font: <font-name>[-<font-size>].");
+                  "Set the font: [<font-name>[:style=<style>]][-<font-size>],"
+                  " e.g. -fn \"Helvetica:style=Bold-16\".");
    args.AddOption(&multisample, "-ms", "--multisample",
                   "Set the multisampling mode (toggled with the 'A' key).");
    args.AddOption(&line_width, "-lw", "--line-width",
                   "Set the line width (multisampling off).");
    args.AddOption(&ms_line_width, "-mslw", "--multisample-line-width",
                   "Set the line width (multisampling on).");
+   args.AddOption(&legacy_gl_ctx, "-oldgl", "--legacy-gl",
+                  "-anygl", "--any-gl",
+                  "Only try to create a legacy OpenGL (< 2.1) context.");
 
    cout << endl
         << "       _/_/_/  _/      _/      _/  _/"          << endl
@@ -1275,17 +1270,21 @@ int main (int argc, char *argv[])
    {
       SetMultisample(multisample);
    }
-   if (line_width != Get_LineWidth())
+   if (line_width != GetLineWidth())
    {
-      Set_LineWidth(line_width);
+      SetLineWidth(line_width);
    }
-   if (ms_line_width != Get_MS_LineWidth())
+   if (ms_line_width != GetLineWidthMS())
    {
-      Set_MS_LineWidth(ms_line_width);
+      SetLineWidthMS(ms_line_width);
    }
    if (c_plot_caption != string_none)
    {
       plot_caption = c_plot_caption;
+   }
+   if (legacy_gl_ctx == true)
+   {
+      SetLegacyGLOnly(legacy_gl_ctx);
    }
 
    GLVisGeometryRefiner.SetType(geom_ref_type);
@@ -1607,7 +1606,7 @@ int main (int argc, char *argv[])
             {
                if ((input & 4) == 0)
                {
-                  Set_Palette(4);   // Set_Palette(11);
+                  paletteSet(4);   // paletteSet(11);
                }
                vs = vss = new VisualizationSceneSolution(*mesh, sol);
                if (is_gf)
@@ -1617,7 +1616,7 @@ int main (int argc, char *argv[])
                if ((input & 4) == 0)
                {
                   vs->OrthogonalProjection = 1;
-                  vs->light = 0;
+                  vs->SetLight(false);
                   vs->Zoom(1.8);
                   if (grid_f)
                   {
@@ -1663,13 +1662,13 @@ int main (int argc, char *argv[])
                {
                   if (mesh->Dimension() == 3)
                   {
-                     // Set_Palette(4);
-                     Set_Palette(11);
-                     Set_Material_And_Light(4,3);
+                     // paletteSet(4);
+                     paletteSet(11);
+                     vss->SetLightMatIdx(4);
                   }
                   else
                   {
-                     Set_Palette(4);
+                     paletteSet(4);
                   }
                   vss->ToggleDrawAxes();
                   vss->ToggleDrawMesh();

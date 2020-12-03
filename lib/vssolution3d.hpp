@@ -13,6 +13,8 @@
 #define GLVIS_VSSOLUTION_3D
 
 #include "mfem.hpp"
+#include "gl/types.hpp"
+#include <map>
 using namespace mfem;
 
 class VisualizationSceneSolution3d : public VisualizationSceneScalarData
@@ -20,14 +22,20 @@ class VisualizationSceneSolution3d : public VisualizationSceneScalarData
 protected:
 
    int drawmesh, drawelems, shading, draworder;
-   int displlist, linelist;
-   int order_list, order_list_noarrow;
-   int cplane, cplanelist, cplanelineslist, lsurflist;
+   int cplane;
    int cp_drawmesh, cp_drawelems, drawlsurf;
    // Algorithm used to draw the cutting plane when shading is 2 and cplane is 1
    // 0 - slower, more accurate algorithm for curved meshes (default)
    // 1 - faster algorithm suitable for meshes with planar faces
    int cp_algo;
+
+   gl3::GlDrawable disp_buf;
+   gl3::GlDrawable line_buf;
+   gl3::GlDrawable cplane_buf;
+   gl3::GlDrawable cplines_buf;
+   gl3::GlDrawable lsurf_buf;
+   gl3::GlDrawable other_buf;
+   gl3::GlDrawable order_buf, order_noarrow_buf;
 
    double *node_pos;
 
@@ -52,7 +60,8 @@ protected:
                               int part = -1);
    void LiftRefinedSurf (int n, DenseMatrix &pointmat,
                          Vector &values, int *RG);
-   void DrawTetLevelSurf(const DenseMatrix &verts, const Vector &vals,
+   void DrawTetLevelSurf(gl3::GlDrawable& target, const DenseMatrix &verts,
+                         const Vector &vals,
                          const int *ind, const Array<double> &levels,
                          const DenseMatrix *grad = NULL);
 
@@ -60,6 +69,7 @@ protected:
                                  const Array<int> &faces,
                                  const Array<int> &ofaces);
    void DrawRefinedWedgeLevelSurf(
+      gl3::GlDrawable& target,
       const DenseMatrix &verts, const Vector &vals, const int *RG, const int np,
       const int face_splits, const DenseMatrix *grad = NULL);
 
@@ -67,6 +77,7 @@ protected:
                                const Array<int> &faces,
                                const Array<int> &ofaces);
    void DrawRefinedHexLevelSurf(
+      gl3::GlDrawable& target,
       const DenseMatrix &verts, const Vector &vals, const int *RG, const int nh,
       const int face_splits, const DenseMatrix *grad = NULL);
 
@@ -101,12 +112,15 @@ public:
    virtual void FindNewBox(bool prepare);
    virtual void FindNewValueRange(bool prepare);
 
+   virtual void PrepareRuler()
+   { VisualizationSceneScalarData::PrepareRuler(false); }
    virtual void PrepareFlat();
    virtual void PrepareLines();
    virtual void Prepare();
    virtual void PrepareOrderingCurve();
-   virtual void PrepareOrderingCurve1(int list, bool arrows, bool color);
-   virtual void Draw();
+   virtual void PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows,
+                                      bool color);
+   virtual gl3::SceneInfo GetSceneObjs();
 
    void ToggleDrawElems()
    { drawelems = !drawelems; Prepare(); }
@@ -128,10 +142,12 @@ public:
 
    void CuttingPlaneFunc (int type);
    // func: 0 - draw surface, 1 - draw level lines
-   void CutRefinedElement(const DenseMatrix &verts, const Vector &vert_dist,
+   void CutRefinedElement(gl3::GlDrawable& target,
+                          const DenseMatrix &verts, const Vector &vert_dist,
                           const Vector &vals, const Geometry::Type geom,
                           const int *elems, int num_elems, int func);
-   void CutRefinedFace(const DenseMatrix &verts, const Vector &vert_dist,
+   void CutRefinedFace(gl3::GlDrawable& target,
+                       const DenseMatrix &verts, const Vector &vert_dist,
                        const Vector &vals, const Geometry::Type geom,
                        const int *faces, int num_faces);
    void CPPrepare();
@@ -153,6 +169,16 @@ public:
    virtual void UpdateLevelLines()
    { PrepareLines(); PrepareCuttingPlaneLines(); }
    virtual void UpdateValueRange(bool prepare);
+
+   virtual void SetDrawMesh(int i)
+   {
+      if (drawmesh != i % 3)
+      {
+         drawmesh = i % 3;
+         PrepareLines();
+      }
+   }
+   virtual int GetDrawMesh() { return drawmesh; }
 };
 
 int Normalize(DenseMatrix &normals);

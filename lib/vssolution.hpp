@@ -15,6 +15,11 @@
 #include "mfem.hpp"
 using namespace mfem;
 
+#include "sdl.hpp"
+#include "gl/types.hpp"
+
+#include <map>
+
 // Visualization header file
 
 class VisualizationSceneSolution : public VisualizationSceneScalarData
@@ -24,16 +29,27 @@ protected:
    GridFunction *rsol;
 
    int drawmesh, drawelems, drawnums, draworder;
-   int displlist, linelist, lcurvelist;
-   int bdrlist, drawbdr, draw_cp, cp_list;
-   int e_nums_list, v_nums_list;
-   int order_list, order_list_noarrow;
+   int drawbdr, draw_cp;
+
+   gl3::GlDrawable disp_buf;
+
+   gl3::GlDrawable e_nums_buf;
+   gl3::GlDrawable v_nums_buf;
+
+   gl3::GlDrawable lcurve_buf;
+   gl3::GlDrawable line_buf;
+   gl3::GlDrawable bdr_buf;
+   gl3::GlDrawable cp_buf;
+
+   gl3::GlDrawable order_buf;
+   gl3::GlDrawable order_noarrow_buf;
 
    void Init();
 
    void FindNewBox(double rx[], double ry[], double rval[]);
 
-   void DrawCPLine(DenseMatrix &pointmat, Vector &values, Array<int> &ind);
+   void DrawCPLine(gl3::GlBuilder& bld,
+                   DenseMatrix &pointmat, Vector &values, Array<int> &ind);
 
    void GetRefinedDetJ(int i, const IntegrationRule &ir,
                        Vector &vals, DenseMatrix &tr);
@@ -45,7 +61,7 @@ protected:
                                           Vector &vals, DenseMatrix &tr,
                                           DenseMatrix &normals);
 
-   void DrawLevelCurves(Array<int> &RG, DenseMatrix &pointmat,
+   void DrawLevelCurves(gl3::GlBuilder& buf, Array<int> &RG, DenseMatrix &pointmat,
                         Vector &values, int sides, Array<double> &lvl,
                         int flat = 0);
 
@@ -102,7 +118,7 @@ public:
    void PrepareBoundary();
 
    void PrepareOrderingCurve();
-   void PrepareOrderingCurve1(int list, bool arrows, bool color);
+   void PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows, bool color);
 
    void PrepareNumbering();
    void PrepareElementNumbering();
@@ -114,7 +130,7 @@ public:
 
    void PrepareCP();
 
-   virtual void Draw();
+   virtual gl3::SceneInfo GetSceneObjs();
 
    void ToggleDrawBdr()
    { drawbdr = !drawbdr; }
@@ -138,17 +154,26 @@ public:
    virtual void SetRefineFactors(int, int);
    virtual void AutoRefine();
    virtual void ToggleAttributes(Array<int> &attr_list);
+
+   virtual void SetDrawMesh(int i) { drawmesh = i % 3; }
+   virtual int GetShading() { return shading; }
+   virtual int GetDrawMesh() { return drawmesh; }
 };
 
-void DrawNumberedMarker(const double x[3], double dx, int n);
+void DrawNumberedMarker(gl3::GlDrawable& buff, const double x[3], double dx,
+                        int n);
 
-void DrawTriangle(const double pts[][3], const double cv[],
+// We only need 3 points, but the array is 4x3
+void DrawTriangle(gl3::GlDrawable& buff,
+                  const double (&pts)[4][3], const double (&cv)[4],
                   const double minv, const double maxv);
 
-void DrawQuad(const double pts[][3], const double cv[],
+void DrawQuad(gl3::GlDrawable& buff,
+              const double (&pts)[4][3], const double (&cv)[4],
               const double minv, const double maxv);
 
-void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
+void DrawPatch(gl3::GlDrawable& buff, const DenseMatrix &pts, Vector &vals,
+               DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
                const double maxv, const int normals_opt = 0);
 

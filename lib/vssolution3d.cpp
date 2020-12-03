@@ -14,12 +14,10 @@
 #include <cmath>
 #include <limits>
 
-#include <X11/keysym.h>
-
 #include "mfem.hpp"
 using namespace mfem;
 #include "visual.hpp"
-
+#include "palettes.hpp"
 using namespace std;
 
 
@@ -120,29 +118,34 @@ static void KeyIPressed()
 void VisualizationSceneSolution3d::PrepareOrderingCurve()
 {
    bool color = draworder < 3;
-   PrepareOrderingCurve1(order_list, true, color);
-   PrepareOrderingCurve1(order_list_noarrow, false, color);
+   order_buf.clear();
+   order_noarrow_buf.clear();
+   PrepareOrderingCurve1(order_buf, true, color);
+   PrepareOrderingCurve1(order_noarrow_buf, false, color);
+   updated_bufs.emplace_back(&order_buf);
+   updated_bufs.emplace_back(&order_noarrow_buf);
 }
 
 
-void VisualizationSceneSolution3d::PrepareOrderingCurve1(int list, bool arrows,
+void VisualizationSceneSolution3d::PrepareOrderingCurve1(gl3::GlDrawable& buf,
+                                                         bool arrows,
                                                          bool color)
 {
-   glNewList(list, GL_COMPILE);
+   gl3::GlBuilder builder = buf.createBuilder();
 
    // make the lines of the ordering curve thicker
    double ThicknessFactor = 2.0;
    double MS_Thickness = 2.0;
    double LineWidth;
-   if (Get_AntiAliasing())
+   if (GetMultisample() > 0)
    {
-      LineWidth = Get_MS_LineWidth();
-      Set_MS_LineWidth(MS_Thickness);
+      LineWidth = GetLineWidthMS();
+      SetLineWidthMS(MS_Thickness);
    }
    else
    {
-      LineWidth = Get_LineWidth();
-      Set_LineWidth(ThicknessFactor*LineWidth);
+      LineWidth = GetLineWidth();
+      SetLineWidth(ThicknessFactor*LineWidth);
    }
 
    DenseMatrix pointmat;
@@ -198,33 +201,33 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve1(int list, bool arrows,
       if (color)
       {
          double cval = minv+double(k)/ne*(maxv-minv);
-         MySetColor(cval, minv, maxv);
+         MySetColor(builder, cval, minv, maxv);
       }
 
       if (arrows)
       {
-         Arrow3(xs,ys,zs,
+         Arrow3(builder,
+                xs,ys,zs,
                 dx,dy,dz,
                 ds,0.05);
       }
       else
       {
-         Arrow3(xs,ys,zs,
+         Arrow3(builder,
+                xs,ys,zs,
                 dx,dy,dz,
                 ds,0.0);
       }
    }
 
-   if (Get_AntiAliasing())
+   if (GetMultisample() > 0)
    {
-      Set_MS_LineWidth(LineWidth);
+      SetLineWidthMS(LineWidth);
    }
    else
    {
-      Set_LineWidth(LineWidth);
+      SetLineWidth(LineWidth);
    }
-
-   glEndList();
 }
 
 void VisualizationSceneSolution3d::CPPrepare()
@@ -323,7 +326,7 @@ static void KeyFPressed()
 
 static void KeyoPressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       vssol3d -> ToggleDrawOrdering();
       vssol3d -> PrepareOrderingCurve();
@@ -714,11 +717,10 @@ VisualizationSceneSolution3d::VisualizationSceneSolution3d(Mesh &m, Vector &s)
 
    Init();
 
-   auxKeyFunc (AUX_h, Solution3dKeyHPressed);
-   auxKeyFunc (AUX_H, Solution3dKeyHPressed);
+   wnd->setOnKeyDown('h', Solution3dKeyHPressed);
+   wnd->setOnKeyDown('H', Solution3dKeyHPressed);
 }
 
-void Set_Palette(int);
 
 void VisualizationSceneSolution3d::Init()
 {
@@ -768,8 +770,8 @@ void VisualizationSceneSolution3d::Init()
 
    node_pos = new double[mesh->GetNV()];
 
-   Set_Palette(12); // use the 'vivid' palette in 3D
-   SetUseTexture(1);
+   paletteSet(12); // use the 'vivid' palette in 3D
+   SetUseTexture(0);
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
    CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*x[0]+(0.5+eps)*x[1]);
@@ -783,58 +785,50 @@ void VisualizationSceneSolution3d::Init()
    {
       // init = 1;
 
-      auxKeyFunc (AUX_m, KeymPressed);
-      auxKeyFunc (AUX_M, KeyMPressed);
+      wnd->setOnKeyDown('m', KeymPressed);
+      wnd->setOnKeyDown('M', KeyMPressed);
 
-      auxKeyFunc (AUX_e, KeyePressed);
-      auxKeyFunc (AUX_E, KeyEPressed);
+      wnd->setOnKeyDown('e', KeyePressed);
+      wnd->setOnKeyDown('E', KeyEPressed);
 
-      auxKeyFunc (AUX_f, KeyFPressed);
-      // auxKeyFunc (AUX_F, KeyFPressed);
+      wnd->setOnKeyDown('f', KeyFPressed);
+      // wnd->setOnKeyDown('F', KeyFPressed);
 
-      auxKeyFunc (AUX_i, KeyiPressed);
-      auxKeyFunc (AUX_I, KeyIPressed);
+      wnd->setOnKeyDown('i', KeyiPressed);
+      wnd->setOnKeyDown('I', KeyIPressed);
 
-      auxModKeyFunc (AUX_o, KeyoPressed);
-      auxKeyFunc (AUX_O, KeyOPressed);
+      wnd->setOnKeyDown('o', KeyoPressed);
+      wnd->setOnKeyDown('O', KeyOPressed);
 
-      auxKeyFunc (AUX_w, KeywPressed);
-      auxKeyFunc (AUX_W, KeyWPressed);
+      wnd->setOnKeyDown('w', KeywPressed);
+      wnd->setOnKeyDown('W', KeyWPressed);
 
-      auxKeyFunc (AUX_x, KeyxPressed);
-      auxKeyFunc (AUX_X, KeyXPressed);
+      wnd->setOnKeyDown('x', KeyxPressed);
+      wnd->setOnKeyDown('X', KeyXPressed);
 
-      auxKeyFunc (AUX_y, KeyyPressed);
-      auxKeyFunc (AUX_Y, KeyYPressed);
+      wnd->setOnKeyDown('y', KeyyPressed);
+      wnd->setOnKeyDown('Y', KeyYPressed);
 
-      auxKeyFunc (AUX_z, KeyzPressed);
-      auxKeyFunc (AUX_Z, KeyZPressed);
+      wnd->setOnKeyDown('z', KeyzPressed);
+      wnd->setOnKeyDown('Z', KeyZPressed);
 
-      auxKeyFunc (AUX_u, KeyuPressed);
-      auxKeyFunc (AUX_U, KeyUPressed);
+      wnd->setOnKeyDown('u', KeyuPressed);
+      wnd->setOnKeyDown('U', KeyUPressed);
 
-      auxKeyFunc (AUX_v, KeyvPressed);
-      auxKeyFunc (AUX_V, KeyVPressed);
+      wnd->setOnKeyDown('v', KeyvPressed);
+      wnd->setOnKeyDown('V', KeyVPressed);
 
-      auxKeyFunc (XK_F3, KeyF3Pressed);
-      auxKeyFunc (XK_F4, KeyF4Pressed);
-      auxKeyFunc (XK_Num_Lock, ToggleMagicKey);
+      wnd->setOnKeyDown(SDLK_F3, KeyF3Pressed);
+      wnd->setOnKeyDown(SDLK_F4, KeyF4Pressed);
+      wnd->setOnKeyDown(SDLK_NUMLOCKCLEAR, ToggleMagicKey);
 
-      auxKeyFunc (XK_F8, KeyF8Pressed);
-      auxKeyFunc (XK_F9, KeyF9Pressed);
-      auxKeyFunc (XK_F10, KeyF10Pressed);
+      wnd->setOnKeyDown(SDLK_F8, KeyF8Pressed);
+      wnd->setOnKeyDown(SDLK_F9, KeyF9Pressed);
+      wnd->setOnKeyDown(SDLK_F10, KeyF10Pressed);
 
-      auxKeyFunc (XK_F11, KeyF11Pressed);
-      auxKeyFunc (XK_F12, KeyF12Pressed);
+      wnd->setOnKeyDown(SDLK_F11, KeyF11Pressed);
+      wnd->setOnKeyDown(SDLK_F12, KeyF12Pressed);
    }
-   displlist  = glGenLists (1);
-   linelist   = glGenLists (1);
-   cplanelist = glGenLists (1);
-   cplanelineslist = glGenLists (1);
-   lsurflist = glGenLists (1);
-   order_list = glGenLists (1);
-   order_list_noarrow = glGenLists (1);
-
    Prepare();
    PrepareLines();
    CPPrepare();
@@ -844,13 +838,6 @@ void VisualizationSceneSolution3d::Init()
 
 VisualizationSceneSolution3d::~VisualizationSceneSolution3d()
 {
-   glDeleteLists (displlist, 1);
-   glDeleteLists (linelist, 1);
-   glDeleteLists (cplanelist, 1);
-   glDeleteLists (cplanelineslist, 1);
-   glDeleteLists (lsurflist, 1);
-   glDeleteLists (order_list, 1);
-   glDeleteLists (order_list_noarrow, 1);
    delete [] node_pos;
 }
 
@@ -1382,6 +1369,7 @@ void VisualizationSceneSolution3d::DrawRefinedSurf(
    int n, DenseMatrix &pointmat, Vector &values, Array<int> &RefGeoms)
 {
    double norm[3], pts[4][3];
+   gl3::GlBuilder draw = cplane_buf.createBuilder();
 
    for (int i = 0; i < RefGeoms.Size()/n; i++)
    {
@@ -1402,14 +1390,14 @@ void VisualizationSceneSolution3d::DrawRefinedSurf(
       }
       if (!j)
       {
-         glBegin (GL_POLYGON);
-         glNormal3dv (norm);
+         draw.glBegin (GL_POLYGON);
+         draw.glNormal3dv (norm);
          for (j = 0; j < n; j++)
          {
-            MySetColor (values(RG[j]), minv, maxv);
-            glVertex3dv (pts[j]);
+            MySetColor (draw, values(RG[j]), minv, maxv);
+            draw.glVertex3dv (pts[j]);
          }
-         glEnd();
+         draw.glEnd();
       }
       /*
         else
@@ -1427,6 +1415,7 @@ void VisualizationSceneSolution3d::DrawRefinedSurfEdges(
 
    k_start = 0;
    k_end   = RefEdges.Size();
+   gl3::GlBuilder line = cplines_buf.createBuilder();
    if (part == 0)
    {
       k_end = (k_end/n) * (n-1);
@@ -1436,21 +1425,15 @@ void VisualizationSceneSolution3d::DrawRefinedSurfEdges(
       k_start = (k_end/n);
    }
 
-   if (part != 1)
-   {
-      glBegin (GL_LINES);
-   }
+   line.glBegin(GL_LINES);
    for (k = k_start; k < k_end; k++)
    {
       int RE = RefEdges[k];
 
-      glVertex3d (pointmat(0, RE), pointmat(1, RE),
-                  pointmat(2, RE));
+      line.glVertex3d (pointmat(0, RE), pointmat(1, RE),
+                       pointmat(2, RE));
    }
-   if (part != 0)
-   {
-      glEnd();
-   }
+   line.glEnd();
 }
 
 void VisualizationSceneSolution3d::DrawRefinedSurfLevelLines(
@@ -1459,6 +1442,8 @@ void VisualizationSceneSolution3d::DrawRefinedSurfLevelLines(
    int j, k;
    int *RG;
    double point[4][4];
+
+   gl3::GlBuilder line = cplines_buf.createBuilder();
 
    for (k = 0; k < RefGeoms.Size()/n; k++)
    {
@@ -1472,16 +1457,14 @@ void VisualizationSceneSolution3d::DrawRefinedSurfLevelLines(
          }
          point[j][3] = values(RG[j]);
       }
-      DrawPolygonLevelLines(point[0], n, level, false);
+      DrawPolygonLevelLines(line, point[0], n, level, false);
    }
 }
 
 void VisualizationSceneSolution3d::PrepareFlat()
 {
    int i, j;
-
-   glNewList(displlist, GL_COMPILE);
-
+   disp_buf.clear();
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
    DenseMatrix pointmat;
@@ -1534,22 +1517,21 @@ void VisualizationSceneSolution3d::PrepareFlat()
       }
       if (j == 3)
       {
-         DrawTriangle(p, c, minv, maxv);
+         DrawTriangle(disp_buf, p, c, minv, maxv);
       }
       else
       {
-         DrawQuad(p, c, minv, maxv);
+         DrawQuad(disp_buf, p, c, minv, maxv);
       }
    }
-   glEndList();
+   updated_bufs.emplace_back(&disp_buf);
 }
 
 void VisualizationSceneSolution3d::PrepareFlat2()
 {
    int i, k, fn, fo, di, have_normals;
    double bbox_diam, vmin, vmax;
-
-   glNewList(displlist, GL_COMPILE);
+   disp_buf.clear();
 
    int dim = mesh->Dimension();
    int nbe = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -1589,12 +1571,9 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       else
       {
          if (!bdr_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
-
          mesh->GetElementVertices(i, vertices);
       }
-
       if (cplane == 2 && CheckPositions(vertices)) { continue; }
-
       if (dim == 3)
       {
          mesh -> GetBdrElementFace (i, &fn, &fo);
@@ -1683,10 +1662,11 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       // Comment the above lines and use the below version in order to remove
       // the 3D dark artifacts (indicating wrong boundary element orientation)
       // have_normals = have_normals ? 1 : 0;
-      DrawPatch(pointmat, values, normals, sides, RefG->RefGeoms,
+      DrawPatch(disp_buf, pointmat, values, normals, sides, RefG->RefGeoms,
                 minv, maxv, have_normals);
    }
-   glEndList();
+   updated_bufs.emplace_back(&disp_buf);
+
    cout << "VisualizationSceneSolution3d::PrepareFlat2() : [min,max] = ["
         << vmin << "," << vmax << "]" << endl;
 }
@@ -1697,8 +1677,6 @@ void VisualizationSceneSolution3d::Prepare()
 
    if (!drawelems)
    {
-      glNewList(displlist, GL_COMPILE);
-      glEndList();
       return;
    }
 
@@ -1714,7 +1692,8 @@ void VisualizationSceneSolution3d::Prepare()
          break;
    }
 
-   glNewList(displlist, GL_COMPILE);
+   disp_buf.clear();
+   gl3::GlBuilder poly = disp_buf.createBuilder();
 
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -1832,20 +1811,22 @@ void VisualizationSceneSolution3d::Prepare()
          {
             mesh->GetElementVertices(elem[i], vertices);
          }
+
+         GLenum elemType = GL_NONE;
          switch ((dim == 3) ? mesh->GetBdrElementType(elem[i]) :
                  mesh->GetElementType(elem[i]))
          {
             case Element::TRIANGLE:
-               glBegin (GL_TRIANGLES);
+               elemType = GL_TRIANGLES;
                break;
-
             case Element::QUADRILATERAL:
-               glBegin (GL_QUADS);
+               elemType = GL_QUADS;
                break;
             default:
                MFEM_ABORT("Invalid boundary element type");
                break;
          }
+         poly.glBegin(elemType);
          if (dim == 3)
          {
             mesh->GetBdrPointMatrix(elem[i], pointmat);
@@ -1857,23 +1838,20 @@ void VisualizationSceneSolution3d::Prepare()
 
          for (j = 0; j < pointmat.Size(); j++)
          {
-            MySetColor((*sol)(vertices[j]), minv, maxv);
-            glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
-            glVertex3dv(&pointmat(0, j));
+            MySetColor(poly, (*sol)(vertices[j]), minv, maxv);
+            poly.glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
+            poly.glVertex3dv(&pointmat(0, j));
          }
-         glEnd();
+         poly.glEnd();
       }
-
    }
-   glEndList();
+   updated_bufs.emplace_back(&disp_buf);
 }
 
 void VisualizationSceneSolution3d::PrepareLines()
 {
    if (!drawmesh)
    {
-      glNewList(linelist, GL_COMPILE);
-      glEndList();
       return;
    }
 
@@ -1888,7 +1866,7 @@ void VisualizationSceneSolution3d::PrepareLines()
    int i, j, k;
    DenseMatrix pointmat;
 
-   glNewList(linelist, GL_COMPILE);
+   line_buf.clear();
 
    Array<int> vertices;
 
@@ -1930,16 +1908,17 @@ void VisualizationSceneSolution3d::PrepareLines()
          mesh->GetPointMatrix(i, pointmat);
       }
 
+      gl3::GlBuilder line = line_buf.createBuilder();
       switch (drawmesh)
       {
          case 1:
-            glBegin(GL_LINE_LOOP);
+            line.glBegin(GL_LINE_LOOP);
 
             for (j = 0; j < pointmat.Size(); j++)
             {
-               glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j));
+               line.glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j));
             }
-            glEnd();
+            line.glEnd();
             break;
 
          case 2:
@@ -1951,12 +1930,11 @@ void VisualizationSceneSolution3d::PrepareLines()
                }
                point[j][3] = (*sol)(vertices[j]);
             }
-            DrawPolygonLevelLines(point[0], pointmat.Size(), level, false);
+            DrawPolygonLevelLines(line, point[0], pointmat.Size(), level, false);
             break;
       }
    }
-
-   glEndList();
+   updated_bufs.emplace_back(&line_buf);
 }
 
 void VisualizationSceneSolution3d::PrepareLines2()
@@ -1964,7 +1942,7 @@ void VisualizationSceneSolution3d::PrepareLines2()
    int i, j, k, fn, fo, di = 0;
    double bbox_diam;
 
-   glNewList (linelist, GL_COMPILE);
+   line_buf.clear();
 
    int dim = mesh->Dimension();
    int nbe = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -2078,17 +2056,17 @@ void VisualizationSceneSolution3d::PrepareLines2()
             }
          }
       }
-
+      gl3::GlBuilder line = line_buf.createBuilder();
       if (drawmesh == 1)
       {
          Array<int> &REdges = RefG->RefEdges;
 
-         glBegin(GL_LINES);
+         line.glBegin(GL_LINES);
          for (k = 0; k < REdges.Size(); k++)
          {
-            glVertex3dv(&pointmat(0, REdges[k]));
+            line.glVertex3dv(&pointmat(0, REdges[k]));
          }
-         glEnd();
+         line.glEnd();
       }
       else if (drawmesh == 2)
       {
@@ -2118,11 +2096,11 @@ void VisualizationSceneSolution3d::PrepareLines2()
                }
                point[j][3] = values(RG[j]);
             }
-            DrawPolygonLevelLines(point[0], sides, level, false);
+            DrawPolygonLevelLines(line, point[0], sides, level, false);
          }
       }
    }
-   glEndList();
+   updated_bufs.emplace_back(&line_buf);
 }
 
 static void CutElement(const Geometry::Type geom, const int *vert_flags,
@@ -2392,16 +2370,17 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
                      break;
                   }
 
+                  gl3::GlBuilder draw = cplane_buf.createBuilder();
                   if (!j)
                   {
-                     glBegin(GL_POLYGON);
-                     glNormal3dv(norm);
+                     draw.glBegin(GL_POLYGON);
+                     draw.glNormal3dv(norm);
                      for (j = 0; j < m; j++)
                      {
-                        MySetColor(point[j][3], minv, maxv);
-                        glVertex3dv(point[j]);
+                        MySetColor(draw, point[j][3], minv, maxv);
+                        draw.glVertex3dv(point[j]);
                      }
-                     glEnd();
+                     draw.glEnd();
                   }
                }
             }
@@ -2417,12 +2396,13 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
                else
                {
                   // glBegin (GL_POLYGON);
-                  glBegin(GL_LINE_LOOP);
+                  gl3::GlBuilder line = cplines_buf.createBuilder();
+                  line.glBegin(GL_LINE_LOOP);
                   for (j = 0; j < n; j++)
                   {
-                     glVertex3dv(point[j]);
+                     line.glVertex3dv(point[j]);
                   }
-                  glEnd();
+                  line.glEnd();
                }
             }
             break;
@@ -2436,7 +2416,8 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
                }
                else
                {
-                  DrawPolygonLevelLines(point[0], n, level, false);
+                  gl3::GlBuilder line = cplines_buf.createBuilder();
+                  DrawPolygonLevelLines(line, point[0], n, level, false);
                }
             }
             break;
@@ -2453,6 +2434,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
 }
 
 void VisualizationSceneSolution3d::CutRefinedElement(
+   gl3::GlDrawable& target,
    const DenseMatrix &verts, const Vector &vert_dist, const Vector &vals,
    const Geometry::Type geom, const int *elems, int num_elems, int func)
 {
@@ -2465,6 +2447,8 @@ void VisualizationSceneSolution3d::CutRefinedElement(
       sc = FaceShiftScale * bbox_diam;
    }
    const int nv = Geometry::NumVerts[geom];
+
+   gl3::GlBuilder bld = target.createBuilder();
 
    for (int i = 0; i < num_elems; i++)
    {
@@ -2543,19 +2527,19 @@ void VisualizationSceneSolution3d::CutRefinedElement(
             }
             if (!err)
             {
-               glBegin(GL_POLYGON);
-               glNormal3dv(norm);
+               bld.glBegin(GL_POLYGON);
+               bld.glNormal3dv(norm);
                for (int j = 0; j < m; j++)
                {
-                  MySetColor(pts[j][3], minv, maxv);
-                  glVertex3dv(pts[j]);
+                  MySetColor(bld, pts[j][3], minv, maxv);
+                  bld.glVertex3dv(pts[j]);
                }
-               glEnd();
+               bld.glEnd();
             }
          }
          else // draw level lines
          {
-            DrawPolygonLevelLines(pts[0], n, level, false);
+            DrawPolygonLevelLines(bld, pts[0], n, level, false);
          }
 
          for (int j = 0; j < n2; j++)
@@ -2569,6 +2553,7 @@ void VisualizationSceneSolution3d::CutRefinedElement(
 }
 
 void VisualizationSceneSolution3d::CutRefinedFace(
+   gl3::GlDrawable& target,
    const DenseMatrix &verts, const Vector &vert_dist, const Vector &vals,
    const Geometry::Type geom, const int *faces, int num_faces)
 {
@@ -2582,7 +2567,6 @@ void VisualizationSceneSolution3d::CutRefinedFace(
    }
    const int nv = Geometry::NumVerts[geom];
 
-   bool gl_lines_begun = false;
    for (int i = 0; i < num_faces; i++)
    {
       int vert_flag[4], cut_edges[4];
@@ -2632,30 +2616,18 @@ void VisualizationSceneSolution3d::CutRefinedFace(
             }
          }
       }
-      if (!gl_lines_begun)
-      {
-         glBegin(GL_LINES);
-         gl_lines_begun = true;
-      }
-      glVertex3dv(pts[0]);
-      glVertex3dv(pts[1]);
+
+      target.addLine(gl3::Vertex::create(pts[0]), gl3::Vertex::create(pts[1]));
       if (n == 4)
       {
-         glVertex3dv(pts[2]);
-         glVertex3dv(pts[3]);
+         target.addLine(gl3::Vertex::create(pts[2]), gl3::Vertex::create(pts[3]));
       }
-   }
-
-   if (gl_lines_begun)
-   {
-      glEnd();
    }
 }
 
 void VisualizationSceneSolution3d::PrepareCuttingPlane()
 {
-   glNewList(cplanelist, GL_COMPILE);
-
+   cplane_buf.clear();
    if (cp_drawelems && cplane && mesh->Dimension() == 3)
    {
       if (cplane == 2)
@@ -2684,13 +2656,12 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane()
             Array<int> &RG = RefG->RefGeoms;
 
             const int func = 0; // draw surface
-            CutRefinedElement(pointmat, vert_dist, vals, geom,
+            CutRefinedElement(cplane_buf, pointmat, vert_dist, vals, geom,
                               RG, RG.Size()/Geometry::NumVerts[geom], func);
          }
       }
    }
-
-   glEndList();
+   updated_bufs.emplace_back(&cplane_buf);
 }
 
 void VisualizationSceneSolution3d::PrepareCuttingPlane2()
@@ -2703,6 +2674,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
 
    Array<int> nodes;
    Array<int> partition (mesh -> GetNE());
+
    for (i = 0; i < mesh -> GetNE(); i++)
    {
       n = 0; // n will be the number of nodes behind the cutting plane
@@ -2734,11 +2706,11 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
 
             if (nodes.Size() == 3)
             {
-               DrawTriangle(p, c, minv, maxv);
+               DrawTriangle(cplane_buf, p, c, minv, maxv);
             }
             else
             {
-               DrawQuad(p, c, minv, maxv);
+               DrawQuad(cplane_buf, p, c, minv, maxv);
             }
          }
          else // shading == 2
@@ -2759,7 +2731,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
                   break;
             }
             // DrawRefinedSurf (n, pointmat, values, RefG->RefGeoms);
-            DrawPatch(pointmat, values, normals, n, RefG->RefGeoms,
+            DrawPatch(cplane_buf, pointmat, values, normals, n, RefG->RefGeoms,
                       minv, maxv, dir ? -3 : 2);
          } // end shading == 2
       }
@@ -2768,7 +2740,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
 
 void VisualizationSceneSolution3d::PrepareCuttingPlaneLines()
 {
-   glNewList(cplanelineslist, GL_COMPILE);
+   cplines_buf.clear();
 
    if (cp_drawmesh && cplane && mesh->Dimension() == 3)
    {
@@ -2819,7 +2791,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines()
                }
                Array<int> &RG = RefG->RefGeoms;
 
-               CutRefinedFace(pointmat, vert_dist, vals, geom,
+               CutRefinedFace(cplines_buf, pointmat, vert_dist, vals, geom,
                               RG, RG.Size()/Geometry::NumVerts[geom]);
             }
          }
@@ -2845,14 +2817,14 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines()
                Array<int> &RG = RefG->RefGeoms;
 
                const int func = 1; // draw level lines
-               CutRefinedElement(pointmat, vert_dist, vals, geom,
+               CutRefinedElement(cplines_buf, pointmat, vert_dist, vals, geom,
                                  RG, RG.Size()/Geometry::NumVerts[geom], func);
             }
          }
       }
    }
 
-   glEndList();
+   updated_bufs.emplace_back(&cplines_buf);
 }
 
 void VisualizationSceneSolution3d::PrepareCuttingPlaneLines2()
@@ -2893,19 +2865,20 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines2()
                point[j][2] = coord[2];
                point[j][3] = (*sol)(nodes[j]);
             }
+            gl3::GlBuilder line = cplines_buf.createBuilder();
             switch (cp_drawmesh)
             {
                case 1:
                   // glBegin(GL_POLYGON);
-                  glBegin(GL_LINE_LOOP);
+                  line.glBegin(GL_LINE_LOOP);
                   for (j = 0; j < nodes.Size(); j++)
                   {
-                     glVertex3dv (point[j]);
+                     line.glVertex3dv (point[j]);
                   }
-                  glEnd();
+                  line.glEnd();
                   break;
                case 2:
-                  DrawPolygonLevelLines(point[0], nodes.Size(), level, false);
+                  DrawPolygonLevelLines(line, point[0], nodes.Size(), level, false);
                   break;
             }
          }
@@ -2944,12 +2917,15 @@ int triangle_counter;
 int quad_counter;
 
 void VisualizationSceneSolution3d::DrawTetLevelSurf(
+   gl3::GlDrawable& target,
    const DenseMatrix &verts, const Vector &vals, const int *ind,
    const Array<double> &levels, const DenseMatrix *grad)
 {
    double t, lvl, normal[3], vert[4][3], norm[4][3];
    int i, j, l, pos[4];
    bool flipped;
+
+   gl3::GlBuilder draw = target.createBuilder();
 
    for (l = 0; l < levels.Size(); l++)
    {
@@ -3029,27 +3005,27 @@ void VisualizationSceneSolution3d::DrawTetLevelSurf(
          {
             if (!Compute3DUnitNormal(vert[0], vert[1], vert[2], normal))
             {
-               MySetColor(lvl, minv, maxv);
-               glNormal3dv(normal);
-               glBegin(GL_TRIANGLES);
+               MySetColor(draw, lvl, minv, maxv);
+               draw.glNormal3dv(normal);
+               draw.glBegin(GL_TRIANGLES);
                for (int k = 0; k < 3; k++)
                {
-                  glVertex3dv(vert[k]);
+                  draw.glVertex3dv(vert[k]);
                }
-               glEnd();
+               draw.glEnd();
                triangle_counter++;
             }
          }
          else
          {
-            MySetColor(lvl, minv, maxv);
-            glBegin(GL_TRIANGLES);
+            MySetColor(draw, lvl, minv, maxv);
+            draw.glBegin(GL_TRIANGLES);
             for (int k = 0; k < 3; k++)
             {
-               glNormal3dv(norm[k]);
-               glVertex3dv(vert[k]);
+               draw.glNormal3dv(norm[k]);
+               draw.glVertex3dv(vert[k]);
             }
-            glEnd();
+            draw.glEnd();
             triangle_counter++;
          }
       }
@@ -3078,27 +3054,27 @@ void VisualizationSceneSolution3d::DrawTetLevelSurf(
             if (!Compute3DUnitNormal(vert[0], vert[1], vert[2], vert[3],
                                      normal))
             {
-               MySetColor(lvl, minv, maxv);
-               glNormal3dv(normal);
-               glBegin(GL_QUADS);
+               MySetColor(draw, lvl, minv, maxv);
+               draw.glNormal3dv(normal);
+               draw.glBegin(GL_QUADS);
                for (int k = 0; k < 4; k++)
                {
-                  glVertex3dv(vert[k]);
+                  draw.glVertex3dv(vert[k]);
                }
-               glEnd();
+               draw.glEnd();
                quad_counter++;
             }
          }
          else
          {
-            MySetColor(lvl, minv, maxv);
-            glBegin(GL_QUADS);
+            MySetColor(draw, lvl, minv, maxv);
+            draw.glBegin(GL_QUADS);
             for (int k = 0; k < 4; k++)
             {
-               glNormal3dv(norm[k]);
-               glVertex3dv(vert[k]);
+               draw.glNormal3dv(norm[k]);
+               draw.glVertex3dv(vert[k]);
             }
-            glEnd();
+            draw.glEnd();
             quad_counter++;
          }
       }
@@ -3124,6 +3100,7 @@ int VisualizationSceneSolution3d::GetWedgeFaceSplits(
 }
 
 void VisualizationSceneSolution3d::DrawRefinedWedgeLevelSurf(
+   gl3::GlDrawable& target,
    const DenseMatrix &verts, const Vector &vals, const int *RG, const int np,
    const int face_splits, const DenseMatrix *grad)
 {
@@ -3207,7 +3184,7 @@ void VisualizationSceneSolution3d::DrawRefinedWedgeLevelSurf(
          const DenseMatrix *gd_ = grad ? &gd : NULL;
          for (int k = 0; k < 6; k++)
          {
-            DrawTetLevelSurf(pm, vs, pri_tets_0[k], levels, gd_);
+            DrawTetLevelSurf(target, pm, vs, pri_tets_0[k], levels, gd_);
          }
       }
       else if (fsl == 7)
@@ -3231,7 +3208,7 @@ void VisualizationSceneSolution3d::DrawRefinedWedgeLevelSurf(
          const DenseMatrix *gd_ = grad ? &gd : NULL;
          for (int k = 0; k < 6; k++)
          {
-            DrawTetLevelSurf(pm, vs, pri_tets_7[k], levels, gd_);
+            DrawTetLevelSurf(target, pm, vs, pri_tets_7[k], levels, gd_);
          }
       }
       else
@@ -3243,7 +3220,7 @@ void VisualizationSceneSolution3d::DrawRefinedWedgeLevelSurf(
             {
                m_ind[i] = pv[pri_tets[fsl-1][j][i]];
             }
-            DrawTetLevelSurf(verts, vals, m_ind, levels, grad);
+            DrawTetLevelSurf(target, verts, vals, m_ind, levels, grad);
          }
       }
    }
@@ -3269,6 +3246,7 @@ int VisualizationSceneSolution3d::GetHexFaceSplits(
 }
 
 void VisualizationSceneSolution3d::DrawRefinedHexLevelSurf(
+   gl3::GlDrawable& target,
    const DenseMatrix &verts, const Vector &vals, const int *RG, const int nh,
    const int face_splits, const DenseMatrix *grad)
 {
@@ -3427,8 +3405,8 @@ void VisualizationSceneSolution3d::DrawRefinedHexLevelSurf(
                tv[7] = 8;
             }
             const DenseMatrix *gp = grad ? &gd : NULL;
-            DrawTetLevelSurf(pm, vs, &tv[0], levels, gp);
-            DrawTetLevelSurf(pm, vs, &tv[4], levels, gp);
+            DrawTetLevelSurf(target, pm, vs, &tv[0], levels, gp);
+            DrawTetLevelSurf(target, pm, vs, &tv[4], levels, gp);
          }
 
          continue;
@@ -3461,8 +3439,8 @@ void VisualizationSceneSolution3d::DrawRefinedHexLevelSurf(
       const bool diag = (l06 > 1.01*l24);
       const int fs1 = (fsl&(16+8))/4 + !diag; // a|b|c|d|e|f -> b|c|1-diag
       const int fs2 = (fsl&(4+2)) + diag; // a|b|c|d|e|f -> d|e|diag
-      DrawRefinedWedgeLevelSurf(verts, vals, pv[0], 1, fs1, grad);
-      DrawRefinedWedgeLevelSurf(verts, vals, pv[1], 1, fs2, grad);
+      DrawRefinedWedgeLevelSurf(target, verts, vals, pv[0], 1, fs1, grad);
+      DrawRefinedWedgeLevelSurf(target, verts, vals, pv[1], 1, fs2, grad);
    }
 #endif
 }
@@ -3475,17 +3453,14 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
    DenseMatrix pointmat, grad;
    Array<int> vertices;
 
+   lsurf_buf.clear();
    if (drawlsurf == 0 || mesh->Dimension() != 3)
    {
       //  Create empty list
-      glNewList(lsurflist, GL_COMPILE);
-      glEndList();
       return;
    }
 
    triangle_counter = quad_counter = 0;
-
-   glNewList(lsurflist, GL_COMPILE);
 
    levels.SetSize(nlevels);
    for (int l = 0; l < nlevels; l++)
@@ -3530,20 +3505,20 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
          switch (mesh->GetElementType(ie))
          {
             case Element::TETRAHEDRON:
-               DrawTetLevelSurf(pointmat, vals, ident, levels);
+               DrawTetLevelSurf(lsurf_buf, pointmat, vals, ident, levels);
                break;
             case Element::WEDGE:
             {
                mesh->GetElementFaces(ie, faces, ofaces);
                const int fs = GetWedgeFaceSplits(quad_diag, faces, ofaces);
-               DrawRefinedWedgeLevelSurf(pointmat, vals, ident, 1, fs);
+               DrawRefinedWedgeLevelSurf(lsurf_buf, pointmat, vals, ident, 1, fs);
             }
             break;
             case Element::HEXAHEDRON:
             {
                mesh->GetElementFaces(ie, faces, ofaces);
                const int fs = GetHexFaceSplits(quad_diag, faces, ofaces);
-               DrawRefinedHexLevelSurf(pointmat, vals, ident, 1, fs);
+               DrawRefinedHexLevelSurf(lsurf_buf, pointmat, vals, ident, 1, fs);
             }
             break;
             default:
@@ -3580,25 +3555,25 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
          {
             for (int k = 0; k < nre; k++)
             {
-               DrawTetLevelSurf(pointmat, vals, &RG[nv*k], levels, gp);
+               DrawTetLevelSurf(lsurf_buf, pointmat, vals, &RG[nv*k], levels, gp);
             }
          }
          else if (geom == Geometry::PRISM)
          {
             mesh->GetElementFaces(ie, faces, ofaces);
             const int fs = GetWedgeFaceSplits(quad_diag, faces, ofaces);
-            DrawRefinedWedgeLevelSurf(pointmat, vals, RG, nre, fs, gp);
+            DrawRefinedWedgeLevelSurf(lsurf_buf, pointmat, vals, RG, nre, fs, gp);
          }
          else if (geom == Geometry::CUBE)
          {
             mesh->GetElementFaces(ie, faces, ofaces);
             const int fs = GetHexFaceSplits(quad_diag, faces, ofaces);
-            DrawRefinedHexLevelSurf(pointmat, vals, RG, nre, fs, gp);
+            DrawRefinedHexLevelSurf(lsurf_buf, pointmat, vals, RG, nre, fs, gp);
          }
       }
    }
 
-   glEndList();
+   updated_bufs.emplace_back(&lsurf_buf);
 
 #ifdef GLVIS_DEBUG
    cout << "VisualizationSceneSolution3d::PrepareLevelSurf() : "
@@ -3607,174 +3582,68 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
 #endif
 }
 
-void VisualizationSceneSolution3d::Draw()
+gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
 {
-   glEnable(GL_DEPTH_TEST);
-
-   Set_Background();
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-   // model transformation
-   ModelView();
-
-   // draw colored faces
-   glPolygonOffset (1, 1);
-   glEnable (GL_POLYGON_OFFSET_FILL);
-   glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
-
-   glDisable(GL_CLIP_PLANE0);
-   // draw colorbar
-   glDisable(GL_LIGHTING);
    if (colorbar)
    {
-      if (drawmesh == 2 || cp_drawmesh >= 2)
-      {
-         if (drawlsurf)
-         {
-            DrawColorBar(minv,maxv,&level,&levels);
-         }
-         else
-         {
-            DrawColorBar(minv,maxv,&level);
-         }
-      }
-      else
-      {
-         if (drawlsurf)
-         {
-            DrawColorBar(minv,maxv,NULL,&levels);
-         }
-         else
-         {
-            DrawColorBar(minv,maxv);
-         }
-      }
+      Array<double>* cb_level = nullptr,
+                     * cb_levels = nullptr;
+      if (drawlsurf) { cb_levels = &levels; }
+      if (drawmesh == 2 || cp_drawmesh >= 2) { cb_level = &level; }
+      PrepareColorBar(minv, maxv, cb_level, cb_levels);
    }
-
-   // define and enable the clipping plane
-   if (cplane)
-   {
-      //  double *eqn
-      //  eqn = CuttingPlane->Equation();
-      //  double tr_eqn[4];
-      //  tr_eqn[0] = eqn[0];
-      //  tr_eqn[1] = eqn[1];
-      //  tr_eqn[2] = eqn[2];
-      //  tr_eqn[3] = eqn[3];
-      //  tr_eqn[3] = eqn[3] + 1e-2;
-      //  glClipPlane(GL_CLIP_PLANE0,tr_eqn);
-      glClipPlane(GL_CLIP_PLANE0, CuttingPlane->Equation());
-      glEnable(GL_CLIP_PLANE0);
-   }
-
-   Set_Material(); // color section
-   if (light)
-   {
-      glEnable(GL_LIGHTING);
-   }
-
-   if (MatAlpha < 1.0)
-   {
-      Set_Transparency();
-   }
-
-   if (GetUseTexture())
-   {
-      glEnable (GL_TEXTURE_1D);
-      glColor4d(1, 1, 1, 1); // default color
-   }
+   gl3::SceneInfo scene = VisualizationSceneScalarData::GetSceneObjs();
+   gl3::RenderParams params = GetMeshDrawParams();
+   params.use_clip_plane = cplane;
+   double* cp_eqn = CuttingPlane->Equation();
+   params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};
+   params.contains_translucent = MatAlpha < 1.0;
 
    if (drawlsurf)
    {
-      glCallList (lsurflist);
-      // Set_Black_Material();
-      // glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
-      // glCallList (lsurflist);
+      scene.queue.emplace_back(params, &lsurf_buf);
    }
-
-   // draw elements
    if (drawelems)
    {
-      glCallList(displlist);
+      scene.queue.emplace_back(params, &disp_buf);
    }
-
-   // draw ordering -- color modes
+   if (cplane && cp_drawelems)
+   {
+      params.use_clip_plane = false;
+      scene.queue.emplace_back(params, &cplane_buf);
+      params.use_clip_plane = true;
+   }
+   params.contains_translucent = false;
+   // draw orderings -- color modes
    if (draworder == 1)
    {
-      glCallList(order_list_noarrow);
+      scene.queue.emplace_back(params, &order_noarrow_buf);
    }
    else if (draworder == 2)
    {
-      glCallList(order_list);
+      scene.queue.emplace_back(params, &order_buf);
    }
-
-   if (cplane && cp_drawelems)
-   {
-      glDisable(GL_CLIP_PLANE0);
-      glCallList(cplanelist);
-      glEnable(GL_CLIP_PLANE0);
-   }
-
-   if (GetUseTexture())
-   {
-      glDisable(GL_TEXTURE_1D);
-   }
-
-   if (MatAlpha < 1.0)
-   {
-      Remove_Transparency();
-   }
-
-   if (light)
-   {
-      glDisable(GL_LIGHTING);
-   }
-   Set_Black_Material(); // everything below will be drawn in "black"
-
-   // ruler may have mixture of polygons and lines
-   if (cplane)
-   {
-      glDisable(GL_CLIP_PLANE0);
-      DrawRuler();
-      if (cp_drawmesh)
-      {
-         glCallList(cplanelineslist);
-      }
-      glEnable(GL_CLIP_PLANE0);
-   }
-   else
-   {
-      DrawRuler();
-   }
-
-   // draw lines
+   params.mesh_material = VisualizationScene::BLK_MAT;
+   // everything below will be drawn in "black"
+   params.static_color = GetLineColor();
+   params.num_pt_lights = 0;
    if (drawmesh)
    {
-      glCallList(linelist);
+      scene.queue.emplace_back(params, &line_buf);
    }
-
-   if (cplane)
+   if (cp_drawmesh)
    {
-      glDisable(GL_CLIP_PLANE0);
+      params.use_clip_plane = false;
+      scene.queue.emplace_back(params, &cplines_buf);
    }
-
-   // draw ordering -- "black" modes
+   // draw orderings -- "black" modes
    if (draworder == 3)
    {
-      glCallList(order_list_noarrow);
+      scene.queue.emplace_back(params, &order_noarrow_buf);
    }
    else if (draworder == 4)
    {
-      glCallList(order_list);
+      scene.queue.emplace_back(params, &order_buf);
    }
-
-   // draw axes
-   if (drawaxes)
-   {
-      glCallList(axeslist);
-      DrawCoordinateCross();
-   }
-
-   glFlush();
-   auxSwapBuffers();
+   return scene;
 }

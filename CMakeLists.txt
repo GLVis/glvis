@@ -1,6 +1,20 @@
-cmake_minimum_required(VERSION 2.8.12)
+# Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at the
+# Lawrence Livermore National Laboratory. LLNL-CODE-443271. All Rights reserved.
+# See file COPYRIGHT for details.
+#
+# This file is part of the GLVis visualization tool and library. For more
+# information and source code availability see http://glvis.org.
+#
+# GLVis is free software; you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License (as published by the Free
+# Software Foundation) version 2.1 dated February 1999.
+
+# CMake v3.10 is where "Imported Targets" like "Freetype::Freetype" are
+# introduced.
+cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Prohibit in-source builds
 if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
@@ -43,14 +57,6 @@ option(GLVIS_USE_LIBPNG
   "Use libpng for taking screenshots internally"
   ON)
 
-option(GLVIS_USE_FREETYPE
-  "Use freetype and fontconfig for rendinering and finding fonts."
-  ON)
-
-option(GLVIS_USE_GLX10
-  "Use GLX 1.0 calls. Use if X server doesn't support GLX 1.3."
-  OFF)
-
 #
 # Handle a few other definitions
 #
@@ -66,7 +72,7 @@ if (NOT GLVIS_MS_LINEWIDTH)
     set(GLVIS_MS_LINEWIDTH 1.4)
   else()
     # This value seems to work better on Macs
-    set(GLVIS_MS_LINEWIDTH 0.01)
+    set(GLVIS_MS_LINEWIDTH 1.0)
   endif()
 endif (NOT GLVIS_MS_LINEWIDTH)
 
@@ -78,10 +84,6 @@ set(_glvis_compile_defs)
 set(_glvis_compile_opts)
 set(_glvis_include_dirs)
 set(_glvis_libraries)
-
-if (GLVIS_USE_GLX10)
-  list(APPEND _glvis_compile_defs "GLVIS_GLX10")
-endif (GLVIS_USE_GLX10)
 
 list(APPEND _glvis_compile_defs "GLVIS_MULTISAMPLE=${GLVIS_MULTISAMPLE}")
 list(APPEND _glvis_compile_defs "GLVIS_MS_LINEWIDTH=${GLVIS_MS_LINEWIDTH}")
@@ -95,113 +97,156 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MFEM_CXX_FLAGS}")
 list(APPEND _glvis_include_dirs "${MFEM_INCLUDE_DIRS}")
 list(APPEND _glvis_libraries "${MFEM_LIBRARIES}")
 
-# Find X11. Only need libX11.
-find_package(X11 REQUIRED)
-list(APPEND _glvis_include_dirs "${X11_X11_INCLUDE_PATH}")
-list(APPEND _glvis_libraries "${X11_X11_LIB}")
+if (NOT EMSCRIPTEN)
 
-# Find OpenGL
-if (NOT APPLE)
+  # Find OpenGL
   find_package(OpenGL REQUIRED)
-else()
+  list(APPEND _glvis_libraries OpenGL::GL)
 
-  find_path(OPENGL_INCLUDE_DIR GL/gl.h
-    HINTS ${X11_X11_INCLUDE_PATH} ${OPENGL_DIR} $ENV{OPENGL_DIR}
-    DOC "OpenGL include path"
-    NO_DEFAULT_PATH)
-  find_path(OPENGL_INCLUDE_DIR GL/gl.h)
-
-  if (NOT OPENGL_LIBRARIES)
-    # I know this is ugly, but the internet suggests manually editing
-    # the CMakeCache.txt file. That seems worse.
-    get_filename_component(_x11_base_dir "${X11_X11_LIB}" DIRECTORY)
-
-    find_library(_gl_library GL
-      HINTS ${_x11_base_dir} ${OPENGL_DIR} $ENV{OPENGL_DIR}
-      DOC "OpenGL GL library."
-      NO_DEFAULT_PATH)
-    find_library(_gl_library GL)
-    if (NOT _gl_library)
-      message(FATAL_ERROR "OpenGL not found. Please set OPENGL_DIR.")
+  # Find 'SDL2' which is not part of the CMake standard modules
+  list(APPEND SDL2_DIR "../SDL2")
+  set(SDL2_DIR_SAVE ${SDL2_DIR})
+  find_package(SDL2 QUIET HINTS ${SDL2_DIR})
+  # The SDL2 target 'SDL2::SDL2' is not always defined, so instead we use
+  # directly 'SDL2_INCLUDE_DIRS' and 'SDL2_LIBRARIES'.
+  if (SDL2_INCLUDE_DIRS AND SDL2_LIBRARIES)
+    # SDL2_INCLUDE_DIRS is defined with 'SDL2' at the end of the path we need to
+    # strip that.
+    set(new_list_)
+    foreach (path IN LISTS SDL2_INCLUDE_DIRS)
+      string(REGEX REPLACE "/include/SDL2$" "/include" new_path_ "${path}")
+      list(APPEND new_list_ "${new_path_}")
+    endforeach()
+    set(SDL2_INCLUDE_DIRS ${new_list_})
+  else()
+    # find_package() did not work; try more direct approach.
+    set(SDL2_DIR ${SDL2_DIR_SAVE})
+    find_path(SDL2_INCLUDE_DIRS "SDL2/SDL.h"
+      HINTS ${SDL2_DIR} ENV SDL2_DIR
+      PATH_SUFFIXES "include"
+      DOC "SDL2 include path.")
+    find_library(SDL2_LIBRARIES "SDL2"
+      HINTS ${SDL2_DIR} ENV SDL2_DIR
+      PATH_SUFFIXES "lib"
+      DOC "SDL2 library.")
+    if (NOT (SDL2_INCLUDE_DIRS AND SDL2_LIBRARIES))
+      message(FATAL_ERROR "SDL2 library not found. Please set SDL2_DIR.")
     endif()
+  endif()
+  list(APPEND _glvis_include_dirs "${SDL2_INCLUDE_DIRS}")
+  list(APPEND _glvis_libraries "${SDL2_LIBRARIES}")
+  message(STATUS "SDL2 found: ${SDL2_LIBRARIES}")
+  message(STATUS "SDL2_INCLUDE_DIRS = ${SDL2_INCLUDE_DIRS}")
 
-    find_library(_glu_library GLU
-      HINTS ${_x11_base_dir} ${OPENGL_DIR} $ENV{OPENGL_DIR}
-      DOC "OpenGL GLU library."
-      NO_DEFAULT_PATH)
-    find_library(_glu_library GLU)
-    if (NOT _glu_library)
-      message(FATAL_ERROR "GLU library not found. Please set OPENGL_DIR.")
+  # Find GLEW
+  # GLEW search path can be set using CMAKE_PREFIX_PATH
+  list(APPEND CMAKE_PREFIX_PATH "../glew")
+  find_package(GLEW REQUIRED)
+  list(APPEND _glvis_libraries GLEW::GLEW)
+
+  # Find 'glm' which is not part of the CMake standard modules
+  list(APPEND GLM_DIR "../glm")
+  find_package(glm QUIET HINTS ${GLM_DIR})
+  if (NOT GLM_INCLUDE_DIRS)
+    find_path(GLM_INCLUDE_DIRS "glm/glm.hpp"
+      HINTS ${GLM_DIR} ENV GLM_DIR
+      PATH_SUFFIXES "include"
+      DOC "GLM include path.")
+    if (NOT GLM_INCLUDE_DIRS)
+      message(FATAL_ERROR "GLM headers not found. Please set GLM_DIR.")
     endif()
+  endif()
+  message(STATUS "GLM headers found: ${GLM_INCLUDE_DIRS}")
+  list(APPEND _glvis_include_dirs "${GLM_INCLUDE_DIRS}")
 
-    set(OPENGL_LIBRARIES "${_gl_library}" "${_glu_library}")
-    message(STATUS "Found OpenGL: ${OPENGL_LIBRARIES}")
-  endif (NOT OPENGL_LIBRARIES)
-endif (NOT APPLE)
-
-list(APPEND _glvis_include_dirs "${OPENGL_INCLUDE_DIR}")
-list(APPEND _glvis_libraries "${OPENGL_LIBRARIES}")
-
-# Find TIFF
-if (GLVIS_USE_LIBTIFF)
-  find_package(TIFF)
-  if (TIFF_FOUND)
-    list(APPEND _glvis_compile_defs "GLVIS_USE_LIBTIFF")
-    list(APPEND _glvis_include_dirs "${TIFF_INCLUDE_DIRS}")
-    list(APPEND _glvis_libraries "${TIFF_LIBRARIES}")
-  else()
-    message(WARNING "TIFF library not found. TIFF disabled.")
-    set(GLVIS_USE_LIBTIFF OFF)
-  endif (TIFF_FOUND)
-endif (GLVIS_USE_LIBTIFF)
-
-# Find PNG
-if (GLVIS_USE_LIBPNG)
-  find_package(PNG)
-  if (PNG_FOUND)
-    list(APPEND _glvis_compile_defs "GLVIS_USE_LIBPNG")
-    list(APPEND _glvis_include_dirs "${PNG_INCLUDE_DIRS}")
-    list(APPEND _glvis_libraries "${PNG_LIBRARIES}")
-  else()
-    message(WARNING "PNG library not found. PNG disabled.")
-    set(GLVIS_USE_LIBPNG OFF)
-  endif (PNG_FOUND)
-endif (GLVIS_USE_LIBPNG)
-
-# Find FreeType and Fontconfig.
-if (GLVIS_USE_FREETYPE)
-  find_package(Freetype)
-  if (NOT FREETYPE_FOUND)
-    message(WARNING "FreeType not found. Disabling FreeType support.")
-  else()
-    # Find FontConfig
-    find_library(FONTCONFIG_LIBRARY fontconfig
-      HINTS ${FONTCONFIG_DIR} $ENV{FONTCONFIG_DIR}
-      DOC "The fontconfig library for use with FreeType."
-      NO_DEFAULT_PATH)
-    find_library(FONTCONFIG_LIBRARY fontconfig)
-    if (FONTCONFIG_LIBRARY)
-      list(APPEND _glvis_compile_defs "GLVIS_USE_FREETYPE")
-      list(APPEND _glvis_include_dirs "${FREETYPE_INCLUDE_DIRS}")
-      list(APPEND _glvis_libraries "${FREETYPE_LIBRARIES}")
-      # Need FONTCONFIG_INCLUDE_DIRS?
-      list(APPEND _glvis_libraries "${FONTCONFIG_LIBRARY}")
-      message(STATUS "Found Fontconfig: ${FONTCONFIG_LIBRARY}")
+  # Find TIFF
+  if (GLVIS_USE_LIBTIFF)
+    find_package(TIFF)
+    if (TIFF_FOUND)
+      list(APPEND _glvis_compile_defs "GLVIS_USE_LIBTIFF")
+      list(APPEND _glvis_libraries TIFF::TIFF)
     else()
-      message(STATUS "Fontconfig not found. Please set FONTCONFIG_DIR.")
-      message(WARNING "Fontconfig not found. Disabling FreeType support.")
-    endif (FONTCONFIG_LIBRARY)
-  endif (NOT FREETYPE_FOUND)
-endif (GLVIS_USE_FREETYPE)
+      message(WARNING "TIFF library not found. TIFF disabled.")
+      set(GLVIS_USE_LIBTIFF OFF)
+    endif (TIFF_FOUND)
+  endif (GLVIS_USE_LIBTIFF)
 
-# Find threading library
-set(CMAKE_THREAD_PREFER_PTHREAD ON)
-find_package(Threads REQUIRED)
-if (NOT CMAKE_USE_PTHREADS_INIT)
-  message(FATAL_ERROR "The required pthreads library was not found.")
-else()
-  list(APPEND _glvis_libraries "${CMAKE_THREAD_LIBS_INIT}")
-endif()
+  # Find PNG
+  if (GLVIS_USE_LIBPNG)
+    find_package(PNG)
+    if (PNG_FOUND)
+      list(APPEND _glvis_compile_defs "GLVIS_USE_LIBPNG")
+      list(APPEND _glvis_libraries PNG::PNG)
+    else()
+      message(WARNING "PNG library not found. PNG disabled.")
+      set(GLVIS_USE_LIBPNG OFF)
+    endif (PNG_FOUND)
+  endif (GLVIS_USE_LIBPNG)
+
+  # Find FreeType.
+  find_package(Freetype REQUIRED)
+  # Find FontConfig (FindFontconfig.cmake was added in CMake 3.14)
+  find_library(FONTCONFIG_LIBRARY fontconfig
+    HINTS ${FONTCONFIG_DIR} $ENV{FONTCONFIG_DIR}
+    DOC "The fontconfig library for use with FreeType."
+    NO_DEFAULT_PATH)
+  find_library(FONTCONFIG_LIBRARY fontconfig)
+  if (FONTCONFIG_LIBRARY)
+    list(APPEND _glvis_libraries Freetype::Freetype)
+    # Need FONTCONFIG_INCLUDE_DIRS?
+    list(APPEND _glvis_libraries "${FONTCONFIG_LIBRARY}")
+    message(STATUS "Found Fontconfig: ${FONTCONFIG_LIBRARY}")
+  else()
+    message(STATUS "Fontconfig not found. Please set FONTCONFIG_DIR.")
+    message(FATAL_ERROR "Fontconfig not found.")
+  endif (FONTCONFIG_LIBRARY)
+
+  # Find threading library
+  set(CMAKE_THREAD_PREFER_PTHREAD ON)
+  find_package(Threads REQUIRED)
+  if (NOT CMAKE_USE_PTHREADS_INIT)
+    message(FATAL_ERROR "The required pthreads library was not found.")
+  else()
+    list(APPEND _glvis_libraries "${CMAKE_THREAD_LIBS_INIT}")
+  endif()
+
+else(NOT EMSCRIPTEN)
+
+  find_package(glm REQUIRED)
+  list(APPEND _glvis_include_dirs "${GLM_INCLUDE_DIRS}")
+  set(_emscripten_opts)
+  # Enable embind
+  list(APPEND _emscripten_opts "--bind")
+
+  # OpenGL, SDL2, and GLEW are provided by the Emscripten runtime
+  # Enable SDL2
+  list(APPEND _emscripten_opts "-s USE_SDL=2")
+
+  # Set WebGL options
+  list(APPEND _emscripten_opts
+       "-s GL_ASSERTIONS=1 -s GL_DEBUG=1 -s USE_WEBGL2=1")
+
+  # Enable Freetype port
+  list(APPEND _emscripten_opts "-s USE_FREETYPE=1")
+
+  # Module export options
+  list(APPEND _emscripten_opts "-s ENVIRONMENT=web")
+  list(APPEND _emscripten_opts "-s MODULARIZE=1")
+  list(APPEND _emscripten_opts "-s EXPORT_NAME=glvis")
+
+  # Other emscripten options
+  list(APPEND _emscripten_opts "-s ALLOW_MEMORY_GROWTH=1")
+  list(APPEND _emscripten_opts "-s SINGLE_FILE=1")
+  list(APPEND _emscripten_opts "--no-heap-copy")
+
+  # Since we don't have access to fontconfig, embed a font
+  if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/OpenSans.ttf")
+    message(FATAL_ERROR "Preload font file \"OpenSans.ttf\" not found.")
+  endif()
+  list(APPEND _emscripten_opts
+       "--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/OpenSans.ttf@OpenSans.ttf")
+
+endif(NOT EMSCRIPTEN)
 
 message(STATUS "GLVis build type: CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
 message(STATUS "GLVis defines: ${_glvis_compile_defs}")
@@ -216,25 +261,28 @@ message(STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
 #
 
 add_subdirectory(lib)
+add_subdirectory(share)
 
-#
-# Setup the GLVis executable
+if(NOT EMSCRIPTEN)
 
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "")
-set(CMAKE_INSTALL_RPATH "${MFEM_LIBRARY_DIR}" CACHE PATH "")
+  # Setup the GLVis executable
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "")
+  set(CMAKE_INSTALL_RPATH "${MFEM_LIBRARY_DIR}" CACHE PATH "")
 
-add_executable(glvis-exe glvis.cpp)
-set_target_properties(glvis-exe PROPERTIES OUTPUT_NAME glvis)
+  add_executable(glvis-exe glvis.cpp)
+  set_target_properties(glvis-exe PROPERTIES OUTPUT_NAME glvis)
 
-target_link_libraries(glvis-exe PRIVATE glvis)
+  target_link_libraries(glvis-exe PRIVATE glvis glvis_logo)
 
-# Install the executable
-install(TARGETS glvis-exe RUNTIME DESTINATION bin)
+  # Install the executable
+  install(TARGETS glvis-exe RUNTIME DESTINATION bin)
 
-# Install the gnutls helper script
-if (MFEM_USE_GNUTLS)
-  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/glvis-keygen.sh
-    DESTINATION bin
-    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-      GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-endif (MFEM_USE_GNUTLS)
+  # Install the gnutls helper script
+  if (MFEM_USE_GNUTLS)
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/glvis-keygen.sh
+      DESTINATION bin
+      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+        GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+  endif (MFEM_USE_GNUTLS)
+
+endif(NOT EMSCRIPTEN)

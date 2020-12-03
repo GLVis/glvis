@@ -12,8 +12,11 @@
 #ifndef GLVIS_VSDATA
 #define GLVIS_VSDATA
 
+#include <array>
+
 #include "openglvis.hpp"
 #include "mfem.hpp"
+
 using namespace mfem;
 
 extern std::string plot_caption; // defined in glvis.cpp
@@ -59,8 +62,16 @@ protected:
 
    std::string a_label_x, a_label_y, a_label_z;
 
-   int scaling, colorbar, drawaxes, axeslist;
+   int scaling, colorbar, drawaxes;
    int auto_ref_max, auto_ref_max_surf_elem;
+
+   vector<gl3::GlDrawable*> updated_bufs;
+   gl3::GlDrawable axes_buf;
+   gl3::GlDrawable coord_cross_buf;
+   gl3::GlDrawable color_bar;
+   gl3::GlDrawable ruler_buf;
+   gl3::GlDrawable caption_buf;
+   int caption_w, caption_h;
 
    void Init();
 
@@ -80,6 +91,7 @@ protected:
    int autoscale;
 
    bool logscale;
+
    bool LogscaleRange() { return (minv > 0.0 && maxv > minv); }
    void PrintLogscale(bool warn);
 
@@ -112,9 +124,10 @@ protected:
 
    void FixValueRange();
 
+   void Cone(gl3::GlBuilder& builder, glm::mat4 transform);
+
 public:
    Plane *CuttingPlane;
-   int light;
    int key_r_state;
    /** Shrink factor with respect to the center of each element (2D) or the
        center of each boundary attribute (3D) */
@@ -181,33 +194,33 @@ public:
 
    Mesh *GetMesh() { return mesh; }
 
-   void DrawColorBar(double minval, double maxval,
-                     Array<double> * level = NULL,
-                     Array<double> * levels = NULL);
-   void DrawCaption();
-   void DrawCoordinateCross();
+   virtual gl3::SceneInfo GetSceneObjs();
 
    double &GetMinV() { return minv; }
    double &GetMaxV() { return maxv; }
 
    void SetLevelLines(double min, double max, int n, int adj = 1);
 
-   void Arrow(double px, double py, double pz,
+   void Arrow(gl3::GlBuilder& builder,
+              double px, double py, double pz,
               double vx, double vy, double vz, double length,
               double cone_scale = 0.075);
-   void Arrow2(double px, double py, double pz,
+   void Arrow2(gl3::GlBuilder& builder,
+               double px, double py, double pz,
                double vx, double vy, double vz,
                double length,
                double cone_scale = 0.075);
-   void Arrow3(double px, double py, double pz,
+   void Arrow3(gl3::GlBuilder& builder,
+               double px, double py, double pz,
                double vx, double vy, double vz,
                double length,
                double cone_scale = 0.075);
 
-   void DrawPolygonLevelLines(double *point, int n, Array<double> &level,
-                              bool log_vals);
+   void DrawPolygonLevelLines(gl3::GlBuilder& builder, double *point, int n,
+                              Array<double> &level, bool log_vals);
 
-   void ToggleLight() { light = !light; }
+   void ToggleLight() { use_light = !use_light; }
+   void SetLight(bool light_set) { use_light = light_set; }
 
    void ToggleDrawColorbar()
    {
@@ -218,11 +231,11 @@ public:
    }
 
    // Turn on or off the caption
-   void UpdateCaption()
-   {
-      bool empty = plot_caption.empty();
-      colorbar = (colorbar ? empty+1 : !empty);
-   }
+   void PrepareCaption();
+
+   void PrepareColorBar(double minval, double maxval,
+                        Array<double> * level = NULL,
+                        Array<double> * levels = NULL);
 
    void SetAxisLabels(const char * a_x, const char * a_y, const char * a_z);
 
@@ -243,9 +256,12 @@ public:
 
    void ToggleRuler();
    void RulerPosition();
-   void DrawRuler(bool log_z = false);
+   virtual void PrepareRuler() { PrepareRuler(logscale); }
+   void PrepareRuler(bool log_z);
 
    void ToggleTexture();
+
+   void Toggle2DView();
 
    void SetAutoscale(int _autoscale);
    int GetAutoscale() const { return autoscale; }

@@ -23,5 +23,6 @@
 #include "vsvector.hpp"
 #include "vsvector3d.hpp"
 #include "threads.hpp"
+#include "gl/types.hpp"
 
 #endif

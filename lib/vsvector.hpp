@@ -13,6 +13,7 @@
 #define GLVIS_VSVECTOR
 
 #include "mfem.hpp"
+#include "gl/types.hpp"
 using namespace mfem;
 
 class VisualizationSceneVector : public VisualizationSceneSolution
@@ -20,8 +21,10 @@ class VisualizationSceneVector : public VisualizationSceneSolution
 protected:
 
    Vector *solx, *soly;
-   int vectorlist, displinelist, drawdisp, drawvector;
+   int drawdisp, drawvector;
 
+   gl3::GlDrawable vector_buf;
+   gl3::GlDrawable displine_buf;
    GridFunction *VecGridF;
 
    void Init();
@@ -68,7 +71,7 @@ public:
       }
    }
 
-   virtual void Draw();
+   virtual gl3::SceneInfo GetSceneObjs();
 
    virtual void EventUpdateColors() { Prepare(); PrepareVectorField(); }
 

@@ -13,6 +13,7 @@
 #define GLVIS_VSVECTOR_3D
 
 #include "mfem.hpp"
+#include "gl/types.hpp"
 using namespace mfem;
 
 class VisualizationSceneVector3d : public VisualizationSceneSolution3d
@@ -20,7 +21,9 @@ class VisualizationSceneVector3d : public VisualizationSceneSolution3d
 protected:
 
    Vector *solx, *soly, *solz;
-   int vectorlist, displinelist, drawvector, scal_func;
+   int drawvector, scal_func;
+   gl3::GlDrawable vector_buf;
+   gl3::GlDrawable displine_buf;
 
    GridFunction *VecGridF;
    FiniteElementSpace *sfes;
@@ -48,7 +51,8 @@ public:
    void PrepareFlat2();
    void PrepareLines2();
 
-   void DrawVector (int type, double v0, double v1, double v2,
+   void DrawVector (gl3::GlBuilder& builder,
+                    int type, double v0, double v1, double v2,
                     double sx, double sy, double sz, double s);
    virtual void PrepareVectorField();
    void PrepareDisplacedMesh();
@@ -61,7 +65,7 @@ public:
 
    void ToggleDisplacements() {drawdisp = (drawdisp+1)%2;};
 
-   virtual void Draw();
+   virtual gl3::SceneInfo GetSceneObjs();
 
    virtual void EventUpdateColors()
    { Prepare(); PrepareVectorField(); PrepareCuttingPlane(); };
