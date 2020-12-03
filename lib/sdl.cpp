@@ -549,37 +549,45 @@ void SdlWindow::mainIter()
    static bool useIdle = false;
    if (SDL_PollEvent(&e))
    {
-      switch (e.type)
+      bool keep_going;
+      do
       {
-         case SDL_QUIT:
-            running = false;
-            break;
-         case SDL_WINDOWEVENT:
-            windowEvent(e.window);
-            break;
-         case SDL_KEYDOWN:
-            keyEvent(e.key.keysym);
-            break;
-         case SDL_KEYUP:
-            if (e.key.keysym.sym == SDLK_LCTRL
-                || e.key.keysym.sym == SDLK_RCTRL)
-            {
-               ctrlDown = false;
-            }
-            break;
-         case SDL_TEXTINPUT:
-            keyEvent(e.text.text[0]);
-            break;
-         case SDL_MOUSEMOTION:
-            motionEvent(e.motion);
-            break;
-         case SDL_MOUSEBUTTONDOWN:
-            mouseEventDown(e.button);
-            break;
-         case SDL_MOUSEBUTTONUP:
-            mouseEventUp(e.button);
-            break;
+         keep_going = false;
+         switch (e.type)
+         {
+            case SDL_QUIT:
+               running = false;
+               break;
+            case SDL_WINDOWEVENT:
+               windowEvent(e.window);
+               break;
+            case SDL_KEYDOWN:
+               keyEvent(e.key.keysym);
+               break;
+            case SDL_KEYUP:
+               if (e.key.keysym.sym == SDLK_LCTRL
+                   || e.key.keysym.sym == SDLK_RCTRL)
+               {
+                  ctrlDown = false;
+               }
+               break;
+            case SDL_TEXTINPUT:
+               keyEvent(e.text.text[0]);
+               break;
+            case SDL_MOUSEMOTION:
+               motionEvent(e.motion);
+               // continue processing events
+               keep_going = true;
+               break;
+            case SDL_MOUSEBUTTONDOWN:
+               mouseEventDown(e.button);
+               break;
+            case SDL_MOUSEBUTTONUP:
+               mouseEventUp(e.button);
+               break;
+         }
       }
+      while (keep_going && SDL_PollEvent(&e));
    }
 #ifndef __EMSCRIPTEN__
    else if (onIdle)
