@@ -22,6 +22,8 @@
 #include <X11/extensions/XInput2.h>
 #endif // SDL_VIDEO_DRIVER_X11_XINPUT2
 
+extern int visualize;
+
 class SdlX11Platform final : public SdlNativePlatform
 {
 public:
