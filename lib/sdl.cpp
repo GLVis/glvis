@@ -13,7 +13,8 @@
 #include <chrono>
 #include <thread>
 #include "sdl.hpp"
-#include "visual.hpp"
+#include "threads.hpp"
+#include "aux_vis.hpp"
 #include "logo.hpp"
 #include "gl/renderer_core.hpp"
 #include "gl/renderer_ff.hpp"
