@@ -396,6 +396,7 @@ void MyExpose()
    int w, h;
    wnd->getGLDrawSize(w, h);
    MyExpose(w, h);
+   wnd->signalSwap();
 }
 
 
@@ -827,6 +828,10 @@ int Screenshot(const char *fname, bool convert)
    cout << "done." << endl;
 #endif
 #ifndef __EMSCRIPTEN__
+   if (wnd->isExposePending())
+   {
+      MFEM_WARNING("Expose pending, some events may not have been handled." << endl);
+   }
    string filename = fname;
    string convert_name = fname;
    bool call_convert = false;
@@ -849,7 +854,20 @@ int Screenshot(const char *fname, bool convert)
 
    int w, h;
    wnd->getGLDrawSize(w, h);
-   glReadBuffer(GL_FRONT);
+   if (wnd->isSwapPending())
+   {
+#if GLVIS_DEBUG
+      cerr << "Screenshot: reading image data from back buffer..." << endl;
+#endif
+      glReadBuffer(GL_BACK);
+   }
+   else
+   {
+#if GLVIS_DEBUG
+      cerr << "Screenshot: reading image data from front buffer..." << endl;
+#endif
+      glReadBuffer(GL_FRONT);
+   }
 #if defined(GLVIS_USE_LIBTIFF)
    // Save a TIFF image. This requires the libtiff library, see www.libtiff.org
    TIFF* image;
@@ -1639,7 +1657,7 @@ GlVisFont * GetFont()
 bool SetFont(const vector<std::string>& font_patterns, int height)
 {
 #ifdef __EMSCRIPTEN__
-   return glvis_font.LoadFont("OpenSans.ttf", height);
+   return glvis_font.LoadFont("OpenSans.ttf", 0, height);
 #else
    if (!FcInit())
    {
@@ -1704,10 +1722,6 @@ bool SetFont(const vector<std::string>& font_patterns, int height)
       {
          if (glvis_font.LoadFont(font_file, font_index, height))
          {
-#ifdef GLVIS_DEBUG
-            cout << "Loaded font: " << font_name << ", height: " << height
-                 << endl;
-#endif
             break;
          }
       }

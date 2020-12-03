@@ -261,6 +261,7 @@ message(STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
 #
 
 add_subdirectory(lib)
+add_subdirectory(share)
 
 if(NOT EMSCRIPTEN)
 
@@ -271,7 +272,7 @@ if(NOT EMSCRIPTEN)
   add_executable(glvis-exe glvis.cpp)
   set_target_properties(glvis-exe PROPERTIES OUTPUT_NAME glvis)
 
-  target_link_libraries(glvis-exe PRIVATE glvis)
+  target_link_libraries(glvis-exe PRIVATE glvis glvis_logo)
 
   # Install the executable
   install(TARGETS glvis-exe RUNTIME DESTINATION bin)

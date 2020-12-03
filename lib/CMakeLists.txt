@@ -15,7 +15,6 @@ list(APPEND SOURCES
   gl/types.cpp
   aux_vis.cpp
   font.cpp
-  logo.cpp
   material.cpp
   openglvis.cpp
   palettes.cpp
@@ -39,6 +38,8 @@ list(APPEND HEADERS
   openglvis.hpp
   palettes.hpp
   sdl.hpp
+  sdl_helper.hpp
+  sdl_mac.hpp
   visual.hpp
   vsdata.hpp
   vssolution.hpp
@@ -66,10 +67,17 @@ if(EMSCRIPTEN)
 else()
   # Desktop build target
   list(APPEND SOURCES gl/renderer_ff.cpp threads.cpp gl2ps.c)
-  list(APPEND HEADERS gl/renderer_ff.hpp threads.hpp gl2ps.h)
+  list(APPEND HEADERS gl/renderer_ff.hpp threads.hpp gl2ps.h sdl_x11.hpp)
+  if (APPLE)
+    list(APPEND SOURCES sdl_mac.mm)
+    list(APPEND HEADERS sdl_mac.hpp)
+  endif()
   add_library(glvis ${SOURCES} ${HEADERS})
   target_compile_definitions(glvis PUBLIC "${_glvis_compile_defs}")
   target_compile_options(glvis PUBLIC "${_glvis_compile_opts}")
   target_include_directories(glvis SYSTEM PUBLIC "${_glvis_include_dirs}")
   target_link_libraries(glvis PUBLIC "${_glvis_libraries}")
+  if (APPLE)
+    target_link_libraries(glvis PUBLIC "-framework Cocoa")
+  endif()
 endif(EMSCRIPTEN)

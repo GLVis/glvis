@@ -82,11 +82,9 @@ void FFGLDevice::init()
    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
    glActiveTexture(GL_TEXTURE1);
    glEnable(GL_TEXTURE_2D);
-   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-   glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
-   glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
-   glTexEnvi(GL_TEXTURE_ENV, GL_SRC0_RGB, GL_PREVIOUS);
-   glTexEnvi(GL_TEXTURE_ENV, GL_SRC0_ALPHA, GL_TEXTURE);
+   // With a GL_ALPHA format texture loaded, GL_MODULATE will pass through the
+   // fragment rgb value.
+   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
 void FFGLDevice::setTransformMatrices(glm::mat4 model_view,
@@ -377,9 +375,10 @@ void FFGLDevice::captureXfbBuffer(CaptureBuffer& cbuf, int hnd)
    // draw with feedback capture
    glRenderMode(GL_FEEDBACK);
    drawDeviceBuffer(hnd);
-   int result = glRenderMode(GL_RENDER);
-#ifdef GLVIS_DEBUG
-   if (result < 0)
+#ifndef GLVIS_DEBUG
+   glRenderMode(GL_RENDER);
+#else
+   if (glRenderMode(GL_RENDER) < 0)
    {
       std::cerr << "Warning: feedback data exceeded available buffer size" <<
                 std::endl;

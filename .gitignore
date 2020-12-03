@@ -3,6 +3,7 @@
 *.bc
 lib/libglvis.js
 lib/libglvis.a
+share/logo.rgba.bin.cpp
 glvis
 
 # Output from running glvis
@@ -20,3 +21,7 @@ Makefile
 cmake_install.cmake
 install_manifest.txt
 compile_commands.json
+
+# OS-specific: Mac
+*.dSYM
+.DS_Store

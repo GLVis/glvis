@@ -92,7 +92,8 @@ FONT_FILE ?= OpenSans.ttf
 EMCC_OPTS ?= -s USE_SDL=2 -s USE_FREETYPE=1
 EMCC_LIBS ?= -s USE_SDL=2 --bind -s ALLOW_MEMORY_GROWTH=1 -s SINGLE_FILE=1 \
  --no-heap-copy -s ENVIRONMENT=web -s MODULARIZE=1 -s EXPORT_NAME=glvis \
- -s GL_ASSERTIONS=1 -s GL_DEBUG=1 -s USE_FREETYPE=1 -s USE_WEBGL2=1
+ -s GL_ASSERTIONS=1 -s GL_DEBUG=1 -s USE_FREETYPE=1 -s USE_WEBGL2=1 \
+ -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0
 
 # Flags used when $(GLVIS_DEBUG) is not the same as $(MFEM_DEBUG)
 CXX11FLAG ?= -std=c++11
@@ -162,7 +163,7 @@ GLM_DIR ?= $(call find_dir,$(GLM_SEARCH_FILE),$(GLM_SEARCH_PATHS))
 OPENGL_SEARCH_PATHS = /usr /usr/local /opt/local
 OPENGL_SEARCH_FILE = include/GL/gl.h
 OPENGL_DIR ?= $(call find_dir,$(OPENGL_SEARCH_FILE),$(OPENGL_SEARCH_PATHS))
-OPENGL_LIBS = $(if $(NOTMAC),-lGL,-framework OpenGL)
+OPENGL_LIBS = $(if $(NOTMAC),-lGL,-framework OpenGL -framework Cocoa)
 
 
 GL_OPTS ?= $(if $(FREETYPE_DIR),-I$(FREETYPE_DIR)/include/freetype2) \
@@ -207,15 +208,18 @@ LIBS = $(strip $(GLVIS_LIBS) $(GLVIS_LDFLAGS))
 CCC  = $(strip $(CXX) $(GLVIS_FLAGS))
 Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
-# generated with 'echo lib/gl/*.c* lib/*.c*'
+# generated with 'echo lib/gl/*.c* lib/*.c*', does not include lib/*.m (Obj-C)
 ALL_SOURCE_FILES = \
  lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp \
  lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp lib/font.cpp lib/gl2ps.c \
- lib/logo.cpp lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp \
+ lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp \
  lib/threads.cpp lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp \
  lib/vsvector.cpp lib/vsvector3d.cpp
+OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl_mac.mm)
 DESKTOP_ONLY_SOURCE_FILES = lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c
 WEB_ONLY_SOURCE_FILES = lib/aux_js.cpp
+LOGO_FILE = share/logo.rgba
+LOGO_FILE_CPP = $(LOGO_FILE).bin.cpp
 COMMON_SOURCE_FILES = $(filter-out \
  $(DESKTOP_ONLY_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES),$(ALL_SOURCE_FILES))
 
@@ -224,20 +228,19 @@ HEADER_FILES = \
  lib/gl/attr_traits.hpp lib/gl/platform_gl.hpp lib/gl/renderer.hpp \
  lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp lib/gl/types.hpp \
  lib/aux_vis.hpp lib/font.hpp lib/gl2ps.h lib/logo.hpp lib/material.hpp \
- lib/openglvis.hpp lib/palettes.hpp lib/sdl.hpp lib/threads.hpp lib/visual.hpp \
+ lib/openglvis.hpp lib/palettes.hpp lib/sdl.hpp lib/sdl_helper.hpp \
+ lib/sdl_mac.hpp lib/sdl_x11.hpp lib/threads.hpp lib/visual.hpp \
  lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp \
  lib/vsvector3d.hpp
 
-DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) $(DESKTOP_ONLY_SOURCE_FILES)
+DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) $(DESKTOP_ONLY_SOURCE_FILES) $(LOGO_FILE_CPP)
 WEB_SOURCE_FILES     = $(COMMON_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES)
 OBJECT_FILES1        = $(DESKTOP_SOURCE_FILES:.cpp=.o)
-OBJECT_FILES         = $(OBJECT_FILES1:.c=.o)
+OBJECT_FILES         = $(OBJECT_FILES1:.c=.o) $(OBJC_SOURCE_FILES:.mm=.o)
 BYTECODE_FILES       = $(WEB_SOURCE_FILES:.cpp=.bc)
 
 # Targets
 .PHONY: clean distclean install status info opt debug style js
-
-.SUFFIXES: .c .cpp .o
 
 %.o: %.cpp
 	$(CCC) -o $@ -c $<
@@ -245,11 +248,18 @@ BYTECODE_FILES       = $(WEB_SOURCE_FILES:.cpp=.bc)
 %.o: %.c %.h
 	$(Ccc) -o $@ -c $<
 
+%.o: %.mm
+	$(CCC) -o $@ -c $<
+
 %.bc: %.cpp
 	$(EMCC) $(EMCC_OPTS) -c $< -o $@
 
 glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(CCC) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
+
+$(LOGO_FILE_CPP): $(LOGO_FILE)
+	cd $(dir $(LOGO_FILE)) && xxd -i $(notdir $(LOGO_FILE)) > \
+		$(notdir $(LOGO_FILE_CPP))
 
 # Generate an error message if the MFEM library is not built and exit
 $(CONFIG_MK) $(MFEM_LIB_FILE):
@@ -274,6 +284,7 @@ lib/libglvis.js: $(BYTECODE_FILES) $(CONFIG_MK) $(MFEM_LIB_FILE)
 
 clean:
 	rm -rf lib/*.o lib/*.bc lib/gl/*.o lib/gl/*.bc lib/*~ *~ glvis
+	rm -rf $(LOGO_FILE_CPP) share/*.o
 	rm -rf lib/libglvis.a lib/libglvis.js *.dSYM
 
 distclean: clean

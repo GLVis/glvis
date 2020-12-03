@@ -530,40 +530,6 @@ void setKeyboardListeningElementId(const std::string & elem_id)
 {
    SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, elem_id.c_str());
 }
-
-class SceneModel
-{
-   VisualizationSceneScalarData * _scene;
-   SceneModel(VisualizationSceneScalarData * scene)
-      : _scene(scene) { }
-
-public:
-   static SceneModel create()
-   {
-      return SceneModel(dynamic_cast<VisualizationSceneScalarData*>
-                        (GetVisualizationScene()));
-   }
-
-   int getDrawAxes() const { return _scene->GetDrawAxes(); }
-   int getShading() const { return _scene->GetShading(); }
-   int getColorbar() const { return _scene->GetColorbar(); }
-   int getRuler() const { return _scene->GetRuler(); }
-
-   void setDrawAxes (int axes)
-   {
-      _scene->SetDrawAxes(axes);
-      SendExposeEvent();
-   }
-   void setShading (int shade)
-   {
-      _scene->SetShading(shade, true);
-      SendExposeEvent();
-   }
-   void setColorbar (int colorbar) { _scene->SetColorbar(colorbar); }
-   void setRuler (int ruler) { _scene->SetRuler(ruler); }
-
-};
-
 } // namespace js
 
 namespace em = emscripten;
@@ -579,15 +545,4 @@ EMSCRIPTEN_BINDINGS(js_funcs)
    em::function("getTextureMode", &GetUseTexture);
    em::function("setTextureMode", &SetUseTexture);
    em::function("resizeWindow", &ResizeWindow);
-}
-EMSCRIPTEN_BINDINGS(model)
-{
-   em::class_<js::SceneModel>("SceneModel")
-   .property("shading", &js::SceneModel::getShading, &js::SceneModel::setShading)
-   .property("colorbar", &js::SceneModel::getColorbar,
-             &js::SceneModel::setColorbar)
-   .property("drawaxes", &js::SceneModel::getDrawAxes,
-             &js::SceneModel::setDrawAxes)
-   .property("ruler", &js::SceneModel::getRuler, &js::SceneModel::setRuler)
-   .class_function("create", &js::SceneModel::create);
 }

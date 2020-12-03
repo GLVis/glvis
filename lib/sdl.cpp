@@ -11,13 +11,22 @@
 
 #include <iostream>
 #include <chrono>
+#include <thread>
 #include "sdl.hpp"
-#include "visual.hpp"
+#include "threads.hpp"
+#include "aux_vis.hpp"
 #include "logo.hpp"
 #include "gl/renderer_core.hpp"
 #include "gl/renderer_ff.hpp"
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#endif
+#include "sdl_helper.hpp"
+#if defined(SDL_VIDEO_DRIVER_X11)
+#include "sdl_x11.hpp"
+#endif
+#if defined(SDL_VIDEO_DRIVER_COCOA)
+#include "sdl_mac.hpp"
 #endif
 
 using std::cerr;
@@ -79,12 +88,15 @@ bool SdlWindow::isGlInitialized()
    return (handle->gl_ctx != 0);
 }
 
+// Initialize static member
+Uint32 SdlWindow::glvis_event_type = (Uint32)(-1);
+
 SdlWindow::SdlWindow()
    : onIdle(nullptr)
    , onExpose(nullptr)
    , onReshape(nullptr)
    , ctrlDown(false)
-   , requiresExpose(false)
+   , wnd_state(RenderState::Updated)
    , takeScreenshot(false)
    , saved_keys("")
 {
@@ -139,17 +151,20 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
          cerr << "FATAL: Failed to initialize SDL: " << SDL_GetError() << endl;
          return false;
       }
+      SDL_EnableScreenSaver();
+      if (glvis_event_type == (Uint32)(-1))
+      {
+         glvis_event_type = SDL_RegisterEvents(1);
+         if (glvis_event_type == (Uint32)(-1))
+         {
+            cerr << "SDL_RegisterEvents(1) failed: " << SDL_GetError() << endl;
+            return false;
+         }
+      }
    }
 
    // destroy any existing SDL window
    handle.reset();
-
-   // If we want to use WebGL 2:
-   // #ifdef __EMSCRIPTEN__
-   // SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-   // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-   // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-   // #endif
 
    Uint32 win_flags = SDL_WINDOW_OPENGL;
    // Hide window until we adjust its size for high-dpi displays
@@ -158,7 +173,6 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    win_flags |= SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE;
 #endif
    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
-   SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8);
    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
    Uint32 win_gl_ctx = 0;
 #ifndef __EMSCRIPTEN__
@@ -168,6 +182,8 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
       // which will only support OpenGL 2.1 if you don't create a core context.
       win_gl_ctx = probeGLContextSupport();
    }
+#else
+   win_gl_ctx = SDL_GL_CONTEXT_PROFILE_ES;
 #endif
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, win_gl_ctx);
    if (GetMultisample() > 0)
@@ -200,18 +216,32 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
       PRINT_DEBUG("done." << endl);
    }
 
-   SDL_Surface* iconSurf = SDL_CreateRGBSurfaceFrom(icon_pixels,
-                                                    64, 64, // height, width
-                                                    32,     // depth
-                                                    64 * 4, // pitch
-                                                    0xFF000000,
-                                                    0x00FF0000,
-                                                    0x0000FF00,
-                                                    0x000000FF);
-   if (iconSurf)
+   const int PixelStride = 4;
+   int stride = (int) sqrt(logo_rgba_len / PixelStride);
+   if (unsigned(stride * stride * PixelStride) != logo_rgba_len)
    {
-      SDL_SetWindowIcon(handle->hwnd, iconSurf);
-      SDL_FreeSurface(iconSurf);
+      cerr << "Unable to set window logo: icon size not square" << endl;
+   }
+   else
+   {
+      SDL_Surface* iconSurf =
+         SDL_CreateRGBSurfaceFrom(logo_rgba,
+                                  stride, stride,       // height, width
+                                  8 * PixelStride,      // depth
+                                  stride * PixelStride, // pitch
+                                  0x000000FF,
+                                  0x0000FF00,
+                                  0x00FF0000,
+                                  0xFF000000);
+      if (iconSurf)
+      {
+         SDL_SetWindowIcon(handle->hwnd, iconSurf);
+         SDL_FreeSurface(iconSurf);
+      }
+      else
+      {
+         PRINT_DEBUG("Unable to set window logo: " << SDL_GetError() << endl);
+      }
    }
 
 #ifndef __EMSCRIPTEN__
@@ -238,7 +268,29 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
 
    renderer.reset(new gl3::MeshRenderer);
 #ifndef __EMSCRIPTEN__
-   if (GLEW_EXT_transform_feedback)
+   if (!GLEW_VERSION_1_1)
+   {
+      cerr << "FATAL: Minimum of OpenGL 1.1 is required." << endl;
+      return false;
+   }
+   if (!GLEW_VERSION_1_3)
+   {
+      // Multitexturing was introduced into the core OpenGL specification in
+      // version 1.3; for versions before, we need to load the functions from
+      // the ARB_multitexture extension.
+      if (GLEW_ARB_multitexture)
+      {
+         glActiveTexture = glActiveTextureARB;
+         glClientActiveTexture = glClientActiveTextureARB;
+         glMultiTexCoord2f = glMultiTexCoord2fARB;
+      }
+      else
+      {
+         cerr << "FATAL: Missing OpenGL multitexture support." << endl;
+         return false;
+      }
+   }
+   if (!GLEW_VERSION_3_0 && GLEW_EXT_transform_feedback)
    {
       glBindBufferBase            = glBindBufferBaseEXT;
       // Use an explicit typecast to suppress an error from inconsistent types
@@ -307,6 +359,35 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    }
    SDL_ShowWindow(handle->hwnd);
 
+   SDL_VERSION(&sysinfo.version);
+   if (!SDL_GetWindowWMInfo(handle->hwnd, &sysinfo))
+   {
+      sysinfo.subsystem = SDL_SYSWM_UNKNOWN;
+   }
+   switch (sysinfo.subsystem)
+   {
+#if defined(SDL_VIDEO_DRIVER_X11)
+      case SDL_SYSWM_X11:
+      {
+         // Disable XInput extension events since they are generated even
+         // outside the GLVis window.
+         Display *dpy = sysinfo.info.x11.display;
+         Window win = sysinfo.info.x11.window;
+         platform.reset(new SdlX11Platform(dpy, win));
+      }
+      break;
+#elif defined(SDL_VIDEO_DRIVER_COCOA)
+      case SDL_SYSWM_COCOA:
+      {
+         platform.reset(new SdlCocoaPlatform);
+      }
+      break;
+#endif
+      default:
+         // unhandled window manager
+         break;
+   }
+
    return true;
 }
 
@@ -326,7 +407,7 @@ void SdlWindow::windowEvent(SDL_WindowEvent& ew)
       case SDL_WINDOWEVENT_EXPOSED:
          if (onExpose)
          {
-            requiresExpose = true;
+            wnd_state = RenderState::ExposePending;
          }
          break;
       default:
@@ -390,7 +471,7 @@ void SdlWindow::mouseEventUp(SDL_MouseButtonEvent& eb)
    }
 }
 
-bool SdlWindow::keyEvent(SDL_Keysym& ks)
+void SdlWindow::keyEvent(SDL_Keysym& ks)
 {
    bool handled = false;
    if (ks.sym >= 128 || ks.sym < 32)
@@ -420,7 +501,7 @@ bool SdlWindow::keyEvent(SDL_Keysym& ks)
       saved_keys += "[";
       if (isCtrl) { saved_keys += "C-"; }
       if (isAlt) { saved_keys += "Alt-"; }
-      if (std::isalpha(ks.sym))
+      if (ks.sym < 256 && std::isalpha(ks.sym))
       {
          //key with corresponding text output
          char c = ks.sym;
@@ -433,10 +514,9 @@ bool SdlWindow::keyEvent(SDL_Keysym& ks)
       }
       saved_keys += "]";
    }
-   return handled;
 }
 
-bool SdlWindow::keyEvent(char c)
+void SdlWindow::keyEvent(char c)
 {
    if (onKeyDown[c])
    {
@@ -455,62 +535,61 @@ bool SdlWindow::keyEvent(char c)
       {
          saved_keys += "]";
       }
-      return true;
    }
-   return false;
 }
 
-bool SdlWindow::mainIter()
+void SdlWindow::mainIter()
 {
    SDL_Event e;
    static bool useIdle = false;
-   bool needsSwap = false;
-   while (SDL_PollEvent(&e))
+   if (SDL_PollEvent(&e))
    {
-      bool renderKeyEvent = false;
-      switch (e.type)
+      bool keep_going;
+      do
       {
-         case SDL_QUIT:
-            running = false;
-            break;
-         case SDL_WINDOWEVENT:
-            windowEvent(e.window);
-            break;
-         case SDL_KEYDOWN:
-            renderKeyEvent = keyEvent(e.key.keysym);
-            break;
-         case SDL_KEYUP:
-            if (e.key.keysym.sym == SDLK_LCTRL
-                || e.key.keysym.sym == SDLK_RCTRL)
-            {
-               ctrlDown = false;
-            }
-            break;
-         case SDL_TEXTINPUT:
-            renderKeyEvent = keyEvent(e.text.text[0]);
-            break;
-         case SDL_MOUSEMOTION:
-            motionEvent(e.motion);
-            break;
-         case SDL_MOUSEBUTTONDOWN:
-            mouseEventDown(e.button);
-            break;
-         case SDL_MOUSEBUTTONUP:
-            mouseEventUp(e.button);
-            break;
+         keep_going = false;
+         switch (e.type)
+         {
+            case SDL_QUIT:
+               running = false;
+               break;
+            case SDL_WINDOWEVENT:
+               windowEvent(e.window);
+               break;
+            case SDL_KEYDOWN:
+               keyEvent(e.key.keysym);
+               break;
+            case SDL_KEYUP:
+               if (e.key.keysym.sym == SDLK_LCTRL
+                   || e.key.keysym.sym == SDLK_RCTRL)
+               {
+                  ctrlDown = false;
+               }
+               break;
+            case SDL_TEXTINPUT:
+               keyEvent(e.text.text[0]);
+               break;
+            case SDL_MOUSEMOTION:
+               motionEvent(e.motion);
+               // continue processing events
+               keep_going = true;
+               break;
+            case SDL_MOUSEBUTTONDOWN:
+               mouseEventDown(e.button);
+               break;
+            case SDL_MOUSEBUTTONUP:
+               mouseEventUp(e.button);
+               break;
+         }
       }
-      if (renderKeyEvent)
-      {
-         break;
-      }
+      while (keep_going && SDL_PollEvent(&e));
    }
 #ifndef __EMSCRIPTEN__
-   if (onIdle)
+   else if (onIdle)
    {
       if (glvis_command == NULL || visualize == 2 || useIdle)
       {
          onIdle();
-         needsSwap = true;
       }
       else
       {
@@ -521,24 +600,48 @@ bool SdlWindow::mainIter()
       }
       useIdle = !useIdle;
    }
-   else if (glvis_command && visualize == 1)
+   else
    {
-      if (glvis_command->Execute() < 0) { running = false; }
+      int status;
+      if (glvis_command && visualize == 1 &&
+          (status = glvis_command->Execute()) != 1)
+      {
+         if (status < 0) { running = false; }
+      }
+      else
+      {
+         // Wait for the next event (without consuming CPU cycles, if possible)
+         // See also: SdlWindow::signalLoop()
+         if (platform)
+         {
+            platform->WaitEvent();
+         }
+         else
+         {
+            if (!SDL_PollEvent(nullptr))
+            {
+               std::this_thread::sleep_for(std::chrono::milliseconds(8));
+            }
+         }
+      }
    }
 #else
-   if (onIdle)
+   else if (onIdle)
    {
       onIdle();
-      needsSwap = true;
+   }
+   else
+   {
+#ifndef __EMSCRIPTEN__
+      SDL_WaitEvent(NULL);
+#endif
    }
 #endif
-   if (requiresExpose)
+   if (wnd_state == RenderState::ExposePending)
    {
       onExpose();
-      requiresExpose = false;
-      needsSwap = true;
+      wnd_state = RenderState::SwapPending;
    }
-   return needsSwap;
 }
 
 void SdlWindow::mainLoop()
@@ -553,20 +656,39 @@ void SdlWindow::mainLoop()
    visualize = 1;
    while (running)
    {
-      bool glSwap = mainIter();
-      if (glSwap)
+      mainIter();
+      if (wnd_state == RenderState::SwapPending)
       {
          SDL_GL_SwapWindow(handle->hwnd);
+         wnd_state = RenderState::Updated;
       }
       if (takeScreenshot)
       {
          Screenshot(screenshot_file.c_str());
          takeScreenshot = false;
       }
-      // sleep for n milliseconds to avoid pegging CPU at 100%
-      SDL_WaitEventTimeout(NULL, 10);
    }
 #endif
+}
+
+void SdlWindow::signalLoop()
+{
+   // Note: not executed from the main thread
+   if (platform)
+   {
+      platform->SendEvent();
+   }
+   else
+   {
+      SDL_Event event;
+      SDL_memset(&event, 0, sizeof(event));
+      event.type = glvis_event_type;
+      const int glvis_event_code = 1;
+      event.user.code = glvis_event_code;
+      event.user.data1 = nullptr;
+      event.user.data2 = nullptr;
+      SDL_PushEvent(&event);
+   }
 }
 
 void SdlWindow::getWindowSize(int& w, int& h)

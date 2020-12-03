@@ -57,11 +57,15 @@ bool GlVisFont::LoadFont(const std::string& path, int font_index, int font_size)
    }
    if (FT_Set_Char_Size(face, 0, font_size*font_scale, ppi_w, ppi_h))
    {
-      cout << "GlVisFont::LoadFont(): Cannot set font height: " << font_size << " pts"
-           << endl;
+      cout << "GlVisFont::LoadFont(): Cannot set font height: " << font_size
+           << " pts" << endl;
       FT_Done_Face(face);
       return false;
    }
+#ifdef GLVIS_DEBUG
+   cout << "Loaded font: " << path << ", index: " << font_index
+        << ", height: " << font_size << endl;
+#endif
 
    // generate atlas
    size_t w = 0, h = 0;
@@ -73,7 +77,7 @@ bool GlVisFont::LoadFont(const std::string& path, int font_index, int font_size)
          continue;
       }
       w += face->glyph->bitmap.width + 2;
-      if (h < face->glyph->bitmap.rows)
+      if (h < size_t(face->glyph->bitmap.rows))
       {
          h = face->glyph->bitmap.rows;
       }

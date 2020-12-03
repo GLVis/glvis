@@ -12,6 +12,7 @@
 #ifndef __LOGO_HPP__
 #define __LOGO_HPP__
 
-extern unsigned int icon_pixels[4096];
+extern unsigned char logo_rgba[];
+extern unsigned int logo_rgba_len;
 
 #endif //__LOGO_HPP__

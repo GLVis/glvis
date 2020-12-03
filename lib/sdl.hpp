@@ -16,6 +16,7 @@
 #include <functional>
 #include <map>
 #include "gl/renderer.hpp"
+#include "sdl_helper.hpp"
 
 struct EventInfo
 {
@@ -49,6 +50,11 @@ private:
    //   scaled "screen coordinates" on all high-dpi displays.
    float pixel_scale_x = 1.0f, pixel_scale_y = 1.0f;
 
+   std::unique_ptr<SdlNativePlatform> platform;
+
+   SDL_SysWMinfo sysinfo;
+   static Uint32 glvis_event_type;
+
    bool running;
 
    Delegate onIdle;
@@ -61,7 +67,19 @@ private:
 
    bool ctrlDown;
 
-   bool requiresExpose;
+   enum class RenderState
+   {
+      // window displayed is fully current (no events or backbuffer updates pending)
+      Updated,
+      // events issued which may require a call to MyExpose
+      ExposePending,
+      // back buffer updated by MyExpose, now awaiting swap to be displayed on window
+      SwapPending
+   };
+
+   RenderState wnd_state;
+
+   //bool requiresExpose;
    bool takeScreenshot;
    std::string screenshot_file;
 
@@ -71,8 +89,8 @@ private:
    void motionEvent(SDL_MouseMotionEvent& em);
    void mouseEventDown(SDL_MouseButtonEvent& eb);
    void mouseEventUp(SDL_MouseButtonEvent& eb);
-   bool keyEvent(SDL_Keysym& ks);
-   bool keyEvent(char c);
+   void keyEvent(SDL_Keysym& ks);
+   void keyEvent(char c);
 
    std::string saved_keys;
 public:
@@ -85,7 +103,10 @@ public:
                      bool legacyGlOnly);
    /// Runs the window loop.
    void mainLoop();
-   bool mainIter();
+   void mainIter();
+
+   // Called by worker threads in GLVisCommand::signal()
+   void signalLoop();
 
    void setOnIdle(Delegate func) { onIdle = func; }
    void setOnExpose(Delegate func) { onExpose = func; }
@@ -133,12 +154,14 @@ public:
    void setWindowPos(int x, int y);
 
    void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE);
-   void signalExpose() { requiresExpose = true; }
+   void signalExpose() { wnd_state = RenderState::ExposePending; }
+   void signalSwap() { wnd_state = RenderState::SwapPending; }
    void signalQuit() { running = false; }
 
    /// Returns the keyboard events that have been logged by the window.
    std::string getSavedKeys() const { return saved_keys; }
 
+   /// Queues a screenshot to be taken.
    void screenshot(std::string filename)
    {
       takeScreenshot = true;
@@ -151,6 +174,9 @@ public:
    bool isWindowInitialized() { return (bool) handle; }
    /// Returns true if the OpenGL context was successfully initialized.
    bool isGlInitialized();
+
+   bool isSwapPending() { return wnd_state == RenderState::SwapPending; }
+   bool isExposePending() { return wnd_state == RenderState::ExposePending; }
 };
 
 #endif
