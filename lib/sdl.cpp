@@ -20,11 +20,9 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
+#include "sdl_helper.hpp"
 #if defined(SDL_VIDEO_DRIVER_X11)
-#include <poll.h>
-#if defined(SDL_VIDEO_DRIVER_X11_XINPUT2)
-#include <X11/extensions/XInput2.h>
-#endif
+#include "sdl_x11.hpp"
 #endif
 #if defined(SDL_VIDEO_DRIVER_COCOA)
 #include "sdl_mac.hpp"
@@ -370,49 +368,29 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    {
       sysinfo.subsystem = SDL_SYSWM_UNKNOWN;
    }
-#if defined(SDL_VIDEO_DRIVER_X11) && defined(SDL_VIDEO_DRIVER_X11_XINPUT2)
-   if (sysinfo.subsystem == SDL_SYSWM_X11)
+   switch (sysinfo.subsystem)
    {
-      // Disable XInput extension events since they are generated even outside
-      // the GLVis window.
-      Display *dpy = sysinfo.info.x11.display;
-      Window win = sysinfo.info.x11.window;
-      Window root_win = DefaultRootWindow(dpy);
-      unsigned char mask[4] = {0,0,0,0};
-      XIEventMask event_mask;
-      event_mask.deviceid = XIAllMasterDevices;
-      event_mask.mask_len = sizeof(mask);
-      event_mask.mask = mask;
-#ifdef SDL_VIDEO_DRIVER_X11_DYNAMIC_XINPUT2
-      typedef int (*XISelectEvents_ptr)(Display *, Window, XIEventMask *, int);
-      static XISelectEvents_ptr XISelectEvents_ = NULL;
-      if (XISelectEvents_ == NULL)
+#if defined(SDL_VIDEO_DRIVER_X11)
+      case SDL_SYSWM_X11:
       {
-         void *lib = SDL_LoadObject(SDL_VIDEO_DRIVER_X11_DYNAMIC_XINPUT2);
-         if (lib != NULL)
-         {
-            XISelectEvents_ =
-               (XISelectEvents_ptr)SDL_LoadFunction(lib, "XISelectEvents");
-         }
+         // Disable XInput extension events since they are generated even
+         // outside the GLVis window.
+         Display *dpy = sysinfo.info.x11.display;
+         Window win = sysinfo.info.x11.window;
+         platform.reset(new SdlX11Platform(dpy, win));
       }
-      if (XISelectEvents_ == NULL)
+      break;
+#elif defined(SDL_VIDEO_DRIVER_COCOA)
+      case SDL_SYSWM_COCOA:
       {
-         cerr << "Error accessing XISelectEvents!" << endl;
-         exit(EXIT_FAILURE);
+         platform.reset(new SdlCocoaPlatform);
       }
-#else
-#define XISelectEvents_ XISelectEvents
+      break;
 #endif
-      if (XISelectEvents_(dpy, root_win, &event_mask, 1) != Success)
-      {
-         cerr << "Failed to disable XInput on the default root window!" << endl;
-      }
-      if (XISelectEvents_(dpy, win, &event_mask, 1) != Success)
-      {
-         cerr << "Failed to disable XInput on the current window!" << endl;
-      }
+      default:
+         // unhandled window manager
+         break;
    }
-#endif
 
    return true;
 }
@@ -630,42 +608,10 @@ void SdlWindow::mainIter()
       {
          // Wait for the next event (without consuming CPU cycles, if possible)
          // See also: SdlWindow::signalLoop()
-         if (false)
+         if (platform)
          {
-            // empty
+            platform->WaitEvent();
          }
-#if defined(SDL_VIDEO_DRIVER_X11)
-         else if (sysinfo.subsystem == SDL_SYSWM_X11)
-         {
-            int nstr, nfd = 1;
-            struct pollfd pfd[2];
-
-            pfd[0].fd     = ConnectionNumber(sysinfo.info.x11.display);
-            pfd[0].events = POLLIN;
-            pfd[0].revents = 0;
-            if (glvis_command && visualize == 1)
-            {
-               pfd[1].fd     = glvis_command->ReadFD();
-               pfd[1].events = POLLIN;
-               pfd[1].revents = 0;
-               nfd = 2;
-            }
-            do
-            {
-               nstr = poll(pfd, nfd, -1);
-            }
-            while (nstr == -1 && errno == EINTR);
-
-            if (nstr == -1) { perror("poll()"); }
-         }
-#endif
-#if defined(SDL_VIDEO_DRIVER_COCOA)
-         else if (sysinfo.subsystem == SDL_SYSWM_COCOA)
-         {
-            // NSWindow *ns_win = sysinfo.info.cocoa.window;
-            GLVis_Cocoa_WaitEvent();
-         }
-#endif
          else
          {
             if (!SDL_PollEvent(nullptr))
@@ -722,23 +668,10 @@ void SdlWindow::mainLoop()
 void SdlWindow::signalLoop()
 {
    // Note: not executed from the main thread
-   if (false)
+   if (platform)
    {
-      // empty
+      platform->SendEvent();
    }
-#if defined(SDL_VIDEO_DRIVER_X11)
-   else if (sysinfo.subsystem == SDL_SYSWM_X11)
-   {
-      // empty
-   }
-#endif
-#if defined(SDL_VIDEO_DRIVER_COCOA)
-   else if (sysinfo.subsystem == SDL_SYSWM_COCOA)
-   {
-      // NSWindow *ns_win = sysinfo.info.cocoa.window;
-      GLVis_Cocoa_SendCommEvent();
-   }
-#endif
    else
    {
       SDL_Event event;

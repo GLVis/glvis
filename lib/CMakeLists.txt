@@ -38,6 +38,7 @@ list(APPEND HEADERS
   openglvis.hpp
   palettes.hpp
   sdl.hpp
+  sdl_helper.hpp
   sdl_mac.hpp
   visual.hpp
   vsdata.hpp
@@ -66,9 +67,10 @@ if(EMSCRIPTEN)
 else()
   # Desktop build target
   list(APPEND SOURCES gl/renderer_ff.cpp threads.cpp gl2ps.c)
-  list(APPEND HEADERS gl/renderer_ff.hpp threads.hpp gl2ps.h)
+  list(APPEND HEADERS gl/renderer_ff.hpp threads.hpp gl2ps.h sdl_x11.hpp)
   if (APPLE)
-    list(APPEND SOURCES sdl_mac.m)
+    list(APPEND SOURCES sdl_mac.mm)
+    list(APPEND HEADERS sdl_mac.hpp)
   endif()
   add_library(glvis ${SOURCES} ${HEADERS})
   target_compile_definitions(glvis PUBLIC "${_glvis_compile_defs}")

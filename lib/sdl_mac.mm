@@ -10,8 +10,9 @@
 // Software Foundation) version 2.1 dated February 1999.
 
 #import <Cocoa/Cocoa.h>
+#include "sdl_mac.hpp"
 
-void GLVis_Cocoa_WaitEvent()
+void SdlCocoaPlatform::WaitEvent()
 { @autoreleasepool
 {
    [NSApp nextEventMatchingMask:NSEventMaskAny
@@ -20,7 +21,7 @@ void GLVis_Cocoa_WaitEvent()
           dequeue:NO];
 }}
 
-void GLVis_Cocoa_SendCommEvent()
+void SdlCocoaPlatform::SendEvent()
 { @autoreleasepool
 {
    NSPoint loc = {0., 0.};

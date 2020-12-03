@@ -16,6 +16,7 @@
 #include <functional>
 #include <map>
 #include "gl/renderer.hpp"
+#include "sdl_helper.hpp"
 
 struct EventInfo
 {
@@ -48,6 +49,8 @@ private:
    // - set to 2 on other high-dpi displays, so that GLVis can always work with
    //   scaled "screen coordinates" on all high-dpi displays.
    float pixel_scale_x = 1.0f, pixel_scale_y = 1.0f;
+
+   std::unique_ptr<SdlNativePlatform> platform;
 
    SDL_SysWMinfo sysinfo;
    static Uint32 glvis_event_type;

@@ -9,15 +9,19 @@
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
 
-#ifndef GLVIS_SDL_MAC_HPP
-#define GLVIS_SDL_MAC_HPP
-#include "sdl_helper.hpp"
+#ifndef GLVIS_SDL_HELPER_HPP
+#define GLVIS_SDL_HELPER_HPP
 
-class SdlCocoaPlatform final : public SdlNativePlatform
+class SdlNativePlatform
 {
 public:
-   void WaitEvent();
-   void SendEvent();
+   virtual ~SdlNativePlatform() = default;
+   // SDL_WaitEvent only polls for events and sleeps, instead of actually
+   // blocking. This method calls the system-native blocking event pump.
+   virtual void WaitEvent() = 0;
+   // This method sends a system-native event, which will wake the blocking
+   // event pump.
+   virtual void SendEvent() = 0;
 };
 
 #endif
