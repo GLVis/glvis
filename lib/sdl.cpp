@@ -26,6 +26,9 @@
 #include <X11/extensions/XInput2.h>
 #endif
 #endif
+#if defined(SDL_VIDEO_DRIVER_COCOA)
+#include "sdl_mac.hpp"
+#endif
 
 using std::cerr;
 using std::endl;
@@ -221,7 +224,7 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
 
    const int PixelStride = 4;
    int stride = (int) sqrt(logo_rgba_len / PixelStride);
-   if (stride * stride * PixelStride != logo_rgba_len)
+   if (unsigned(stride * stride * PixelStride) != logo_rgba_len)
    {
       cerr << "Unable to set window logo: icon size not square" << endl;
    }
@@ -657,10 +660,10 @@ void SdlWindow::mainIter()
          }
 #endif
 #if defined(SDL_VIDEO_DRIVER_COCOA)
-         else if (false && sysinfo.subsystem == SDL_SYSWM_COCOA)
+         else if (sysinfo.subsystem == SDL_SYSWM_COCOA)
          {
-            // TODO
             // NSWindow *ns_win = sysinfo.info.cocoa.window;
+            GLVis_Cocoa_WaitEvent();
          }
 #endif
          else
@@ -729,10 +732,10 @@ void SdlWindow::signalLoop()
    }
 #endif
 #if defined(SDL_VIDEO_DRIVER_COCOA)
-   else if (false && sysinfo.subsystem == SDL_SYSWM_COCOA)
+   else if (sysinfo.subsystem == SDL_SYSWM_COCOA)
    {
-      // TODO
       // NSWindow *ns_win = sysinfo.info.cocoa.window;
+      GLVis_Cocoa_SendCommEvent();
    }
 #endif
    else

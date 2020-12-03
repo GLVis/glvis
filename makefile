@@ -162,7 +162,7 @@ GLM_DIR ?= $(call find_dir,$(GLM_SEARCH_FILE),$(GLM_SEARCH_PATHS))
 OPENGL_SEARCH_PATHS = /usr /usr/local /opt/local
 OPENGL_SEARCH_FILE = include/GL/gl.h
 OPENGL_DIR ?= $(call find_dir,$(OPENGL_SEARCH_FILE),$(OPENGL_SEARCH_PATHS))
-OPENGL_LIBS = $(if $(NOTMAC),-lGL,-framework OpenGL)
+OPENGL_LIBS = $(if $(NOTMAC),-lGL,-framework OpenGL -framework Cocoa)
 
 
 GL_OPTS ?= $(if $(FREETYPE_DIR),-I$(FREETYPE_DIR)/include/freetype2) \
@@ -207,13 +207,14 @@ LIBS = $(strip $(GLVIS_LIBS) $(GLVIS_LDFLAGS))
 CCC  = $(strip $(CXX) $(GLVIS_FLAGS))
 Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
-# generated with 'echo lib/gl/*.c* lib/*.c*'
+# generated with 'echo lib/gl/*.c* lib/*.c*', does not include lib/*.m (Obj-C)
 ALL_SOURCE_FILES = \
  lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp \
  lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp lib/font.cpp lib/gl2ps.c \
  lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp \
  lib/threads.cpp lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp \
  lib/vsvector.cpp lib/vsvector3d.cpp
+OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl_mac.m)
 DESKTOP_ONLY_SOURCE_FILES = lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c
 WEB_ONLY_SOURCE_FILES = lib/aux_js.cpp
 LOGO_FILE = share/logo.rgba
@@ -226,14 +227,14 @@ HEADER_FILES = \
  lib/gl/attr_traits.hpp lib/gl/platform_gl.hpp lib/gl/renderer.hpp \
  lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp lib/gl/types.hpp \
  lib/aux_vis.hpp lib/font.hpp lib/gl2ps.h lib/logo.hpp lib/material.hpp \
- lib/openglvis.hpp lib/palettes.hpp lib/sdl.hpp lib/threads.hpp lib/visual.hpp \
- lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp \
- lib/vsvector3d.hpp
+ lib/openglvis.hpp lib/palettes.hpp lib/sdl.hpp lib/sdl_mac.hpp \
+ lib/threads.hpp lib/visual.hpp lib/vsdata.hpp lib/vssolution.hpp \
+ lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp
 
 DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) $(DESKTOP_ONLY_SOURCE_FILES) $(LOGO_FILE_CPP)
 WEB_SOURCE_FILES     = $(COMMON_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES)
 OBJECT_FILES1        = $(DESKTOP_SOURCE_FILES:.cpp=.o)
-OBJECT_FILES         = $(OBJECT_FILES1:.c=.o)
+OBJECT_FILES         = $(OBJECT_FILES1:.c=.o) $(OBJC_SOURCE_FILES:.m=.o)
 BYTECODE_FILES       = $(WEB_SOURCE_FILES:.cpp=.bc)
 
 # Targets
@@ -244,6 +245,9 @@ BYTECODE_FILES       = $(WEB_SOURCE_FILES:.cpp=.bc)
 
 %.o: %.c %.h
 	$(Ccc) -o $@ -c $<
+
+%.o: %.m
+	$(CC) $(CFLAGS) -o $@ -c $<
 
 %.bc: %.cpp
 	$(EMCC) $(EMCC_OPTS) -c $< -o $@
