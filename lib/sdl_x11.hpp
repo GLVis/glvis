@@ -12,12 +12,9 @@
 #ifndef GLVIS_SDL_X11_HPP
 #define GLVIS_SDL_X11_HPP
 
-#include "gl/platform_gl.hpp"
 #ifdef SDL_VIDEO_DRIVER_X11
-#ifdef Status
-#undef Status
-#endif // Status
 #include "sdl_helper.hpp"
+#include "gl/platform_gl.hpp"
 #include "threads.hpp"
 #include <poll.h>
 #ifdef SDL_VIDEO_DRIVER_X11_XINPUT2
