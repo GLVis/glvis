@@ -52,7 +52,6 @@ private:
 
    std::unique_ptr<SdlNativePlatform> platform;
 
-   SDL_SysWMinfo sysinfo;
    static Uint32 glvis_event_type;
 
    bool running;
