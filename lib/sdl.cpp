@@ -28,6 +28,12 @@
 #if defined(SDL_VIDEO_DRIVER_COCOA)
 #include "sdl_mac.hpp"
 #endif
+#ifndef __EMSCRIPTEN__
+#include <SDL2/SDL_syswm.h>
+#else
+#include <SDL_syswm.h>
+#endif
+
 
 using std::cerr;
 using std::endl;
@@ -359,6 +365,7 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    }
    SDL_ShowWindow(handle->hwnd);
 
+   SDL_SysWMinfo sysinfo;
    SDL_VERSION(&sysinfo.version);
    if (!SDL_GetWindowWMInfo(handle->hwnd, &sysinfo))
    {

@@ -19,6 +19,11 @@
 #include <iterator>
 #include <algorithm>
 
+#ifdef __INTEL_COMPILER
+// for some reason, icpc is choking on GLM's constexpr stuff - force it to use
+// only C++98 features as a workaround.
+#define GLM_FORCE_CXX98
+#endif
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 #include <glm/gtc/matrix_access.hpp>
