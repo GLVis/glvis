@@ -33,6 +33,11 @@
  * Please report all bugs and problems to <gl2ps@geuz.org>.
  */
 
+// Suppress GL2PS OpenGL warning on Mac
+#ifdef __APPLE__
+#define GL_SILENCE_DEPRECATION
+#endif
+
 #include "gl2ps.h"
 
 #include <math.h>
