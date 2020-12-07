@@ -77,9 +77,9 @@ static void SolutionKeyHPressed()
         << "| s -  Turn on/off unit cube scaling |" << endl
         << "| S -  Take snapshot/Record a movie  |" << endl
         << "| t -  Cycle materials and lights    |" << endl
-        << "| w -  Toggle the clipping plane     |" << endl
-        << "| y/Y  Rotate the clipping plane     |" << endl
-        << "| z/Z  Move the clipping plane       |" << endl
+        << "| w -  Toggle the cutting plane      |" << endl
+        << "| y/Y  Rotate the cutting plane      |" << endl
+        << "| z/Z  Move the cutting plane        |" << endl
         << "| \\ -  Set light source position     |" << endl
         << "| Ctrl+p - Print to a PDF file       |" << endl
         << "| Ctrl+o - Element ordering curve    |" << endl

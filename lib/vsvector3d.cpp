@@ -59,9 +59,9 @@ static void VectorKeyHPressed()
         << "| u/U  Move the level field vectors  |" << endl
         << "| v/V  Vector field                  |" << endl
         << "| w/W  Add/Delete level field vector |" << endl
-        << "| x/X  Rotate clipping plane (phi)   |" << endl
-        << "| y/Y  Rotate clipping plane (theta) |" << endl
-        << "| z/Z  Translate clipping plane      |" << endl
+        << "| x/X  Rotate cutting plane (phi)    |" << endl
+        << "| y/Y  Rotate cutting plane (theta)  |" << endl
+        << "| z/Z  Translate cutting plane       |" << endl
         << "| Ctrl+p - Print to a PDF file       |" << endl
         << "+------------------------------------+" << endl
         << "| Function keys                      |" << endl
