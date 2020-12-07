@@ -28,6 +28,9 @@ Unlike previous GLVis releases, this version requires a C++11 compiler.
 - Preliminary support for building GLVis to Javascript/WebAssembly using
   Emscripten, see https://github.com/GLVis/glvis-jupyter.
 
+- Documented project workflow and provided contribution guidelines in the new
+  top-level file, CONTRIBUTING.md.
+
 - Added several perceptually uniform colormaps "turbo", "viridis", "plasma",
   "fusion", "iceburn", "viola", "pride" and "ocean" from
   * Google AI: https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
