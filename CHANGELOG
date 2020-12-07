@@ -50,7 +50,8 @@ Unlike previous GLVis releases, this version requires a C++11 compiler.
 - Transparency and printing in textured coloring modes is now supported, and
   no-texture coloring has been removed as a result.
 
-- Text on screen is now rendered using a texture atlas.
+- FreeType is now a required dependency and text on screen is rendered using a
+  texture atlas.
 
 - Replaced the "deep sea" palette with "ocean". Added new palette: gray.
 

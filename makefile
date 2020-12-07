@@ -125,7 +125,7 @@ DEFINES = -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
  -DGLVIS_OGL3
 GLVIS_FLAGS += $(DEFINES)
 
-# we don't want most of the stuff below because emscripten handles that for us
+# We don't want most of the stuff below because Emscripten handles that for us
 EMCC_OPTS += $(CPPFLAGS) $(CXXFLAGS) $(MFEM_INCFLAGS) $(DEFINES)
 EMCC_LIBS += $(MFEM_LIBS)
 
