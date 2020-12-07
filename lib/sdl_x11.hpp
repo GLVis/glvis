@@ -13,6 +13,7 @@
 #define GLVIS_SDL_X11_HPP
 
 #ifdef SDL_VIDEO_DRIVER_X11
+
 #include "sdl_helper.hpp"
 #include "gl/platform_gl.hpp"
 #include "threads.hpp"
@@ -97,4 +98,5 @@ private:
 };
 
 #endif // SDL_VIDEO_DRIVER_X11
+
 #endif // GLVIS_SDL_X11_HPP

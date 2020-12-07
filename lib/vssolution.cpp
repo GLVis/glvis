@@ -2336,7 +2336,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    params.static_color = GetLineColor();
    if (draw_cp)
    {
-      //draw cutting plane
+      // draw cutting plane
       params.use_clip_plane = false;
       scene.queue.emplace_back(params, &cp_buf);
       params.use_clip_plane = true;
@@ -2347,7 +2347,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &bdr_buf);
    }
-   //draw lines
+   // draw lines
    if (drawmesh == 1)
    {
       scene.queue.emplace_back(params, &line_buf);
@@ -2356,7 +2356,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &lcurve_buf);
    }
-   //draw numberings
+   // draw numberings
    if (drawnums == 1)
    {
       scene.queue.emplace_back(params, &e_nums_buf);

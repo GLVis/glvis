@@ -9,8 +9,8 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef GLVIS_VISUAL
-#define GLVIS_VISUAL
+#ifndef GLVIS_VISUAL_HPP
+#define GLVIS_VISUAL_HPP
 
 // Visualization header file
 

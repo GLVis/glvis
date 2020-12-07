@@ -693,7 +693,7 @@ void RightButtonLoc (EventInfo *event)
 
    if (event->keymod & KMOD_SHIFT)
    {
-      //glLoadIdentity();
+      // glLoadIdentity();
       // GLfloat light[] = {newx,-newy, sqrt((float)(newx*newx+newy*newy)), 0.0 };
       newx -= startx;
       newy -= starty;

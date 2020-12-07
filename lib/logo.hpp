@@ -9,8 +9,8 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef __LOGO_HPP__
-#define __LOGO_HPP__
+#ifndef GLVIS_LOGO_HPP
+#define GLVIS_LOGO_HPP
 
 extern unsigned char logo_rgba[];
 extern unsigned int logo_rgba_len;

@@ -9,8 +9,8 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef GLVIS_COLOR_PALETTES
-#define GLVIS_COLOR_PALETTES
+#ifndef GLVIS_PALETTES_HPP
+#define GLVIS_PALETTES_HPP
 
 /// Initializes the palette textures.
 void paletteInit();

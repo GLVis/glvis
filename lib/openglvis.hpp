@@ -9,8 +9,8 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef GLVIS_OPENGLVIS
-#define GLVIS_OPENGLVIS
+#ifndef GLVIS_OPENGLVIS_HPP
+#define GLVIS_OPENGLVIS_HPP
 
 #include <cmath>
 #include "sdl.hpp"

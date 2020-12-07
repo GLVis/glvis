@@ -9,8 +9,8 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef FONT_HPP
-#define FONT_HPP
+#ifndef GLVIS_FONT_HPP
+#define GLVIS_FONT_HPP
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -22,7 +22,6 @@
 #include "gl/platform_gl.hpp"
 
 using namespace std;
-
 
 class GlVisFont
 {
@@ -61,9 +60,9 @@ public:
    void getObjectSize(const std::string& text, int& w, int& h);
 
    GlVisFont()
-      : init(false)
-      , font_init(false)
-      , face_has_kerning(false)
+      : init(false),
+        font_init(false),
+        face_has_kerning(false)
    {
       if (FT_Init_FreeType(&library))
       {
@@ -110,4 +109,4 @@ public:
    void setAlphaChannel(GLenum alpha) { alpha_channel = alpha; }
 };
 
-#endif /* FONT_HPP */
+#endif /* GLVIS_FONT_HPP */

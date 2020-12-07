@@ -886,7 +886,7 @@ void VisualizationSceneVector::PrepareVectorField()
    {
       rerun = 0;
 
-      //glNewList(vectorlist, GL_COMPILE);
+      // glNewList(vectorlist, GL_COMPILE);
       vector_buf.clear();
 
       if (drawvector > 0)
@@ -948,7 +948,7 @@ void VisualizationSceneVector::PrepareVectorField()
          }
       }
 
-      //glEndList();
+      // glEndList();
 
    }
    while (rerun);

@@ -9,8 +9,8 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef GLVIS_VSDATA
-#define GLVIS_VSDATA
+#ifndef GLVIS_VSDATA_HPP
+#define GLVIS_VSDATA_HPP
 
 #include <array>
 
