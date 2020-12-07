@@ -133,4 +133,3 @@ void GlBuilder::saveVertex(const GlBuilder::FFState& v)
       }
    }
 }
-

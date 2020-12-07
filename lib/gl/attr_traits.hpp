@@ -9,6 +9,9 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
+#ifndef GLVIS_ATTR_TRAITS_HPP
+#define GLVIS_ATTR_TRAITS_HPP
+
 #include "types.hpp"
 #include "renderer_core.hpp"
 #include <type_traits>
@@ -148,4 +151,7 @@ AttrTexcoord<TV, decltype((void)TV::texCoord, 0)>>
    const static GLenum FFArrayIdx = GL_TEXTURE_COORD_ARRAY;
    constexpr static auto FFSetupFunc = glTexCoordPointer;
 };
+
 }
+
+#endif

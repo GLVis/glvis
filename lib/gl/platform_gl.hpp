@@ -9,8 +9,8 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef GLVIS_PLATFORM_GL
-#define GLVIS_PLATFORM_GL
+#ifndef GLVIS_PLATFORM_GL_HPP
+#define GLVIS_PLATFORM_GL_HPP
 
 #include <GL/glew.h>
 #ifndef __EMSCRIPTEN__

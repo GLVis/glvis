@@ -12,7 +12,6 @@
 
 // GLVis - an OpenGL visualization server based on the MFEM library
 
-
 #include <limits>
 #include <iostream>
 #include <fstream>
