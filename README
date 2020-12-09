@@ -108,18 +108,18 @@ f - Change the shading type (the way the elements and mesh are drawn)
                         at the vertices
                      -> multiple triangles / quads per element, also allowing
                         for the visualization of discontinuous functions and
-                        curvilinear elements (use i/I to control subdivisions)
+                        curvilinear elements (use o/O to control subdivisions)
 
-i/I - Control element subdivisions (2D)
+o/O - Control element subdivisions (2D)
       there are two subdivision factors: -> element subdivision factor s1
                                          -> boundary subdivision factor s2
-I - Cycle through the "subdivision functions", (prints a message in the
+O - Cycle through the "subdivision functions", (prints a message in the
     terminal when changed)
     The options are: -> Increase subdivision factor:      s1 += s2
                      -> Decrease subdivision factor:      s1 -= s2
                      -> Increase bdr subdivision factor:  s2++
                      -> Decrease bdr subdivision factor:  s2--
-i - perform the current "subdivision function"
+o - perform the current "subdivision function"
 
 A - Turn on/off the use of anti-aliasing/multi-sampling
 b - Display/Hide the boundary in 2D scalar mode. Use Shift+F9/F10 to cycle
@@ -141,7 +141,8 @@ arrow keys        - Manual rotation
 Ctrl+arrow keys   - Translate the viewpoint
 
 Ctrl+o - Toggle an element ordering curve in 2D and 3D
-w - Toggle clipping (cutting) plane in 2D (see also 'i' in 3D)
+
+i - Toggle cutting (clipping) plane in 2D
 y/Y - Rotate clipping plane (theta) in 2D
 z/Z - Translate clipping plane in 2D
 
@@ -242,7 +243,7 @@ z/Z - Translate clipping plane
 E   - Display/Hide the elements in the clipping plane
 M   - Display/Hide the mesh in the clipping plane
 
-o/O - Refine/de-refine elements (similar to i/I in 2D)
+o/O - Refine/de-refine elements
 
 u/U - Move level surface value up/down
 v/V - Add/Delete a level surface value
