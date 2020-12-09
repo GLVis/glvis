@@ -234,7 +234,9 @@ static void KeyNPressed()
    SendExposeEvent();
 }
 
-static void KeyOPressed(GLenum state)
+int refine_func = 0;
+
+static void KeyoPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
@@ -242,76 +244,61 @@ static void KeyOPressed(GLenum state)
       vssol -> PrepareOrderingCurve();
       SendExposeEvent();
    }
-}
-
-static void KeyEPressed()
-{
-   vssol -> ToggleDrawElems();
-   SendExposeEvent();
-}
-
-static void KeyFPressed()
-{
-   vssol -> ToggleShading();
-   SendExposeEvent();
-}
-
-int refine_func = 0;
-
-void KeyiPressed()
-{
-   int update = 1;
-   switch (refine_func)
+   else
    {
-      case 0:
-         vssol -> TimesToRefine += vssol -> EdgeRefineFactor;
-         break;
-      case 1:
-         if (vssol -> TimesToRefine > vssol -> EdgeRefineFactor)
-         {
-            vssol -> TimesToRefine -= vssol -> EdgeRefineFactor;
-         }
-         else
-         {
-            update = 0;
-         }
-         break;
-      case 2:
-         vssol -> TimesToRefine /= vssol -> EdgeRefineFactor;
-         vssol -> EdgeRefineFactor ++;
-         vssol -> TimesToRefine *= vssol -> EdgeRefineFactor;
-         break;
-      case 3:
-         if (vssol -> EdgeRefineFactor > 1)
-         {
+      int update = 1;
+      switch (refine_func)
+      {
+         case 0:
+            vssol -> TimesToRefine += vssol -> EdgeRefineFactor;
+            break;
+         case 1:
+            if (vssol -> TimesToRefine > vssol -> EdgeRefineFactor)
+            {
+               vssol -> TimesToRefine -= vssol -> EdgeRefineFactor;
+            }
+            else
+            {
+               update = 0;
+            }
+            break;
+         case 2:
             vssol -> TimesToRefine /= vssol -> EdgeRefineFactor;
-            vssol -> EdgeRefineFactor --;
+            vssol -> EdgeRefineFactor ++;
             vssol -> TimesToRefine *= vssol -> EdgeRefineFactor;
-         }
-         else
-         {
-            update = 0;
-         }
-         break;
+            break;
+         case 3:
+            if (vssol -> EdgeRefineFactor > 1)
+            {
+               vssol -> TimesToRefine /= vssol -> EdgeRefineFactor;
+               vssol -> EdgeRefineFactor --;
+               vssol -> TimesToRefine *= vssol -> EdgeRefineFactor;
+            }
+            else
+            {
+               update = 0;
+            }
+            break;
+      }
+      if (update && vssol -> shading == 2)
+      {
+         vssol -> DoAutoscale(false);
+         vssol -> PrepareLines();
+         vssol -> PrepareBoundary();
+         vssol -> Prepare();
+         vssol -> PrepareLevelCurves();
+         vssol -> PrepareCP();
+         SendExposeEvent();
+      }
+      cout << "Subdivision factors = " << vssol -> TimesToRefine
+           << ", " << vssol -> EdgeRefineFactor << endl;
    }
-   if (update && vssol -> shading == 2)
-   {
-      vssol -> DoAutoscale(false);
-      vssol -> PrepareLines();
-      vssol -> PrepareBoundary();
-      vssol -> Prepare();
-      vssol -> PrepareLevelCurves();
-      vssol -> PrepareCP();
-      SendExposeEvent();
-   }
-   cout << "Subdivision factors = " << vssol -> TimesToRefine
-        << ", " << vssol -> EdgeRefineFactor << endl;
 }
 
-void KeyIPressed()
+static void KeyOPressed(GLenum state)
 {
    refine_func = (refine_func+1)%4;
-   cout << "Key 'i' will: ";
+   cout << "Key 'o' will: ";
    switch (refine_func)
    {
       case 0:
@@ -327,6 +314,28 @@ void KeyIPressed()
          cout << "Decrease bdr subdivision factor" << endl;
          break;
    }
+}
+
+static void KeyEPressed()
+{
+   vssol -> ToggleDrawElems();
+   SendExposeEvent();
+}
+
+static void KeyFPressed()
+{
+   vssol -> ToggleShading();
+   SendExposeEvent();
+}
+
+void KeyiPressed()
+{
+   // no-op, available
+}
+
+void KeyIPressed()
+{
+   // no-op, available
 }
 
 static void KeywPressed()
@@ -492,7 +501,7 @@ void VisualizationSceneSolution::Init()
       wnd->setOnKeyDown('n', KeyNPressed);
       wnd->setOnKeyDown('N', KeyNPressed);
 
-      wnd->setOnKeyDown('o', KeyOPressed);
+      wnd->setOnKeyDown('o', KeyoPressed);
       wnd->setOnKeyDown('O', KeyOPressed);
 
       wnd->setOnKeyDown('e', KeyEPressed);
