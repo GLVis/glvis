@@ -491,11 +491,12 @@ void SdlWindow::keyEvent(SDL_Keysym& ks)
    }
    else if (ks.sym < 256 && std::isdigit(ks.sym))
    {
-       if (!(SDL_GetModState() & KMOD_SHIFT)) {
-           // handle number key event here
-           onKeyDown[ks.sym](ks.mod);
-           handled = true;
-       }
+      if (!(SDL_GetModState() & KMOD_SHIFT))
+      {
+         // handle number key event here
+         onKeyDown[ks.sym](ks.mod);
+         handled = true;
+      }
    }
    else if (ctrlDown)
    {
