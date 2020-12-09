@@ -61,8 +61,8 @@ static void SolutionKeyHPressed()
         << "| f -  Smooth/Nonconf/Flat shading   |" << endl
         << "| g -  Toggle background             |" << endl
         << "| h -  Displays help menu            |" << endl
-        << "| i -  (De)refine elem. (NC shading) |" << endl
-        << "| I -  Switch 'i' func. (NC shading) |" << endl
+        << "| o -  (De)refine elem. (NC shading) |" << endl
+        << "| O -  Switch 'o' func. (NC shading) |" << endl
         << "| j -  Turn on/off perspective       |" << endl
         << "| k/K  Adjust the transparency level |" << endl
         << "| ,/<  Adjust color transparency     |" << endl
