@@ -11,6 +11,10 @@
 Version 3.4.1 (development)
 ===========================
 
+- Keystroke changes: cutting plane in 2D is now toggled with 'i' instead of 'w',
+  and 2D element subdivision is controlled with 'o/O' instead of 'i/I'. These
+  are the same as the corresponding keystrokes in 3D.
+
 - Overhauled rendering and window management backend, replacing X Windows with
   SDL for platform-native window and event handling. This allows for OpenGL 3+
   and HiDPI support on Mac OS X.
