@@ -483,7 +483,15 @@ void SdlWindow::keyEvent(SDL_Keysym& ks)
    bool handled = false;
    if (ks.sym >= 128 || ks.sym < 32)
    {
-      if (onKeyDown[ks.sym])
+      bool skipEvent = false;
+      if (SDL_GetModState() & KMOD_NUM)
+      {
+         // Skip keypad number events if NumLock is down - text input events
+         // will be issued
+         // Note: order of keycodes for keypad is KP_1 KP_2 ... KP_9 KP_0
+         skipEvent |= (ks.sym >= SDLK_KP_1 && ks.sym <= SDLK_KP_0);
+      }
+      if (!skipEvent && onKeyDown[ks.sym])
       {
          onKeyDown[ks.sym](ks.mod);
          handled = true;
