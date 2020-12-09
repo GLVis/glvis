@@ -39,9 +39,13 @@ Unlike previous GLVis releases, this version requires a C++11 compiler.
 
 - Added support for visualization of the element ordering curve with 'Ctrl+o'.
 
-- Improved the cutting plane algorithm for curved elements. The key 'I' can be
-  used to switch to the previous (faster) algorithm which is suitable for meshes
-  with planar faces.
+- Keystroke changes: cutting plane in 2D is now toggled with 'i' instead of 'w',
+  and 2D element subdivision is controlled with 'o/O' instead of 'i/I'. These
+  are the same as the corresponding keystrokes in 3D.
+
+- Improved the 3D cutting plane algorithm for curved elements. The key 'I' can
+  be used to switch to the previous (faster) algorithm which is suitable for
+  meshes with planar faces.
 
 - Updated to support the display and slicing of meshes with wedge elements.
 
