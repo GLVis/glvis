@@ -141,7 +141,7 @@ arrow keys        - Manual rotation
 Ctrl+arrow keys   - Translate the viewpoint
 
 Ctrl+o - Toggle an element ordering curve in 2D and 3D
-w - Toggle clipping (cutting) plane in 2D (see also 'i' in 3D)
+i - Toggle cutting (clipping) plane in 2D
 y/Y - Rotate clipping plane (theta) in 2D
 z/Z - Translate clipping plane in 2D
 

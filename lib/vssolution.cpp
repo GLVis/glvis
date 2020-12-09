@@ -61,8 +61,7 @@ static void SolutionKeyHPressed()
         << "| f -  Smooth/Nonconf/Flat shading   |" << endl
         << "| g -  Toggle background             |" << endl
         << "| h -  Displays help menu            |" << endl
-        << "| o -  (De)refine elem. (NC shading) |" << endl
-        << "| O -  Switch 'o' func. (NC shading) |" << endl
+        << "| i -  Toggle the cutting plane      |" << endl
         << "| j -  Turn on/off perspective       |" << endl
         << "| k/K  Adjust the transparency level |" << endl
         << "| ,/<  Adjust color transparency     |" << endl
@@ -70,6 +69,8 @@ static void SolutionKeyHPressed()
         << "| L -  Toggle logarithmic scale      |" << endl
         << "| m -  Displays/Hides the mesh       |" << endl
         << "| n/N  Cycle through numberings      |" << endl
+        << "| o -  (De)refine elem. (NC shading) |" << endl
+        << "| O -  Switch 'o' func. (NC shading) |" << endl
         << "| p/P  Cycle through color palettes  |" << endl
         << "| q -  Quits                         |" << endl
         << "| r -  Reset the plot to 3D view     |" << endl
@@ -77,7 +78,6 @@ static void SolutionKeyHPressed()
         << "| s -  Turn on/off unit cube scaling |" << endl
         << "| S -  Take snapshot/Record a movie  |" << endl
         << "| t -  Cycle materials and lights    |" << endl
-        << "| w -  Toggle the clipping plane     |" << endl
         << "| y/Y  Rotate the clipping plane     |" << endl
         << "| z/Z  Move the clipping plane       |" << endl
         << "| \\ -  Set light source position     |" << endl
@@ -330,18 +330,13 @@ static void KeyFPressed()
 
 void KeyiPressed()
 {
-   // no-op, available
+   vssol->ToggleDrawCP();
+   SendExposeEvent();
 }
 
 void KeyIPressed()
 {
    // no-op, available
-}
-
-static void KeywPressed()
-{
-   vssol->ToggleDrawCP();
-   SendExposeEvent();
 }
 
 static void KeyyPressed()
@@ -513,7 +508,6 @@ void VisualizationSceneSolution::Init()
       wnd->setOnKeyDown('i', KeyiPressed);
       wnd->setOnKeyDown('I', KeyIPressed);
 
-      wnd->setOnKeyDown('w', KeywPressed);
       wnd->setOnKeyDown('y', KeyyPressed);
       wnd->setOnKeyDown('Y', KeyYPressed);
       wnd->setOnKeyDown('z', KeyzPressed);
