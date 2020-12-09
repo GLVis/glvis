@@ -483,19 +483,19 @@ void SdlWindow::keyEvent(SDL_Keysym& ks)
    bool handled = false;
    if (ks.sym >= 128 || ks.sym < 32)
    {
-      bool skipEvent = false;
-      if (SDL_GetModState() & KMOD_NUM)
-      {
-         // Skip keypad number events if NumLock is down - text input events
-         // will be issued
-         // Note: order of keycodes for keypad is KP_1 KP_2 ... KP_9 KP_0
-         skipEvent |= (ks.sym >= SDLK_KP_1 && ks.sym <= SDLK_KP_0);
-      }
-      if (!skipEvent && onKeyDown[ks.sym])
+      if (onKeyDown[ks.sym])
       {
          onKeyDown[ks.sym](ks.mod);
          handled = true;
       }
+   }
+   else if (ks.sym < 256 && std::isdigit(ks.sym))
+   {
+       if (!(SDL_GetModState() & KMOD_SHIFT)) {
+           // handle number key event here
+           onKeyDown[ks.sym](ks.mod);
+           handled = true;
+       }
    }
    else if (ctrlDown)
    {
@@ -533,7 +533,7 @@ void SdlWindow::keyEvent(SDL_Keysym& ks)
 
 void SdlWindow::keyEvent(char c)
 {
-   if (onKeyDown[c])
+   if (!std::isdigit(c) && onKeyDown[c])
    {
       SDL_Keymod mods = SDL_GetModState();
       bool isAlt = mods & (KMOD_ALT);
