@@ -29,6 +29,7 @@ public:
    SdlX11Platform(Display* xdisplay, Window xwindow)
       : disp(xdisplay), wnd(xwindow)
    {
+#ifdef SDL_VIDEO_DRIVER_X11_XINPUT2
       // Disable XInput extension events since they are generated even outside
       // the GLVis window.
       Window root_win = DefaultRootWindow(disp);
@@ -66,6 +67,7 @@ public:
 #ifndef SDL_VIDEO_DRIVER_X11_DYNAMIC_XINPUT2
       SDL_UnloadObject(lib);
 #endif
+#endif // SDL_VIDEO_DRIVER_X11_XINPUT2
    }
    void WaitEvent()
    {
