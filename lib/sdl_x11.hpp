@@ -29,6 +29,7 @@ public:
    SdlX11Platform(Display* xdisplay, Window xwindow)
       : disp(xdisplay), wnd(xwindow)
    {
+#ifdef SDL_VIDEO_DRIVER_X11_XINPUT2
       // Disable XInput extension events since they are generated even outside
       // the GLVis window.
       Window root_win = DefaultRootWindow(disp);
@@ -38,25 +39,23 @@ public:
       event_mask.mask_len = sizeof(mask);
       event_mask.mask = mask;
 #ifdef SDL_VIDEO_DRIVER_X11_DYNAMIC_XINPUT2
+      const char Xi_lib[] = SDL_VIDEO_DRIVER_X11_DYNAMIC_XINPUT2;
+#else
+      const char Xi_lib[] = "libXi.so";
+#endif
       typedef int (*XISelectEvents_ptr)(Display *, Window, XIEventMask *, int);
-      static XISelectEvents_ptr XISelectEvents_ = NULL;
-      if (XISelectEvents_ == NULL)
+      XISelectEvents_ptr XISelectEvents_ = NULL;
+      void *lib = SDL_LoadObject(Xi_lib);
+      if (lib != NULL)
       {
-         void *lib = SDL_LoadObject(SDL_VIDEO_DRIVER_X11_DYNAMIC_XINPUT2);
-         if (lib != NULL)
-         {
-            XISelectEvents_ =
-               (XISelectEvents_ptr)SDL_LoadFunction(lib, "XISelectEvents");
-         }
+         XISelectEvents_ =
+            (XISelectEvents_ptr)SDL_LoadFunction(lib, "XISelectEvents");
       }
       if (XISelectEvents_ == NULL)
       {
          cerr << "Error accessing XISelectEvents!" << endl;
          exit(EXIT_FAILURE);
       }
-#else
-#define XISelectEvents_ XISelectEvents
-#endif
       if (XISelectEvents_(disp, root_win, &event_mask, 1) != Success)
       {
          cerr << "Failed to disable XInput on the default root window!" << endl;
@@ -65,6 +64,10 @@ public:
       {
          cerr << "Failed to disable XInput on the current window!" << endl;
       }
+#ifndef SDL_VIDEO_DRIVER_X11_DYNAMIC_XINPUT2
+      SDL_UnloadObject(lib);
+#endif
+#endif // SDL_VIDEO_DRIVER_X11_XINPUT2
    }
    void WaitEvent()
    {
