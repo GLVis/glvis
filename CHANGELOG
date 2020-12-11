@@ -8,8 +8,11 @@
 
                               http://glvis.org
 
+
 Version 3.4.1 (development)
 ===========================
+
+Starting with this version, the GLVis open source license is changed to BSD-3.
 
 - Keystroke changes: cutting plane in 2D is now toggled with 'i' instead of 'w',
   and 2D element subdivision is controlled with 'o/O' instead of 'i/I'. These
