@@ -9,8 +9,8 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef GLVIS_THREADS
-#define GLVIS_THREADS
+#ifndef GLVIS_THREADS_HPP
+#define GLVIS_THREADS_HPP
 
 #include "vsdata.hpp"
 #include <mfem.hpp>

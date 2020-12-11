@@ -9,8 +9,8 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef MATERIAL_HPP
-#define MATERIAL_HPP
+#ifndef GLVIS_MATERIAL_HPP
+#define GLVIS_MATERIAL_HPP
 #include <array>
 
 struct Material

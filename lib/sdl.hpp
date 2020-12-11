@@ -9,8 +9,9 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef SDL_HPP
-#define SDL_HPP
+#ifndef GLVIS_SDL_HPP
+#define GLVIS_SDL_HPP
+
 #include <string>
 #include <memory>
 #include <functional>
@@ -96,7 +97,7 @@ public:
    SdlWindow();
    ~SdlWindow();
 
-   /// Creates a new OpenGL window. Returns false if SDL or OpenGL intialization
+   /// Creates a new OpenGL window. Returns false if SDL or OpenGL initialization
    /// fails.
    bool createWindow(const char * title, int x, int y, int w, int h,
                      bool legacyGlOnly);

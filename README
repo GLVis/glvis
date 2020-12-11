@@ -144,8 +144,8 @@ Ctrl+arrow keys   - Translate the viewpoint
 Ctrl+o - Toggle an element ordering curve in 2D and 3D
 
 i - Toggle cutting (clipping) plane in 2D
-y/Y - Rotate clipping plane (theta) in 2D
-z/Z - Translate clipping plane in 2D
+y/Y - Rotate cutting plane (theta) in 2D
+z/Z - Translate cutting plane in 2D
 
 ` - Toggle a ruler, with initial origin at the center of the bounding box. The
     origin can be later moved with '~'.
@@ -230,19 +230,19 @@ U - Toggle the functionality of 'u' (prints a message in the terminal when
 
 3D data commands
 ================
-i   - Toggle clipping (cutting) plane
+i   - Toggle cutting (clipping) plane
       The options are: -> none
                        -> cut through the elements
-                       -> show only elements behind the clipping plane
-I   - Toggle the clipping plane algorithm used when the option "cut through the
+                       -> show only elements behind the cutting plane
+I   - Toggle the cutting plane algorithm used when the option "cut through the
       elements" is selected. The two algorithms are:
          -> slower, more accurate algorithm for curved meshes (default)
          -> faster algorithm suitable for meshes with planar faces
-x/X - Rotate clipping plane (phi)
-y/Y - Rotate clipping plane (theta)
-z/Z - Translate clipping plane
-E   - Display/Hide the elements in the clipping plane
-M   - Display/Hide the mesh in the clipping plane
+x/X - Rotate cutting plane (phi)
+y/Y - Rotate cutting plane (theta)
+z/Z - Translate cutting plane
+E   - Display/Hide the elements in the cutting plane
+M   - Display/Hide the mesh in the cutting plane
 
 o/O - Refine/de-refine elements
 

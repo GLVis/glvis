@@ -62,9 +62,9 @@ static void Solution3dKeyHPressed()
         << "| u/U  Move the level surface        |" << endl
         << "| v/V  Add/Delete a level surface    |" << endl
         << "| w/W  Move bdr elements up/down     |" << endl
-        << "| x/X  Rotate clipping plane (phi)   |" << endl
-        << "| y/Y  Rotate clipping plane (theta) |" << endl
-        << "| z/Z  Translate clipping plane      |" << endl
+        << "| x/X  Rotate cutting plane (phi)    |" << endl
+        << "| y/Y  Rotate cutting plane (theta)  |" << endl
+        << "| z/Z  Translate cutting plane       |" << endl
         << "| Ctrl+p - Print to a PDF file       |" << endl
         << "| Ctrl+o - Element ordering curve    |" << endl
         << "+------------------------------------+" << endl

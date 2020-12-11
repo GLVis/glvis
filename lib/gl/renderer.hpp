@@ -9,8 +9,8 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef GLVIS_RENDERER
-#define GLVIS_RENDERER
+#ifndef GLVIS_RENDERER_HPP
+#define GLVIS_RENDERER_HPP
 
 #include <memory>
 #include <vector>
@@ -296,4 +296,4 @@ public:
 
 }
 
-#endif // GLVIS_RENDERER
+#endif // GLVIS_RENDERER_HPP

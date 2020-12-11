@@ -78,8 +78,8 @@ static void SolutionKeyHPressed()
         << "| s -  Turn on/off unit cube scaling |" << endl
         << "| S -  Take snapshot/Record a movie  |" << endl
         << "| t -  Cycle materials and lights    |" << endl
-        << "| y/Y  Rotate the clipping plane     |" << endl
-        << "| z/Z  Move the clipping plane       |" << endl
+        << "| y/Y  Rotate the cutting plane      |" << endl
+        << "| z/Z  Move the cutting plane        |" << endl
         << "| \\ -  Set light source position     |" << endl
         << "| Ctrl+p - Print to a PDF file       |" << endl
         << "| Ctrl+o - Element ordering curve    |" << endl
@@ -2339,7 +2339,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    params.static_color = GetLineColor();
    if (draw_cp)
    {
-      //draw cutting plane
+      // draw cutting plane
       params.use_clip_plane = false;
       scene.queue.emplace_back(params, &cp_buf);
       params.use_clip_plane = true;
@@ -2350,7 +2350,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &bdr_buf);
    }
-   //draw lines
+   // draw lines
    if (drawmesh == 1)
    {
       scene.queue.emplace_back(params, &line_buf);
@@ -2359,7 +2359,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &lcurve_buf);
    }
-   //draw numberings
+   // draw numberings
    if (drawnums == 1)
    {
       scene.queue.emplace_back(params, &e_nums_buf);

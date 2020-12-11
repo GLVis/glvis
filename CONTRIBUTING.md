@@ -84,9 +84,10 @@ The GLVis source code has the following structure:
 
 ```
   .
-  └── lib
-      └── gl
-          └── shaders
+  ├── lib
+  │   └── gl
+  │       └── shaders
+  └── share
 ```
 
 ## GitHub Workflow
@@ -271,19 +272,19 @@ Before a PR can be merged, it should satisfy the following:
 
 ### Releases
 
-- Releases are just tags in the `master` branch, e.g. https://github.com/glvis/glvis/releases/tag/v3.3.2,
-  and have a version that ends in an even "patch" number, e.g. `v3.2.2` or
+- Releases are just tags in the `master` branch, e.g. https://github.com/glvis/glvis/releases/tag/v3.4,
+  and have a version that ends in an even "patch" number, e.g. `v3.4.2` or
   `v3.4` (by convention `v3.4` is the same as `v3.4.0`.)  Between releases, the
-  version ends in an odd "patch" number, e.g. `v3.3.3`.
+  version ends in an odd "patch" number, e.g. `v3.4.1`.
 
 - We use [milestones](https://github.com/glvis/glvis/milestones) to coordinate the
   work on different PRs toward a release, see for example the
-  [v3.3.2 release](https://github.com/glvis/glvis/milestone/1?closed=1).
+  [v3.4 release](https://github.com/glvis/glvis/milestone/1?closed=1).
 
 - After a release is complete, the `next` branch is recreated, e.g. as follows
-  (replace `3.3.2` with current release):
-  - Rename the current `next` branch to `next-pre-v3.3.2`.
-  - Create a new `next` branch starting from the `v3.3.2` release.
+  (replace `3.4` with current release):
+  - Rename the current `next` branch to `next-pre-v3.4`.
+  - Create a new `next` branch starting from the `v3.4` release.
   - Local copies of `next` can then be updated with `git fetch origin next && git checkout -B next origin/next`.
 
 ### Release Checklist

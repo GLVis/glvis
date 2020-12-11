@@ -519,7 +519,7 @@ void SdlWindow::keyEvent(SDL_Keysym& ks)
       if (isAlt) { saved_keys += "Alt-"; }
       if (ks.sym < 256 && std::isalpha(ks.sym))
       {
-         //key with corresponding text output
+         // key with corresponding text output
          char c = ks.sym;
          if (!(ks.mod & KMOD_SHIFT)) { c = std::tolower(c); }
          saved_keys += c;

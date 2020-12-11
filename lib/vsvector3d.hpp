@@ -9,8 +9,8 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef GLVIS_VSVECTOR_3D
-#define GLVIS_VSVECTOR_3D
+#ifndef GLVIS_VSVECTOR_3D_HPP
+#define GLVIS_VSVECTOR_3D_HPP
 
 #include "mfem.hpp"
 #include "gl/types.hpp"

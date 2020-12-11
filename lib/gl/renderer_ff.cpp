@@ -262,8 +262,8 @@ void FFGLDevice::drawDeviceBuffer(int hnd)
    }
    glCallList(disp_lists[hnd].list);
    // reset texturing parameters
-   //glMultiTexCoord2f(GL_TEXTURE0, 0.f, 0.f);
-   //glMultiTexCoord2f(GL_TEXTURE1, 0.f, 0.f);
+   // glMultiTexCoord2f(GL_TEXTURE0, 0.f, 0.f);
+   // glMultiTexCoord2f(GL_TEXTURE1, 0.f, 0.f);
 }
 
 void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)

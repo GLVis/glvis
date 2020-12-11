@@ -9,8 +9,8 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef GLVIS_AUX_VIS
-#define GLVIS_AUX_VIS
+#ifndef GLVIS_AUX_VIS_HPP
+#define GLVIS_AUX_VIS_HPP
 
 #include "gl/platform_gl.hpp"
 #include "gl/types.hpp"

@@ -9,8 +9,8 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef GLVIS_RENDERER_CORE
-#define GLVIS_RENDERER_CORE
+#ifndef GLVIS_RENDERER_CORE_HPP
+#define GLVIS_RENDERER_CORE_HPP
 #include "renderer.hpp"
 
 namespace gl3
@@ -118,4 +118,4 @@ public:
 
 }
 
-#endif // GLVIS_RENDERER_CORE
+#endif // GLVIS_RENDERER_CORE_HPP

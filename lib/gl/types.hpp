@@ -9,8 +9,8 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef GLVIS_AUX_GL3
-#define GLVIS_AUX_GL3
+#ifndef GLVIS_TYPES_HPP
+#define GLVIS_TYPES_HPP
 
 #include <vector>
 #include <array>
@@ -677,5 +677,4 @@ public:
 
 }
 
-#endif // GLVIS_AUX_GL3
-
+#endif // GLVIS_TYPES_HPP
