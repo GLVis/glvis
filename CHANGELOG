@@ -26,7 +26,7 @@ Unlike previous GLVis releases, this version requires a C++11 compiler.
   "-oldgl" can be used to request the legacy backend.
 
 - Preliminary support for building GLVis to Javascript/WebAssembly using
-  Emscripten, see https://github.com/GLVis/glvis-jupyter.
+  Emscripten, see https://github.com/GLVis/glvisjs.
 
 - Documented project workflow and provided contribution guidelines in the new
   top-level file, CONTRIBUTING.md.
