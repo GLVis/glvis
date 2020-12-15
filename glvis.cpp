@@ -62,6 +62,7 @@ GridFunction *grid_f = NULL;
 int is_gf = 0;
 string keys;
 VisualizationSceneScalarData *vs = NULL;
+communication_thread *comm_thread = NULL;
 
 GeometryRefiner GLVisGeometryRefiner;
 
@@ -334,30 +335,25 @@ int ReadStream(istream &is, const string &data_type)
    return field_type;
 }
 
-int InitVis(int t)
-{
-   const char *win_title =
-      (window_title == string_default) ? window_titles[t] : window_title;
-
-   return InitVisualization(win_title, window_x, window_y,
-                            window_w, window_h);
-}
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
-void StartVisualization(int field_type)
+void GlvisInitVis(int field_type)
 {
    if (field_type < 0 || field_type > 2)
    {
       return;
    }
 
-   if (InitVis(field_type))
+   const char *win_title = (window_title == string_default)
+                                ? window_titles[field_type]
+                                : window_title;
+
+   if (InitVisualization(win_title, window_x, window_y,
+                         window_w, window_h))
    {
       cerr << "Initializing the visualization failed." << endl;
       return;
    }
-
-   communication_thread *comm_thread = NULL;
 
    if (input_streams.Size() > 0)
    {
@@ -412,9 +408,9 @@ void StartVisualization(int field_type)
          {
             if (mesh->Dimension() == 3)
             {
-               paletteSet(4);
-               // paletteSet(11);
-               // Set_Material_And_Light(4,3);
+               //paletteSet(4);
+               paletteSet(11);
+               vss->SetLightMatIdx(4);
             }
             else
             {
@@ -485,8 +481,11 @@ void StartVisualization(int field_type)
          SetVisualizationScene(vs, 3, keys.c_str());
       }
    }
+}
 
-   KillVisualization(); // deletes vs
+void GlvisStartVis()
+{
+   RunVisualization(); // deletes vs
    vs = NULL;
    if (input_streams.Size() > 0)
    {
@@ -1116,11 +1115,12 @@ void PlayScript(istream &scr)
    }
 
    scr_level = scr_running = 0;
-   GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
    script = &scr;
    keys.clear();
 
-   StartVisualization((grid_f->VectorDim() == 1) ? 0 : 1);
+   GlvisInitVis((grid_f->VectorDim() == 1) ? 0 : 1);
+   GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
+   GlvisStartVis();
 
    delete init_nodes; init_nodes = NULL;
 
@@ -1302,7 +1302,8 @@ int main (int argc, char *argv[])
       ifs >> data_type >> ws;
       int ft = ReadStream(ifs, data_type);
       input_streams.Append(&ifs);
-      StartVisualization(ft);
+      GlvisInitVis(ft);
+      GlvisStartVis();
       return 0;
    }
 
@@ -1562,7 +1563,8 @@ int main (int argc, char *argv[])
                      delete isock;
                      ft = ReadInputStreams();
                   }
-                  StartVisualization(ft);
+                  GlvisInitVis(ft);
+                  GlvisStartVis();
                   CloseInputStreams(false);
                   exit(0);
                }
@@ -1593,142 +1595,19 @@ int main (int argc, char *argv[])
          ReadSerial();
       }
 
-      int window_err;
-      double mesh_range = -1.0;
-      if (mesh->SpaceDimension() == 2)
+      bool use_vector_soln = (input & 8);
+      bool use_soln = (input & 4);
+      int field_type;
+      if (use_vector_soln)
       {
-         if ((input & 8) == 0)
-         {
-            VisualizationSceneSolution *vss;
-            window_err = InitVis((input & 4) ? 0 : 2);
-            if (!window_err)
-            {
-               if ((input & 4) == 0)
-               {
-                  paletteSet(4);   // paletteSet(11);
-               }
-               vs = vss = new VisualizationSceneSolution(*mesh, sol);
-               if (is_gf)
-               {
-                  vss->SetGridFunction(*grid_f);
-               }
-               if ((input & 4) == 0)
-               {
-                  vs->OrthogonalProjection = 1;
-                  vs->SetLight(false);
-                  vs->Zoom(1.8);
-                  if (grid_f)
-                  {
-                     mesh_range = grid_f->Max() + 1.0;
-                  }
-                  else
-                  {
-                     mesh_range = sol.Max() + 1.0;
-                  }
-               }
-            }
-         }
-         else
-         {
-            window_err = InitVis(1);
-            if (!window_err)
-            {
-               if (is_gf)
-               {
-                  vs = new VisualizationSceneVector(*grid_f);
-               }
-               else
-               {
-                  vs = new VisualizationSceneVector(*mesh, solu, solv);
-               }
-            }
-         }
-      }
-      else // 3D
-      {
-         if ((input & 8) == 0 && (input & 512) == 0)
-         {
-            VisualizationSceneSolution3d *vss;
-            window_err = InitVis((input & 4) ? 0 : 2);
-            if (!window_err)
-            {
-               vs = vss = new VisualizationSceneSolution3d(*mesh, sol);
-               if (is_gf)
-               {
-                  vss->SetGridFunction(grid_f);
-               }
-               if ((input & 4) == 0)
-               {
-                  if (mesh->Dimension() == 3)
-                  {
-                     // paletteSet(4);
-                     paletteSet(11);
-                     vss->SetLightMatIdx(4);
-                  }
-                  else
-                  {
-                     paletteSet(4);
-                  }
-                  vss->ToggleDrawAxes();
-                  vss->ToggleDrawMesh();
-                  if (grid_f)
-                  {
-                     mesh_range = grid_f->Max() + 1.0;
-                  }
-                  else
-                  {
-                     mesh_range = sol.Max() + 1.0;
-                  }
-               }
-            }
-         }
-         else
-         {
-            window_err = InitVis(1);
-            if (!window_err)
-            {
-               if (is_gf)
-               {
-                  grid_f = ProjectVectorFEGridFunction(grid_f);
-                  vs = new VisualizationSceneVector3d(*grid_f);
-               }
-               else
-               {
-                  vs = new VisualizationSceneVector3d(*mesh, solu, solv, solw);
-               }
-            }
-         }
-      }
-      if (!window_err)
-      {
-         // increase the refinement factors if visualizing a GridFunction
-         if (is_gf)
-         {
-            vs->AutoRefine();
-            vs->SetShading(2, true);
-         }
-         if (mesh_range > 0.0)
-         {
-            vs->SetValueRange(-mesh_range, mesh_range);
-            vs->SetAutoscale(0);
-         }
-         if (mesh->SpaceDimension() == 2 && (input & 12) == 0)
-         {
-            SetVisualizationScene(vs, 2, keys.c_str());
-         }
-         else
-         {
-            SetVisualizationScene(vs, 3, keys.c_str());
-         }
-         KillVisualization(); // deletes vs
-         if (is_gf) { delete grid_f; }
-         delete mesh;
+          field_type = 1;
       }
       else
       {
-         cerr << "Initializing the visualization failed." << endl;
-         return 1;
+          field_type = (use_soln) ? 0 : 2;
       }
+      GlvisInitVis(field_type);
+      GlvisStartVis();
    }
 
    cout << "Thank you for using GLVis." << endl;
