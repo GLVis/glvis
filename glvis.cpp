@@ -335,9 +335,8 @@ int ReadStream(istream &is, const string &data_type)
    return field_type;
 }
 
-
 // Visualize the data in the global variables mesh, sol/grid_f, etc
-void GlvisInitVis(int field_type)
+void GLVisInitVis(int field_type)
 {
    if (field_type < 0 || field_type > 2)
    {
@@ -347,8 +346,7 @@ void GlvisInitVis(int field_type)
    const char *win_title = (window_title == string_default) ?
                            window_titles[field_type] : window_title;
 
-   if (InitVisualization(win_title, window_x, window_y,
-                         window_w, window_h))
+   if (InitVisualization(win_title, window_x, window_y, window_w, window_h))
    {
       cerr << "Initializing the visualization failed." << endl;
       return;
@@ -407,7 +405,6 @@ void GlvisInitVis(int field_type)
          {
             if (mesh->Dimension() == 3)
             {
-               //paletteSet(4);
                paletteSet(11);
                vss->SetLightMatIdx(4);
             }
@@ -482,7 +479,7 @@ void GlvisInitVis(int field_type)
    }
 }
 
-void GlvisStartVis()
+void GLVisStartVis()
 {
    RunVisualization(); // deletes vs
    vs = NULL;
@@ -1117,9 +1114,9 @@ void PlayScript(istream &scr)
    script = &scr;
    keys.clear();
 
-   GlvisInitVis((grid_f->VectorDim() == 1) ? 0 : 1);
+   GLVisInitVis((grid_f->VectorDim() == 1) ? 0 : 1);
    GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
-   GlvisStartVis();
+   GLVisStartVis();
 
    delete init_nodes; init_nodes = NULL;
 
@@ -1301,8 +1298,8 @@ int main (int argc, char *argv[])
       ifs >> data_type >> ws;
       int ft = ReadStream(ifs, data_type);
       input_streams.Append(&ifs);
-      GlvisInitVis(ft);
-      GlvisStartVis();
+      GLVisInitVis(ft);
+      GLVisStartVis();
       return 0;
    }
 
@@ -1562,8 +1559,8 @@ int main (int argc, char *argv[])
                      delete isock;
                      ft = ReadInputStreams();
                   }
-                  GlvisInitVis(ft);
-                  GlvisStartVis();
+                  GLVisInitVis(ft);
+                  GLVisStartVis();
                   CloseInputStreams(false);
                   exit(0);
                }
@@ -1605,8 +1602,8 @@ int main (int argc, char *argv[])
       {
          field_type = (use_soln) ? 0 : 2;
       }
-      GlvisInitVis(field_type);
-      GlvisStartVis();
+      GLVisInitVis(field_type);
+      GLVisStartVis();
    }
 
    cout << "Thank you for using GLVis." << endl;
