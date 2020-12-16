@@ -344,9 +344,8 @@ void GlvisInitVis(int field_type)
       return;
    }
 
-   const char *win_title = (window_title == string_default)
-                                ? window_titles[field_type]
-                                : window_title;
+   const char *win_title = (window_title == string_default) ?
+                           window_titles[field_type] : window_title;
 
    if (InitVisualization(win_title, window_x, window_y,
                          window_w, window_h))
@@ -1600,11 +1599,11 @@ int main (int argc, char *argv[])
       int field_type;
       if (use_vector_soln)
       {
-          field_type = 1;
+         field_type = 1;
       }
       else
       {
-          field_type = (use_soln) ? 0 : 2;
+         field_type = (use_soln) ? 0 : 2;
       }
       GlvisInitVis(field_type);
       GlvisStartVis();
