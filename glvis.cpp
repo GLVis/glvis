@@ -336,11 +336,11 @@ int ReadStream(istream &is, const string &data_type)
 }
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
-void GLVisInitVis(int field_type)
+bool GLVisInitVis(int field_type)
 {
    if (field_type < 0 || field_type > 2)
    {
-      return;
+      return false;
    }
 
    const char *win_title = (window_title == string_default) ?
@@ -349,7 +349,7 @@ void GLVisInitVis(int field_type)
    if (InitVisualization(win_title, window_x, window_y, window_w, window_h))
    {
       cerr << "Initializing the visualization failed." << endl;
-      return;
+      return false;
    }
 
    if (input_streams.Size() > 0)
@@ -477,6 +477,7 @@ void GLVisInitVis(int field_type)
          SetVisualizationScene(vs, 3, keys.c_str());
       }
    }
+   return true;
 }
 
 void GLVisStartVis()
@@ -1114,9 +1115,11 @@ void PlayScript(istream &scr)
    script = &scr;
    keys.clear();
 
-   GLVisInitVis((grid_f->VectorDim() == 1) ? 0 : 1);
-   GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
-   GLVisStartVis();
+   if (GLVisInitVis((grid_f->VectorDim() == 1) ? 0 : 1))
+   {
+      GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
+      GLVisStartVis();
+   }
 
    delete init_nodes; init_nodes = NULL;
 
@@ -1298,8 +1301,10 @@ int main (int argc, char *argv[])
       ifs >> data_type >> ws;
       int ft = ReadStream(ifs, data_type);
       input_streams.Append(&ifs);
-      GLVisInitVis(ft);
-      GLVisStartVis();
+      if (GLVisInitVis(ft))
+      {
+         GLVisStartVis();
+      }
       return 0;
    }
 
@@ -1559,8 +1564,10 @@ int main (int argc, char *argv[])
                      delete isock;
                      ft = ReadInputStreams();
                   }
-                  GLVisInitVis(ft);
-                  GLVisStartVis();
+                  if (GLVisInitVis(ft))
+                  {
+                     GLVisStartVis();
+                  }
                   CloseInputStreams(false);
                   exit(0);
                }
@@ -1602,8 +1609,10 @@ int main (int argc, char *argv[])
       {
          field_type = (use_soln) ? 0 : 2;
       }
-      GLVisInitVis(field_type);
-      GLVisStartVis();
+      if (GLVisInitVis(field_type))
+      {
+         GLVisStartVis();
+      }
    }
 
    cout << "Thank you for using GLVis." << endl;
