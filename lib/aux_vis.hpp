@@ -28,11 +28,11 @@ extern int PaletteNumColors;
 /// Initializes the visualization and some keys.
 int InitVisualization(const char name[], int x, int y, int w, int h);
 
-/// Start the infinite visualization loop.
 void SetVisualizationScene(VisualizationScene * scene,
                            int view = 3, const char *keys = NULL);
 
-void KillVisualization();
+/// Start the infinite visualization loop.
+void RunVisualization();
 
 /// Send expose event. In our case MyReshape is executed and Draw after it.
 void SendExposeEvent();

@@ -9,6 +9,11 @@
                               http://glvis.org
 
 
+Version 4.0.1 (development)
+===========================
+- Refactored glvis.cpp to fix a bug in GLVis script handling.
+
+
 Version 4.0, released on Dec 11, 2020
 =====================================
 

@@ -322,16 +322,14 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
    {
       SendKeySequence(keys);
    }
+}
 
-   // auxMainLoop(NULL);
+void RunVisualization()
+{
 #ifndef __EMSCRIPTEN__
    wnd->mainLoop();
 #endif
    InitIdleFuncs();
-}
-
-void KillVisualization()
-{
    delete locscene;
    delete wnd;
    wnd = nullptr;

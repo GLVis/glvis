@@ -37,8 +37,7 @@ static void VectorKeyHPressed()
         << "| f -  Smooth/Flat shading           |" << endl
         << "| g -  Toggle background             |" << endl
         << "| h -  Displays help menu            |" << endl
-        << "| i -  (De)refine elem. (NC shading) |" << endl
-        << "| I -  Switch 'i' func. (NC shading) |" << endl
+        << "| i -  Toggle the cutting plane      |" << endl
         << "| j -  Turn on/off perspective       |" << endl
         << "| k/K  Adjust the transparency level |" << endl
         << "| ,/<  Adjust color transparency     |" << endl
@@ -47,6 +46,8 @@ static void VectorKeyHPressed()
         << "| m -  Displays/Hides the mesh       |" << endl
         << "| n -  Displacements step forward    |" << endl
         << "| N -  Cycle through numberings      |" << endl
+        << "| o -  (De)refine elem. (NC shading) |" << endl
+        << "| O -  Switch 'o' func. (NC shading) |" << endl
         << "| p/P  Cycle through color palettes  |" << endl
         << "| q -  Quits                         |" << endl
         << "| r -  Reset the plot to 3D view     |" << endl
@@ -54,9 +55,11 @@ static void VectorKeyHPressed()
         << "| s -  Turn on/off unit cube scaling |" << endl
         << "| S -  Take snapshot/Record a movie  |" << endl
         << "| t -  Cycle materials and lights    |" << endl
-        << "| \\ -  Set light source position     |" << endl
+        << "| u -  Vector sampling; scalar func. |" << endl
+        << "| U -  Switch 'u' functionality      |" << endl
         << "| v -  Cycle through vector fields   |" << endl
         << "| V -  Change the arrows scaling     |" << endl
+        << "| \\ -  Set light source position     |" << endl
         << "| Ctrl+p - Print to a PDF file       |" << endl
         << "+------------------------------------+" << endl
         << "| Function keys                      |" << endl

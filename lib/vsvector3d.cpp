@@ -55,13 +55,13 @@ static void VectorKeyHPressed()
         << "| s -  Turn on/off unit cube scaling |" << endl
         << "| S -  Take snapshot/Record a movie  |" << endl
         << "| t -  Cycle materials and lights    |" << endl
-        << "| \\ -  Set light source position     |" << endl
         << "| u/U  Move the level field vectors  |" << endl
         << "| v/V  Vector field                  |" << endl
         << "| w/W  Add/Delete level field vector |" << endl
         << "| x/X  Rotate cutting plane (phi)    |" << endl
         << "| y/Y  Rotate cutting plane (theta)  |" << endl
         << "| z/Z  Translate cutting plane       |" << endl
+        << "| \\ -  Set light source position     |" << endl
         << "| Ctrl+p - Print to a PDF file       |" << endl
         << "+------------------------------------+" << endl
         << "| Function keys                      |" << endl

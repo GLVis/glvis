@@ -81,8 +81,8 @@ static void SolutionKeyHPressed()
         << "| y/Y  Rotate the cutting plane      |" << endl
         << "| z/Z  Move the cutting plane        |" << endl
         << "| \\ -  Set light source position     |" << endl
-        << "| Ctrl+p - Print to a PDF file       |" << endl
         << "| Ctrl+o - Element ordering curve    |" << endl
+        << "| Ctrl+p - Print to a PDF file       |" << endl
         << "+------------------------------------+" << endl
         << "| Function keys                      |" << endl
         << "+------------------------------------+" << endl
