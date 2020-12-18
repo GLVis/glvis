@@ -280,7 +280,9 @@ void GLDevice::init()
    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
    // generate a white default texture modulation with default texture will just
    // pass through input color
-   glBindTexture(GL_TEXTURE_2D, 0);
+   GLuint default_texture;
+   glGenTextures(1, &default_texture);
+   glBindTexture(GL_TEXTURE_2D, default_texture);
    int black_color = 0xFFFFFFFF;
    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                 &black_color);
@@ -288,6 +290,8 @@ void GLDevice::init()
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+   passthrough_texture = TextureHandle(default_texture);
 }
 
 void GLDevice::setViewport(GLsizei w, GLsizei h)

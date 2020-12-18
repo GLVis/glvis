@@ -7708,16 +7708,6 @@ void paletteInit()
       }
       MaxTextureSize = std::min(MaxTextureSize, 4096);
       Init_Palettes();
-      //generate a black default texture
-      //modulation with default texture will just pass through input color
-      glBindTexture(GL_TEXTURE_2D, 0);
-      int black_color = 0xFFFFFFFF;
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                   &black_color);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
       glGenTextures(Num_RGB_Palettes * 2, &(palette_tex[0][0]));
       glGenTextures(1, &alpha_tex);
