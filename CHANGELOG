@@ -30,7 +30,7 @@ Unlike previous GLVis releases, this version requires a C++11 compiler.
   The modern OpenGL context is preferred by default; a new command-line argument
   "-oldgl" can be used to request the legacy backend.
 
-- Preliminary support for building GLVis to Javascript/WebAssembly using
+- Preliminary support for building GLVis to JavaScript/WebAssembly using
   Emscripten, see https://github.com/GLVis/glvis-js.
 
 - Documented project workflow and provided contribution guidelines in the new
