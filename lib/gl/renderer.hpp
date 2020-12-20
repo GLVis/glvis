@@ -144,10 +144,18 @@ protected:
       glDeleteVertexArrays(1, &vao);
    }
 
+   static void texCleanup(GLuint tex)
+   {
+      glDeleteTextures(1, &tex);
+   }
+
    using BufObjHandle = Handle<boCleanup>;
    using DispListHandle = Handle<dspListCleanup>;
    using VtxArrayHandle = Handle<vaoCleanup>;
    using ShaderPrgmHandle = Handle<prgmCleanup>;
+   using TextureHandle = Handle<texCleanup>;
+
+   TextureHandle passthrough_texture;
 
 public:
 
@@ -165,7 +173,7 @@ public:
    void detachTexture(int tex_unit)
    {
       glActiveTexture(GL_TEXTURE0 + tex_unit);
-      glBindTexture(GL_TEXTURE_2D, 0);
+      glBindTexture(GL_TEXTURE_2D, passthrough_texture);
    }
    void attachTexture(int tex_unit, int tex_id)
    {
