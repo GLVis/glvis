@@ -58,7 +58,7 @@ void Extrude1DMeshAndSolution(Mesh **mesh_p, GridFunction **grid_f_p,
 
 void SetMeshSolution(Mesh *mesh, GridFunction *&grid_f, bool save_coloring)
 {
-  auto & state = stream_state;
+   auto & state = stream_state;
 
    if (1) // checkerboard solution
    {

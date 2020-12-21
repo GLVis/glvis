@@ -319,7 +319,8 @@ print-%:
 	$(info )
 	@true
 
-ASTYLE = astyle --options=$(MFEM_DIR)/config/mfem.astylerc
+ASTYLE_BIN = astyle
+ASTYLE = $(ASTYLE_BIN) --options=$(MFEM_DIR)/config/mfem.astylerc
 ALL_FILES = ./glvis.cpp $(ALL_SOURCE_FILES) $(HEADER_FILES)
 EXT_FILES = lib/gl2ps.c lib/gl2ps.h
 FORMAT_FILES := $(filter-out $(EXT_FILES), $(ALL_FILES))

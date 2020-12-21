@@ -47,7 +47,8 @@ GridFunction *ProjectVectorFEGridFunction(GridFunction *gf)
    return gf;
 }
 
-bool startVisualization(const std::string input, const std::string data_type, int w, int h)
+bool startVisualization(const std::string input, const std::string data_type,
+                        int w, int h)
 {
    std::stringstream ss(input);
    const int field_type = ReadStream(ss, data_type);
@@ -101,7 +102,8 @@ bool startVisualization(const std::string input, const std::string data_type, in
       else if (stream_state.mesh->SpaceDimension() == 3)
       {
          VisualizationSceneSolution3d * vss;
-         vs = vss = new VisualizationSceneSolution3d(*stream_state.mesh, stream_state.sol);
+         vs = vss = new VisualizationSceneSolution3d(*stream_state.mesh,
+                                                     stream_state.sol);
          if (stream_state.grid_f)
          {
             vss->SetGridFunction(stream_state.grid_f);
