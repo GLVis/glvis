@@ -57,13 +57,13 @@ string      extra_caption;
 
 // Global variables
 int input = 1;
-Mesh *&mesh = stream_state.mesh;//nullptr;
+Mesh *&mesh = stream_state.mesh;
 Vector & sol = stream_state.sol;
 Vector & solu = stream_state.solu;
 Vector & solv = stream_state.solv;
 Vector & solw = stream_state.solw;
 Vector & normals = stream_state.normals;
-GridFunction *& grid_f = stream_state.grid_f;//nullptr;
+GridFunction *& grid_f = stream_state.grid_f;
 int & is_gf = stream_state.is_gf;
 std::string & keys = stream_state.keys;
 VisualizationSceneScalarData *vs = NULL;
