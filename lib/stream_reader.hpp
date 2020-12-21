@@ -30,8 +30,11 @@ extern StreamState stream_state;
 void Extrude1DMeshAndSolution(mfem::Mesh **mesh_p,
                               mfem::GridFunction **grid_f_p,
                               mfem::Vector *sol);
+
+// set a (checkerboard) solution when only the mesh is given
 void SetMeshSolution(mfem::Mesh *mesh, mfem::GridFunction *&grid_f,
                      bool save_coloring);
+
 int ReadStream(std::istream &is, const std::string &data_type);
 
 #endif // GLVIS_STREAM_READER_HPP

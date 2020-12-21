@@ -92,9 +92,6 @@ void ReadSerial();
 // choose grid function component and set the input flag
 void SetGridFunction();
 
-// set a (checkerboard) solution when only the mesh is given
-void SetMeshSolution(Mesh *mesh, GridFunction *&grid_f, bool save_coloring);
-
 // read the mesh and the solution from multiple files
 void ReadParallel();
 
@@ -107,9 +104,6 @@ int ReadInputStreams();
 void CloseInputStreams(bool);
 
 GridFunction *ProjectVectorFEGridFunction(GridFunction*);
-
-void Extrude1DMeshAndSolution(Mesh **mesh_p, GridFunction **grid_f_p,
-                              Vector *sol);
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 bool GLVisInitVis(int field_type)
