@@ -26,6 +26,7 @@
 #include "mfem.hpp"
 #include "lib/palettes.hpp"
 #include "lib/visual.hpp"
+#include "lib/stream_reader.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -42,8 +43,8 @@ const char *arg_keys        = string_none;
 int         np              = 0;
 int         pad_digits      = 6;
 int         gf_component    = -1;
-bool        fix_elem_orient = false;
-bool        save_coloring   = false;
+bool&       fix_elem_orient = stream_state.fix_elem_orient;
+bool&       save_coloring   = stream_state.save_coloring;
 bool        keep_attr       = false;
 int         window_x        = 0; // not a command line option
 int         window_y        = 0; // not a command line option
@@ -56,11 +57,15 @@ string      extra_caption;
 
 // Global variables
 int input = 1;
-Mesh *mesh = NULL;
-Vector sol, solu, solv, solw, normals;
-GridFunction *grid_f = NULL;
-int is_gf = 0;
-string keys;
+Mesh *&mesh = stream_state.mesh;//nullptr;
+Vector & sol = stream_state.sol;
+Vector & solu = stream_state.solu;
+Vector & solv = stream_state.solv;
+Vector & solw = stream_state.solw;
+Vector & normals = stream_state.normals;
+GridFunction *& grid_f = stream_state.grid_f;//nullptr;
+int & is_gf = stream_state.is_gf;
+std::string & keys = stream_state.keys;
 VisualizationSceneScalarData *vs = NULL;
 communication_thread *comm_thread = NULL;
 
@@ -105,235 +110,6 @@ GridFunction *ProjectVectorFEGridFunction(GridFunction*);
 
 void Extrude1DMeshAndSolution(Mesh **mesh_p, GridFunction **grid_f_p,
                               Vector *sol);
-
-// Read the content of an input stream (e.g. from socket/file)
-int ReadStream(istream &is, const string &data_type)
-{
-   // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
-   int field_type = 0;
-
-   delete mesh; mesh = NULL;
-   delete grid_f; grid_f = NULL;
-   keys.clear();
-   if (data_type == "fem2d_data")
-   {
-      mesh = new Mesh(is, 0, 0, fix_elem_orient);
-      sol.Load(is, mesh->GetNV());
-   }
-   else if (data_type == "vfem2d_data" || data_type == "vfem2d_data_keys")
-   {
-      field_type = 1;
-      mesh = new Mesh(is, 0, 0, fix_elem_orient);
-      solu.Load(is, mesh->GetNV());
-      solv.Load(is, mesh->GetNV());
-      if (data_type == "vfem2d_data_keys")
-      {
-         is >> keys;
-      }
-   }
-   else if (data_type == "fem3d_data")
-   {
-      mesh = new Mesh(is, 0, 0, fix_elem_orient);
-      sol.Load(is, mesh->GetNV());
-   }
-   else if (data_type == "vfem3d_data" || data_type == "vfem3d_data_keys")
-   {
-      field_type = 1;
-      mesh = new Mesh(is, 0, 0, fix_elem_orient);
-      solu.Load(is, mesh->GetNV());
-      solv.Load(is, mesh->GetNV());
-      solw.Load(is, mesh->GetNV());
-      if (data_type == "vfem3d_data_keys")
-      {
-         is >> keys;
-      }
-   }
-   else if (data_type == "fem2d_gf_data" || data_type == "fem2d_gf_data_keys")
-   {
-      mesh = new Mesh(is, 1, 0, fix_elem_orient);
-      grid_f = new GridFunction(mesh, is);
-      if (data_type == "fem2d_gf_data_keys")
-      {
-         is >> keys;
-      }
-   }
-   else if (data_type == "vfem2d_gf_data" || data_type == "vfem2d_gf_data_keys")
-   {
-      field_type = 1;
-      mesh = new Mesh(is, 1, 0, fix_elem_orient);
-      grid_f = new GridFunction(mesh, is);
-      if (data_type == "vfem2d_gf_data_keys")
-      {
-         is >> keys;
-      }
-   }
-   else if (data_type == "fem3d_gf_data" || data_type == "fem3d_gf_data_keys")
-   {
-      mesh = new Mesh(is, 1, 0, fix_elem_orient);
-      grid_f = new GridFunction(mesh, is);
-      if (data_type == "fem3d_gf_data_keys")
-      {
-         is >> keys;
-      }
-   }
-   else if (data_type == "vfem3d_gf_data" || data_type == "vfem3d_gf_data_keys")
-   {
-      field_type = 1;
-      mesh = new Mesh(is, 1, 0, fix_elem_orient);
-      grid_f = new GridFunction(mesh, is);
-      if (data_type == "vfem3d_gf_data_keys")
-      {
-         is >> keys;
-      }
-   }
-   else if (data_type == "solution")
-   {
-      mesh = new Mesh(is, 1, 0, fix_elem_orient);
-      grid_f = new GridFunction(mesh, is);
-      field_type = (grid_f->VectorDim() == 1) ? 0 : 1;
-   }
-   else if (data_type == "mesh")
-   {
-      mesh = new Mesh(is, 1, 0, fix_elem_orient);
-      SetMeshSolution(mesh, grid_f, save_coloring);
-      field_type = 2;
-   }
-   else if (data_type == "raw_scalar_2d")
-   {
-      Array<Array<double> *> vertices;
-      Array<Array<int> *> elements;
-      Array<int> elem_types;
-      string ident;
-      int num_patches, num_vert, num_elem, n;
-      is >> ws >> ident; // 'patches'
-      is >> num_patches;
-      // cout << ident << ' ' << num_patches << endl;
-      vertices.SetSize(num_patches);
-      vertices = NULL;
-      elements.SetSize(num_patches);
-      elements = NULL;
-      elem_types.SetSize(num_patches);
-      elem_types = 0;
-      int tot_num_vert = 0;
-      int tot_num_elem = 0;
-      int mesh_type = 0;
-      for (int i = 0; i < num_patches; i++)
-      {
-         is >> ws >> ident; // 'vertices'
-         is >> num_vert;
-         // cout << '\n' << ident << ' ' << num_vert << endl;
-         // read vertices in the format: x y z nx ny nz
-         vertices[i] = new Array<double>(6*num_vert);
-         Array<double> &verts = *vertices[i];
-         for (int j = 0; j < verts.Size(); j++)
-         {
-            is >> verts[j];
-         }
-
-         is >> ws >> ident; // 'triangles' or 'quads'
-         if (ident == "triangles")
-         {
-            n = 3, mesh_type |= 1;
-         }
-         else
-         {
-            n = 4, mesh_type |= 2;
-         }
-         elem_types[i] = n;
-         is >> num_elem;
-         // cout << ident << ' ' << num_elem << endl;
-         elements[i] = new Array<int>(n*num_elem);
-         Array<int> &elems = *elements[i];
-         for (int j = 0; j < elems.Size(); j++)
-         {
-            is >> elems[j];
-            elems[j] += tot_num_vert;
-         }
-         tot_num_vert += num_vert;
-         tot_num_elem += num_elem;
-      }
-
-      mesh = new Mesh(2, tot_num_vert, tot_num_elem, 0);
-      sol.SetSize(tot_num_vert);
-      normals.SetSize(3*tot_num_vert);
-
-      int v_off = 0;
-      for (int i = 0; i < num_patches; i++)
-      {
-         Array<double> &verts = *vertices[i];
-         num_vert = verts.Size()/6;
-         for (int j = 0; j < num_vert; j++)
-         {
-            mesh->AddVertex(&verts[6*j]);
-            sol(v_off) = verts[6*j+2];
-            normals(3*v_off+0) = verts[6*j+3];
-            normals(3*v_off+1) = verts[6*j+4];
-            normals(3*v_off+2) = verts[6*j+5];
-            v_off++;
-         }
-
-         n = elem_types[i];
-         Array<int> &elems = *elements[i];
-         num_elem = elems.Size()/n;
-         // int attr = 1;
-         int attr = i + 1;
-         if (n == 3)
-            for (int j = 0; j < num_elem; j++)
-            {
-               mesh->AddTriangle(&elems[3*j], attr);
-            }
-         else
-            for (int j = 0; j < num_elem; j++)
-            {
-               mesh->AddQuad(&elems[4*j], attr);
-            }
-      }
-
-      if (mesh_type == 1)
-      {
-         mesh->FinalizeTriMesh(1, 0, fix_elem_orient);
-      }
-      else if (mesh_type == 2)
-      {
-         mesh->FinalizeQuadMesh(1, 0, fix_elem_orient);
-      }
-      else
-      {
-         mfem_error("Input data contains mixture of triangles and quads!");
-      }
-
-      mesh->GenerateBoundaryElements();
-
-      for (int i = num_patches; i > 0; )
-      {
-         i--;
-         delete elements[i];
-         delete vertices[i];
-      }
-
-      field_type = 0;
-   }
-   else
-   {
-      field_type = -1;
-      cerr << "Unknown data format" << endl;
-      cerr << data_type << endl;
-   }
-
-   if (field_type >= 0 && field_type <= 2)
-   {
-      if (grid_f)
-      {
-         Extrude1DMeshAndSolution(&mesh, &grid_f, NULL);
-      }
-      else
-      {
-         Extrude1DMeshAndSolution(&mesh, NULL, &sol);
-      }
-   }
-
-   return field_type;
-}
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 bool GLVisInitVis(int field_type)
@@ -1737,59 +1513,6 @@ void SetGridFunction()
 }
 
 
-void SetMeshSolution(Mesh *mesh, GridFunction *&grid_f, bool save_coloring)
-{
-   if (1) // checkerboard solution
-   {
-      FiniteElementCollection *cfec;
-      if (mesh->Dimension() == 1)
-      {
-         cfec = new L2_FECollection(0, 1);
-      }
-      else if (mesh->Dimension() == 2)
-      {
-         cfec = new Const2DFECollection;
-      }
-      else
-      {
-         cfec = new Const3DFECollection;
-      }
-      FiniteElementSpace *cfes = new FiniteElementSpace(mesh, cfec);
-      grid_f = new GridFunction(cfes);
-      grid_f->MakeOwner(cfec);
-      {
-         Array<int> coloring;
-         srandom(time(0));
-         double a = double(random()) / (double(RAND_MAX) + 1.);
-         int el0 = (int)floor(a * mesh->GetNE());
-         cout << "Generating coloring starting with element " << el0+1
-              << " / " << mesh->GetNE() << endl;
-         mesh->GetElementColoring(coloring, el0);
-         for (int i = 0; i < coloring.Size(); i++)
-         {
-            (*grid_f)(i) = coloring[i];
-         }
-         cout << "Number of colors: " << grid_f->Max() + 1 << endl;
-      }
-      grid_f->GetNodalValues(sol);
-      is_gf = 1;
-      if (save_coloring)
-      {
-         const char col_fname[] = "GLVis_coloring.gf";
-         ofstream fgrid(col_fname);
-         cout << "Saving the coloring function -> " << flush;
-         grid_f->Save(fgrid);
-         cout << col_fname << endl;
-      }
-   }
-   else // zero solution
-   {
-      sol.SetSize (mesh -> GetNV());
-      sol = 0.0;
-   }
-}
-
-
 void ReadParallel()
 {
    int err;
@@ -2020,54 +1743,4 @@ GridFunction *ProjectVectorFEGridFunction(GridFunction *gf)
       return d_gf;
    }
    return gf;
-}
-
-void Extrude1DMeshAndSolution(Mesh **mesh_p, GridFunction **grid_f_p,
-                              Vector *sol)
-{
-   Mesh *mesh = *mesh_p;
-
-   if (mesh->Dimension() != 1 || mesh->SpaceDimension() != 1)
-   {
-      return;
-   }
-
-   // find xmin and xmax over the vertices of the 1D mesh
-   double xmin = numeric_limits<double>::infinity();
-   double xmax = -xmin;
-   for (int i = 0; i < mesh->GetNV(); i++)
-   {
-      const double x = mesh->GetVertex(i)[0];
-      if (x < xmin)
-      {
-         xmin = x;
-      }
-      if (x > xmax)
-      {
-         xmax = x;
-      }
-   }
-
-   Mesh *mesh2d = Extrude1D(mesh, 1, 0.1*(xmax - xmin));
-
-   if (grid_f_p && *grid_f_p)
-   {
-      GridFunction *grid_f_2d =
-         Extrude1DGridFunction(mesh, mesh2d, *grid_f_p, 1);
-
-      delete *grid_f_p;
-      *grid_f_p = grid_f_2d;
-   }
-   if (sol && sol->Size() == mesh->GetNV())
-   {
-      Vector sol2d(mesh2d->GetNV());
-      for (int i = 0; i < mesh->GetNV(); i++)
-      {
-         sol2d(2*i+0) = sol2d(2*i+1) = (*sol)(i);
-      }
-      *sol = sol2d;
-   }
-
-   delete mesh;
-   *mesh_p = mesh2d;
 }
