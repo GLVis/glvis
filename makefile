@@ -92,7 +92,7 @@ FONT_FILE ?= OpenSans.ttf
 EMCC_OPTS ?= -s USE_SDL=2 -s USE_FREETYPE=1
 EMCC_LIBS ?= -s USE_SDL=2 --bind -s ALLOW_MEMORY_GROWTH=1 -s SINGLE_FILE=1 \
  --no-heap-copy -s ENVIRONMENT=web -s MODULARIZE=1 -s EXPORT_NAME=glvis \
- -s GL_ASSERTIONS=1 -s GL_DEBUG=1 -s USE_FREETYPE=1 -s USE_WEBGL2=1 \
+ -s GL_ASSERTIONS=1 -s GL_DEBUG=1 -s USE_FREETYPE=1 -s MAX_WEBGL_VERSION=2 \
  -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0
 
 # Flags used when $(GLVIS_DEBUG) is not the same as $(MFEM_DEBUG)
@@ -280,7 +280,7 @@ lib/libglvis.a: $(OBJECT_FILES)
 
 js: lib/libglvis.js
 lib/libglvis.js: $(BYTECODE_FILES) $(CONFIG_MK) $(MFEM_LIB_FILE)
-	$(EMCC) -o $@ $(BYTECODE_FILES) $(EMCC_LIBS) --embed-file $(FONT_FILE)
+	$(EMCC) $(EMCC_OPTS) -o $@ $(BYTECODE_FILES) $(EMCC_LIBS) --embed-file $(FONT_FILE)
 
 clean:
 	rm -rf lib/*.o lib/*.bc lib/gl/*.o lib/gl/*.bc lib/*~ *~ glvis
