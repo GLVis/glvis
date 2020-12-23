@@ -7604,7 +7604,7 @@ void PaletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
    glBindTexture(GL_TEXTURE_2D, tex);
    glTexImage2D(GL_TEXTURE_2D,
                 0,
-                GL_RGBA,
+                GL_RGBA32F,
                 plt_size,
                 1,
                 0,
@@ -7646,7 +7646,7 @@ void PaletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
             };
          }
       }
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F,
                    plt_size * abs(RepeatPaletteTimes), 1,
                    0, GL_RGBA, GL_FLOAT, texture_buf.data());
    }
@@ -7677,7 +7677,7 @@ void PaletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
             1.0
          };
       }
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F,
                    textureSize, 1,
                    0, GL_RGBA, GL_FLOAT, texture_buf.data());
    }
@@ -7714,6 +7714,8 @@ void paletteInit()
       first_init = false;
    }
    alpha_channel = GetAppWindow()->getRenderer().getDeviceAlphaChannel();
+   // WebGL 2 requires sized internal format for float texture
+   GLenum alpha_internal = alpha_channel == GL_RED ? GL_R32F : alpha_channel;
 
    for (int i = 0; i < Num_RGB_Palettes; i++)
    {
@@ -7727,7 +7729,7 @@ void paletteInit()
    std::fill(alphaTexData.begin(), alphaTexData.end(), 1.0f);
    glActiveTexture(GL_TEXTURE1);
    glBindTexture(GL_TEXTURE_2D, alpha_tex);
-   glTexImage2D(GL_TEXTURE_2D, 0, alpha_channel, MaxTextureSize, 2, 0,
+   glTexImage2D(GL_TEXTURE_2D, 0, alpha_internal, MaxTextureSize, 2, 0,
                 alpha_channel, GL_FLOAT, alphaTexData.data());
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);

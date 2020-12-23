@@ -18,7 +18,18 @@ GLenum MeshRenderer::getDeviceAlphaChannel()
 {
    if (!device) { return GL_NONE; }
 #ifdef __EMSCRIPTEN__
-   return GL_ALPHA;
+   const std::string versionString
+       = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+   if (versionString.find("OpenGL ES 3.0") != std::string::npos)
+   {
+       // WebGL 2 uses GL_RED as the single-channel texture
+       return GL_RED;
+   }
+   else
+   {
+       // WebGL uses GL_ALPHA as the single-channel texture
+       return GL_ALPHA;
+   }
 #else
    if (device->getType() == GLDevice::FF_DEVICE)
    {

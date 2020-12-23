@@ -139,6 +139,17 @@ std::string formatShaderString(const std::string &shader_string,
    // add the header
    formatted = std::regex_replace(GLSL_HEADER, std::regex("GLSL_VER"),
                                   std::to_string(glsl_version)) + formatted;
+#ifdef __EMSCRIPTEN__
+   // special prepend for WebGL 2 shaders
+   if (glsl_version == 300)
+   {
+       formatted = "#version 300 es\n" + formatted;
+   }
+   else
+   {
+       formatted = "#define USE_ALPHA\n" + formatted;
+   }
+#endif
 
    return formatted;
 }
