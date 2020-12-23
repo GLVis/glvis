@@ -55,14 +55,17 @@ bool startVisualization(const std::string input, const std::string data_type,
    const int field_type = ReadStream(ss, data_type);
 
    std::string line;
-   while (ss >> line) {
-     if (line == "keys") {
-       std::cout << "parsing 'keys'" << std::endl;
-       ss >> stream_state.keys;
-     }
-     else {
-       std::cout << "unknown line '" << line << "'" << std::endl;
-     }
+   while (ss >> line)
+   {
+      if (line == "keys")
+      {
+         std::cout << "parsing 'keys'" << std::endl;
+         ss >> stream_state.keys;
+      }
+      else
+      {
+         std::cout << "unknown line '" << line << "'" << std::endl;
+      }
    }
 
    if (field_type < 0 || field_type > 2)
@@ -231,17 +234,22 @@ void setKeyboardListeningElementId(const std::string & id)
    SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, id.c_str());
 }
 
-void setupResizeEventCallback(const std::string & id) {
-  // typedef EM_BOOL (*em_ui_callback_func)(int eventType, const EmscriptenUiEvent *uiEvent, void *userData);
-  std::cout << "glvis: adding resize callback for " << id << std::endl;
-  auto err = emscripten_set_resize_callback(id.c_str(), nullptr, true, [](int eventType, const EmscriptenUiEvent *uiEvent, void *userData) -> EM_BOOL {
-    std::cout << "got resize event" << std::endl;
-    return true;
-  });
-  // TODO: macro to wrap this
-  if (err != EMSCRIPTEN_RESULT_SUCCESS) {
+void setupResizeEventCallback(const std::string & id)
+{
+   // typedef EM_BOOL (*em_ui_callback_func)(int eventType, const EmscriptenUiEvent *uiEvent, void *userData);
+   std::cout << "glvis: adding resize callback for " << id << std::endl;
+   auto err = emscripten_set_resize_callback(id.c_str(), nullptr,
+                                             true, [](int eventType, const EmscriptenUiEvent *uiEvent,
+                                                      void *userData) -> EM_BOOL
+   {
+      std::cout << "got resize event" << std::endl;
+      return true;
+   });
+   // TODO: macro to wrap this
+   if (err != EMSCRIPTEN_RESULT_SUCCESS)
+   {
       std::cerr << "error (emscripten_set_resize_callback): " << err << std::endl;
-  }
+   }
 }
 } // namespace js
 

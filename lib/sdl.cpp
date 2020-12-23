@@ -649,7 +649,7 @@ void SdlWindow::mainIter()
    }
    else
    {
-     // pass
+      // pass
    }
 #endif
    if (wnd_state == RenderState::ExposePending)
@@ -713,18 +713,20 @@ void SdlWindow::getWindowSize(int& w, int& h)
    if (handle)
    {
 #ifdef __EMSCRIPTEN__
-      if (canvas_id_.empty()) {
-        std::cerr << "error: id is undefined: " << canvas_id_ << std::endl;
-        return;
+      if (canvas_id_.empty())
+      {
+         std::cerr << "error: id is undefined: " << canvas_id_ << std::endl;
+         return;
       }
       // maybe emscripten_get_element_css_size if we're using the pixel_scale
       // but it looks like it is always 1
       // double dw, dh;
       //auto err = emscripten_get_element_css_size(canvas_id_.c_str(), &dw, &dh);
       auto err = emscripten_get_canvas_element_size(canvas_id_.c_str(), &w, &h);
-      if (err != EMSCRIPTEN_RESULT_SUCCESS) {
-        std::cerr << "error (emscripten_get_element_css_size): " << err << std::endl;
-        return;
+      if (err != EMSCRIPTEN_RESULT_SUCCESS)
+      {
+         std::cerr << "error (emscripten_get_element_css_size): " << err << std::endl;
+         return;
       }
 #else
       SDL_GetWindowSize(handle->hwnd, &w, &h);
