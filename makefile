@@ -90,6 +90,8 @@ GLVIS_LDFLAGS ?=
 EMCC      ?= emcc -std=c++11
 FONT_FILE ?= OpenSans.ttf
 EMCC_OPTS ?= -s USE_SDL=2 -s USE_FREETYPE=1
+# TODO: we don't want to have DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0
+# longterm but until the SDL layer supports non-default canvas ids we need this
 EMCC_LIBS ?= -s USE_SDL=2 --bind -s ALLOW_MEMORY_GROWTH=1 -s SINGLE_FILE=1 \
  --no-heap-copy -s ENVIRONMENT=web -s MODULARIZE=1 -s EXPORT_NAME=glvis \
  -s GL_ASSERTIONS=1 -s GL_DEBUG=1 -s USE_FREETYPE=1 -s USE_WEBGL2=1 \
