@@ -25,13 +25,16 @@ struct StreamState
    bool fix_elem_orient{false};
    bool save_coloring{false};
 };
+
+/// Singleton holding the current stream content (defined in steam_reader.cpp)
 extern StreamState stream_state;
 
+/// Helper function for visualizing 1D data
 void Extrude1DMeshAndSolution(mfem::Mesh **mesh_p,
                               mfem::GridFunction **grid_f_p,
                               mfem::Vector *sol);
 
-// set a (checkerboard) solution when only the mesh is given
+/// Set a (checkerboard) solution when only the mesh is given
 void SetMeshSolution(mfem::Mesh *mesh, mfem::GridFunction *&grid_f,
                      bool save_coloring);
 
