@@ -174,9 +174,9 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
 
    Uint32 win_flags = SDL_WINDOW_OPENGL;
    // Hide window until we adjust its size for high-dpi displays
-   win_flags |= SDL_WINDOW_HIDDEN;
+   win_flags |= SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN;
 #ifndef __EMSCRIPTEN__
-   win_flags |= SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE;
+   win_flags |= SDL_WINDOW_RESIZABLE;
 #endif
    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
