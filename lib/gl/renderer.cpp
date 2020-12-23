@@ -19,16 +19,16 @@ GLenum MeshRenderer::getDeviceAlphaChannel()
    if (!device) { return GL_NONE; }
 #ifdef __EMSCRIPTEN__
    const std::string versionString
-       = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+      = reinterpret_cast<const char*>(glGetString(GL_VERSION));
    if (versionString.find("OpenGL ES 3.0") != std::string::npos)
    {
-       // WebGL 2 uses GL_RED as the single-channel texture
-       return GL_RED;
+      // WebGL 2 uses GL_RED as the single-channel texture
+      return GL_RED;
    }
    else
    {
-       // WebGL uses GL_ALPHA as the single-channel texture
-       return GL_ALPHA;
+      // WebGL uses GL_ALPHA as the single-channel texture
+      return GL_ALPHA;
    }
 #else
    if (device->getType() == GLDevice::FF_DEVICE)
@@ -49,14 +49,22 @@ void MeshRenderer::setAntialiasing(bool aa_status)
       msaa_enable = aa_status;
       if (msaa_enable)
       {
-         device->enableMultisample();
-         device->enableBlend();
+         if (!feat_use_fbo_antialias)
+         {
+            glEnable(GL_MULTISAMPLE);
+            glEnable(GL_LINE_SMOOTH);
+            device->enableBlend();
+         }
          device->setLineWidth(line_w_aa);
       }
       else
       {
-         device->disableMultisample();
-         device->disableBlend();
+         if (!feat_use_fbo_antialias)
+         {
+            glDisable(GL_MULTISAMPLE);
+            glDisable(GL_LINE_SMOOTH);
+            device->disableBlend();
+         }
          device->setLineWidth(line_w);
       }
    }
@@ -82,11 +90,19 @@ void MeshRenderer::setLineWidthMS(float w)
 
 void MeshRenderer::init()
 {
+#ifdef __EMSCRIPTEN__
+   const std::string versionString
+      = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+   bool is_webgl2 = (versionString.find("OpenGL ES 3.0") != std::string::npos);
+   feat_use_fbo_antialias = is_webgl2;
+#else
+   // TODO: we could also support ARB_framebuffer_object
+   feat_use_fbo_antialias = GLEW_VERSION_3_0;
+#endif
 }
 
 void MeshRenderer::render(const RenderQueue& queue)
 {
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    // elements containing opaque objects should be rendered first
    RenderQueue sorted_queue = queue;
    std::stable_partition(sorted_queue.begin(), sorted_queue.end(),
@@ -94,6 +110,45 @@ void MeshRenderer::render(const RenderQueue& queue)
    {
       return !renderPair.first.contains_translucent;
    });
+   GLDevice::RenderBufHandle renderBufs[2];
+   GLDevice::FBOHandle msaaFb;
+   if (feat_use_fbo_antialias && msaa_enable)
+   {
+      GLuint colorBuf, depthBuf;
+      glGenRenderbuffers(1, &colorBuf);
+      glGenRenderbuffers(1, &depthBuf);
+      renderBufs[0] = GLDevice::RenderBufHandle(colorBuf);
+      renderBufs[1] = GLDevice::RenderBufHandle(depthBuf);
+
+      GLuint fbo;
+      glGenFramebuffers(1, &fbo);
+      msaaFb = GLDevice::FBOHandle(fbo);
+
+      int vp[4];
+      device->getViewport(vp);
+      int width = vp[2];
+      int height = vp[3];
+      glBindRenderbuffer(GL_RENDERBUFFER, colorBuf);
+      glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_samples,
+                                       GL_RGBA8, width, height);
+      glBindRenderbuffer(GL_RENDERBUFFER, depthBuf);
+      glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_samples,
+                                       GL_DEPTH_COMPONENT24, width, height);
+      glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+      glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                GL_RENDERBUFFER, colorBuf);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                GL_RENDERBUFFER, depthBuf);
+
+      if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+      {
+         std::cout << "Unable to create multisampled renderbuffer.";
+         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      }
+   }
+   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    for (auto& q_elem : sorted_queue)
    {
       const RenderParams& params = q_elem.first;
@@ -174,7 +229,51 @@ void MeshRenderer::render(const RenderQueue& queue)
          device->drawDeviceBuffer(*buf);
       }
       device->enableDepthWrite();
-      if (!msaa_enable) { device->disableBlend(); }
+      if (feat_use_fbo_antialias || !msaa_enable) { device->disableBlend(); }
+   }
+   if (feat_use_fbo_antialias && msaa_enable)
+   {
+      int vp[4];
+      device->getViewport(vp);
+      int width = vp[2];
+      int height = vp[3];
+      GLuint colorBufId;
+      glGenRenderbuffers(1, &colorBufId);
+      GLDevice::RenderBufHandle colorBuf(colorBufId);
+
+      GLuint fboId;
+      glGenFramebuffers(1, &fboId);
+      GLDevice::FBOHandle resolveFb(fboId);
+
+      glBindRenderbuffer(GL_RENDERBUFFER, colorBuf);
+      glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
+      glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+      glBindFramebuffer(GL_FRAMEBUFFER, resolveFb);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                GL_RENDERBUFFER, colorBuf);
+
+      if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+      {
+         std::cout << "Unable to create resolve renderbuffer.";
+         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      }
+
+      // bind our draw framebuffer and blit the multisampled image
+      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, resolveFb);
+      glBindFramebuffer(GL_READ_FRAMEBUFFER, msaaFb);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      glBlitFramebuffer(0, 0, width, height,
+                        0, 0, width, height,
+                        GL_COLOR_BUFFER_BIT,
+                        GL_NEAREST);
+      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+      glBindFramebuffer(GL_READ_FRAMEBUFFER, resolveFb);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      glBlitFramebuffer(0, 0, width, height,
+                        0, 0, width, height,
+                        GL_COLOR_BUFFER_BIT,
+                        GL_LINEAR);
    }
 }
 

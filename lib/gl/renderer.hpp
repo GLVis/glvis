@@ -149,12 +149,26 @@ protected:
       glDeleteTextures(1, &tex);
    }
 
+   static void fboCleanup(GLuint fbo)
+   {
+      glDeleteFramebuffers(1, &fbo);
+   }
+
+   static void rboCleanup(GLuint rbo)
+   {
+      glDeleteRenderbuffers(1, &rbo);
+   }
+public:
+
    using BufObjHandle = Handle<boCleanup>;
    using DispListHandle = Handle<dspListCleanup>;
    using VtxArrayHandle = Handle<vaoCleanup>;
    using ShaderPrgmHandle = Handle<prgmCleanup>;
    using TextureHandle = Handle<texCleanup>;
+   using FBOHandle = Handle<fboCleanup>;
+   using RenderBufHandle = Handle<rboCleanup>;
 
+protected:
    TextureHandle passthrough_texture;
 
 public:
@@ -185,16 +199,6 @@ public:
    void disableBlend() { glDisable(GL_BLEND); }
    void enableDepthWrite() { glDepthMask(GL_TRUE); }
    void disableDepthWrite() { glDepthMask(GL_FALSE); }
-   void enableMultisample()
-   {
-      glEnable(GL_MULTISAMPLE);
-      glEnable(GL_LINE_SMOOTH);
-   }
-   void disableMultisample()
-   {
-      glDisable(GL_MULTISAMPLE);
-      glDisable(GL_LINE_SMOOTH);
-   }
    void setLineWidth(float w) { glLineWidth(w); }
 
    virtual void init();
@@ -252,13 +256,18 @@ class MeshRenderer
 {
    unique_ptr<GLDevice> device;
    bool msaa_enable;
+   int msaa_samples;
    GLuint color_tex, alpha_tex, font_tex;
    float line_w, line_w_aa;
+
+   bool feat_use_fbo_antialias;
+   void init();
 public:
    MeshRenderer()
       : msaa_enable(false)
+      , msaa_samples(0)
       , line_w(1.f)
-      , line_w_aa(LINE_WIDTH_AA) { }
+      , line_w_aa(LINE_WIDTH_AA) { init(); }
 
    template<typename TDevice>
    void setDevice()
@@ -286,6 +295,8 @@ public:
 
    void setAntialiasing(bool aa_status);
    bool getAntialiasing() { return msaa_enable; }
+   void setSamplesMSAA(int samples) { msaa_samples = samples; }
+   int getSamplesMSAA() { return msaa_samples; }
 
    void setLineWidth(float w);
    float getLineWidth() { return line_w; }
@@ -295,7 +306,6 @@ public:
    void setClearColor(float r, float g, float b, float a) { glClearColor(r, g, b, a); }
    void setViewport(GLsizei w, GLsizei h) { device->setViewport(w, h); }
 
-   void init();
    void render(const RenderQueue& queued);
    CaptureBuffer capture(const RenderQueue& queued);
 
