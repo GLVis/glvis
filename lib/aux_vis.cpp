@@ -1607,11 +1607,7 @@ vector<string> fc_font_patterns =
    "Helvetica:style=Regular",
 };
 
-#ifdef __EMSCRIPTEN__
-constexpr int default_font_size = 14;
-#else
 constexpr int default_font_size = 12;
-#endif
 int font_size = default_font_size;
 
 GlVisFont glvis_font;

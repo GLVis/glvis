@@ -212,7 +212,7 @@ Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 ALL_SOURCE_FILES = \
  lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp \
  lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp lib/font.cpp lib/gl2ps.c \
- lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp \
+ lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp lib/stream_reader.cpp \
  lib/threads.cpp lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp \
  lib/vsvector.cpp lib/vsvector3d.cpp
 OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl_mac.mm)
@@ -229,7 +229,7 @@ HEADER_FILES = \
  lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp lib/gl/types.hpp \
  lib/aux_vis.hpp lib/font.hpp lib/gl2ps.h lib/logo.hpp lib/material.hpp \
  lib/openglvis.hpp lib/palettes.hpp lib/sdl.hpp lib/sdl_helper.hpp \
- lib/sdl_mac.hpp lib/sdl_x11.hpp lib/threads.hpp lib/visual.hpp \
+ lib/sdl_mac.hpp lib/sdl_x11.hpp lib/stream_reader.hpp lib/threads.hpp lib/visual.hpp \
  lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp \
  lib/vsvector3d.hpp
 
@@ -319,7 +319,8 @@ print-%:
 	$(info )
 	@true
 
-ASTYLE = astyle --options=$(MFEM_DIR)/config/mfem.astylerc
+ASTYLE_BIN = astyle
+ASTYLE = $(ASTYLE_BIN) --options=$(MFEM_DIR)/config/mfem.astylerc
 ALL_FILES = ./glvis.cpp $(ALL_SOURCE_FILES) $(HEADER_FILES)
 EXT_FILES = lib/gl2ps.c lib/gl2ps.h
 FORMAT_FILES := $(filter-out $(EXT_FILES), $(ALL_FILES))

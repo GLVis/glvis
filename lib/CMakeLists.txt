@@ -19,6 +19,7 @@ list(APPEND SOURCES
   openglvis.cpp
   palettes.cpp
   sdl.cpp
+  stream_reader.cpp
   vsdata.cpp
   vssolution.cpp
   vssolution3d.cpp
@@ -40,6 +41,7 @@ list(APPEND HEADERS
   sdl.hpp
   sdl_helper.hpp
   sdl_mac.hpp
+  stream_reader.hpp
   visual.hpp
   vsdata.hpp
   vssolution.hpp
