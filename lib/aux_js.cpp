@@ -14,10 +14,11 @@
 #include "stream_reader.hpp"
 #include <SDL2/SDL_hints.h>
 #include <emscripten/bind.h>
+#include <emscripten/html5.h>
 
 std::string plot_caption;
-std::string extra_caption;
-mfem::GeometryRefiner GLVisGeometryRefiner;
+std::string extra_caption; // used in extern context
+mfem::GeometryRefiner GLVisGeometryRefiner; // used in extern context
 
 namespace js
 {
@@ -52,6 +53,20 @@ bool startVisualization(const std::string input, const std::string data_type,
 {
    std::stringstream ss(input);
    const int field_type = ReadStream(ss, data_type);
+
+   std::string line;
+   while (ss >> line)
+   {
+      if (line == "keys")
+      {
+         std::cout << "parsing 'keys'" << std::endl;
+         ss >> stream_state.keys;
+      }
+      else
+      {
+         std::cout << "unknown line '" << line << "'" << std::endl;
+      }
+   }
 
    if (field_type < 0 || field_type > 2)
    {
@@ -196,6 +211,12 @@ void iterVisualization()
    GetAppWindow()->mainIter();
 }
 
+void setCanvasId(const std::string & id)
+{
+   std::cout << "glvis: setting canvas id to " << id << std::endl;
+   GetAppWindow()->setCanvasId(id);
+}
+
 void disableKeyHandling()
 {
    SDL_EventState(SDL_KEYDOWN, SDL_DISABLE);
@@ -208,9 +229,27 @@ void enableKeyHandling()
    SDL_EventState(SDL_KEYUP, SDL_ENABLE);
 }
 
-void setKeyboardListeningElementId(const std::string & elem_id)
+void setKeyboardListeningElementId(const std::string & id)
 {
-   SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, elem_id.c_str());
+   SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, id.c_str());
+}
+
+void setupResizeEventCallback(const std::string & id)
+{
+   // typedef EM_BOOL (*em_ui_callback_func)(int eventType, const EmscriptenUiEvent *uiEvent, void *userData);
+   std::cout << "glvis: adding resize callback for " << id << std::endl;
+   auto err = emscripten_set_resize_callback(id.c_str(), nullptr,
+                                             true, [](int eventType, const EmscriptenUiEvent *uiEvent,
+                                                      void *userData) -> EM_BOOL
+   {
+      std::cout << "got resize event" << std::endl;
+      return true;
+   });
+   // TODO: macro to wrap this
+   if (err != EMSCRIPTEN_RESULT_SUCCESS)
+   {
+      std::cerr << "error (emscripten_set_resize_callback): " << err << std::endl;
+   }
 }
 } // namespace js
 
@@ -227,4 +266,6 @@ EMSCRIPTEN_BINDINGS(js_funcs)
    em::function("getTextureMode", &GetUseTexture);
    em::function("setTextureMode", &SetUseTexture);
    em::function("resizeWindow", &ResizeWindow);
+   em::function("setCanvasId", &js::setCanvasId);
+   em::function("setupResizeEventCallback", &js::setupResizeEventCallback);
 }
