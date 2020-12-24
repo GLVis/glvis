@@ -67,6 +67,10 @@ private:
 
    bool ctrlDown;
 
+#ifdef __EMSCRIPTEN__
+   std::string canvas_id_;
+#endif
+
    enum class RenderState
    {
       // window displayed is fully current (no events or backbuffer updates pending)
@@ -177,6 +181,11 @@ public:
 
    bool isSwapPending() { return wnd_state == RenderState::SwapPending; }
    bool isExposePending() { return wnd_state == RenderState::ExposePending; }
+
+#ifdef __EMSCRIPTEN__
+   std::string getCanvasId() const { return canvas_id_; }
+   void setCanvasId(std::string canvas_id) { canvas_id_ = canvas_id; }
+#endif
 };
 
 #endif

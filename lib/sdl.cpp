@@ -20,6 +20,7 @@
 #include "gl/renderer_ff.hpp"
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#include <emscripten/html5.h>
 #endif
 #include "sdl_helper.hpp"
 #if defined(SDL_VIDEO_DRIVER_X11)
@@ -688,9 +689,7 @@ void SdlWindow::mainIter()
    }
    else
    {
-#ifndef __EMSCRIPTEN__
-      SDL_WaitEvent(NULL);
-#endif
+      // pass
    }
 #endif
    if (wnd_state == RenderState::ExposePending)
@@ -707,7 +706,7 @@ void SdlWindow::mainLoop()
    emscripten_set_main_loop_arg([](void* arg)
    {
       ((SdlWindow*) arg)->mainIter();
-   }, this, 0, 1);
+   }, this, 0, true);
 #else
    visualize = 1;
    while (running)
@@ -749,18 +748,26 @@ void SdlWindow::signalLoop()
 
 void SdlWindow::getWindowSize(int& w, int& h)
 {
+   w = 0;
+   h = 0;
    if (handle)
    {
 #ifdef __EMSCRIPTEN__
-      int is_fullscreen;
-      emscripten_get_canvas_size(&w, &h, &is_fullscreen);
-      // TODO: ^ is deprecated but we need to store the id somewhere
-      /*
-      EMSCRIPTEN_RESULT r = emscripten_get_canvas_element_size("#canvas", &w, &h);
-      if (r != EMSCRIPTEN_RESULT_SUCCESS) {
-        std::cerr << "emscripten error" << std::endl;
+      if (canvas_id_.empty())
+      {
+         std::cerr << "error: id is undefined: " << canvas_id_ << std::endl;
+         return;
       }
-      */
+      // maybe emscripten_get_element_css_size if we're using the pixel_scale
+      // but it looks like it is always 1
+      // double dw, dh;
+      //auto err = emscripten_get_element_css_size(canvas_id_.c_str(), &dw, &dh);
+      auto err = emscripten_get_canvas_element_size(canvas_id_.c_str(), &w, &h);
+      if (err != EMSCRIPTEN_RESULT_SUCCESS)
+      {
+         std::cerr << "error (emscripten_get_element_css_size): " << err << std::endl;
+         return;
+      }
 #else
       SDL_GetWindowSize(handle->hwnd, &w, &h);
 #endif
