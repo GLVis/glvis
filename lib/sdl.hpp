@@ -83,7 +83,7 @@ private:
    bool takeScreenshot;
    std::string screenshot_file;
 
-   void probeGLContextSupport();
+   void probeGLContextSupport(bool legacyGlOnly);
    // internal event handlers
    void windowEvent(SDL_WindowEvent& ew);
    void motionEvent(SDL_MouseMotionEvent& em);

@@ -95,9 +95,14 @@ void MeshRenderer::init()
       = reinterpret_cast<const char*>(glGetString(GL_VERSION));
    bool is_webgl2 = (versionString.find("OpenGL ES 3.0") != std::string::npos);
    feat_use_fbo_antialias = is_webgl2;
+   if (feat_use_fbo_antialias)
+   {
+      glGetIntegerv(GL_MAX_SAMPLES, &msaa_samples);
+   }
 #else
    // TODO: we could also support ARB_framebuffer_object
    feat_use_fbo_antialias = GLEW_VERSION_3_0;
+   glGetIntegerv(GL_MAX_SAMPLES, &msaa_samples);
 #endif
 }
 
@@ -122,7 +127,6 @@ void MeshRenderer::render(const RenderQueue& queue)
 
       GLuint fbo;
       glGenFramebuffers(1, &fbo);
-      msaaFb = GLDevice::FBOHandle(fbo);
 
       int vp[4];
       device->getViewport(vp);
@@ -144,9 +148,17 @@ void MeshRenderer::render(const RenderQueue& queue)
 
       if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
       {
-         std::cout << "Unable to create multisampled renderbuffer.";
+         cerr << "Unable to create multisampled renderbuffer." << flush;
+         glDeleteFramebuffers(1, &fbo);
          glBindFramebuffer(GL_FRAMEBUFFER, 0);
       }
+      else
+      {
+         msaaFb = GLDevice::FBOHandle(fbo);
+      }
+#ifndef __EMSCRIPTEN__
+      glEnable(GL_MULTISAMPLE);
+#endif
    }
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    for (auto& q_elem : sorted_queue)
@@ -231,8 +243,9 @@ void MeshRenderer::render(const RenderQueue& queue)
       device->enableDepthWrite();
       if (feat_use_fbo_antialias || !msaa_enable) { device->disableBlend(); }
    }
-   if (feat_use_fbo_antialias && msaa_enable)
+   if (feat_use_fbo_antialias && msaa_enable && msaaFb)
    {
+      device->enableBlend();
       int vp[4];
       device->getViewport(vp);
       int width = vp[2];
@@ -255,7 +268,7 @@ void MeshRenderer::render(const RenderQueue& queue)
 
       if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
       {
-         std::cout << "Unable to create resolve renderbuffer.";
+         cerr << "Unable to create resolve renderbuffer." << endl;
          glBindFramebuffer(GL_FRAMEBUFFER, 0);
       }
 
@@ -267,6 +280,9 @@ void MeshRenderer::render(const RenderQueue& queue)
                         0, 0, width, height,
                         GL_COLOR_BUFFER_BIT,
                         GL_NEAREST);
+#ifndef __EMSCRIPTEN__
+      glDisable(GL_MULTISAMPLE);
+#endif
       glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
       glBindFramebuffer(GL_READ_FRAMEBUFFER, resolveFb);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -274,6 +290,7 @@ void MeshRenderer::render(const RenderQueue& queue)
                         0, 0, width, height,
                         GL_COLOR_BUFFER_BIT,
                         GL_LINEAR);
+      device->disableBlend();
    }
 }
 

@@ -295,7 +295,20 @@ public:
 
    void setAntialiasing(bool aa_status);
    bool getAntialiasing() { return msaa_enable; }
-   void setSamplesMSAA(int samples) { msaa_samples = samples; }
+   void setSamplesMSAA(int samples)
+   {
+      if (msaa_samples < samples)
+      {
+         std::cerr << "GL_MAX_SAMPLES = " << msaa_samples
+                   << " but requested " << samples << "x MSAA. ";
+         std::cerr << "Setting antialiasing mode to "
+                   << msaa_samples << "x MSAA." << endl;
+      }
+      else
+      {
+         msaa_samples = samples;
+      }
+   }
    int getSamplesMSAA() { return msaa_samples; }
 
    void setLineWidth(float w);
