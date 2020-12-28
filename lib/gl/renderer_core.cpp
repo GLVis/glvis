@@ -143,11 +143,11 @@ std::string formatShaderString(const std::string &shader_string,
    // special prepend for WebGL 2 shaders
    if (glsl_version == 300)
    {
-       formatted = "#version 300 es\n" + formatted;
+      formatted = "#version 300 es\n" + formatted;
    }
    else
    {
-       formatted = "#define USE_ALPHA\n" + formatted;
+      formatted = "#define USE_ALPHA\n" + formatted;
    }
 #endif
 
