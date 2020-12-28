@@ -198,8 +198,8 @@ void SdlWindow::probeGLContextSupport(bool legacyGlOnly)
    // Note that WebGL 2 support controllable antialiasing, while WebGL 1 only
    // supports requesting multisampling at context creation time. The browser
    // is free to ignore this flag.
-   SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);
-   SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
+   SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+   SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
    {
       Handle testWebGl("",
                        SDL_WINDOWPOS_UNDEFINED,
