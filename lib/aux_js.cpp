@@ -195,13 +195,16 @@ bool startVisualization(const std::string input, const std::string data_type,
       }
       if (stream_state.mesh->SpaceDimension() == 2 && field_type == 2)
       {
-         SetVisualizationScene(vs, 2, stream_state.keys.c_str());
+         SetVisualizationScene(vs, 2);
       }
       else
       {
-         SetVisualizationScene(vs, 3, stream_state.keys.c_str());
+         SetVisualizationScene(vs, 3);
       }
    }
+
+   CallKeySequence(stream_state.keys.c_str());
+
    SendExposeEvent();
    return true;
 }
