@@ -98,16 +98,7 @@ bool SdlWindow::isGlInitialized()
 // Initialize static member
 Uint32 SdlWindow::glvis_event_type = (Uint32)(-1);
 
-SdlWindow::SdlWindow()
-   : onIdle(nullptr)
-   , onExpose(nullptr)
-   , onReshape(nullptr)
-   , ctrlDown(false)
-   , wnd_state(RenderState::Updated)
-   , takeScreenshot(false)
-   , saved_keys("")
-{
-}
+SdlWindow::SdlWindow() {}
 
 int SdlWindow::probeGLContextSupport()
 {
@@ -555,6 +546,18 @@ void SdlWindow::keyEvent(char c)
    }
 }
 
+void SdlWindow::multiGestureEvent(SDL_MultiGestureEvent & e) {
+  if (e.numFingers == 2) {
+    if (onTouchPinch && fabs(e.dDist) > 0.00002) {
+      onTouchPinch(e);
+    }
+
+    if (onTouchRotate) {
+      onTouchRotate(e);
+    }
+  }
+}
+
 void SdlWindow::mainIter()
 {
    SDL_Event e;
@@ -572,6 +575,10 @@ void SdlWindow::mainIter()
                break;
             case SDL_WINDOWEVENT:
                windowEvent(e.window);
+               break;
+            case SDL_MULTIGESTURE:
+               multiGestureEvent(e.mgesture);
+               keep_going = true;
                break;
             case SDL_KEYDOWN:
                keyEvent(e.key.keysym);
