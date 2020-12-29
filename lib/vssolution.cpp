@@ -725,7 +725,7 @@ int VisualizationSceneSolution::GetRefinedValuesAndNormals(
    if (drawelems < 2)
    {
       // In 1D we do not have well-defined normals.
-      if (dim > 1)
+      if (dim > 1 && rsol->FESpace()->GetFE(i)->GetMapType() == FiniteElement::VALUE)
       {
          rsol->GetGradients(i, ir, tr);
          normals.SetSize(3, tr.Width());

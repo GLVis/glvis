@@ -3915,11 +3915,7 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
    {
       RefinedGeometry *RefG;
 #define GLVIS_SMOOTH_LEVELSURF_NORMALS
-#ifdef GLVIS_SMOOTH_LEVELSURF_NORMALS
-      const DenseMatrix *gp = &grad;
-#else
       const DenseMatrix *gp = NULL;
-#endif
 
       for (int ie = 0; ie < mesh->GetNE(); ie++)
       {
@@ -3928,7 +3924,15 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
          RefG = GLVisGeometryRefiner.Refine(geom, TimesToRefine);
          GridF->GetValues(ie, RefG->RefPts, vals, pointmat);
 #ifdef GLVIS_SMOOTH_LEVELSURF_NORMALS
-         GridF->GetGradients(ie, RefG->RefPts, grad);
+         if (GridF->FESpace()->GetFE(ie)->GetMapType() == FiniteElement::VALUE)
+         {
+            GridF->GetGradients(ie, RefG->RefPts, grad);
+            gp = &grad;
+         }
+         else
+         {
+            gp = NULL;
+         }
 #endif
 
          Array<int> &RG = RefG->RefGeoms;
