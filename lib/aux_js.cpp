@@ -252,7 +252,8 @@ void setupResizeEventCallback(const std::string & id)
    }
 }
 
-std::string getHelpString() {
+std::string getHelpString()
+{
    return GetAppWindow()->getHelpString();
 }
 } // namespace js
