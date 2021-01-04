@@ -835,9 +835,13 @@ void SdlWindow::swapBuffer()
 std::string SdlWindow::getHelpString()
 {
    std::ostringstream oss;
-   auto * fb = std::cout.rdbuf();
-   std::cout.rdbuf(oss.rdbuf());
-   onKeyDown['h'](0);
-   std::cout.rdbuf(fb);
+   help_fnc_(oss);
    return oss.str();
 }
+
+void SdlWindow::setHelpFunction(HelpFnc f)
+{
+   help_fnc_ = f;
+   onKeyDown['h'] = [f](GLenum /*unused*/) { f(std::cout); };
+   onKeyDown['H'] = [f](GLenum /*unused*/) { f(std::cout); };
+};

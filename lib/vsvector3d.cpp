@@ -20,82 +20,82 @@ using namespace mfem;
 
 using namespace std;
 
-static void VectorKeyHPressed()
+static void Vector3dHelpFunction(std::ostream & os)
 {
-   cout << endl
-        << "+------------------------------------+" << endl
-        << "| Keys                               |" << endl
-        << "+------------------------------------+" << endl
-        << "| a -  Displays/Hides the axes       |" << endl
-        << "| A -  Turns antialiasing on/off     |" << endl
-        << "| b -  Displacements step back       |" << endl
-        << "| c -  Toggle colorbar and caption   |" << endl
-        << "| C -  Change the main plot caption  |" << endl
-        << "| d -  Displays/Hides displacements  |" << endl
-        << "| e -  Displays/Hides the elements   |" << endl
-        << "| E -  Toggle the elements in the CP |" << endl
-        << "| f -  Smooth/Flat shading           |" << endl
-        << "| F -  Display mag./x/y/z component  |" << endl
-        << "| g -  Toggle background             |" << endl
-        << "| h -  Displays help menu            |" << endl
-        << "| i -  Toggle cutting plane          |" << endl
-        << "| j -  Turn on/off perspective       |" << endl
-        << "| k/K  Adjust the transparency level |" << endl
-        << "| ,/<  Adjust color transparency     |" << endl
-        << "| l -  Turns on/off the light        |" << endl
-        << "| L -  Toggle logarithmic scale      |" << endl
-        << "| m -  Displays/Hides the mesh       |" << endl
-        << "| M -  Toggle the mesh in the CP     |" << endl
-        << "| n -  Displacements step forward    |" << endl
-        << "| o/O  (De)refine elem, disc shading |" << endl
-        << "| p/P  Cycle through color palettes  |" << endl
-        << "| q -  Quits                         |" << endl
-        << "| r -  Reset the plot to 3D view     |" << endl
-        << "| R -  Reset the plot to 2D view     |" << endl
-        << "| s -  Turn on/off unit cube scaling |" << endl
-        << "| S -  Take snapshot/Record a movie  |" << endl
-        << "| t -  Cycle materials and lights    |" << endl
-        << "| u/U  Move the level field vectors  |" << endl
-        << "| v/V  Vector field                  |" << endl
-        << "| w/W  Add/Delete level field vector |" << endl
-        << "| x/X  Rotate cutting plane (phi)    |" << endl
-        << "| y/Y  Rotate cutting plane (theta)  |" << endl
-        << "| z/Z  Translate cutting plane       |" << endl
-        << "| \\ -  Set light source position     |" << endl
-        << "| Ctrl+p - Print to a PDF file       |" << endl
-        << "+------------------------------------+" << endl
-        << "| Function keys                      |" << endl
-        << "+------------------------------------+" << endl
-        << "| F1 - X window info and keystrokes  |" << endl
-        << "| F2 - Update colors, etc.           |" << endl
-        << "| F3/F4 - Shrink/Zoom bdr elements   |" << endl
-        << "| F6 - Palette options               |" << endl
-        << "| F7 - Manually set min/max value    |" << endl
-        << "| F8 - List of subdomains to show    |" << endl
-        << "| F9/F10 - Walk through subdomains   |" << endl
-        << "| F11/F12 - Shrink/Zoom subdomains   |" << endl
-        << "+------------------------------------+" << endl
-        << "| Keypad                             |" << endl
-        << "+------------------------------------+" << endl
-        << "| 1-9  Small rotation, reset with 5  |" << endl
-        << "| *,/  Scale up/down                 |" << endl
-        << "| +/-  Change z-scaling              |" << endl
-        << "| . -  Start/stop spinning           |" << endl
-        << "| 0/Enter - Spinning speed and dir.  |" << endl
-        << "+------------------------------------+" << endl
-        << "| Mouse                              |" << endl
-        << "+------------------------------------+" << endl
-        << "| left   btn    - Rotation           |" << endl
-        << "| middle btn    - Translation        |" << endl
-        << "| right  btn    - Scaling            |" << endl
-        << "| left  + Alt   - Tilt               |" << endl
-        << "| left  + Shift - Spinning           |" << endl
-        << "| right + Shift - Change light pos.  |" << endl
-        << "| left  + Ctrl  - Spherical rotation |" << endl
-        << "| middle+ Ctrl  - Object translation |" << endl
-        << "| right + Ctrl  - Object scaling     |" << endl
-        << "| left  + Ctrl + Shift - z-Spinning  |" << endl
-        << "+------------------------------------+" << endl;
+   os << endl
+      << "+------------------------------------+" << endl
+      << "| Keys                               |" << endl
+      << "+------------------------------------+" << endl
+      << "| a -  Displays/Hides the axes       |" << endl
+      << "| A -  Turns antialiasing on/off     |" << endl
+      << "| b -  Displacements step back       |" << endl
+      << "| c -  Toggle colorbar and caption   |" << endl
+      << "| C -  Change the main plot caption  |" << endl
+      << "| d -  Displays/Hides displacements  |" << endl
+      << "| e -  Displays/Hides the elements   |" << endl
+      << "| E -  Toggle the elements in the CP |" << endl
+      << "| f -  Smooth/Flat shading           |" << endl
+      << "| F -  Display mag./x/y/z component  |" << endl
+      << "| g -  Toggle background             |" << endl
+      << "| h -  Displays help menu            |" << endl
+      << "| i -  Toggle cutting plane          |" << endl
+      << "| j -  Turn on/off perspective       |" << endl
+      << "| k/K  Adjust the transparency level |" << endl
+      << "| ,/<  Adjust color transparency     |" << endl
+      << "| l -  Turns on/off the light        |" << endl
+      << "| L -  Toggle logarithmic scale      |" << endl
+      << "| m -  Displays/Hides the mesh       |" << endl
+      << "| M -  Toggle the mesh in the CP     |" << endl
+      << "| n -  Displacements step forward    |" << endl
+      << "| o/O  (De)refine elem, disc shading |" << endl
+      << "| p/P  Cycle through color palettes  |" << endl
+      << "| q -  Quits                         |" << endl
+      << "| r -  Reset the plot to 3D view     |" << endl
+      << "| R -  Reset the plot to 2D view     |" << endl
+      << "| s -  Turn on/off unit cube scaling |" << endl
+      << "| S -  Take snapshot/Record a movie  |" << endl
+      << "| t -  Cycle materials and lights    |" << endl
+      << "| u/U  Move the level field vectors  |" << endl
+      << "| v/V  Vector field                  |" << endl
+      << "| w/W  Add/Delete level field vector |" << endl
+      << "| x/X  Rotate cutting plane (phi)    |" << endl
+      << "| y/Y  Rotate cutting plane (theta)  |" << endl
+      << "| z/Z  Translate cutting plane       |" << endl
+      << "| \\ -  Set light source position     |" << endl
+      << "| Ctrl+p - Print to a PDF file       |" << endl
+      << "+------------------------------------+" << endl
+      << "| Function keys                      |" << endl
+      << "+------------------------------------+" << endl
+      << "| F1 - X window info and keystrokes  |" << endl
+      << "| F2 - Update colors, etc.           |" << endl
+      << "| F3/F4 - Shrink/Zoom bdr elements   |" << endl
+      << "| F6 - Palette options               |" << endl
+      << "| F7 - Manually set min/max value    |" << endl
+      << "| F8 - List of subdomains to show    |" << endl
+      << "| F9/F10 - Walk through subdomains   |" << endl
+      << "| F11/F12 - Shrink/Zoom subdomains   |" << endl
+      << "+------------------------------------+" << endl
+      << "| Keypad                             |" << endl
+      << "+------------------------------------+" << endl
+      << "| 1-9  Small rotation, reset with 5  |" << endl
+      << "| *,/  Scale up/down                 |" << endl
+      << "| +/-  Change z-scaling              |" << endl
+      << "| . -  Start/stop spinning           |" << endl
+      << "| 0/Enter - Spinning speed and dir.  |" << endl
+      << "+------------------------------------+" << endl
+      << "| Mouse                              |" << endl
+      << "+------------------------------------+" << endl
+      << "| left   btn    - Rotation           |" << endl
+      << "| middle btn    - Translation        |" << endl
+      << "| right  btn    - Scaling            |" << endl
+      << "| left  + Alt   - Tilt               |" << endl
+      << "| left  + Shift - Spinning           |" << endl
+      << "| right + Shift - Change light pos.  |" << endl
+      << "| left  + Ctrl  - Spherical rotation |" << endl
+      << "| middle+ Ctrl  - Object translation |" << endl
+      << "| right + Ctrl  - Object scaling     |" << endl
+      << "| left  + Ctrl + Shift - z-Spinning  |" << endl
+      << "+------------------------------------+" << endl;
 }
 
 VisualizationSceneVector3d  *vsvector3d;
@@ -398,8 +398,7 @@ void VisualizationSceneVector3d::Init()
    {
       // init = 1;
 
-      wnd->setOnKeyDown('h', VectorKeyHPressed);
-      wnd->setOnKeyDown('H', VectorKeyHPressed);
+      wnd->setHelpFunction(Vector3dHelpFunction);
 
       wnd->setOnKeyDown('d', KeyDPressed);
       wnd->setOnKeyDown('D', KeyDPressed);

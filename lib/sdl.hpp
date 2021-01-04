@@ -30,6 +30,7 @@ typedef void (*MouseDelegate)(EventInfo*);
 typedef std::function<void(GLenum)> KeyDelegate;
 typedef void (*WindowDelegate)(int, int);
 typedef void (*Delegate)();
+using HelpFnc = void (*)(std::ostream &);
 
 class SdlWindow
 {
@@ -64,6 +65,7 @@ private:
    std::map<int, MouseDelegate> onMouseDown;
    std::map<int, MouseDelegate> onMouseUp;
    std::map<int, MouseDelegate> onMouseMove;
+   HelpFnc help_fnc_{nullptr};
 
    bool ctrlDown;
 
@@ -183,6 +185,7 @@ public:
    bool isExposePending() { return wnd_state == RenderState::ExposePending; }
 
    std::string getHelpString();
+   void setHelpFunction(HelpFnc f);
 
 #ifdef __EMSCRIPTEN__
    std::string getCanvasId() const { return canvas_id_; }
