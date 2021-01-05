@@ -19,6 +19,7 @@
 #include "mfem.hpp"
 using namespace mfem;
 #include "visual.hpp"
+#include "palettes.hpp"
 
 using namespace std;
 
@@ -476,6 +477,7 @@ void VisualizationSceneSolution::Init()
 
    VisualizationSceneScalarData::Init();  // Calls FindNewBox() !!!
 
+   paletteSet(2); // use the 'jet-like' palette in 2D
    SetUseTexture(0);
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts

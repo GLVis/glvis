@@ -320,7 +320,8 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
 
    if (keys)
    {
-      SendKeySequence(keys);
+      // SendKeySequence(keys);
+      CallKeySequence(keys);
    }
 }
 
