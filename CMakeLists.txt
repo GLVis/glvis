@@ -225,7 +225,7 @@ else(NOT EMSCRIPTEN)
 
   # Set WebGL options
   list(APPEND _emscripten_opts
-       "-s GL_ASSERTIONS=1 -s GL_DEBUG=1 -s USE_WEBGL2=1")
+      "-s GL_ASSERTIONS=1 -s GL_DEBUG=1 -s MAX_WEBGL_VERSION=2")
 
   # Enable Freetype port
   list(APPEND _emscripten_opts "-s USE_FREETYPE=1")
