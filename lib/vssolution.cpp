@@ -46,77 +46,79 @@ int isfinite(double x)
 
 // Definitions of some more keys
 
-static void SolutionKeyHPressed()
+std::string VisualizationSceneSolution::GetHelpString() const
 {
-   cout << endl
-        << "+------------------------------------+" << endl
-        << "| Keys                               |" << endl
-        << "+------------------------------------+" << endl
-        << "| a -  Displays/Hides the axes       |" << endl
-        << "| A -  Turns antialiasing on/off     |" << endl
-        << "| b/B  Displays/Hides the boundary   |" << endl
-        << "| c -  Toggle colorbar and caption   |" << endl
-        << "| C -  Change the main plot caption  |" << endl
-        << "| e -  Displays/Hides the elements   |" << endl
-        << "| f -  Smooth/Nonconf/Flat shading   |" << endl
-        << "| g -  Toggle background             |" << endl
-        << "| h -  Displays help menu            |" << endl
-        << "| i -  Toggle the cutting plane      |" << endl
-        << "| j -  Turn on/off perspective       |" << endl
-        << "| k/K  Adjust the transparency level |" << endl
-        << "| ,/<  Adjust color transparency     |" << endl
-        << "| l -  Turns on/off the light        |" << endl
-        << "| L -  Toggle logarithmic scale      |" << endl
-        << "| m -  Displays/Hides the mesh       |" << endl
-        << "| n/N  Cycle through numberings      |" << endl
-        << "| o -  (De)refine elem. (NC shading) |" << endl
-        << "| O -  Switch 'o' func. (NC shading) |" << endl
-        << "| p/P  Cycle through color palettes  |" << endl
-        << "| q -  Quits                         |" << endl
-        << "| r -  Reset the plot to 3D view     |" << endl
-        << "| R -  Reset the plot to 2D view     |" << endl
-        << "| s -  Turn on/off unit cube scaling |" << endl
-        << "| S -  Take snapshot/Record a movie  |" << endl
-        << "| t -  Cycle materials and lights    |" << endl
-        << "| y/Y  Rotate the cutting plane      |" << endl
-        << "| z/Z  Move the cutting plane        |" << endl
-        << "| \\ -  Set light source position     |" << endl
-        << "| Ctrl+o - Element ordering curve    |" << endl
-        << "| Ctrl+p - Print to a PDF file       |" << endl
-        << "+------------------------------------+" << endl
-        << "| Function keys                      |" << endl
-        << "+------------------------------------+" << endl
-        << "| F1 - X window info and keystrokes  |" << endl
-        << "| F2 - Update colors, etc.           |" << endl
-        << "| F3/F4 - Shrink/Zoom elements       |" << endl
-        << "| F5 - Set level lines               |" << endl
-        << "| F6 - Palette options               |" << endl
-        << "| F7 - Manually set min/max value    |" << endl
-        << "| F8 - List of subdomains to show    |" << endl
-        << "| F9/F10 - Walk through subdomains   |" << endl
-        << "| F11/F12 - Shrink/Zoom subdomains   |" << endl
-        << "+------------------------------------+" << endl
-        << "| Keypad                             |" << endl
-        << "+------------------------------------+" << endl
-        << "| 1-9  Small rotation, reset with 5  |" << endl
-        << "| *,/  Scale up/down                 |" << endl
-        << "| +/-  Change z-scaling              |" << endl
-        << "| . -  Start/stop spinning           |" << endl
-        << "| 0/Enter - Spinning speed and dir.  |" << endl
-        << "+------------------------------------+" << endl
-        << "| Mouse                              |" << endl
-        << "+------------------------------------+" << endl
-        << "| left   btn    - Rotation           |" << endl
-        << "| middle btn    - Translation        |" << endl
-        << "| right  btn    - Scaling            |" << endl
-        << "| left  + Alt   - Tilt               |" << endl
-        << "| left  + Shift - Spinning           |" << endl
-        << "| right + Shift - Change light pos.  |" << endl
-        << "| left  + Ctrl  - Spherical rotation |" << endl
-        << "| middle+ Ctrl  - Object translation |" << endl
-        << "| right + Ctrl  - Object scaling     |" << endl
-        << "| left  + Ctrl + Shift - z-Spinning  |" << endl
-        << "+------------------------------------+" << endl;
+   std::stringstream os;
+   os << endl
+      << "+------------------------------------+" << endl
+      << "| Keys                               |" << endl
+      << "+------------------------------------+" << endl
+      << "| a -  Displays/Hides the axes       |" << endl
+      << "| A -  Turns antialiasing on/off     |" << endl
+      << "| b/B  Displays/Hides the boundary   |" << endl
+      << "| c -  Toggle colorbar and caption   |" << endl
+      << "| C -  Change the main plot caption  |" << endl
+      << "| e -  Displays/Hides the elements   |" << endl
+      << "| f -  Smooth/Nonconf/Flat shading   |" << endl
+      << "| g -  Toggle background             |" << endl
+      << "| h -  Displays help menu            |" << endl
+      << "| i -  Toggle the cutting plane      |" << endl
+      << "| j -  Turn on/off perspective       |" << endl
+      << "| k/K  Adjust the transparency level |" << endl
+      << "| ,/<  Adjust color transparency     |" << endl
+      << "| l -  Turns on/off the light        |" << endl
+      << "| L -  Toggle logarithmic scale      |" << endl
+      << "| m -  Displays/Hides the mesh       |" << endl
+      << "| n/N  Cycle through numberings      |" << endl
+      << "| o -  (De)refine elem. (NC shading) |" << endl
+      << "| O -  Switch 'o' func. (NC shading) |" << endl
+      << "| p/P  Cycle through color palettes  |" << endl
+      << "| q -  Quits                         |" << endl
+      << "| r -  Reset the plot to 3D view     |" << endl
+      << "| R -  Reset the plot to 2D view     |" << endl
+      << "| s -  Turn on/off unit cube scaling |" << endl
+      << "| S -  Take snapshot/Record a movie  |" << endl
+      << "| t -  Cycle materials and lights    |" << endl
+      << "| y/Y  Rotate the cutting plane      |" << endl
+      << "| z/Z  Move the cutting plane        |" << endl
+      << "| \\ -  Set light source position     |" << endl
+      << "| Ctrl+o - Element ordering curve    |" << endl
+      << "| Ctrl+p - Print to a PDF file       |" << endl
+      << "+------------------------------------+" << endl
+      << "| Function keys                      |" << endl
+      << "+------------------------------------+" << endl
+      << "| F1 - X window info and keystrokes  |" << endl
+      << "| F2 - Update colors, etc.           |" << endl
+      << "| F3/F4 - Shrink/Zoom elements       |" << endl
+      << "| F5 - Set level lines               |" << endl
+      << "| F6 - Palette options               |" << endl
+      << "| F7 - Manually set min/max value    |" << endl
+      << "| F8 - List of subdomains to show    |" << endl
+      << "| F9/F10 - Walk through subdomains   |" << endl
+      << "| F11/F12 - Shrink/Zoom subdomains   |" << endl
+      << "+------------------------------------+" << endl
+      << "| Keypad                             |" << endl
+      << "+------------------------------------+" << endl
+      << "| 1-9  Small rotation, reset with 5  |" << endl
+      << "| *,/  Scale up/down                 |" << endl
+      << "| +/-  Change z-scaling              |" << endl
+      << "| . -  Start/stop spinning           |" << endl
+      << "| 0/Enter - Spinning speed and dir.  |" << endl
+      << "+------------------------------------+" << endl
+      << "| Mouse                              |" << endl
+      << "+------------------------------------+" << endl
+      << "| left   btn    - Rotation           |" << endl
+      << "| middle btn    - Translation        |" << endl
+      << "| right  btn    - Scaling            |" << endl
+      << "| left  + Alt   - Tilt               |" << endl
+      << "| left  + Shift - Spinning           |" << endl
+      << "| right + Shift - Change light pos.  |" << endl
+      << "| left  + Ctrl  - Spherical rotation |" << endl
+      << "| middle+ Ctrl  - Object translation |" << endl
+      << "| right + Ctrl  - Object scaling     |" << endl
+      << "| left  + Ctrl + Shift - z-Spinning  |" << endl
+      << "+------------------------------------+" << endl;
+   return os.str();
 }
 
 static void KeyF8Pressed()
@@ -443,9 +445,6 @@ VisualizationSceneSolution::VisualizationSceneSolution(
    v_normals = normals;
 
    Init();
-
-   wnd->setOnKeyDown('h', SolutionKeyHPressed);
-   wnd->setOnKeyDown('H', SolutionKeyHPressed);
 }
 
 void VisualizationSceneSolution::Init()

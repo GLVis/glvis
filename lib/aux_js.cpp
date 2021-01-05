@@ -251,6 +251,13 @@ void setupResizeEventCallback(const std::string & id)
       std::cerr << "error (emscripten_set_resize_callback): " << err << std::endl;
    }
 }
+
+std::string getHelpString()
+{
+   VisualizationSceneScalarData* vss
+      = dynamic_cast<VisualizationSceneScalarData*>(GetVisualizationScene());
+   return vss->GetHelpString();
+}
 } // namespace js
 
 namespace em = emscripten;
@@ -268,4 +275,5 @@ EMSCRIPTEN_BINDINGS(js_funcs)
    em::function("resizeWindow", &ResizeWindow);
    em::function("setCanvasId", &js::setCanvasId);
    em::function("setupResizeEventCallback", &js::setupResizeEventCallback);
+   em::function("getHelpString", &js::getHelpString);
 }
