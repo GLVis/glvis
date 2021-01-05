@@ -1617,7 +1617,9 @@ std::string priority_font;
 void InitFont()
 {
    // This function is called after the window is created.
-   glvis_font.setAlphaChannel(wnd->getRenderer().getDeviceAlphaChannel());
+   GLenum alphaChannel = gl3::GLDevice::useLegacyTextureFmts() ? GL_ALPHA
+                                                               : GL_RED;
+   glvis_font.setAlphaChannel(alphaChannel);
    bool try_fc_patterns = true;
    if (!priority_font.empty())
    {

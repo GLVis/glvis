@@ -7543,6 +7543,7 @@ int Choose_Palette()
 
 int RepeatPaletteTimes = 1;
 int MaxTextureSize;
+GLenum rgba_internal;
 
 /* *
  * Generates a discrete texture from the given palette.
@@ -7604,7 +7605,7 @@ void PaletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
    glBindTexture(GL_TEXTURE_2D, tex);
    glTexImage2D(GL_TEXTURE_2D,
                 0,
-                GL_RGBA32F,
+                rgba_internal,
                 plt_size,
                 1,
                 0,
@@ -7646,7 +7647,7 @@ void PaletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
             };
          }
       }
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F,
+      glTexImage2D(GL_TEXTURE_2D, 0, rgba_internal,
                    plt_size * abs(RepeatPaletteTimes), 1,
                    0, GL_RGBA, GL_FLOAT, texture_buf.data());
    }
@@ -7677,7 +7678,7 @@ void PaletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
             1.0
          };
       }
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F,
+      glTexImage2D(GL_TEXTURE_2D, 0, rgba_internal,
                    textureSize, 1,
                    0, GL_RGBA, GL_FLOAT, texture_buf.data());
    }
@@ -7713,9 +7714,20 @@ void paletteInit()
       glGenTextures(1, &alpha_tex);
       first_init = false;
    }
-   alpha_channel = GetAppWindow()->getRenderer().getDeviceAlphaChannel();
-   // WebGL 2 requires sized internal format for float texture
-   GLenum alpha_internal = alpha_channel == GL_RED ? GL_R32F : alpha_channel;
+   GLenum alpha_internal;
+   if (gl3::GLDevice::useLegacyTextureFmts())
+   {
+      alpha_internal = GL_ALPHA;
+      alpha_channel = GL_ALPHA;
+      rgba_internal = GL_RGBA;
+   }
+   else
+   {
+      // WebGL 2 requires sized internal format for float texture
+      alpha_internal = GL_R32F;
+      alpha_channel = GL_RED;
+      rgba_internal = GL_RGBA32F;
+   }
 
    for (int i = 0; i < Num_RGB_Palettes; i++)
    {

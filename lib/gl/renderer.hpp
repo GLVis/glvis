@@ -195,6 +195,10 @@ public:
       glBindTexture(GL_TEXTURE_2D, tex_id);
    };
 
+   // If true, use unsized internal formats and GL_ALPHA for single-channel
+   // data. Otherwise, use the newer sized internal formats and GL_RED.
+   static bool useLegacyTextureFmts();
+
    void enableBlend() { glEnable(GL_BLEND); }
    void disableBlend() { glDisable(GL_BLEND); }
    void enableDepthWrite() { glDepthMask(GL_TRUE); }
@@ -283,8 +287,6 @@ public:
    {
       device.reset(new TDevice(device));
    }
-
-   GLenum getDeviceAlphaChannel();
 
    // Sets the texture handle of the color palette.
    void setColorTexture(GLuint tex_h) { color_tex = tex_h; }

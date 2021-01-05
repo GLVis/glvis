@@ -14,31 +14,31 @@
 namespace gl3
 {
 
-GLenum MeshRenderer::getDeviceAlphaChannel()
+// Beginning in OpenGL 3.0, there were two changes in texture format support:
+// - The older single-channel internal format GL_ALPHA was deprecated in favor
+//   of GL_RED
+// - New sized internal formats were introduced, e.g. GL_RGBA32F defines a 4-
+//   channel texture with each channel holding a 32-bit floating point value
+//
+// An additional complication is introduced with OpenGL ES 3/WebGL 2 - the
+// unsized formats like GL_RED and GL_RGBA no longer support floating-point
+// data being passed in, so use of the sized internal formats is obligatory in
+// WebGL 2.
+bool GLDevice::useLegacyTextureFmts()
 {
-   if (!device) { return GL_NONE; }
 #ifdef __EMSCRIPTEN__
    const std::string versionString
       = reinterpret_cast<const char*>(glGetString(GL_VERSION));
    if (versionString.find("OpenGL ES 3.0") != std::string::npos)
    {
-      // WebGL 2 uses GL_RED as the single-channel texture
-      return GL_RED;
+      return false;
    }
    else
    {
-      // WebGL uses GL_ALPHA as the single-channel texture
-      return GL_ALPHA;
+      return true;
    }
 #else
-   if (device->getType() == GLDevice::FF_DEVICE)
-   {
-      return GL_ALPHA;
-   }
-   else
-   {
-      return GL_RED;
-   }
+   return !GLEW_VERSION_3_0;
 #endif
 }
 
