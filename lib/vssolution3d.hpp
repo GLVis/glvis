@@ -109,6 +109,8 @@ public:
 
    virtual ~VisualizationSceneSolution3d();
 
+   virtual std::string GetHelpString() const;
+
    virtual void FindNewBox(bool prepare);
    virtual void FindNewValueRange(bool prepare);
 

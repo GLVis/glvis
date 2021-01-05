@@ -20,8 +20,9 @@ using namespace mfem;
 
 using namespace std;
 
-static void Vector3dHelpFunction(std::ostream & os)
+std::string VisualizationSceneVector3d::GetHelpString() const
 {
+   std::stringstream os;
    os << endl
       << "+------------------------------------+" << endl
       << "| Keys                               |" << endl
@@ -96,6 +97,7 @@ static void Vector3dHelpFunction(std::ostream & os)
       << "| right + Ctrl  - Object scaling     |" << endl
       << "| left  + Ctrl + Shift - z-Spinning  |" << endl
       << "+------------------------------------+" << endl;
+   return os.str();
 }
 
 VisualizationSceneVector3d  *vsvector3d;
@@ -397,8 +399,6 @@ void VisualizationSceneVector3d::Init()
    // if (!init)
    {
       // init = 1;
-
-      wnd->setHelpFunction(Vector3dHelpFunction);
 
       wnd->setOnKeyDown('d', KeyDPressed);
       wnd->setOnKeyDown('D', KeyDPressed);

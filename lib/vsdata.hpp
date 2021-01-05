@@ -141,6 +141,8 @@ public:
 
    virtual ~VisualizationSceneScalarData();
 
+   virtual std::string GetHelpString() const { return ""; }
+
    // Determine 'xscale', 'yscale', and 'zscale' using the current bounding
    // box, depending on the value of 'scaling'.
    virtual void SetNewScalingFromBox();

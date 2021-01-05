@@ -511,6 +511,11 @@ void Key_Mod_a_Pressed(GLenum state)
    }
 }
 
+void KeyHPressed()
+{
+   cout << vsdata->GetHelpString() << flush;
+}
+
 void KeylPressed()
 {
    vsdata -> ToggleLight();
@@ -1106,6 +1111,8 @@ void VisualizationSceneScalarData::Init()
       wnd->setOnKeyDown('p', KeypPressed);
       wnd->setOnKeyDown('P', KeyPPressed);
 
+      wnd->setOnKeyDown('h', KeyHPressed);
+      wnd->setOnKeyDown('H', KeyHPressed);
 
       wnd->setOnKeyDown(SDLK_F5, KeyF5Pressed);
       wnd->setOnKeyDown(SDLK_F6, KeyF6Pressed);

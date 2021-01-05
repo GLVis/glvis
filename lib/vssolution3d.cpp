@@ -26,8 +26,9 @@ extern GeometryRefiner GLVisGeometryRefiner;
 
 // Definitions of some more keys
 
-static void Solution3dHelpFunction(std::ostream & os)
+std::string VisualizationSceneSolution3d::GetHelpString() const
 {
+   std::stringstream os;
    os << endl
       << "+------------------------------------+" << endl
       << "| Keys                               |" << endl
@@ -101,6 +102,7 @@ static void Solution3dHelpFunction(std::ostream & os)
       << "| right + Ctrl  - Object scaling     |" << endl
       << "| left  + Ctrl + Shift - z-Spinning  |" << endl
       << "+------------------------------------+" << endl;
+   return os.str();
 }
 
 static void KeyiPressed()
@@ -716,8 +718,6 @@ VisualizationSceneSolution3d::VisualizationSceneSolution3d(Mesh &m, Vector &s)
    GridF = NULL;
 
    Init();
-
-   wnd->setHelpFunction(Solution3dHelpFunction);
 }
 
 

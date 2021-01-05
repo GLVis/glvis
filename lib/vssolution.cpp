@@ -46,8 +46,9 @@ int isfinite(double x)
 
 // Definitions of some more keys
 
-static void SolutionHelpFunction(std::ostream & os)
+std::string VisualizationSceneSolution::GetHelpString() const
 {
+   std::stringstream os;
    os << endl
       << "+------------------------------------+" << endl
       << "| Keys                               |" << endl
@@ -117,6 +118,7 @@ static void SolutionHelpFunction(std::ostream & os)
       << "| right + Ctrl  - Object scaling     |" << endl
       << "| left  + Ctrl + Shift - z-Spinning  |" << endl
       << "+------------------------------------+" << endl;
+   return os.str();
 }
 
 static void KeyF8Pressed()
@@ -443,8 +445,6 @@ VisualizationSceneSolution::VisualizationSceneSolution(
    v_normals = normals;
 
    Init();
-
-   wnd->setHelpFunction(SolutionHelpFunction);
 }
 
 void VisualizationSceneSolution::Init()
