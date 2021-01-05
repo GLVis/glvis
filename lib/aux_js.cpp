@@ -255,7 +255,7 @@ void setupResizeEventCallback(const std::string & id)
 std::string getHelpString()
 {
    VisualizationSceneScalarData* vss
-       = dynamic_cast<VisualizationSceneScalarData*>(GetVisualizationScene());
+      = dynamic_cast<VisualizationSceneScalarData*>(GetVisualizationScene());
    return vss->GetHelpString();
 }
 } // namespace js
