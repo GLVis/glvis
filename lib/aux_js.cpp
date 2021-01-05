@@ -98,7 +98,7 @@ bool startVisualization(const std::string input, const std::string data_type,
             // Use the 'bone' palette when visualizing a 2D mesh only
             paletteSet(4);
          }
-         // Otherwise, the 'jet-like' palette is in 2D see vssolution.cpp
+         // Otherwise, the 'jet-like' palette is used in 2D see vssolution.cpp
 
          if (stream_state.normals.Size() > 0)
          {
@@ -144,7 +144,7 @@ bool startVisualization(const std::string input, const std::string data_type,
                // (the same as when visualizing a 2D mesh only)
                paletteSet(4);
             }
-            // Otherwise, the 'vivid' palette is in 3D see vssolution3d.cpp
+            // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
 
             vss->ToggleDrawAxes();
             vss->ToggleDrawMesh();
