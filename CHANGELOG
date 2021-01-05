@@ -16,6 +16,9 @@ Version 4.0.1 (development)
 - Enabled support for WebGL 2, when available. This enables, among other
   features, support for controllable multisampling via framebuffers.
 
+- Various bugfixes and improvements related to the JavaScript version.
+
+
 Version 4.0, released on Dec 11, 2020
 =====================================
 
