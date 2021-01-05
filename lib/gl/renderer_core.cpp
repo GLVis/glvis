@@ -136,9 +136,20 @@ std::string formatShaderString(const std::string &shader_string,
       formatted = std::regex_replace(formatted, std::regex("texture2D"), "texture");
    }
 
+   if (GLDevice::useLegacyTextureFmts())
+   {
+      formatted = "#define USE_ALPHA\n" + formatted;
+   }
    // add the header
    formatted = std::regex_replace(GLSL_HEADER, std::regex("GLSL_VER"),
                                   std::to_string(glsl_version)) + formatted;
+#ifdef __EMSCRIPTEN__
+   // special prepend for WebGL 2 shaders
+   if (glsl_version == 300)
+   {
+      formatted = "#version 300 es\n" + formatted;
+   }
+#endif
 
    return formatted;
 }

@@ -54,6 +54,9 @@ bool startVisualization(const std::string input, const std::string data_type,
    std::stringstream ss(input);
    const int field_type = ReadStream(ss, data_type);
 
+   // reset antialiasing
+   GetAppWindow()->getRenderer().setAntialiasing(0);
+
    std::string line;
    while (ss >> line)
    {
@@ -92,8 +95,11 @@ bool startVisualization(const std::string input, const std::string data_type,
          VisualizationSceneSolution * vss;
          if (field_type == 2)
          {
+            // Use the 'bone' palette when visualizing a 2D mesh only
             paletteSet(4);
          }
+         // Otherwise, the 'jet-like' palette is used in 2D see vssolution.cpp
+
          if (stream_state.normals.Size() > 0)
          {
             vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
@@ -127,14 +133,19 @@ bool startVisualization(const std::string input, const std::string data_type,
          {
             if (stream_state.mesh->Dimension() == 3)
             {
-               paletteSet(4);
-               // paletteSet(11);
-               // Set_Material_And_Light(4,3);
+               // Use the 'white' palette when visualizing a 3D volume mesh only
+               // paletteSet(4);
+               paletteSet(11);
+               vss->SetLightMatIdx(4);
             }
             else
             {
+               // Use the 'bone' palette when visualizing a surface mesh only
+               // (the same as when visualizing a 2D mesh only)
                paletteSet(4);
             }
+            // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
+
             vss->ToggleDrawAxes();
             vss->ToggleDrawMesh();
          }
@@ -195,13 +206,16 @@ bool startVisualization(const std::string input, const std::string data_type,
       }
       if (stream_state.mesh->SpaceDimension() == 2 && field_type == 2)
       {
-         SetVisualizationScene(vs, 2, stream_state.keys.c_str());
+         SetVisualizationScene(vs, 2);
       }
       else
       {
-         SetVisualizationScene(vs, 3, stream_state.keys.c_str());
+         SetVisualizationScene(vs, 3);
       }
    }
+
+   CallKeySequence(stream_state.keys.c_str());
+
    SendExposeEvent();
    return true;
 }
