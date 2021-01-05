@@ -182,8 +182,6 @@ public:
    bool isSwapPending() { return wnd_state == RenderState::SwapPending; }
    bool isExposePending() { return wnd_state == RenderState::ExposePending; }
 
-   std::string getHelpString();
-
 #ifdef __EMSCRIPTEN__
    std::string getCanvasId() const { return canvas_id_; }
    void setCanvasId(std::string canvas_id) { canvas_id_ = canvas_id; }

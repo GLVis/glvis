@@ -831,13 +831,3 @@ void SdlWindow::swapBuffer()
 {
    SDL_GL_SwapWindow(handle->hwnd);
 }
-
-std::string SdlWindow::getHelpString()
-{
-   std::ostringstream oss;
-   auto * fb = std::cout.rdbuf();
-   std::cout.rdbuf(oss.rdbuf());
-   onKeyDown['h'](0);
-   std::cout.rdbuf(fb);
-   return oss.str();
-}
