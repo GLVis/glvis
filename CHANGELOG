@@ -13,6 +13,8 @@ Version 4.0.1 (development)
 ===========================
 - Refactored glvis.cpp to fix a bug in GLVis script handling.
 
+- Enabled support for WebGL 2, when available. This enables, among other
+  features, support for controllable multisampling via framebuffers.
 
 Version 4.0, released on Dec 11, 2020
 =====================================
