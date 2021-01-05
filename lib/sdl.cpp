@@ -109,43 +109,109 @@ SdlWindow::SdlWindow()
 {
 }
 
-int SdlWindow::probeGLContextSupport()
+// Setup the correct OpenGL context flags in SDL for when we actually open the
+// window.
+void SdlWindow::probeGLContextSupport(bool legacyGlOnly)
 {
    Uint32 win_flags_hidden = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN;
-   PRINT_DEBUG("Testing if OpenGL core profile window can be created..." << flush);
-   // Try to create core profile context first
-   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+#ifndef __EMSCRIPTEN__
+   if (!legacyGlOnly)
    {
-      Handle testCore("",
-                      SDL_WINDOWPOS_UNDEFINED,
-                      SDL_WINDOWPOS_UNDEFINED,
-                      100, 100, win_flags_hidden);
-      if (testCore.isInitialized())
+      // Try and probe for a core/compatibility context. Needed for Mac OS X,
+      // which will only support OpenGL 2.1 if you don't create a core context.
+      PRINT_DEBUG("Testing if OpenGL core profile window can be created..." << flush);
+      // Try to create core profile context first
+      SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
       {
-         PRINT_DEBUG("success!" << endl);
-         return SDL_GL_CONTEXT_PROFILE_CORE;
+         Handle testCore("",
+                         SDL_WINDOWPOS_UNDEFINED,
+                         SDL_WINDOWPOS_UNDEFINED,
+                         100, 100, win_flags_hidden);
+         if (testCore.isInitialized())
+         {
+            PRINT_DEBUG("success!" << endl);
+            return;
+         }
       }
-   }
 
-   PRINT_DEBUG("failed." << endl);
-   PRINT_DEBUG("Testing if OpenGL compatibility profile window can be created..."
-               << flush);
-   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
-                       SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+      PRINT_DEBUG("failed." << endl);
+      PRINT_DEBUG("Testing if OpenGL compatibility profile window can be created..."
+                  << flush);
+      SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+                          SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+      {
+         Handle testCompat("",
+                           SDL_WINDOWPOS_UNDEFINED,
+                           SDL_WINDOWPOS_UNDEFINED,
+                           100, 100, win_flags_hidden);
+         if (testCompat.isInitialized())
+         {
+            PRINT_DEBUG("success!" << endl);
+            return;
+         }
+      }
+      PRINT_DEBUG("failed." << endl);
+   }
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 0);
+   if (GetMultisample() > 0)
    {
-      Handle testCompat("",
+      SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);
+      SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
+      PRINT_DEBUG("Testing OpenGL with default profile and antialiasing..." << endl);
+      {
+         Handle testMsaa("",
+                         SDL_WINDOWPOS_UNDEFINED,
+                         SDL_WINDOWPOS_UNDEFINED,
+                         100, 100, win_flags_hidden);
+         if (testMsaa.isInitialized())
+         {
+            PRINT_DEBUG("success!" << endl);
+            return;
+         }
+      }
+      SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
+      SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
+      PRINT_DEBUG("failed." << endl);
+   }
+   PRINT_DEBUG("Opening OpenGL window with no flags.");
+#else
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+                       SDL_GL_CONTEXT_PROFILE_ES);
+   PRINT_DEBUG("Testing for WebGL 2.0 context availability..." << flush);
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+   {
+      Handle testWebGl2("",
                         SDL_WINDOWPOS_UNDEFINED,
                         SDL_WINDOWPOS_UNDEFINED,
                         100, 100, win_flags_hidden);
-      if (testCompat.isInitialized())
+      if (testWebGl2.isInitialized())
       {
          PRINT_DEBUG("success!" << endl);
-         return SDL_GL_CONTEXT_PROFILE_COMPATIBILITY;
+         return;
       }
    }
    PRINT_DEBUG("failed." << endl);
-   PRINT_DEBUG("No profile flags were accepted." << endl);
-   return 0;
+   PRINT_DEBUG("Testing for WebGL 1.0 context availability..." << flush);
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+   // Note that WebGL 2 support controllable antialiasing, while WebGL 1 only
+   // supports requesting multisampling at context creation time. The browser
+   // is free to ignore this flag.
+   SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+   SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
+   {
+      Handle testWebGl("",
+                       SDL_WINDOWPOS_UNDEFINED,
+                       SDL_WINDOWPOS_UNDEFINED,
+                       100, 100, win_flags_hidden);
+      if (testWebGl.isInitialized())
+      {
+         PRINT_DEBUG("success!" << endl);
+         return;
+      }
+   }
+#endif
 }
 
 bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
@@ -181,35 +247,8 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
 #endif
    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
-   Uint32 win_gl_ctx = 0;
-#ifndef __EMSCRIPTEN__
-   if (!legacyGlOnly)
-   {
-      // Try and probe for a core/compatibility context. Needed for Mac OS X,
-      // which will only support OpenGL 2.1 if you don't create a core context.
-      win_gl_ctx = probeGLContextSupport();
-   }
-#else
-   win_gl_ctx = SDL_GL_CONTEXT_PROFILE_ES;
-#endif
-   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, win_gl_ctx);
-   if (GetMultisample() > 0)
-   {
-      SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);
-      SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
-      cerr << "Creating window..." << flush;
-   }
+   probeGLContextSupport(legacyGlOnly);
    handle.reset(new Handle(title, x, y, w, h, win_flags));
-   if (GetMultisample() > 0 && !handle->isInitialized())
-   {
-      // Antialiasing support might not be available on all platforms.
-      PRINT_DEBUG("failed." << endl);
-      PRINT_DEBUG("Disabling antialiasing and trying again..." << flush);
-      SetMultisample(0);
-      SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 0);
-      SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 0);
-      handle.reset(new Handle(title, x, y, w, h, win_flags));
-   }
 
    // at this point, window should be up
    if (!handle->isInitialized())
@@ -274,6 +313,7 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
                << "." << (int)sdl_ver.patch << std::endl);
 
    renderer.reset(new gl3::MeshRenderer);
+   renderer->setSamplesMSAA(GetMultisample());
 #ifndef __EMSCRIPTEN__
    if (!GLEW_VERSION_1_1)
    {
