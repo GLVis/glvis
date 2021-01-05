@@ -831,17 +831,3 @@ void SdlWindow::swapBuffer()
 {
    SDL_GL_SwapWindow(handle->hwnd);
 }
-
-std::string SdlWindow::getHelpString()
-{
-   std::ostringstream oss;
-   help_fnc_(oss);
-   return oss.str();
-}
-
-void SdlWindow::setHelpFunction(HelpFnc f)
-{
-   help_fnc_ = f;
-   onKeyDown['h'] = [f](GLenum /*unused*/) { f(std::cout); };
-   onKeyDown['H'] = [f](GLenum /*unused*/) { f(std::cout); };
-};
