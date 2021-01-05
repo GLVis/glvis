@@ -20,6 +20,8 @@ std::string plot_caption;
 std::string extra_caption; // used in extern context
 mfem::GeometryRefiner GLVisGeometryRefiner; // used in extern context
 
+static VisualizationSceneScalarData * vs{nullptr};
+
 namespace js
 {
 
@@ -78,8 +80,8 @@ bool startVisualization(const std::string input, const std::string data_type,
       return false;
    }
 
-   VisualizationSceneScalarData * vs;
 
+   delete vs;
    double mesh_range = -1.0;
    if (field_type == 0 || field_type == 2)
    {
@@ -206,6 +208,88 @@ bool startVisualization(const std::string input, const std::string data_type,
    return true;
 }
 
+
+int updateVisualization(std::string data_type, std::string stream)
+{
+   std::stringstream ss(stream);
+
+   if (data_type != "solution")
+   {
+      std::cerr << "unsupported data type '" << data_type << "' for stream update" <<
+                std::endl;
+      return 1;
+   }
+
+   auto * new_m = new Mesh(ss, 1, 0, stream_state.fix_elem_orient);
+   auto * new_g = new GridFunction(new_m, ss);
+
+   double mesh_range = -1.0;
+   /*
+   if (new_g == nullptr)
+   {
+      SetMeshSolution(new_m, new_g, false);
+      mesh_range = new_g->Max() + 1.0;
+   }
+   */
+
+   if (new_m->SpaceDimension() == stream_state.mesh->SpaceDimension() &&
+       new_g->VectorDim() == stream_state.grid_f->VectorDim())
+   {
+      if (new_m->SpaceDimension() == 2)
+      {
+         if (new_g->VectorDim() == 1)
+         {
+            VisualizationSceneSolution *vss =
+               dynamic_cast<VisualizationSceneSolution *>(vs);
+            new_g->GetNodalValues(stream_state.sol);
+            vss->NewMeshAndSolution(new_m, &stream_state.sol, new_g);
+         }
+         else
+         {
+            VisualizationSceneVector *vsv =
+               dynamic_cast<VisualizationSceneVector *>(vs);
+            vsv->NewMeshAndSolution(*new_g);
+         }
+      }
+      else
+      {
+         if (new_g->VectorDim() == 1)
+         {
+            VisualizationSceneSolution3d *vss =
+               dynamic_cast<VisualizationSceneSolution3d *>(vs);
+            new_g->GetNodalValues(stream_state.sol);
+            vss->NewMeshAndSolution(new_m, &stream_state.sol, new_g);
+         }
+         else
+         {
+            new_g = ProjectVectorFEGridFunction(new_g);
+            VisualizationSceneVector3d *vss =
+               dynamic_cast<VisualizationSceneVector3d *>(vs);
+            vss->NewMeshAndSolution(new_m, new_g);
+         }
+      }
+      if (mesh_range > 0.0)
+      {
+         vs->SetValueRange(-mesh_range, mesh_range);
+      }
+
+      delete stream_state.grid_f;
+      stream_state.grid_f = new_g;
+      delete stream_state.mesh;
+      stream_state.mesh = new_m;
+
+      SendExposeEvent();
+      return 0;
+   }
+   else
+   {
+      cout << "Stream: field type does not match!" << endl;
+      delete new_g;
+      delete new_m;
+      return 1;
+   }
+}
+
 void iterVisualization()
 {
    GetAppWindow()->mainIter();
@@ -257,6 +341,7 @@ namespace em = emscripten;
 EMSCRIPTEN_BINDINGS(js_funcs)
 {
    em::function("startVisualization", &js::startVisualization);
+   em::function("updateVisualization", &js::updateVisualization);
    em::function("iterVisualization", &js::iterVisualization);
    em::function("sendExposeEvent", &SendExposeEvent);
    em::function("disableKeyHanding", &js::disableKeyHandling);
