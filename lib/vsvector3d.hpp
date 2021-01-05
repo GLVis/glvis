@@ -43,6 +43,8 @@ public:
 
    virtual ~VisualizationSceneVector3d();
 
+   virtual std::string GetHelpString() const;
+
    void NPressed();
    virtual void PrepareFlat();
    virtual void Prepare();

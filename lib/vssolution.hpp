@@ -85,6 +85,8 @@ public:
 
    virtual ~VisualizationSceneSolution();
 
+   virtual std::string GetHelpString() const;
+
    void SetGridFunction(GridFunction & u) { rsol = &u; }
 
    void NewMeshAndSolution(Mesh *new_m, Vector *new_sol,
