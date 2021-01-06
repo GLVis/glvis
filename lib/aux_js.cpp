@@ -237,15 +237,7 @@ int updateVisualization(std::string data_type, std::string stream)
 
    auto * new_m = new Mesh(ss, 1, 0, stream_state.fix_elem_orient);
    auto * new_g = new GridFunction(new_m, ss);
-
    double mesh_range = -1.0;
-   /*
-   if (new_g == nullptr)
-   {
-      SetMeshSolution(new_m, new_g, false);
-      mesh_range = new_g->Max() + 1.0;
-   }
-   */
 
    if (new_m->SpaceDimension() == stream_state.mesh->SpaceDimension() &&
        new_g->VectorDim() == stream_state.grid_f->VectorDim())
