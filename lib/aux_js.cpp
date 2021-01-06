@@ -83,8 +83,9 @@ bool startVisualization(const std::string input, const std::string data_type,
       return false;
    }
 
-
    delete vs;
+   vs = nullptr;
+
    double mesh_range = -1.0;
    if (field_type == 0 || field_type == 2)
    {
