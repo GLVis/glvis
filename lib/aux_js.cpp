@@ -20,7 +20,7 @@ std::string plot_caption;
 std::string extra_caption; // used in extern context
 mfem::GeometryRefiner GLVisGeometryRefiner; // used in extern context
 
-static VisualizationSceneScalarData * vs{nullptr};
+static VisualizationSceneScalarData * vs = nullptr;
 
 namespace js
 {
