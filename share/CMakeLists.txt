@@ -18,5 +18,5 @@ add_custom_command(
     DEPENDS logo.rgba
     COMMENT "Generating logo.rgba.bin.o")
 
-add_library(glvis_logo OBJECT
+add_library(glvis_logo STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/logo.rgba.bin.cpp)
