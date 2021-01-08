@@ -121,7 +121,7 @@ protected:
          }
          return *this;
       }
-      operator GLuint() { return hnd; }
+      operator GLuint() const { return hnd; }
    };
 
    static void boCleanup(GLuint vbo_hnd)
@@ -137,6 +137,11 @@ protected:
    static void prgmCleanup(GLuint prgm)
    {
       glDeleteProgram(prgm);
+   }
+
+   static void shdrCleanup(GLuint shdr)
+   {
+       glDeleteShader(shdr);
    }
 
    static void vaoCleanup(GLuint vao)
@@ -164,6 +169,7 @@ public:
    using DispListHandle = Handle<dspListCleanup>;
    using VtxArrayHandle = Handle<vaoCleanup>;
    using ShaderPrgmHandle = Handle<prgmCleanup>;
+   using ShaderHandle = Handle<shdrCleanup>;
    using TextureHandle = Handle<texCleanup>;
    using FBOHandle = Handle<fboCleanup>;
    using RenderBufHandle = Handle<rboCleanup>;
@@ -266,6 +272,8 @@ class MeshRenderer
 
    bool feat_use_fbo_antialias;
    void init();
+
+   void renderImpl(GlDrawable* drawable);
 public:
    MeshRenderer()
       : msaa_enable(false)

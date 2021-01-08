@@ -15,6 +15,7 @@
 
 #include <regex>
 #include <type_traits>
+#include <unordered_set>
 
 #ifdef __EMSCRIPTEN__
 // TODO: for webgl glsl the version ends in "es": #version GLSL_VER es
@@ -93,227 +94,39 @@ void clearVtxAttrLayout()
    AttrTexcoord<TVtx>::clear();
 }
 
-std::string formatShaderString(const std::string &shader_string,
-                               GLenum shader_type, int glsl_version)
-{
-   std::string formatted = shader_string;
-
-   // replace some identifiers depending on the version of glsl we're using
-   if (glsl_version >= 130)
-   {
-      if (shader_type == GL_VERTEX_SHADER)
-      {
-         formatted = std::regex_replace(formatted, std::regex("attribute"), "in");
-         formatted = std::regex_replace(formatted, std::regex("varying"), "out");
-      }
-
-      else if (shader_type == GL_FRAGMENT_SHADER)
-      {
-         formatted = std::regex_replace(formatted, std::regex("varying"), "in");
-
-         // requires GL_ARB_explicit_attrib_location extension or GLSL 3.30
-         // although gl_FragColor was deprecated in GLSL 1.3
-         if (glsl_version > 130 && glsl_version < 330)
-         {
-            formatted = "out vec4 fragColor;\n" + formatted;
-            formatted = std::regex_replace(formatted, std::regex("gl_FragColor"),
-                                           "fragColor");
-         }
-         else if (glsl_version >= 330)
-         {
-            formatted = "layout(location = 0) out vec4 fragColor;\n" + formatted;
-            formatted = std::regex_replace(formatted, std::regex("gl_FragColor"),
-                                           "fragColor");
-         }
-      }
-
-      else
-      {
-         std::cerr << "buildShaderString: unknown shader type" << std::endl;
-         return {};
-      }
-
-      formatted = std::regex_replace(formatted, std::regex("texture2D"), "texture");
-   }
-
-   if (GLDevice::useLegacyTextureFmts())
-   {
-      formatted = "#define USE_ALPHA\n" + formatted;
-   }
-   // add the header
-   formatted = std::regex_replace(GLSL_HEADER, std::regex("GLSL_VER"),
-                                  std::to_string(glsl_version)) + formatted;
-#ifdef __EMSCRIPTEN__
-   // special prepend for WebGL 2 shaders
-   if (glsl_version == 300)
-   {
-      formatted = "#version 300 es\n" + formatted;
-   }
-#endif
-
-   return formatted;
-}
-
-GLuint compileShaderString(const std::string &shader_str, GLenum shader_type)
-{
-   int shader_len = shader_str.length();
-   const char *shader_cstr = shader_str.c_str();
-
-   GLuint shader = glCreateShader(shader_type);
-   glShaderSource(shader, 1, &shader_cstr, &shader_len);
-   glCompileShader(shader);
-
-   GLint stat;
-   glGetShaderiv(shader, GL_COMPILE_STATUS, &stat);
-   // glGetObjectParameteriv
-   if (stat == GL_FALSE)
-   {
-      std::cerr << "failed to compile shader" << std::endl;
-      int err_len;
-      glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &err_len);
-      char *error_text = new char[err_len];
-      glGetShaderInfoLog(shader, err_len, &err_len, error_text);
-      std::cerr << error_text << std::endl;
-      delete[] error_text;
-      return 0;
-   }
-   return shader;
-}
-
-GLuint compileRawShaderString(const std::string &shader_string,
-                              GLenum shader_type, int glsl_version)
-{
-   std::string formatted = formatShaderString(shader_string, shader_type,
-                                              glsl_version);
-   // std::cout << "compiling '''" << formatted << "...";
-   GLuint shader_ref = compileShaderString(formatted, shader_type);
-   // if (shader_ref != 0) { std::cerr << "successfully compiled shader" << std::endl; }
-   return shader_ref;
-}
-
-bool linkShaders(GLuint prgm, const std::vector<GLuint> &shaders)
-{
-   // explicitly specify attrib positions so we don't have to reset VAO bindings
-   // when switching programs
-
-   // for OSX, attrib 0 must be bound to render an object
-   glBindAttribLocation(prgm, CoreGLDevice::ATTR_VERTEX, "vertex");
-   glBindAttribLocation(prgm, CoreGLDevice::ATTR_TEXT_VERTEX, "textVertex");
-   glBindAttribLocation(prgm, CoreGLDevice::ATTR_NORMAL, "normal");
-   glBindAttribLocation(prgm, CoreGLDevice::ATTR_COLOR, "color");
-   glBindAttribLocation(prgm, CoreGLDevice::ATTR_TEXCOORD0, "texCoord0");
-
-   for (GLuint i : shaders)
-   {
-      glAttachShader(prgm, i);
-   }
-   glLinkProgram(prgm);
-
-   GLint stat;
-   glGetProgramiv(prgm, GL_LINK_STATUS, &stat);
-   if (stat == GL_FALSE)
-   {
-      cerr << "fatal: Shader linking failed" << endl;
-   }
-   return (stat == GL_TRUE);
-}
-
 bool CoreGLDevice::compileShaders()
 {
-   std::string verStr = (char*)glGetString(GL_VERSION);
-   int ver_major, ver_minor;
-   int vs_idx = verStr.find_first_of(".");
-   ver_major = std::stoi(verStr.substr(vs_idx - 1, vs_idx));
-   ver_minor = std::stoi(verStr.substr(vs_idx + 1, 1));
-   int opengl_ver = ver_major * 100 + ver_minor * 10;
-   int glsl_ver = -1;
+   std::unordered_map<int, std::string> attribMap =
+   {
+       { CoreGLDevice::ATTR_VERTEX, "vertex"},
+       { CoreGLDevice::ATTR_TEXT_VERTEX, "textVertex"},
+       { CoreGLDevice::ATTR_NORMAL, "normal"},
+       { CoreGLDevice::ATTR_COLOR, "color"},
+       { CoreGLDevice::ATTR_TEXCOORD0, "texCoord0"}
+   };
 
-#ifndef __EMSCRIPTEN__
-   // The GLSL version is the same as the OpenGL version when the OpenGL
-   // version is >= 3.30, otherwise it is:
-   //
-   // GL Version | GLSL Version
-   // -------------------------
-   //    2.0     |   1.10
-   //    2.1     |   1.20
-   //    3.0     |   1.30
-   //    3.1     |   1.40
-   //    3.2     |   1.50
-
-   if (opengl_ver < 330)
+   if (!default_prgm.create(DEFAULT_VS, DEFAULT_FS, attribMap, 1))
    {
-      if (ver_major == 2)
-      {
-         glsl_ver = opengl_ver - 90;
-      }
-      else if (ver_major == 3)
-      {
-         glsl_ver = opengl_ver - 170;
-      }
-      else
-      {
-         std::cerr << "fatal: unsupported OpenGL version " << opengl_ver << std::endl;
-         return false;
-      }
-   }
-   else
-   {
-      glsl_ver = opengl_ver;
-   }
-#else
-   // GL Version | WebGL Version | GLSL Version
-   //    2.0     |      1.0      |   1.00 ES
-   //    3.0     |      2.0      |   3.00 ES
-   //    3.1     |               |   3.10 ES
-   if (opengl_ver < 300)
-   {
-      glsl_ver = 100;
-   }
-   else
-   {
-      glsl_ver = 300;
-   }
-#endif
-   std::cerr << "Using GLSL " << glsl_ver << std::endl;
-
-   GLuint default_vs = compileRawShaderString(DEFAULT_VS, GL_VERTEX_SHADER,
-                                              glsl_ver);
-   GLuint default_fs = compileRawShaderString(DEFAULT_FS, GL_FRAGMENT_SHADER,
-                                              glsl_ver);
-
-   default_prgm = glCreateProgram();
-   if (!linkShaders(default_prgm, {default_vs, default_fs}))
-   {
-      std::cerr << "Failed to link shaders for the default shader program" <<
+      std::cerr << "Failed to create the default shader program." <<
                 std::endl;
-      glDeleteProgram(default_prgm);
-      default_prgm = 0;
       return false;
    }
 
 #ifndef __EMSCRIPTEN__
    if (GLEW_EXT_transform_feedback || GLEW_VERSION_3_0)
    {
-      feedback_prgm = glCreateProgram();
       const char * xfrm_varyings[] =
       {
          "gl_Position",
          "fColor",
          "fClipCoord",
       };
-      glTransformFeedbackVaryings(feedback_prgm, 3, xfrm_varyings,
+      glTransformFeedbackVaryings(feedback_prgm.getProgramId(), 3, xfrm_varyings,
                                   GL_INTERLEAVED_ATTRIBS);
 
-      GLuint printing_vs = compileRawShaderString(PRINTING_VS, GL_VERTEX_SHADER,
-                                                  glsl_ver);
-      GLuint printing_fs = compileRawShaderString(PRINTING_FS, GL_FRAGMENT_SHADER,
-                                                  glsl_ver);
-
-      if (!linkShaders(feedback_prgm, {printing_vs, printing_fs}))
+      if (!feedback_prgm.create(PRINTING_VS, PRINTING_FS, attribMap, 1))
       {
-         std::cerr << "failed to link shaders for the printing program" << std::endl;
-         glDeleteProgram(feedback_prgm);
-         feedback_prgm = 0;
+         std::cerr << "Failed to create the printing capture program." << std::endl;
          return false;
       }
    }
@@ -324,63 +137,40 @@ bool CoreGLDevice::compileShaders()
 
 void CoreGLDevice::initializeShaderState(CoreGLDevice::RenderMode mode)
 {
-   GLuint curr_prgm = 0;
    if (mode == RenderMode::Default)
    {
-      glUseProgram(default_prgm);
-      curr_prgm = default_prgm;
+      default_prgm.bind();
+      uniforms = default_prgm.getUniformMap();
    }
    else if (mode == RenderMode::Feedback)
    {
-      glUseProgram(feedback_prgm);
-      curr_prgm = feedback_prgm;
+      feedback_prgm.bind();
+      uniforms = feedback_prgm.getUniformMap();
    }
-   uniforms.clear();
-   // initialize uniform map
-   int num_unifs;
-   glGetProgramiv(curr_prgm, GL_ACTIVE_UNIFORMS, &num_unifs);
-   std::unordered_map<std::string, bool> uniform_query{};
    for (const auto& uf : unif_list)
    {
-      uniform_query.emplace(uf, false);
-   }
-   for (int i = 0; i < num_unifs; i++)
-   {
-      const size_t max_length = 100;
-      char unif_name[max_length];
-      GLsizei name_length;
-      GLint gl_size;
-      GLenum gl_type;
-      glGetActiveUniform(curr_prgm, i, max_length, &name_length, &gl_size, &gl_type,
-                         unif_name);
-      auto it = uniform_query.find(std::string(unif_name, name_length));
-      if (it == uniform_query.end())
-      {
+       if (uniforms.find(uf) == uniforms.end())
+       {
 #ifdef GLVIS_DEBUG
-         std::cerr << "Warning: unexpected uniform \""
-                   << std::string(unif_name, name_length)
-                   << "\" found in shader." << std::endl;
-#endif
-      }
-      else
-      {
-         it->second = true;
-         GLuint uf_idx = glGetUniformLocation(curr_prgm, it->first.c_str());
-         uniforms.emplace(it->first, uf_idx);
-      }
-   }
-   for (const auto& uf : uniform_query)
-   {
-      if (!uf.second)
-      {
-#ifdef GLVIS_DEBUG
-         std::cerr << "Uniform \"" << uf.first
+         std::cerr << "Uniform \"" << uf
                    << "\" missing in shader, ignoring." << std::endl;
 #endif
          // set uniform index to -1 so glUniform ignores data
-         uniforms.emplace(uf.first, -1);
-      }
+         uniforms.emplace(uf, -1);
+       }
    }
+#ifdef GLVIS_DEBUG
+   unordered_set<string> expectedUnifs(unif_list.begin(), unif_list.end());
+   for (const auto& pairunif : uniforms)
+   {
+       if (expectedUnifs.find(pairunif.first) == expectedUnifs.end())
+       {
+         std::cerr << "Warning: unexpected uniform \""
+                   << pairunif.first
+                   << "\" found in shader." << std::endl;
+       }
+   }
+#endif
    glUniform1i(uniforms["colorTex"], 0);
    glUniform1i(uniforms["alphaTex"], 1);
    use_clip_plane = false;

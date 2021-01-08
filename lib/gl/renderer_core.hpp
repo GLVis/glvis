@@ -12,6 +12,7 @@
 #ifndef GLVIS_RENDERER_CORE_HPP
 #define GLVIS_RENDERER_CORE_HPP
 #include "renderer.hpp"
+#include "shader.hpp"
 
 namespace gl3
 {
@@ -37,8 +38,8 @@ public:
    };
 
 private:
-   ShaderPrgmHandle default_prgm;
-   ShaderPrgmHandle feedback_prgm;
+   ShaderProgram default_prgm;
+   ShaderProgram feedback_prgm;
    VtxArrayHandle global_vao;
 
    BufObjHandle feedback_vbo;
@@ -79,7 +80,7 @@ private:
 
 public:
    CoreGLDevice()
-      : default_prgm(0), feedback_prgm(0), global_vao(0)
+      : global_vao(0)
    {
       vbos.emplace_back(VBOData{}); // dummy for index 0
    }
