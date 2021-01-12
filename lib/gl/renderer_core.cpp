@@ -17,12 +17,6 @@
 #include <type_traits>
 #include <unordered_set>
 
-#ifdef __EMSCRIPTEN__
-// TODO: for webgl glsl the version ends in "es": #version GLSL_VER es
-const std::string GLSL_HEADER = "precision mediump float;\n";
-#else
-const std::string GLSL_HEADER = "#version GLSL_VER\n";
-#endif
 // weird but loads them inline
 
 const std::string BLINN_PHONG_FS =
@@ -135,18 +129,10 @@ bool CoreGLDevice::compileShaders()
    return true;
 }
 
-void CoreGLDevice::initializeShaderState(CoreGLDevice::RenderMode mode)
+void CoreGLDevice::initializeShaderState(const ShaderProgram& prog)
 {
-   if (mode == RenderMode::Default)
-   {
-      default_prgm.bind();
-      uniforms = default_prgm.getUniformMap();
-   }
-   else if (mode == RenderMode::Feedback)
-   {
-      feedback_prgm.bind();
-      uniforms = feedback_prgm.getUniformMap();
-   }
+   prog.bind();
+   uniforms = prog.getUniformMap();
    for (const auto& uf : unif_list)
    {
        if (uniforms.find(uf) == uniforms.end())

@@ -43,10 +43,7 @@ public:
 
     GLuint getProgramId() const { return program_id; }
 
-    void bind()
-    {
-        glUseProgram(program_id);
-    }
+    void bind() const { glUseProgram(program_id); }
 
 private:
 

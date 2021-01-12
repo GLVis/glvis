@@ -44,12 +44,6 @@ private:
 
    BufObjHandle feedback_vbo;
 
-   enum class RenderMode
-   {
-      Default,
-      Feedback
-   };
-
    const static std::vector<std::string> unif_list;
 
    std::unordered_map<std::string, GLuint> uniforms;
@@ -68,7 +62,7 @@ private:
    std::vector<VBOData> vbos;
 
    bool compileShaders();
-   void initializeShaderState(RenderMode mode);
+   void initializeShaderState(const ShaderProgram& prog);
 
    template<typename T>
    void drawDeviceBufferImpl(GLenum shape, int count, bool indexed);
@@ -105,13 +99,19 @@ public:
    void initXfbMode() override
    {
       glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, feedback_vbo);
-      initializeShaderState(RenderMode::Feedback);
+      initializeShaderState(feedback_prgm);
       glEnable(GL_RASTERIZER_DISCARD);
    }
    void exitXfbMode() override
    {
       glDisable(GL_RASTERIZER_DISCARD);
-      initializeShaderState(RenderMode::Default);
+      initializeShaderState(default_prgm);
+      glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
+   }
+   void bindExternalProgram(const ShaderProgram& prog)
+   {
+      glDisable(GL_RASTERIZER_DISCARD);
+      initializeShaderState(prog);
       glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
    }
    void captureXfbBuffer(CaptureBuffer& cbuf, int hnd) override;
