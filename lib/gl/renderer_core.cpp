@@ -170,7 +170,7 @@ void CoreGLDevice::init()
       std::cerr << "Unable to initialize CoreGLDevice." << std::endl;
       return;
    }
-   this->initializeShaderState(RenderMode::Default);
+   this->initializeShaderState(default_prgm);
    if (GLEW_VERSION_3_0 || GLEW_ARB_vertex_array_object)
    {
       GLuint hnd_vao;
