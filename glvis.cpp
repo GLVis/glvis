@@ -106,6 +106,7 @@ void CloseInputStreams(bool);
 GridFunction *ProjectVectorFEGridFunction(GridFunction*);
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
+// 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
 bool GLVisInitVis(int field_type)
 {
    if (field_type < 0 || field_type > 2)
@@ -140,10 +141,6 @@ bool GLVisInitVis(int field_type)
       if (mesh->SpaceDimension() == 2)
       {
          VisualizationSceneSolution *vss;
-         if (field_type == 2)
-         {
-            paletteSet(4);
-         }
          if (normals.Size() > 0)
          {
             vs = vss = new VisualizationSceneSolution(*mesh, sol, &normals);
@@ -156,6 +153,12 @@ bool GLVisInitVis(int field_type)
          {
             vss->SetGridFunction(*grid_f);
          }
+         if (field_type == 2)
+         {
+            // Use the 'bone' palette when visualizing a 2D mesh only
+            paletteSet(4);
+         }
+         // Otherwise, the 'jet-like' palette is used in 2D see vssolution.cpp
          if (field_type == 2)
          {
             vs->OrthogonalProjection = 1;
@@ -175,13 +178,16 @@ bool GLVisInitVis(int field_type)
          {
             if (mesh->Dimension() == 3)
             {
+               // Use the 'white' palette when visualizing a 3D volume mesh only
                paletteSet(11);
                vss->SetLightMatIdx(4);
             }
             else
             {
+               // Use the 'bone' palette when visualizing a surface mesh only
                paletteSet(4);
             }
+            // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
             vss->ToggleDrawAxes();
             vss->ToggleDrawMesh();
          }
