@@ -155,15 +155,12 @@ bool GLVisInitVis(int field_type)
          }
          if (field_type == 2)
          {
-            // Use the 'bone' palette when visualizing a 2D mesh only
-            paletteSet(4);
-         }
-         // Otherwise, the 'jet-like' palette is used in 2D see vssolution.cpp
-         if (field_type == 2)
-         {
             vs->OrthogonalProjection = 1;
             vs->SetLight(false);
             vs->Zoom(1.8);
+            // Use the 'bone' palette when visualizing a 2D mesh only (otherwise
+            // the 'jet-like' palette is used in 2D, see vssolution.cpp).
+            paletteSet(4);
          }
       }
       else if (mesh->SpaceDimension() == 3)
