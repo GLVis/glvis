@@ -54,6 +54,8 @@ bool startVisualization(const std::string input, const std::string data_type,
                         int w, int h)
 {
    std::stringstream ss(input);
+
+   // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
    const int field_type = ReadStream(ss, data_type);
 
    // reset antialiasing
@@ -96,13 +98,6 @@ bool startVisualization(const std::string input, const std::string data_type,
       if (stream_state.mesh->SpaceDimension() == 2)
       {
          VisualizationSceneSolution * vss;
-         if (field_type == 2)
-         {
-            // Use the 'bone' palette when visualizing a 2D mesh only
-            paletteSet(4);
-         }
-         // Otherwise, the 'jet-like' palette is used in 2D see vssolution.cpp
-
          if (stream_state.normals.Size() > 0)
          {
             vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
@@ -121,6 +116,9 @@ bool startVisualization(const std::string input, const std::string data_type,
             vs->OrthogonalProjection = 1;
             vs->SetLight(0);
             vs->Zoom(1.8);
+            // Use the 'bone' palette when visualizing a 2D mesh only (otherwise
+            // the 'jet-like' palette is used in 2D, see vssolution.cpp).
+            paletteSet(4);
          }
       }
       else if (stream_state.mesh->SpaceDimension() == 3)
