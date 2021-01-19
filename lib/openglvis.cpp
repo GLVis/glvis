@@ -121,7 +121,6 @@ VisualizationScene::VisualizationScene()
    ViewCenterY = 0.0;
 
    background = BG_WHITE;
-   GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
    _use_cust_l0_pos = false;
    light_mat_idx = 3;
    use_light = true;
@@ -183,12 +182,10 @@ void VisualizationScene::ToggleBackground()
    if (background == BG_BLK)
    {
       background = BG_WHITE;
-      GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
    }
    else
    {
       background = BG_BLK;
-      GetAppWindow()->getRenderer().setClearColor(0.f, 0.f, 0.f, 1.f);
    }
 }
 
