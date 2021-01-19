@@ -769,8 +769,7 @@ void VisualizationSceneSolution3d::Init()
 
    node_pos = new double[mesh->GetNV()];
 
-   paletteSet(12); // use the 'vivid' palette in 3D
-   SetUseTexture(0);
+   palette.SetPalette(12); // use the 'vivid' palette in 3D
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
    CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*x[0]+(0.5+eps)*x[1]);
@@ -3596,7 +3595,7 @@ gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
    params.use_clip_plane = cplane;
    double* cp_eqn = CuttingPlane->Equation();
    params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};
-   params.contains_translucent = MatAlpha < 1.0;
+   params.contains_translucent = matAlpha < 1.0;
 
    if (drawlsurf)
    {

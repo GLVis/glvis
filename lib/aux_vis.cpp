@@ -36,9 +36,6 @@ using namespace mfem;
 int visualize = 0;
 VisualizationScene * locscene;
 
-float MatAlpha = 1.0;
-float MatAlphaCenter = 0.5;
-
 #ifdef GLVIS_MULTISAMPLE
 static int glvis_multisample = GLVIS_MULTISAMPLE;
 #else
@@ -82,23 +79,19 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
       {
          return 1;
       }
-
    }
    else
    {
-      wnd->clearEvents();
-      paletteRebind();
+      cout << "Error: visualization is already up." << endl;
+      return 1;
    }
 
 #ifdef GLVIS_DEBUG
    cout << "Window should be up" << endl;
 #endif
-   paletteInit();
    InitFont();
    wnd->getRenderer().setLineWidth(line_w);
    wnd->getRenderer().setLineWidthMS(line_w_aa);
-
-   SetUseTexture(0);
 
    // auxReshapeFunc (MyReshape); // not needed, MyExpose calls it
    // auxReshapeFunc (NULL);
@@ -382,6 +375,10 @@ void MyReshape(GLsizei w, GLsizei h)
 void MyExpose(GLsizei w, GLsizei h)
 {
    MyReshape (w, h);
+   GLuint color_tex = locscene->GetPalette().GetColorTexture();
+   GLuint alpha_tex = locscene->GetPalette().GetAlphaTexture();
+   wnd->getRenderer().setColorTexture(color_tex);
+   wnd->getRenderer().setAlphaTexture(alpha_tex);
    gl3::SceneInfo frame = locscene->GetSceneObjs();
    for (auto drawable_ptr : frame.needs_buffering)
    {
@@ -1457,9 +1454,6 @@ void SetWindowTitle(const char *title)
 }
 
 int MySetColorLogscale = 0;
-extern int RepeatPaletteTimes;
-int PaletteNumColors   = 0;
-int UseTexture         = 0;
 
 double GetColorCoord(double val, double min, double max)
 {
@@ -1485,21 +1479,22 @@ double GetColorCoord(double val, double min, double max)
 
 void GetColorFromVal(double val, float * rgba)
 {
-   int palSize = paletteGetSize();
+   int palSize = locscene->GetPalette().GetSize();
+   int RepeatPaletteTimes = locscene->GetPalette().GetRepeatTimes();
+   const double* palData = locscene->GetPalette().GetData();
    val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
    int i = (int) floor( val );
    double t = val - i;
 
-   double* pal;
+   const double* pal;
    if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
        ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
    {
-      pal = paletteGet() + 3 * ( i % (palSize-1) );
+      pal = palData + 3 * ( i % (palSize-1) );
    }
    else
    {
-      pal = paletteGet() + 3 * ( (palSize-2) -
-                                 i % (palSize-1) );
+      pal = palData + 3 * ( (palSize-2) - i % (palSize-1) );
       t = 1.0 - t;
    }
    rgba[0] = (1.0 - t) * pal[0] + t * pal[3];
@@ -1523,22 +1518,18 @@ void MySetColor (gl3::GlBuilder& builder, double val)
 
 int GetUseTexture()
 {
-   return UseTexture;
+   return locscene->GetPalette().GetSmoothSetting();
 }
 
 void SetUseTexture(int ut)
 {
-   if (UseTexture != ut)
+   if (ut == 0)
    {
-      UseTexture = ut;
-      if (UseTexture == 0)
-      {
-         paletteUseDiscrete();
-      }
-      else
-      {
-         paletteUseSmooth();
-      }
+      locscene->GetPalette().UseDiscrete();
+   }
+   else
+   {
+      locscene->GetPalette().UseSmooth();
    }
 }
 

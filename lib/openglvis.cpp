@@ -125,6 +125,8 @@ VisualizationScene::VisualizationScene()
    _use_cust_l0_pos = false;
    light_mat_idx = 3;
    use_light = true;
+
+   palette.Init();
 }
 
 VisualizationScene::~VisualizationScene() {}
