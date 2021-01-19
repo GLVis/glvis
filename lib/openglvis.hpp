@@ -172,6 +172,17 @@ public:
 
    void SetLight0CustomPos(std::array<float, 4> pos);
    void ToggleBackground();
+   std::array<float, 4> GetBackgroundColor()
+   {
+      if (background == BG_BLK)
+      {
+         return { 0.f, 0.f, 0.f, 1.f };
+      }
+      else
+      {
+         return { 1.f, 1.f, 1.f, 1.f };
+      }
+   }
 
    void GenerateAlphaTexture()
    { palette.GenerateAlphaTexture(matAlpha, matAlphaCenter); }
