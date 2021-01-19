@@ -16,6 +16,7 @@
 #include "sdl.hpp"
 #include "gl/types.hpp"
 #include "material.hpp"
+#include "palettes.hpp"
 
 // Visualization header file
 
@@ -132,6 +133,8 @@ protected:
    int light_mat_idx;
    bool use_light;
 
+   PaletteState palette;
+
    gl3::RenderParams GetMeshDrawParams();
    glm::mat4 GetModelViewMtx();
 
@@ -163,6 +166,9 @@ public:
    glm::mat4 rotmat;
    glm::mat4 translmat;
 
+   float matAlpha = 1.0;
+   float matAlphaCenter = 0.5;
+
    virtual gl3::SceneInfo GetSceneObjs() = 0;
 
    void SetView(double theta, double phi);
@@ -185,6 +191,10 @@ public:
 
    void SetLight0CustomPos(std::array<float, 4> pos);
    void ToggleBackground();
+
+   PaletteState& GetPalette() { return palette; }
+   void GenerateAlphaTexture()
+   { palette.GenerateAlphaTexture(matAlpha, matAlphaCenter); }
 
    /// This is set by SetVisualizationScene
    int view;

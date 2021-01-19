@@ -684,7 +684,7 @@ int GLVisCommand::Execute()
       case PALETTE:
       {
          cout << "Command: palette: " << palette << endl;
-         paletteSet(palette-1);
+         (*vs)->GetPalette().SetPalette(palette-1);
          if (!GetUseTexture())
          {
             (*vs)->EventUpdateColors();
@@ -696,8 +696,8 @@ int GLVisCommand::Execute()
       case PALETTE_REPEAT:
       {
          cout << "Command: palette_repeat: " << palette_repeat << endl;
-         RepeatPaletteTimes = palette_repeat;
-         paletteInit();
+         (*vs)->GetPalette().SetRepeatTimes(palette_repeat);
+         (*vs)->GetPalette().Init();
 
          if (!GetUseTexture())
          {

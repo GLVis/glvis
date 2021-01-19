@@ -121,7 +121,7 @@ protected:
          }
          return *this;
       }
-      operator GLuint() { return hnd; }
+      operator GLuint() const { return hnd; }
    };
 
    static void boCleanup(GLuint vbo_hnd)
