@@ -62,12 +62,18 @@ bool startVisualization(const std::string input, const std::string data_type,
    GetAppWindow()->getRenderer().setAntialiasing(0);
 
    std::string line;
+   double minv = 0.0, maxv = 0.0;
    while (ss >> line)
    {
       if (line == "keys")
       {
          std::cout << "parsing 'keys'" << std::endl;
          ss >> stream_state.keys;
+      }
+      else if (line == "valuerange")
+      {
+         std::cout << "parsing 'valuerange'" << std::endl;
+         ss >> minv >> maxv;
       }
       else
       {
@@ -216,6 +222,11 @@ bool startVisualization(const std::string input, const std::string data_type,
    }
 
    CallKeySequence(stream_state.keys.c_str());
+
+   if (minv || maxv)
+   {
+      vs->SetValueRange(minv, maxv);
+   }
 
    SendExposeEvent();
    return true;
