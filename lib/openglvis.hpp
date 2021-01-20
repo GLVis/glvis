@@ -14,6 +14,7 @@
 
 #include <cmath>
 #include "sdl.hpp"
+#include "font.hpp"
 #include "gl/types.hpp"
 #include "material.hpp"
 #include "palettes.hpp"
@@ -134,6 +135,7 @@ protected:
    bool use_light;
 
    PaletteState palette;
+   GlVisFont* font = nullptr;
 
    gl3::RenderParams GetMeshDrawParams();
    glm::mat4 GetModelViewMtx();
@@ -202,6 +204,8 @@ public:
          return { 1.f, 1.f, 1.f, 1.f };
       }
    }
+
+   void SetFont(GlVisFont* fnt) { this->font = fnt; };
 
    PaletteState& GetPalette() { return palette; }
    void GenerateAlphaTexture()

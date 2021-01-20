@@ -19,11 +19,31 @@
 #include "font.hpp"
 #include "openglvis.hpp"
 
-/// Initializes the visualization and some keys.
-int InitVisualization(const char name[], int x, int y, int w, int h);
+class GLVisWindow
+{
+public:
+    /// Initializes the visualization and some keys.
+    GLVisWindow(std::string name, int x, int y, int w, int h, bool legacyGlOnly);
 
-void SetVisualizationScene(VisualizationScene * scene,
-                           int view = 3, const char *keys = NULL);
+    void SetVisualizationScene(VisualizationScene * scene,
+                               int view = 3, const char *keys = NULL);
+    void SetFont(const std::string& fn);
+
+    GlVisFont* getFont() { return &font; }
+
+    SdlWindow* getSdl() { return wnd.get(); }
+
+private:
+    void InitFont();
+    bool SetFont(const vector<std::string>& patterns, int height);
+    std::unique_ptr<SdlWindow> wnd;
+    VisualizationScene* locscene;
+
+    int visualize;
+    GlVisFont font;
+    std::string priority_font;
+    int font_size = 12;
+};
 
 /// Start the infinite visualization loop.
 void RunVisualization();
@@ -35,10 +55,8 @@ void MyExpose();
 
 void MainLoop();
 
-SdlWindow * GetAppWindow();
+[[deprecated]] SdlWindow * GetAppWindow();
 VisualizationScene * GetVisualizationScene();
-
-void SetLegacyGLOnly(bool status);
 
 void AddIdleFunc(void (*Func)(void));
 void RemoveIdleFunc(void (*Func)(void));
@@ -124,10 +142,5 @@ void SetLineWidth(float width);
 float GetLineWidth();
 void SetLineWidthMS(float width_ms);
 float GetLineWidthMS();
-
-void InitFont();
-GlVisFont * GetFont();
-bool SetFont(const vector<std::string>& patterns, int height);
-void SetFont(const std::string& fn);
 
 #endif

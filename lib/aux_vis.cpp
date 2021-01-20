@@ -14,6 +14,7 @@
 #include <fstream>
 #include <cmath>
 #include <ctime>
+#include <exception>
 
 #include "mfem.hpp"
 using namespace mfem;
@@ -45,12 +46,11 @@ static int glvis_multisample = -1;
 float line_w = 1.f;
 float line_w_aa = gl3::LINE_WIDTH_AA;
 
-SdlWindow * wnd = nullptr;
-bool wndLegacyGl = false;
+[[deprecated]] SdlWindow* wnd;
 
 SdlWindow * GetAppWindow()
 {
-   return wnd;
+    return wnd;
 }
 
 VisualizationScene * GetVisualizationScene()
@@ -58,38 +58,27 @@ VisualizationScene * GetVisualizationScene()
    return locscene;
 }
 
-void SetLegacyGLOnly(bool status)
-{
-   wndLegacyGl = true;
-}
-
 void MyExpose(GLsizei w, GLsizei h);
 void MyExpose();
 
-int InitVisualization (const char name[], int x, int y, int w, int h)
+GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool legacyGlOnly)
+    : locscene(nullptr)
 {
 
 #ifdef GLVIS_DEBUG
    cout << "OpenGL Visualization" << endl;
 #endif
-   if (!wnd)
+   wnd.reset(new SdlWindow());
+   if (!wnd->createWindow(name, x, y, w, h, legacyGlOnly))
    {
-      wnd = new SdlWindow();
-      if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
-      {
-         return 1;
-      }
+      throw std::runtime_error("Could not create an SDL window.");
    }
-   else
-   {
-      cout << "Error: visualization is already up." << endl;
-      return 1;
-   }
-
+   ::wnd = wnd.get();
 #ifdef GLVIS_DEBUG
    cout << "Window should be up" << endl;
 #endif
    InitFont();
+   wnd->getRenderer().setFont(&font);
    wnd->getRenderer().setLineWidth(line_w);
    wnd->getRenderer().setLineWidthMS(line_w_aa);
 
@@ -173,15 +162,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 #ifndef __EMSCRIPTEN__
    wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
    wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
-
-   if (locscene)
-   {
-      delete locscene;
-   }
 #endif
-   locscene = nullptr;
-
-   return 0;
 }
 
 void SendKeySequence(const char *seq)
@@ -293,10 +274,11 @@ void CallKeySequence(const char *seq)
 
 void InitIdleFuncs();
 
-void SetVisualizationScene(VisualizationScene * scene, int view,
-                           const char *keys)
+void GLVisWindow::SetVisualizationScene(VisualizationScene * scene, int view,
+                                        const char *keys)
 {
-   locscene = scene;
+   ::locscene = locscene = scene;
+   locscene->SetFont(&font);
    locscene -> view = view;
    if (view == 2)
    {
@@ -327,7 +309,7 @@ void RunVisualization()
 #endif
    InitIdleFuncs();
    delete locscene;
-   delete wnd;
+   //delete wnd;
    wnd = nullptr;
 }
 
@@ -1617,23 +1599,27 @@ vector<string> fc_font_patterns =
    "Helvetica:style=Regular",
 };
 
-constexpr int default_font_size = 12;
-int font_size = default_font_size;
+//constexpr int default_font_size = 12;
+//int font_size = default_font_size;
 
-GlVisFont glvis_font;
-std::string priority_font;
+//GlVisFont glvis_font;
+//std::string priority_font;
 
-void InitFont()
+void GLVisWindow::InitFont()
 {
    // This function is called after the window is created.
    GLenum alphaChannel =
       gl3::GLDevice::useLegacyTextureFmts() ? GL_ALPHA : GL_RED;
-   glvis_font.setAlphaChannel(alphaChannel);
+   int ppi_w, ppi_h;
+   wnd->getDpi(ppi_w, ppi_h);
+   bool is_hidpi = wnd->isHighDpi();
+   font.SetDPIParams(is_hidpi, ppi_w, ppi_h);
+   font.setAlphaChannel(alphaChannel);
    bool try_fc_patterns = true;
    if (!priority_font.empty())
    {
       if (SetFont({priority_font}, font_size) ||
-          glvis_font.LoadFont(priority_font, 0, font_size))
+          font.LoadFont(priority_font, 0, font_size))
       {
          try_fc_patterns = false;
       }
@@ -1652,18 +1638,13 @@ void InitFont()
               << endl;
       }
    }
-   wnd->getRenderer().setFontTexture(glvis_font.getFontTex());
+   wnd->getRenderer().setFontTexture(font.getFontTex());
 }
 
-GlVisFont * GetFont()
-{
-   return &glvis_font;
-}
-
-bool SetFont(const vector<std::string>& font_patterns, int height)
+bool GLVisWindow::SetFont(const vector<std::string>& font_patterns, int height)
 {
 #ifdef __EMSCRIPTEN__
-   return glvis_font.LoadFont("OpenSans.ttf", 0, height);
+   return font.LoadFont("OpenSans.ttf", 0, height);
 #else
    if (!FcInit())
    {
@@ -1726,7 +1707,7 @@ bool SetFont(const vector<std::string>& font_patterns, int height)
       FcFontSetDestroy(fs);
       if (font_file != std::string(""))
       {
-         if (glvis_font.LoadFont(font_file, font_index, height))
+         if (font.LoadFont(font_file, font_index, height))
          {
             break;
          }
@@ -1740,11 +1721,11 @@ bool SetFont(const vector<std::string>& font_patterns, int height)
 
    FcFini();
 
-   return glvis_font.isFontLoaded();
+   return font.isFontLoaded();
 #endif
 }
 
-void SetFont(const std::string& fn)
+void GLVisWindow::SetFont(const std::string& fn)
 {
    priority_font = fn;
    size_t pos = priority_font.rfind('-');

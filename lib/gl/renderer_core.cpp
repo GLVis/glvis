@@ -514,19 +514,19 @@ void CoreGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
                 buf.getIndices().data(), GL_STATIC_DRAW);
 }
 
-void CoreGLDevice::bufferToDevice(TextBuffer &t_buf)
+void CoreGLDevice::bufferToDevice(GlVisFont& font, TextBuffer &t_buf)
 {
    std::vector<float> buf_data;
-   float tex_w = GetFont()->getAtlasWidth();
-   float tex_h = GetFont()->getAtlasHeight();
+   float tex_w = font.getAtlasWidth();
+   float tex_h = font.getAtlasHeight();
    for (auto &e : t_buf)
    {
       float pen_x = e.ox, pen_y = e.oy;
       char prev_c = '\0';
       for (char c : e.text)
       {
-         const GlVisFont::glyph &g = GetFont()->GetTexChar(c);
-         pen_x += GetFont()->GetKerning(prev_c, c);
+         const GlVisFont::glyph &g = font.GetTexChar(c);
+         pen_x += font.GetKerning(prev_c, c);
          // note: subtract 1 to account for the padding in the texture glyphs
          float cur_x = pen_x + g.bear_x - 1;
          float cur_y = -pen_y - g.bear_y - 1;
@@ -626,7 +626,7 @@ void CoreGLDevice::drawDeviceBuffer(int hnd)
          cerr << "WARNING: Unhandled vertex layout " << vbos[hnd].layout << endl;
    }
 }
-void CoreGLDevice::drawDeviceBuffer(const TextBuffer& t_buf)
+void CoreGLDevice::drawDeviceBuffer(GlVisFont&, const TextBuffer& t_buf)
 {
    if (t_buf.getHandle() == 0) { return; }
    if (t_buf.count() == 0) { return; }

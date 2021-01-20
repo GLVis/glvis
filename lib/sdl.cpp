@@ -214,7 +214,7 @@ void SdlWindow::probeGLContextSupport(bool legacyGlOnly)
 #endif
 }
 
-bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
+bool SdlWindow::createWindow(const std::string& title, int x, int y, int w, int h,
                              bool legacyGlOnly)
 {
    if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
