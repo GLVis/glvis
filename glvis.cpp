@@ -48,14 +48,17 @@ int         window_x        = 0; // not a command line option
 int         window_y        = 0; // not a command line option
 int         window_w        = 400;
 int         window_h        = 350;
+bool        legacy_gl_ctx   = false;
 const char *window_title    = string_default;
 const char *c_plot_caption  = string_none;
+const char *font_name       = string_default;
 string      plot_caption;
 string      extra_caption;
 
 // Global variables
 int input = 1;
 StreamState stream_state;
+GLVisWindow * mainWindow = nullptr;
 VisualizationSceneScalarData *vs = NULL;
 communication_thread *comm_thread = NULL;
 
@@ -105,15 +108,31 @@ bool GLVisInitVis(int field_type)
    const char *win_title = (window_title == string_default) ?
                            window_titles[field_type] : window_title;
 
-   if (InitVisualization(win_title, window_x, window_y, window_w, window_h))
+   try
    {
-      cerr << "Initializing the visualization failed." << endl;
+       mainWindow = new GLVisWindow(win_title, window_x, window_y,
+                                    window_w, window_h, legacy_gl_ctx);
+   }
+   catch (std::runtime_error& ex)
+   {
+      cerr << "Initializing the visualization failed: " << endl
+           << ex.what() << endl;
       return false;
+   }
+   catch(...)
+   {
+       cerr << "Initializing the visualization failed - unknown error."
+            << endl;
+      return false;
+   }
+   if (font_name != string_default)
+   {
+       mainWindow->SetFont(font_name);
    }
 
    if (input_streams.Size() > 0)
    {
-      GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
+      mainWindow->getSdl()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
       glvis_command = new GLVisCommand(&vs, stream_state, &keep_attr);
       comm_thread = new communication_thread(input_streams);
    }
@@ -156,6 +175,8 @@ bool GLVisInitVis(int field_type)
          VisualizationSceneSolution3d * vss;
          vs = vss = new VisualizationSceneSolution3d(*stream_state.mesh,
                                                      stream_state.sol);
+         // HACK: below needs to be called before ToggleAxes
+         vs->SetFont(mainWindow->getFont());
          if (stream_state.grid_f)
          {
             vss->SetGridFunction(stream_state.grid_f.get());
@@ -235,11 +256,11 @@ bool GLVisInitVis(int field_type)
       }
       if (stream_state.mesh->SpaceDimension() == 2 && field_type == 2)
       {
-         SetVisualizationScene(vs, 2, stream_state.keys.c_str());
+         mainWindow->SetVisualizationScene(vs, 2, stream_state.keys.c_str());
       }
       else
       {
-         SetVisualizationScene(vs, 3, stream_state.keys.c_str());
+         mainWindow->SetVisualizationScene(vs, 3, stream_state.keys.c_str());
       }
    }
    return true;
@@ -863,14 +884,12 @@ int main (int argc, char *argv[])
    bool        mac           = false;
    const char *stream_file   = string_none;
    const char *script_file   = string_none;
-   const char *font_name     = string_default;
    int         portnum       = 19916;
    bool        secure        = socketstream::secure_default;
    int         multisample   = GetMultisample();
    double      line_width    = 1.0;
    double      ms_line_width = gl3::LINE_WIDTH_AA;
    int         geom_ref_type = Quadrature1D::ClosedUniform;
-   bool        legacy_gl_ctx = false;
 
    OptionsParser args(argc, argv);
 
@@ -986,10 +1005,6 @@ int main (int argc, char *argv[])
    {
       stream_state.keys = arg_keys;
    }
-   if (font_name != string_default)
-   {
-      SetFont(font_name);
-   }
    if (multisample != GetMultisample())
    {
       SetMultisample(multisample);
@@ -1005,10 +1020,6 @@ int main (int argc, char *argv[])
    if (c_plot_caption != string_none)
    {
       plot_caption = c_plot_caption;
-   }
-   if (legacy_gl_ctx == true)
-   {
-      SetLegacyGLOnly(legacy_gl_ctx);
    }
 
    GLVisGeometryRefiner.SetType(geom_ref_type);

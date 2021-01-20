@@ -236,9 +236,9 @@ void FFGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
    }
 }
 
-void FFGLDevice::bufferToDevice(TextBuffer&)
+void FFGLDevice::bufferToDevice(GlVisFont&, TextBuffer&)
 {
-   // we can't really do anything here can only compute offset matrix at draw
+   // we can't really do anything here - can only compute offset matrix at draw
 }
 
 void FFGLDevice::drawDeviceBuffer(int hnd)
@@ -266,13 +266,13 @@ void FFGLDevice::drawDeviceBuffer(int hnd)
    // glMultiTexCoord2f(GL_TEXTURE1, 0.f, 0.f);
 }
 
-void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)
+void FFGLDevice::drawDeviceBuffer(GlVisFont& font, const TextBuffer& buf)
 {
    glColor4fv(static_color.data());
    glNormal3f(0.f, 0.f, 1.f);
    glMultiTexCoord2f(GL_TEXTURE0, 0.f, 0.f);
-   float tex_w = GetFont()->getAtlasWidth();
-   float tex_h = GetFont()->getAtlasHeight();
+   float tex_w = font.getAtlasWidth();
+   float tex_h = font.getAtlasHeight();
    // Model-view transform:
    // - scale bounding boxes to relative clip-space/NDC coords
    // - add z-offset of -0.005 to reduce text hiding by mesh
@@ -298,8 +298,8 @@ void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)
       char prev_c = '\0';
       for (char c : e.text)
       {
-         const GlVisFont::glyph &g = GetFont()->GetTexChar(c);
-         pen_x += GetFont()->GetKerning(prev_c, c);
+         const GlVisFont::glyph &g = font.GetTexChar(c);
+         pen_x += font.GetKerning(prev_c, c);
          // note: subtract 1 to account for the padding in the texture glyphs
          float cur_x = pen_x + g.bear_x - 1;
          float cur_y = -pen_y - g.bear_y - 1;

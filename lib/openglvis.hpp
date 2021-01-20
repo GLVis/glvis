@@ -14,6 +14,7 @@
 
 #include <cmath>
 #include "sdl.hpp"
+#include "font.hpp"
 #include "gl/types.hpp"
 #include "material.hpp"
 #include "palettes.hpp"
@@ -87,6 +88,7 @@ protected:
    int light_mat_idx;
    bool use_light;
 
+   GlVisFont* font = nullptr;
 
    gl3::RenderParams GetMeshDrawParams();
    glm::mat4 GetModelViewMtx();
@@ -183,6 +185,8 @@ public:
          return { 1.f, 1.f, 1.f, 1.f };
       }
    }
+
+   void SetFont(GlVisFont* fnt) { this->font = fnt; };
 
    void GenerateAlphaTexture()
    { palette.GenerateAlphaTexture(matAlpha, matAlphaCenter); }

@@ -238,7 +238,7 @@ void MeshRenderer::render(const RenderQueue& queue)
       device->setNumLights(0);
       for (TextBuffer* buf : text_bufs)
       {
-         device->drawDeviceBuffer(*buf);
+         device->drawDeviceBuffer(*font, *buf);
       }
       device->enableDepthWrite();
       if (feat_use_fbo_antialias || !msaa_enable) { device->disableBlend(); }
@@ -391,7 +391,7 @@ void MeshRenderer::buffer(GlDrawable* buf)
          }
       }
    }
-   device->bufferToDevice(buf->text_buffer);
+   device->bufferToDevice(*font, buf->text_buffer);
 }
 
 void GLDevice::init()

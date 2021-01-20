@@ -109,7 +109,7 @@ public:
 
    /// Creates a new OpenGL window. Returns false if SDL or OpenGL initialization
    /// fails.
-   bool createWindow(const char * title, int x, int y, int w, int h,
+   bool createWindow(const std::string& title, int x, int y, int w, int h,
                      bool legacyGlOnly);
    /// Runs the window loop.
    void mainLoop();

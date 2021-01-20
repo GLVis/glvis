@@ -54,9 +54,9 @@ public:
 
    void bufferToDevice(array_layout layout, IVertexBuffer& buf) override;
    void bufferToDevice(array_layout layout, IIndexedBuffer& buf) override;
-   void bufferToDevice(TextBuffer& t_buf) override;
+   void bufferToDevice(GlVisFont& font, TextBuffer& t_buf) override;
    void drawDeviceBuffer(int hnd) override;
-   void drawDeviceBuffer(const TextBuffer& t_buf) override;
+   void drawDeviceBuffer(GlVisFont& font, const TextBuffer& t_buf) override;
    void captureXfbBuffer(PaletteState& pal, CaptureBuffer& cbuf, int hnd) override;
 };
 

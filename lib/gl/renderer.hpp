@@ -20,6 +20,7 @@
 #include "platform_gl.hpp"
 #include "types.hpp"
 #include "../material.hpp"
+#include "../font.hpp"
 #include "../palettes.hpp"
 
 namespace gl3
@@ -173,10 +174,10 @@ public:
    // Load a client-side vertex buffer into a device buffer.
    virtual void bufferToDevice(array_layout layout, IVertexBuffer& buf) = 0;
    virtual void bufferToDevice(array_layout layout, IIndexedBuffer& buf) = 0;
-   virtual void bufferToDevice(TextBuffer& t_buf) = 0;
+   virtual void bufferToDevice(GlVisFont& font, TextBuffer& t_buf) = 0;
    // Draw the data loaded in a device buffer.
    virtual void drawDeviceBuffer(int hnd) = 0;
-   virtual void drawDeviceBuffer(const TextBuffer& t_buf) = 0;
+   virtual void drawDeviceBuffer(GlVisFont& font, const TextBuffer& t_buf) = 0;
 
    // === Transform feedback functions ===
 
@@ -201,6 +202,7 @@ class MeshRenderer
    GLuint color_tex, alpha_tex, font_tex;
    float line_w, line_w_aa;
    PaletteState* pal;
+   GlVisFont* font;
 
    bool feat_use_fbo_antialias;
    void init();
@@ -209,7 +211,8 @@ public:
       : msaa_enable(false)
       , msaa_samples(0)
       , line_w(1.f)
-      , line_w_aa(LINE_WIDTH_AA) { init(); }
+      , line_w_aa(LINE_WIDTH_AA)
+      , font(nullptr) { init(); }
 
    template<typename TDevice>
    void setDevice()
@@ -226,6 +229,8 @@ public:
       device.reset(new TDevice(device));
    }
    void setPalette(PaletteState* pal) { this->pal = pal; }
+
+   void setFont(GlVisFont* fnt) { this->font = fnt; }
 
    // Sets the texture handle of the color palette.
    void setColorTexture(GLuint tex_h) { color_tex = tex_h; }

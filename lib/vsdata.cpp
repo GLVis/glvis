@@ -460,7 +460,7 @@ void VisualizationSceneScalarData::PrepareCaption()
    caption_buf.clear();
    caption_buf.addText(0, 0, 0, caption);
    updated_bufs.emplace_back(&caption_buf);
-   GetFont()->getObjectSize(caption, caption_w, caption_h);
+   font->getObjectSize(caption, caption_w, caption_h);
 }
 
 VisualizationSceneScalarData * vsdata;
@@ -996,7 +996,7 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
       wnd->getGLDrawSize(gl_w, gl_h);
       // add caption to draw list
       double v_pos = 2.;
-      double line_h = GetFont()->getFontLineSpacing();
+      double line_h = font->getFontLineSpacing();
       params.model_view.translate(-(double)caption_w / gl_w,
                                   1.0 - 2 * v_pos * line_h / gl_h, 0.0);
       scene.queue.emplace_back(params, &caption_buf);
@@ -1313,7 +1313,7 @@ void VisualizationSceneScalarData::PrepareAxes()
 
    if (drawaxes == 1)
    {
-      int desc = GetFont()->getFontDescender();
+      int desc = font->getFontDescender();
       int ox = -desc/2;
       int oy = -3*desc/2;
       ostringstream buf;
