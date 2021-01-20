@@ -108,6 +108,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
 
    wnd->setTouchPinchCallback(TouchPinch);
+   wnd->setOnKeyDown('A', ToggleAntialiasing);
 
    // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
    wnd->setOnKeyDown (SDLK_s, KeyS);
@@ -738,6 +739,18 @@ void RightButtonLoc (EventInfo *event)
 
 void RightButtonUp (EventInfo*)
 {}
+
+void ToggleAntialiasing()
+{
+   bool curr_aa = wnd->getRenderer().getAntialiasing();
+   wnd->getRenderer().setAntialiasing(!curr_aa);
+   const std::string strings_off_on[2] = { "off", "on" };
+
+   cout << "Multisampling/Antialiasing: "
+        << strings_off_on[!curr_aa ? 1 : 0] << endl;
+
+   SendExposeEvent();
+}
 
 void TouchPinch(SDL_MultiGestureEvent & e)
 {

@@ -55,6 +55,7 @@ void RightButtonUp   (EventInfo *event);
 
 void TouchPinch(SDL_MultiGestureEvent & e);
 
+void ToggleAntialiasing();
 void KeyCtrlP();
 void KeyS();
 void KeyQPressed();
