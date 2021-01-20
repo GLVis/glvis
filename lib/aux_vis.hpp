@@ -53,6 +53,7 @@ void RightButtonDown (EventInfo *event);
 void RightButtonLoc  (EventInfo *event);
 void RightButtonUp   (EventInfo *event);
 
+void ToggleAntialiasing();
 void KeyCtrlP();
 void KeyS();
 void KeyQPressed();

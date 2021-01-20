@@ -108,6 +108,8 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
    wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
 
+   wnd->setOnKeyDown('A', ToggleAntialiasing);
+
    // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
    wnd->setOnKeyDown (SDLK_s, KeyS);
    wnd->setOnKeyDown ('S', KeyS);
@@ -736,6 +738,18 @@ void RightButtonLoc (EventInfo *event)
 
 void RightButtonUp (EventInfo*)
 {}
+
+void ToggleAntialiasing()
+{
+   bool curr_aa = wnd->getRenderer().getAntialiasing();
+   wnd->getRenderer().setAntialiasing(!curr_aa);
+   const std::string strings_off_on[2] = { "off", "on" };
+
+   cout << "Multisampling/Antialiasing: "
+        << strings_off_on[!curr_aa ? 1 : 0] << endl;
+
+   SendExposeEvent();
+}
 
 #if defined(GLVIS_USE_LIBTIFF)
 const char *glvis_screenshot_ext = ".tif";
