@@ -54,7 +54,7 @@ SdlWindow * GetAppWindow()
     return wnd;
 }
 
-GLVisWindow * GetGlvisWindow()
+GLVisWindow * GetGLVisWindow()
 {
     return glvis_wnd;
 }
@@ -69,6 +69,7 @@ void MyExpose();
 
 GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool legacyGlOnly)
     : locscene(nullptr)
+    , idle_funcs(0)
 {
 
 #ifdef GLVIS_DEBUG
@@ -286,8 +287,6 @@ void GLVisWindow::CallKeySequence(const char *seq)
    disableSendExposeEvent = false;
 }
 
-void InitIdleFuncs();
-
 void GLVisWindow::SetVisualizationScene(VisualizationScene * scene, int view,
                                         const char *keys)
 {
@@ -303,7 +302,6 @@ void GLVisWindow::SetVisualizationScene(VisualizationScene * scene, int view,
       scene -> CenterObject();
    }
 
-   InitIdleFuncs();
    if (scene -> spinning)
    {
       AddIdleFunc(MainLoop);
@@ -321,7 +319,6 @@ void GLVisWindow::RunVisualization()
 #ifndef __EMSCRIPTEN__
    wnd->mainLoop();
 #endif
-   InitIdleFuncs();
    delete locscene;
    //delete wnd;
    wnd = nullptr;
@@ -407,38 +404,27 @@ void GLVisWindow::MyExpose()
    wnd->signalSwap();
 }
 
-
-Array<void (*)()> IdleFuncs;
-int LastIdleFunc;
-
-void InitIdleFuncs()
+void GLVisWindow::MainIdleFunc()
 {
-   IdleFuncs.SetSize(0);
-   LastIdleFunc = 0;
-   wnd->setOnIdle(NULL);
-}
-
-void MainIdleFunc()
-{
-   LastIdleFunc = (LastIdleFunc + 1) % IdleFuncs.Size();
-   if (IdleFuncs[LastIdleFunc])
+   last_idle_func = (last_idle_func + 1) % idle_funcs.Size();
+   if (idle_funcs[last_idle_func])
    {
-      (*IdleFuncs[LastIdleFunc])();
+      (*idle_funcs[last_idle_func])(this);
    }
 }
 
-void AddIdleFunc(void (*Func)(void))
+void GLVisWindow::AddIdleFunc(GLVisWindow::IdleFPtr Func)
 {
-   IdleFuncs.Union(Func);
-   wnd->setOnIdle(MainIdleFunc);
+   idle_funcs.Union(Func);
+   wnd->setOnIdle([this](){MainIdleFunc();});
 }
 
-void RemoveIdleFunc(void (*Func)(void))
+void GLVisWindow::RemoveIdleFunc(GLVisWindow::IdleFPtr Func)
 {
-   IdleFuncs.DeleteFirst(Func);
-   if (IdleFuncs.Size() == 0)
+   idle_funcs.DeleteFirst(Func);
+   if (idle_funcs.Size() == 0)
    {
-      wnd->setOnIdle(NULL);
+      wnd->setOnIdle(nullptr);
    }
 }
 
@@ -451,8 +437,9 @@ static GLint oldx, oldy, startx, starty;
 int constrained_spinning = 0;
 
 
-void MainLoop()
+void MainLoop(GLVisWindow* wnd)
 {
+   VisualizationScene* locscene = wnd->getScene();
    static int p = 1;
    struct timespec req;
    if (locscene->spinning)
@@ -475,7 +462,7 @@ void MainLoop()
    {
       char fname[20];
       snprintf(fname, 20, "GLVis_m%04d", p++);
-      wnd->screenshot(fname);
+      wnd->getSdl()->screenshot(fname);
    }
 }
 
@@ -512,7 +499,7 @@ inline void ComputeSphereAngles(int &newx, int &newy,
 void LeftButtonDown (EventInfo *event)
 {
    locscene -> spinning = 0;
-   RemoveIdleFunc(MainLoop);
+   glvis_wnd->RemoveIdleFunc(MainLoop);
 
    oldx = event->mouse_x;
    oldy = event->mouse_y;
@@ -596,7 +583,7 @@ void LeftButtonUp (EventInfo *event)
    if ( (event->keymod & KMOD_SHIFT) && (xang != 0.0 || yang != 0.0) )
    {
       locscene -> spinning = 1;
-      AddIdleFunc(MainLoop);
+      glvis_wnd->AddIdleFunc(MainLoop);
       if (xang > 20) { xang = 20; } if (xang < -20) { xang = -20; }
       if (yang > 20) { yang = 20; } if (yang < -20) { yang = -20; }
 
@@ -1205,12 +1192,12 @@ void CheckSpin()
    if (xang != 0. || yang != 0.)
    {
       locscene->spinning = 1;
-      AddIdleFunc(MainLoop);
+      glvis_wnd->AddIdleFunc(MainLoop);
    }
    else
    {
       locscene->spinning = 0;
-      RemoveIdleFunc(MainLoop);
+      glvis_wnd->RemoveIdleFunc(MainLoop);
    }
    cout << "Spin angle: " << xang << " degrees / frame" << endl;
 }
@@ -1233,14 +1220,14 @@ void KeyDeletePressed()
    {
       xang = yang = 0.;
       locscene -> spinning = 0;
-      RemoveIdleFunc(MainLoop);
+      glvis_wnd->RemoveIdleFunc(MainLoop);
       constrained_spinning = 1;
    }
    else
    {
       xang = xang_step;
       locscene -> spinning = 1;
-      AddIdleFunc(MainLoop);
+      glvis_wnd->AddIdleFunc(MainLoop);
       constrained_spinning = 1;
    }
 }

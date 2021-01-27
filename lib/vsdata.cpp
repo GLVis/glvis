@@ -531,7 +531,7 @@ void KeyLPressed()
 void KeyrPressed()
 {
    locscene -> spinning = 0;
-   RemoveIdleFunc(MainLoop);
+   GetGLVisWindow()->RemoveIdleFunc(MainLoop);
    vsdata -> CenterObject();
 
    locscene -> ViewAngle = 45.0;
@@ -546,7 +546,7 @@ void KeyrPressed()
 void KeyRPressed()
 {
    locscene->spinning = 0;
-   RemoveIdleFunc(MainLoop);
+   GetGLVisWindow()->RemoveIdleFunc(MainLoop);
    vsdata->Toggle2DView();
    SendExposeEvent();
 }

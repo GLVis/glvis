@@ -137,7 +137,7 @@ static void KeyBPressed()
 static void KeyrPressed()
 {
    locscene -> spinning = 0;
-   RemoveIdleFunc(MainLoop);
+   GetGLVisWindow()->RemoveIdleFunc(MainLoop);
    vsvector3d -> CenterObject();
    locscene -> ViewAngle = 45.0;
    locscene -> ViewScale = 1.0;
@@ -154,7 +154,7 @@ static void KeyrPressed()
 static void KeyRPressed()
 {
    locscene->spinning = 0;
-   RemoveIdleFunc(MainLoop);
+   GetGLVisWindow()->RemoveIdleFunc(MainLoop);
    vsvector3d -> ianim = vsvector3d -> ianimd = 0;
    vsvector3d -> Prepare();
    vsvector3d -> PrepareLines();
