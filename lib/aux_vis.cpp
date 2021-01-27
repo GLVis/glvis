@@ -47,10 +47,16 @@ float line_w = 1.f;
 float line_w_aa = gl3::LINE_WIDTH_AA;
 
 [[deprecated]] SdlWindow* wnd;
+[[deprecated]] GLVisWindow * glvis_wnd = nullptr;
 
 SdlWindow * GetAppWindow()
 {
     return wnd;
+}
+
+GLVisWindow * GetGlvisWindow()
+{
+    return glvis_wnd;
 }
 
 VisualizationScene * GetVisualizationScene()
@@ -68,6 +74,7 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
 #ifdef GLVIS_DEBUG
    cout << "OpenGL Visualization" << endl;
 #endif
+   ::glvis_wnd = this;
    wnd.reset(new SdlWindow());
    if (!wnd->createWindow(name, x, y, w, h, legacyGlOnly))
    {
@@ -84,8 +91,7 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
 
    // auxReshapeFunc (MyReshape); // not needed, MyExpose calls it
    // auxReshapeFunc (NULL);
-   void (*exposeFunc)(void) = MyExpose;
-   wnd->setOnExpose(exposeFunc);
+   wnd->setOnExpose([this]() { MyExpose(); });
 
    wnd->setOnMouseDown(SDL_BUTTON_LEFT, LeftButtonDown);
    wnd->setOnMouseUp(SDL_BUTTON_LEFT, LeftButtonUp);
@@ -168,6 +174,16 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
 
 void SendKeySequence(const char *seq)
 {
+    glvis_wnd->SendKeySequence(seq);
+}
+
+void CallKeySequence(const char *seq)
+{
+    glvis_wnd->CallKeySequence(seq);
+}
+
+void GLVisWindow::SendKeySequence(const char *seq)
+{
    for (const char* key = seq; *key != '\0'; key++)
    {
       if (*key == '~')
@@ -219,9 +235,7 @@ void SendKeySequence(const char *seq)
 }
 
 
-static bool disableSendExposeEvent = false;
-
-void CallKeySequence(const char *seq)
+void GLVisWindow::CallKeySequence(const char *seq)
 {
    const char *key = seq;
 
@@ -304,7 +318,7 @@ void GLVisWindow::SetVisualizationScene(VisualizationScene * scene, int view,
    wnd->getRenderer().setPalette(&locscene->palette);
 }
 
-void RunVisualization()
+void GLVisWindow::RunVisualization()
 {
 #ifndef __EMSCRIPTEN__
    wnd->mainLoop();
@@ -317,11 +331,21 @@ void RunVisualization()
 
 void SendExposeEvent()
 {
+    glvis_wnd->SendExposeEvent();
+}
+
+void MyExpose()
+{
+    glvis_wnd->MyExpose();
+}
+
+void GLVisWindow::SendExposeEvent()
+{
    if (disableSendExposeEvent) { return; }
    wnd->signalExpose();
 }
 
-void MyReshape(GLsizei w, GLsizei h)
+void GLVisWindow::MyReshape(GLsizei w, GLsizei h)
 {
    wnd->getRenderer().setViewport(w, h);
 
@@ -358,7 +382,7 @@ void MyReshape(GLsizei w, GLsizei h)
    locscene->SetProjectionMtx(projmtx.mtx);
 }
 
-void MyExpose(GLsizei w, GLsizei h)
+void GLVisWindow::MyExpose(GLsizei w, GLsizei h)
 {
    MyReshape (w, h);
    GLuint color_tex = locscene->palette.GetColorTexture();
@@ -377,7 +401,7 @@ void MyExpose(GLsizei w, GLsizei h)
    wnd->getRenderer().render(frame.queue);
 }
 
-void MyExpose()
+void GLVisWindow::MyExpose()
 {
    int w, h;
    wnd->getGLDrawSize(w, h);

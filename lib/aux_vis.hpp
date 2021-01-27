@@ -33,20 +33,42 @@ public:
 
     SdlWindow* getSdl() { return wnd.get(); }
 
+    /// Start the infinite visualization loop.
+    void RunVisualization();
+
+    /// Send expose event. In our case MyReshape is executed and Draw after it.
+    void SendExposeEvent();
+
+    void MyExpose();
+
+    /// Send a sequence of keystrokes to the visualization window
+    void SendKeySequence(const char *seq);
+
+    // Directly call the functions assigned to the given keys. Unlike the above
+    // function, SendKeySequence(), this function does not send X events and
+    // actually disables the function SendExposeEvent() used by many of the
+    // functions assigned to keys. Call MyExpose() after calling this function to
+    // update the visualization window.
+    void CallKeySequence(const char *seq);
 private:
     void InitFont();
     bool SetFont(const vector<std::string>& patterns, int height);
+
+    void MyReshape(GLsizei w, GLsizei h);
+    void MyExpose(GLsizei w, GLsizei h);
     std::unique_ptr<SdlWindow> wnd;
     VisualizationScene* locscene;
 
+    std::vector<std::function<void()>> idle_funcs;
+
     int visualize;
+
+    bool disableSendExposeEvent = false;
+
     GlVisFont font;
     std::string priority_font;
     int font_size = 12;
 };
-
-/// Start the infinite visualization loop.
-void RunVisualization();
 
 /// Send expose event. In our case MyReshape is executed and Draw after it.
 void SendExposeEvent();
@@ -56,6 +78,7 @@ void MyExpose();
 void MainLoop();
 
 [[deprecated]] SdlWindow * GetAppWindow();
+[[deprecated]] GLVisWindow * GetGLVisWindow();
 VisualizationScene * GetVisualizationScene();
 
 void AddIdleFunc(void (*Func)(void));

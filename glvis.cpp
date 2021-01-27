@@ -268,7 +268,7 @@ bool GLVisInitVis(int field_type)
 
 void GLVisStartVis()
 {
-   RunVisualization(); // deletes vs
+   mainWindow->RunVisualization(); // deletes vs
    vs = NULL;
    if (input_streams.Size() > 0)
    {
