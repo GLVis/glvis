@@ -12,6 +12,8 @@
 #ifndef GLVIS_AUX_VIS_HPP
 #define GLVIS_AUX_VIS_HPP
 
+#include "mfem/mfem.hpp"
+
 #include "gl/platform_gl.hpp"
 #include "gl/types.hpp"
 
@@ -22,12 +24,16 @@
 class GLVisWindow
 {
 public:
+    using IdleFPtr = void(*)(GLVisWindow* wnd);
+
     /// Initializes the visualization and some keys.
     GLVisWindow(std::string name, int x, int y, int w, int h, bool legacyGlOnly);
 
     void SetVisualizationScene(VisualizationScene * scene,
                                int view = 3, const char *keys = NULL);
     void SetFont(const std::string& fn);
+
+    VisualizationScene* getScene() { return locscene; }
 
     GlVisFont* getFont() { return &font; }
 
@@ -50,16 +56,22 @@ public:
     // functions assigned to keys. Call MyExpose() after calling this function to
     // update the visualization window.
     void CallKeySequence(const char *seq);
+
+    void AddIdleFunc(IdleFPtr func);
+    void RemoveIdleFunc(IdleFPtr func);
 private:
     void InitFont();
     bool SetFont(const vector<std::string>& patterns, int height);
+
+    void MainIdleFunc();
 
     void MyReshape(GLsizei w, GLsizei h);
     void MyExpose(GLsizei w, GLsizei h);
     std::unique_ptr<SdlWindow> wnd;
     VisualizationScene* locscene;
 
-    std::vector<std::function<void()>> idle_funcs;
+    mfem::Array<IdleFPtr> idle_funcs{};
+    int last_idle_func = 0;
 
     int visualize;
 
@@ -75,14 +87,11 @@ void SendExposeEvent();
 
 void MyExpose();
 
-void MainLoop();
+void MainLoop(GLVisWindow* wnd);
 
 [[deprecated]] SdlWindow * GetAppWindow();
 [[deprecated]] GLVisWindow * GetGLVisWindow();
 VisualizationScene * GetVisualizationScene();
-
-void AddIdleFunc(void (*Func)(void));
-void RemoveIdleFunc(void (*Func)(void));
 
 void LeftButtonDown  (EventInfo *event);
 void LeftButtonLoc   (EventInfo *event);

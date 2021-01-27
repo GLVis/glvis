@@ -772,7 +772,7 @@ void ExecuteScriptCommand()
 
 void ScriptControl();
 
-void ScriptIdleFunc()
+void ScriptIdleFunc(GLVisWindow* wnd)
 {
    ExecuteScriptCommand();
    if (scr_level == 0)
@@ -786,12 +786,12 @@ void ScriptControl()
    if (scr_running)
    {
       scr_running = 0;
-      RemoveIdleFunc(ScriptIdleFunc);
+      mainWindow->RemoveIdleFunc(ScriptIdleFunc);
    }
    else
    {
       scr_running = 1;
-      AddIdleFunc(ScriptIdleFunc);
+      mainWindow->AddIdleFunc(ScriptIdleFunc);
    }
 }
 
