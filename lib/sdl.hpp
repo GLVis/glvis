@@ -29,7 +29,7 @@ struct EventInfo
 typedef void (*MouseDelegate)(EventInfo*);
 typedef std::function<void(GLenum)> KeyDelegate;
 typedef void (*WindowDelegate)(int, int);
-typedef void (*Delegate)();
+typedef std::function<void()> Delegate;
 
 class SdlWindow
 {
