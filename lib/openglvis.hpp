@@ -18,6 +18,7 @@
 #include "gl/types.hpp"
 #include "material.hpp"
 #include "palettes.hpp"
+#include "mfem.hpp"
 #include "geom_utils.hpp"
 
 // Visualization header file
@@ -104,6 +105,33 @@ protected:
          return { 0.f, 0.f, 0.f, 1.f };
       }
    }
+
+   void MySetColor (gl3::GlBuilder& builder, double val, double min, double max)
+   {
+      MySetColor(builder, palette.GetColorCoord(val, min, max));
+   }
+
+   void MySetColor (gl3::GlBuilder& builder, double val)
+   {
+      if (val < 0.0) { val = 0.0; }
+      if (val > 1.0) { val = 1.0; }
+
+      builder.glTexCoord2f(val, 1.0);
+   }
+
+   // We only need 3 points, but the array is 4x3
+   void DrawTriangle(gl3::GlDrawable& buff,
+                     const double (&pts)[4][3], const double (&cv)[4],
+                     const double minv, const double maxv);
+
+   void DrawQuad(gl3::GlDrawable& buff,
+                 const double (&pts)[4][3], const double (&cv)[4],
+                 const double minv, const double maxv);
+
+   void DrawPatch(gl3::GlDrawable& buff, const mfem::DenseMatrix &pts,
+                  mfem::Vector &vals, mfem::DenseMatrix &normals,
+                  const int n, const mfem::Array<int> &ind, const double minv,
+                  const double maxv, const int normals_opt = 0);
 
 public:
    VisualizationScene();

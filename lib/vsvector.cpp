@@ -895,7 +895,7 @@ void VisualizationSceneVector::PrepareVectorField()
       {
          int i;
 
-         MySetColorLogscale = logscale;
+         palette.SetUseLogscale(logscale);
          if (drawvector == 3)
          {
             new_maxlen = 0.0;

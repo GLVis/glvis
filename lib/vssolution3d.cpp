@@ -1010,7 +1010,7 @@ void VisualizationSceneSolution3d::EventUpdateColors()
 void VisualizationSceneSolution3d::UpdateValueRange(bool prepare)
 {
    logscale = logscale && LogscaleRange();
-   MySetColorLogscale = logscale;
+   palette.SetUseLogscale(logscale);
    SetLogA();
    SetLevelLines(minv, maxv, nl);
    if (prepare)

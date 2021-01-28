@@ -1248,30 +1248,6 @@ void GLVisWindow::SetWindowTitle(const char *title)
    wnd->setWindowTitle(title);
 }
 
-int MySetColorLogscale = 0;
-
-double GetColorCoord(double val, double min, double max)
-{
-   // static double eps = 1e-24;
-   static const double eps = 0.0;
-   if (MySetColorLogscale)
-   {
-      if (val < min)
-      {
-         val = min;
-      }
-      if (val > max)
-      {
-         val = max;
-      }
-      return log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps);
-   }
-   else
-   {
-      return ((val-min)/(max-min));
-   }
-}
-
 void GetColorFromVal(double val, float * rgba)
 {
    int palSize = locscene->GetPalette().GetSize();
@@ -1296,19 +1272,6 @@ void GetColorFromVal(double val, float * rgba)
    rgba[1] = (1.0 - t) * pal[1] + t * pal[4];
    rgba[2] = (1.0 - t) * pal[2] + t * pal[5];
    rgba[3] = 1.f;
-}
-
-void MySetColor (gl3::GlBuilder& builder, double val, double min, double max)
-{
-   MySetColor(builder, GetColorCoord(val, min, max));
-}
-
-void MySetColor (gl3::GlBuilder& builder, double val)
-{
-   if (val < 0.0) { val = 0.0; }
-   if (val > 1.0) { val = 1.0; }
-
-   builder.glTexCoord2f(val, 1.0);
 }
 
 int GetUseTexture()

@@ -7756,6 +7756,30 @@ void PaletteState::Init()
    }
 }
 
+
+
+double PaletteState::GetColorCoord(double val, double min, double max)
+{
+   // static double eps = 1e-24;
+   static const double eps = 0.0;
+   if (use_logscale)
+   {
+      if (val < min)
+      {
+         val = min;
+      }
+      if (val > max)
+      {
+         val = max;
+      }
+      return log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps);
+   }
+   else
+   {
+      return ((val-min)/(max-min));
+   }
+}
+
 const double * PaletteState::GetData() const
 {
    return RGB_Palettes[curr_palette];
