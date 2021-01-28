@@ -808,7 +808,7 @@ void VisualizationSceneScalarData::ToggleLogscale(bool print)
    if (logscale || LogscaleRange())
    {
       logscale = !logscale;
-      MySetColorLogscale = logscale;
+      palette.SetUseLogscale(logscale);
       SetLogA();
       SetLevelLines(minv, maxv, nl);
       UpdateLevelLines();
@@ -1092,7 +1092,6 @@ void VisualizationSceneScalarData::Init()
    minv = 0.0;
    maxv = 1.0;
    logscale = false;
-   MySetColorLogscale = 0;
    SetLogA();
    PrepareCaption(); // turn on or off the caption
 

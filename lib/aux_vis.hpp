@@ -107,11 +107,7 @@ void SendKeySequence(const char *seq);
 // update the visualization window.
 void CallKeySequence(const char *seq);
 
-extern int MySetColorLogscale;
-double GetColorCoord(double val, double min, double max);
 void GetColorFromVal(double val, float * rgba);
-void MySetColor(gl3::GlBuilder& builder, double val);
-void MySetColor(gl3::GlBuilder& builder, double val, double min, double max);
 
 void SetUseTexture(int ut);
 int GetUseTexture();

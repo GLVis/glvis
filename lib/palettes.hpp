@@ -46,6 +46,10 @@ public:
    int GetRepeatTimes() const { return RepeatPaletteTimes; }
    void SetRepeatTimes(int rpt) { RepeatPaletteTimes = rpt; }
 
+   void SetUseLogscale(bool logscale) { use_logscale = logscale; }
+   bool GetUseLogscale() { return use_logscale; }
+   double GetColorCoord(double val, double min, double max);
+
    GLuint GetColorTexture() const
    { return palette_tex[curr_palette][use_smooth]; }
    GLuint GetAlphaTexture() const { return alpha_tex; }
@@ -62,6 +66,8 @@ private:
    int use_smooth = 0;
    int RepeatPaletteTimes = 1;
    int PaletteNumColors = 0;
+
+   bool use_logscale = false;
 
    bool first_init;
    int MaxTextureSize;
