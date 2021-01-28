@@ -19,6 +19,7 @@ list(APPEND SOURCES
   openglvis.cpp
   palettes.cpp
   sdl.cpp
+  sdl_screenshot.cpp
   stream_reader.cpp
   vsdata.cpp
   vssolution.cpp

@@ -96,6 +96,8 @@ private:
    void keyEvent(SDL_Keysym& ks);
    void keyEvent(char c);
 
+   int screenshotHelper(bool convert = false);
+
    std::string saved_keys;
 public:
    SdlWindow();

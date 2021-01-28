@@ -511,14 +511,8 @@ int GLVisCommand::Execute()
       case SCREENSHOT:
       {
          cout << "Command: screenshot: " << flush;
-         if (::Screenshot(screenshot_filename.c_str(), true))
-         {
-            cout << "Screenshot(" << screenshot_filename << ") failed." << endl;
-         }
-         else
-         {
-            cout << "-> " << screenshot_filename << endl;
-         }
+         GetGLVisWindow()->Screenshot(screenshot_filename.c_str());
+         cout << "-> " << screenshot_filename << endl;
          break;
       }
 
