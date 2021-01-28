@@ -157,11 +157,11 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
    wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
    wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
 
-   wnd->setOnKeyDown('A', ToggleAntialiasing);
+   SetKeyEventHandler('A', &GLVisWindow::ToggleAntialiasing);
 
    // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
-   wnd->setOnKeyDown (SDLK_s, KeyS);
-   wnd->setOnKeyDown ('S', KeyS);
+   SetKeyEventHandler (SDLK_s, &GLVisWindow::Screenshot);
+   SetKeyEventHandler ('S', &GLVisWindow::Screenshot);
 
    wnd->setOnKeyDown (SDLK_q, KeyQPressed);
    // wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
@@ -223,6 +223,12 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
    wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
    wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
 #endif
+}
+
+void GLVisWindow::SetKeyEventHandler(int key, void (GLVisWindow::*handler)())
+{
+    auto handlerWrapper = [this, handler]() { (this->*handler)(); };
+    wnd->setOnKeyDown(key, handlerWrapper);
 }
 
 void SendKeySequence(const char *seq)
@@ -784,7 +790,7 @@ void GLVisWindow::RotationControl::RightButtonLoc (EventInfo *event)
 void GLVisWindow::RotationControl::RightButtonUp (EventInfo*)
 {}
 
-void ToggleAntialiasing()
+void GLVisWindow::ToggleAntialiasing()
 {
    bool curr_aa = wnd->getRenderer().getAntialiasing();
    wnd->getRenderer().setAntialiasing(!curr_aa);
@@ -1080,7 +1086,7 @@ int Screenshot(const char *fname, bool convert)
 #endif
 }
 
-void KeyS()
+void GLVisWindow::Screenshot()
 {
    static int p = 1;
 
@@ -1150,7 +1156,7 @@ void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
    }
 }
 
-void KeyCtrlP()
+void GLVisWindow::PrintToPDF()
 {
 #ifdef __EMSCRIPTEN__
    cerr << "Printing in WebGL is not supported at this time." << endl;

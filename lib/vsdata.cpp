@@ -555,7 +555,7 @@ void KeypPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
-      KeyCtrlP();
+      GetGLVisWindow()->PrintToPDF();
    }
    else
    {
