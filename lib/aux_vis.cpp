@@ -354,7 +354,7 @@ void GLVisWindow::SetVisualizationScene(VisualizationScene * scene, int view,
                                         const char *keys)
 {
    ::locscene = locscene = scene;
-   locscene->SetFont(&font);
+   //locscene->SetFont(&font);
    locscene -> view = view;
    if (view == 2)
    {

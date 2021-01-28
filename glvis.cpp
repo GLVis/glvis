@@ -175,8 +175,6 @@ bool GLVisInitVis(int field_type)
          VisualizationSceneSolution3d * vss;
          vs = vss = new VisualizationSceneSolution3d(*stream_state.mesh,
                                                      stream_state.sol);
-         // HACK: below needs to be called before ToggleAxes
-         vs->SetFont(mainWindow->getFont());
          if (stream_state.grid_f)
          {
             vss->SetGridFunction(stream_state.grid_f.get());
