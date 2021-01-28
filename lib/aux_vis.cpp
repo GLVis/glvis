@@ -67,14 +67,54 @@ VisualizationScene * GetVisualizationScene()
 void MyExpose(GLsizei w, GLsizei h);
 void MyExpose();
 
+struct GLVisWindow::RotationControl
+{
+    GLVisWindow* wnd;
+    double xang = 0., yang = 0.;
+    gl3::GlMatrix srot;
+    double sph_t, sph_u;
+    GLint oldx, oldy, startx, starty;
+
+    bool constrained_spinning = 0;
+
+    void LeftButtonDown  (EventInfo *event);
+    void LeftButtonLoc   (EventInfo *event);
+    void LeftButtonUp    (EventInfo *event);
+    void MiddleButtonDown(EventInfo *event);
+    void MiddleButtonLoc (EventInfo *event);
+    void MiddleButtonUp  (EventInfo *event);
+    void RightButtonDown (EventInfo *event);
+    void RightButtonLoc  (EventInfo *event);
+    void RightButtonUp   (EventInfo *event);
+
+    void CheckSpin();
+    void Key0Pressed();
+    void KeyDeletePressed();
+    void KeyEnterPressed();
+    MouseDelegate CreateMouseEvent(void (GLVisWindow::RotationControl::*func)(EventInfo*))
+    {
+        return [this, func](EventInfo* ei) { (this->*func)(ei); };
+    }
+
+};
+
+template<typename T>
+KeyDelegate CreateKeyEvent(T* inst, void (T::*func)())
+{
+    return [inst, func](GLenum) { (inst->*func)(); };
+}
+
+
 GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool legacyGlOnly)
     : locscene(nullptr)
     , idle_funcs(0)
+    , rot_data(new RotationControl)
 {
 
 #ifdef GLVIS_DEBUG
    cout << "OpenGL Visualization" << endl;
 #endif
+   rot_data->wnd = this;
    ::glvis_wnd = this;
    wnd.reset(new SdlWindow());
    if (!wnd->createWindow(name, x, y, w, h, legacyGlOnly))
@@ -93,6 +133,19 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
    // auxReshapeFunc (MyReshape); // not needed, MyExpose calls it
    // auxReshapeFunc (NULL);
    wnd->setOnExpose([this]() { MyExpose(); });
+   auto LeftButtonDown   = rot_data->CreateMouseEvent(&RotationControl::LeftButtonDown);
+   auto LeftButtonUp     = rot_data->CreateMouseEvent(&RotationControl::LeftButtonUp);
+   auto LeftButtonLoc    = rot_data->CreateMouseEvent(&RotationControl::LeftButtonLoc);
+   auto MiddleButtonDown = rot_data->CreateMouseEvent(&RotationControl::MiddleButtonDown);
+   auto MiddleButtonUp   = rot_data->CreateMouseEvent(&RotationControl::MiddleButtonUp);
+   auto MiddleButtonLoc  = rot_data->CreateMouseEvent(&RotationControl::MiddleButtonLoc);
+   auto RightButtonDown  = rot_data->CreateMouseEvent(&RotationControl::RightButtonDown);
+   auto RightButtonUp    = rot_data->CreateMouseEvent(&RotationControl::RightButtonUp);
+   auto RightButtonLoc   = rot_data->CreateMouseEvent(&RotationControl::RightButtonLoc);
+
+   auto Key0Pressed = CreateKeyEvent(rot_data.get(), &RotationControl::Key0Pressed);
+   auto KeyEnterPressed = CreateKeyEvent(rot_data.get(), &RotationControl::KeyEnterPressed);
+   auto KeyDeletePressed = CreateKeyEvent(rot_data.get(), &RotationControl::KeyDeletePressed);
 
    wnd->setOnMouseDown(SDL_BUTTON_LEFT, LeftButtonDown);
    wnd->setOnMouseUp(SDL_BUTTON_LEFT, LeftButtonUp);
@@ -305,7 +358,7 @@ void GLVisWindow::SetVisualizationScene(VisualizationScene * scene, int view,
 
    if (scene -> spinning)
    {
-      AddIdleFunc(MainLoop);
+      AddIdleFunc(::MainLoop);
    }
 
    if (keys)
@@ -430,23 +483,20 @@ void GLVisWindow::RemoveIdleFunc(GLVisWindow::IdleFPtr Func)
    }
 }
 
-
-double xang = 0., yang = 0.;
-gl3::GlMatrix srot;
-double sph_t, sph_u;
-static GLint oldx, oldy, startx, starty;
-
-int constrained_spinning = 0;
-
-
 void MainLoop(GLVisWindow* wnd)
 {
-   VisualizationScene* locscene = wnd->getScene();
+    wnd->MainLoop();
+}
+
+void GLVisWindow::MainLoop()
+{
    static int p = 1;
    struct timespec req;
+   double xang = rot_data->xang;
+   double yang = rot_data->yang;
    if (locscene->spinning)
    {
-      if (!constrained_spinning)
+      if (!rot_data->constrained_spinning)
       {
          locscene->Rotate(xang, yang);
          SendExposeEvent();
@@ -464,7 +514,7 @@ void MainLoop(GLVisWindow* wnd)
    {
       char fname[20];
       snprintf(fname, 20, "GLVis_m%04d", p++);
-      wnd->getSdl()->screenshot(fname);
+      wnd->screenshot(fname);
    }
 }
 
@@ -475,14 +525,14 @@ inline double sqr(double t)
    return t*t;
 }
 
-inline void ComputeSphereAngles(int &newx, int &newy,
+inline void ComputeSphereAngles(int viewport_w, int viewport_h,
+                                int &newx, int &newy,
                                 double &new_sph_u, double &new_sph_t)
 {
-   GLint viewport[4] = { 0, 0, 0, 0 };
+   GLint viewport[4] = { 0, 0, viewport_w, viewport_h };
    double r, x, y, rr;
    const double maxr = 0.996194698091745532295;
 
-   wnd->getGLDrawSize(viewport[2], viewport[3]);
    r = sqrt(sqr(viewport[2])+sqr(viewport[3]))*M_SQRT1_2;
 
    x = double(newx-viewport[0]-viewport[2]/2) / r;
@@ -498,41 +548,46 @@ inline void ComputeSphereAngles(int &newx, int &newy,
    new_sph_t = atan2(y, x);
 }
 
-void LeftButtonDown (EventInfo *event)
+void GLVisWindow::RotationControl::LeftButtonDown (EventInfo *event)
 {
-   locscene -> spinning = 0;
-   glvis_wnd->RemoveIdleFunc(MainLoop);
+   wnd->locscene -> spinning = 0;
+   wnd->RemoveIdleFunc(::MainLoop);
 
    oldx = event->mouse_x;
    oldy = event->mouse_y;
 
-   ComputeSphereAngles(oldx, oldy, sph_u, sph_t);
+   int vp_w, vp_h;
+   wnd->wnd->getGLDrawSize(vp_w, vp_h);
+
+   ComputeSphereAngles(vp_w, vp_h, oldx, oldy, sph_u, sph_t);
 
    srot.identity();
-   srot.mult(locscene->cam.RotMatrix());
-   srot.mult(locscene->rotmat);
+   srot.mult(wnd->locscene->cam.RotMatrix());
+   srot.mult(wnd->locscene->rotmat);
 
    startx = oldx;
    starty = oldy;
 }
 
-void LeftButtonLoc (EventInfo *event)
+void GLVisWindow::RotationControl::LeftButtonLoc (EventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
-   int sendexpose = 1;
 
    if (event->keymod & KMOD_CTRL)
    {
       if (event->keymod & KMOD_SHIFT)
       {
-         locscene->PreRotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
+         wnd->locscene->PreRotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
       }
       else
       {
          double new_sph_u, new_sph_t;
 
-         ComputeSphereAngles(newx, newy, new_sph_u, new_sph_t);
+         int vp_w, vp_h;
+         wnd->wnd->getGLDrawSize(vp_w, vp_h);
+
+         ComputeSphereAngles(vp_w, vp_h, newx, newy, new_sph_u, new_sph_t);
 
          gl3::GlMatrix newrot;
          newrot.identity();
@@ -545,36 +600,33 @@ void LeftButtonLoc (EventInfo *event)
          inprod = InnerProd(scoord, ncoord);
          CrossProd(scoord, ncoord, cross);
 
-         newrot.mult(locscene->cam.TransposeRotMatrix());
+         newrot.mult(wnd->locscene->cam.TransposeRotMatrix());
          newrot.rotate(acos(inprod)*(180.0/M_PI), cross[0], cross[1], cross[2]);
          newrot.mult(srot.mtx);
-         locscene->rotmat = newrot.mtx;
+         wnd->locscene->rotmat = newrot.mtx;
       }
    }
    else if (event->keymod & KMOD_ALT)
    {
-      locscene->Rotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
+      wnd->locscene->Rotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
    }
    else if (event->keymod & KMOD_SHIFT)
    {
-      locscene->Rotate(double(newx-oldx)/2, double(newy-oldy)/2);
+      wnd->locscene->Rotate(double(newx-oldx)/2, double(newy-oldy)/2);
    }
    else
    {
-      locscene->Rotate(double(newy-oldy)/2, 1.0, 0.0, 0.0);
-      locscene->PreRotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
+      wnd->locscene->Rotate(double(newy-oldy)/2, 1.0, 0.0, 0.0);
+      wnd->locscene->PreRotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
    }
 
    oldx = newx;
    oldy = newy;
 
-   if (sendexpose)
-   {
-      SendExposeEvent();
-   }
+   wnd->SendExposeEvent();
 }
 
-void LeftButtonUp (EventInfo *event)
+void GLVisWindow::RotationControl::LeftButtonUp (EventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -584,8 +636,8 @@ void LeftButtonUp (EventInfo *event)
 
    if ( (event->keymod & KMOD_SHIFT) && (xang != 0.0 || yang != 0.0) )
    {
-      locscene -> spinning = 1;
-      glvis_wnd->AddIdleFunc(MainLoop);
+      wnd->locscene -> spinning = 1;
+      wnd->AddIdleFunc(::MainLoop);
       if (xang > 20) { xang = 20; } if (xang < -20) { xang = -20; }
       if (yang > 20) { yang = 20; } if (yang < -20) { yang = -20; }
 
@@ -600,13 +652,13 @@ void LeftButtonUp (EventInfo *event)
    }
 }
 
-void MiddleButtonDown (EventInfo *event)
+void GLVisWindow::RotationControl::MiddleButtonDown (EventInfo *event)
 {
    startx = oldx = event->mouse_x;
    starty = oldy = event->mouse_y;
 }
 
-void MiddleButtonLoc (EventInfo *event)
+void GLVisWindow::RotationControl::MiddleButtonLoc (EventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -616,15 +668,15 @@ void MiddleButtonLoc (EventInfo *event)
       int w, h;
       double TrX, TrY, scale;
 
-      if (locscene->OrthogonalProjection)
+      if (wnd->locscene->OrthogonalProjection)
       {
-         scale = locscene->ViewScale;
+         scale = wnd->locscene->ViewScale;
       }
       else
       {
-         scale = 0.4142135623730950488/tan(locscene->ViewAngle*(M_PI/360));
+         scale = 0.4142135623730950488/tan(wnd->locscene->ViewAngle*(M_PI/360));
       }
-      wnd->getGLDrawSize(w, h);
+      wnd->wnd->getGLDrawSize(w, h);
       if (w < h)
       {
          scale *= w;
@@ -635,12 +687,12 @@ void MiddleButtonLoc (EventInfo *event)
       }
       TrX = 2.0*double(oldx-newx)/scale;
       TrY = 2.0*double(newy-oldy)/scale;
-      locscene->ViewCenterX += TrX;
-      locscene->ViewCenterY += TrY;
+      wnd->locscene->ViewCenterX += TrX;
+      wnd->locscene->ViewCenterY += TrY;
    }
    else
    {
-      // locscene->Translate((double)(newx-oldx)/200,(double)(newy-oldy)/200);
+      // wnd->locscene->Translate((double)(newx-oldx)/200,(double)(newy-oldy)/200);
 
       double dx = double(newx-oldx)/400;
       double dy = double(oldy-newy)/400;
@@ -650,40 +702,40 @@ void MiddleButtonLoc (EventInfo *event)
          double sx = double(newx-startx)/400;
          double sy = double(starty-newy)/400;
 
-         locscene->cam.TurnLeftRight(dx-sx);
-         locscene->cam.TurnUpDown(sy-dy);
+         wnd->locscene->cam.TurnLeftRight(dx-sx);
+         wnd->locscene->cam.TurnUpDown(sy-dy);
 
-         locscene->cam.TurnUpDown(-sy);
-         locscene->cam.TurnLeftRight(sx);
+         wnd->locscene->cam.TurnUpDown(-sy);
+         wnd->locscene->cam.TurnLeftRight(sx);
       }
       else if (event->keymod & KMOD_ALT) // ctrl + alt
       {
-         locscene->cam.MoveForwardBackward(dy);
-         locscene->cam.TiltLeftRight(-dx);
+         wnd->locscene->cam.MoveForwardBackward(dy);
+         wnd->locscene->cam.TiltLeftRight(-dx);
       }
       else // ctrl
       {
-         locscene->cam.MoveLeftRight(dx);
-         locscene->cam.MoveUpDown(-dy);
+         wnd->locscene->cam.MoveLeftRight(dx);
+         wnd->locscene->cam.MoveUpDown(-dy);
       }
    }
 
-   SendExposeEvent();
+   wnd->SendExposeEvent();
 
    oldx = newx;
    oldy = newy;
 }
 
-void MiddleButtonUp (EventInfo*)
+void GLVisWindow::RotationControl::MiddleButtonUp (EventInfo*)
 {}
 
-void RightButtonDown (EventInfo *event)
+void GLVisWindow::RotationControl::RightButtonDown (EventInfo *event)
 {
    startx = oldx = event->mouse_x;
    starty = oldy = event->mouse_y;
 }
 
-void RightButtonLoc (EventInfo *event)
+void GLVisWindow::RotationControl::RightButtonLoc (EventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -714,24 +766,24 @@ void RightButtonLoc (EventInfo *event)
          x = 0.; y = 0.; z = -1.;
       }
       cout << "(x,y,z) = (" << x << ',' << y << ',' << z << ')' << endl;
-      locscene->SetLight0CustomPos({(float)x, (float)y, (float)z, 0.f});
+      wnd->locscene->SetLight0CustomPos({(float)x, (float)y, (float)z, 0.f});
    }
    else if ( !( event->keymod & KMOD_CTRL ) )
    {
-      locscene -> Zoom (exp ( double (oldy-newy) / 100 ));
+      wnd->locscene -> Zoom (exp ( double (oldy-newy) / 100 ));
    }
    else
    {
-      locscene -> Scale ( exp ( double (oldy-newy) / 50 ) );
+      wnd->locscene -> Scale ( exp ( double (oldy-newy) / 50 ) );
    }
 
-   SendExposeEvent();
+   wnd->SendExposeEvent();
 
    oldx = newx;
    oldy = newy;
 }
 
-void RightButtonUp (EventInfo*)
+void GLVisWindow::RotationControl::RightButtonUp (EventInfo*)
 {}
 
 void ToggleAntialiasing()
@@ -1192,7 +1244,7 @@ void ThreadsRun()
    }
 }
 
-void CheckSpin()
+void GLVisWindow::RotationControl::CheckSpin()
 {
    if (fabs(xang) < 1.e-2)
    {
@@ -1200,22 +1252,22 @@ void CheckSpin()
    }
    if (xang != 0. || yang != 0.)
    {
-      locscene->spinning = 1;
-      glvis_wnd->AddIdleFunc(MainLoop);
+      wnd->locscene->spinning = 1;
+      wnd->AddIdleFunc(::MainLoop);
    }
    else
    {
-      locscene->spinning = 0;
-      glvis_wnd->RemoveIdleFunc(MainLoop);
+      wnd->locscene->spinning = 0;
+      wnd->RemoveIdleFunc(::MainLoop);
    }
    cout << "Spin angle: " << xang << " degrees / frame" << endl;
 }
 
 const double xang_step = 0.2; // angle in degrees
 
-void Key0Pressed()
+void GLVisWindow::RotationControl::Key0Pressed()
 {
-   if (!locscene -> spinning)
+   if (!wnd->locscene -> spinning)
    {
       xang = 0;
    }
@@ -1223,27 +1275,27 @@ void Key0Pressed()
    CheckSpin();
 }
 
-void KeyDeletePressed()
+void GLVisWindow::RotationControl::KeyDeletePressed()
 {
-   if (locscene -> spinning)
+   if (wnd->locscene -> spinning)
    {
       xang = yang = 0.;
-      locscene -> spinning = 0;
-      glvis_wnd->RemoveIdleFunc(MainLoop);
+      wnd->locscene -> spinning = 0;
+      wnd->RemoveIdleFunc(::MainLoop);
       constrained_spinning = 1;
    }
    else
    {
       xang = xang_step;
-      locscene -> spinning = 1;
-      glvis_wnd->AddIdleFunc(MainLoop);
+      wnd->locscene -> spinning = 1;
+      wnd->AddIdleFunc(::MainLoop);
       constrained_spinning = 1;
    }
 }
 
-void KeyEnterPressed()
+void GLVisWindow::RotationControl::KeyEnterPressed()
 {
-   if (!locscene -> spinning)
+   if (!wnd->locscene -> spinning)
    {
       xang = 0;
    }
