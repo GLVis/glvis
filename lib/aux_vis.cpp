@@ -64,9 +64,6 @@ VisualizationScene * GetVisualizationScene()
    return locscene;
 }
 
-void MyExpose(GLsizei w, GLsizei h);
-void MyExpose();
-
 struct GLVisWindow::RotationControl
 {
     GLVisWindow* wnd;
@@ -166,24 +163,24 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
    SetKeyEventHandler (SDLK_q, &GLVisWindow::Quit);
    // wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
 
-   wnd->setOnKeyDown (SDLK_LEFT, KeyLeftPressed);
-   wnd->setOnKeyDown (SDLK_RIGHT, KeyRightPressed);
-   wnd->setOnKeyDown (SDLK_UP, KeyUpPressed);
-   wnd->setOnKeyDown (SDLK_DOWN, KeyDownPressed);
+   SetKeyEventHandler (SDLK_LEFT, &GLVisWindow::KeyLeftPressed);
+   SetKeyEventHandler (SDLK_RIGHT, &GLVisWindow::KeyRightPressed);
+   SetKeyEventHandler (SDLK_UP, &GLVisWindow::KeyUpPressed);
+   SetKeyEventHandler (SDLK_DOWN, &GLVisWindow::KeyDownPressed);
 
    wnd->setOnKeyDown (SDLK_KP_0, Key0Pressed);
-   wnd->setOnKeyDown (SDLK_KP_1, Key1Pressed);
-   wnd->setOnKeyDown (SDLK_KP_2, Key2Pressed);
-   wnd->setOnKeyDown (SDLK_KP_3, Key3Pressed);
-   wnd->setOnKeyDown (SDLK_KP_4, Key4Pressed);
-   wnd->setOnKeyDown (SDLK_KP_5, Key5Pressed);
-   wnd->setOnKeyDown (SDLK_KP_6, Key6Pressed);
-   wnd->setOnKeyDown (SDLK_KP_7, Key7Pressed);
-   wnd->setOnKeyDown (SDLK_KP_8, Key8Pressed);
-   wnd->setOnKeyDown (SDLK_KP_9, Key9Pressed);
+   SetKeyEventHandler (SDLK_KP_1, &GLVisWindow::Key1Pressed);
+   SetKeyEventHandler (SDLK_KP_2, &GLVisWindow::Key2Pressed);
+   SetKeyEventHandler (SDLK_KP_3, &GLVisWindow::Key3Pressed);
+   SetKeyEventHandler (SDLK_KP_4, &GLVisWindow::Key4Pressed);
+   SetKeyEventHandler (SDLK_KP_5, &GLVisWindow::Key5Pressed);
+   SetKeyEventHandler (SDLK_KP_6, &GLVisWindow::Key6Pressed);
+   SetKeyEventHandler (SDLK_KP_7, &GLVisWindow::Key7Pressed);
+   SetKeyEventHandler (SDLK_KP_8, &GLVisWindow::Key8Pressed);
+   SetKeyEventHandler (SDLK_KP_9, &GLVisWindow::Key9Pressed);
 
-   wnd->setOnKeyDown (SDLK_KP_MEMSUBTRACT, KeyMinusPressed);
-   wnd->setOnKeyDown (SDLK_KP_MEMADD, KeyPlusPressed);
+   SetKeyEventHandler (SDLK_KP_MEMSUBTRACT, &GLVisWindow::KeyMinusPressed);
+   SetKeyEventHandler (SDLK_KP_MEMADD, &GLVisWindow::KeyPlusPressed);
 
    wnd->setOnKeyDown (SDLK_KP_DECIMAL, KeyDeletePressed);
    wnd->setOnKeyDown (SDLK_KP_ENTER, KeyEnterPressed);
@@ -192,21 +189,21 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
    wnd->setOnKeyDown (SDLK_RETURN, KeyEnterPressed);
 
    wnd->setOnKeyDown (SDLK_0, Key0Pressed);
-   wnd->setOnKeyDown (SDLK_1, Key1Pressed);
-   wnd->setOnKeyDown (SDLK_2, Key2Pressed);
-   wnd->setOnKeyDown (SDLK_3, Key3Pressed);
-   wnd->setOnKeyDown (SDLK_4, Key4Pressed);
-   wnd->setOnKeyDown (SDLK_5, Key5Pressed);
-   wnd->setOnKeyDown (SDLK_6, Key6Pressed);
-   wnd->setOnKeyDown (SDLK_7, Key7Pressed);
-   wnd->setOnKeyDown (SDLK_8, Key8Pressed);
-   wnd->setOnKeyDown (SDLK_9, Key9Pressed);
+   SetKeyEventHandler (SDLK_1, &GLVisWindow::Key1Pressed);
+   SetKeyEventHandler (SDLK_2, &GLVisWindow::Key2Pressed);
+   SetKeyEventHandler (SDLK_3, &GLVisWindow::Key3Pressed);
+   SetKeyEventHandler (SDLK_4, &GLVisWindow::Key4Pressed);
+   SetKeyEventHandler (SDLK_5, &GLVisWindow::Key5Pressed);
+   SetKeyEventHandler (SDLK_6, &GLVisWindow::Key6Pressed);
+   SetKeyEventHandler (SDLK_7, &GLVisWindow::Key7Pressed);
+   SetKeyEventHandler (SDLK_8, &GLVisWindow::Key8Pressed);
+   SetKeyEventHandler (SDLK_9, &GLVisWindow::Key9Pressed);
 
-   wnd->setOnKeyDown (SDLK_MINUS, KeyMinusPressed);
-   wnd->setOnKeyDown (SDLK_PLUS, KeyPlusPressed);
-   wnd->setOnKeyDown (SDLK_EQUALS, KeyPlusPressed);
+   SetKeyEventHandler (SDLK_MINUS, &GLVisWindow::KeyMinusPressed);
+   SetKeyEventHandler (SDLK_PLUS, &GLVisWindow::KeyPlusPressed);
+   SetKeyEventHandler (SDLK_EQUALS, &GLVisWindow::KeyPlusPressed);
 
-   wnd->setOnKeyDown (SDLK_j, KeyJPressed);
+   SetKeyEventHandler (SDLK_j, &GLVisWindow::KeyJPressed);
    // wnd->setOnKeyDown (AUX_J, KeyJPressed);
 
    SetKeyEventHandler (SDLK_KP_MULTIPLY, &GLVisWindow::ZoomIn);
@@ -228,6 +225,12 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
 void GLVisWindow::SetKeyEventHandler(int key, void (GLVisWindow::*handler)())
 {
     auto handlerWrapper = [this, handler]() { (this->*handler)(); };
+    wnd->setOnKeyDown(key, handlerWrapper);
+}
+
+void GLVisWindow::SetKeyEventHandler(int key, void (GLVisWindow::*handler)(GLenum))
+{
+    auto handlerWrapper = [this, handler](GLenum mod) { (this->*handler)(mod); };
     wnd->setOnKeyDown(key, handlerWrapper);
 }
 
@@ -1023,31 +1026,31 @@ void GLVisWindow::RotationControl::KeyEnterPressed()
    CheckSpin();
 }
 
-void Key7Pressed()
+void GLVisWindow::Key7Pressed()
 {
    locscene->PreRotate(1.0, 0.0, -1.0, 0.0);
    SendExposeEvent();
 }
 
-void Key8Pressed()
+void GLVisWindow::Key8Pressed()
 {
    locscene->Rotate(0.0, -1.0);
    SendExposeEvent();
 }
 
-void Key9Pressed()
+void GLVisWindow::Key9Pressed()
 {
    locscene->PreRotate(-1.0, 1.0, 0.0, 0.0);
    SendExposeEvent();
 }
 
-void Key4Pressed()
+void GLVisWindow::Key4Pressed()
 {
    locscene->PreRotate(-1.0, 0.0, 0.0, 1.0);
    SendExposeEvent();
 }
 
-void Key5Pressed()
+void GLVisWindow::Key5Pressed()
 {
    if (locscene->view == 2)
    {
@@ -1060,31 +1063,31 @@ void Key5Pressed()
    SendExposeEvent();
 }
 
-void Key6Pressed()
+void GLVisWindow::Key6Pressed()
 {
    locscene->PreRotate(1.0, 0.0, 0.0, 1.0);
    SendExposeEvent();
 }
 
-void Key1Pressed()
+void GLVisWindow::Key1Pressed()
 {
    locscene->PreRotate(1.0, 1.0, 0.0, 0.0);
    SendExposeEvent();
 }
 
-void Key2Pressed()
+void GLVisWindow::Key2Pressed()
 {
    locscene->Rotate(1.0, 1.0, 0.0, 0.0);
    SendExposeEvent();
 }
 
-void Key3Pressed()
+void GLVisWindow::Key3Pressed()
 {
    locscene->PreRotate(1.0, 0.0, 1.0, 0.0);
    SendExposeEvent();
 }
 
-void ShiftView(double dx, double dy)
+void ShiftView(VisualizationScene* locscene, double dx, double dy)
 {
    double scale;
    if (locscene->OrthogonalProjection)
@@ -1099,11 +1102,11 @@ void ShiftView(double dx, double dy)
    locscene->ViewCenterY += dy/scale;
 }
 
-void KeyLeftPressed(GLenum state)
+void GLVisWindow::KeyLeftPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
-      ShiftView(0.05, 0.);
+      ShiftView(locscene, 0.05, 0.);
    }
    else
    {
@@ -1112,11 +1115,11 @@ void KeyLeftPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyRightPressed(GLenum state)
+void GLVisWindow::KeyRightPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
-      ShiftView(-0.05, 0.);
+      ShiftView(locscene, -0.05, 0.);
    }
    else
    {
@@ -1125,11 +1128,11 @@ void KeyRightPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyUpPressed(GLenum state)
+void GLVisWindow::KeyUpPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
-      ShiftView(0., -0.05);
+      ShiftView(locscene, 0., -0.05);
    }
    else
    {
@@ -1138,11 +1141,11 @@ void KeyUpPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyDownPressed(GLenum state)
+void GLVisWindow::KeyDownPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
-      ShiftView(0., 0.05);
+      ShiftView(locscene, 0., 0.05);
    }
    else
    {
@@ -1151,19 +1154,19 @@ void KeyDownPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyJPressed()
+void GLVisWindow::KeyJPressed()
 {
-   locscene->OrthogonalProjection = !(locscene->OrthogonalProjection);
+   locscene->ToggleProjectionMode();
    SendExposeEvent();
 }
 
-void KeyMinusPressed()
+void GLVisWindow::KeyMinusPressed()
 {
    locscene -> Scale(1., 1., 1./1.1);
    SendExposeEvent();
 }
 
-void KeyPlusPressed()
+void GLVisWindow::KeyPlusPressed()
 {
    locscene -> Scale(1., 1., 1.1);
    SendExposeEvent();

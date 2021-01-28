@@ -85,11 +85,33 @@ private:
     bool SetFont(const vector<std::string>& patterns, int height);
 
     void SetKeyEventHandler(int key, void (GLVisWindow::*handler)());
+    void SetKeyEventHandler(int key, void (GLVisWindow::*handler)(GLenum));
 
     void MainIdleFunc();
 
     void MyReshape(GLsizei w, GLsizei h);
     void MyExpose(GLsizei w, GLsizei h);
+
+    // Internal event handlers for small scene rotations
+    void Key1Pressed();
+    void Key2Pressed();
+    void Key3Pressed();
+    void Key4Pressed();
+    void Key5Pressed();
+    void Key6Pressed();
+    void Key7Pressed();
+    void Key8Pressed();
+    void Key9Pressed();
+
+    // Internal event handlers for other scene rotations, transformations
+    void KeyLeftPressed(GLenum);
+    void KeyRightPressed(GLenum);
+    void KeyUpPressed(GLenum);
+    void KeyDownPressed(GLenum);
+    void KeyJPressed();
+    void KeyMinusPressed();
+    void KeyPlusPressed();
+
     std::unique_ptr<SdlWindow> wnd;
     VisualizationScene* locscene;
 
@@ -120,29 +142,10 @@ void MainLoop(GLVisWindow* wnd);
 [[deprecated]] GLVisWindow * GetGLVisWindow();
 VisualizationScene * GetVisualizationScene();
 
-void KeyQPressed();
 void ToggleThreads();
 void ThreadsPauseFunc(GLenum);
 void ThreadsStop();
 void ThreadsRun();
-
-void Key1Pressed();
-void Key2Pressed();
-void Key3Pressed();
-void Key4Pressed();
-void Key5Pressed();
-void Key6Pressed();
-void Key7Pressed();
-void Key8Pressed();
-void Key9Pressed();
-
-void KeyLeftPressed(GLenum);
-void KeyRightPressed(GLenum);
-void KeyUpPressed(GLenum);
-void KeyDownPressed(GLenum);
-void KeyJPressed();
-void KeyMinusPressed();
-void KeyPlusPressed();
 
 
 /// Take a screenshot using libtiff, libpng or sdl2
