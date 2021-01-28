@@ -163,7 +163,7 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
    SetKeyEventHandler (SDLK_s, &GLVisWindow::Screenshot);
    SetKeyEventHandler ('S', &GLVisWindow::Screenshot);
 
-   wnd->setOnKeyDown (SDLK_q, KeyQPressed);
+   SetKeyEventHandler (SDLK_q, &GLVisWindow::Quit);
    // wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
 
    wnd->setOnKeyDown (SDLK_LEFT, KeyLeftPressed);
@@ -209,19 +209,19 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
    wnd->setOnKeyDown (SDLK_j, KeyJPressed);
    // wnd->setOnKeyDown (AUX_J, KeyJPressed);
 
-   wnd->setOnKeyDown (SDLK_KP_MULTIPLY, ZoomIn);
-   wnd->setOnKeyDown (SDLK_KP_DIVIDE, ZoomOut);
+   SetKeyEventHandler (SDLK_KP_MULTIPLY, &GLVisWindow::ZoomIn);
+   SetKeyEventHandler (SDLK_KP_DIVIDE, &GLVisWindow::ZoomOut);
 
-   wnd->setOnKeyDown (SDLK_ASTERISK, ZoomIn);
-   wnd->setOnKeyDown (SDLK_SLASH, ZoomOut);
+   SetKeyEventHandler (SDLK_ASTERISK, &GLVisWindow::ZoomIn);
+   SetKeyEventHandler (SDLK_SLASH, &GLVisWindow::ZoomOut);
 
-   wnd->setOnKeyDown (SDLK_LEFTBRACKET, ScaleDown);
-   wnd->setOnKeyDown (SDLK_RIGHTBRACKET, ScaleUp);
-   wnd->setOnKeyDown (SDLK_AT, LookAt);
+   SetKeyEventHandler (SDLK_LEFTBRACKET, &GLVisWindow::ScaleDown);
+   SetKeyEventHandler (SDLK_RIGHTBRACKET, &GLVisWindow::ScaleUp);
+   SetKeyEventHandler (SDLK_AT, &GLVisWindow::LookAt);
 
 #ifndef __EMSCRIPTEN__
-   wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
-   wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
+   SetKeyEventHandler(SDLK_LEFTPAREN, &GLVisWindow::ShrinkWindow);
+   SetKeyEventHandler(SDLK_RIGHTPAREN, &GLVisWindow::EnlargeWindow);
 #endif
 }
 
@@ -920,7 +920,7 @@ void GLVisWindow::PrintToPDF()
 #endif
 }
 
-void KeyQPressed()
+void GLVisWindow::Quit()
 {
    wnd->signalQuit();
    visualize = 0;
@@ -1169,31 +1169,31 @@ void KeyPlusPressed()
    SendExposeEvent();
 }
 
-void ZoomIn()
+void GLVisWindow::ZoomIn()
 {
    locscene->Zoom(exp (0.05));
    SendExposeEvent();
 }
 
-void ZoomOut()
+void GLVisWindow::ZoomOut()
 {
    locscene->Zoom(exp (-0.05));
    SendExposeEvent();
 }
 
-void ScaleUp()
+void GLVisWindow::ScaleUp()
 {
    locscene->Scale(1.025);
    SendExposeEvent();
 }
 
-void ScaleDown()
+void GLVisWindow::ScaleDown()
 {
    locscene->Scale(1.0/1.025);
    SendExposeEvent();
 }
 
-void LookAt()
+void GLVisWindow::LookAt()
 {
    cout << "ViewCenter = (" << locscene->ViewCenterX << ','
         << locscene->ViewCenterY << ")\nNew x = " << flush;
@@ -1205,7 +1205,7 @@ void LookAt()
 
 const double window_scale_factor = 1.1;
 
-void ShrinkWindow()
+void GLVisWindow::ShrinkWindow()
 {
    int w, h;
    wnd->getWindowSize(w, h);
@@ -1217,7 +1217,7 @@ void ShrinkWindow()
    ResizeWindow(w, h);
 }
 
-void EnlargeWindow()
+void GLVisWindow::EnlargeWindow()
 {
    int w, h;
    wnd->getWindowSize(w, h);
@@ -1229,18 +1229,18 @@ void EnlargeWindow()
    ResizeWindow(w, h);
 }
 
-void MoveResizeWindow(int x, int y, int w, int h)
+void GLVisWindow::MoveResizeWindow(int x, int y, int w, int h)
 {
    wnd->setWindowSize(w, h);
    wnd->setWindowPos(x, y);
 }
 
-void ResizeWindow(int w, int h)
+void GLVisWindow::ResizeWindow(int w, int h)
 {
    wnd->setWindowSize(w, h);
 }
 
-void SetWindowTitle(const char *title)
+void GLVisWindow::SetWindowTitle(const char *title)
 {
    wnd->setWindowTitle(title);
 }

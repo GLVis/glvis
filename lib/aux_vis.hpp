@@ -63,10 +63,23 @@ public:
 
     void MainLoop();
 
+    void Quit();
+
     void ToggleAntialiasing();
     void Screenshot() { Screenshot(""); }
     void Screenshot(std::string filename);
     void PrintToPDF();
+
+    void ZoomIn();
+    void ZoomOut();
+    void ScaleUp();
+    void ScaleDown();
+    void LookAt();
+    void ShrinkWindow();
+    void EnlargeWindow();
+    void MoveResizeWindow(int x, int y, int w, int h);
+    void ResizeWindow(int w, int h);
+    void SetWindowTitle(const char *title);
 private:
     void InitFont();
     bool SetFont(const vector<std::string>& patterns, int height);
@@ -131,16 +144,6 @@ void KeyJPressed();
 void KeyMinusPressed();
 void KeyPlusPressed();
 
-void ZoomIn();
-void ZoomOut();
-void ScaleUp();
-void ScaleDown();
-void LookAt();
-void ShrinkWindow();
-void EnlargeWindow();
-void MoveResizeWindow(int x, int y, int w, int h);
-void ResizeWindow(int w, int h);
-void SetWindowTitle(const char *title);
 
 /// Take a screenshot using libtiff, libpng or sdl2
 //int Screenshot(const char *fname, bool convert = false);
