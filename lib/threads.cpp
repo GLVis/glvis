@@ -468,7 +468,7 @@ int GLVisCommand::Execute()
       {
          cout << "Command: keys: '" << key_commands << "'" << endl;
          // SendKeySequence(key_commands.c_str());
-         CallKeySequence(key_commands.c_str());
+         GetGLVisWindow()->CallKeySequence(key_commands.c_str());
          MyExpose();
          break;
       }
@@ -476,7 +476,7 @@ int GLVisCommand::Execute()
       case WINDOW_SIZE:
       {
          cout << "Command: window_size: " << window_w << " x " << window_h << endl;
-         ResizeWindow(window_w, window_h);
+         GetGLVisWindow()->ResizeWindow(window_w, window_h);
          break;
       }
 
@@ -485,14 +485,14 @@ int GLVisCommand::Execute()
          cout << "Command: window_geometry: "
               << "@(" << window_x << "," << window_y << ") "
               << window_w << " x " << window_h << endl;
-         MoveResizeWindow(window_x, window_y, window_w, window_h);
+         GetGLVisWindow()->MoveResizeWindow(window_x, window_y, window_w, window_h);
          break;
       }
 
       case WINDOW_TITLE:
       {
          cout << "Command: window_title: " << window_title << endl;
-         SetWindowTitle(window_title.c_str());
+         GetGLVisWindow()->SetWindowTitle(window_title.c_str());
          break;
       }
 

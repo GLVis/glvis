@@ -656,7 +656,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          scr >> window_x >> window_y >> window_w >> window_h;
          cout << "Script: window: " << window_x << ' ' << window_y
               << ' ' << window_w << ' ' << window_h << endl;
-         MoveResizeWindow(window_x, window_y, window_w, window_h);
+         wnd->MoveResizeWindow(window_x, window_y, window_w, window_h);
          MyExpose();
       }
       else if (word == "keys")
