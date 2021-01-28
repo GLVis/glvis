@@ -25,6 +25,7 @@ class GLVisWindow
 {
 public:
     using IdleFPtr = void(*)(GLVisWindow* wnd);
+    using KeyEvent = void(*)(GLVisWindow* wnd, int keystate);
 
     /// Initializes the visualization and some keys.
     GLVisWindow(std::string name, int x, int y, int w, int h, bool legacyGlOnly);
@@ -59,6 +60,8 @@ public:
 
     void AddIdleFunc(IdleFPtr func);
     void RemoveIdleFunc(IdleFPtr func);
+
+    void MainLoop();
 private:
     void InitFont();
     bool SetFont(const vector<std::string>& patterns, int height);
@@ -80,6 +83,10 @@ private:
     GlVisFont font;
     std::string priority_font;
     int font_size = 12;
+
+    struct RotationControl;
+    std::unique_ptr<RotationControl> rot_data;
+
 };
 
 /// Send expose event. In our case MyReshape is executed and Draw after it.
@@ -92,16 +99,6 @@ void MainLoop(GLVisWindow* wnd);
 [[deprecated]] SdlWindow * GetAppWindow();
 [[deprecated]] GLVisWindow * GetGLVisWindow();
 VisualizationScene * GetVisualizationScene();
-
-void LeftButtonDown  (EventInfo *event);
-void LeftButtonLoc   (EventInfo *event);
-void LeftButtonUp    (EventInfo *event);
-void MiddleButtonDown(EventInfo *event);
-void MiddleButtonLoc (EventInfo *event);
-void MiddleButtonUp  (EventInfo *event);
-void RightButtonDown (EventInfo *event);
-void RightButtonLoc  (EventInfo *event);
-void RightButtonUp   (EventInfo *event);
 
 void ToggleAntialiasing();
 void KeyCtrlP();
@@ -121,10 +118,6 @@ void Key6Pressed();
 void Key7Pressed();
 void Key8Pressed();
 void Key9Pressed();
-
-void Key0Pressed();
-void KeyDeletePressed();
-void KeyEnterPressed();
 
 void KeyLeftPressed(GLenum);
 void KeyRightPressed(GLenum);
