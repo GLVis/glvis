@@ -190,8 +190,6 @@ public:
       }
    }
 
-   void SetFont(GlVisFont* fnt) { this->font = fnt; };
-
    PaletteState& GetPalette() { return palette; }
    void GenerateAlphaTexture()
    { palette.GenerateAlphaTexture(matAlpha, matAlphaCenter); }

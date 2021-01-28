@@ -128,6 +128,7 @@ VisualizationScene::VisualizationScene()
    use_light = true;
 
    palette.Init();
+   font = GetGLVisWindow()->getFont();
 }
 
 VisualizationScene::~VisualizationScene() {}
