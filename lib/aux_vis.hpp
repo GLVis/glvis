@@ -62,9 +62,15 @@ public:
     void RemoveIdleFunc(IdleFPtr func);
 
     void MainLoop();
+
+    void ToggleAntialiasing();
+    void Screenshot();
+    void PrintToPDF();
 private:
     void InitFont();
     bool SetFont(const vector<std::string>& patterns, int height);
+
+    void SetKeyEventHandler(int key, void (GLVisWindow::*handler)());
 
     void MainIdleFunc();
 
@@ -102,9 +108,6 @@ VisualizationScene * GetVisualizationScene();
 
 void TouchPinch(SDL_MultiGestureEvent & e);
 
-void ToggleAntialiasing();
-void KeyCtrlP();
-void KeyS();
 void KeyQPressed();
 void ToggleThreads();
 void ThreadsPauseFunc(GLenum);
