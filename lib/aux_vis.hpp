@@ -64,7 +64,8 @@ public:
     void MainLoop();
 
     void ToggleAntialiasing();
-    void Screenshot();
+    void Screenshot() { Screenshot(""); }
+    void Screenshot(std::string filename);
     void PrintToPDF();
 private:
     void InitFont();
@@ -144,7 +145,7 @@ void ResizeWindow(int w, int h);
 void SetWindowTitle(const char *title);
 
 /// Take a screenshot using libtiff, libpng or sdl2
-int Screenshot(const char *fname, bool convert = false);
+//int Screenshot(const char *fname, bool convert = false);
 
 /// Send a sequence of keystrokes to the visualization window
 void SendKeySequence(const char *seq);

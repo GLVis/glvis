@@ -102,6 +102,8 @@ private:
    void keyEvent(char c);
    void multiGestureEvent(SDL_MultiGestureEvent & e);
 
+   int screenshotHelper(bool convert = false);
+
    std::string saved_keys;
 public:
    SdlWindow();

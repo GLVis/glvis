@@ -741,7 +741,7 @@ void SdlWindow::mainLoop()
       }
       if (takeScreenshot)
       {
-         Screenshot(screenshot_file.c_str());
+         screenshotHelper();
          takeScreenshot = false;
       }
    }

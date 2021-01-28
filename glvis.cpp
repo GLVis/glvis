@@ -416,7 +416,7 @@ int ScriptReadDisplMesh(istream &scr, StreamState& state)
    return 0;
 }
 
-void ExecuteScriptCommand()
+void ExecuteScriptCommand(GLVisWindow* wnd)
 {
    if (!script)
    {
@@ -504,12 +504,9 @@ void ExecuteScriptCommand()
 
          cout << "Script: screenshot: " << flush;
 
-         if (Screenshot(word.c_str(), true))
-         {
-            cout << "Screenshot(" << word << ") failed." << endl;
-            done_one_command = 1;
-            continue;
-         }
+
+
+         wnd->Screenshot(word.c_str());
          cout << "-> " << word << endl;
 
          if (scr_min_val > vs->GetMinV())
@@ -774,7 +771,7 @@ void ScriptControl();
 
 void ScriptIdleFunc(GLVisWindow* wnd)
 {
-   ExecuteScriptCommand();
+   ExecuteScriptCommand(wnd);
    if (scr_level == 0)
    {
       ScriptControl();
