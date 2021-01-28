@@ -168,6 +168,10 @@ public:
    void CenterObject();
    void CenterObject2D();
 
+   // Toggles between orthogonal and perspective projections.
+   void ToggleProjectionMode()
+   { OrthogonalProjection = !OrthogonalProjection; }
+
    void SetProjectionMtx(glm::mat4 projection) { proj_mtx = projection; }
    void SetLightMatIdx(unsigned i);
    int GetLightMatIdx() { return light_mat_idx; }
