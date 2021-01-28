@@ -17,56 +17,9 @@
 #include "gl/types.hpp"
 #include "material.hpp"
 #include "palettes.hpp"
+#include "geom_utils.hpp"
 
 // Visualization header file
-
-// Some inline functions
-
-inline void LinearCombination(const double a, const double x[],
-                              const double b, const double y[], double z[])
-{
-   z[0] = a*x[0] + b*y[0];
-   z[1] = a*x[1] + b*y[1];
-   z[2] = a*x[2] + b*y[2];
-}
-
-inline double InnerProd(const double a[], const double b[])
-{
-   return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
-
-inline void CrossProd(const double a[], const double b[], double cp[])
-{
-   cp[0] = a[1] * b[2] - a[2] * b[1];
-   cp[1] = a[2] * b[0] - a[0] * b[2];
-   cp[2] = a[0] * b[1] - a[1] * b[0];
-}
-
-inline int Normalize(double v[])
-{
-   double len = sqrt(InnerProd(v, v));
-   if (len > 0.0)
-   {
-      len = 1.0 / len;
-   }
-   else
-   {
-      return 1;
-   }
-   for (int i = 0; i < 3; i++)
-   {
-      v[i] *= len;
-   }
-   return 0;
-}
-
-inline int ProjectVector(double v[], const double n[])
-{
-   // project 'v' on the plane with normal given by 'n' and  then normalize 'v'
-   LinearCombination(InnerProd(n, n), v, -InnerProd(v, n), n, v);
-   return Normalize(v);
-}
-
 
 class Camera
 {
