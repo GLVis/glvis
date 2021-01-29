@@ -451,7 +451,7 @@ int GLVisCommand::Execute()
          if (autopause)
          {
             cout << "Autopause ..." << endl;
-            ThreadsStop();
+            GetGLVisWindow()->ThreadsStop();
          }
          break;
       }
@@ -518,7 +518,7 @@ int GLVisCommand::Execute()
       case PAUSE:
       {
          cout << "Command: pause: ";
-         ToggleThreads();
+         GetGLVisWindow()->ToggleThreads();
          break;
       }
 
@@ -667,11 +667,11 @@ int GLVisCommand::Execute()
          cout << "Command: autopause: " << strings_off_on[autopause] << endl;
          if (autopause)
          {
-            ThreadsStop();
+            GetGLVisWindow()->ThreadsStop();
          }
          else
          {
-            ThreadsRun();   // probably not needed
+            GetGLVisWindow()->ThreadsRun();   // probably not needed
          }
          break;
       }
@@ -718,11 +718,11 @@ void GLVisCommand::ToggleAutopause()
    cout << "Autopause: " << strings_off_on[autopause] << endl;
    if (autopause)
    {
-      ThreadsStop();
+      GetGLVisWindow()->ThreadsStop();
    }
    else
    {
-      ThreadsRun();
+      GetGLVisWindow()->ThreadsRun();
    }
 }
 
