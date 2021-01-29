@@ -12,7 +12,7 @@
 #ifndef GLVIS_AUX_VIS_HPP
 #define GLVIS_AUX_VIS_HPP
 
-#include "mfem/mfem.hpp"
+#include "mfem.hpp"
 
 #include "gl/platform_gl.hpp"
 #include "gl/types.hpp"
@@ -115,10 +115,11 @@ private:
     std::unique_ptr<SdlWindow> wnd;
     VisualizationScene* locscene;
 
+    // Idle function callbacks
     mfem::Array<IdleFPtr> idle_funcs{};
     int last_idle_func = 0;
 
-    int visualize;
+    int visualize = 0;
 
     bool disableSendExposeEvent = false;
 
@@ -163,9 +164,6 @@ void CallKeySequence(const char *seq);
 
 void GetColorFromVal(double val, float * rgba);
 
-void SetUseTexture(int ut);
-int GetUseTexture();
-void Set_Texture_Image();
 int GetMultisample();
 void SetMultisample(int m);
 

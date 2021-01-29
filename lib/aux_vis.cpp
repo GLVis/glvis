@@ -1274,23 +1274,6 @@ void GetColorFromVal(double val, float * rgba)
    rgba[3] = 1.f;
 }
 
-int GetUseTexture()
-{
-   return locscene->GetPalette().GetSmoothSetting();
-}
-
-void SetUseTexture(int ut)
-{
-   if (ut == 0)
-   {
-      locscene->GetPalette().UseDiscrete();
-   }
-   else
-   {
-      locscene->GetPalette().UseSmooth();
-   }
-}
-
 int GetMultisample()
 {
    return glvis_multisample;

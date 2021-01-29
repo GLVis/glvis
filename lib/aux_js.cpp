@@ -21,6 +21,7 @@ std::string extra_caption; // used in extern context
 mfem::GeometryRefiner GLVisGeometryRefiner; // used in extern context
 
 static VisualizationSceneScalarData * vs = nullptr;
+GLVisWindow * mainWindow = nullptr;
 
 namespace js
 {
@@ -80,8 +81,20 @@ bool startVisualization(const std::string input, const std::string data_type,
       return false;
    }
 
-   if (InitVisualization("glvis", 0, 0, w, h))
+   try
    {
+       mainWindow = new GLVisWindow("glvis", 0, 0, w, h, false);
+   }
+   catch (std::runtime_error& ex)
+   {
+      cerr << "Initializing the visualization failed: " << endl
+           << ex.what() << endl;
+      return false;
+   }
+   catch(...)
+   {
+       cerr << "Initializing the visualization failed - unknown error."
+            << endl;
       return false;
    }
 
@@ -118,7 +131,7 @@ bool startVisualization(const std::string input, const std::string data_type,
             vs->Zoom(1.8);
             // Use the 'bone' palette when visualizing a 2D mesh only (otherwise
             // the 'jet-like' palette is used in 2D, see vssolution.cpp).
-            paletteSet(4);
+            vs->GetPalette().SetPalette(4);
          }
       }
       else if (stream_state.mesh->SpaceDimension() == 3)
@@ -136,14 +149,14 @@ bool startVisualization(const std::string input, const std::string data_type,
             {
                // Use the 'white' palette when visualizing a 3D volume mesh only
                // paletteSet(4);
-               paletteSet(11);
+               vss->GetPalette().SetPalette(11);
                vss->SetLightMatIdx(4);
             }
             else
             {
                // Use the 'bone' palette when visualizing a surface mesh only
                // (the same as when visualizing a 2D mesh only)
-               paletteSet(4);
+               vss->GetPalette().SetPalette(4);
             }
             // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
 
@@ -207,17 +220,17 @@ bool startVisualization(const std::string input, const std::string data_type,
       }
       if (stream_state.mesh->SpaceDimension() == 2 && field_type == 2)
       {
-         SetVisualizationScene(vs, 2);
+         mainWindow->SetVisualizationScene(vs, 2);
       }
       else
       {
-         SetVisualizationScene(vs, 3);
+         mainWindow->SetVisualizationScene(vs, 3);
       }
    }
 
-   CallKeySequence(stream_state.keys.c_str());
+   mainWindow->CallKeySequence(stream_state.keys.c_str());
 
-   SendExposeEvent();
+   mainWindow->SendExposeEvent();
    return true;
 }
 
@@ -347,6 +360,29 @@ std::string getHelpString()
       = dynamic_cast<VisualizationSceneScalarData*>(GetVisualizationScene());
    return vss->GetHelpString();
 }
+
+void ResizeWindow(int w, int h)
+{
+    mainWindow->ResizeWindow(w, h);
+}
+
+int GetUseTexture()
+{
+   return vs->GetPalette().GetSmoothSetting();
+}
+
+void SetUseTexture(int ut)
+{
+   if (ut == 0)
+   {
+      vs->GetPalette().UseDiscrete();
+   }
+   else
+   {
+      vs->GetPalette().UseSmooth();
+   }
+}
+
 } // namespace js
 
 namespace em = emscripten;
@@ -360,9 +396,9 @@ EMSCRIPTEN_BINDINGS(js_funcs)
    em::function("enableKeyHandling", &js::enableKeyHandling);
    em::function("setKeyboardListeningElementId",
                 js::setKeyboardListeningElementId);
-   em::function("getTextureMode", &GetUseTexture);
-   em::function("setTextureMode", &SetUseTexture);
-   em::function("resizeWindow", &ResizeWindow);
+   em::function("getTextureMode", &js::GetUseTexture);
+   em::function("setTextureMode", &js::SetUseTexture);
+   em::function("resizeWindow", &js::ResizeWindow);
    em::function("setCanvasId", &js::setCanvasId);
    em::function("setupResizeEventCallback", &js::setupResizeEventCallback);
    em::function("getHelpString", &js::getHelpString);
