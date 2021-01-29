@@ -22,6 +22,7 @@ mfem::GeometryRefiner GLVisGeometryRefiner; // used in extern context
 
 static VisualizationSceneScalarData * vs = nullptr;
 StreamState stream_state;
+GLVisWindow * mainWindow = nullptr;
 
 namespace js
 {
@@ -64,8 +65,20 @@ bool startVisualization(const std::string input, const std::string data_type,
       return false;
    }
 
-   if (InitVisualization("glvis", 0, 0, w, h))
+   try
    {
+       mainWindow = new GLVisWindow("glvis", 0, 0, w, h, false);
+   }
+   catch (std::runtime_error& ex)
+   {
+      cerr << "Initializing the visualization failed: " << endl
+           << ex.what() << endl;
+      return false;
+   }
+   catch(...)
+   {
+       cerr << "Initializing the visualization failed - unknown error."
+            << endl;
       return false;
    }
 
@@ -192,22 +205,22 @@ bool startVisualization(const std::string input, const std::string data_type,
       }
       if (stream_state.mesh->SpaceDimension() == 2 && field_type == 2)
       {
-         SetVisualizationScene(vs, 2);
+         mainWindow->SetVisualizationScene(vs, 2);
       }
       else
       {
-         SetVisualizationScene(vs, 3);
+         mainWindow->SetVisualizationScene(vs, 3);
       }
    }
 
-   CallKeySequence(stream_state.keys.c_str());
+   mainWindow->CallKeySequence(stream_state.keys.c_str());
 
    if (minv || maxv)
    {
       vs->SetValueRange(minv, maxv);
    }
 
-   SendExposeEvent();
+   mainWindow->SendExposeEvent();
    return true;
 }
 
@@ -310,6 +323,29 @@ std::string getHelpString()
       = dynamic_cast<VisualizationSceneScalarData*>(GetVisualizationScene());
    return vss->GetHelpString();
 }
+
+void ResizeWindow(int w, int h)
+{
+    mainWindow->ResizeWindow(w, h);
+}
+
+int GetUseTexture()
+{
+   return vs->GetPalette().GetSmoothSetting();
+}
+
+void SetUseTexture(int ut)
+{
+   if (ut == 0)
+   {
+      vs->GetPalette().UseDiscrete();
+   }
+   else
+   {
+      vs->GetPalette().UseSmooth();
+   }
+}
+
 } // namespace js
 
 // Info on type conversion:
@@ -325,9 +361,9 @@ EMSCRIPTEN_BINDINGS(js_funcs)
    em::function("enableKeyHandling", &js::enableKeyHandling);
    em::function("setKeyboardListeningElementId",
                 js::setKeyboardListeningElementId);
-   em::function("getTextureMode", &GetUseTexture);
-   em::function("setTextureMode", &SetUseTexture);
-   em::function("resizeWindow", &ResizeWindow);
+   em::function("getTextureMode", &js::GetUseTexture);
+   em::function("setTextureMode", &js::SetUseTexture);
+   em::function("resizeWindow", &js::ResizeWindow);
    em::function("setCanvasId", &js::setCanvasId);
    em::function("setupResizeEventCallback", &js::setupResizeEventCallback);
    em::function("getHelpString", &js::getHelpString);

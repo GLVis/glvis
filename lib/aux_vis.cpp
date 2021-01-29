@@ -1257,23 +1257,6 @@ void GLVisWindow::SetWindowTitle(const char *title)
    wnd->setWindowTitle(title);
 }
 
-int GetUseTexture()
-{
-   return locscene->palette.GetSmoothSetting();
-}
-
-void SetUseTexture(int ut)
-{
-   if (ut == 0)
-   {
-      locscene->palette.UseDiscrete();
-   }
-   else
-   {
-      locscene->palette.UseSmooth();
-   }
-}
-
 int GetMultisample()
 {
    return glvis_multisample;

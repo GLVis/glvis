@@ -627,10 +627,6 @@ int GLVisCommand::Execute()
       {
          cout << "Command: palette: " << palette << endl;
          (*vs)->palette.SetIndex(palette-1);
-         if (!GetUseTexture())
-         {
-            (*vs)->EventUpdateColors();
-         }
          MyExpose();
          break;
       }
@@ -641,10 +637,6 @@ int GLVisCommand::Execute()
          (*vs)->palette.SetRepeatTimes(palette_repeat);
          (*vs)->palette.Init();
 
-         if (!GetUseTexture())
-         {
-            (*vs)->EventUpdateColors();
-         }
          MyExpose();
          break;
       }
