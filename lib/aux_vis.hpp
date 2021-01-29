@@ -61,6 +61,10 @@ public:
     void AddIdleFunc(IdleFPtr func);
     void RemoveIdleFunc(IdleFPtr func);
 
+    void ThreadsStop();
+    void ThreadsRun();
+    void ToggleThreads();
+
     void MainLoop();
 
     void Quit();
@@ -112,6 +116,9 @@ private:
     void KeyMinusPressed();
     void KeyPlusPressed();
 
+    // Internal event handler for toggling state of threads
+    void ThreadsPauseFunc(GLenum);
+
     std::unique_ptr<SdlWindow> wnd;
     VisualizationScene* locscene;
 
@@ -133,9 +140,9 @@ private:
 };
 
 /// Send expose event. In our case MyReshape is executed and Draw after it.
-void SendExposeEvent();
+[[deprecated]] void SendExposeEvent();
 
-void MyExpose();
+[[deprecated]] void MyExpose();
 
 void MainLoop(GLVisWindow* wnd);
 
@@ -143,10 +150,6 @@ void MainLoop(GLVisWindow* wnd);
 [[deprecated]] GLVisWindow * GetGLVisWindow();
 VisualizationScene * GetVisualizationScene();
 
-void ToggleThreads();
-void ThreadsPauseFunc(GLenum);
-void ThreadsStop();
-void ThreadsRun();
 
 
 /// Take a screenshot using libtiff, libpng or sdl2

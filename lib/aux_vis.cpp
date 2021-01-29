@@ -216,6 +216,8 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
    SetKeyEventHandler (SDLK_RIGHTBRACKET, &GLVisWindow::ScaleUp);
    SetKeyEventHandler (SDLK_AT, &GLVisWindow::LookAt);
 
+   SetKeyEventHandler (SDLK_SPACE, &GLVisWindow::ThreadsPauseFunc);
+
 #ifndef __EMSCRIPTEN__
    SetKeyEventHandler(SDLK_LEFTPAREN, &GLVisWindow::ShrinkWindow);
    SetKeyEventHandler(SDLK_RIGHTPAREN, &GLVisWindow::EnlargeWindow);
@@ -929,7 +931,7 @@ void GLVisWindow::Quit()
    visualize = 0;
 }
 
-void ToggleThreads()
+void GLVisWindow::ToggleThreads()
 {
    static const char *state[] = { "running", "stopped" };
    if (visualize > 0 && visualize < 3)
@@ -939,19 +941,24 @@ void ToggleThreads()
    }
 }
 
-void ThreadsPauseFunc(GLenum state)
+void GLVisWindow::ThreadsPauseFunc(GLenum state)
 {
-   if (state & KMOD_CTRL)
+#ifndef __EMSCRIPTEN__
+   if (glvis_command)
    {
-      glvis_command->ToggleAutopause();
+       if (state & KMOD_CTRL)
+       {
+           glvis_command->ToggleAutopause();
+       }
+       else
+       {
+           ToggleThreads();
+       }
    }
-   else
-   {
-      ToggleThreads();
-   }
+#endif
 }
 
-void ThreadsStop()
+void GLVisWindow::ThreadsStop()
 {
    if (visualize == 1)
    {
@@ -959,7 +966,7 @@ void ThreadsStop()
    }
 }
 
-void ThreadsRun()
+void GLVisWindow::ThreadsRun()
 {
    if (visualize == 2)
    {

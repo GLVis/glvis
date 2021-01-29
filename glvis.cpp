@@ -144,7 +144,6 @@ bool GLVisInitVis(int field_type)
 
    if (input_streams.Size() > 0)
    {
-      mainWindow->getSdl()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
       glvis_command = new GLVisCommand(&vs, &mesh, &grid_f, &sol, &keep_attr,
                                        &fix_elem_orient);
       comm_thread = new communication_thread(input_streams);
