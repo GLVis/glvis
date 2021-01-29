@@ -52,6 +52,8 @@ public:
 
    virtual ~VisualizationSceneVector();
 
+   virtual std::string GetHelpString() const;
+
    void NPressed();
    void PrepareDisplacedMesh();
    virtual void PrepareLines()
