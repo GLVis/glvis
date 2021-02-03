@@ -443,12 +443,11 @@ void ExecuteScriptCommand()
       }
       else if (word == "solution" || word == "mesh" || word == "psolution")
       {
-         Mesh *new_m = NULL;
-         GridFunction *new_g;
+         StreamState new_state;
 
          if (word == "solution")
          {
-            if (ScriptReadSolution(scr, stream_state))
+            if (ScriptReadSolution(scr, new_state))
             {
                done_one_command = 1;
                continue;
@@ -456,12 +455,12 @@ void ExecuteScriptCommand()
          }
          else if (word == "mesh")
          {
-            if (ScriptReadDisplMesh(scr, stream_state))
+            if (ScriptReadDisplMesh(scr, new_state))
             {
                done_one_command = 1;
                continue;
             }
-            if (new_m == NULL)
+            if (new_state.mesh == NULL)
             {
                cout << "Script: unexpected 'mesh' command!" << endl;
                done_one_command = 1;
@@ -470,59 +469,22 @@ void ExecuteScriptCommand()
          }
          else if (word == "psolution")
          {
-            if (ScriptReadParSolution(scr, stream_state))
+            if (ScriptReadParSolution(scr, new_state))
             {
                done_one_command = 1;
                continue;
             }
          }
 
-         if (new_m->SpaceDimension() == mesh->SpaceDimension() &&
-             new_g->VectorDim() == grid_f->VectorDim())
+         if (new_state.mesh->SpaceDimension() == mesh->SpaceDimension() &&
+             new_state.grid_f->VectorDim() == grid_f->VectorDim())
          {
-            if (new_m->SpaceDimension() == 2)
-            {
-               if (new_g->VectorDim() == 1)
-               {
-                  VisualizationSceneSolution *vss =
-                     dynamic_cast<VisualizationSceneSolution *>(vs);
-                  new_g->GetNodalValues(sol);
-                  vss->NewMeshAndSolution(new_m, &sol, new_g);
-               }
-               else
-               {
-                  VisualizationSceneVector *vsv =
-                     dynamic_cast<VisualizationSceneVector *>(vs);
-                  vsv->NewMeshAndSolution(*new_g);
-               }
-            }
-            else
-            {
-               if (new_g->VectorDim() == 1)
-               {
-                  VisualizationSceneSolution3d *vss =
-                     dynamic_cast<VisualizationSceneSolution3d *>(vs);
-                  new_g->GetNodalValues(sol);
-                  vss->NewMeshAndSolution(new_m, &sol, new_g);
-               }
-               else
-               {
-                  new_g = ProjectVectorFEGridFunction(new_g);
-                  VisualizationSceneVector3d *vss =
-                     dynamic_cast<VisualizationSceneVector3d *>(vs);
-                  vss->NewMeshAndSolution(new_m, new_g);
-               }
-            }
-            stream_state.grid_f.reset(new_g);
-            stream_state.mesh.reset(new_m);
-
+            stream_state.SetNewMeshAndSolution(std::move(new_state), vs);
             MyExpose();
          }
          else
          {
             cout << "Different type of mesh / solution." << endl;
-            delete new_g;
-            delete new_m;
          }
       }
       else if (word == "screenshot")

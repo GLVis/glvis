@@ -10,6 +10,7 @@
 // CONTRIBUTING.md for details.
 
 #include "stream_reader.hpp"
+#include "visual.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -333,3 +334,50 @@ int StreamState::ReadStream(istream &is, const string &data_type)
 
    return field_type;
 }
+
+GridFunction *ProjectVectorFEGridFunction(GridFunction*);
+
+void StreamState::SetNewMeshAndSolution(StreamState new_state,
+                                        VisualizationScene* vs)
+{
+    std::unique_ptr<mfem::Mesh> new_m = std::move(new_state.mesh);
+    std::unique_ptr<mfem::GridFunction> new_g = std::move(new_state.grid_f);
+    if (new_m->SpaceDimension() == 2)
+    {
+        if (new_g->VectorDim() == 1)
+        {
+            VisualizationSceneSolution *vss =
+                dynamic_cast<VisualizationSceneSolution *>(vs);
+            new_g->GetNodalValues(sol);
+            vss->NewMeshAndSolution(new_m.get(), &sol, new_g.get());
+        }
+        else
+        {
+            VisualizationSceneVector *vsv =
+                dynamic_cast<VisualizationSceneVector *>(vs);
+            vsv->NewMeshAndSolution(*new_g);
+        }
+    }
+    else
+    {
+        if (new_g->VectorDim() == 1)
+        {
+            VisualizationSceneSolution3d *vss =
+                dynamic_cast<VisualizationSceneSolution3d *>(vs);
+            new_g->GetNodalValues(sol);
+            vss->NewMeshAndSolution(new_m.get(), &sol, new_g.get());
+        }
+        else
+        {
+            GridFunction* proj_new_g = ProjectVectorFEGridFunction(new_g.get());
+            new_g.reset(proj_new_g);
+
+            VisualizationSceneVector3d *vss =
+                dynamic_cast<VisualizationSceneVector3d *>(vs);
+            vss->NewMeshAndSolution(new_m.get(), proj_new_g);
+        }
+    }
+    grid_f = std::move(new_g);
+    mesh = std::move(new_m);
+}
+
