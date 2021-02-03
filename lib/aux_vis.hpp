@@ -84,6 +84,16 @@ public:
     void MoveResizeWindow(int x, int y, int w, int h);
     void ResizeWindow(int w, int h);
     void SetWindowTitle(const char *title);
+
+    void AddWindowEvent(int key, void (*eh)(GLVisWindow*), bool exposeAfter = true)
+    {
+       auto wrapped_eh = [this, eh, exposeAfter](GLenum e)
+       {
+           (*eh)(this);
+           if (exposeAfter) { SendExposeEvent(); }
+       };
+       wnd->setOnKeyDown(key, wrapped_eh);
+    }
 private:
     void InitFont();
     bool SetFont(const vector<std::string>& patterns, int height);
