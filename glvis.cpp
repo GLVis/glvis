@@ -488,7 +488,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
 
          if (stream_state.SetNewMeshAndSolution(std::move(new_state), vs))
          {
-            MyExpose();
+            wnd->MyExpose();
          }
          else
          {
@@ -520,7 +520,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          scr >> vs->ViewCenterX >> vs->ViewCenterY;
          cout << "Script: viewcenter: "
               << vs->ViewCenterX << ' ' << vs->ViewCenterY << endl;
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word ==  "perspective")
       {
@@ -539,7 +539,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
             cout << '?';
          }
          cout << endl;
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word ==  "light")
       {
@@ -558,7 +558,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
             cout << '?';
          }
          cout << endl;
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "view")
       {
@@ -566,7 +566,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          scr >> theta >> phi;
          cout << "Script: view: " << theta << ' ' << phi << endl;
          vs->SetView(theta, phi);
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "zoom")
       {
@@ -574,7 +574,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          scr >> factor;
          cout << "Script: zoom: " << factor << endl;
          vs->Zoom(factor);
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "shading")
       {
@@ -597,7 +597,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          {
             vs->SetShading(s, false);
             cout << word << endl;
-            MyExpose();
+            wnd->MyExpose();
          }
          else
          {
@@ -611,7 +611,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          cout << "Script: subdivisions: " << flush;
          vs->SetRefineFactors(t, b);
          cout << t << ' ' << b << endl;
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "valuerange")
       {
@@ -620,7 +620,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          cout << "Script: valuerange: " << flush;
          vs->SetValueRange(min, max);
          cout << min << ' ' << max << endl;
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "autoscale")
       {
@@ -654,7 +654,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          cout << "Script: window: " << window_x << ' ' << window_y
               << ' ' << window_w << ' ' << window_h << endl;
          wnd->MoveResizeWindow(window_x, window_y, window_w, window_h);
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "keys")
       {
@@ -662,7 +662,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          cout << "Script: keys: '" << stream_state.keys << "'" << endl;
          // SendKeySequence(keys.c_str());
          CallKeySequence(stream_state.keys.c_str());
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "palette")
       {
@@ -670,7 +670,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          scr >> pal;
          cout << "Script: palette: " << pal << endl;
          vs->palette.SetIndex(pal-1);
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "palette_repeat")
       {
@@ -679,7 +679,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          cout << "Script: palette_repeat: " << rpt_times << endl;
          vs->palette.SetRepeatTimes(rpt_times);
          vs->palette.Init();
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "toggle_attributes")
       {
@@ -701,7 +701,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          scr.get(); // read the end symbol: ';'
          cout << endl;
          vs->ToggleAttributes(attr_list);
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "rotmat")
       {
@@ -712,7 +712,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
             cout << ' ' << vs->rotmat[i/4][i%4];
          }
          cout << endl;
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "camera")
       {
@@ -725,7 +725,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          }
          cout << endl;
          vs->cam.Set(cam);
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "scale")
       {
@@ -735,7 +735,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          cout << ' ' << scale;
          cout << endl;
          vs->Scale(scale);
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "translate")
       {
@@ -745,7 +745,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          cout << ' ' << x << ' ' << y << ' ' << z;
          cout << endl;
          vs->Translate(x, y, z);
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "plot_caption")
       {
@@ -753,7 +753,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          scr >> ws >> delim;
          getline(scr, plot_caption, delim);
          vs->PrepareCaption(); // turn on or off the caption
-         MyExpose();
+         wnd->MyExpose();
       }
       else
       {
@@ -764,28 +764,28 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
    }
 }
 
-void ScriptControl();
+void ScriptControl(GLVisWindow* wnd);
 
 void ScriptIdleFunc(GLVisWindow* wnd)
 {
    ExecuteScriptCommand(wnd);
    if (scr_level == 0)
    {
-      ScriptControl();
+      ScriptControl(wnd);
    }
 }
 
-void ScriptControl()
+void ScriptControl(GLVisWindow* wnd)
 {
    if (scr_running)
    {
       scr_running = 0;
-      mainWindow->RemoveIdleFunc(ScriptIdleFunc);
+      wnd->RemoveIdleFunc(ScriptIdleFunc);
    }
    else
    {
       scr_running = 1;
-      mainWindow->AddIdleFunc(ScriptIdleFunc);
+      wnd->AddIdleFunc(ScriptIdleFunc);
    }
 }
 
@@ -858,7 +858,7 @@ void PlayScript(istream &scr)
 
    if (GLVisInitVis((stream_state.grid_f->VectorDim() == 1) ? 0 : 1))
    {
-      GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
+      mainWindow->AddWindowEvent(SDLK_SPACE, ScriptControl, false);
       GLVisStartVis();
    }
 
