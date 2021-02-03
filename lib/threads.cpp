@@ -443,60 +443,19 @@ int GLVisCommand::Execute()
             new_state.SetMeshSolution(false);
             mesh_range = new_state.grid_f->Max() + 1.0;
          }
-         Mesh* const new_m = new_state.mesh.get();
-         GridFunction* const new_g = new_state.grid_f.get();
-         if (new_m->SpaceDimension() == curr_state.mesh->SpaceDimension() &&
-             new_g->VectorDim() == curr_state.grid_f->VectorDim())
+         if (new_state.mesh->SpaceDimension() == curr_state.mesh->SpaceDimension() &&
+             new_state.grid_f->VectorDim() == curr_state.grid_f->VectorDim())
          {
-            if (new_m->SpaceDimension() == 2)
-            {
-               if (new_g->VectorDim() == 1)
-               {
-                  VisualizationSceneSolution *vss =
-                     dynamic_cast<VisualizationSceneSolution *>(*vs);
-                  new_g->GetNodalValues(curr_state.sol);
-                  vss->NewMeshAndSolution(new_m, &curr_state.sol, new_g);
-               }
-               else
-               {
-                  VisualizationSceneVector *vsv =
-                     dynamic_cast<VisualizationSceneVector *>(*vs);
-                  vsv->NewMeshAndSolution(*new_g);
-               }
-            }
-            else
-            {
-               if (new_g->VectorDim() == 1)
-               {
-                  VisualizationSceneSolution3d *vss =
-                     dynamic_cast<VisualizationSceneSolution3d *>(*vs);
-                  new_g->GetNodalValues(curr_state.sol);
-                  vss->NewMeshAndSolution(new_m, &curr_state.sol, new_g);
-               }
-               else
-               {
-                  GridFunction* proj_new_g = ProjectVectorFEGridFunction(new_g);
-                  new_state.grid_f.reset(proj_new_g);
-
-                  VisualizationSceneVector3d *vss =
-                     dynamic_cast<VisualizationSceneVector3d *>(*vs);
-                  vss->NewMeshAndSolution(new_m, proj_new_g);
-               }
-            }
+            curr_state.SetNewMeshAndSolution(std::move(new_state), *vs);
             if (mesh_range > 0.0)
             {
-               (*vs)->SetValueRange(-mesh_range, mesh_range);
+                (*vs)->SetValueRange(-mesh_range, mesh_range);
             }
-            curr_state.grid_f = std::move(new_state.grid_f);
-            curr_state.mesh = std::move(new_state.mesh);
-
             MyExpose();
          }
          else
          {
             cout << "Stream: field type does not match!" << endl;
-            delete new_g;
-            delete new_m;
          }
          if (autopause)
          {

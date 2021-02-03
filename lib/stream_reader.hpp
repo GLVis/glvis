@@ -15,6 +15,7 @@
 #include <string>
 #include <memory>
 #include "mfem.hpp"
+#include "openglvis.hpp"
 
 struct StreamState
 {
@@ -33,6 +34,9 @@ struct StreamState
    void SetMeshSolution(bool save_coloring);
 
    int ReadStream(std::istream &is, const std::string &data_type);
+
+   void SetNewMeshAndSolution(StreamState new_state,
+                              VisualizationScene* vs);
 };
 
 /// Singleton holding the current stream content (defined in steam_reader.cpp)
