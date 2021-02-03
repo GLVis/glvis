@@ -13,6 +13,7 @@
 #define GLVIS_THREADS_HPP
 
 #include "vsdata.hpp"
+#include "stream_reader.hpp"
 #include <mfem.hpp>
 #include <pthread.h>
 
@@ -21,11 +22,8 @@ class GLVisCommand
 private:
    // Pointers to global GLVis data
    VisualizationSceneScalarData **vs;
-   mfem::Mesh          **mesh;
-   mfem::GridFunction  **grid_f;
-   mfem::Vector         *sol;
+   StreamState&         curr_state;
    bool                 *keep_attr;
-   bool                 *fix_elem_orient;
 
    pthread_mutex_t glvis_mutex;
    pthread_cond_t  glvis_cond;
@@ -62,8 +60,7 @@ private:
    int command;
 
    // command arguments
-   Mesh         *new_m;
-   GridFunction *new_g;
+   StreamState   new_state;
    std::string   screenshot_filename;
    std::string   key_commands;
    int           window_x, window_y;
@@ -93,19 +90,19 @@ private:
 
 public:
    // called by the main execution thread
-   GLVisCommand(VisualizationSceneScalarData **_vs, Mesh **_mesh,
-                GridFunction **_grid_f, Vector *_sol, bool *_keep_attr,
-                bool *_fix_elem_orient);
+   GLVisCommand(VisualizationSceneScalarData **_vs,
+                StreamState& thread_state, bool *_keep_attr);
 
    // to be used by the main execution (visualization) thread
    int ReadFD() { return pfd[0]; }
 
    // to be used by worker threads
    bool KeepAttrib() { return *keep_attr; } // may need to sync this
-   bool FixElementOrientations() { return *fix_elem_orient; }
+   bool FixElementOrientations() { return curr_state.fix_elem_orient; }
 
    // called by worker threads
-   int NewMeshAndSolution(Mesh *_new_m, GridFunction *_new_g);
+   int NewMeshAndSolution(std::unique_ptr<Mesh> _new_m,
+                          std::unique_ptr<GridFunction> _new_g);
    int Screenshot(const char *filename);
    int KeyCommands(const char *keys);
    int WindowSize(int w, int h);
@@ -147,8 +144,8 @@ private:
    Array<std::istream *> &is;
 
    // data that may be dynamically allocated by the thread
-   Mesh *new_m;
-   GridFunction *new_g;
+   std::unique_ptr<Mesh> new_m;
+   std::unique_ptr<GridFunction> new_g;
    std::string ident;
 
    // thread id
