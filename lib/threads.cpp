@@ -30,8 +30,6 @@ GLVisCommand::GLVisCommand(
    vs        = _vs;
    keep_attr = _keep_attr;
 
-   pthread_mutex_init(&glvis_mutex, NULL);
-   pthread_cond_init(&glvis_cond, NULL);
    num_waiting = 0;
    terminating = false;
    if (pipe(pfd) == -1)
@@ -50,25 +48,22 @@ GLVisCommand::GLVisCommand(
 int GLVisCommand::lock()
 {
    int my_id;
-   pthread_mutex_lock(&glvis_mutex);
+   unique_lock<mutex> scope_lock(glvis_mutex);
    if (terminating)
    {
-      pthread_mutex_unlock(&glvis_mutex);
       return -1;
    }
    my_id = num_waiting++;
    while (my_id > 0)
    {
-      pthread_cond_wait(&glvis_cond, &glvis_mutex);
+      glvis_cond.wait(scope_lock);
       if (terminating)
       {
          num_waiting--;
-         pthread_mutex_unlock(&glvis_mutex);
          return -1;
       }
       my_id--;
    }
-   pthread_mutex_unlock(&glvis_mutex);
    return 0;
 }
 
@@ -91,13 +86,12 @@ int GLVisCommand::signal()
 
 void GLVisCommand::unlock()
 {
-   pthread_mutex_lock(&glvis_mutex);
+   lock_guard<mutex> scope_lock(glvis_mutex);
    num_waiting--;
    if (num_waiting > 0)
    {
-      pthread_cond_broadcast(&glvis_cond);
+      glvis_cond.notify_all();
    }
-   pthread_mutex_unlock(&glvis_mutex);
 }
 
 int GLVisCommand::NewMeshAndSolution(std::unique_ptr<Mesh> _new_m,
@@ -710,9 +704,10 @@ void GLVisCommand::Terminate()
    char c;
    int n = read(pfd[0], &c, 1);
 
-   pthread_mutex_lock(&glvis_mutex);
-   terminating = true;
-   pthread_mutex_unlock(&glvis_mutex);
+   {
+      lock_guard<mutex> scope_lock(glvis_mutex);
+      terminating = true;
+   }
    if (n == 1 && c == 's')
    {
       switch (command)
@@ -724,12 +719,13 @@ void GLVisCommand::Terminate()
       }
       unlock();
    }
-   pthread_mutex_lock(&glvis_mutex);
-   if (num_waiting > 0)
    {
-      pthread_cond_broadcast(&glvis_cond);
+      lock_guard<mutex> scope_lock(glvis_mutex);
+      if (num_waiting > 0)
+      {
+         glvis_cond.notify_all();
+      }
    }
-   pthread_mutex_unlock(&glvis_mutex);
 }
 
 void GLVisCommand::ToggleAutopause()
@@ -755,8 +751,6 @@ GLVisCommand::~GLVisCommand()
    }
    close(pfd[0]);
    close(pfd[1]);
-   pthread_cond_destroy(&glvis_cond);
-   pthread_mutex_destroy(&glvis_mutex);
 }
 
 communication_thread::communication_thread(Array<istream *> &_is)
@@ -767,7 +761,7 @@ communication_thread::communication_thread(Array<istream *> &_is)
 
    if (is.Size() > 0)
    {
-      pthread_create(&tid, NULL, communication_thread::execute, this);
+      tid = std::thread(&communication_thread::execute, this);
    }
 }
 
@@ -775,8 +769,8 @@ communication_thread::~communication_thread()
 {
    if (is.Size() > 0)
    {
-      pthread_cancel(tid);
-      pthread_join(tid, NULL);
+      terminate_thread = true;
+      tid.join();
    }
 }
 
@@ -789,9 +783,9 @@ void *communication_thread::execute(void *p)
 
    while (1)
    {
-      *_this->is[0] >> ws; // thread cancellation point
-
-      _this->cancel_off();
+      *_this->is[0] >> ws;
+      // thread cancellation point
+      if (_this->terminate_thread) { break; }
 
       *_this->is[0] >> _this->ident;
       if (!(*_this->is[0]))
@@ -1256,8 +1250,6 @@ void *communication_thread::execute(void *p)
       {
          cout << "Stream: unknown command: " << _this->ident << endl;
       }
-
-      _this->cancel_on();
    }
 
    cout << "Stream: end of input." << endl;
@@ -1271,7 +1263,6 @@ comm_terminate:
          isock->close();
       }
    }
-   _this->cancel_on();
 
    return p;
 }
