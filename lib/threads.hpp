@@ -15,7 +15,8 @@
 #include "vsdata.hpp"
 #include "stream_reader.hpp"
 #include <mfem.hpp>
-#include <pthread.h>
+#include <thread>
+#include <condition_variable>
 
 class GLVisWindow;
 
@@ -27,8 +28,9 @@ private:
    StreamState&         curr_state;
    bool                 keep_attr;
 
-   pthread_mutex_t glvis_mutex;
-   pthread_cond_t  glvis_cond;
+   std::mutex glvis_mutex;
+   std::condition_variable glvis_cond;
+
    int num_waiting;
    bool terminating;
    int pfd[2];  // pfd[0] -- reading, pfd[1] -- writing
@@ -150,18 +152,10 @@ private:
    std::unique_ptr<GridFunction> new_g;
    std::string ident;
 
-   // thread id
-   pthread_t tid;
-
-   static void cancel_off()
-   {
-      pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-   }
-
-   static void cancel_on()
-   {
-      pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-   }
+   // thread object
+   std::thread tid;
+   // signal for thread cancellation
+   std::atomic<bool> terminate_thread {false};
 
    static void *execute(void *);
 
