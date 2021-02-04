@@ -22,10 +22,9 @@ using namespace std;
 extern const char *strings_off_on[]; // defined in vsdata.cpp
 
 GLVisCommand::GLVisCommand(
-   VisualizationSceneScalarData **_vs, StreamState& state, bool _keep_attr)
-   : curr_state(state)
+   GLVisWindow* wnd, StreamState& state, bool _keep_attr)
+   : window(wnd), curr_state(state)
 {
-   vs        = _vs;
    keep_attr = _keep_attr;
 
    pthread_mutex_init(&glvis_mutex, NULL);
@@ -78,7 +77,7 @@ int GLVisCommand::signal()
       return -1;
    }
 
-   SdlWindow *sdl_window = GetAppWindow();
+   SdlWindow *sdl_window = window->getSdl();
    if (sdl_window)
    {
       sdl_window->signalLoop();
@@ -428,6 +427,9 @@ int GLVisCommand::Execute()
       return -1;
    }
 
+   VisualizationSceneScalarData* vs
+       = dynamic_cast<VisualizationSceneScalarData*>(window->getScene());
+
    switch (command)
    {
       case NO_COMMAND:
@@ -444,12 +446,12 @@ int GLVisCommand::Execute()
          if (new_state.mesh->SpaceDimension() == curr_state.mesh->SpaceDimension() &&
              new_state.grid_f->VectorDim() == curr_state.grid_f->VectorDim())
          {
-            curr_state.SetNewMeshAndSolution(std::move(new_state), *vs);
+            curr_state.SetNewMeshAndSolution(std::move(new_state), vs);
             if (mesh_range > 0.0)
             {
-                (*vs)->SetValueRange(-mesh_range, mesh_range);
+                vs->SetValueRange(-mesh_range, mesh_range);
             }
-            MyExpose();
+            window->MyExpose();
          }
          else
          {
@@ -458,7 +460,7 @@ int GLVisCommand::Execute()
          if (autopause)
          {
             cout << "Autopause ..." << endl;
-            GetGLVisWindow()->ThreadsStop();
+            window->ThreadsStop();
          }
          break;
       }
@@ -466,7 +468,7 @@ int GLVisCommand::Execute()
       case SCREENSHOT:
       {
          cout << "Command: screenshot: " << flush;
-         GetGLVisWindow()->Screenshot(screenshot_filename.c_str());
+         window->Screenshot(screenshot_filename.c_str());
          cout << "-> " << screenshot_filename << endl;
          break;
       }
@@ -475,15 +477,15 @@ int GLVisCommand::Execute()
       {
          cout << "Command: keys: '" << key_commands << "'" << endl;
          // SendKeySequence(key_commands.c_str());
-         GetGLVisWindow()->CallKeySequence(key_commands.c_str());
-         MyExpose();
+         window->CallKeySequence(key_commands.c_str());
+         window->MyExpose();
          break;
       }
 
       case WINDOW_SIZE:
       {
          cout << "Command: window_size: " << window_w << " x " << window_h << endl;
-         GetGLVisWindow()->ResizeWindow(window_w, window_h);
+         window->ResizeWindow(window_w, window_h);
          break;
       }
 
@@ -492,14 +494,14 @@ int GLVisCommand::Execute()
          cout << "Command: window_geometry: "
               << "@(" << window_x << "," << window_y << ") "
               << window_w << " x " << window_h << endl;
-         GetGLVisWindow()->MoveResizeWindow(window_x, window_y, window_w, window_h);
+         window->MoveResizeWindow(window_x, window_y, window_w, window_h);
          break;
       }
 
       case WINDOW_TITLE:
       {
          cout << "Command: window_title: " << window_title << endl;
-         GetGLVisWindow()->SetWindowTitle(window_title.c_str());
+         window->SetWindowTitle(window_title.c_str());
          break;
       }
 
@@ -507,8 +509,8 @@ int GLVisCommand::Execute()
       {
          cout << "Command: plot_caption: " << plot_caption << endl;
          ::plot_caption = plot_caption;
-         (*vs)->PrepareCaption(); // turn on or off the caption
-         MyExpose();
+         vs->PrepareCaption(); // turn on or off the caption
+         window->MyExpose();
          break;
       }
 
@@ -516,16 +518,16 @@ int GLVisCommand::Execute()
       {
          cout << "Command: axis_labels: '" << axis_label_x << "' '"
               << axis_label_y << "' '" << axis_label_z << "'" << endl;
-         (*vs)->SetAxisLabels(axis_label_x.c_str(), axis_label_y.c_str(),
+         vs->SetAxisLabels(axis_label_x.c_str(), axis_label_y.c_str(),
                               axis_label_z.c_str());
-         MyExpose();
+         window->MyExpose();
          break;
       }
 
       case PAUSE:
       {
          cout << "Command: pause: ";
-         GetGLVisWindow()->ToggleThreads();
+         window->ToggleThreads();
          break;
       }
 
@@ -533,34 +535,34 @@ int GLVisCommand::Execute()
       {
          cout << "Command: view: " << view_ang_theta << ' ' << view_ang_phi
               << endl;
-         (*vs)->SetView(view_ang_theta, view_ang_phi);
-         MyExpose();
+         vs->SetView(view_ang_theta, view_ang_phi);
+         window->MyExpose();
          break;
       }
 
       case ZOOM:
       {
          cout << "Command: zoom: " << zoom_factor << endl;
-         (*vs)->Zoom(zoom_factor);
-         MyExpose();
+         vs->Zoom(zoom_factor);
+         window->MyExpose();
          break;
       }
 
       case SUBDIVISIONS:
       {
          cout << "Command: subdivisions: " << flush;
-         (*vs)->SetRefineFactors(subdiv_tot, subdiv_bdr);
+         vs->SetRefineFactors(subdiv_tot, subdiv_bdr);
          cout << subdiv_tot << ' ' << subdiv_bdr << endl;
-         MyExpose();
+         window->MyExpose();
          break;
       }
 
       case VALUE_RANGE:
       {
          cout << "Command: valuerange: " << flush;
-         (*vs)->SetValueRange(val_min, val_max);
+         vs->SetValueRange(val_min, val_max);
          cout << val_min << ' ' << val_max << endl;
-         MyExpose();
+         window->MyExpose();
          break;
       }
 
@@ -582,9 +584,9 @@ int GLVisCommand::Execute()
          }
          if (s != -1)
          {
-            (*vs)->SetShading(s, false);
+            vs->SetShading(s, false);
             cout << shading << endl;
-            MyExpose();
+            window->MyExpose();
          }
          else
          {
@@ -597,9 +599,9 @@ int GLVisCommand::Execute()
       {
          cout << "Command: viewcenter: "
               << view_center_x << ' ' << view_center_y << endl;
-         (*vs)->ViewCenterX = view_center_x;
-         (*vs)->ViewCenterY = view_center_y;
-         MyExpose();
+         vs->ViewCenterX = view_center_x;
+         vs->ViewCenterY = view_center_y;
+         window->MyExpose();
          break;
       }
 
@@ -608,19 +610,19 @@ int GLVisCommand::Execute()
          cout << "Command: autoscale: " << autoscale_mode;
          if (autoscale_mode == "off")
          {
-            (*vs)->SetAutoscale(0);
+            vs->SetAutoscale(0);
          }
          else if (autoscale_mode == "on")
          {
-            (*vs)->SetAutoscale(1);
+            vs->SetAutoscale(1);
          }
          else if (autoscale_mode == "value")
          {
-            (*vs)->SetAutoscale(2);
+            vs->SetAutoscale(2);
          }
          else if (autoscale_mode == "mesh")
          {
-            (*vs)->SetAutoscale(3);
+            vs->SetAutoscale(3);
          }
          else
          {
@@ -633,18 +635,18 @@ int GLVisCommand::Execute()
       case PALETTE:
       {
          cout << "Command: palette: " << palette << endl;
-         (*vs)->GetPalette().SetPalette(palette-1);
-         MyExpose();
+         vs->GetPalette().SetPalette(palette-1);
+         window->MyExpose();
          break;
       }
 
       case PALETTE_REPEAT:
       {
          cout << "Command: palette_repeat: " << palette_repeat << endl;
-         (*vs)->GetPalette().SetRepeatTimes(palette_repeat);
-         (*vs)->GetPalette().Init();
+         vs->GetPalette().SetRepeatTimes(palette_repeat);
+         vs->GetPalette().Init();
 
-         MyExpose();
+         window->MyExpose();
          break;
       }
 
@@ -656,8 +658,8 @@ int GLVisCommand::Execute()
             cout << ' ' << camera[i];
          }
          cout << endl;
-         (*vs)->cam.Set(camera);
-         MyExpose();
+         vs->cam.Set(camera);
+         window->MyExpose();
          break;
       }
 
@@ -674,11 +676,11 @@ int GLVisCommand::Execute()
          cout << "Command: autopause: " << strings_off_on[autopause] << endl;
          if (autopause)
          {
-            GetGLVisWindow()->ThreadsStop();
+            window->ThreadsStop();
          }
          else
          {
-            GetGLVisWindow()->ThreadsRun();   // probably not needed
+            window->ThreadsRun();   // probably not needed
          }
          break;
       }
@@ -723,11 +725,11 @@ void GLVisCommand::ToggleAutopause()
    cout << "Autopause: " << strings_off_on[autopause] << endl;
    if (autopause)
    {
-      GetGLVisWindow()->ThreadsStop();
+      window->ThreadsStop();
    }
    else
    {
-      GetGLVisWindow()->ThreadsRun();
+      window->ThreadsRun();
    }
 }
 
@@ -745,7 +747,7 @@ GLVisCommand::~GLVisCommand()
 }
 
 communication_thread::communication_thread(GLVisCommand* parent_cmd,
-                                           Array<istream *> &_is)
+                                           const Array<istream *> &_is)
    : is(_is), glvis_command(parent_cmd)
 {
    new_m = NULL;

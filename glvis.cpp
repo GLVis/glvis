@@ -143,147 +143,20 @@ bool GLVisInitVis(int field_type)
        mainWindow->SetFont(font_name);
    }
 
-   if (input_streams.Size() > 0)
+   mainWindow->InitVisualization(field_type, std::move(stream_state),
+                                 input_streams, keep_attr);
+   if (keys != "")
    {
-      glvis_command = new GLVisCommand(&vs, stream_state, keep_attr);
-      comm_thread = new communication_thread(glvis_command, input_streams);
-      mainWindow->SetGLVisCommand(glvis_command, comm_thread);
+      mainWindow->CallKeySequence(keys.c_str());
    }
 
-   double mesh_range = -1.0;
-   if (field_type == 0 || field_type == 2)
-   {
-      if (grid_f)
-      {
-         grid_f->GetNodalValues(sol);
-      }
-      if (mesh->SpaceDimension() == 2)
-      {
-         VisualizationSceneSolution *vss;
-         if (normals.Size() > 0)
-         {
-            vs = vss = new VisualizationSceneSolution(*mesh, sol, &normals);
-         }
-         else
-         {
-            vs = vss = new VisualizationSceneSolution(*mesh, sol);
-         }
-         if (grid_f)
-         {
-            vss->SetGridFunction(*grid_f);
-         }
-         if (field_type == 2)
-         {
-            vs->OrthogonalProjection = 1;
-            vs->SetLight(false);
-            vs->Zoom(1.8);
-            // Use the 'bone' palette when visualizing a 2D mesh only (otherwise
-            // the 'jet-like' palette is used in 2D, see vssolution.cpp).
-            vs->GetPalette().SetPalette(4);
-         }
-      }
-      else if (mesh->SpaceDimension() == 3)
-      {
-         VisualizationSceneSolution3d *vss;
-         vs = vss = new VisualizationSceneSolution3d(*mesh, sol);
-         if (grid_f)
-         {
-            vss->SetGridFunction(grid_f.get());
-         }
-         if (field_type == 2)
-         {
-            if (mesh->Dimension() == 3)
-            {
-               // Use the 'white' palette when visualizing a 3D volume mesh only
-               vss->GetPalette().SetPalette(11);
-               vss->SetLightMatIdx(4);
-            }
-            else
-            {
-               // Use the 'bone' palette when visualizing a surface mesh only
-               vss->GetPalette().SetPalette(4);
-            }
-            // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
-            vss->ToggleDrawAxes();
-            vss->ToggleDrawMesh();
-         }
-      }
-      if (field_type == 2)
-      {
-         if (grid_f)
-         {
-            mesh_range = grid_f->Max() + 1.0;
-         }
-         else
-         {
-            mesh_range = sol.Max() + 1.0;
-         }
-      }
-   }
-   else if (field_type == 1)
-   {
-      if (mesh->SpaceDimension() == 2)
-      {
-         if (grid_f)
-         {
-            vs = new VisualizationSceneVector(*grid_f);
-         }
-         else
-         {
-            vs = new VisualizationSceneVector(*mesh, solu, solv);
-         }
-      }
-      else if (mesh->SpaceDimension() == 3)
-      {
-         if (grid_f)
-         {
-            GridFunction* proj_grid_f = ProjectVectorFEGridFunction(grid_f.get());
-            grid_f.reset(proj_grid_f);
-            vs = new VisualizationSceneVector3d(*proj_grid_f);
-         }
-         else
-         {
-            vs = new VisualizationSceneVector3d(*mesh, solu, solv, solw);
-         }
-      }
-   }
-
-   if (vs)
-   {
-      // increase the refinement factors if visualizing a GridFunction
-      if (grid_f)
-      {
-         vs->AutoRefine();
-         vs->SetShading(2, true);
-      }
-      if (mesh_range > 0.0)
-      {
-         vs->SetValueRange(-mesh_range, mesh_range);
-         vs->SetAutoscale(0);
-      }
-      if (mesh->SpaceDimension() == 2 && field_type == 2)
-      {
-         mainWindow->SetVisualizationScene(vs, 2, keys.c_str());
-      }
-      else
-      {
-         mainWindow->SetVisualizationScene(vs, 3, keys.c_str());
-      }
-   }
    return true;
 }
 
 void GLVisStartVis()
 {
    mainWindow->RunVisualization(); // deletes vs
-   vs = NULL;
-   if (input_streams.Size() > 0)
-   {
-      glvis_command->Terminate();
-      delete comm_thread;
-      delete glvis_command;
-      glvis_command = NULL;
-   }
+   delete mainWindow;
    cout << "GLVis window closed." << endl;
 }
 

@@ -35,6 +35,8 @@ struct StreamState
 
    int ReadStream(std::istream &is, const std::string &data_type);
 
+   std::unique_ptr<VisualizationScene> CreateVisualizationScene(int field_type);
+
    void SetNewMeshAndSolution(StreamState new_state,
                               VisualizationScene* vs);
 };
