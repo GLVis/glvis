@@ -70,6 +70,7 @@ int & is_gf = stream_state.is_gf;
 std::string & keys = stream_state.keys;
 GLVisWindow * mainWindow = nullptr;
 VisualizationSceneScalarData *vs = NULL;
+GLVisCommand *glvis_command = nullptr;
 communication_thread *comm_thread = NULL;
 
 GeometryRefiner GLVisGeometryRefiner;
@@ -144,8 +145,9 @@ bool GLVisInitVis(int field_type)
 
    if (input_streams.Size() > 0)
    {
-      glvis_command = new GLVisCommand(&vs, stream_state, &keep_attr);
-      comm_thread = new communication_thread(input_streams);
+      glvis_command = new GLVisCommand(&vs, stream_state, keep_attr);
+      comm_thread = new communication_thread(glvis_command, input_streams);
+      mainWindow->SetGLVisCommand(glvis_command, comm_thread);
    }
 
    double mesh_range = -1.0;

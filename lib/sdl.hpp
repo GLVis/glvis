@@ -30,6 +30,7 @@ typedef std::function<void(EventInfo*)> MouseDelegate;
 typedef std::function<void(GLenum)> KeyDelegate;
 typedef std::function<void(int, int)> WindowDelegate;
 typedef std::function<void()> Delegate;
+typedef std::function<bool()> IdleDelegate;
 
 class SdlWindow
 {
@@ -57,7 +58,7 @@ private:
 
    bool running;
 
-   Delegate onIdle;
+   IdleDelegate onIdle;
    Delegate onExpose;
    WindowDelegate onReshape;
    std::map<int, KeyDelegate> onKeyDown;
@@ -114,7 +115,7 @@ public:
    // Called by worker threads in GLVisCommand::signal()
    void signalLoop();
 
-   void setOnIdle(Delegate func) { onIdle = func; }
+   void setOnIdle(IdleDelegate func) { onIdle = func; }
    void setOnExpose(Delegate func) { onExpose = func; }
    void setOnReshape(WindowDelegate func) { onReshape = func; }
 

@@ -378,8 +378,18 @@ void GLVisWindow::SetVisualizationScene(VisualizationScene * scene, int view,
    }
 }
 
+void GLVisWindow::SetGLVisCommand(GLVisCommand* cmd,
+                                  communication_thread* cthread)
+{
+   glvis_command = cmd;
+   comm_thread = cthread;
+   use_idle = false;
+}
+
 void GLVisWindow::RunVisualization()
 {
+   visualize = 1;
+   wnd->setOnIdle([this](){return MainIdleFunc();});
 #ifndef __EMSCRIPTEN__
    wnd->mainLoop();
 #endif
@@ -468,19 +478,55 @@ void GLVisWindow::MyExpose()
    wnd->signalSwap();
 }
 
-void GLVisWindow::MainIdleFunc()
+bool GLVisWindow::CommunicationIdleFunc()
 {
-   last_idle_func = (last_idle_func + 1) % idle_funcs.Size();
-   if (idle_funcs[last_idle_func])
+   int status = glvis_command->Execute();
+   if (status < 0)
    {
-      (*idle_funcs[last_idle_func])(this);
+       cout << "GLVisCommand signalled exit" << endl;
+       wnd->signalQuit();
    }
+   else if (status == 1)
+   {
+       // no commands right now - main loop should sleep
+       return true;
+   }
+   return false;
+}
+
+bool GLVisWindow::MainIdleFunc()
+{
+   bool sleep = true;
+   if (glvis_command && visualize == 1
+       && !(idle_funcs.Size() > 0 && use_idle))
+   {
+       // Execute the next event from the communication thread if:
+       //  - a valid GLVisCommand has been set
+       //  - the communication thread is not stopped
+       //  - The idle function flag is not set, or no idle functions have been
+       //    registered
+       sleep = CommunicationIdleFunc();
+       if (idle_funcs.Size() > 0) { sleep = false; }
+   }
+   else if (idle_funcs.Size() > 0)
+   {
+       last_idle_func = (last_idle_func + 1) % idle_funcs.Size();
+       if (idle_funcs[last_idle_func])
+       {
+           (*idle_funcs[last_idle_func])(this);
+       }
+       // Continue executing idle functions
+       sleep = false;
+   }
+   use_idle = !use_idle;
+   return sleep;
 }
 
 void GLVisWindow::AddIdleFunc(GLVisWindow::IdleFPtr Func)
 {
    idle_funcs.Union(Func);
-   wnd->setOnIdle([this](){MainIdleFunc();});
+   use_idle = false;
+   wnd->setOnIdle([this](){return MainIdleFunc();});
 }
 
 void GLVisWindow::RemoveIdleFunc(GLVisWindow::IdleFPtr Func)
@@ -488,7 +534,8 @@ void GLVisWindow::RemoveIdleFunc(GLVisWindow::IdleFPtr Func)
    idle_funcs.DeleteFirst(Func);
    if (idle_funcs.Size() == 0)
    {
-      wnd->setOnIdle(nullptr);
+      use_idle = false;
+      if (!glvis_command) { wnd->setOnIdle(nullptr); }
    }
 }
 

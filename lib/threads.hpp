@@ -23,7 +23,7 @@ private:
    // Pointers to global GLVis data
    VisualizationSceneScalarData **vs;
    StreamState&         curr_state;
-   bool                 *keep_attr;
+   bool                 keep_attr;
 
    pthread_mutex_t glvis_mutex;
    pthread_cond_t  glvis_cond;
@@ -91,13 +91,13 @@ private:
 public:
    // called by the main execution thread
    GLVisCommand(VisualizationSceneScalarData **_vs,
-                StreamState& thread_state, bool *_keep_attr);
+                StreamState& thread_state, bool _keep_attr);
 
    // to be used by the main execution (visualization) thread
    int ReadFD() { return pfd[0]; }
 
    // to be used by worker threads
-   bool KeepAttrib() { return *keep_attr; } // may need to sync this
+   bool KeepAttrib() { return keep_attr; } // may need to sync this
    bool FixElementOrientations() { return curr_state.fix_elem_orient; }
 
    // called by worker threads
@@ -135,13 +135,13 @@ public:
    ~GLVisCommand();
 };
 
-extern GLVisCommand *glvis_command;
-
 class communication_thread
 {
 private:
    // streams to read data from
    Array<std::istream *> &is;
+
+   GLVisCommand* glvis_command;
 
    // data that may be dynamically allocated by the thread
    std::unique_ptr<Mesh> new_m;
@@ -164,7 +164,7 @@ private:
    static void *execute(void *);
 
 public:
-   communication_thread(Array<std::istream *> &_is);
+   communication_thread(GLVisCommand* parent_cmd, Array<std::istream *> &_is);
 
    ~communication_thread();
 };
