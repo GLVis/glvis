@@ -19,11 +19,13 @@
 #include <atomic>
 #include <condition_variable>
 
+class GLVisWindow;
+
 class GLVisCommand
 {
 private:
    // Pointers to global GLVis data
-   VisualizationSceneScalarData **vs;
+   GLVisWindow*         window;
    StreamState&         curr_state;
    bool                 *keep_attr;
 
@@ -93,7 +95,7 @@ private:
 
 public:
    // called by the main execution thread
-   GLVisCommand(VisualizationSceneScalarData **_vs,
+   GLVisCommand(GLVisWindow* parent,
                 StreamState& thread_state, bool *_keep_attr);
 
    // to be used by the main execution (visualization) thread
@@ -142,7 +144,7 @@ class communication_thread
 {
 private:
    // streams to read data from
-   Array<std::istream *> &is;
+   Array<std::istream *> is;
 
    GLVisCommand* glvis_command;
 
@@ -159,7 +161,7 @@ private:
    void execute();
 
 public:
-   communication_thread(GLVisCommand* parent_cmd, Array<std::istream *> &_is);
+   communication_thread(GLVisCommand* parent_cmd, const Array<std::istream *> &_is);
 
    ~communication_thread();
 };

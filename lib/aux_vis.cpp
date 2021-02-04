@@ -225,6 +225,44 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
 #endif
 }
 
+GLVisWindow::~GLVisWindow()
+{
+    if (glvis_command)
+    {
+        glvis_command->Terminate();
+    }
+}
+
+void GLVisWindow::InitVisualization(int field_type, StreamState state,
+                                    const mfem::Array<istream*>& input_streams,
+                                    bool& keep_attr)
+{
+   prob_state = std::move(state);
+   if (input_streams.Size() > 0)
+   {
+      glvis_command.reset(new GLVisCommand(this, prob_state, &keep_attr));
+      comm_thread.reset(new communication_thread(glvis_command.get(), input_streams));
+   }
+
+   locscene = prob_state.CreateVisualizationScene(field_type);
+
+   if (prob_state.mesh->SpaceDimension() == 2 && field_type == 2)
+   {
+      locscene->view = 2;
+      locscene->CenterObject2D();
+   }
+   else
+   {
+      locscene->view = 3;
+      locscene->CenterObject();
+   }
+
+   if (locscene->spinning)
+   {
+      AddIdleFunc(::MainLoop);
+   }
+}
+
 void GLVisWindow::SetKeyEventHandler(int key, void (GLVisWindow::*handler)())
 {
     auto handlerWrapper = [this, handler]() { (this->*handler)(); };
@@ -352,42 +390,6 @@ void GLVisWindow::CallKeySequence(const char *seq)
    disableSendExposeEvent = false;
 }
 
-void GLVisWindow::SetVisualizationScene(VisualizationScene * scene, int view,
-                                        const char *keys)
-{
-   ::locscene = locscene = scene;
-   //locscene->SetFont(&font);
-   locscene -> view = view;
-   if (view == 2)
-   {
-      scene -> CenterObject2D();
-   }
-   else
-   {
-      scene -> CenterObject();
-   }
-
-   if (scene -> spinning)
-   {
-      AddIdleFunc(::MainLoop);
-   }
-
-   if (keys)
-   {
-      // SendKeySequence(keys);
-      CallKeySequence(keys);
-   }
-   wnd->getRenderer().setPalette(&locscene->palette);
-}
-
-void GLVisWindow::SetGLVisCommand(GLVisCommand* cmd,
-                                  communication_thread* cthread)
-{
-   glvis_command = cmd;
-   comm_thread = cthread;
-   use_idle = false;
-}
-
 void GLVisWindow::RunVisualization()
 {
    visualize = 1;
@@ -395,9 +397,6 @@ void GLVisWindow::RunVisualization()
 #ifndef __EMSCRIPTEN__
    wnd->mainLoop();
 #endif
-   delete locscene;
-   //delete wnd;
-   wnd = nullptr;
 }
 
 void SendExposeEvent()
@@ -1169,7 +1168,7 @@ void GLVisWindow::KeyLeftPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
-      ShiftView(locscene, 0.05, 0.);
+      ShiftView(locscene.get(), 0.05, 0.);
    }
    else
    {
@@ -1182,7 +1181,7 @@ void GLVisWindow::KeyRightPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
-      ShiftView(locscene, -0.05, 0.);
+      ShiftView(locscene.get(), -0.05, 0.);
    }
    else
    {
@@ -1195,7 +1194,7 @@ void GLVisWindow::KeyUpPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
-      ShiftView(locscene, 0., -0.05);
+      ShiftView(locscene.get(), 0., -0.05);
    }
    else
    {
@@ -1208,7 +1207,7 @@ void GLVisWindow::KeyDownPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
-      ShiftView(locscene, 0., 0.05);
+      ShiftView(locscene.get(), 0., 0.05);
    }
    else
    {

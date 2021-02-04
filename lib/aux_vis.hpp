@@ -34,14 +34,15 @@ public:
     /// Initializes the visualization and some keys.
     GLVisWindow(std::string name, int x, int y, int w, int h, bool legacyGlOnly);
 
-    void SetVisualizationScene(VisualizationScene * scene,
-                               int view = 3, const char *keys = NULL);
+    ~GLVisWindow();
 
-    void SetGLVisCommand(GLVisCommand* cmd, communication_thread* cthread);
+    void InitVisualization(int field_type, StreamState state,
+                           const mfem::Array<istream*>& input_streams,
+                           bool& keep_attr);
 
     void SetFont(const std::string& fn);
 
-    VisualizationScene* getScene() { return locscene; }
+    VisualizationScene* getScene() { return locscene.get(); }
 
     GlVisFont* getFont() { return &font; }
 
@@ -138,9 +139,10 @@ private:
     void ThreadsPauseFunc(GLenum);
 
     std::unique_ptr<SdlWindow> wnd;
-    VisualizationScene* locscene;
-    GLVisCommand* glvis_command = nullptr;
-    communication_thread* comm_thread = nullptr;
+    std::unique_ptr<VisualizationScene> locscene;
+    std::unique_ptr<GLVisCommand> glvis_command;
+    std::unique_ptr<communication_thread> comm_thread;
+    StreamState prob_state;
     bool use_idle = false;
 
     // Idle function callbacks
