@@ -23,6 +23,7 @@ mfem::GeometryRefiner GLVisGeometryRefiner; // used in extern context
 static VisualizationSceneScalarData * vs = nullptr;
 StreamState stream_state;
 GLVisWindow * mainWindow = nullptr;
+bool keep_attr = false;
 
 namespace js
 {
@@ -36,9 +37,6 @@ bool startVisualization(const std::string input, const std::string data_type,
 
    // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
    const int field_type = stream_state.ReadStream(ss, data_type);
-
-   // reset antialiasing
-   GetAppWindow()->getRenderer().setAntialiasing(0);
 
    std::string line;
    double minv = 0.0, maxv = 0.0;
@@ -86,140 +84,12 @@ bool startVisualization(const std::string input, const std::string data_type,
    vs = nullptr;
 
    double mesh_range = -1.0;
-   if (field_type == 0 || field_type == 2)
-   {
-      if (stream_state.grid_f)
-      {
-         stream_state.grid_f->GetNodalValues(stream_state.sol);
-      }
-      if (stream_state.mesh->SpaceDimension() == 2)
-      {
-         VisualizationSceneSolution * vss;
-         if (stream_state.normals.Size() > 0)
-         {
-            vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
-                                                      &stream_state.normals);
-         }
-         else
-         {
-            vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol);
-         }
-         if (stream_state.grid_f)
-         {
-            vss->SetGridFunction(*stream_state.grid_f);
-         }
-         if (field_type == 2)
-         {
-            vs->OrthogonalProjection = 1;
-            vs->SetLight(0);
-            vs->Zoom(1.8);
-            // Use the 'bone' palette when visualizing a 2D mesh only (otherwise
-            // the 'jet-like' palette is used in 2D, see vssolution.cpp).
-            vs->palette.SetIndex(4);
-         }
-      }
-      else if (stream_state.mesh->SpaceDimension() == 3)
-      {
-         VisualizationSceneSolution3d * vss;
-         vs = vss = new VisualizationSceneSolution3d(*stream_state.mesh,
-                                                     stream_state.sol);
-         if (stream_state.grid_f)
-         {
-            vss->SetGridFunction(stream_state.grid_f.get());
-         }
-         if (field_type == 2)
-         {
-            if (stream_state.mesh->Dimension() == 3)
-            {
-               // Use the 'white' palette when visualizing a 3D volume mesh only
-               // vs->palette.SetIndex(4);
-               vs->palette.SetIndex(11);
-               vss->SetLightMatIdx(4);
-            }
-            else
-            {
-               // Use the 'bone' palette when visualizing a surface mesh only
-               // (the same as when visualizing a 2D mesh only)
-               vs->palette.SetIndex(4);
-            }
-            // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
-
-            vss->ToggleDrawAxes();
-            vss->ToggleDrawMesh();
-         }
-      }
-      if (field_type == 2)
-      {
-         if (stream_state.grid_f)
-         {
-            mesh_range = stream_state.grid_f->Max() + 1.0;
-         }
-         else
-         {
-            mesh_range = stream_state.sol.Max() + 1.0;
-         }
-      }
-   }
-   else if (field_type == 1)
-   {
-      if (stream_state.mesh->SpaceDimension() == 2)
-      {
-         if (stream_state.grid_f)
-         {
-            vs = new VisualizationSceneVector(*stream_state.grid_f);
-         }
-         else
-         {
-            vs = new VisualizationSceneVector(*stream_state.mesh, stream_state.solu,
-                                              stream_state.solv);
-         }
-      }
-      else if (stream_state.mesh->SpaceDimension() == 3)
-      {
-         if (stream_state.grid_f)
-         {
-            stream_state.grid_f
-               = ProjectVectorFEGridFunction(std::move(stream_state.grid_f));
-            vs = new VisualizationSceneVector3d(*stream_state.grid_f);
-         }
-         else
-         {
-            vs = new VisualizationSceneVector3d(*stream_state.mesh, stream_state.solu,
-                                                stream_state.solv, stream_state.solw);
-         }
-      }
-   }
-
-   if (vs)
-   {
-      // increase the refinement factors if visualizing a GridFunction
-      if (stream_state.grid_f)
-      {
-         vs->AutoRefine();
-         vs->SetShading(2, true);
-      }
-      if (mesh_range > 0.0)
-      {
-         vs->SetValueRange(-mesh_range, mesh_range);
-         vs->SetAutoscale(0);
-      }
-      if (stream_state.mesh->SpaceDimension() == 2 && field_type == 2)
-      {
-         mainWindow->SetVisualizationScene(vs, 2);
-      }
-      else
-      {
-         mainWindow->SetVisualizationScene(vs, 3);
-      }
-   }
-
-   mainWindow->CallKeySequence(stream_state.keys.c_str());
+   mainWindow->InitVisualization(field_type, std::move(stream_state), keep_attr);
 
    if (minv || maxv)
    {
       vs->SetValueRange(minv, maxv);
    }
-
    mainWindow->SendExposeEvent();
    return true;
 }
@@ -246,8 +116,7 @@ int updateVisualization(std::string data_type, std::string stream)
       {
          vs->SetValueRange(-mesh_range, mesh_range);
       }
-
-      SendExposeEvent();
+      mainWindow->SendExposeEvent();
       return 0;
    }
    else
@@ -331,18 +200,18 @@ void ResizeWindow(int w, int h)
 
 int GetUseTexture()
 {
-   return vs->GetPalette().GetSmoothSetting();
+   return vs->palette.GetSmoothSetting();
 }
 
 void SetUseTexture(int ut)
 {
    if (ut == 0)
    {
-      vs->GetPalette().UseDiscrete();
+      vs->palette.UseDiscrete();
    }
    else
    {
-      vs->GetPalette().UseSmooth();
+      vs->palette.UseSmooth();
    }
 }
 

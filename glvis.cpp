@@ -132,7 +132,7 @@ bool GLVisInitVis(int field_type)
    }
 
    mainWindow->InitVisualization(field_type, std::move(stream_state),
-                                 input_streams, keep_attr);
+                                 keep_attr, input_streams);
 
    return true;
 }

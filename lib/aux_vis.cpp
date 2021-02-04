@@ -227,22 +227,26 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
 
 GLVisWindow::~GLVisWindow()
 {
+#ifndef __EMSCRIPTEN__
     if (glvis_command)
     {
         glvis_command->Terminate();
     }
+#endif
 }
 
 void GLVisWindow::InitVisualization(int field_type, StreamState state,
-                                    const mfem::Array<istream*>& input_streams,
-                                    bool& keep_attr)
+                                    bool& keep_attr,
+                                    const mfem::Array<istream*>& input_streams)
 {
    prob_state = std::move(state);
+#ifndef __EMSCRIPTEN__
    if (input_streams.Size() > 0)
    {
       glvis_command.reset(new GLVisCommand(this, prob_state, &keep_attr));
       comm_thread.reset(new communication_thread(glvis_command.get(), input_streams));
    }
+#endif
 
    locscene = prob_state.CreateVisualizationScene(field_type);
 
@@ -260,6 +264,11 @@ void GLVisWindow::InitVisualization(int field_type, StreamState state,
    if (locscene->spinning)
    {
       AddIdleFunc(::MainLoop);
+   }
+
+   if (state.keys == "")
+   {
+      CallKeySequence(state.keys.c_str());
    }
 }
 
@@ -498,6 +507,7 @@ bool GLVisWindow::CommunicationIdleFunc()
 bool GLVisWindow::MainIdleFunc()
 {
    bool sleep = true;
+#ifndef __EMSCRIPTEN__
    if (glvis_command && visualize == 1
        && !(idle_funcs.Size() > 0 && use_idle))
    {
@@ -520,6 +530,18 @@ bool GLVisWindow::MainIdleFunc()
        sleep = false;
    }
    use_idle = !use_idle;
+#else
+   if (idle_funcs.Size() > 0)
+   {
+       last_idle_func = (last_idle_func + 1) % idle_funcs.Size();
+       if (idle_funcs[last_idle_func])
+       {
+           (*idle_funcs[last_idle_func])(this);
+       }
+       // Continue executing idle functions
+       sleep = false;
+   }
+#endif
    return sleep;
 }
 
