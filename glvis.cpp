@@ -107,8 +107,6 @@ int ReadInputStreams();
 
 void CloseInputStreams(bool);
 
-GridFunction *ProjectVectorFEGridFunction(GridFunction*);
-
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
 bool GLVisInitVis(int field_type)
@@ -1557,26 +1555,4 @@ void CloseInputStreams(bool parent)
       delete input_streams[i];
    }
    input_streams.DeleteAll();
-}
-
-// Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec
-// or Raviart-Thomas space) with a discontinuous piece-wise polynomial Cartesian
-// product vector grid function of the same order.
-GridFunction *ProjectVectorFEGridFunction(GridFunction *gf)
-{
-   if ((gf->VectorDim() == 3) && (gf->FESpace()->GetVDim() == 1))
-   {
-      int p = gf->FESpace()->GetOrder(0);
-      cout << "Switching to order " << p
-           << " discontinuous vector grid function..." << endl;
-      int dim = gf->FESpace()->GetMesh()->Dimension();
-      FiniteElementCollection *d_fec = new L2_FECollection(p, dim, 1);
-      FiniteElementSpace *d_fespace =
-         new FiniteElementSpace(gf->FESpace()->GetMesh(), d_fec, 3);
-      GridFunction *d_gf = new GridFunction(d_fespace);
-      d_gf->MakeOwner(d_fec);
-      gf->ProjectVectorFieldOn(*d_gf);
-      return d_gf;
-   }
-   return gf;
 }

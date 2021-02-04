@@ -37,8 +37,8 @@ public:
     ~GLVisWindow();
 
     void InitVisualization(int field_type, StreamState state,
-                           const mfem::Array<istream*>& input_streams,
-                           bool keep_attr);
+                           const mfem::Array<istream*>& input_streams = {},
+                           bool keep_attr = false);
 
     void SetFont(const std::string& fn);
 
