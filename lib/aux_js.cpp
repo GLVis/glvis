@@ -21,6 +21,7 @@ std::string extra_caption; // used in extern context
 mfem::GeometryRefiner GLVisGeometryRefiner; // used in extern context
 
 static VisualizationSceneScalarData * vs = nullptr;
+StreamState stream_state;
 
 namespace js
 {

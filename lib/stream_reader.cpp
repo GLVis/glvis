@@ -15,8 +15,6 @@
 using namespace std;
 using namespace mfem;
 
-StreamState stream_state;
-
 void StreamState::Extrude1DMeshAndSolution()
 {
    if (mesh->Dimension() != 1 || mesh->SpaceDimension() != 1)
@@ -63,7 +61,7 @@ void StreamState::Extrude1DMeshAndSolution()
 }
 
 
-void StreamState::SetMeshSolution(bool save_coloring)
+void StreamState::SetMeshSolution()
 {
    if (1) // checkerboard solution
    {
@@ -202,7 +200,7 @@ int StreamState::ReadStream(istream &is, const string &data_type)
    else if (data_type == "mesh")
    {
       mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
-      SetMeshSolution(save_coloring);
+      SetMeshSolution();
       field_type = 2;
    }
    else if (data_type == "raw_scalar_2d")
