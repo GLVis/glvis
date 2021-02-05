@@ -434,7 +434,8 @@ int GLVisCommand::Execute()
          double mesh_range = -1.0;
          if (!new_state.grid_f)
          {
-            new_state.SetMeshSolution(false);
+            new_state.save_coloring = false;
+            new_state.SetMeshSolution();
             mesh_range = new_state.grid_f->Max() + 1.0;
          }
          if (curr_state.SetNewMeshAndSolution(std::move(new_state), vs))

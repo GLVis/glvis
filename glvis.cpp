@@ -43,8 +43,6 @@ const char *arg_keys        = string_none;
 int         np              = 0;
 int         pad_digits      = 6;
 int         gf_component    = -1;
-bool      & fix_elem_orient = stream_state.fix_elem_orient;
-bool      & save_coloring   = stream_state.save_coloring;
 bool        keep_attr       = false;
 int         window_x        = 0; // not a command line option
 int         window_y        = 0; // not a command line option
@@ -59,19 +57,8 @@ string      extra_caption;
 
 // Global variables
 int input = 1;
-std::unique_ptr<Mesh>& mesh = stream_state.mesh;
-Vector & sol = stream_state.sol;
-Vector & solu = stream_state.solu;
-Vector & solv = stream_state.solv;
-Vector & solw = stream_state.solw;
-Vector & normals = stream_state.normals;
-std::unique_ptr<GridFunction>& grid_f = stream_state.grid_f;
-int & is_gf = stream_state.is_gf;
-std::string & keys = stream_state.keys;
+StreamState stream_state;
 GLVisWindow * mainWindow = nullptr;
-VisualizationSceneScalarData *vs = NULL;
-GLVisCommand *glvis_command = nullptr;
-communication_thread *comm_thread = NULL;
 
 GeometryRefiner GLVisGeometryRefiner;
 
@@ -91,19 +78,19 @@ extern char **environ;
 void PrintSampleUsage(ostream &out);
 
 // read the mesh and the solution from a file
-void ReadSerial();
+void ReadSerial(StreamState& state);
 
 // choose grid function component and set the input flag
-void SetGridFunction();
+void SetGridFunction(StreamState& state);
 
 // read the mesh and the solution from multiple files
-void ReadParallel();
+void ReadParallel(StreamState& state);
 
 int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                                const char *sol_prefix, StreamState& state,
                                int keep_attr);
 
-int ReadInputStreams();
+int ReadInputStreams(StreamState& state);
 
 void CloseInputStreams(bool);
 
@@ -143,10 +130,6 @@ bool GLVisInitVis(int field_type)
 
    mainWindow->InitVisualization(field_type, std::move(stream_state),
                                  input_streams, keep_attr);
-   if (keys != "")
-   {
-      mainWindow->CallKeySequence(keys.c_str());
-   }
 
    return true;
 }
@@ -172,7 +155,7 @@ int ScriptReadSolution(istream &scr, StreamState& state)
       cout << "Can not open mesh file: " << mword << endl;
       return 1;
    }
-   state.mesh.reset(new Mesh(imesh, 1, 0, fix_elem_orient));
+   state.mesh.reset(new Mesh(imesh, 1, 0, state.fix_elem_orient));
 
    // read the solution (GridFunction)
    scr >> ws >> sword;
@@ -248,7 +231,7 @@ int ScriptReadDisplMesh(istream &scr, StreamState& state)
          return 1;
       }
       cout << word << endl;
-      meshstate.mesh.reset(new Mesh(imesh, 1, 0, fix_elem_orient));
+      meshstate.mesh.reset(new Mesh(imesh, 1, 0, state.fix_elem_orient));
    }
    meshstate.Extrude1DMeshAndSolution();
    Mesh* const m = meshstate.mesh.get();
@@ -301,6 +284,11 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
       cout << "No script stream defined! (Bug?)" << endl;
       return;
    }
+
+   VisualizationSceneScalarData* vs
+       = static_cast<VisualizationSceneScalarData*>(wnd->getScene());
+
+   StreamState& state = wnd->getStreamState();
 
    istream &scr = *script;
    string word;
@@ -367,10 +355,8 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
             }
          }
 
-         if (new_state.mesh->SpaceDimension() == mesh->SpaceDimension() &&
-             new_state.grid_f->VectorDim() == grid_f->VectorDim())
+         if (state.SetNewMeshAndSolution(std::move(new_state), vs))
          {
-            stream_state.SetNewMeshAndSolution(std::move(new_state), vs);
             wnd->MyExpose();
          }
          else
@@ -541,10 +527,10 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
       }
       else if (word == "keys")
       {
-         scr >> keys;
-         cout << "Script: keys: '" << keys << "'" << endl;
+         scr >> state.keys;
+         cout << "Script: keys: '" << state.keys << "'" << endl;
          // SendKeySequence(keys.c_str());
-         CallKeySequence(keys.c_str());
+         wnd->CallKeySequence(state.keys.c_str());
          wnd->MyExpose();
       }
       else if (word == "palette")
@@ -724,7 +710,7 @@ void PlayScript(istream &scr)
          {
             return;
          }
-         if (mesh)
+         if (stream_state.mesh)
          {
             break;
          }
@@ -737,9 +723,9 @@ void PlayScript(istream &scr)
 
    scr_level = scr_running = 0;
    script = &scr;
-   keys.clear();
+   stream_state.keys.clear();
 
-   if (GLVisInitVis((grid_f->VectorDim() == 1) ? 0 : 1))
+   if (GLVisInitVis((stream_state.grid_f->VectorDim() == 1) ? 0 : 1))
    {
       mainWindow->AddWindowEvent(SDLK_SPACE, ScriptControl, false);
       GLVisStartVis();
@@ -789,7 +775,7 @@ int main (int argc, char *argv[])
                   "Run a GLVis script file.");
    args.AddOption(&arg_keys, "-k", "--keys",
                   "Execute key shortcut commands in the GLVis window.");
-   args.AddOption(&fix_elem_orient, "-fo", "--fix-orientations",
+   args.AddOption(&stream_state.fix_elem_orient, "-fo", "--fix-orientations",
                   "-no-fo", "--dont-fix-orientations",
                   "Attempt to fix the orientations of inverted elements.");
    args.AddOption(&keep_attr, "-a", "--real-attributes",
@@ -799,7 +785,7 @@ int main (int argc, char *argv[])
    args.AddOption(&geom_ref_type, "-grt", "--geometry-refiner-type",
                   "Set of points to use when refining geometry:"
                   " 3 = uniform, 1 = Gauss-Lobatto, (see mfem::Quadrature1D).");
-   args.AddOption(&save_coloring, "-sc", "--save-coloring",
+   args.AddOption(&stream_state.save_coloring, "-sc", "--save-coloring",
                   "-no-sc", "--dont-save-coloring",
                   "Save the mesh coloring generated when opening only a mesh.");
    args.AddOption(&portnum, "-p", "--listen-port",
@@ -872,7 +858,7 @@ int main (int argc, char *argv[])
    if (gfunc_file != string_none)
    {
       sol_file = gfunc_file;
-      is_gf = 255;
+      stream_state.is_gf = 255;
    }
    if (np > 0)
    {
@@ -880,7 +866,7 @@ int main (int argc, char *argv[])
    }
    if (arg_keys != string_none)
    {
-      keys = arg_keys;
+      stream_state.keys = arg_keys;
    }
    if (multisample != GetMultisample())
    {
@@ -937,7 +923,7 @@ int main (int argc, char *argv[])
 
    // print help for wrong input
    if (!(input == 1 || input == 3 || input == 7 || input == 11 || input == 259 ||
-         (is_gf && (input == 3 || input == 259))))
+         (stream_state.is_gf && (input == 3 || input == 259))))
    {
       cout << "Invalid combination of mesh/solution options!\n\n";
       PrintSampleUsage(cout);
@@ -1127,12 +1113,12 @@ int main (int argc, char *argv[])
                }
                else
                {
-                  ReadInputStreams();
+                  ReadInputStreams(stream_state);
                   CloseInputStreams(false);
                   ofs.precision(8);
                   ofs << "solution\n";
-                  mesh->Print(ofs);
-                  grid_f->Save(ofs);
+                  stream_state.mesh->Print(ofs);
+                  stream_state.grid_f->Save(ofs);
                }
                ofs.close();
                cout << "Data saved in " << tmp_file << endl;
@@ -1174,7 +1160,7 @@ int main (int argc, char *argv[])
                   else
                   {
                      delete isock;
-                     ft = ReadInputStreams();
+                     ft = ReadInputStreams(stream_state);
                   }
                   if (GLVisInitVis(ft))
                   {
@@ -1203,11 +1189,11 @@ int main (int argc, char *argv[])
    {
       if (input & 256)
       {
-         ReadParallel();
+         ReadParallel(stream_state);
       }
       else
       {
-         ReadSerial();
+         ReadSerial(stream_state);
       }
 
       bool use_vector_soln = (input & 8);
@@ -1248,7 +1234,7 @@ void PrintSampleUsage(ostream &out)
 }
 
 
-void ReadSerial()
+void ReadSerial(StreamState& state)
 {
    // get the mesh from a file
    named_ifgzstream meshin(mesh_file);
@@ -1258,9 +1244,9 @@ void ReadSerial()
       exit(1);
    }
 
-   stream_state.mesh.reset(new Mesh(meshin, 1, 0, fix_elem_orient));
+   state.mesh.reset(new Mesh(meshin, 1, 0, state.fix_elem_orient));
 
-   if (is_gf || (input & 4) || (input & 8))
+   if (state.is_gf || (input & 4) || (input & 8))
    {
       // get the solution from file
       bool freesolin = false;
@@ -1280,25 +1266,25 @@ void ReadSerial()
          }
       }
 
-      if (is_gf)
+      if (state.is_gf)
       {
-         stream_state.grid_f.reset(new GridFunction(mesh.get(), *solin));
-         SetGridFunction();
+         state.grid_f.reset(new GridFunction(state.mesh.get(), *solin));
+         SetGridFunction(state);
       }
       else if (input & 4)
       {
          // get rid of NetGen's info line
          char buff[128];
          solin->getline(buff,128);
-         sol.Load(*solin, mesh->GetNV());
+         state.sol.Load(*solin, state.mesh->GetNV());
       }
       else if (input & 8)
       {
-         solu.Load(*solin, mesh->GetNV());
-         solv.Load(*solin, mesh->GetNV());
-         if (mesh->SpaceDimension() == 3)
+         state.solu.Load(*solin, state.mesh->GetNV());
+         state.solv.Load(*solin, state.mesh->GetNV());
+         if (state.mesh->SpaceDimension() == 3)
          {
-            solw.Load(*solin, mesh->GetNV());
+            state.solw.Load(*solin, state.mesh->GetNV());
          }
       }
       if (freesolin)
@@ -1308,37 +1294,37 @@ void ReadSerial()
    }
    else
    {
-      stream_state.SetMeshSolution(save_coloring);
+      state.SetMeshSolution();
    }
 
-   stream_state.Extrude1DMeshAndSolution();
+   state.Extrude1DMeshAndSolution();
 }
 
 
-void SetGridFunction()
+void SetGridFunction(StreamState& state)
 {
    if (gf_component != -1)
    {
-      if (gf_component < 0 || gf_component >= grid_f->VectorDim())
+      if (gf_component < 0 || gf_component >= state.grid_f->VectorDim())
       {
          cerr << "Invalid component " << gf_component << '.' << endl;
          exit(1);
       }
-      FiniteElementSpace *ofes = grid_f->FESpace();
+      FiniteElementSpace *ofes = state.grid_f->FESpace();
       FiniteElementCollection *fec =
          FiniteElementCollection::New(ofes->FEColl()->Name());
-      FiniteElementSpace *fes = new FiniteElementSpace(mesh.get(), fec);
+      FiniteElementSpace *fes = new FiniteElementSpace(state.mesh.get(), fec);
       GridFunction *new_gf = new GridFunction(fes);
       new_gf->MakeOwner(fec);
       for (int i = 0; i < new_gf->Size(); i++)
       {
-         (*new_gf)(i) = (*grid_f)(ofes->DofToVDof(i, gf_component));
+         (*new_gf)(i) = (*state.grid_f)(ofes->DofToVDof(i, gf_component));
       }
-      stream_state.grid_f.reset(new_gf);
+      state.grid_f.reset(new_gf);
    }
-   if (grid_f->VectorDim() == 1)
+   if (state.grid_f->VectorDim() == 1)
    {
-      grid_f->GetNodalValues(sol);
+      state.grid_f->GetNodalValues(state.sol);
       input |= 4;
    }
    else
@@ -1348,26 +1334,26 @@ void SetGridFunction()
 }
 
 
-void ReadParallel()
+void ReadParallel(StreamState& state)
 {
    int err;
 
-   if (is_gf)
+   if (state.is_gf)
    {
       err = ReadParMeshAndGridFunction(np, mesh_file, sol_file,
-                                       stream_state, keep_attr);
+                                       state, keep_attr);
       if (!err)
       {
-         SetGridFunction();
+         SetGridFunction(state);
       }
    }
    else
    {
       err = ReadParMeshAndGridFunction(np, mesh_file, NULL,
-                                       stream_state, keep_attr);
+                                       state, keep_attr);
       if (!err)
       {
-         stream_state.SetMeshSolution(save_coloring);
+         state.SetMeshSolution();
       }
    }
 
@@ -1376,7 +1362,7 @@ void ReadParallel()
       exit(1);
    }
 
-   stream_state.Extrude1DMeshAndSolution();
+   state.Extrude1DMeshAndSolution();
 }
 
 int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
@@ -1411,7 +1397,7 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
          break;
       }
 
-      mesh_array[p] = new Mesh(meshfile, 1, 0, fix_elem_orient);
+      mesh_array[p] = new Mesh(meshfile, 1, 0, state.fix_elem_orient);
 
       if (!keep_attr)
       {
@@ -1470,7 +1456,7 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    return err;
 }
 
-int ReadInputStreams()
+int ReadInputStreams(StreamState& state)
 {
    int nproc = input_streams.Size();
    Array<Mesh *> mesh_array(nproc);
@@ -1491,7 +1477,7 @@ int ReadInputStreams()
 #ifdef GLVIS_DEBUG
       cout << " type " << data_type << " ... " << flush;
 #endif
-      mesh_array[p] = new Mesh(isock, 1, 0, fix_elem_orient);
+      mesh_array[p] = new Mesh(isock, 1, 0, state.fix_elem_orient);
       if (!keep_attr)
       {
          // set element and boundary attributes to proc+1
@@ -1520,16 +1506,16 @@ int ReadInputStreams()
       mfem_error("Input streams contain a mixture of data types!");
    }
 
-   stream_state.mesh.reset(new Mesh(mesh_array, nproc));
+   state.mesh.reset(new Mesh(mesh_array, nproc));
    if (gf_count == 0)
    {
-      stream_state.SetMeshSolution(save_coloring);
+      state.SetMeshSolution();
       field_type = 2;
    }
    else
    {
-      stream_state.grid_f.reset(new GridFunction(mesh.get(), gf_array, nproc));
-      field_type = (grid_f->VectorDim() == 1) ? 0 : 1;
+      state.grid_f.reset(new GridFunction(state.mesh.get(), gf_array, nproc));
+      field_type = (state.grid_f->VectorDim() == 1) ? 0 : 1;
    }
 
    for (int p = 0; p < nproc; p++)
@@ -1538,7 +1524,7 @@ int ReadInputStreams()
       delete gf_array[nproc-1-p];
    }
 
-   stream_state.Extrude1DMeshAndSolution();
+   state.Extrude1DMeshAndSolution();
 
    return field_type;
 }

@@ -48,6 +48,8 @@ public:
 
     SdlWindow* getSdl() { return wnd.get(); }
 
+    StreamState& getStreamState() { return prob_state; }
+
     /// Start the infinite visualization loop.
     void RunVisualization();
 

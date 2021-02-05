@@ -31,7 +31,7 @@ struct StreamState
    void Extrude1DMeshAndSolution();
 
    /// Set a (checkerboard) solution when only the mesh is given
-   void SetMeshSolution(bool save_coloring);
+   void SetMeshSolution();
 
    int ReadStream(std::istream &is, const std::string &data_type);
 
@@ -47,9 +47,6 @@ struct StreamState
    bool SetNewMeshAndSolution(StreamState new_state,
                               VisualizationScene* vs);
 };
-
-/// Singleton holding the current stream content (defined in steam_reader.cpp)
-extern StreamState stream_state;
 
 
 #endif // GLVIS_STREAM_READER_HPP
