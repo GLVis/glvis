@@ -725,7 +725,7 @@ void PlayScript(istream &scr)
 
    if (GLVisInitVis((stream_state.grid_f->VectorDim() == 1) ? 0 : 1))
    {
-      mainWindow->AddWindowEvent(SDLK_SPACE, ScriptControl, false);
+      mainWindow->AddKeyEvent(SDLK_SPACE, ScriptControl, false);
       GLVisStartVis();
    }
 

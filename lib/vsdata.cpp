@@ -464,13 +464,6 @@ void VisualizationSceneScalarData::PrepareCaption()
 }
 
 VisualizationSceneScalarData * vsdata;
-extern VisualizationScene  * locscene;
-
-void KeycPressed()
-{
-   vsdata->ToggleDrawColorbar();
-   SendExposeEvent();
-}
 
 void KeyCPressed()
 {
@@ -480,20 +473,10 @@ void KeyCPressed()
    SendExposeEvent();
 }
 
-void KeySPressed()
+void Key_Mod_a_Pressed(GLVisWindow* wnd, GLenum state)
 {
-   vsdata -> ToggleScaling();
-   SendExposeEvent();
-}
-
-void KeyaPressed()
-{
-   vsdata -> ToggleDrawAxes();
-   SendExposeEvent();
-}
-
-void Key_Mod_a_Pressed(GLenum state)
-{
+   VisualizationSceneScalarData * vsdata
+       = dynamic_cast<VisualizationSceneScalarData*>(wnd->getScene());
    if (state & KMOD_CTRL)
    {
       static const char *autoscale_modes[] = { "off", "on", "value", "mesh" };
@@ -516,12 +499,6 @@ void KeyHPressed()
    cout << vsdata->GetHelpString() << flush;
 }
 
-void KeylPressed()
-{
-   vsdata -> ToggleLight();
-   SendExposeEvent();
-}
-
 void KeyLPressed()
 {
    vsdata->ToggleLogscale(true);
@@ -530,22 +507,22 @@ void KeyLPressed()
 
 void KeyrPressed()
 {
-   locscene -> spinning = 0;
+   vsdata -> spinning = 0;
    GetGLVisWindow()->RemoveIdleFunc(MainLoop);
    vsdata -> CenterObject();
 
-   locscene -> ViewAngle = 45.0;
-   locscene -> ViewScale = 1.0;
-   locscene -> ViewCenterX = 0.0;
-   locscene -> ViewCenterY = 0.0;
-   locscene->cam.Reset();
+   vsdata -> ViewAngle = 45.0;
+   vsdata -> ViewScale = 1.0;
+   vsdata -> ViewCenterX = 0.0;
+   vsdata -> ViewCenterY = 0.0;
+   vsdata->cam.Reset();
    vsdata -> key_r_state = 0;
    SendExposeEvent();
 }
 
 void KeyRPressed()
 {
-   locscene->spinning = 0;
+   vsdata->spinning = 0;
    GetGLVisWindow()->RemoveIdleFunc(MainLoop);
    vsdata->Toggle2DView();
    SendExposeEvent();
@@ -559,14 +536,14 @@ void KeypPressed(GLenum state)
    }
    else
    {
-      locscene->palette.NextIndex();
+      vsdata->palette.NextIndex();
       SendExposeEvent();
    }
 }
 
 void KeyPPressed()
 {
-   locscene->palette.PrevIndex();
+   vsdata->palette.PrevIndex();
    SendExposeEvent();
 }
 
@@ -705,78 +682,11 @@ void KeyGPressed()
    SendExposeEvent();
 }
 
-void KeyF1Pressed()
-{
-   vsdata->PrintState();
-}
-
 void KeyF2Pressed()
 {
    vsdata -> EventUpdateColors();
    vsdata -> PrepareLines();
    // vsdata->CPPrepare();
-   SendExposeEvent();
-}
-
-void KeykPressed()
-{
-   locscene->matAlpha -= 0.05;
-   if (locscene->matAlpha < 0.0)
-   {
-      locscene->matAlpha = 0.0;
-   }
-   locscene->GenerateAlphaTexture();
-   SendExposeEvent();
-}
-
-void KeyKPressed()
-{
-   locscene->matAlpha += 0.05;
-   if (locscene->matAlpha > 1.0)
-   {
-      locscene->matAlpha = 1.0;
-   }
-   locscene->GenerateAlphaTexture();
-   SendExposeEvent();
-}
-
-void KeyCommaPressed()
-{
-   locscene->matAlphaCenter -= 0.25;
-   //vsdata -> EventUpdateColors();
-   locscene->GenerateAlphaTexture();
-   SendExposeEvent();
-#ifdef GLVIS_DEBUG
-   cout << "MatAlphaCenter = " << locscene->matAlphaCenter << endl;
-#endif
-}
-
-void KeyLessPressed()
-{
-   locscene->matAlphaCenter += 0.25;
-   //vsdata -> EventUpdateColors();
-   locscene->GenerateAlphaTexture();
-   SendExposeEvent();
-#ifdef GLVIS_DEBUG
-   cout << "MatAlphaCenter = " << locscene->matAlphaCenter << endl;
-#endif
-}
-
-void KeyGravePressed()
-{
-   vsdata->ToggleRuler();
-   SendExposeEvent();
-}
-
-void KeyTildePressed()
-{
-   vsdata->RulerPosition();
-   SendExposeEvent();
-}
-
-void KeyToggleTexture()
-{
-   vsdata->ToggleTexture();
    SendExposeEvent();
 }
 
@@ -1091,50 +1001,53 @@ void VisualizationSceneScalarData::Init()
    // if (!init)
    {
       // init = 1;
+      GLVisWindow* wnd = GetGLVisWindow();
 
-      wnd->setOnKeyDown('l', KeylPressed);
-      wnd->setOnKeyDown('L', KeyLPressed);
+      using SceneType = VisualizationSceneScalarData;
 
-      wnd->setOnKeyDown('s', KeySPressed);
+      wnd->AddKeyEvent('l', &SceneType::ToggleLight);
+      wnd->AddKeyEvent('L', KeyLPressed);
 
-      // wnd->setOnKeyDown('a', KeyaPressed);
-      wnd->setOnKeyDown('a', Key_Mod_a_Pressed);
+      wnd->AddKeyEvent('s', &SceneType::ToggleScaling);
 
-      wnd->setOnKeyDown('r', KeyrPressed);
-      wnd->setOnKeyDown('R', KeyRPressed);
+      // wnd->AddKeyEvent('a', KeyaPressed);
+      wnd->AddKeyEvent('a', Key_Mod_a_Pressed);
 
-      wnd->setOnKeyDown('p', KeypPressed);
-      wnd->setOnKeyDown('P', KeyPPressed);
+      wnd->AddKeyEvent('r', KeyrPressed);
+      wnd->AddKeyEvent('R', KeyRPressed);
 
-      wnd->setOnKeyDown('h', KeyHPressed);
-      wnd->setOnKeyDown('H', KeyHPressed);
+      wnd->AddKeyEvent('p', KeypPressed);
+      wnd->AddKeyEvent('P', KeyPPressed);
 
-      wnd->setOnKeyDown(SDLK_F5, KeyF5Pressed);
-      wnd->setOnKeyDown(SDLK_F6, KeyF6Pressed);
-      wnd->setOnKeyDown(SDLK_F7, KeyF7Pressed);
+      wnd->AddKeyEvent('h', KeyHPressed);
+      wnd->AddKeyEvent('H', KeyHPressed);
 
-      wnd->setOnKeyDown(SDLK_BACKSLASH, KeyBackslashPressed);
-      wnd->setOnKeyDown('t', KeyTPressed);
-      wnd->setOnKeyDown('T', KeyTPressed);
+      wnd->AddKeyEvent(SDLK_F5, KeyF5Pressed);
+      wnd->AddKeyEvent(SDLK_F6, KeyF6Pressed);
+      wnd->AddKeyEvent(SDLK_F7, KeyF7Pressed);
 
-      wnd->setOnKeyDown('g', KeyGPressed);
-      wnd->setOnKeyDown('G', KeyGPressed);
+      wnd->AddKeyEvent(SDLK_BACKSLASH, KeyBackslashPressed);
+      wnd->AddKeyEvent('t', KeyTPressed);
+      wnd->AddKeyEvent('T', KeyTPressed);
 
-      wnd->setOnKeyDown('c', KeycPressed);
-      wnd->setOnKeyDown('C', KeyCPressed);
+      wnd->AddKeyEvent('g', KeyGPressed);
+      wnd->AddKeyEvent('G', KeyGPressed);
 
-      wnd->setOnKeyDown('k', KeykPressed);
-      wnd->setOnKeyDown('K', KeyKPressed);
+      wnd->AddKeyEvent('c', &SceneType::ToggleDrawColorbar);
+      wnd->AddKeyEvent('C', KeyCPressed);
 
-      wnd->setOnKeyDown(SDLK_F1, KeyF1Pressed);
-      wnd->setOnKeyDown(SDLK_F2, KeyF2Pressed);
+      wnd->AddKeyEvent('k', &SceneType::DecrementAlpha);
+      wnd->AddKeyEvent('K', &SceneType::IncrementAlpha);
 
-      wnd->setOnKeyDown(SDLK_COMMA, KeyCommaPressed);
-      wnd->setOnKeyDown(SDLK_LESS, KeyLessPressed);
-      wnd->setOnKeyDown('~', KeyTildePressed);
-      wnd->setOnKeyDown('`', KeyGravePressed);
+      wnd->AddKeyEvent(SDLK_F1, &SceneType::PrintState, false);
+      wnd->AddKeyEvent(SDLK_F2, KeyF2Pressed);
 
-      wnd->setOnKeyDown(SDLK_EXCLAIM, KeyToggleTexture);
+      wnd->AddKeyEvent(SDLK_COMMA, &SceneType::DecrementAlphaCenter);
+      wnd->AddKeyEvent(SDLK_LESS, &SceneType::IncrementAlphaCenter);
+      wnd->AddKeyEvent('~', &SceneType::RulerPosition);
+      wnd->AddKeyEvent('`', &SceneType::ToggleRuler);
+
+      wnd->AddKeyEvent(SDLK_EXCLAIM, &SceneType::ToggleTexture);
    }
 
    //Set_Light();

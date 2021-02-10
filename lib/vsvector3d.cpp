@@ -104,34 +104,22 @@ VisualizationSceneVector3d  *vsvector3d;
 extern VisualizationScene *locscene;
 extern GeometryRefiner GLVisGeometryRefiner;
 
-static void KeyDPressed()
+void VisualizationSceneVector3d::NextDisplacement()
 {
-   vsvector3d -> ToggleDisplacements();
-   SendExposeEvent();
+   if (drawdisp)
+      ianimd =( (ianimd + 1) % (ianimmax + 1) );
+   else
+      ianim =( (ianim + 1) % (ianimmax + 1) );
+   NPressed();
 }
 
-static void KeyNPressed()
+void VisualizationSceneVector3d::PrevDisplacement()
 {
-   if (vsvector3d -> drawdisp)
-      vsvector3d -> ianimd =( (vsvector3d ->ianimd + 1) %
-                              (vsvector3d -> ianimmax + 1) );
+   if (drawdisp)
+      ianimd = ((ianimd + ianimmax) % (ianimmax + 1));
    else
-      vsvector3d -> ianim =( (vsvector3d ->ianim + 1) %
-                             (vsvector3d -> ianimmax + 1) );
-   vsvector3d -> NPressed();
-}
-
-static void KeyBPressed()
-{
-   if (vsvector3d -> drawdisp)
-      vsvector3d ->ianimd = ((vsvector3d ->ianimd +
-                              vsvector3d ->ianimmax) %
-                             (vsvector3d ->ianimmax + 1));
-   else
-      vsvector3d ->ianim = ((vsvector3d ->ianim +
-                             vsvector3d ->ianimmax) %
-                            (vsvector3d ->ianimmax + 1));
-   vsvector3d -> NPressed();
+      ianim = ((ianim + ianimmax) % (ianimmax + 1));
+   NPressed();
 }
 
 static void KeyrPressed()
@@ -178,16 +166,14 @@ void VisualizationSceneVector3d::NPressed()
    SendExposeEvent();
 }
 
-static void KeyuPressed()
+void VisualizationSceneVector3d::NextVectorFieldLevel()
 {
-   vsvector3d -> ToggleVectorFieldLevel(+1);
-   SendExposeEvent();
+   ToggleVectorFieldLevel(+1);
 }
 
-static void KeyUPressed()
+void VisualizationSceneVector3d::PrevVectorFieldLevel()
 {
-   vsvector3d -> ToggleVectorFieldLevel(-1);
-   SendExposeEvent();
+   ToggleVectorFieldLevel(-1);
 }
 
 void VisualizationSceneVector3d::ToggleVectorFieldLevel(int v)
@@ -206,19 +192,7 @@ void VisualizationSceneVector3d::ToggleVectorFieldLevel(int v)
    {
       dvflevel[i] = level[vflevel[i]];
    }
-   vsvector3d -> PrepareVectorField();
-}
-
-static void KeywPressed()
-{
-   vsvector3d -> AddVectorFieldLevel();
-   SendExposeEvent();
-}
-
-static void KeyWPressed()
-{
-   vsvector3d -> RemoveVectorFieldLevel();
-   SendExposeEvent();
+   PrepareVectorField();
 }
 
 void VisualizationSceneVector3d::AddVectorFieldLevel()
@@ -227,32 +201,24 @@ void VisualizationSceneVector3d::AddVectorFieldLevel()
    next = (next + 1) % (nl+1);
    vflevel.Append(next);
    dvflevel.Append(level[next]);
-   vsvector3d -> PrepareVectorField();
+   PrepareVectorField();
 }
 
 void VisualizationSceneVector3d::RemoveVectorFieldLevel()
 {
    vflevel.DeleteLast();
    dvflevel.DeleteLast();
-   vsvector3d -> PrepareVectorField();
+   PrepareVectorField();
 }
 
-static void KeyvPressed()
+void VisualizationSceneVector3d::NextVectorField()
 {
-   vsvector3d -> ToggleVectorField(1);
-   SendExposeEvent();
+   ToggleVectorField(1);
 }
 
-static void KeyVPressed()
+void VisualizationSceneVector3d::PrevVectorField()
 {
-   vsvector3d -> ToggleVectorField(-1);
-   SendExposeEvent();
-}
-
-static void VectorKeyFPressed()
-{
-   vsvector3d->ToggleScalarFunction();
-   SendExposeEvent();
+   ToggleVectorField(-1);
 }
 
 void VisualizationSceneVector3d::ToggleVectorField(int i)
@@ -399,29 +365,31 @@ void VisualizationSceneVector3d::Init()
    // if (!init)
    {
       // init = 1;
+      GLVisWindow* wnd = GetGLVisWindow();
+      using SceneType = VisualizationSceneVector3d;
 
-      wnd->setOnKeyDown('d', KeyDPressed);
-      wnd->setOnKeyDown('D', KeyDPressed);
+      wnd->AddKeyEvent('d', &SceneType::ToggleDisplacements);
+      wnd->AddKeyEvent('D', &SceneType::ToggleDisplacements);
 
-      wnd->setOnKeyDown('n', KeyNPressed);
-      wnd->setOnKeyDown('N', KeyNPressed);
+      wnd->AddKeyEvent('n', &SceneType::NextDisplacement);
+      wnd->AddKeyEvent('N', &SceneType::NextDisplacement);
 
-      wnd->setOnKeyDown('b', KeyBPressed);
-      wnd->setOnKeyDown('B', KeyBPressed);
+      wnd->AddKeyEvent('b', &SceneType::PrevDisplacement);
+      wnd->AddKeyEvent('B', &SceneType::PrevDisplacement);
 
-      wnd->setOnKeyDown('r', KeyrPressed); // adds another function to 'r' and 'R'
-      wnd->setOnKeyDown('R', KeyRPressed); // the other function is in vsdata.cpp
+      wnd->AddKeyEvent('r', KeyrPressed); // adds another function to 'r' and 'R'
+      wnd->AddKeyEvent('R', KeyRPressed); // the other function is in vsdata.cpp
 
-      wnd->setOnKeyDown('u', KeyuPressed); // Keys u, U are also used in
-      wnd->setOnKeyDown('U', KeyUPressed); // VisualizationSceneSolution3d
+      wnd->AddKeyEvent('u', &SceneType::NextVectorFieldLevel); // Keys u, U are also used in
+      wnd->AddKeyEvent('U', &SceneType::PrevVectorFieldLevel); // VisualizationSceneSolution3d
 
-      wnd->setOnKeyDown('w', KeywPressed); // Keys w, W are also used in
-      wnd->setOnKeyDown('W', KeyWPressed); // VisualizationSceneSolution3d
+      wnd->AddKeyEvent('w', &SceneType::AddVectorFieldLevel); // Keys w, W are also used in
+      wnd->AddKeyEvent('W', &SceneType::RemoveVectorFieldLevel); // VisualizationSceneSolution3d
 
-      wnd->setOnKeyDown('v', KeyvPressed); // Keys v, V are also used in
-      wnd->setOnKeyDown('V', KeyVPressed); // VisualizationSceneSolution3d
+      wnd->AddKeyEvent('v', &SceneType::NextVectorField); // Keys v, V are also used in
+      wnd->AddKeyEvent('V', &SceneType::PrevVectorField); // VisualizationSceneSolution3d
 
-      wnd->setOnKeyDown('F', VectorKeyFPressed);
+      wnd->AddKeyEvent('F', &SceneType::ToggleScalarFunction);
    }
 }
 

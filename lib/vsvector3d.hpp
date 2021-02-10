@@ -33,6 +33,14 @@ protected:
    Array<int> vflevel;
    Array<double> dvflevel;
 
+   void NextDisplacement();
+   void PrevDisplacement();
+   void NPressed();
+
+   void NextVectorField();
+   void PrevVectorField();
+   void NextVectorFieldLevel();
+   void PrevVectorFieldLevel();
 public:
    int ianim, ianimd, ianimmax, drawdisp;
 
@@ -45,7 +53,6 @@ public:
 
    virtual std::string GetHelpString() const;
 
-   void NPressed();
    virtual void PrepareFlat();
    virtual void Prepare();
    virtual void PrepareLines();

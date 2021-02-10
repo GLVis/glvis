@@ -44,6 +44,14 @@ protected:
    Vector vc0;
    IsoparametricTransformation T0;
 
+   int ianim = 0;
+   const int ianimmax = 10;
+
+   void NextDisplacement();
+   void PrevDisplacement();
+
+   void QueryArrowScaling();
+
 public:
    VisualizationSceneVector(Mesh &m, Vector &sx, Vector &sy);
    VisualizationSceneVector(GridFunction &vgf);
@@ -54,7 +62,6 @@ public:
 
    virtual std::string GetHelpString() const;
 
-   void NPressed();
    void PrepareDisplacedMesh();
    virtual void PrepareLines()
    { VisualizationSceneSolution::PrepareLines(); PrepareDisplacedMesh(); }

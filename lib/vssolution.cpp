@@ -219,24 +219,6 @@ static void KeyF10Pressed(GLenum state)
    }
 }
 
-static void KeyBPressed()
-{
-   vssol -> ToggleDrawBdr();
-   SendExposeEvent();
-}
-
-static void KeyMPressed()
-{
-   vssol -> ToggleDrawMesh();
-   SendExposeEvent();
-}
-
-static void KeyNPressed()
-{
-   vssol -> ToggleDrawNumberings();
-   SendExposeEvent();
-}
-
 int refine_func = 0;
 
 static void KeyoPressed(GLenum state)
@@ -317,24 +299,6 @@ static void KeyOPressed(GLenum state)
          cout << "Decrease bdr subdivision factor" << endl;
          break;
    }
-}
-
-static void KeyEPressed()
-{
-   vssol -> ToggleDrawElems();
-   SendExposeEvent();
-}
-
-static void KeyFPressed()
-{
-   vssol -> ToggleShading();
-   SendExposeEvent();
-}
-
-void KeyiPressed()
-{
-   vssol->ToggleDrawCP();
-   SendExposeEvent();
 }
 
 void KeyIPressed()
@@ -487,40 +451,42 @@ void VisualizationSceneSolution::Init()
    // if (!init)
    {
       // init = 1;
+      GLVisWindow* wnd = GetGLVisWindow();
+      using SceneType = VisualizationSceneSolution;
 
-      wnd->setOnKeyDown('b', KeyBPressed);
-      wnd->setOnKeyDown('B', KeyBPressed);
+      wnd->AddKeyEvent('b', &SceneType::ToggleDrawBdr);
+      wnd->AddKeyEvent('B', &SceneType::ToggleDrawBdr);
 
-      wnd->setOnKeyDown('m', KeyMPressed);
-      wnd->setOnKeyDown('M', KeyMPressed);
+      wnd->AddKeyEvent('m', &SceneType::ToggleDrawMesh);
+      wnd->AddKeyEvent('M', &SceneType::ToggleDrawMesh);
 
-      wnd->setOnKeyDown('n', KeyNPressed);
-      wnd->setOnKeyDown('N', KeyNPressed);
+      wnd->AddKeyEvent('n', &SceneType::ToggleDrawNumberings);
+      wnd->AddKeyEvent('N', &SceneType::ToggleDrawNumberings);
 
-      wnd->setOnKeyDown('o', KeyoPressed);
-      wnd->setOnKeyDown('O', KeyOPressed);
+      wnd->AddKeyEvent('o', KeyoPressed);
+      wnd->AddKeyEvent('O', KeyOPressed);
 
-      wnd->setOnKeyDown('e', KeyEPressed);
-      wnd->setOnKeyDown('E', KeyEPressed);
+      wnd->AddKeyEvent('e', &SceneType::ToggleDrawElems);
+      wnd->AddKeyEvent('E', &SceneType::ToggleDrawElems);
 
-      wnd->setOnKeyDown('f', KeyFPressed);
-      wnd->setOnKeyDown('F', KeyFPressed);
+      wnd->AddKeyEvent('f', &SceneType::ToggleShading);
+      wnd->AddKeyEvent('F', &SceneType::ToggleShading);
 
-      wnd->setOnKeyDown('i', KeyiPressed);
-      wnd->setOnKeyDown('I', KeyIPressed);
+      wnd->AddKeyEvent('i', &SceneType::ToggleDrawCP);
+      //wnd->AddKeyEvent('I', KeyIPressed);
 
-      wnd->setOnKeyDown('y', KeyyPressed);
-      wnd->setOnKeyDown('Y', KeyYPressed);
-      wnd->setOnKeyDown('z', KeyzPressed);
-      wnd->setOnKeyDown('Z', KeyZPressed);
+      wnd->AddKeyEvent('y', KeyyPressed);
+      wnd->AddKeyEvent('Y', KeyYPressed);
+      wnd->AddKeyEvent('z', KeyzPressed);
+      wnd->AddKeyEvent('Z', KeyZPressed);
 
-      wnd->setOnKeyDown(SDLK_F3, KeyF3Pressed);
-      wnd->setOnKeyDown(SDLK_F4, KeyF4Pressed);
-      wnd->setOnKeyDown(SDLK_F8, KeyF8Pressed);
-      wnd->setOnKeyDown(SDLK_F9,  KeyF9Pressed);
-      wnd->setOnKeyDown(SDLK_F10, KeyF10Pressed);
-      wnd->setOnKeyDown(SDLK_F11, KeyF11Pressed);
-      wnd->setOnKeyDown(SDLK_F12, KeyF12Pressed);
+      wnd->AddKeyEvent(SDLK_F3, KeyF3Pressed);
+      wnd->AddKeyEvent(SDLK_F4, KeyF4Pressed);
+      wnd->AddKeyEvent(SDLK_F8, KeyF8Pressed);
+      wnd->AddKeyEvent(SDLK_F9,  KeyF9Pressed);
+      wnd->AddKeyEvent(SDLK_F10, KeyF10Pressed);
+      wnd->AddKeyEvent(SDLK_F11, KeyF11Pressed);
+      wnd->AddKeyEvent(SDLK_F12, KeyF12Pressed);
    }
 
    Prepare();

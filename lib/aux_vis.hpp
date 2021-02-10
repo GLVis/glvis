@@ -93,11 +93,39 @@ public:
     void ResizeWindow(int w, int h);
     void SetWindowTitle(const char *title);
 
-    void AddWindowEvent(int key, void (*eh)(GLVisWindow*), bool exposeAfter = true)
+    template<typename... Args>
+    void AddKeyEvent(int key, void(*eh)(Args...))
+    {
+        wnd->setOnKeyDown(key, eh);
+    }
+
+    template<typename TScene>
+    void AddKeyEvent(int key, void (TScene::*eh)(), bool exposeAfter = true)
+    {
+       auto wrapped_eh = [this, eh, exposeAfter](GLenum e)
+       {
+           TScene* pScene = dynamic_cast<TScene*>(locscene.get());
+           (pScene->*eh)();
+           if (exposeAfter) { SendExposeEvent(); }
+       };
+       wnd->setOnKeyDown(key, wrapped_eh);
+    }
+
+    void AddKeyEvent(int key, void (*eh)(GLVisWindow*), bool exposeAfter = true)
     {
        auto wrapped_eh = [this, eh, exposeAfter](GLenum e)
        {
            (*eh)(this);
+           if (exposeAfter) { SendExposeEvent(); }
+       };
+       wnd->setOnKeyDown(key, wrapped_eh);
+    }
+
+    void AddKeyEvent(int key, void (*eh)(GLVisWindow*, GLenum), bool exposeAfter = true)
+    {
+       auto wrapped_eh = [this, eh, exposeAfter](GLenum e)
+       {
+           (*eh)(this, e);
            if (exposeAfter) { SendExposeEvent(); }
        };
        wnd->setOnKeyDown(key, wrapped_eh);
