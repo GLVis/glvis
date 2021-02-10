@@ -465,3 +465,41 @@ glm::mat4 VisualizationScene::GetModelViewMtx()
    return modelView.mtx;
 }
 
+void VisualizationScene::DecrementAlpha()
+{
+   matAlpha -= 0.05;
+   if (matAlpha < 0.0)
+   {
+      matAlpha = 0.0;
+   }
+   GenerateAlphaTexture();
+}
+
+void VisualizationScene::IncrementAlpha()
+{
+   matAlpha += 0.05;
+   if (matAlpha > 1.0)
+   {
+      matAlpha = 1.0;
+   }
+   GenerateAlphaTexture();
+}
+
+void VisualizationScene::DecrementAlphaCenter()
+{
+   matAlphaCenter -= 0.25;
+   GenerateAlphaTexture();
+#ifdef GLVIS_DEBUG
+   cout << "MatAlphaCenter = " << matAlphaCenter << endl;
+#endif
+}
+
+void VisualizationScene::IncrementAlphaCenter()
+{
+   matAlphaCenter += 0.25;
+   GenerateAlphaTexture();
+#ifdef GLVIS_DEBUG
+   cout << "MatAlphaCenter = " << matAlphaCenter << endl;
+#endif
+}
+

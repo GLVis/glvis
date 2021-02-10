@@ -105,18 +105,6 @@ std::string VisualizationSceneSolution3d::GetHelpString() const
    return os.str();
 }
 
-static void KeyiPressed()
-{
-   vssol3d -> ToggleCuttingPlane();
-   SendExposeEvent();
-}
-
-static void KeyIPressed()
-{
-   vssol3d -> ToggleCPAlgorithm();
-   SendExposeEvent();
-}
-
 void VisualizationSceneSolution3d::PrepareOrderingCurve()
 {
    bool color = draworder < 3;
@@ -293,36 +281,6 @@ static void KeyZPressed()
    vssol3d -> CuttingPlane -> DecreaseDistance();
    vssol3d -> FindNodePos();
    vssol3d -> CPMoved();
-   SendExposeEvent();
-}
-
-static void KeymPressed()
-{
-   vssol3d -> ToggleDrawMesh();
-   SendExposeEvent();
-}
-
-static void KeyePressed()
-{
-   vssol3d -> ToggleDrawElems();
-   SendExposeEvent();
-}
-
-static void KeyMPressed()
-{
-   vssol3d -> ToggleCPDrawMesh();
-   SendExposeEvent();
-}
-
-static void KeyEPressed()
-{
-   vssol3d -> ToggleCPDrawElems();
-   SendExposeEvent();
-}
-
-static void KeyFPressed()
-{
-   vssol3d -> ToggleShading();
    SendExposeEvent();
 }
 
@@ -707,50 +665,52 @@ void VisualizationSceneSolution3d::Init()
    // if (!init)
    {
       // init = 1;
+      GLVisWindow* wnd = GetGLVisWindow();
+      using SceneType = VisualizationSceneSolution3d;
 
-      wnd->setOnKeyDown('m', KeymPressed);
-      wnd->setOnKeyDown('M', KeyMPressed);
+      wnd->AddKeyEvent('m', &SceneType::ToggleDrawMesh);
+      wnd->AddKeyEvent('M', &SceneType::ToggleCPDrawMesh);
 
-      wnd->setOnKeyDown('e', KeyePressed);
-      wnd->setOnKeyDown('E', KeyEPressed);
+      wnd->AddKeyEvent('e', &SceneType::ToggleDrawElems);
+      wnd->AddKeyEvent('E', &SceneType::ToggleCPDrawElems);
 
-      wnd->setOnKeyDown('f', KeyFPressed);
-      // wnd->setOnKeyDown('F', KeyFPressed);
+      wnd->AddKeyEvent('f', &SceneType::ToggleShading);
+      // wnd->AddKeyEvent('F', KeyFPressed);
 
-      wnd->setOnKeyDown('i', KeyiPressed);
-      wnd->setOnKeyDown('I', KeyIPressed);
+      wnd->AddKeyEvent('i', &SceneType::ToggleCuttingPlane);
+      wnd->AddKeyEvent('I', &SceneType::ToggleCPAlgorithm);
 
-      wnd->setOnKeyDown('o', KeyoPressed);
-      wnd->setOnKeyDown('O', KeyOPressed);
+      wnd->AddKeyEvent('o', KeyoPressed);
+      wnd->AddKeyEvent('O', KeyOPressed);
 
-      wnd->setOnKeyDown('w', KeywPressed);
-      wnd->setOnKeyDown('W', KeyWPressed);
+      wnd->AddKeyEvent('w', KeywPressed);
+      wnd->AddKeyEvent('W', KeyWPressed);
 
-      wnd->setOnKeyDown('x', KeyxPressed);
-      wnd->setOnKeyDown('X', KeyXPressed);
+      wnd->AddKeyEvent('x', KeyxPressed);
+      wnd->AddKeyEvent('X', KeyXPressed);
 
-      wnd->setOnKeyDown('y', KeyyPressed);
-      wnd->setOnKeyDown('Y', KeyYPressed);
+      wnd->AddKeyEvent('y', KeyyPressed);
+      wnd->AddKeyEvent('Y', KeyYPressed);
 
-      wnd->setOnKeyDown('z', KeyzPressed);
-      wnd->setOnKeyDown('Z', KeyZPressed);
+      wnd->AddKeyEvent('z', KeyzPressed);
+      wnd->AddKeyEvent('Z', KeyZPressed);
 
-      wnd->setOnKeyDown('u', KeyuPressed);
-      wnd->setOnKeyDown('U', KeyUPressed);
+      wnd->AddKeyEvent('u', KeyuPressed);
+      wnd->AddKeyEvent('U', KeyUPressed);
 
-      wnd->setOnKeyDown('v', KeyvPressed);
-      wnd->setOnKeyDown('V', KeyVPressed);
+      wnd->AddKeyEvent('v', KeyvPressed);
+      wnd->AddKeyEvent('V', KeyVPressed);
 
-      wnd->setOnKeyDown(SDLK_F3, KeyF3Pressed);
-      wnd->setOnKeyDown(SDLK_F4, KeyF4Pressed);
-      wnd->setOnKeyDown(SDLK_NUMLOCKCLEAR, ToggleMagicKey);
+      wnd->AddKeyEvent(SDLK_F3, KeyF3Pressed);
+      wnd->AddKeyEvent(SDLK_F4, KeyF4Pressed);
+      wnd->AddKeyEvent(SDLK_NUMLOCKCLEAR, ToggleMagicKey);
 
-      wnd->setOnKeyDown(SDLK_F8, KeyF8Pressed);
-      wnd->setOnKeyDown(SDLK_F9, KeyF9Pressed);
-      wnd->setOnKeyDown(SDLK_F10, KeyF10Pressed);
+      wnd->AddKeyEvent(SDLK_F8, KeyF8Pressed);
+      wnd->AddKeyEvent(SDLK_F9, KeyF9Pressed);
+      wnd->AddKeyEvent(SDLK_F10, KeyF10Pressed);
 
-      wnd->setOnKeyDown(SDLK_F11, KeyF11Pressed);
-      wnd->setOnKeyDown(SDLK_F12, KeyF12Pressed);
+      wnd->AddKeyEvent(SDLK_F11, KeyF11Pressed);
+      wnd->AddKeyEvent(SDLK_F12, KeyF12Pressed);
    }
    Prepare();
    PrepareLines();

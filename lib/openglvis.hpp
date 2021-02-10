@@ -194,6 +194,11 @@ public:
    void GenerateAlphaTexture()
    { palette.GenerateAlphaTexture(matAlpha, matAlphaCenter); }
 
+   void DecrementAlpha();
+   void IncrementAlpha();
+   void DecrementAlphaCenter();
+   void IncrementAlphaCenter();
+
    /// This is set by SetVisualizationScene
    int view;
 };

@@ -104,53 +104,34 @@ extern VisualizationScene * locscene;
 extern VisualizationSceneSolution * vssol;
 extern GeometryRefiner GLVisGeometryRefiner;
 
-static int ianim = 0;
-static int ianimmax = 10;
-
-void KeyDPressed()
-{
-   vsvector -> ToggleDisplacements();
-   SendExposeEvent();
-}
-
-void KeyNPressed()
+void VisualizationSceneVector::NextDisplacement()
 {
    ianim = (ianim + 1) % (ianimmax + 1);
-   vsvector -> NPressed();
-}
-
-void KeyBPressed()
-{
-   ianim = (ianim + ianimmax) % (ianimmax + 1);
-   vsvector -> NPressed();
-}
-
-void VisualizationSceneVector::NPressed()
-{
    if (drawdisp == 0)
    {
       drawdisp = 1;
       ianim = 0;
    }
-
    PrepareDisplacedMesh();
-
-   SendExposeEvent();
 }
 
-void KeyvPressed()
+void VisualizationSceneVector::PrevDisplacement()
 {
-   vsvector -> ToggleVectorField();
-   SendExposeEvent();
+   ianim = (ianim + ianimmax) % (ianimmax + 1);
+   if (drawdisp == 0)
+   {
+      drawdisp = 1;
+      ianim = 0;
+   }
+   PrepareDisplacedMesh();
 }
 
-void KeyVPressed()
+void VisualizationSceneVector::QueryArrowScaling()
 {
    cout << "New arrow scale: " << flush;
-   cin >> vsvector -> ArrowScale;
-   cout << "New arrow scale = " << vsvector -> ArrowScale << endl;
-   vsvector -> PrepareVectorField();
-   SendExposeEvent();
+   cin >> ArrowScale;
+   cout << "New arrow scale = " << ArrowScale << endl;
+   PrepareVectorField();
 }
 
 int key_u_func = 0;
@@ -500,15 +481,17 @@ void VisualizationSceneVector::Init()
    // if (!init)
    {
       // init = 1;
+      GLVisWindow* wnd = GetGLVisWindow();
+      using SceneType = VisualizationSceneVector;
 
-      wnd->setOnKeyDown('d', KeyDPressed);
-      wnd->setOnKeyDown('D', KeyDPressed);
-      wnd->setOnKeyDown('n', KeyNPressed);
-      wnd->setOnKeyDown('b', KeyBPressed);
-      wnd->setOnKeyDown('v', KeyvPressed);
-      wnd->setOnKeyDown('V', KeyVPressed);
-      wnd->setOnKeyDown('u', KeyuPressed);
-      wnd->setOnKeyDown('U', KeyUPressed);
+      wnd->AddKeyEvent('d', &SceneType::ToggleDisplacements);
+      wnd->AddKeyEvent('D', &SceneType::ToggleDisplacements);
+      wnd->AddKeyEvent('n', &SceneType::NextDisplacement);
+      wnd->AddKeyEvent('b', &SceneType::PrevDisplacement);
+      wnd->AddKeyEvent('v', &SceneType::ToggleVectorField);
+      wnd->AddKeyEvent('V', &SceneType::QueryArrowScaling);
+      wnd->AddKeyEvent('u', KeyuPressed);
+      wnd->AddKeyEvent('U', KeyUPressed);
    }
 
    // Vec2Scalar is VecLength
