@@ -36,7 +36,8 @@ private:
    double phi_step, theta_step, rho_step;
 
 public:
-   Plane(double A,double B,double C,double D);
+   Plane(double A,double B,double C,double D,
+         double (&bbx)[2], double (&bby)[2], double (&bbz)[2]);
    inline double * Equation() { return eqn; }
    inline double Transform(double x, double y, double z)
    { return eqn[0]*x+eqn[1]*y+eqn[2]*z+eqn[3]; }
