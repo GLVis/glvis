@@ -374,6 +374,8 @@ std::string getHelpString()
 }
 } // namespace js
 
+// Info on type conversion:
+// https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html#built-in-type-conversions
 namespace em = emscripten;
 EMSCRIPTEN_BINDINGS(js_funcs)
 {
