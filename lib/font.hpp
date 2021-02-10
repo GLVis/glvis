@@ -34,7 +34,6 @@ public:
       float tex_x;
    };
 private:
-   bool init;
    bool font_init;
 
    GLenum alpha_channel;
@@ -44,13 +43,14 @@ private:
    float tex_h;
    uint32_t font_tex;
 
-   FT_Library  library;
    FT_Face     face;
    bool        face_has_kerning;
 
    bool is_hidpi;
    int ppi_w, ppi_h;
 public:
+
+
 
    void SetDPIParams(bool is_hidpi, int ppi_w, int ppi_h)
    {
@@ -70,25 +70,23 @@ public:
    void getObjectSize(const std::string& text, int& w, int& h);
 
    GlVisFont()
-      : init(false),
-        font_init(false),
+      : font_init(false),
         face_has_kerning(false),
         is_hidpi(false),
         ppi_w(96), ppi_h(96)
    {
-      if (FT_Init_FreeType(&library))
-      {
-         cout << "GLVis: Can not initialize FreeType library!" << endl;
-      }
-      init = true;
+      //if (FT_Init_FreeType(&library))
+      //{
+      //   cout << "GLVis: Can not initialize FreeType library!" << endl;
+      //}
    }
 
    ~GlVisFont()
    {
-      if (init)
-      {
-         FT_Done_FreeType(library);
-      }
+      //if (init)
+      //{
+      //   FT_Done_FreeType(library);
+      //}
    }
 
    float GetKerning(char cprev, char c)

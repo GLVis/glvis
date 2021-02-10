@@ -23,14 +23,52 @@ struct vert_tex2d
       : x(x), y(y), u(u), v(v) { }
 };
 
+struct FTLibraryInit
+{
+   FT_Library instance;
+   bool init = false;
+
+   FTLibraryInit()
+   {
+       if (!init)
+       {
+           if (FT_Init_FreeType(&instance))
+           {
+               cout << "GLVis: Cannot initialize FreeType library!" << endl;
+               return;
+           }
+           init = true;
+       }
+   }
+
+   ~FTLibraryInit()
+   {
+       if (init)
+       {
+           FT_Done_FreeType(instance);
+       }
+   }
+};
+
+static FTLibraryInit ft_;
+
+bool GetFTLibrary(FT_Library& lib)
+{
+    if (ft_.init)
+    {
+        lib = ft_.instance;
+        return true;
+    }
+    return false;
+}
+
 
 const int font_scale = 64;
 bool GlVisFont::LoadFont(const std::string& path, int font_index, int font_size)
 {
-   if (!init)
-   {
-      return false;
-   }
+   FT_Library library;
+   if (!GetFTLibrary(library)) { return false; }
+
    if (font_init)
    {
       glDeleteTextures(1, &font_tex);
