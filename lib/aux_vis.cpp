@@ -101,6 +101,13 @@ KeyDelegate CreateKeyEvent(T* inst, void (T::*func)())
     return [inst, func](GLenum) { (inst->*func)(); };
 }
 
+bool KeyPrint(GLVisWindow* wnd, GLenum mod)
+{
+    if (mod & KMOD_CTRL)
+    {
+        wnd->PrintToPDF();
+    }
+}
 
 GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool legacyGlOnly)
     : locscene(nullptr)
@@ -156,7 +163,9 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
 
    SetKeyEventHandler('A', &GLVisWindow::ToggleAntialiasing);
 
-   // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
+   SetKeyEventHandler ('p', &GLVisWindow::PrintToPDF);
+   SetKeyEventHandler ('r', &GLVisWindow::StopSpinning);
+   SetKeyEventHandler ('R', &GLVisWindow::StopSpinning);
    SetKeyEventHandler (SDLK_s, &GLVisWindow::Screenshot);
    SetKeyEventHandler ('S', &GLVisWindow::Screenshot);
 
@@ -271,16 +280,30 @@ void GLVisWindow::InitVisualization(int field_type, StreamState state,
    }
 }
 
+void GLVisWindow::SetupHandledKey(int key)
+{
+   wnd->setOnKeyDown(key,
+      [this, key](GLenum e)
+      {
+         if (internal_keyevents.find(key) != internal_keyevents.end())
+         { internal_keyevents[key](e); }
+         if (keyevents.find(key) != keyevents.end())
+         { keyevents[key](e); }
+      });
+}
+
 void GLVisWindow::SetKeyEventHandler(int key, void (GLVisWindow::*handler)())
 {
-    auto handlerWrapper = [this, handler]() { (this->*handler)(); };
-    wnd->setOnKeyDown(key, handlerWrapper);
+    auto handlerWrapper = [this, handler](GLenum) { (this->*handler)(); };
+    internal_keyevents[key] = handlerWrapper;
+    SetupHandledKey(key);
 }
 
 void GLVisWindow::SetKeyEventHandler(int key, void (GLVisWindow::*handler)(GLenum))
 {
     auto handlerWrapper = [this, handler](GLenum mod) { (this->*handler)(mod); };
-    wnd->setOnKeyDown(key, handlerWrapper);
+    internal_keyevents[key] = handlerWrapper;
+    SetupHandledKey(key);
 }
 
 void SendKeySequence(const char *seq)
@@ -628,8 +651,7 @@ inline void ComputeSphereAngles(int viewport_w, int viewport_h,
 
 void GLVisWindow::RotationControl::LeftButtonDown (EventInfo *event)
 {
-   wnd->locscene -> spinning = 0;
-   wnd->RemoveIdleFunc(::MainLoop);
+   wnd->StopSpinning();
 
    oldx = event->mouse_x;
    oldy = event->mouse_y;
@@ -1056,8 +1078,7 @@ void GLVisWindow::RotationControl::CheckSpin()
    }
    else
    {
-      wnd->locscene->spinning = 0;
-      wnd->RemoveIdleFunc(::MainLoop);
+      wnd->StopSpinning();
    }
    cout << "Spin angle: " << xang << " degrees / frame" << endl;
 }
@@ -1079,8 +1100,7 @@ void GLVisWindow::RotationControl::KeyDeletePressed()
    if (wnd->locscene -> spinning)
    {
       xang = yang = 0.;
-      wnd->locscene -> spinning = 0;
-      wnd->RemoveIdleFunc(::MainLoop);
+      wnd->StopSpinning();
       constrained_spinning = 1;
    }
    else
@@ -1246,6 +1266,12 @@ void GLVisWindow::KeyPlusPressed()
 {
    locscene -> Scale(1., 1., 1.1);
    SendExposeEvent();
+}
+
+void GLVisWindow::StopSpinning()
+{
+   locscene -> spinning = 0;
+   RemoveIdleFunc(::MainLoop);
 }
 
 void GLVisWindow::ZoomIn()

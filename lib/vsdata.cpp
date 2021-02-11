@@ -485,12 +485,10 @@ void Key_Mod_a_Pressed(GLVisWindow* wnd, GLenum state)
       cout << "Autoscale: " << flush;
       vsdata->SetAutoscale(autoscale);
       cout << autoscale_modes[autoscale] << endl;
-      SendExposeEvent();
    }
    else
    {
       vsdata->ToggleDrawAxes();
-      SendExposeEvent();
    }
 }
 
@@ -505,39 +503,26 @@ void KeyLPressed()
    SendExposeEvent();
 }
 
-void KeyrPressed()
+void VisualizationSceneScalarData::Reset3DView()
 {
-   vsdata -> spinning = 0;
-   GetGLVisWindow()->RemoveIdleFunc(MainLoop);
-   vsdata -> CenterObject();
+   CenterObject();
 
-   vsdata -> ViewAngle = 45.0;
-   vsdata -> ViewScale = 1.0;
-   vsdata -> ViewCenterX = 0.0;
-   vsdata -> ViewCenterY = 0.0;
-   vsdata->cam.Reset();
-   vsdata -> key_r_state = 0;
-   SendExposeEvent();
+   ViewAngle = 45.0;
+   ViewScale = 1.0;
+   ViewCenterX = 0.0;
+   ViewCenterY = 0.0;
+   cam.Reset();
+   key_r_state = 0;
 }
 
-void KeyRPressed()
+void KeypPressed(GLVisWindow* wnd, GLenum state)
 {
-   vsdata->spinning = 0;
-   GetGLVisWindow()->RemoveIdleFunc(MainLoop);
-   vsdata->Toggle2DView();
-   SendExposeEvent();
-}
-
-void KeypPressed(GLenum state)
-{
-   if (state & KMOD_CTRL)
-   {
-      GetGLVisWindow()->PrintToPDF();
-   }
-   else
+   VisualizationSceneScalarData * vsdata
+       = dynamic_cast<VisualizationSceneScalarData*>(wnd->getScene());
+   // KMOD_CTRL handled by KeyPrintPDF in aux_vis.cpp
+   if (!(state & KMOD_CTRL))
    {
       vsdata->GetPalette().NextPalette();
-      SendExposeEvent();
    }
 }
 
@@ -1013,8 +998,8 @@ void VisualizationSceneScalarData::Init()
       // wnd->AddKeyEvent('a', KeyaPressed);
       wnd->AddKeyEvent('a', Key_Mod_a_Pressed);
 
-      wnd->AddKeyEvent('r', KeyrPressed);
-      wnd->AddKeyEvent('R', KeyRPressed);
+      wnd->AddKeyEvent('r', &SceneType::Reset3DView);
+      wnd->AddKeyEvent('R', &SceneType::Toggle2DView);
 
       wnd->AddKeyEvent('p', KeypPressed);
       wnd->AddKeyEvent('P', KeyPPressed);
