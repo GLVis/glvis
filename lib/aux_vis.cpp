@@ -34,9 +34,6 @@ using namespace mfem;
 #include <fontconfig/fontconfig.h>
 #endif
 
-int visualize = 0;
-VisualizationScene * locscene;
-
 #ifdef GLVIS_MULTISAMPLE
 static int glvis_multisample = GLVIS_MULTISAMPLE;
 #else
@@ -49,6 +46,8 @@ float line_w_aa = gl3::LINE_WIDTH_AA;
 [[deprecated]] SdlWindow* wnd;
 [[deprecated]] GLVisWindow * glvis_wnd = nullptr;
 
+void MainLoop(GLVisWindow* wnd);
+
 SdlWindow * GetAppWindow()
 {
     return wnd;
@@ -57,11 +56,6 @@ SdlWindow * GetAppWindow()
 GLVisWindow * GetGLVisWindow()
 {
     return glvis_wnd;
-}
-
-VisualizationScene * GetVisualizationScene()
-{
-   return locscene;
 }
 
 struct GLVisWindow::RotationControl
