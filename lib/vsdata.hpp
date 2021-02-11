@@ -264,7 +264,8 @@ public:
 
    void ToggleTexture();
 
-   void Toggle2DView();
+   virtual void Reset3DView();
+   virtual void Toggle2DView();
 
    void SetAutoscale(int _autoscale);
    int GetAutoscale() const { return autoscale; }

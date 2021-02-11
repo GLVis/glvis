@@ -60,6 +60,10 @@ public:
    void PrepareFlat2();
    void PrepareLines2();
 
+   // Overrides original event handlers defined in vsdata.cpp
+   virtual void Reset3DView();
+   virtual void Toggle2DView();
+
    void DrawVector (gl3::GlBuilder& builder,
                     int type, double v0, double v1, double v2,
                     double sx, double sy, double sz, double s);

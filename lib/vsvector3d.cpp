@@ -100,8 +100,6 @@ std::string VisualizationSceneVector3d::GetHelpString() const
    return os.str();
 }
 
-VisualizationSceneVector3d  *vsvector3d;
-extern VisualizationScene *locscene;
 extern GeometryRefiner GLVisGeometryRefiner;
 
 void VisualizationSceneVector3d::NextDisplacement()
@@ -122,33 +120,27 @@ void VisualizationSceneVector3d::PrevDisplacement()
    NPressed();
 }
 
-static void KeyrPressed()
+void VisualizationSceneVector3d::Reset3DView()
 {
-   locscene -> spinning = 0;
-   GetGLVisWindow()->RemoveIdleFunc(MainLoop);
-   vsvector3d -> CenterObject();
-   locscene -> ViewAngle = 45.0;
-   locscene -> ViewScale = 1.0;
-   locscene -> ViewCenterX = 0.0;
-   locscene -> ViewCenterY = 0.0;
-   vsvector3d -> ianim = vsvector3d -> ianimd = 0;
-   vsvector3d -> Prepare();
-   vsvector3d -> PrepareLines();
-   vsvector3d -> PrepareDisplacedMesh();
-   vsvector3d -> key_r_state = 0;
-   SendExposeEvent();
+   CenterObject();
+   ViewAngle = 45.0;
+   ViewScale = 1.0;
+   ViewCenterX = 0.0;
+   ViewCenterY = 0.0;
+   ianim = ianimd = 0;
+   Prepare();
+   PrepareLines();
+   PrepareDisplacedMesh();
+   key_r_state = 0;
 }
 
-static void KeyRPressed()
+void VisualizationSceneVector3d::Toggle2DView()
 {
-   locscene->spinning = 0;
-   GetGLVisWindow()->RemoveIdleFunc(MainLoop);
-   vsvector3d -> ianim = vsvector3d -> ianimd = 0;
-   vsvector3d -> Prepare();
-   vsvector3d -> PrepareLines();
-   vsvector3d -> PrepareDisplacedMesh();
-   vsvector3d->Toggle2DView();
-   SendExposeEvent();
+   ianim = ianimd = 0;
+   Prepare();
+   PrepareLines();
+   PrepareDisplacedMesh();
+   VisualizationSceneScalarData::Toggle2DView();
 }
 
 void VisualizationSceneVector3d::NPressed()
@@ -162,8 +154,6 @@ void VisualizationSceneVector3d::NPressed()
       Prepare();
       PrepareLines();
    }
-
-   SendExposeEvent();
 }
 
 void VisualizationSceneVector3d::NextVectorFieldLevel()
@@ -359,8 +349,6 @@ void VisualizationSceneVector3d::Init()
    vflevel.Append(0);
    dvflevel.Append(level[0]);
 
-   vsvector3d = this;
-
    // static int init = 0;
    // if (!init)
    {
@@ -376,9 +364,6 @@ void VisualizationSceneVector3d::Init()
 
       wnd->AddKeyEvent('b', &SceneType::PrevDisplacement);
       wnd->AddKeyEvent('B', &SceneType::PrevDisplacement);
-
-      wnd->AddKeyEvent('r', KeyrPressed); // adds another function to 'r' and 'R'
-      wnd->AddKeyEvent('R', KeyRPressed); // the other function is in vsdata.cpp
 
       wnd->AddKeyEvent('u', &SceneType::NextVectorFieldLevel); // Keys u, U are also used in
       wnd->AddKeyEvent('U', &SceneType::PrevVectorFieldLevel); // VisualizationSceneSolution3d

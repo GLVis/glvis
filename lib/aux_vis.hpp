@@ -108,7 +108,8 @@ public:
            (pScene->*eh)();
            if (exposeAfter) { SendExposeEvent(); }
        };
-       wnd->setOnKeyDown(key, wrapped_eh);
+       keyevents[key] = wrapped_eh;
+       SetupHandledKey(key);
     }
 
     void AddKeyEvent(int key, void (*eh)(GLVisWindow*), bool exposeAfter = true)
@@ -118,7 +119,8 @@ public:
            (*eh)(this);
            if (exposeAfter) { SendExposeEvent(); }
        };
-       wnd->setOnKeyDown(key, wrapped_eh);
+       keyevents[key] = wrapped_eh;
+       SetupHandledKey(key);
     }
 
     void AddKeyEvent(int key, void (*eh)(GLVisWindow*, GLenum), bool exposeAfter = true)
@@ -128,11 +130,14 @@ public:
            (*eh)(this, e);
            if (exposeAfter) { SendExposeEvent(); }
        };
-       wnd->setOnKeyDown(key, wrapped_eh);
+       keyevents[key] = wrapped_eh;
+       SetupHandledKey(key);
     }
 private:
     void InitFont();
     bool SetFont(const vector<std::string>& patterns, int height);
+
+    void SetupHandledKey(int key);
 
     void SetKeyEventHandler(int key, void (GLVisWindow::*handler)());
     void SetKeyEventHandler(int key, void (GLVisWindow::*handler)(GLenum));
@@ -163,6 +168,8 @@ private:
     void KeyMinusPressed();
     void KeyPlusPressed();
 
+    void StopSpinning();
+
     // Internal event handler for toggling state of threads
     void ThreadsPauseFunc(GLenum);
 
@@ -176,6 +183,11 @@ private:
     // Idle function callbacks
     mfem::Array<IdleFPtr> idle_funcs{};
     int last_idle_func = 0;
+
+    // internal_keyevents keeps internal event handlers, which will be called
+    // before an event handler in keyevents
+    std::unordered_map<int, KeyDelegate> internal_keyevents;
+    std::unordered_map<int, KeyDelegate> keyevents;
 
     int visualize = 0;
 
