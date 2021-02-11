@@ -181,6 +181,8 @@ private:
     // Internal event handler for toggling state of threads
     void ThreadsPauseFunc(GLenum);
 
+    void KeyPrint(GLenum);
+
     std::unique_ptr<SdlWindow> wnd;
     std::unique_ptr<VisualizationScene> locscene;
     std::unique_ptr<GLVisCommand> glvis_command;

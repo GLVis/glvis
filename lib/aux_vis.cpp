@@ -101,11 +101,11 @@ KeyDelegate CreateKeyEvent(T* inst, void (T::*func)())
     return [inst, func](GLenum) { (inst->*func)(); };
 }
 
-bool KeyPrint(GLVisWindow* wnd, GLenum mod)
+void GLVisWindow::KeyPrint(GLenum mod)
 {
     if (mod & KMOD_CTRL)
     {
-        wnd->PrintToPDF();
+        PrintToPDF();
     }
 }
 
@@ -164,7 +164,7 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
    wnd->setTouchPinchCallback(TouchPinch);
    SetKeyEventHandler('A', &GLVisWindow::ToggleAntialiasing);
 
-   SetKeyEventHandler ('p', &GLVisWindow::PrintToPDF);
+   SetKeyEventHandler ('p', &GLVisWindow::KeyPrint);
    SetKeyEventHandler ('r', &GLVisWindow::StopSpinning);
    SetKeyEventHandler ('R', &GLVisWindow::StopSpinning);
    SetKeyEventHandler (SDLK_s, &GLVisWindow::Screenshot);
