@@ -34,9 +34,6 @@ using namespace mfem;
 #include <fontconfig/fontconfig.h>
 #endif
 
-int visualize = 0;
-VisualizationScene * locscene;
-
 #ifdef GLVIS_MULTISAMPLE
 static int glvis_multisample = GLVIS_MULTISAMPLE;
 #else
@@ -46,23 +43,7 @@ static int glvis_multisample = -1;
 float line_w = 1.f;
 float line_w_aa = gl3::LINE_WIDTH_AA;
 
-[[deprecated]] SdlWindow* wnd;
-[[deprecated]] GLVisWindow * glvis_wnd = nullptr;
-
-SdlWindow * GetAppWindow()
-{
-    return wnd;
-}
-
-GLVisWindow * GetGLVisWindow()
-{
-    return glvis_wnd;
-}
-
-VisualizationScene * GetVisualizationScene()
-{
-   return locscene;
-}
+void MainLoop(GLVisWindow* wnd);
 
 struct GLVisWindow::RotationControl
 {
@@ -119,13 +100,11 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
    cout << "OpenGL Visualization" << endl;
 #endif
    rot_data->wnd = this;
-   ::glvis_wnd = this;
    wnd.reset(new SdlWindow());
    if (!wnd->createWindow(name, x, y, w, h, legacyGlOnly))
    {
       throw std::runtime_error("Could not create an SDL window.");
    }
-   ::wnd = wnd.get();
 #ifdef GLVIS_DEBUG
    cout << "Window should be up" << endl;
 #endif
@@ -257,7 +236,7 @@ void GLVisWindow::InitVisualization(int field_type, StreamState state,
    }
 #endif
 
-   locscene = prob_state.CreateVisualizationScene(field_type);
+   locscene = prob_state.CreateVisualizationScene(this, field_type);
 
    if (prob_state.mesh->SpaceDimension() == 2 && field_type == 2)
    {
@@ -305,16 +284,6 @@ void GLVisWindow::SetKeyEventHandler(int key, void (GLVisWindow::*handler)(GLenu
     auto handlerWrapper = [this, handler](GLenum mod) { (this->*handler)(mod); };
     internal_keyevents[key] = handlerWrapper;
     SetupHandledKey(key);
-}
-
-void SendKeySequence(const char *seq)
-{
-    glvis_wnd->SendKeySequence(seq);
-}
-
-void CallKeySequence(const char *seq)
-{
-    glvis_wnd->CallKeySequence(seq);
 }
 
 void GLVisWindow::SendKeySequence(const char *seq)
@@ -429,16 +398,6 @@ void GLVisWindow::RunVisualization()
 #ifndef __EMSCRIPTEN__
    wnd->mainLoop();
 #endif
-}
-
-void SendExposeEvent()
-{
-    glvis_wnd->SendExposeEvent();
-}
-
-void MyExpose()
-{
-    glvis_wnd->MyExpose();
 }
 
 void GLVisWindow::SendExposeEvent()
@@ -1381,20 +1340,11 @@ void SetMultisample(int m)
 void SetLineWidth(float width)
 {
    line_w = width;
-   if (wnd)
-   {
-      wnd->getRenderer().setLineWidth(line_w);
-   }
 }
 
 void SetLineWidthMS(float width_ms)
 {
    line_w_aa = width_ms;
-   if (wnd)
-   {
-      wnd->getRenderer().setLineWidthMS(line_w_aa);
-   }
-
 }
 
 float GetLineWidth()

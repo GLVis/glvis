@@ -591,12 +591,10 @@ VisualizationSceneSolution3d::VisualizationSceneSolution3d(Mesh &m, Vector &s)
    mesh = &m;
    sol = &s;
    GridF = NULL;
-
-   Init();
 }
 
 
-void VisualizationSceneSolution3d::Init()
+void VisualizationSceneSolution3d::Init(GLVisWindow* wnd)
 {
    cplane = 0;
    cp_drawmesh = 0; cp_drawelems = 1;
@@ -636,7 +634,7 @@ void VisualizationSceneSolution3d::Init()
    }
    bdr_attr_to_show = 1;
 
-   VisualizationSceneScalarData::Init(); // calls FindNewBox
+   VisualizationSceneScalarData::Init(wnd); // calls FindNewBox
 
    FindNewValueRange(false);
 
@@ -656,7 +654,6 @@ void VisualizationSceneSolution3d::Init()
    // if (!init)
    {
       // init = 1;
-      GLVisWindow* wnd = GetGLVisWindow();
       using SceneType = VisualizationSceneSolution3d;
 
       wnd->AddKeyEvent('m', &SceneType::ToggleDrawMesh);

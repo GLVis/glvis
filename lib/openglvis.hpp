@@ -21,6 +21,8 @@
 #include "mfem.hpp"
 #include "geom_utils.hpp"
 
+class GLVisWindow;
+
 // Visualization header file
 
 class Camera
@@ -133,6 +135,8 @@ protected:
 public:
    VisualizationScene();
    virtual ~VisualizationScene();
+
+   virtual void Init(GLVisWindow* wnd);
 
    int spinning, OrthogonalProjection, print, movie;
    double ViewAngle, ViewScale;

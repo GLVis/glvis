@@ -44,8 +44,6 @@ protected:
    gl3::GlDrawable order_buf;
    gl3::GlDrawable order_noarrow_buf;
 
-   void Init();
-
    void FindNewBox(double rx[], double ry[], double rval[]);
 
    void DrawCPLine(gl3::GlBuilder& bld,
@@ -100,6 +98,8 @@ public:
    VisualizationSceneSolution(Mesh &m, Vector &s, Vector *normals = NULL);
 
    virtual ~VisualizationSceneSolution();
+
+   virtual void Init(GLVisWindow* wnd);
 
    virtual std::string GetHelpString() const;
 

@@ -211,35 +211,12 @@ private:
     std::unique_ptr<RotationControl> rot_data;
 
 };
-
-/// Send expose event. In our case MyReshape is executed and Draw after it.
-[[deprecated]] void SendExposeEvent();
-
-[[deprecated]] void MyExpose();
-
-void MainLoop(GLVisWindow* wnd);
-
-[[deprecated]] SdlWindow * GetAppWindow();
-[[deprecated]] GLVisWindow * GetGLVisWindow();
-VisualizationScene * GetVisualizationScene();
-
 void TouchPinch(SDL_MultiGestureEvent & e);
 
 
 
 /// Take a screenshot using libtiff, libpng or sdl2
 //int Screenshot(const char *fname, bool convert = false);
-
-/// Send a sequence of keystrokes to the visualization window
-void SendKeySequence(const char *seq);
-
-// Directly call the functions assigned to the given keys. Unlike the above
-// function, SendKeySequence(), this function does not send X events and
-// actually disables the function SendExposeEvent() used by many of the
-// functions assigned to keys. Call MyExpose() after calling this function to
-// update the visualization window.
-void CallKeySequence(const char *seq);
-
 
 int GetMultisample();
 void SetMultisample(int m);

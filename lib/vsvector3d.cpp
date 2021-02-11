@@ -295,8 +295,6 @@ VisualizationSceneVector3d::VisualizationSceneVector3d(Mesh &m, Vector &sx,
 
    sfes = NULL;
    VecGridF = NULL;
-
-   Init();
 }
 
 VisualizationSceneVector3d::VisualizationSceneVector3d(GridFunction &vgf)
@@ -324,11 +322,9 @@ VisualizationSceneVector3d::VisualizationSceneVector3d(GridFunction &vgf)
    vgf.GetNodalValues(*solz, 3);
 
    sol = new Vector(mesh->GetNV());
-
-   Init();
 }
 
-void VisualizationSceneVector3d::Init()
+void VisualizationSceneVector3d::Init(GLVisWindow* wnd)
 {
    key_r_state = 0;
 
@@ -341,7 +337,7 @@ void VisualizationSceneVector3d::Init()
 
    SetScalarFunction();
 
-   VisualizationSceneSolution3d::Init();
+   VisualizationSceneSolution3d::Init(wnd);
 
    PrepareVectorField();
    PrepareDisplacedMesh();
@@ -353,7 +349,6 @@ void VisualizationSceneVector3d::Init()
    // if (!init)
    {
       // init = 1;
-      GLVisWindow* wnd = GetGLVisWindow();
       using SceneType = VisualizationSceneVector3d;
 
       wnd->AddKeyEvent('d', &SceneType::ToggleDisplacements);
