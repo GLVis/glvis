@@ -24,6 +24,8 @@
 namespace gl3
 {
 
+using namespace resource;
+
 const int LIGHTS_MAX = 3;
 #ifdef GLVIS_MS_LINEWIDTH
 const float LINE_WIDTH_AA = GLVIS_MS_LINEWIDTH;
@@ -100,73 +102,6 @@ protected:
    glm::mat4 proj_mtx;
 
    std::array<float, 4> static_color;
-
-   // RAII scope guard for OpenGL handles.
-   template<void(*GLFinalizer)(GLuint)>
-   class Handle
-   {
-      GLuint hnd;
-   public:
-      Handle() : hnd{0} {}
-      Handle(GLuint h) : hnd{h} {}
-      ~Handle() { if (hnd) { GLFinalizer(hnd); } }
-      Handle(Handle&& other)
-         : hnd{other.hnd} { other.hnd = 0; }
-      Handle& operator = (Handle&& other) noexcept
-      {
-         if (this != &other)
-         {
-            hnd = other.hnd;
-            other.hnd = 0;
-         }
-         return *this;
-      }
-      operator GLuint() const { return hnd; }
-   };
-
-   static void boCleanup(GLuint vbo_hnd)
-   {
-      glDeleteBuffers(1, &vbo_hnd);
-   }
-
-   static void dspListCleanup(GLuint dlist)
-   {
-      glDeleteLists(dlist, 1);
-   }
-
-   static void prgmCleanup(GLuint prgm)
-   {
-      glDeleteProgram(prgm);
-   }
-
-   static void vaoCleanup(GLuint vao)
-   {
-      glDeleteVertexArrays(1, &vao);
-   }
-
-   static void texCleanup(GLuint tex)
-   {
-      glDeleteTextures(1, &tex);
-   }
-
-   static void fboCleanup(GLuint fbo)
-   {
-      glDeleteFramebuffers(1, &fbo);
-   }
-
-   static void rboCleanup(GLuint rbo)
-   {
-      glDeleteRenderbuffers(1, &rbo);
-   }
-public:
-
-   using BufObjHandle = Handle<boCleanup>;
-   using DispListHandle = Handle<dspListCleanup>;
-   using VtxArrayHandle = Handle<vaoCleanup>;
-   using ShaderPrgmHandle = Handle<prgmCleanup>;
-   using TextureHandle = Handle<texCleanup>;
-   using FBOHandle = Handle<fboCleanup>;
-   using RenderBufHandle = Handle<rboCleanup>;
 
 protected:
    TextureHandle passthrough_texture;

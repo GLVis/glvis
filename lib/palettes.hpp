@@ -11,7 +11,7 @@
 
 #ifndef GLVIS_PALETTES_HPP
 #define GLVIS_PALETTES_HPP
-#include "gl/renderer.hpp"
+#include "gl/types.hpp"
 #include <vector>
 #include <array>
 
@@ -57,7 +57,7 @@ public:
 private:
    void ToTextureDiscrete(double * palette, size_t plt_size, GLuint tex);
    void ToTextureSmooth(double * palette, size_t plt_size, GLuint tex);
-   using TexHandle = gl3::GLDevice::TextureHandle;
+   using TexHandle = gl3::resource::TextureHandle;
 
    std::vector<std::array<TexHandle,2>> palette_tex;
    TexHandle alpha_tex;
