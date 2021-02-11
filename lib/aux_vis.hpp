@@ -93,12 +93,6 @@ public:
     void ResizeWindow(int w, int h);
     void SetWindowTitle(const char *title);
 
-    template<typename... Args>
-    void AddKeyEvent(int key, void(*eh)(Args...))
-    {
-        wnd->setOnKeyDown(key, eh);
-    }
-
     /// Adds a conditionally-updatable scene event.
     template<typename TScene>
     void AddKeyEvent(int key, bool (TScene::*eh)())

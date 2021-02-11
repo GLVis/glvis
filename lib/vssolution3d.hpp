@@ -93,6 +93,31 @@ protected:
       return (n < vertices.Size());
    }
 
+   void RotateCPPhi();
+   void RotateCPPhiBack();
+   void RotateCPTheta();
+   void RotateCPThetaBack();
+   void TranslateCP();
+   void TranslateCPBack();
+
+   bool MoveUpBdrElems();
+   bool MoveDownBdrElems();
+
+   void MoveUpLevelSurf();
+   void MoveDownLevelSurf();
+   void AddLevelSurf();
+   void RemoveLevelSurf();
+
+   void QueryToggleSubdomains();
+   void WalkNextSubdomain();
+   void WalkPrevSubdomain();
+
+   bool ShrinkBoundaryElems();
+   bool ZoomBoundaryElems();
+   bool ShrinkMatSubdomains();
+   bool ZoomMatSubdomains();
+
+
 public:
    int TimesToRefine;
    double FaceShiftScale;
