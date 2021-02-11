@@ -214,18 +214,8 @@ private:
 
 };
 
-/// Send expose event. In our case MyReshape is executed and Draw after it.
-[[deprecated]] void SendExposeEvent();
-
-[[deprecated]] void MyExpose();
-
-void MainLoop(GLVisWindow* wnd);
-
 [[deprecated]] SdlWindow * GetAppWindow();
 [[deprecated]] GLVisWindow * GetGLVisWindow();
-VisualizationScene * GetVisualizationScene();
-
-
 
 /// Take a screenshot using libtiff, libpng or sdl2
 //int Screenshot(const char *fname, bool convert = false);
