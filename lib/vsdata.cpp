@@ -463,14 +463,12 @@ void VisualizationSceneScalarData::PrepareCaption()
    font->getObjectSize(caption, caption_w, caption_h);
 }
 
-VisualizationSceneScalarData * vsdata;
-
-void KeyCPressed()
+//void KeyCPressed()
+void VisualizationSceneScalarData::QueryCaption()
 {
    cout << "Enter new caption: " << flush;
    std::getline(cin, plot_caption);
-   vsdata->PrepareCaption(); // turn on or off the caption
-   SendExposeEvent();
+   PrepareCaption(); // turn on or off the caption
 }
 
 void Key_Mod_a_Pressed(GLVisWindow* wnd, GLenum state)
@@ -492,15 +490,15 @@ void Key_Mod_a_Pressed(GLVisWindow* wnd, GLenum state)
    }
 }
 
-void KeyHPressed()
+//void KeyHPressed()
+void VisualizationSceneScalarData::PrintHelpString()
 {
-   cout << vsdata->GetHelpString() << flush;
+   cout << GetHelpString() << flush;
 }
 
-void KeyLPressed()
+void VisualizationSceneScalarData::ToggleLogscale()
 {
-   vsdata->ToggleLogscale(true);
-   SendExposeEvent();
+   ToggleLogscale(true);
 }
 
 void VisualizationSceneScalarData::Reset3DView()
@@ -526,13 +524,15 @@ void KeypPressed(GLVisWindow* wnd, GLenum state)
    }
 }
 
-void KeyPPressed()
+void KeyPPressed(GLVisWindow* wnd)
 {
+   VisualizationSceneScalarData * vsdata
+       = dynamic_cast<VisualizationSceneScalarData*>(wnd->getScene());
    vsdata->palette.PrevIndex();
-   SendExposeEvent();
 }
 
-static void KeyF5Pressed()
+//static void KeyF5Pressed()
+void VisualizationSceneScalarData::QueryLevelLines()
 {
    int n;
    double min, max;
@@ -544,15 +544,15 @@ static void KeyF5Pressed()
    cout << "Enter n : " << flush;
    cin >> n;
 
-   vsdata -> SetLevelLines (min, max, n, 0);
+   SetLevelLines (min, max, n, 0);
 
-   vsdata -> UpdateLevelLines();
-   SendExposeEvent();
+   UpdateLevelLines();
 }
 
-void KeyF6Pressed()
+//void KeyF6Pressed()
+void VisualizationSceneScalarData::QueryPaletteSettings()
 {
-   int RepeatPaletteTimes = vsdata->palette.GetRepeatTimes();
+   int RepeatPaletteTimes = palette.GetRepeatTimes();
    cout << "Palette is repeated " << RepeatPaletteTimes << " times.\n"
         << "(Negative value means the palette is flipped.)\n"
         << "Enter new value: " << flush;
@@ -563,31 +563,32 @@ void KeyF6Pressed()
    }
    cout << "Palette will be repeated " << RepeatPaletteTimes
         << " times now.\n\n";
-   vsdata->palette.SetRepeatTimes(RepeatPaletteTimes);
+   palette.SetRepeatTimes(RepeatPaletteTimes);
 
-   int pal = vsdata->palette.ChoosePalette();
+   int pal = palette.ChoosePalette();
 
-   int colors_used = vsdata->palette.GetNumColors(pal);
-   int palette_size = vsdata->palette.GetSize(pal);
+   int colors_used = palette.GetNumColors(pal);
+   int palette_size = palette.GetSize(pal);
    cout << "\nPalette is using " << colors_used << " colors.\n"
         << "Enter new value (0 = use original " << palette_size
         << " colors): " << flush;
    cin >> colors_used;
    if (colors_used == 1) { colors_used = 0; }
-   vsdata->palette.SetNumColors(colors_used);
+   palette.SetNumColors(colors_used);
 
-   vsdata->palette.Init();
-   vsdata->palette.SetIndex(pal);
+   palette.Init();
+   palette.SetIndex(pal);
 
-   colors_used = vsdata->palette.GetNumColors();
+   colors_used = palette.GetNumColors();
    cout << "Palette will be using " << colors_used << " colors now.\n";
 
-   vsdata->EventUpdateColors();
-   SendExposeEvent();
+   EventUpdateColors();
 }
 
-void KeyF7Pressed(GLenum state)
+void KeyF7Pressed(GLVisWindow* wnd, GLenum state)
 {
+   VisualizationSceneScalarData * vsdata
+       = dynamic_cast<VisualizationSceneScalarData*>(wnd->getScene());
    if (state & KMOD_SHIFT)
    {
       cout << "Current bounding box:\n"
@@ -614,7 +615,6 @@ void KeyF7Pressed(GLenum state)
            << "   max: (" << vsdata->x[1] << ',' << vsdata->y[1] << ','
            << vsdata->z[1] << ")\n" << flush;
       vsdata->UpdateBoundingBox();
-      SendExposeEvent();
    }
    else
    {
@@ -625,11 +625,11 @@ void KeyF7Pressed(GLenum state)
       cout << "New value for maxv: " << flush;
       cin >> vsdata->GetMaxV();
       vsdata->UpdateValueRange(true);
-      SendExposeEvent();
    }
 }
 
-void KeyBackslashPressed()
+//void KeyBackslashPressed()
+void VisualizationSceneScalarData::QueryLightPosition()
 {
    float x, y, z, w;
 
@@ -645,34 +645,32 @@ void KeyBackslashPressed()
    cout << "w = " << flush;
    cin >> w;
 
-   vsdata->SetLight0CustomPos({x, y, z, w});
-   SendExposeEvent();
+   SetLight0CustomPos({x, y, z, w});
 }
 
-void KeyTPressed()
+//void KeyTPressed()
+void VisualizationSceneScalarData::NextLightMatSetting()
 {
    int ml;
 
-   ml = (vsdata->GetLightMatIdx() + 1) % 5;
-   vsdata->SetLightMatIdx(ml);
-   SendExposeEvent();
+   ml = (GetLightMatIdx() + 1) % 5;
+   SetLightMatIdx(ml);
    cout << "New material/light : " << ml << endl;
 }
 
-void KeyGPressed()
+void VisualizationSceneScalarData::ToggleBackground()
 {
-   vsdata->ToggleBackground();
-   vsdata->PrepareAxes();
-   vsdata->EventUpdateBackground();
-   SendExposeEvent();
+   VisualizationScene::ToggleBackground();
+   PrepareAxes();
+   EventUpdateBackground();
 }
 
-void KeyF2Pressed()
+//void KeyF2Pressed()
+void VisualizationSceneScalarData::RedrawColors()
 {
-   vsdata -> EventUpdateColors();
-   vsdata -> PrepareLines();
-   // vsdata->CPPrepare();
-   SendExposeEvent();
+   EventUpdateColors();
+   PrepareLines();
+   // CPPrepare();
 }
 
 void VisualizationSceneScalarData::PrintLogscale(bool warn)
@@ -964,9 +962,6 @@ VisualizationSceneScalarData::VisualizationSceneScalarData(
 
 void VisualizationSceneScalarData::Init()
 {
-   vsdata = this;
-   wnd = GetAppWindow();
-
    arrow_type = arrow_scaling_type = 0;
    scaling = 0;
    drawaxes = colorbar = 0;
@@ -991,7 +986,7 @@ void VisualizationSceneScalarData::Init()
       using SceneType = VisualizationSceneScalarData;
 
       wnd->AddKeyEvent('l', &SceneType::ToggleLight);
-      wnd->AddKeyEvent('L', KeyLPressed);
+      wnd->AddKeyEvent('L', &SceneType::ToggleLogscale);
 
       wnd->AddKeyEvent('s', &SceneType::ToggleScaling);
 
@@ -1004,28 +999,28 @@ void VisualizationSceneScalarData::Init()
       wnd->AddKeyEvent('p', KeypPressed);
       wnd->AddKeyEvent('P', KeyPPressed);
 
-      wnd->AddKeyEvent('h', KeyHPressed);
-      wnd->AddKeyEvent('H', KeyHPressed);
+      wnd->AddKeyEvent('h', &SceneType::PrintHelpString);
+      wnd->AddKeyEvent('H', &SceneType::PrintHelpString);
 
-      wnd->AddKeyEvent(SDLK_F5, KeyF5Pressed);
-      wnd->AddKeyEvent(SDLK_F6, KeyF6Pressed);
+      wnd->AddKeyEvent(SDLK_F5, &SceneType::QueryLevelLines);
+      wnd->AddKeyEvent(SDLK_F6, &SceneType::QueryPaletteSettings);
       wnd->AddKeyEvent(SDLK_F7, KeyF7Pressed);
 
-      wnd->AddKeyEvent(SDLK_BACKSLASH, KeyBackslashPressed);
-      wnd->AddKeyEvent('t', KeyTPressed);
-      wnd->AddKeyEvent('T', KeyTPressed);
+      wnd->AddKeyEvent(SDLK_BACKSLASH, &SceneType::QueryLightPosition);
+      wnd->AddKeyEvent('t', &SceneType::NextLightMatSetting);
+      wnd->AddKeyEvent('T', &SceneType::NextLightMatSetting);
 
-      wnd->AddKeyEvent('g', KeyGPressed);
-      wnd->AddKeyEvent('G', KeyGPressed);
+      wnd->AddKeyEvent('g', &SceneType::ToggleBackground);
+      wnd->AddKeyEvent('G', &SceneType::ToggleBackground);
 
       wnd->AddKeyEvent('c', &SceneType::ToggleDrawColorbar);
-      wnd->AddKeyEvent('C', KeyCPressed);
+      wnd->AddKeyEvent('C', &SceneType::QueryCaption);
 
       wnd->AddKeyEvent('k', &SceneType::DecrementAlpha);
       wnd->AddKeyEvent('K', &SceneType::IncrementAlpha);
 
       wnd->AddKeyEvent(SDLK_F1, &SceneType::PrintState, false);
-      wnd->AddKeyEvent(SDLK_F2, KeyF2Pressed);
+      wnd->AddKeyEvent(SDLK_F2, &SceneType::RedrawColors);
 
       wnd->AddKeyEvent(SDLK_COMMA, &SceneType::DecrementAlphaCenter);
       wnd->AddKeyEvent(SDLK_LESS, &SceneType::IncrementAlphaCenter);

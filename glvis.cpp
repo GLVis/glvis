@@ -619,6 +619,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          char delim;
          scr >> ws >> delim;
          getline(scr, plot_caption, delim);
+         vs->SetCaption(plot_caption);
          vs->PrepareCaption(); // turn on or off the caption
          wnd->MyExpose();
       }
