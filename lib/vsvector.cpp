@@ -99,9 +99,6 @@ std::string VisualizationSceneVector::GetHelpString() const
    return os.str();
 }
 
-VisualizationSceneVector  * vsvector;
-extern VisualizationScene * locscene;
-extern VisualizationSceneSolution * vssol;
 extern GeometryRefiner GLVisGeometryRefiner;
 
 void VisualizationSceneVector::NextDisplacement()
@@ -134,22 +131,19 @@ void VisualizationSceneVector::QueryArrowScaling()
    PrepareVectorField();
 }
 
-int key_u_func = 0;
-
-void KeyuPressed()
+void VisualizationSceneVector::DoKeyU()
 {
    int update = 1;
-
    switch (key_u_func)
    {
       case 0:
-         vsvector->RefineFactor++;
+         RefineFactor++;
          break;
 
       case 1:
-         if (vsvector->RefineFactor > 1)
+         if (RefineFactor > 1)
          {
-            vsvector->RefineFactor--;
+            RefineFactor--;
          }
          else
          {
@@ -158,8 +152,7 @@ void KeyuPressed()
          break;
 
       case 2:
-         vsvector->CycleVec2Scalar(1);
-         SendExposeEvent();
+         CycleVec2Scalar(1);
          break;
    }
 
@@ -167,13 +160,11 @@ void KeyuPressed()
    {
       case 0:
       case 1:
-         if (update && vsvector->shading == 2)
+         if (update && shading == 2)
          {
-            vsvector->PrepareVectorField();
-            SendExposeEvent();
+            PrepareVectorField();
          }
-         cout << "Vector subdivision factor = "
-              << vsvector->RefineFactor << endl;
+         cout << "Vector subdivision factor = " << RefineFactor << endl;
          break;
 
       case 2:
@@ -181,7 +172,7 @@ void KeyuPressed()
    }
 }
 
-void KeyUPressed()
+void VisualizationSceneVector::ToggleKeyUFunc()
 {
    key_u_func = (key_u_func+1)%3;
    cout << "Key 'u' will: ";
@@ -475,8 +466,6 @@ void VisualizationSceneVector::Init()
    PrepareVectorField();
    // PrepareDisplacedMesh(); // called by PrepareLines()
 
-   vsvector = this;
-
    // static int init = 0;
    // if (!init)
    {
@@ -490,8 +479,8 @@ void VisualizationSceneVector::Init()
       wnd->AddKeyEvent('b', &SceneType::PrevDisplacement);
       wnd->AddKeyEvent('v', &SceneType::ToggleVectorField);
       wnd->AddKeyEvent('V', &SceneType::QueryArrowScaling);
-      wnd->AddKeyEvent('u', KeyuPressed);
-      wnd->AddKeyEvent('U', KeyUPressed);
+      wnd->AddKeyEvent('u', &SceneType::DoKeyU);
+      wnd->AddKeyEvent('U', &SceneType::ToggleKeyUFunc);
    }
 
    // Vec2Scalar is VecLength

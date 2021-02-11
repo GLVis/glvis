@@ -52,6 +52,10 @@ protected:
 
    void QueryArrowScaling();
 
+   int key_u_func = 0;
+   void ToggleKeyUFunc();
+   void DoKeyU();
+
 public:
    VisualizationSceneVector(Mesh &m, Vector &sx, Vector &sy);
    VisualizationSceneVector(GridFunction &vgf);
