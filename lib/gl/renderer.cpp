@@ -351,13 +351,13 @@ CaptureBuffer MeshRenderer::capture(const RenderQueue& queue)
       device->attachTexture(GLDevice::SAMPLER_ALPHA, alpha_tex);
       for (auto buf : tex_bufs)
       {
-         device->captureXfbBuffer(cbuf, buf);
+         device->captureXfbBuffer(*pal, cbuf, buf);
       }
       device->detachTexture(GLDevice::SAMPLER_COLOR);
       device->detachTexture(GLDevice::SAMPLER_ALPHA);
       for (auto buf : no_tex_bufs)
       {
-         device->captureXfbBuffer(cbuf, buf);
+         device->captureXfbBuffer(*pal, cbuf, buf);
       }
       if (!params.contains_translucent)
       {

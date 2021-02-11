@@ -107,7 +107,6 @@ void SendKeySequence(const char *seq);
 // update the visualization window.
 void CallKeySequence(const char *seq);
 
-void GetColorFromVal(double val, float * rgba);
 
 void SetUseTexture(int ut);
 int GetUseTexture();

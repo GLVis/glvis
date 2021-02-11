@@ -326,7 +326,7 @@ void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)
    glPopMatrix();
 }
 
-void FFGLDevice::captureXfbBuffer(CaptureBuffer& cbuf, int hnd)
+void FFGLDevice::captureXfbBuffer(PaletteState& pal, CaptureBuffer& cbuf, int hnd)
 {
    if (hnd == 0) { return; }
    if (disp_lists[hnd].count == 0) { return; }
@@ -401,8 +401,8 @@ void FFGLDevice::captureXfbBuffer(CaptureBuffer& cbuf, int hnd)
             if (fbStride == 11)
             {
                // get texture
-               GetColorFromVal(xfb_buf[tok_idx + 7], glm::value_ptr(color0));
-               GetColorFromVal(xfb_buf[tok_idx + 7 + fbStride], glm::value_ptr(color1));
+               pal.GetColorFromVal(xfb_buf[tok_idx + 7], glm::value_ptr(color0));
+               pal.GetColorFromVal(xfb_buf[tok_idx + 7 + fbStride], glm::value_ptr(color1));
             }
             cbuf.lines.emplace_back(coord0, color0);
             cbuf.lines.emplace_back(coord1, color1);
@@ -421,8 +421,8 @@ void FFGLDevice::captureXfbBuffer(CaptureBuffer& cbuf, int hnd)
             if (fbStride == 11)
             {
                // get texture
-               GetColorFromVal(xfb_buf[tok_idx + 7], glm::value_ptr(color0));
-               GetColorFromVal(xfb_buf[tok_idx + 7 + fbStride], glm::value_ptr(color1));
+               pal.GetColorFromVal(xfb_buf[tok_idx + 7], glm::value_ptr(color0));
+               pal.GetColorFromVal(xfb_buf[tok_idx + 7 + fbStride], glm::value_ptr(color1));
             }
             // decompose polygon into n-2 triangles [0 1 2] [0 2 3] ...
             for (int i = 0; i < n-2; i++)
@@ -433,7 +433,7 @@ void FFGLDevice::captureXfbBuffer(CaptureBuffer& cbuf, int hnd)
                glm::vec4 color2 = glm::make_vec4(&xfb_buf[tok_idx + 3 + vtxStart]);
                if (fbStride == 11)
                {
-                  GetColorFromVal(xfb_buf[tok_idx + 7 + vtxStart], glm::value_ptr(color2));
+                  pal.GetColorFromVal(xfb_buf[tok_idx + 7 + vtxStart], glm::value_ptr(color2));
                }
                cbuf.triangles.emplace_back(coord0, color0);
                cbuf.triangles.emplace_back(coord1, color1);

@@ -7780,6 +7780,31 @@ double PaletteState::GetColorCoord(double val, double min, double max)
    }
 }
 
+void PaletteState::GetColorFromVal(double val, float * rgba)
+{
+   int palSize = RGB_Palettes_Sizes[curr_palette];
+   const double* palData = RGB_Palettes[curr_palette];
+   val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
+   int i = (int) floor( val );
+   double t = val - i;
+
+   const double* pal;
+   if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
+       ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
+   {
+      pal = palData + 3 * ( i % (palSize-1) );
+   }
+   else
+   {
+      pal = palData + 3 * ( (palSize-2) - i % (palSize-1) );
+      t = 1.0 - t;
+   }
+   rgba[0] = (1.0 - t) * pal[0] + t * pal[3];
+   rgba[1] = (1.0 - t) * pal[1] + t * pal[4];
+   rgba[2] = (1.0 - t) * pal[2] + t * pal[5];
+   rgba[3] = 1.f;
+}
+
 const double * PaletteState::GetData() const
 {
    return RGB_Palettes[curr_palette];
