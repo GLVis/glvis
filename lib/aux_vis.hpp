@@ -99,6 +99,20 @@ public:
         wnd->setOnKeyDown(key, eh);
     }
 
+    /// Adds a conditionally-updatable scene event.
+    template<typename TScene>
+    void AddKeyEvent(int key, bool (TScene::*eh)())
+    {
+       auto wrapped_eh = [this, eh](GLenum e)
+       {
+           TScene* pScene = dynamic_cast<TScene*>(locscene.get());
+           bool exposeAfter = (pScene->*eh)();
+           if (exposeAfter) { SendExposeEvent(); }
+       };
+       keyevents[key] = wrapped_eh;
+       SetupHandledKey(key);
+    }
+
     template<typename TScene>
     void AddKeyEvent(int key, void (TScene::*eh)(), bool exposeAfter = true)
     {
