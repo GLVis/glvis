@@ -859,8 +859,6 @@ void VisualizationSceneScalarData::Toggle2DView()
 
 gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
 {
-   int w, h;
-   wnd->getWindowSize(w, h);
    gl3::SceneInfo scene {};
    scene.needs_buffering = std::move(updated_bufs);
    updated_bufs.clear();
@@ -885,13 +883,11 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
    {
       // caption size is in screen pixels and needs to be centered with
       // GL pixel size
-      int gl_w, gl_h;
-      wnd->getGLDrawSize(gl_w, gl_h);
       // add caption to draw list
       double v_pos = 2.;
       double line_h = font->getFontLineSpacing();
-      params.model_view.translate(-(double)caption_w / gl_w,
-                                  1.0 - 2 * v_pos * line_h / gl_h, 0.0);
+      params.model_view.translate(-(double)caption_w / draw_w,
+                                  1.0 - 2 * v_pos * line_h / draw_h, 0.0);
       scene.queue.emplace_back(params, &caption_buf);
    }
    params.contains_translucent = true;
@@ -901,7 +897,7 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
       params.projection.ortho(-1.,1.,-1.,1.,-2.,2.);
       params.model_view.identity();
       params.model_view.translate(-1, -1, 0.0);
-      params.model_view.scale(40.0 / w, 40.0 / h, 1);
+      params.model_view.scale(40.0 / window_w, 40.0 / window_h, 1);
       params.model_view.translate(2.0, 2.0, 0.0);
       params.model_view.mult(cam.RotMatrix());
       params.model_view.mult(rotmat);

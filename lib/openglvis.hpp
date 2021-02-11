@@ -65,8 +65,6 @@ protected:
    // How to scale the visualized object(s)
    double xscale, yscale, zscale;
 
-   SdlWindow * wnd;
-
    glm::mat4 proj_mtx;
 
    enum
@@ -152,6 +150,8 @@ public:
    float matAlpha = 1.0;
    float matAlphaCenter = 0.5;
 
+   /// Needs to be called before GetSceneObjs()
+   virtual void UpdateWindowSize(int w, int h, int gl_w, int gl_h) = 0;
    virtual gl3::SceneInfo GetSceneObjs() = 0;
 
    void SetView(double theta, double phi);

@@ -58,6 +58,9 @@ protected:
 
    double minv, maxv;
 
+   int window_w, window_h;
+   int draw_w, draw_h;
+
    std::string plot_caption = "";
    std::string extra_caption = "";
    std::string a_label_x, a_label_y, a_label_z;
@@ -206,6 +209,11 @@ public:
 
    Mesh *GetMesh() { return mesh; }
 
+   void UpdateWindowSize(int w, int h, int gl_w, int gl_h)
+   {
+      window_w = w; window_h = h;
+      draw_w = gl_w; draw_h = gl_h;
+   }
    virtual gl3::SceneInfo GetSceneObjs();
 
    double &GetMinV() { return minv; }
