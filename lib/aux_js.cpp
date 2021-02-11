@@ -336,16 +336,16 @@ void setKeyboardListeningElementId(const std::string & id)
 
 void processKeys(const std::string & keys)
 {
-  CallKeySequence(keys.c_str());
+   CallKeySequence(keys.c_str());
 }
 
 void processKey(char sym, bool ctrl=false, bool shift=false, bool alt=false)
 {
-  Uint16 mod = 0;
-  mod |= ctrl ? KMOD_CTRL : 0;
-  mod |= shift ? KMOD_SHIFT : 0;
-  mod |= alt ? KMOD_ALT : 0;
-  GetAppWindow()->callKeyDown(sym, mod);
+   Uint16 mod = 0;
+   mod |= ctrl ? KMOD_CTRL : 0;
+   mod |= shift ? KMOD_SHIFT : 0;
+   mod |= alt ? KMOD_ALT : 0;
+   GetAppWindow()->callKeyDown(sym, mod);
 }
 
 void setupResizeEventCallback(const std::string & id)
