@@ -334,6 +334,20 @@ void setKeyboardListeningElementId(const std::string & id)
    SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, id.c_str());
 }
 
+void processKeys(const std::string & keys)
+{
+   CallKeySequence(keys.c_str());
+}
+
+void processKey(char sym, bool ctrl=false, bool shift=false, bool alt=false)
+{
+   Uint16 mod = 0;
+   mod |= ctrl ? KMOD_CTRL : 0;
+   mod |= shift ? KMOD_SHIFT : 0;
+   mod |= alt ? KMOD_ALT : 0;
+   GetAppWindow()->callKeyDown(sym, mod);
+}
+
 void setupResizeEventCallback(const std::string & id)
 {
    // typedef EM_BOOL (*em_ui_callback_func)(int eventType, const EmscriptenUiEvent *uiEvent, void *userData);
@@ -360,6 +374,8 @@ std::string getHelpString()
 }
 } // namespace js
 
+// Info on type conversion:
+// https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html#built-in-type-conversions
 namespace em = emscripten;
 EMSCRIPTEN_BINDINGS(js_funcs)
 {
@@ -377,4 +393,6 @@ EMSCRIPTEN_BINDINGS(js_funcs)
    em::function("setCanvasId", &js::setCanvasId);
    em::function("setupResizeEventCallback", &js::setupResizeEventCallback);
    em::function("getHelpString", &js::getHelpString);
+   em::function("processKeys", &js::processKeys);
+   em::function("processKey", &js::processKey);
 }
