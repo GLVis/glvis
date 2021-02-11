@@ -74,6 +74,22 @@ protected:
    // slow.  Turn it off above some entity count.
    static const int MAX_RENDER_NUMBERING = 1000;
 
+   void RotateCP();
+   void RotateCPBack();
+   void TranslateCP();
+   void TranslateCPBack();
+
+   bool ShrinkElements();
+   bool ZoomElements();
+
+   void QueryToggleSubdomains();
+
+   bool ShrinkMatSubdomains();
+   bool ZoomMatSubdomains();
+
+   int refine_func = 0;
+
+
 public:
    int shading, TimesToRefine, EdgeRefineFactor;
 
@@ -153,6 +169,8 @@ public:
 
    void ToggleDrawCP() { draw_cp = !draw_cp; PrepareCP(); }
 
+   void ToggleRefineFunc();
+   bool DoRefineFunc();
    virtual void SetRefineFactors(int, int);
    virtual void AutoRefine();
    virtual void ToggleAttributes(Array<int> &attr_list);
