@@ -19,9 +19,6 @@
 
 using namespace mfem;
 
-extern std::string plot_caption; // defined in glvis.cpp
-extern std::string extra_caption; // defined in glvis.cpp
-
 class Plane
 {
 private:
@@ -61,6 +58,8 @@ protected:
 
    double minv, maxv;
 
+   std::string plot_caption = "";
+   std::string extra_caption = "";
    std::string a_label_x, a_label_y, a_label_z;
 
    int scaling, colorbar, drawaxes;
@@ -126,6 +125,16 @@ protected:
    void FixValueRange();
 
    void Cone(gl3::GlBuilder& builder, glm::mat4 transform);
+
+   void PrintHelpString();
+   void QueryCaption();
+   void QueryLevelLines();
+   void QueryPaletteSettings();
+   void QueryLightPosition();
+   void NextLightMatSetting();
+   void RedrawColors();
+   void ToggleBackground();
+   void ToggleLogscale();
 
 public:
    Plane *CuttingPlane;
@@ -240,6 +249,7 @@ public:
                         Array<double> * level = NULL,
                         Array<double> * levels = NULL);
 
+   void SetCaption(std::string caption) { plot_caption = caption; }
    void SetAxisLabels(const char * a_x, const char * a_y, const char * a_z);
 
    void PrepareAxes();
