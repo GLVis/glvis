@@ -495,6 +495,9 @@ void GLVisWindow::MyExpose(GLsizei w, GLsizei h)
    std::array<float, 4> bgcol = locscene->GetBackgroundColor();
    wnd->getRenderer().setClearColor(bgcol[0], bgcol[1], bgcol[2], bgcol[3]);
 
+   int wnd_w, wnd_h;
+   wnd->getWindowSize(wnd_w, wnd_h);
+   locscene->UpdateWindowSize(wnd_w, wnd_h, w, h);
    gl3::SceneInfo frame = locscene->GetSceneObjs();
    for (auto drawable_ptr : frame.needs_buffering)
    {
