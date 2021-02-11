@@ -240,8 +240,6 @@ void SendKeySequence(const char *seq);
 // update the visualization window.
 void CallKeySequence(const char *seq);
 
-void GetColorFromVal(double val, float * rgba);
-
 int GetMultisample();
 void SetMultisample(int m);
 

@@ -258,6 +258,8 @@ void GLVisWindow::InitVisualization(int field_type, StreamState state,
 
    locscene = prob_state.CreateVisualizationScene(field_type);
 
+   wnd->getRenderer().setPalette(&locscene->GetPalette());
+
    if (prob_state.mesh->SpaceDimension() == 2 && field_type == 2)
    {
       locscene->view = 2;
@@ -1351,32 +1353,6 @@ void GLVisWindow::ResizeWindow(int w, int h)
 void GLVisWindow::SetWindowTitle(const char *title)
 {
    wnd->setWindowTitle(title);
-}
-
-void GetColorFromVal(double val, float * rgba)
-{
-   int palSize = locscene->GetPalette().GetSize();
-   int RepeatPaletteTimes = locscene->GetPalette().GetRepeatTimes();
-   const double* palData = locscene->GetPalette().GetData();
-   val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
-   int i = (int) floor( val );
-   double t = val - i;
-
-   const double* pal;
-   if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
-       ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
-   {
-      pal = palData + 3 * ( i % (palSize-1) );
-   }
-   else
-   {
-      pal = palData + 3 * ( (palSize-2) - i % (palSize-1) );
-      t = 1.0 - t;
-   }
-   rgba[0] = (1.0 - t) * pal[0] + t * pal[3];
-   rgba[1] = (1.0 - t) * pal[1] + t * pal[4];
-   rgba[2] = (1.0 - t) * pal[2] + t * pal[5];
-   rgba[3] = 1.f;
 }
 
 int GetMultisample()

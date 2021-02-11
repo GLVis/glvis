@@ -20,6 +20,7 @@
 #include "platform_gl.hpp"
 #include "types.hpp"
 #include "../material.hpp"
+#include "../palettes.hpp"
 #include "../font.hpp"
 
 namespace gl3
@@ -186,7 +187,7 @@ public:
    virtual void exitXfbMode() {}
    // Capture the next drawn vertex buffer to a feedback buffer instead of
    // drawing to screen.
-   virtual void captureXfbBuffer(CaptureBuffer& capture, int hnd) = 0;
+   virtual void captureXfbBuffer(PaletteState& pal, CaptureBuffer& capture, int hnd) = 0;
    // Capture the next text buffer instead of drawing to screen.
    void captureXfbBuffer(CaptureBuffer& capture, const TextBuffer& t_buf);
 
@@ -200,6 +201,7 @@ class MeshRenderer
    GLuint color_tex, alpha_tex, font_tex;
    float line_w, line_w_aa;
    GlVisFont* font;
+   PaletteState* pal;
 
    bool feat_use_fbo_antialias;
    void init();
@@ -227,6 +229,7 @@ public:
    }
 
    void setFont(GlVisFont* fnt) { this->font = fnt; }
+   void setPalette(PaletteState* pal) { this->pal = pal; }
 
    // Sets the texture handle of the color palette.
    void setColorTexture(GLuint tex_h) { color_tex = tex_h; }

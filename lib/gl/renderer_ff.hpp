@@ -57,7 +57,7 @@ public:
    void bufferToDevice(GlVisFont& font, TextBuffer& t_buf) override;
    void drawDeviceBuffer(int hnd) override;
    void drawDeviceBuffer(GlVisFont& font, const TextBuffer& t_buf) override;
-   void captureXfbBuffer(CaptureBuffer& cbuf, int hnd) override;
+   void captureXfbBuffer(PaletteState& pal, CaptureBuffer& cbuf, int hnd) override;
 };
 
 }

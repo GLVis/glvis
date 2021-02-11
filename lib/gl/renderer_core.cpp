@@ -817,7 +817,7 @@ void CoreGLDevice::processLineXfbBuffer(CaptureBuffer& cbuf,
 
 
 void CoreGLDevice::captureXfbBuffer(
-   CaptureBuffer& cbuf, int hnd)
+   PaletteState& pal, CaptureBuffer& cbuf, int hnd)
 {
    if (hnd == 0) { return; }
    if (vbos[hnd].count == 0) { return; }

@@ -49,6 +49,7 @@ public:
    void SetUseLogscale(bool logscale) { use_logscale = logscale; }
    bool GetUseLogscale() { return use_logscale; }
    double GetColorCoord(double val, double min, double max);
+   void GetColorFromVal(double val, float* rgba);
 
    GLuint GetColorTexture() const
    { return palette_tex[curr_palette][use_smooth]; }
