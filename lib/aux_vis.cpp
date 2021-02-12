@@ -43,20 +43,7 @@ static int glvis_multisample = -1;
 float line_w = 1.f;
 float line_w_aa = gl3::LINE_WIDTH_AA;
 
-[[deprecated]] SdlWindow* wnd;
-[[deprecated]] GLVisWindow * glvis_wnd = nullptr;
-
 void MainLoop(GLVisWindow* wnd);
-
-SdlWindow * GetAppWindow()
-{
-    return wnd;
-}
-
-GLVisWindow * GetGLVisWindow()
-{
-    return glvis_wnd;
-}
 
 struct GLVisWindow::RotationControl
 {
@@ -113,13 +100,11 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
    cout << "OpenGL Visualization" << endl;
 #endif
    rot_data->wnd = this;
-   ::glvis_wnd = this;
    wnd.reset(new SdlWindow());
    if (!wnd->createWindow(name, x, y, w, h, legacyGlOnly))
    {
       throw std::runtime_error("Could not create an SDL window.");
    }
-   ::wnd = wnd.get();
 #ifdef GLVIS_DEBUG
    cout << "Window should be up" << endl;
 #endif
@@ -302,16 +287,6 @@ void GLVisWindow::SetKeyEventHandler(int key, void (GLVisWindow::*handler)(GLenu
     SetupHandledKey(key);
 }
 
-void SendKeySequence(const char *seq)
-{
-    glvis_wnd->SendKeySequence(seq);
-}
-
-void CallKeySequence(const char *seq)
-{
-    glvis_wnd->CallKeySequence(seq);
-}
-
 void GLVisWindow::SendKeySequence(const char *seq)
 {
    for (const char* key = seq; *key != '\0'; key++)
@@ -424,16 +399,6 @@ void GLVisWindow::RunVisualization()
 #ifndef __EMSCRIPTEN__
    wnd->mainLoop();
 #endif
-}
-
-void SendExposeEvent()
-{
-    glvis_wnd->SendExposeEvent();
-}
-
-void MyExpose()
-{
-    glvis_wnd->MyExpose();
 }
 
 void GLVisWindow::SendExposeEvent()
@@ -1369,20 +1334,11 @@ void SetMultisample(int m)
 void SetLineWidth(float width)
 {
    line_w = width;
-   if (wnd)
-   {
-      wnd->getRenderer().setLineWidth(line_w);
-   }
 }
 
 void SetLineWidthMS(float width_ms)
 {
    line_w_aa = width_ms;
-   if (wnd)
-   {
-      wnd->getRenderer().setLineWidthMS(line_w_aa);
-   }
-
 }
 
 float GetLineWidth()
