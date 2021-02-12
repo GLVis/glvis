@@ -463,7 +463,6 @@ void VisualizationSceneScalarData::PrepareCaption()
    font->getObjectSize(caption, caption_w, caption_h);
 }
 
-//void KeyCPressed()
 void VisualizationSceneScalarData::QueryCaption()
 {
    cout << "Enter new caption: " << flush;
@@ -490,7 +489,6 @@ void Key_Mod_a_Pressed(GLVisWindow* wnd, GLenum state)
    }
 }
 
-//void KeyHPressed()
 void VisualizationSceneScalarData::PrintHelpString()
 {
    cout << GetHelpString() << flush;
@@ -531,7 +529,6 @@ void KeyPPressed(GLVisWindow* wnd)
    vsdata->GetPalette().PrevPalette();
 }
 
-//static void KeyF5Pressed()
 void VisualizationSceneScalarData::QueryLevelLines()
 {
    int n;
@@ -549,7 +546,6 @@ void VisualizationSceneScalarData::QueryLevelLines()
    UpdateLevelLines();
 }
 
-//void KeyF6Pressed()
 void VisualizationSceneScalarData::QueryPaletteSettings()
 {
    int RepeatPaletteTimes = GetPalette().GetRepeatTimes();
@@ -648,7 +644,6 @@ void VisualizationSceneScalarData::QueryLightPosition()
    SetLight0CustomPos({x, y, z, w});
 }
 
-//void KeyTPressed()
 void VisualizationSceneScalarData::NextLightMatSetting()
 {
    int ml;
@@ -665,7 +660,6 @@ void VisualizationSceneScalarData::ToggleBackground()
    EventUpdateBackground();
 }
 
-//void KeyF2Pressed()
 void VisualizationSceneScalarData::RedrawColors()
 {
    EventUpdateColors();
