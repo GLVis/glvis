@@ -356,7 +356,7 @@ GridFunction *ProjectVectorFEGridFunction(GridFunction *gf)
 }
 
 std::unique_ptr<VisualizationScene>
-StreamState::CreateVisualizationScene(int field_type)
+StreamState::CreateVisualizationScene(GLVisWindow* wnd, int field_type)
 {
    std::unique_ptr<VisualizationSceneScalarData> vs;
    double mesh_range = -1.0;
@@ -377,6 +377,8 @@ StreamState::CreateVisualizationScene(int field_type)
          {
             vss = new VisualizationSceneSolution(*mesh, sol);
          }
+         // initialize events and initial scene state
+         vss->Init(wnd);
          vs.reset(vss);
          if (grid_f)
          {
@@ -395,6 +397,8 @@ StreamState::CreateVisualizationScene(int field_type)
       else if (mesh->SpaceDimension() == 3)
       {
          VisualizationSceneSolution3d *vss = new VisualizationSceneSolution3d(*mesh, sol);
+         // initialize events and initial scene state
+         vss->Init(wnd);
          vs.reset(vss);
          if (grid_f)
          {
@@ -456,6 +460,8 @@ StreamState::CreateVisualizationScene(int field_type)
             vs.reset(new VisualizationSceneVector3d(*mesh, solu, solv, solw));
          }
       }
+      // initialize events and initial scene state
+      vs->Init(wnd);
    }
 
    if (vs)

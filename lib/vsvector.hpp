@@ -27,8 +27,6 @@ protected:
    gl3::GlDrawable displine_buf;
    GridFunction *VecGridF;
 
-   void Init();
-
    virtual void GetRefinedValues(int i, const IntegrationRule &ir,
                                  Vector &vals, DenseMatrix &tr);
    virtual int GetRefinedValuesAndNormals(int i, const IntegrationRule &ir,
@@ -63,6 +61,8 @@ public:
    void NewMeshAndSolution(GridFunction &vgf);
 
    virtual ~VisualizationSceneVector();
+
+   virtual void Init(GLVisWindow* wnd);
 
    virtual std::string GetHelpString() const;
 

@@ -28,8 +28,6 @@ protected:
    GridFunction *VecGridF;
    FiniteElementSpace *sfes;
 
-   void Init();
-
    Array<int> vflevel;
    Array<double> dvflevel;
 
@@ -50,6 +48,8 @@ public:
    void NewMeshAndSolution(Mesh *new_m, GridFunction *new_v);
 
    virtual ~VisualizationSceneVector3d();
+
+   virtual void Init(GLVisWindow* wnd);
 
    virtual std::string GetHelpString() const;
 

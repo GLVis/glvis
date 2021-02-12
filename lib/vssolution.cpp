@@ -417,11 +417,9 @@ VisualizationSceneSolution::VisualizationSceneSolution(
    mesh = &m;
    sol = &s;
    v_normals = normals;
-
-   Init();
 }
 
-void VisualizationSceneSolution::Init()
+void VisualizationSceneSolution::Init(GLVisWindow* wnd)
 {
    rsol  = NULL;
 
@@ -446,7 +444,7 @@ void VisualizationSceneSolution::Init()
 
    drawbdr = 0;
 
-   VisualizationSceneScalarData::Init();  // Calls FindNewBox() !!!
+   VisualizationSceneScalarData::Init(wnd);  // Calls FindNewBox() !!!
 
    palette.SetPalette(2); // use the 'jet-like' palette in 2D
 
@@ -459,7 +457,6 @@ void VisualizationSceneSolution::Init()
    // if (!init)
    {
       // init = 1;
-      GLVisWindow* wnd = GetGLVisWindow();
       using SceneType = VisualizationSceneSolution;
 
       wnd->AddKeyEvent('b', &SceneType::ToggleDrawBdr);

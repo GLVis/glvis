@@ -952,12 +952,13 @@ VisualizationSceneScalarData::VisualizationSceneScalarData(
 {
    mesh = &m;
    sol  = &s;
-
-   Init();
 }
 
-void VisualizationSceneScalarData::Init()
+void VisualizationSceneScalarData::Init(GLVisWindow* wnd)
 {
+   // perform base class initialization first
+   VisualizationScene::Init(wnd);
+
    arrow_type = arrow_scaling_type = 0;
    scaling = 0;
    drawaxes = colorbar = 0;
@@ -977,8 +978,6 @@ void VisualizationSceneScalarData::Init()
    // if (!init)
    {
       // init = 1;
-      GLVisWindow* wnd = GetGLVisWindow();
-
       using SceneType = VisualizationSceneScalarData;
 
       wnd->AddKeyEvent('l', &SceneType::ToggleLight);
@@ -1057,6 +1056,10 @@ void VisualizationSceneScalarData::Init()
    PrepareRuler();
 
    autoscale = 1;
+
+   saved_key_func = [wnd]() -> std::string {
+       return wnd->getSdl()->getSavedKeys();
+   };
 }
 
 VisualizationSceneScalarData::~VisualizationSceneScalarData()
@@ -1321,7 +1324,7 @@ void VisualizationSceneScalarData::SetLevelLines (
 
 void VisualizationSceneScalarData::PrintState()
 {
-   cout << "\nkeys: " << GetAppWindow()->getSavedKeys() << "\n"
+   cout << "\nkeys: " << saved_key_func() << "\n"
         << "\nlight " << strings_off_on[use_light ? 1 : 0]
         << "\nperspective " << strings_off_on[OrthogonalProjection ? 0 : 1]
         << "\nviewcenter " << ViewCenterX << ' ' << ViewCenterY

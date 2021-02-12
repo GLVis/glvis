@@ -250,7 +250,7 @@ void GLVisWindow::InitVisualization(int field_type, StreamState state,
    }
 #endif
 
-   locscene = prob_state.CreateVisualizationScene(field_type);
+   locscene = prob_state.CreateVisualizationScene(this, field_type);
 
    wnd->getRenderer().setPalette(&locscene->GetPalette());
 

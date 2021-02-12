@@ -13,6 +13,7 @@
 #define GLVIS_VSDATA_HPP
 
 #include <array>
+#include <utility>
 
 #include "openglvis.hpp"
 #include "mfem.hpp"
@@ -76,8 +77,6 @@ protected:
    gl3::GlDrawable caption_buf;
    int caption_w, caption_h;
 
-   void Init();
-
    int arrow_type, arrow_scaling_type;
 
    int nl;
@@ -129,6 +128,9 @@ protected:
 
    void Cone(gl3::GlBuilder& builder, glm::mat4 transform);
 
+   // stored function that gets saved keys from SdlWindow
+   std::function<std::string()> saved_key_func;
+
    void PrintHelpString();
    void QueryCaption();
    void QueryLevelLines();
@@ -153,6 +155,8 @@ public:
    VisualizationSceneScalarData (Mesh & m, Vector & s);
 
    virtual ~VisualizationSceneScalarData();
+
+   virtual void Init(GLVisWindow* wnd);
 
    virtual std::string GetHelpString() const { return ""; }
 

@@ -234,8 +234,6 @@ VisualizationSceneVector::VisualizationSceneVector(Mesh & m,
    sol  = new Vector(mesh -> GetNV());
 
    VecGridF = NULL;
-
-   Init();
 }
 
 VisualizationSceneVector::VisualizationSceneVector(GridFunction &vgf)
@@ -261,7 +259,6 @@ VisualizationSceneVector::VisualizationSceneVector(GridFunction &vgf)
 
    //  VisualizationSceneSolution::Init()  sets rsol = NULL !
    {
-      Init();
       SetGridFunction(vgf);
    }
 
@@ -447,7 +444,7 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
    PrepareVectorField();
 }
 
-void VisualizationSceneVector::Init()
+void VisualizationSceneVector::Init(GLVisWindow* wnd)
 {
    drawdisp = 0;
    drawvector = 0;
@@ -461,7 +458,7 @@ void VisualizationSceneVector::Init()
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
    }
 
-   VisualizationSceneSolution::Init();
+   VisualizationSceneSolution::Init(wnd);
 
    PrepareVectorField();
    // PrepareDisplacedMesh(); // called by PrepareLines()
@@ -470,7 +467,6 @@ void VisualizationSceneVector::Init()
    // if (!init)
    {
       // init = 1;
-      GLVisWindow* wnd = GetGLVisWindow();
       using SceneType = VisualizationSceneVector;
 
       wnd->AddKeyEvent('d', &SceneType::ToggleDisplacements);

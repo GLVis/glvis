@@ -128,10 +128,14 @@ VisualizationScene::VisualizationScene()
    use_light = true;
 
    palette.Init();
-   font = GetGLVisWindow()->getFont();
 }
 
 VisualizationScene::~VisualizationScene() {}
+
+void VisualizationScene::Init(GLVisWindow* wnd)
+{
+   font = wnd->getFont();
+}
 
 void VisualizationScene
      ::DrawTriangle(gl3::GlDrawable& buff,

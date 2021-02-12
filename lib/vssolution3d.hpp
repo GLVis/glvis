@@ -44,8 +44,6 @@ protected:
 
    GridFunction *GridF;
 
-   void Init();
-
    void GetFaceNormals(const int FaceNo, const int side,
                        const IntegrationRule &ir, DenseMatrix &normals);
 
@@ -126,6 +124,8 @@ public:
 
    VisualizationSceneSolution3d();
    VisualizationSceneSolution3d(Mesh & m, Vector & s);
+
+   virtual void Init(GLVisWindow* wnd);
 
    void SetGridFunction (GridFunction *gf) { GridF = gf; }
 
