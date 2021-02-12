@@ -144,11 +144,11 @@ public:
       onMouseMove.clear();
    }
 
-   void callKeyDown(SDL_Keycode k)
+   void callKeyDown(SDL_Keycode k, Uint16 mod=0)
    {
       if (onKeyDown[k])
       {
-         onKeyDown[k](0);
+         onKeyDown[k](mod);
       }
    }
 
