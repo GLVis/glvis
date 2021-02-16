@@ -82,8 +82,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    }
    else
    {
-      cout << "Error: visualization is already up." << endl;
-      return 1;
+      wnd->clearEvents();
    }
 
 #ifdef GLVIS_DEBUG
