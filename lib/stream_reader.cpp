@@ -358,53 +358,53 @@ GridFunction *ProjectVectorFEGridFunction(GridFunction *gf)
 bool StreamState::SetNewMeshAndSolution(StreamState new_state,
                                         VisualizationScene* vs)
 {
-    if (new_state.mesh->SpaceDimension() == mesh->SpaceDimension() &&
-        new_state.grid_f->VectorDim() == grid_f->VectorDim())
-    {
-        std::unique_ptr<mfem::Mesh> new_m = std::move(new_state.mesh);
-        std::unique_ptr<mfem::GridFunction> new_g = std::move(new_state.grid_f);
-        if (new_m->SpaceDimension() == 2)
-        {
-            if (new_g->VectorDim() == 1)
-            {
-                VisualizationSceneSolution *vss =
-                    dynamic_cast<VisualizationSceneSolution *>(vs);
-                new_g->GetNodalValues(sol);
-                vss->NewMeshAndSolution(new_m.get(), &sol, new_g.get());
-            }
-            else
-            {
-                VisualizationSceneVector *vsv =
-                    dynamic_cast<VisualizationSceneVector *>(vs);
-                vsv->NewMeshAndSolution(*new_g);
-            }
-        }
-        else
-        {
-            if (new_g->VectorDim() == 1)
-            {
-                VisualizationSceneSolution3d *vss =
-                    dynamic_cast<VisualizationSceneSolution3d *>(vs);
-                new_g->GetNodalValues(sol);
-                vss->NewMeshAndSolution(new_m.get(), &sol, new_g.get());
-            }
-            else
-            {
-                GridFunction* proj_new_g = ProjectVectorFEGridFunction(new_g.get());
-                new_g.reset(proj_new_g);
+   if (new_state.mesh->SpaceDimension() == mesh->SpaceDimension() &&
+       new_state.grid_f->VectorDim() == grid_f->VectorDim())
+   {
+      std::unique_ptr<mfem::Mesh> new_m = std::move(new_state.mesh);
+      std::unique_ptr<mfem::GridFunction> new_g = std::move(new_state.grid_f);
+      if (new_m->SpaceDimension() == 2)
+      {
+         if (new_g->VectorDim() == 1)
+         {
+            VisualizationSceneSolution *vss =
+               dynamic_cast<VisualizationSceneSolution *>(vs);
+            new_g->GetNodalValues(sol);
+            vss->NewMeshAndSolution(new_m.get(), &sol, new_g.get());
+         }
+         else
+         {
+            VisualizationSceneVector *vsv =
+               dynamic_cast<VisualizationSceneVector *>(vs);
+            vsv->NewMeshAndSolution(*new_g);
+         }
+      }
+      else
+      {
+         if (new_g->VectorDim() == 1)
+         {
+            VisualizationSceneSolution3d *vss =
+               dynamic_cast<VisualizationSceneSolution3d *>(vs);
+            new_g->GetNodalValues(sol);
+            vss->NewMeshAndSolution(new_m.get(), &sol, new_g.get());
+         }
+         else
+         {
+            GridFunction* proj_new_g = ProjectVectorFEGridFunction(new_g.get());
+            new_g.reset(proj_new_g);
 
-                VisualizationSceneVector3d *vss =
-                    dynamic_cast<VisualizationSceneVector3d *>(vs);
-                vss->NewMeshAndSolution(new_m.get(), proj_new_g);
-            }
-        }
-        grid_f = std::move(new_g);
-        mesh = std::move(new_m);
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+            VisualizationSceneVector3d *vss =
+               dynamic_cast<VisualizationSceneVector3d *>(vs);
+            vss->NewMeshAndSolution(new_m.get(), proj_new_g);
+         }
+      }
+      grid_f = std::move(new_g);
+      mesh = std::move(new_m);
+      return true;
+   }
+   else
+   {
+      return false;
+   }
 }
 

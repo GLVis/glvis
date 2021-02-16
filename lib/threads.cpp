@@ -448,7 +448,7 @@ int GLVisCommand::Execute()
          {
             if (mesh_range > 0.0)
             {
-                (*vs)->SetValueRange(-mesh_range, mesh_range);
+               (*vs)->SetValueRange(-mesh_range, mesh_range);
             }
             MyExpose();
          }
