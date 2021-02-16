@@ -667,7 +667,7 @@ void SdlWindow::mainIter()
          if (status < 0)
          {
             cout << "GlvisCommand signalled exit" << endl;
-             running = false;
+            running = false;
          }
       }
       else

@@ -326,7 +326,8 @@ void FFGLDevice::drawDeviceBuffer(const TextBuffer& buf)
    glPopMatrix();
 }
 
-void FFGLDevice::captureXfbBuffer(PaletteState& pal, CaptureBuffer& cbuf, int hnd)
+void FFGLDevice::captureXfbBuffer(PaletteState& pal, CaptureBuffer& cbuf,
+                                  int hnd)
 {
    if (hnd == 0) { return; }
    if (disp_lists[hnd].count == 0) { return; }

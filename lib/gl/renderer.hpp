@@ -186,7 +186,8 @@ public:
    virtual void exitXfbMode() {}
    // Capture the next drawn vertex buffer to a feedback buffer instead of
    // drawing to screen.
-   virtual void captureXfbBuffer(PaletteState& pal, CaptureBuffer& capture, int hnd) = 0;
+   virtual void captureXfbBuffer(PaletteState& pal, CaptureBuffer& capture,
+                                 int hnd) = 0;
    // Capture the next text buffer instead of drawing to screen.
    void captureXfbBuffer(CaptureBuffer& capture, const TextBuffer& t_buf);
 

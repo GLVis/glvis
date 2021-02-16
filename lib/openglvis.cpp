@@ -73,10 +73,10 @@ glm::mat4 Camera::RotMatrix()
    double mat[16] =
    {
       -left[0], up[0], -dir[0], 0.0,
-      -left[1], up[1], -dir[1], 0.0,
-      -left[2], up[2], -dir[2], 0.0,
-      0.0, 0.0, 0.0, 1.0
-   };
+         -left[1], up[1], -dir[1], 0.0,
+         -left[2], up[2], -dir[2], 0.0,
+         0.0, 0.0, 0.0, 1.0
+      };
    return glm::make_mat4(mat);
 }
 
@@ -86,10 +86,10 @@ glm::mat4 Camera::TransposeRotMatrix()
    double mat_t[16] =
    {
       -left[0], -left[1], -left[2], 0.0,
-      up[0],    up[1],    up[2],   0.0,
-      -dir[0],  -dir[1],  -dir[2],  0.0,
-      0.0, 0.0, 0.0, 1.0
-   };
+         up[0],    up[1],    up[2],   0.0,
+         -dir[0],  -dir[1],  -dir[2],  0.0,
+         0.0, 0.0, 0.0, 1.0
+      };
    return glm::make_mat4(mat_t);
 }
 
@@ -134,9 +134,9 @@ VisualizationScene::VisualizationScene()
 VisualizationScene::~VisualizationScene() {}
 
 void VisualizationScene
-     ::DrawTriangle(gl3::GlDrawable& buff,
-                    const double (&pts)[4][3], const double (&cv)[4],
-                    const double minv, const double maxv)
+::DrawTriangle(gl3::GlDrawable& buff,
+               const double (&pts)[4][3], const double (&cv)[4],
+               const double minv, const double maxv)
 {
    double nor[3];
    if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
@@ -161,9 +161,9 @@ void VisualizationScene
 }
 
 void VisualizationScene
-     ::DrawQuad(gl3::GlDrawable& buff,
-                const double (&pts)[4][3], const double (&cv)[4],
-                const double minv, const double maxv)
+::DrawQuad(gl3::GlDrawable& buff,
+           const double (&pts)[4][3], const double (&cv)[4],
+           const double minv, const double maxv)
 {
    double nor[3];
    if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
@@ -189,10 +189,10 @@ void VisualizationScene
 }
 
 void VisualizationScene
-     ::DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals,
-                 DenseMatrix &normals,
-                 const int n, const Array<int> &ind, const double minv,
-                 const double maxv, const int normals_opt)
+::DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals,
+            DenseMatrix &normals,
+            const int n, const Array<int> &ind, const double minv,
+            const double maxv, const int normals_opt)
 {
    gl3::GlBuilder poly = drawable.createBuilder();
    double na[3];
