@@ -35,7 +35,14 @@ struct StreamState
 
    int ReadStream(std::istream &is, const std::string &data_type);
 
-   void SetNewMeshAndSolution(StreamState new_state,
+   /// Sets a new mesh and solution from another StreamState object, and
+   /// updates the given VisualizationScene pointer with the new data.
+   ///
+   /// Mesh space and grid function dimensions must both match the original
+   /// dimensions of the current StreamState. If there is a mismatch in either
+   /// value, the function will return false, and the mesh/solution will not be
+   /// updated.
+   bool SetNewMeshAndSolution(StreamState new_state,
                               VisualizationScene* vs);
 };
 

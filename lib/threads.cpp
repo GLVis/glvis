@@ -443,10 +443,8 @@ int GLVisCommand::Execute()
             new_state.SetMeshSolution(false);
             mesh_range = new_state.grid_f->Max() + 1.0;
          }
-         if (new_state.mesh->SpaceDimension() == curr_state.mesh->SpaceDimension() &&
-             new_state.grid_f->VectorDim() == curr_state.grid_f->VectorDim())
+         if (curr_state.SetNewMeshAndSolution(std::move(new_state), *vs))
          {
-            curr_state.SetNewMeshAndSolution(std::move(new_state), *vs);
             if (mesh_range > 0.0)
             {
                 (*vs)->SetValueRange(-mesh_range, mesh_range);
