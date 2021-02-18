@@ -16,6 +16,7 @@
 #include <memory>
 #include <functional>
 #include <map>
+#include <set>
 #include "gl/renderer.hpp"
 #include "sdl_helper.hpp"
 
@@ -67,6 +68,7 @@ private:
    std::map<int, MouseDelegate> onMouseMove;
    TouchDelegate onTouchPinch{nullptr};
    TouchDelegate onTouchRotate{nullptr};
+   std::set<SDL_FingerID> fingers;
 
    bool ctrlDown{false};
 

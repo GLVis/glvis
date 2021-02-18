@@ -586,22 +586,27 @@ void SdlWindow::keyEvent(char c)
    }
 }
 
-void SdlWindow::multiGestureEvent(SDL_MultiGestureEvent & e) {
-  if (e.numFingers == 2) {
-    if (onTouchPinch && fabs(e.dDist) > 0.00002) {
-      onTouchPinch(e);
-    }
+void SdlWindow::multiGestureEvent(SDL_MultiGestureEvent & e)
+{
+   if (e.numFingers == 2)
+   {
+      if (onTouchPinch && fabs(e.dDist) > 0.00002)
+      {
+         onTouchPinch(e);
+      }
 
-    if (onTouchRotate) {
-      onTouchRotate(e);
-    }
-  }
+      if (onTouchRotate)
+      {
+         onTouchRotate(e);
+      }
+   }
 }
 
 void SdlWindow::mainIter()
 {
    SDL_Event e;
    static bool useIdle = false;
+   static bool disable_mouse = false;
    if (SDL_PollEvent(&e))
    {
       bool keep_going;
@@ -615,6 +620,16 @@ void SdlWindow::mainIter()
                break;
             case SDL_WINDOWEVENT:
                windowEvent(e.window);
+               break;
+            case SDL_FINGERDOWN:
+               fingers.insert(e.tfinger.fingerId);
+               if (fingers.size() >= 2) { disable_mouse = true; }
+               keep_going = true;
+               break;
+            case SDL_FINGERUP:
+               fingers.erase(e.tfinger.fingerId);
+               if (fingers.size() < 2) { disable_mouse = false; }
+               keep_going = true;
                break;
             case SDL_MULTIGESTURE:
                multiGestureEvent(e.mgesture);
@@ -634,15 +649,15 @@ void SdlWindow::mainIter()
                keyEvent(e.text.text[0]);
                break;
             case SDL_MOUSEMOTION:
-               motionEvent(e.motion);
+               if (!disable_mouse) { motionEvent(e.motion); }
                // continue processing events
                keep_going = true;
                break;
             case SDL_MOUSEBUTTONDOWN:
-               mouseEventDown(e.button);
+               if (!disable_mouse) { mouseEventDown(e.button); }
                break;
             case SDL_MOUSEBUTTONUP:
-               mouseEventUp(e.button);
+               if (!disable_mouse) { mouseEventUp(e.button); }
                break;
          }
       }

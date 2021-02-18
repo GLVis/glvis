@@ -738,7 +738,8 @@ void RightButtonLoc (EventInfo *event)
 void RightButtonUp (EventInfo*)
 {}
 
-void TouchPinch(SDL_MultiGestureEvent & e) {
+void TouchPinch(SDL_MultiGestureEvent & e)
+{
    // Scale or Zoom?
    locscene->Zoom(exp(e.dDist*10));
    SendExposeEvent();

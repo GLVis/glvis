@@ -339,7 +339,7 @@ void processKeys(const std::string & keys)
    CallKeySequence(keys.c_str());
 }
 
-void processKey(char sym, bool ctrl=false, bool shift=false, bool alt=false)
+void processKey(int sym, bool ctrl=false, bool shift=false, bool alt=false)
 {
    Uint16 mod = 0;
    mod |= ctrl ? KMOD_CTRL : 0;
