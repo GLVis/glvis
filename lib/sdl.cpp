@@ -674,7 +674,6 @@ void SdlWindow::mainIter()
       {
          if (glvis_command->Execute() < 0)
          {
-            cout << "GlvisCommand signalled exit" << endl;
             running = false;
          }
       }
@@ -686,11 +685,7 @@ void SdlWindow::mainIter()
       if (glvis_command && visualize == 1 &&
           (status = glvis_command->Execute()) != 1)
       {
-         if (status < 0)
-         {
-            cout << "GlvisCommand signalled exit" << endl;
-            running = false;
-         }
+         if (status < 0) { running = false; }
       }
       else
       {
