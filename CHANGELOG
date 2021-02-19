@@ -18,6 +18,8 @@ Version 4.0.1 (development)
 
 - Various bugfixes and improvements related to the JavaScript version.
 
+- Refactoring of palette handling code.
+
 
 Version 4.0, released on Dec 11, 2020
 =====================================
