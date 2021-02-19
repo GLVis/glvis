@@ -7861,7 +7861,7 @@ void PaletteState::NextIndex()
 void PaletteState::PrevIndex()
 {
    SetIndex((curr_palette == 0) ? Num_RGB_Palettes - 1 :
-              curr_palette - 1);
+            curr_palette - 1);
 }
 
 int PaletteState::SelectNewRGBPalette()
