@@ -559,14 +559,14 @@ void KeypPressed(GLenum state)
    }
    else
    {
-      locscene->GetPalette().NextPalette();
+      locscene->palette.NextIndex();
       SendExposeEvent();
    }
 }
 
 void KeyPPressed()
 {
-   locscene->GetPalette().PrevPalette();
+   locscene->palette.PrevIndex();
    SendExposeEvent();
 }
 
@@ -590,7 +590,7 @@ static void KeyF5Pressed()
 
 void KeyF6Pressed()
 {
-   int RepeatPaletteTimes = vsdata->GetPalette().GetRepeatTimes();
+   int RepeatPaletteTimes = vsdata->palette.GetRepeatTimes();
    cout << "Palette is repeated " << RepeatPaletteTimes << " times.\n"
         << "(Negative value means the palette is flipped.)\n"
         << "Enter new value: " << flush;
@@ -601,23 +601,23 @@ void KeyF6Pressed()
    }
    cout << "Palette will be repeated " << RepeatPaletteTimes
         << " times now.\n\n";
-   vsdata->GetPalette().SetRepeatTimes(RepeatPaletteTimes);
+   vsdata->palette.SetRepeatTimes(RepeatPaletteTimes);
 
-   int pal = vsdata->GetPalette().ChoosePalette();
+   int pal = vsdata->palette.ChoosePalette();
 
-   int colors_used = vsdata->GetPalette().GetNumColors(pal);
-   int palette_size = vsdata->GetPalette().GetSize(pal);
+   int colors_used = vsdata->palette.GetNumColors(pal);
+   int palette_size = vsdata->palette.GetSize(pal);
    cout << "\nPalette is using " << colors_used << " colors.\n"
         << "Enter new value (0 = use original " << palette_size
         << " colors): " << flush;
    cin >> colors_used;
    if (colors_used == 1) { colors_used = 0; }
-   vsdata->GetPalette().SetNumColors(colors_used);
+   vsdata->palette.SetNumColors(colors_used);
 
-   vsdata->GetPalette().Init();
-   vsdata->GetPalette().SetPalette(pal);
+   vsdata->palette.Init();
+   vsdata->palette.SetIndex(pal);
 
-   colors_used = vsdata->GetPalette().GetNumColors();
+   colors_used = vsdata->palette.GetNumColors();
    cout << "Palette will be using " << colors_used << " colors now.\n";
 
    vsdata->EventUpdateColors();

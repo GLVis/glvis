@@ -28,10 +28,10 @@ public:
    /// Gets whether the smooth texture is being used (1 = true)
    int GetSmoothSetting() { return use_smooth; }
    /// Sets the palette texture to bind.
-   void SetPalette(int num) { curr_palette = num; }
-   int GetPalette() const { return curr_palette; }
-   void NextPalette();
-   void PrevPalette();
+   void SetIndex(int num) { curr_palette = num; }
+   int GetCurrIndex() const { return curr_palette; }
+   void NextIndex();
+   void PrevIndex();
    int ChoosePalette();
    int SelectNewRGBPalette();
    /// Gets the data in the palette color array.

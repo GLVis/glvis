@@ -317,7 +317,7 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
       // SendKeySequence(keys);
       CallKeySequence(keys);
    }
-   wnd->getRenderer().setPalette(&locscene->GetPalette());
+   wnd->getRenderer().setPalette(&locscene->palette);
 }
 
 void RunVisualization()
@@ -377,8 +377,8 @@ void MyReshape(GLsizei w, GLsizei h)
 void MyExpose(GLsizei w, GLsizei h)
 {
    MyReshape (w, h);
-   GLuint color_tex = locscene->GetPalette().GetColorTexture();
-   GLuint alpha_tex = locscene->GetPalette().GetAlphaTexture();
+   GLuint color_tex = locscene->palette.GetColorTexture();
+   GLuint alpha_tex = locscene->palette.GetAlphaTexture();
    wnd->getRenderer().setColorTexture(color_tex);
    wnd->getRenderer().setAlphaTexture(alpha_tex);
    gl3::SceneInfo frame = locscene->GetSceneObjs();
@@ -1464,18 +1464,18 @@ void SetWindowTitle(const char *title)
 
 int GetUseTexture()
 {
-   return locscene->GetPalette().GetSmoothSetting();
+   return locscene->palette.GetSmoothSetting();
 }
 
 void SetUseTexture(int ut)
 {
    if (ut == 0)
    {
-      locscene->GetPalette().UseDiscrete();
+      locscene->palette.UseDiscrete();
    }
    else
    {
-      locscene->GetPalette().UseSmooth();
+      locscene->palette.UseSmooth();
    }
 }
 

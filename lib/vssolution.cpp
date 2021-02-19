@@ -476,7 +476,7 @@ void VisualizationSceneSolution::Init()
 
    VisualizationSceneScalarData::Init();  // Calls FindNewBox() !!!
 
-   palette.SetPalette(2); // use the 'jet-like' palette in 2D
+   palette.SetIndex(2); // use the 'jet-like' palette in 2D
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
    CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*x[0]+(0.5+eps)*x[1]);

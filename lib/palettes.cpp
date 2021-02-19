@@ -7853,14 +7853,14 @@ void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
    glActiveTexture(GL_TEXTURE0);
 }
 
-void PaletteState::NextPalette()
+void PaletteState::NextIndex()
 {
-   SetPalette((curr_palette + 1) % Num_RGB_Palettes);
+   SetIndex((curr_palette + 1) % Num_RGB_Palettes);
 }
 
-void PaletteState::PrevPalette()
+void PaletteState::PrevIndex()
 {
-   SetPalette((curr_palette == 0) ? Num_RGB_Palettes - 1 :
+   SetIndex((curr_palette == 0) ? Num_RGB_Palettes - 1 :
               curr_palette - 1);
 }
 
@@ -7868,7 +7868,7 @@ int PaletteState::SelectNewRGBPalette()
 {
    int pal = ChoosePalette();
 
-   SetPalette(pal);
+   SetIndex(pal);
 
    return pal;
 }

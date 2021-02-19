@@ -87,7 +87,6 @@ protected:
    int light_mat_idx;
    bool use_light;
 
-   PaletteState palette;
 
    gl3::RenderParams GetMeshDrawParams();
    glm::mat4 GetModelViewMtx();
@@ -140,6 +139,7 @@ public:
    double ViewCenterX, ViewCenterY;
 
    Camera cam;
+   PaletteState palette;
 
    /// Bounding box.
    double x[2], y[2], z[2];
@@ -173,7 +173,6 @@ public:
    void SetLight0CustomPos(std::array<float, 4> pos);
    void ToggleBackground();
 
-   PaletteState& GetPalette() { return palette; }
    void GenerateAlphaTexture()
    { palette.GenerateAlphaTexture(matAlpha, matAlphaCenter); }
 
