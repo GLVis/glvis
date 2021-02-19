@@ -210,7 +210,8 @@ bool GLVisInitVis(int field_type)
       {
          if (stream_state.grid_f)
          {
-            GridFunction* proj_grid_f = ProjectVectorFEGridFunction(stream_state.grid_f.get());
+            GridFunction* proj_grid_f = ProjectVectorFEGridFunction(
+                                           stream_state.grid_f.get());
             stream_state.grid_f.reset(proj_grid_f);
             vs = new VisualizationSceneVector3d(*stream_state.grid_f);
          }
