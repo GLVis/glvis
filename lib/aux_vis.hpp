@@ -59,6 +59,8 @@ void RightButtonDown (EventInfo *event);
 void RightButtonLoc  (EventInfo *event);
 void RightButtonUp   (EventInfo *event);
 
+void TouchPinch(SDL_MultiGestureEvent & e);
+
 void KeyCtrlP();
 void KeyS();
 void KeyQPressed();
