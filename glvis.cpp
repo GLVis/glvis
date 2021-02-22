@@ -1726,7 +1726,9 @@ GridFunction *ProjectVectorFEGridFunction(GridFunction *gf)
 {
    if ((gf->VectorDim() == 3) && (gf->FESpace()->GetVDim() == 1))
    {
-      int p = gf->FESpace()->GetOrder(0);
+      MFEM_VERIFY(!gf->FESpace()->IsVariableOrder(),
+                  "Variable orders not supported yet.");
+      int p = gf->FESpace()->GetElementDegree(0);
       cout << "Switching to order " << p
            << " discontinuous vector grid function..." << endl;
       int dim = gf->FESpace()->GetMesh()->Dimension();
