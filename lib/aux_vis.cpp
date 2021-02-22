@@ -115,6 +115,8 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
    wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
 
+   wnd->setTouchPinchCallback(TouchPinch);
+
    // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
    wnd->setOnKeyDown (SDLK_s, KeyS);
    wnd->setOnKeyDown ('S', KeyS);
@@ -735,6 +737,13 @@ void RightButtonLoc (EventInfo *event)
 
 void RightButtonUp (EventInfo*)
 {}
+
+void TouchPinch(SDL_MultiGestureEvent & e)
+{
+   // Scale or Zoom?
+   locscene->Zoom(exp(e.dDist*10));
+   SendExposeEvent();
+}
 
 #if defined(GLVIS_USE_LIBTIFF)
 const char *glvis_screenshot_ext = ".tif";
