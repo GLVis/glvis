@@ -165,18 +165,4 @@ public:
 void DrawNumberedMarker(gl3::GlDrawable& buff, const double x[3], double dx,
                         int n);
 
-// We only need 3 points, but the array is 4x3
-void DrawTriangle(gl3::GlDrawable& buff,
-                  const double (&pts)[4][3], const double (&cv)[4],
-                  const double minv, const double maxv);
-
-void DrawQuad(gl3::GlDrawable& buff,
-              const double (&pts)[4][3], const double (&cv)[4],
-              const double minv, const double maxv);
-
-void DrawPatch(gl3::GlDrawable& buff, const DenseMatrix &pts, Vector &vals,
-               DenseMatrix &normals,
-               const int n, const Array<int> &ind, const double minv,
-               const double maxv, const int normals_opt = 0);
-
 #endif

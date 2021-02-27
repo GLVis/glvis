@@ -113,7 +113,7 @@ public:
       initializeShaderState(RenderMode::Default);
       glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
    }
-   void captureXfbBuffer(CaptureBuffer& cbuf, int hnd) override;
+   void captureXfbBuffer(PaletteState& pal, CaptureBuffer& cbuf, int hnd) override;
 };
 
 }

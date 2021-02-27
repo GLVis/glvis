@@ -19,12 +19,6 @@
 #include "font.hpp"
 #include "openglvis.hpp"
 
-extern GLuint fontbase;
-extern float MatAlpha;
-extern float MatAlphaCenter;
-extern int RepeatPaletteTimes;
-extern int PaletteNumColors;
-
 /// Initializes the visualization and some keys.
 int InitVisualization(const char name[], int x, int y, int w, int h);
 
@@ -115,11 +109,6 @@ void SendKeySequence(const char *seq);
 // update the visualization window.
 void CallKeySequence(const char *seq);
 
-extern int MySetColorLogscale;
-double GetColorCoord(double val, double min, double max);
-void GetColorFromVal(double val, float * rgba);
-void MySetColor(gl3::GlBuilder& builder, double val);
-void MySetColor(gl3::GlBuilder& builder, double val, double min, double max);
 
 void SetUseTexture(int ut);
 int GetUseTexture();

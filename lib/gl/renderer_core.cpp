@@ -817,7 +817,7 @@ void CoreGLDevice::processLineXfbBuffer(CaptureBuffer& cbuf,
 
 
 void CoreGLDevice::captureXfbBuffer(
-   CaptureBuffer& cbuf, int hnd)
+   PaletteState& pal, CaptureBuffer& cbuf, int hnd)
 {
    if (hnd == 0) { return; }
    if (vbos[hnd].count == 0) { return; }
@@ -850,8 +850,8 @@ void CoreGLDevice::captureXfbBuffer(
 
 #else
 
-void CoreGLDevice::captureXfbBuffer(
-   CaptureBuffer& cbuf, int hnd)
+void CoreGLDevice::captureXfbBuffer(PaletteState & /*unused*/,
+                                    CaptureBuffer& /*unused*/, int /*unused*/)
 {
    std::cerr << "CoreGLDevice::captureXfbBuffer: "
              << "Not implemented for WebGL." << std::endl;

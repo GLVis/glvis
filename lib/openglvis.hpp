@@ -16,56 +16,11 @@
 #include "sdl.hpp"
 #include "gl/types.hpp"
 #include "material.hpp"
+#include "palettes.hpp"
+#include "mfem.hpp"
+#include "geom_utils.hpp"
 
 // Visualization header file
-
-// Some inline functions
-
-inline void LinearCombination(const double a, const double x[],
-                              const double b, const double y[], double z[])
-{
-   z[0] = a*x[0] + b*y[0];
-   z[1] = a*x[1] + b*y[1];
-   z[2] = a*x[2] + b*y[2];
-}
-
-inline double InnerProd(const double a[], const double b[])
-{
-   return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
-
-inline void CrossProd(const double a[], const double b[], double cp[])
-{
-   cp[0] = a[1] * b[2] - a[2] * b[1];
-   cp[1] = a[2] * b[0] - a[0] * b[2];
-   cp[2] = a[0] * b[1] - a[1] * b[0];
-}
-
-inline int Normalize(double v[])
-{
-   double len = sqrt(InnerProd(v, v));
-   if (len > 0.0)
-   {
-      len = 1.0 / len;
-   }
-   else
-   {
-      return 1;
-   }
-   for (int i = 0; i < 3; i++)
-   {
-      v[i] *= len;
-   }
-   return 0;
-}
-
-inline int ProjectVector(double v[], const double n[])
-{
-   // project 'v' on the plane with normal given by 'n' and  then normalize 'v'
-   LinearCombination(InnerProd(n, n), v, -InnerProd(v, n), n, v);
-   return Normalize(v);
-}
-
 
 class Camera
 {
@@ -132,6 +87,7 @@ protected:
    int light_mat_idx;
    bool use_light;
 
+
    gl3::RenderParams GetMeshDrawParams();
    glm::mat4 GetModelViewMtx();
 
@@ -147,6 +103,33 @@ protected:
       }
    }
 
+   void MySetColor (gl3::GlBuilder& builder, double val, double min, double max)
+   {
+      MySetColor(builder, palette.GetColorCoord(val, min, max));
+   }
+
+   void MySetColor (gl3::GlBuilder& builder, double val)
+   {
+      if (val < 0.0) { val = 0.0; }
+      if (val > 1.0) { val = 1.0; }
+
+      builder.glTexCoord2f(val, 1.0);
+   }
+
+   // We only need 3 points, but the array is 4x3
+   void DrawTriangle(gl3::GlDrawable& buff,
+                     const double (&pts)[4][3], const double (&cv)[4],
+                     const double minv, const double maxv);
+
+   void DrawQuad(gl3::GlDrawable& buff,
+                 const double (&pts)[4][3], const double (&cv)[4],
+                 const double minv, const double maxv);
+
+   void DrawPatch(gl3::GlDrawable& buff, const mfem::DenseMatrix &pts,
+                  mfem::Vector &vals, mfem::DenseMatrix &normals,
+                  const int n, const mfem::Array<int> &ind, const double minv,
+                  const double maxv, const int normals_opt = 0);
+
 public:
    VisualizationScene();
    virtual ~VisualizationScene();
@@ -156,12 +139,16 @@ public:
    double ViewCenterX, ViewCenterY;
 
    Camera cam;
+   PaletteState palette;
 
    /// Bounding box.
    double x[2], y[2], z[2];
 
    glm::mat4 rotmat;
    glm::mat4 translmat;
+
+   float matAlpha = 1.0;
+   float matAlphaCenter = 0.5;
 
    virtual gl3::SceneInfo GetSceneObjs() = 0;
 
@@ -185,6 +172,9 @@ public:
 
    void SetLight0CustomPos(std::array<float, 4> pos);
    void ToggleBackground();
+
+   void GenerateAlphaTexture()
+   { palette.GenerateAlphaTexture(matAlpha, matAlphaCenter); }
 
    /// This is set by SetVisualizationScene
    int view;

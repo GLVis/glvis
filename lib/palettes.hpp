@@ -11,27 +11,69 @@
 
 #ifndef GLVIS_PALETTES_HPP
 #define GLVIS_PALETTES_HPP
+#include "gl/types.hpp"
+#include <vector>
+#include <array>
 
-/// Initializes the palette textures.
-void paletteInit();
-/// Binds the discrete version of the current palette texture.
-void paletteUseDiscrete();
-/// Binds the smooth version of the current palette texture.
-void paletteUseSmooth();
-/// Sets the palette texture to bind.
-void paletteSet(int num);
-/// Gets the palette color array.
-double * paletteGet();
-/// Rebind the color and alpha textures to their texture units.
-void paletteRebind();
+class PaletteState
+{
+public:
+   PaletteState();
+   /// Initializes the palette textures.
+   void Init();
+   /// Binds the discrete version of the current palette texture.
+   void UseDiscrete() { use_smooth = 0; }
+   /// Binds the smooth version of the current palette texture.
+   void UseSmooth() { use_smooth = 1; }
+   /// Gets whether the smooth texture is being used (1 = true)
+   int GetSmoothSetting() { return use_smooth; }
+   /// Sets the palette texture to bind.
+   void SetIndex(int num) { curr_palette = num; }
+   int GetCurrIndex() const { return curr_palette; }
+   void NextIndex();
+   void PrevIndex();
+   int ChoosePalette();
+   int SelectNewRGBPalette();
+   /// Gets the data in the palette color array.
+   const double* GetData() const;
+   /// Gets the total number of colors in the current palette color array.
+   int GetSize(int pal = -1) const;
+   /// Gets the number of colors used in the current palette color array.
+   int GetNumColors(int pal = -1) const
+   { return PaletteNumColors ? PaletteNumColors : GetSize(pal); }
+   /// Sets the number of colors to use in the current palette color array.
+   void SetNumColors(int numColors) { PaletteNumColors = numColors; }
+   int GetRepeatTimes() const { return RepeatPaletteTimes; }
+   void SetRepeatTimes(int rpt) { RepeatPaletteTimes = rpt; }
 
-int paletteGetSize(int pal = -1);
+   void SetUseLogscale(bool logscale) { use_logscale = logscale; }
+   bool GetUseLogscale() { return use_logscale; }
+   double GetColorCoord(double val, double min, double max);
+   void GetColorFromVal(double val, float* rgba);
 
-void GenerateAlphaTexture(float matAlpha, float matAlphaCenter);
+   GLuint GetColorTexture() const
+   { return palette_tex[curr_palette][use_smooth]; }
+   GLuint GetAlphaTexture() const { return alpha_tex; }
+   void GenerateAlphaTexture(float matAlpha, float matAlphaCenter);
+private:
+   void ToTextureDiscrete(double * palette, size_t plt_size, GLuint tex);
+   void ToTextureSmooth(double * palette, size_t plt_size, GLuint tex);
+   using TexHandle = gl3::resource::TextureHandle;
 
-void Next_RGB_Palette();
-void Prev_RGB_Palette();
-int Choose_Palette();
-int Select_New_RGB_Palette();
+   std::vector<std::array<TexHandle,2>> palette_tex;
+   TexHandle alpha_tex;
+
+   int curr_palette = 2;
+   int use_smooth = 0;
+   int RepeatPaletteTimes = 1;
+   int PaletteNumColors = 0;
+
+   bool use_logscale = false;
+
+   bool first_init;
+   int MaxTextureSize;
+   GLenum alpha_channel;
+   GLenum rgba_internal;
+};
 
 #endif

@@ -632,82 +632,6 @@ static void KeyF10Pressed()
    SendExposeEvent();
 }
 
-// 'v' must define three vectors that add up to the zero vector
-// that is v[0], v[1], and v[2] are the sides of a triangle
-int UnitCrossProd(double v[][3], double nor[])
-{
-   // normalize the three vectors
-   for (int i = 0; i < 3; i++)
-      if (Normalize(v[i]))
-      {
-         return 1;
-      }
-
-   // find the pair that forms an angle closest to pi/2, i.e. having
-   // the longest cross product:
-   double cp[3][3], max_a = 0.;
-   int k = 0;
-   for (int i = 0; i < 3; i++)
-   {
-      CrossProd(v[(i+1)%3], v[(i+2)%3], cp[i]);
-      double a = sqrt(InnerProd(cp[i], cp[i]));
-      if (max_a < a)
-      {
-         max_a = a, k = i;
-      }
-   }
-   if (max_a == 0.)
-   {
-      return 1;
-   }
-   for (int i = 0; i < 3; i++)
-   {
-      nor[i] = cp[k][i] / max_a;
-   }
-
-   return 0;
-}
-
-int Compute3DUnitNormal(const double p1[], const double p2[],
-                        const double p3[], double nor[])
-{
-   double v[3][3];
-
-   for (int i = 0; i < 3; i++)
-   {
-      v[0][i] = p2[i] - p1[i];
-      v[1][i] = p3[i] - p2[i];
-      v[2][i] = p1[i] - p3[i];
-   }
-
-   return UnitCrossProd(v, nor);
-}
-
-int Compute3DUnitNormal (const double p1[], const double p2[],
-                         const double p3[], const double p4[], double nor[])
-{
-   double v[3][3];
-
-   for (int i = 0; i < 3; i++)
-   {
-      // cross product of the two diagonals:
-      /*
-        v[0][i] = p3[i] - p1[i];
-        v[1][i] = p4[i] - p2[i];
-        v[2][i] = (p1[i] + p2[i]) - (p3[i] + p4[i]);
-      */
-
-      // cross product of the two vectors connecting the midpoints of the
-      // two pairs of opposing sides; this gives the normal vector in the
-      // midpoint of the quad:
-      v[0][i] = 0.5 * ((p2[i] + p3[i]) - (p1[i] + p4[i]));
-      v[1][i] = 0.5 * ((p4[i] + p3[i]) - (p1[i] + p2[i]));
-      v[2][i] = p1[i] - p3[i];
-   }
-
-   return UnitCrossProd(v, nor);
-}
-
 VisualizationSceneSolution3d::VisualizationSceneSolution3d()
 {}
 
@@ -769,8 +693,7 @@ void VisualizationSceneSolution3d::Init()
 
    node_pos = new double[mesh->GetNV()];
 
-   paletteSet(12); // use the 'vivid' palette in 3D
-   SetUseTexture(0);
+   palette.SetIndex(12); // use the 'vivid' palette in 3D
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
    CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*x[0]+(0.5+eps)*x[1]);
@@ -1087,7 +1010,7 @@ void VisualizationSceneSolution3d::EventUpdateColors()
 void VisualizationSceneSolution3d::UpdateValueRange(bool prepare)
 {
    logscale = logscale && LogscaleRange();
-   MySetColorLogscale = logscale;
+   palette.SetUseLogscale(logscale);
    SetLogA();
    SetLevelLines(minv, maxv, nl);
    if (prepare)
@@ -1183,16 +1106,6 @@ void VisualizationSceneSolution3d::NumberOfLevelSurf(int c)
       nlevels = 1;
    }
    PrepareLevelSurf();
-}
-
-int Normalize(DenseMatrix &normals)
-{
-   int err = 0;
-   for (int i = 0; i < normals.Width(); i++)
-   {
-      err += Normalize(&normals(0, i));
-   }
-   return err;
 }
 
 void VisualizationSceneSolution3d::GetFaceNormals(
@@ -3596,7 +3509,7 @@ gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
    params.use_clip_plane = cplane;
    double* cp_eqn = CuttingPlane->Equation();
    params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};
-   params.contains_translucent = MatAlpha < 1.0;
+   params.contains_translucent = matAlpha < 1.0;
 
    if (drawlsurf)
    {

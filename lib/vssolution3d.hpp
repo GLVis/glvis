@@ -183,12 +183,4 @@ public:
    virtual int GetDrawMesh() { return drawmesh; }
 };
 
-int Normalize(DenseMatrix &normals);
-
-int Compute3DUnitNormal(const double p1[], const double p2[],
-                        const double p3[], double nor[]);
-
-int Compute3DUnitNormal (const double p1[], const double p2[],
-                         const double p3[], const double p4[], double nor[]);
-
 #endif

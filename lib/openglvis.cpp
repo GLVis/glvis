@@ -14,6 +14,8 @@
 #include "material.hpp"
 #include "aux_vis.hpp"
 
+using namespace mfem;
+
 const int NUM_MATERIALS = 5;
 extern Material materials[5];
 extern Light lights[];
@@ -125,9 +127,183 @@ VisualizationScene::VisualizationScene()
    _use_cust_l0_pos = false;
    light_mat_idx = 3;
    use_light = true;
+
+   palette.Init();
 }
 
 VisualizationScene::~VisualizationScene() {}
+
+void VisualizationScene
+::DrawTriangle(gl3::GlDrawable& buff,
+               const double (&pts)[4][3], const double (&cv)[4],
+               const double minv, const double maxv)
+{
+   double nor[3];
+   if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
+   {
+      return;
+   }
+
+   std::array<float, 2> texcoord[3];
+   std::array<float, 3> fpts[3];
+   std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
+
+   for (int i = 0; i < 3; i++)
+   {
+      float pal_coord = palette.GetColorCoord(cv[i], minv, maxv);
+      texcoord[i] = { pal_coord, 1.0 };
+      fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
+   }
+   buff.addTriangle<gl3::VertexNormTex>(
+   {fpts[0], fnorm, texcoord[0]},
+   {fpts[1], fnorm, texcoord[1]},
+   {fpts[2], fnorm, texcoord[2]});
+}
+
+void VisualizationScene
+::DrawQuad(gl3::GlDrawable& buff,
+           const double (&pts)[4][3], const double (&cv)[4],
+           const double minv, const double maxv)
+{
+   double nor[3];
+   if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
+   {
+      return;
+   }
+
+   std::array<float, 2> texcoord[4];
+   std::array<float, 3> fpts[4];
+   std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
+
+   for (int i = 0; i < 4; i++)
+   {
+      float pal_coord = palette.GetColorCoord(cv[i], minv, maxv);
+      texcoord[i] = { pal_coord, 1.0 };
+      fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
+   }
+   buff.addQuad<gl3::VertexNormTex>(
+   {fpts[0], fnorm, texcoord[0]},
+   {fpts[1], fnorm, texcoord[1]},
+   {fpts[2], fnorm, texcoord[2]},
+   {fpts[3], fnorm, texcoord[3]});
+}
+
+void VisualizationScene
+::DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals,
+            DenseMatrix &normals,
+            const int n, const Array<int> &ind, const double minv,
+            const double maxv, const int normals_opt)
+{
+   gl3::GlBuilder poly = drawable.createBuilder();
+   double na[3];
+
+   if (normals_opt == 1 || normals_opt == -2)
+   {
+      normals.SetSize(3, pts.Width());
+      normals = 0.;
+      for (int i = 0; i < ind.Size(); i += n)
+      {
+         int j;
+         if (n == 3)
+            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                    &pts(0, ind[i+2]), na);
+         else
+            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                    &pts(0, ind[i+2]), &pts(0, ind[i+3]), na);
+         if (j == 0)
+            for ( ; j < n; j++)
+               for (int k = 0; k < 3; k++)
+               {
+                  normals(k, ind[i+j]) += na[k];
+               }
+      }
+   }
+
+   if (normals_opt != 0 && normals_opt != -1)
+   {
+      std::vector<gl3::VertexNormTex> vertices;
+      std::vector<int> indices;
+      vertices.reserve(pts.Size());
+      indices.reserve(ind.Size());
+      for (int i = 0; i < pts.Width(); i++)
+      {
+         vertices.emplace_back(
+            gl3::VertexNormTex
+         {
+            {(float) pts(0, i), (float) pts(1, i), (float) pts(2, i)},
+            {(float) normals(0, i), (float) normals(1, i), (float) normals(2, i)},
+            {(float) palette.GetColorCoord(vals(i), minv, maxv), 1.0 }
+         });
+      }
+      if (normals_opt > 0)
+      {
+         for (int i = 0; i < ind.Size(); i++)
+         {
+            indices.emplace_back(ind[i]);
+         }
+      }
+      else
+      {
+         for (int i = ind.Size()-1; i >= 0; i--)
+         {
+            indices.emplace_back(ind[i]);
+         }
+      }
+      if (n == 3)
+      {
+         drawable.addTriangleIndexed(vertices, indices);
+      }
+      else
+      {
+         drawable.addQuadIndexed(vertices, indices);
+      }
+   }
+   else
+   {
+      if (n == 3)
+      {
+         poly.glBegin(GL_TRIANGLES);
+      }
+      else
+      {
+         poly.glBegin(GL_QUADS);
+      }
+      for (int i = 0; i < ind.Size(); i += n)
+      {
+         int j;
+         if (n == 3)
+            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                    &pts(0, ind[i+2]), na);
+         else
+            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                    &pts(0, ind[i+2]), &pts(0, ind[i+3]), na);
+         if (j == 0)
+         {
+            if (normals_opt == 0)
+            {
+               poly.glNormal3dv(na);
+               for ( ; j < n; j++)
+               {
+                  MySetColor(poly, vals(ind[i+j]), minv, maxv);
+                  poly.glVertex3dv(&pts(0, ind[i+j]));
+               }
+            }
+            else
+            {
+               poly.glNormal3d(-na[0], -na[1], -na[2]);
+               for (j = n-1; j >= 0; j--)
+               {
+                  MySetColor(poly, vals(ind[i+j]), minv, maxv);
+                  poly.glVertex3dv(&pts(0, ind[i+j]));
+               }
+            }
+         }
+      }
+      poly.glEnd();
+   }
+}
+
+
 
 gl3::RenderParams VisualizationScene::GetMeshDrawParams()
 {

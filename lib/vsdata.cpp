@@ -559,14 +559,14 @@ void KeypPressed(GLenum state)
    }
    else
    {
-      Next_RGB_Palette();
+      locscene->palette.NextIndex();
       SendExposeEvent();
    }
 }
 
 void KeyPPressed()
 {
-   Prev_RGB_Palette();
+   locscene->palette.PrevIndex();
    SendExposeEvent();
 }
 
@@ -590,6 +590,7 @@ static void KeyF5Pressed()
 
 void KeyF6Pressed()
 {
+   int RepeatPaletteTimes = vsdata->palette.GetRepeatTimes();
    cout << "Palette is repeated " << RepeatPaletteTimes << " times.\n"
         << "(Negative value means the palette is flipped.)\n"
         << "Enter new value: " << flush;
@@ -600,23 +601,24 @@ void KeyF6Pressed()
    }
    cout << "Palette will be repeated " << RepeatPaletteTimes
         << " times now.\n\n";
+   vsdata->palette.SetRepeatTimes(RepeatPaletteTimes);
 
-   int pal = Choose_Palette();
+   int pal = vsdata->palette.ChoosePalette();
 
-   int colors_used = PaletteNumColors ?  PaletteNumColors : paletteGetSize(pal);
+   int colors_used = vsdata->palette.GetNumColors(pal);
+   int palette_size = vsdata->palette.GetSize(pal);
    cout << "\nPalette is using " << colors_used << " colors.\n"
-        << "Enter new value (0 = use original " << paletteGetSize(pal)
+        << "Enter new value (0 = use original " << palette_size
         << " colors): " << flush;
-   cin >> PaletteNumColors;
-   if (PaletteNumColors == 1)
-   {
-      PaletteNumColors = 0;
-   }
-   colors_used = PaletteNumColors ?  PaletteNumColors : paletteGetSize();
-   cout << "Palette will be using " << colors_used << " colors now.\n";
+   cin >> colors_used;
+   if (colors_used == 1) { colors_used = 0; }
+   vsdata->palette.SetNumColors(colors_used);
 
-   paletteInit();
-   paletteSet(pal);
+   vsdata->palette.Init();
+   vsdata->palette.SetIndex(pal);
+
+   colors_used = vsdata->palette.GetNumColors();
+   cout << "Palette will be using " << colors_used << " colors now.\n";
 
    vsdata->EventUpdateColors();
    SendExposeEvent();
@@ -718,23 +720,23 @@ void KeyF2Pressed()
 
 void KeykPressed()
 {
-   MatAlpha -= 0.05;
-   if (MatAlpha < 0.0)
+   locscene->matAlpha -= 0.05;
+   if (locscene->matAlpha < 0.0)
    {
-      MatAlpha = 0.0;
+      locscene->matAlpha = 0.0;
    }
-   GenerateAlphaTexture(MatAlpha, MatAlphaCenter);
+   locscene->GenerateAlphaTexture();
    SendExposeEvent();
 }
 
 void KeyKPressed()
 {
-   MatAlpha += 0.05;
-   if (MatAlpha > 1.0)
+   locscene->matAlpha += 0.05;
+   if (locscene->matAlpha > 1.0)
    {
-      MatAlpha = 1.0;
+      locscene->matAlpha = 1.0;
    }
-   GenerateAlphaTexture(MatAlpha, MatAlphaCenter);
+   locscene->GenerateAlphaTexture();
    SendExposeEvent();
 }
 
@@ -752,23 +754,23 @@ void KeyAPressed()
 
 void KeyCommaPressed()
 {
-   MatAlphaCenter -= 0.25;
+   locscene->matAlphaCenter -= 0.25;
    //vsdata -> EventUpdateColors();
-   GenerateAlphaTexture(MatAlpha, MatAlphaCenter);
+   locscene->GenerateAlphaTexture();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
-   cout << "MatAlphaCenter = " << MatAlphaCenter << endl;
+   cout << "MatAlphaCenter = " << locscene->matAlphaCenter << endl;
 #endif
 }
 
 void KeyLessPressed()
 {
-   MatAlphaCenter += 0.25;
+   locscene->matAlphaCenter += 0.25;
    //vsdata -> EventUpdateColors();
-   GenerateAlphaTexture(MatAlpha, MatAlphaCenter);
+   locscene->GenerateAlphaTexture();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
-   cout << "MatAlphaCenter = " << MatAlphaCenter << endl;
+   cout << "MatAlphaCenter = " << locscene->matAlphaCenter << endl;
 #endif
 }
 
@@ -806,7 +808,7 @@ void VisualizationSceneScalarData::ToggleLogscale(bool print)
    if (logscale || LogscaleRange())
    {
       logscale = !logscale;
-      MySetColorLogscale = logscale;
+      palette.SetUseLogscale(logscale);
       SetLogA();
       SetLevelLines(minv, maxv, nl);
       UpdateLevelLines();
@@ -1045,10 +1047,17 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
 
 void VisualizationSceneScalarData::ToggleTexture()
 {
-   SetUseTexture((GetUseTexture()+1)%2);
-
-   static const char *texture_type[2] = {"discrete", "smooth"};
-   cout << "Texture type : " << texture_type[GetUseTexture()] << endl;
+   int isSmooth = palette.GetSmoothSetting();
+   if (isSmooth)
+   {
+      palette.UseDiscrete();
+      cout << "Texture type : discrete" << endl;
+   }
+   else
+   {
+      palette.UseSmooth();
+      cout << "Texture type : smooth" << endl;
+   }
 }
 
 void VisualizationSceneScalarData::SetAutoscale(int _autoscale)
@@ -1083,7 +1092,6 @@ void VisualizationSceneScalarData::Init()
    minv = 0.0;
    maxv = 1.0;
    logscale = false;
-   MySetColorLogscale = 0;
    SetLogA();
    PrepareCaption(); // turn on or off the caption
 

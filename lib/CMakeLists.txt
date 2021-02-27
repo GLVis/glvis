@@ -34,6 +34,7 @@ list(APPEND HEADERS
   gl/types.hpp
   aux_vis.hpp
   font.hpp
+  geom_utils.hpp
   logo.hpp
   material.hpp
   openglvis.hpp
