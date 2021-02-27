@@ -850,8 +850,8 @@ void CoreGLDevice::captureXfbBuffer(
 
 #else
 
-void CoreGLDevice::captureXfbBuffer(
-   CaptureBuffer& cbuf, int hnd)
+void CoreGLDevice::captureXfbBuffer(PaletteState & /*unused*/,
+                                    CaptureBuffer& /*unused*/, int /*unused*/)
 {
    std::cerr << "CoreGLDevice::captureXfbBuffer: "
              << "Not implemented for WebGL." << std::endl;
