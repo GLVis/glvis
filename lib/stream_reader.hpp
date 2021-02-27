@@ -13,31 +13,38 @@
 #define GLVIS_STREAM_READER_HPP
 
 #include <string>
+#include <memory>
 #include "mfem.hpp"
+#include "openglvis.hpp"
 
 struct StreamState
 {
    mfem::Vector sol, solu, solv, solw, normals;
    std::string keys;
-   mfem::Mesh *mesh{nullptr};
-   mfem::GridFunction *grid_f{nullptr};
+   std::unique_ptr<mfem::Mesh> mesh;
+   std::unique_ptr<mfem::GridFunction> grid_f;
    int is_gf{0};
    bool fix_elem_orient{false};
    bool save_coloring{false};
+
+   /// Helper function for visualizing 1D data
+   void Extrude1DMeshAndSolution();
+
+   /// Set a (checkerboard) solution when only the mesh is given
+   void SetMeshSolution();
+
+   int ReadStream(std::istream &is, const std::string &data_type);
+
+   /// Sets a new mesh and solution from another StreamState object, and
+   /// updates the given VisualizationScene pointer with the new data.
+   ///
+   /// Mesh space and grid function dimensions must both match the original
+   /// dimensions of the current StreamState. If there is a mismatch in either
+   /// value, the function will return false, and the mesh/solution will not be
+   /// updated.
+   bool SetNewMeshAndSolution(StreamState new_state,
+                              VisualizationScene* vs);
 };
 
-/// Singleton holding the current stream content (defined in steam_reader.cpp)
-extern StreamState stream_state;
-
-/// Helper function for visualizing 1D data
-void Extrude1DMeshAndSolution(mfem::Mesh **mesh_p,
-                              mfem::GridFunction **grid_f_p,
-                              mfem::Vector *sol);
-
-/// Set a (checkerboard) solution when only the mesh is given
-void SetMeshSolution(mfem::Mesh *mesh, mfem::GridFunction *&grid_f,
-                     bool save_coloring);
-
-int ReadStream(std::istream &is, const std::string &data_type);
 
 #endif // GLVIS_STREAM_READER_HPP

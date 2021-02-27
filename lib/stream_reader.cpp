@@ -10,17 +10,13 @@
 // CONTRIBUTING.md for details.
 
 #include "stream_reader.hpp"
+#include "visual.hpp"
 
 using namespace std;
 using namespace mfem;
 
-StreamState stream_state;
-
-void Extrude1DMeshAndSolution(Mesh **mesh_p, GridFunction **grid_f_p,
-                              Vector *sol)
+void StreamState::Extrude1DMeshAndSolution()
 {
-   Mesh *mesh = *mesh_p;
-
    if (mesh->Dimension() != 1 || mesh->SpaceDimension() != 1)
    {
       return;
@@ -42,35 +38,31 @@ void Extrude1DMeshAndSolution(Mesh **mesh_p, GridFunction **grid_f_p,
       }
    }
 
-   Mesh *mesh2d = Extrude1D(mesh, 1, 0.1*(xmax - xmin));
+   Mesh *mesh2d = Extrude1D(mesh.get(), 1, 0.1*(xmax - xmin));
 
-   if (grid_f_p && *grid_f_p)
+   if (grid_f)
    {
       GridFunction *grid_f_2d =
-         Extrude1DGridFunction(mesh, mesh2d, *grid_f_p, 1);
+         Extrude1DGridFunction(mesh.get(), mesh2d, grid_f.get(), 1);
 
-      delete *grid_f_p;
-      *grid_f_p = grid_f_2d;
+      grid_f.reset(grid_f_2d);
    }
-   if (sol && sol->Size() == mesh->GetNV())
+   else if (sol.Size() == mesh->GetNV())
    {
       Vector sol2d(mesh2d->GetNV());
       for (int i = 0; i < mesh->GetNV(); i++)
       {
-         sol2d(2*i+0) = sol2d(2*i+1) = (*sol)(i);
+         sol2d(2*i+0) = sol2d(2*i+1) = sol(i);
       }
-      *sol = sol2d;
+      sol = sol2d;
    }
 
-   delete mesh;
-   *mesh_p = mesh2d;
+   mesh.reset(mesh2d);
 }
 
 
-void SetMeshSolution(Mesh *mesh, GridFunction *&grid_f, bool save_coloring)
+void StreamState::SetMeshSolution()
 {
-   auto & state = stream_state;
-
    if (1) // checkerboard solution
    {
       FiniteElementCollection *cfec;
@@ -86,8 +78,8 @@ void SetMeshSolution(Mesh *mesh, GridFunction *&grid_f, bool save_coloring)
       {
          cfec = new Const3DFECollection;
       }
-      FiniteElementSpace *cfes = new FiniteElementSpace(mesh, cfec);
-      grid_f = new GridFunction(cfes);
+      FiniteElementSpace *cfes = new FiniteElementSpace(mesh.get(), cfec);
+      grid_f.reset(new GridFunction(cfes));
       grid_f->MakeOwner(cfec);
       {
          Array<int> coloring;
@@ -103,8 +95,8 @@ void SetMeshSolution(Mesh *mesh, GridFunction *&grid_f, bool save_coloring)
          }
          cout << "Number of colors: " << grid_f->Max() + 1 << endl;
       }
-      grid_f->GetNodalValues(state.sol);
-      state.is_gf = 1;
+      grid_f->GetNodalValues(sol);
+      is_gf = 1;
       if (save_coloring)
       {
          const char col_fname[] = "GLVis_coloring.gf";
@@ -116,104 +108,99 @@ void SetMeshSolution(Mesh *mesh, GridFunction *&grid_f, bool save_coloring)
    }
    else // zero solution
    {
-      state.sol.SetSize (mesh -> GetNV());
-      state.sol = 0.0;
+      sol.SetSize (mesh -> GetNV());
+      sol = 0.0;
    }
 }
 
 
 // Read the content of an input stream (e.g. from socket/file)
-int ReadStream(istream &is, const string &data_type)
+int StreamState::ReadStream(istream &is, const string &data_type)
 {
-   auto & state = stream_state;
-
    // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
    int field_type = 0;
-
-   delete state.mesh; state.mesh = NULL;
-   delete state.grid_f; state.grid_f = NULL;
-   state.keys.clear();
+   keys.clear();
    if (data_type == "fem2d_data")
    {
-      state.mesh = new Mesh(is, 0, 0, state.fix_elem_orient);
-      state.sol.Load(is, state.mesh->GetNV());
+      mesh.reset(new Mesh(is, 0, 0, fix_elem_orient));
+      sol.Load(is, mesh->GetNV());
    }
    else if (data_type == "vfem2d_data" || data_type == "vfem2d_data_keys")
    {
       field_type = 1;
-      state.mesh = new Mesh(is, 0, 0, state.fix_elem_orient);
-      state.solu.Load(is, state.mesh->GetNV());
-      state.solv.Load(is, state.mesh->GetNV());
+      mesh.reset(new Mesh(is, 0, 0, fix_elem_orient));
+      solu.Load(is, mesh->GetNV());
+      solv.Load(is, mesh->GetNV());
       if (data_type == "vfem2d_data_keys")
       {
-         is >> state.keys;
+         is >> keys;
       }
    }
    else if (data_type == "fem3d_data")
    {
-      state.mesh = new Mesh(is, 0, 0, state.fix_elem_orient);
-      state.sol.Load(is, state.mesh->GetNV());
+      mesh.reset(new Mesh(is, 0, 0, fix_elem_orient));
+      sol.Load(is, mesh->GetNV());
    }
    else if (data_type == "vfem3d_data" || data_type == "vfem3d_data_keys")
    {
       field_type = 1;
-      state.mesh = new Mesh(is, 0, 0, state.fix_elem_orient);
-      state.solu.Load(is, state.mesh->GetNV());
-      state.solv.Load(is, state.mesh->GetNV());
-      state.solw.Load(is, state.mesh->GetNV());
+      mesh.reset(new Mesh(is, 0, 0, fix_elem_orient));
+      solu.Load(is, mesh->GetNV());
+      solv.Load(is, mesh->GetNV());
+      solw.Load(is, mesh->GetNV());
       if (data_type == "vfem3d_data_keys")
       {
-         is >> state.keys;
+         is >> keys;
       }
    }
    else if (data_type == "fem2d_gf_data" || data_type == "fem2d_gf_data_keys")
    {
-      state.mesh = new Mesh(is, 1, 0, state.fix_elem_orient);
-      state.grid_f = new GridFunction(state.mesh, is);
+      mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
+      grid_f.reset(new GridFunction(mesh.get(), is));
       if (data_type == "fem2d_gf_data_keys")
       {
-         is >> state.keys;
+         is >> keys;
       }
    }
    else if (data_type == "vfem2d_gf_data" || data_type == "vfem2d_gf_data_keys")
    {
       field_type = 1;
-      state.mesh = new Mesh(is, 1, 0, state.fix_elem_orient);
-      state.grid_f = new GridFunction(state.mesh, is);
+      mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
+      grid_f.reset(new GridFunction(mesh.get(), is));
       if (data_type == "vfem2d_gf_data_keys")
       {
-         is >> state.keys;
+         is >> keys;
       }
    }
    else if (data_type == "fem3d_gf_data" || data_type == "fem3d_gf_data_keys")
    {
-      state.mesh = new Mesh(is, 1, 0, state.fix_elem_orient);
-      state.grid_f = new GridFunction(state.mesh, is);
+      mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
+      grid_f.reset(new GridFunction(mesh.get(), is));
       if (data_type == "fem3d_gf_data_keys")
       {
-         is >> state.keys;
+         is >> keys;
       }
    }
    else if (data_type == "vfem3d_gf_data" || data_type == "vfem3d_gf_data_keys")
    {
       field_type = 1;
-      state.mesh = new Mesh(is, 1, 0, state.fix_elem_orient);
-      state.grid_f = new GridFunction(state.mesh, is);
+      mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
+      grid_f.reset(new GridFunction(mesh.get(), is));
       if (data_type == "vfem3d_gf_data_keys")
       {
-         is >> state.keys;
+         is >> keys;
       }
    }
    else if (data_type == "solution")
    {
-      state.mesh = new Mesh(is, 1, 0, state.fix_elem_orient);
-      state.grid_f = new GridFunction(state.mesh, is);
-      field_type = (state.grid_f->VectorDim() == 1) ? 0 : 1;
+      mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
+      grid_f.reset(new GridFunction(mesh.get(), is));
+      field_type = (grid_f->VectorDim() == 1) ? 0 : 1;
    }
    else if (data_type == "mesh")
    {
-      state.mesh = new Mesh(is, 1, 0, state.fix_elem_orient);
-      SetMeshSolution(state.mesh, state.grid_f, state.save_coloring);
+      mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
+      SetMeshSolution();
       field_type = 2;
    }
    else if (data_type == "raw_scalar_2d")
@@ -271,9 +258,9 @@ int ReadStream(istream &is, const string &data_type)
          tot_num_elem += num_elem;
       }
 
-      state.mesh = new Mesh(2, tot_num_vert, tot_num_elem, 0);
-      state.sol.SetSize(tot_num_vert);
-      state.normals.SetSize(3*tot_num_vert);
+      mesh.reset(new Mesh(2, tot_num_vert, tot_num_elem, 0));
+      sol.SetSize(tot_num_vert);
+      normals.SetSize(3*tot_num_vert);
 
       int v_off = 0;
       for (int i = 0; i < num_patches; i++)
@@ -282,11 +269,11 @@ int ReadStream(istream &is, const string &data_type)
          num_vert = verts.Size()/6;
          for (int j = 0; j < num_vert; j++)
          {
-            state.mesh->AddVertex(&verts[6*j]);
-            state.sol(v_off) = verts[6*j+2];
-            state.normals(3*v_off+0) = verts[6*j+3];
-            state.normals(3*v_off+1) = verts[6*j+4];
-            state.normals(3*v_off+2) = verts[6*j+5];
+            mesh->AddVertex(&verts[6*j]);
+            sol(v_off) = verts[6*j+2];
+            normals(3*v_off+0) = verts[6*j+3];
+            normals(3*v_off+1) = verts[6*j+4];
+            normals(3*v_off+2) = verts[6*j+5];
             v_off++;
          }
 
@@ -298,29 +285,29 @@ int ReadStream(istream &is, const string &data_type)
          if (n == 3)
             for (int j = 0; j < num_elem; j++)
             {
-               state.mesh->AddTriangle(&elems[3*j], attr);
+               mesh->AddTriangle(&elems[3*j], attr);
             }
          else
             for (int j = 0; j < num_elem; j++)
             {
-               state.mesh->AddQuad(&elems[4*j], attr);
+               mesh->AddQuad(&elems[4*j], attr);
             }
       }
 
       if (mesh_type == 1)
       {
-         state.mesh->FinalizeTriMesh(1, 0, state.fix_elem_orient);
+         mesh->FinalizeTriMesh(1, 0, fix_elem_orient);
       }
       else if (mesh_type == 2)
       {
-         state.mesh->FinalizeQuadMesh(1, 0, state.fix_elem_orient);
+         mesh->FinalizeQuadMesh(1, 0, fix_elem_orient);
       }
       else
       {
          mfem_error("Input data contains mixture of triangles and quads!");
       }
 
-      state.mesh->GenerateBoundaryElements();
+      mesh->GenerateBoundaryElements();
 
       for (int i = num_patches; i > 0; )
       {
@@ -340,15 +327,84 @@ int ReadStream(istream &is, const string &data_type)
 
    if (field_type >= 0 && field_type <= 2)
    {
-      if (state.grid_f)
-      {
-         Extrude1DMeshAndSolution(&state.mesh, &state.grid_f, NULL);
-      }
-      else
-      {
-         Extrude1DMeshAndSolution(&state.mesh, NULL, &state.sol);
-      }
+      Extrude1DMeshAndSolution();
    }
 
    return field_type;
 }
+
+// Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec
+// or Raviart-Thomas space) with a discontinuous piece-wise polynomial Cartesian
+// product vector grid function of the same order.
+GridFunction *ProjectVectorFEGridFunction(GridFunction *gf)
+{
+   if ((gf->VectorDim() == 3) && (gf->FESpace()->GetVDim() == 1))
+   {
+      int p = gf->FESpace()->GetOrder(0);
+      cout << "Switching to order " << p
+           << " discontinuous vector grid function..." << endl;
+      int dim = gf->FESpace()->GetMesh()->Dimension();
+      FiniteElementCollection *d_fec = new L2_FECollection(p, dim, 1);
+      FiniteElementSpace *d_fespace =
+         new FiniteElementSpace(gf->FESpace()->GetMesh(), d_fec, 3);
+      GridFunction *d_gf = new GridFunction(d_fespace);
+      d_gf->MakeOwner(d_fec);
+      gf->ProjectVectorFieldOn(*d_gf);
+      return d_gf;
+   }
+   return gf;
+}
+
+bool StreamState::SetNewMeshAndSolution(StreamState new_state,
+                                        VisualizationScene* vs)
+{
+   if (new_state.mesh->SpaceDimension() == mesh->SpaceDimension() &&
+       new_state.grid_f->VectorDim() == grid_f->VectorDim())
+   {
+      std::unique_ptr<mfem::Mesh> new_m = std::move(new_state.mesh);
+      std::unique_ptr<mfem::GridFunction> new_g = std::move(new_state.grid_f);
+      if (new_m->SpaceDimension() == 2)
+      {
+         if (new_g->VectorDim() == 1)
+         {
+            VisualizationSceneSolution *vss =
+               dynamic_cast<VisualizationSceneSolution *>(vs);
+            new_g->GetNodalValues(sol);
+            vss->NewMeshAndSolution(new_m.get(), &sol, new_g.get());
+         }
+         else
+         {
+            VisualizationSceneVector *vsv =
+               dynamic_cast<VisualizationSceneVector *>(vs);
+            vsv->NewMeshAndSolution(*new_g);
+         }
+      }
+      else
+      {
+         if (new_g->VectorDim() == 1)
+         {
+            VisualizationSceneSolution3d *vss =
+               dynamic_cast<VisualizationSceneSolution3d *>(vs);
+            new_g->GetNodalValues(sol);
+            vss->NewMeshAndSolution(new_m.get(), &sol, new_g.get());
+         }
+         else
+         {
+            GridFunction* proj_new_g = ProjectVectorFEGridFunction(new_g.get());
+            new_g.reset(proj_new_g);
+
+            VisualizationSceneVector3d *vss =
+               dynamic_cast<VisualizationSceneVector3d *>(vs);
+            vss->NewMeshAndSolution(new_m.get(), proj_new_g);
+         }
+      }
+      grid_f = std::move(new_g);
+      mesh = std::move(new_m);
+      return true;
+   }
+   else
+   {
+      return false;
+   }
+}
+

@@ -21,6 +21,7 @@ std::string extra_caption; // used in extern context
 mfem::GeometryRefiner GLVisGeometryRefiner; // used in extern context
 
 static VisualizationSceneScalarData * vs = nullptr;
+StreamState stream_state;
 
 namespace js
 {
@@ -56,7 +57,7 @@ bool startVisualization(const std::string input, const std::string data_type,
    std::stringstream ss(input);
 
    // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
-   const int field_type = ReadStream(ss, data_type);
+   const int field_type = stream_state.ReadStream(ss, data_type);
 
    // reset antialiasing
    GetAppWindow()->getRenderer().setAntialiasing(0);
@@ -134,7 +135,7 @@ bool startVisualization(const std::string input, const std::string data_type,
                                                      stream_state.sol);
          if (stream_state.grid_f)
          {
-            vss->SetGridFunction(stream_state.grid_f);
+            vss->SetGridFunction(stream_state.grid_f.get());
          }
          if (field_type == 2)
          {
@@ -187,7 +188,9 @@ bool startVisualization(const std::string input, const std::string data_type,
       {
          if (stream_state.grid_f)
          {
-            stream_state.grid_f = ProjectVectorFEGridFunction(stream_state.grid_f);
+            GridFunction* proj_grid_f = ProjectVectorFEGridFunction(
+                                           stream_state.grid_f.get());
+            stream_state.grid_f.reset(proj_grid_f);
             vs = new VisualizationSceneVector3d(*stream_state.grid_f);
          }
          else
@@ -244,55 +247,16 @@ int updateVisualization(std::string data_type, std::string stream)
       return 1;
    }
 
-   auto * new_m = new Mesh(ss, 1, 0, stream_state.fix_elem_orient);
-   auto * new_g = new GridFunction(new_m, ss);
+   StreamState new_state;
+   new_state.ReadStream(ss, data_type);
    double mesh_range = -1.0;
 
-   if (new_m->SpaceDimension() == stream_state.mesh->SpaceDimension() &&
-       new_g->VectorDim() == stream_state.grid_f->VectorDim())
+   if (stream_state.SetNewMeshAndSolution(std::move(new_state), vs))
    {
-      if (new_m->SpaceDimension() == 2)
-      {
-         if (new_g->VectorDim() == 1)
-         {
-            VisualizationSceneSolution *vss =
-               dynamic_cast<VisualizationSceneSolution *>(vs);
-            new_g->GetNodalValues(stream_state.sol);
-            vss->NewMeshAndSolution(new_m, &stream_state.sol, new_g);
-         }
-         else
-         {
-            VisualizationSceneVector *vsv =
-               dynamic_cast<VisualizationSceneVector *>(vs);
-            vsv->NewMeshAndSolution(*new_g);
-         }
-      }
-      else
-      {
-         if (new_g->VectorDim() == 1)
-         {
-            VisualizationSceneSolution3d *vss =
-               dynamic_cast<VisualizationSceneSolution3d *>(vs);
-            new_g->GetNodalValues(stream_state.sol);
-            vss->NewMeshAndSolution(new_m, &stream_state.sol, new_g);
-         }
-         else
-         {
-            new_g = ProjectVectorFEGridFunction(new_g);
-            VisualizationSceneVector3d *vss =
-               dynamic_cast<VisualizationSceneVector3d *>(vs);
-            vss->NewMeshAndSolution(new_m, new_g);
-         }
-      }
       if (mesh_range > 0.0)
       {
          vs->SetValueRange(-mesh_range, mesh_range);
       }
-
-      delete stream_state.grid_f;
-      stream_state.grid_f = new_g;
-      delete stream_state.mesh;
-      stream_state.mesh = new_m;
 
       SendExposeEvent();
       return 0;
@@ -300,8 +264,6 @@ int updateVisualization(std::string data_type, std::string stream)
    else
    {
       cout << "Stream: field type does not match!" << endl;
-      delete new_g;
-      delete new_m;
       return 1;
    }
 }
