@@ -91,6 +91,7 @@ list(APPEND _glvis_compile_defs "GLVIS_MS_LINEWIDTH=${GLVIS_MS_LINEWIDTH}")
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug|debug|DEBUG")
   list(APPEND _glvis_compile_defs "GLVIS_DEBUG")
+  list(APPEND _glvis_compile_opts "-Wall")
 endif()
 
 # Include paths and libraries needed by MFEM
