@@ -44,6 +44,9 @@ endif()
 
 enable_language(C)
 enable_language(CXX)
+if (APPLE)
+  enable_language(OBJCXX)
+endif()
 
 # Default options match the Makefile
 if (NOT CMAKE_BUILD_TYPE)

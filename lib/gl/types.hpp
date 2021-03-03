@@ -63,37 +63,37 @@ public:
    operator GLuint() const { return hnd; }
 };
 
-static void boCleanup(GLuint vbo_hnd)
+inline void boCleanup(GLuint vbo_hnd)
 {
    glDeleteBuffers(1, &vbo_hnd);
 }
 
-static void dspListCleanup(GLuint dlist)
+inline void dspListCleanup(GLuint dlist)
 {
    glDeleteLists(dlist, 1);
 }
 
-static void prgmCleanup(GLuint prgm)
+inline void prgmCleanup(GLuint prgm)
 {
    glDeleteProgram(prgm);
 }
 
-static void vaoCleanup(GLuint vao)
+inline void vaoCleanup(GLuint vao)
 {
    glDeleteVertexArrays(1, &vao);
 }
 
-static void texCleanup(GLuint tex)
+inline void texCleanup(GLuint tex)
 {
    glDeleteTextures(1, &tex);
 }
 
-static void fboCleanup(GLuint fbo)
+inline void fboCleanup(GLuint fbo)
 {
    glDeleteFramebuffers(1, &fbo);
 }
 
-static void rboCleanup(GLuint rbo)
+inline void rboCleanup(GLuint rbo)
 {
    glDeleteRenderbuffers(1, &rbo);
 }
