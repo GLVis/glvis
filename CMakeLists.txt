@@ -44,9 +44,6 @@ endif()
 
 enable_language(C)
 enable_language(CXX)
-if (APPLE)
-  enable_language(OBJCXX)
-endif()
 
 # Default options match the Makefile
 if (NOT CMAKE_BUILD_TYPE)
@@ -94,6 +91,7 @@ list(APPEND _glvis_compile_defs "GLVIS_MS_LINEWIDTH=${GLVIS_MS_LINEWIDTH}")
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug|debug|DEBUG")
   list(APPEND _glvis_compile_defs "GLVIS_DEBUG")
+  list(APPEND _glvis_compile_opts "-Wall")
 endif()
 
 # Include paths and libraries needed by MFEM
