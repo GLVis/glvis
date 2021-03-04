@@ -857,7 +857,7 @@ void communication_thread::execute()
             tmp.mesh.reset(new Mesh(mesh_array, nproc));
             tmp.grid_f.reset(new GridFunction(tmp.mesh.get(), gf_array, nproc));
 
-        for (int p = 0; p < nproc; p++)
+            for (int p = 0; p < nproc; p++)
             {
                delete gf_array[nproc-1-p];
                delete mesh_array[nproc-1-p];
