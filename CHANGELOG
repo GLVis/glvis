@@ -20,6 +20,8 @@ Version 4.0.1 (development)
 
 - Refactoring of palette handling code.
 
+- Replace pthreads with C++11 standard thread library.
+
 
 Version 4.0, released on Dec 11, 2020
 =====================================
