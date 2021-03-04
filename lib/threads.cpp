@@ -774,53 +774,48 @@ communication_thread::~communication_thread()
    }
 }
 
-// defined in glvis.cpp
-extern void Extrude1DMeshAndSolution(Mesh **, GridFunction **, Vector *);
-
-void *communication_thread::execute(void *p)
+void communication_thread::execute()
 {
-   communication_thread *_this = (communication_thread *)p;
-
    while (1)
    {
-      *_this->is[0] >> ws;
+      *is[0] >> ws;
       // thread cancellation point
-      if (_this->terminate_thread) { break; }
+      if (terminate_thread) { break; }
 
-      *_this->is[0] >> _this->ident;
-      if (!(*_this->is[0]))
+      *is[0] >> ident;
+      if (!(*is[0]))
       {
          break;
       }
 
-      if (_this->ident == "mesh" || _this->ident == "solution" ||
-          _this->ident == "parallel")
+      if (ident == "mesh" || ident == "solution" ||
+          ident == "parallel")
       {
          bool fix_elem_orient = glvis_command->FixElementOrientations();
          StreamState tmp;
-         if (_this->ident == "mesh")
+         if (ident == "mesh")
          {
-            tmp.mesh.reset(new Mesh(*_this->is[0], 1, 0, fix_elem_orient));
-            if (!(*_this->is[0]))
+            tmp.mesh.reset(new Mesh(*is[0], 1, 0, fix_elem_orient));
+            if (!(*is[0]))
             {
                break;
             }
             tmp.grid_f = NULL;
          }
-         else if (_this->ident == "solution")
+         else if (ident == "solution")
          {
-            tmp.mesh.reset(new Mesh(*_this->is[0], 1, 0, fix_elem_orient));
-            if (!(*_this->is[0]))
+            tmp.mesh.reset(new Mesh(*is[0], 1, 0, fix_elem_orient));
+            if (!(*is[0]))
             {
                break;
             }
-            tmp.grid_f.reset(new GridFunction(tmp.mesh.get(), *_this->is[0]));
-            if (!(*_this->is[0]))
+            tmp.grid_f.reset(new GridFunction(tmp.mesh.get(), *is[0]));
+            if (!(*is[0]))
             {
                break;
             }
          }
-         else if (_this->ident == "parallel")
+         else if (ident == "parallel")
          {
             Array<Mesh *> mesh_array;
             Array<GridFunction *> gf_array;
@@ -828,13 +823,13 @@ void *communication_thread::execute(void *p)
             bool keep_attr = glvis_command->KeepAttrib();
             do
             {
-               istream &isock = *_this->is[np];
+               istream &isock = *is[np];
                isock >> nproc >> proc >> ws;
 #ifdef GLVIS_DEBUG
                cout << "connection[" << np << "]: parallel " << nproc << ' '
                     << proc << endl;
 #endif
-               isock >> _this->ident >> ws; // "solution"
+               isock >> ident >> ws; // "solution"
                mesh_array.SetSize(nproc);
                gf_array.SetSize(nproc);
                mesh_array[proc] = new Mesh(isock, 1, 0, fix_elem_orient);
@@ -856,13 +851,13 @@ void *communication_thread::execute(void *p)
                {
                   break;
                }
-               *_this->is[np] >> _this->ident >> ws; // "parallel"
+               *is[np] >> ident >> ws; // "parallel"
             }
             while (1);
             tmp.mesh.reset(new Mesh(mesh_array, nproc));
             tmp.grid_f.reset(new GridFunction(tmp.mesh.get(), gf_array, nproc));
 
-            for (int p = 0; p < nproc; p++)
+        for (int p = 0; p < nproc; p++)
             {
                delete gf_array[nproc-1-p];
                delete mesh_array[nproc-1-p];
@@ -881,17 +876,17 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "screenshot")
+      else if (ident == "screenshot")
       {
          string filename;
 
-         *_this->is[0] >> ws >> filename;
+         *is[0] >> ws >> filename;
 
          // all processors sent the screenshot command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'screenshot'
-            *_this->is[i] >> ws >> _this->ident; // filename
+            *is[i] >> ws >> ident; // 'screenshot'
+            *is[i] >> ws >> ident; // filename
          }
 
          if (glvis_command->Screenshot(filename.c_str()))
@@ -899,17 +894,17 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "keys")
+      else if (ident == "keys")
       {
          string keys;
 
-         *_this->is[0] >> ws >> keys;
+         *is[0] >> ws >> keys;
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'keys'
-            *_this->is[i] >> ws >> _this->ident; // keys
+            *is[i] >> ws >> ident; // 'keys'
+            *is[i] >> ws >> ident; // keys
          }
 
          if (glvis_command->KeyCommands(keys.c_str()))
@@ -917,17 +912,17 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "window_size")
+      else if (ident == "window_size")
       {
          int w, h, t;
 
-         *_this->is[0] >> w >> h;
+         *is[0] >> w >> h;
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'window_size'
-            *_this->is[i] >> t >> t;
+            *is[i] >> ws >> ident; // 'window_size'
+            *is[i] >> t >> t;
          }
 
          if (glvis_command->WindowSize(w, h))
@@ -935,17 +930,17 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "window_geometry")
+      else if (ident == "window_geometry")
       {
          int x, y, w, h, t;
 
-         *_this->is[0] >> x >> y >> w >> h;
+         *is[0] >> x >> y >> w >> h;
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'window_geometry'
-            *_this->is[i] >> t >> t >> t >> t;
+            *is[i] >> ws >> ident; // 'window_geometry'
+            *is[i] >> t >> t >> t >> t;
          }
 
          if (glvis_command->WindowGeometry(x, y, w, h))
@@ -953,21 +948,21 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "window_title")
+      else if (ident == "window_title")
       {
          char c;
          string title;
 
-         *_this->is[0] >> ws >> c; // read the opening char
+         *is[0] >> ws >> c; // read the opening char
          // use the opening char as termination as well
-         getline(*_this->is[0], title, c);
+         getline(*is[0], title, c);
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'window_title'
-            *_this->is[i] >> ws >> c;
-            getline(*_this->is[i], _this->ident, c);
+            *is[i] >> ws >> ident; // 'window_title'
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
          }
 
          if (glvis_command->WindowTitle(title.c_str()))
@@ -975,21 +970,21 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "plot_caption")
+      else if (ident == "plot_caption")
       {
          char c;
          string caption;
 
-         *_this->is[0] >> ws >> c; // read the opening char
+         *is[0] >> ws >> c; // read the opening char
          // use the opening char as termination as well
-         getline(*_this->is[0], caption, c);
+         getline(*is[0], caption, c);
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'plot_caption'
-            *_this->is[i] >> ws >> c;
-            getline(*_this->is[i], _this->ident, c);
+            *is[i] >> ws >> ident; // 'plot_caption'
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
          }
 
          if (glvis_command->PlotCaption(caption.c_str()))
@@ -997,29 +992,29 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "axis_labels")
+      else if (ident == "axis_labels")
       {
          char c;
          string label_x, label_y, label_z;
 
-         *_this->is[0] >> ws >> c; // read the opening char
+         *is[0] >> ws >> c; // read the opening char
          // use the opening char as termination as well
-         getline(*_this->is[0], label_x, c);
-         *_this->is[0] >> ws >> c;
-         getline(*_this->is[0], label_y, c);
-         *_this->is[0] >> ws >> c;
-         getline(*_this->is[0], label_z, c);
+         getline(*is[0], label_x, c);
+         *is[0] >> ws >> c;
+         getline(*is[0], label_y, c);
+         *is[0] >> ws >> c;
+         getline(*is[0], label_z, c);
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'axis_label'
-            *_this->is[i] >> ws >> c;
-            getline(*_this->is[i], _this->ident, c);
-            *_this->is[i] >> ws >> c;
-            getline(*_this->is[i], _this->ident, c);
-            *_this->is[i] >> ws >> c;
-            getline(*_this->is[i], _this->ident, c);
+            *is[i] >> ws >> ident; // 'axis_label'
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
          }
 
          if (glvis_command->AxisLabels(label_x.c_str(),
@@ -1029,12 +1024,12 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "pause")
+      else if (ident == "pause")
       {
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'pause'
+            *is[i] >> ws >> ident; // 'pause'
          }
 
          if (glvis_command->Pause())
@@ -1042,17 +1037,17 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "view")
+      else if (ident == "view")
       {
          double theta, phi, a;
 
-         *_this->is[0] >> theta >> phi;
+         *is[0] >> theta >> phi;
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'view'
-            *_this->is[i] >> a >> a;
+            *is[i] >> ws >> ident; // 'view'
+            *is[i] >> a >> a;
          }
 
          if (glvis_command->ViewAngles(theta, phi))
@@ -1060,17 +1055,17 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "zoom")
+      else if (ident == "zoom")
       {
          double factor, a;
 
-         *_this->is[0] >> factor;
+         *is[0] >> factor;
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'zoom'
-            *_this->is[i] >> a;
+            *is[i] >> ws >> ident; // 'zoom'
+            *is[i] >> a;
          }
 
          if (glvis_command->Zoom(factor))
@@ -1078,17 +1073,17 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "subdivisions")
+      else if (ident == "subdivisions")
       {
          int tot, bdr, a;
 
-         *_this->is[0] >> tot >> bdr;
+         *is[0] >> tot >> bdr;
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'subdivisions'
-            *_this->is[i] >> a >> a;
+            *is[i] >> ws >> ident; // 'subdivisions'
+            *is[i] >> a >> a;
          }
 
          if (glvis_command->Subdivisions(tot, bdr))
@@ -1096,17 +1091,17 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "valuerange")
+      else if (ident == "valuerange")
       {
          double minv, maxv, a;
 
-         *_this->is[0] >> minv >> maxv;
+         *is[0] >> minv >> maxv;
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'valuerange'
-            *_this->is[i] >> a >> a;
+            *is[i] >> ws >> ident; // 'valuerange'
+            *is[i] >> a >> a;
          }
 
          if (glvis_command->ValueRange(minv, maxv))
@@ -1114,17 +1109,17 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "shading")
+      else if (ident == "shading")
       {
          string shd;
 
-         *_this->is[0] >> ws >> shd;
+         *is[0] >> ws >> shd;
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'shading'
-            *_this->is[i] >> ws >> _this->ident;
+            *is[i] >> ws >> ident; // 'shading'
+            *is[i] >> ws >> ident;
          }
 
          if (glvis_command->SetShading(shd.c_str()))
@@ -1132,17 +1127,17 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "viewcenter")
+      else if (ident == "viewcenter")
       {
          double x, y, a;
 
-         *_this->is[0] >> x >> y;
+         *is[0] >> x >> y;
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'viewcenter'
-            *_this->is[i] >> a >> a;
+            *is[i] >> ws >> ident; // 'viewcenter'
+            *is[i] >> a >> a;
          }
 
          if (glvis_command->ViewCenter(x, y))
@@ -1150,17 +1145,17 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "autoscale")
+      else if (ident == "autoscale")
       {
          string mode;
 
-         *_this->is[0] >> ws >> mode;
+         *is[0] >> ws >> mode;
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'autoscale'
-            *_this->is[i] >> ws >> _this->ident;
+            *is[i] >> ws >> ident; // 'autoscale'
+            *is[i] >> ws >> ident;
          }
 
          if (glvis_command->Autoscale(mode.c_str()))
@@ -1168,17 +1163,17 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "palette")
+      else if (ident == "palette")
       {
          int pal, a;
 
-         *_this->is[0] >> pal;
+         *is[0] >> pal;
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'palette'
-            *_this->is[i] >> a;
+            *is[i] >> ws >> ident; // 'palette'
+            *is[i] >> a;
          }
 
          if (glvis_command->Palette(pal))
@@ -1186,17 +1181,17 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "palette_repeat")
+      else if (ident == "palette_repeat")
       {
          int n, a;
 
-         *_this->is[0] >> n;
+         *is[0] >> n;
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'palette_repeat'
-            *_this->is[i] >> a;
+            *is[i] >> ws >> ident; // 'palette_repeat'
+            *is[i] >> a;
          }
 
          if (glvis_command->PaletteRepeat(n))
@@ -1204,22 +1199,22 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "camera")
+      else if (ident == "camera")
       {
          double cam[9], a;
 
          for (int i = 0; i < 9; i++)
          {
-            *_this->is[0] >> cam[i];
+            *is[0] >> cam[i];
          }
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'camera'
+            *is[i] >> ws >> ident; // 'camera'
             for (int j = 0; j < 9; j++)
             {
-               *_this->is[i] >> a;
+               *is[i] >> a;
             }
          }
 
@@ -1228,17 +1223,17 @@ void *communication_thread::execute(void *p)
             goto comm_terminate;
          }
       }
-      else if (_this->ident == "autopause")
+      else if (ident == "autopause")
       {
          string mode;
 
-         *_this->is[0] >> ws >> mode;
+         *is[0] >> ws >> mode;
 
          // all processors sent the command
-         for (int i = 1; i < _this->is.Size(); i++)
+         for (int i = 1; i < is.Size(); i++)
          {
-            *_this->is[i] >> ws >> _this->ident; // 'autopause'
-            *_this->is[i] >> ws >> _this->ident;
+            *is[i] >> ws >> ident; // 'autopause'
+            *is[i] >> ws >> ident;
          }
 
          if (glvis_command->Autopause(mode.c_str()))
@@ -1248,21 +1243,19 @@ void *communication_thread::execute(void *p)
       }
       else
       {
-         cout << "Stream: unknown command: " << _this->ident << endl;
+         cout << "Stream: unknown command: " << ident << endl;
       }
    }
 
    cout << "Stream: end of input." << endl;
 
 comm_terminate:
-   for (int i = 0; i < _this->is.Size(); i++)
+   for (int i = 0; i < is.Size(); i++)
    {
-      socketstream *isock = dynamic_cast<socketstream *>(_this->is[i]);
+      socketstream *isock = dynamic_cast<socketstream *>(is[i]);
       if (isock)
       {
          isock->close();
       }
    }
-
-   return p;
 }

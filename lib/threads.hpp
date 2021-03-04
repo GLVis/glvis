@@ -155,7 +155,7 @@ private:
    // signal for thread cancellation
    std::atomic<bool> terminate_thread {false};
 
-   static void *execute(void *);
+   void execute();
 
 public:
    communication_thread(Array<std::istream *> &_is);
