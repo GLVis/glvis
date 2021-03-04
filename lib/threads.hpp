@@ -16,6 +16,7 @@
 #include "stream_reader.hpp"
 #include <mfem.hpp>
 #include <thread>
+#include <atomic>
 #include <condition_variable>
 
 class GLVisCommand
