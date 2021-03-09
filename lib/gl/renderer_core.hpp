@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -114,7 +114,7 @@ public:
       initializeShaderState(prog);
       glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
    }
-   void captureXfbBuffer(CaptureBuffer& cbuf, int hnd) override;
+   void captureXfbBuffer(PaletteState& pal, CaptureBuffer& cbuf, int hnd) override;
 };
 
 }

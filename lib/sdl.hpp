@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -16,6 +16,7 @@
 #include <memory>
 #include <functional>
 #include <map>
+#include <set>
 #include "gl/renderer.hpp"
 #include "sdl_helper.hpp"
 
@@ -26,6 +27,7 @@ struct EventInfo
    SDL_Keymod keymod;
 };
 
+typedef void (*TouchDelegate)(SDL_MultiGestureEvent&);
 typedef void (*MouseDelegate)(EventInfo*);
 typedef std::function<void(GLenum)> KeyDelegate;
 typedef void (*WindowDelegate)(int, int);
@@ -57,15 +59,18 @@ private:
 
    bool running;
 
-   Delegate onIdle;
-   Delegate onExpose;
-   WindowDelegate onReshape;
+   Delegate onIdle{nullptr};
+   Delegate onExpose{nullptr};
+   WindowDelegate onReshape{nullptr};
    std::map<int, KeyDelegate> onKeyDown;
    std::map<int, MouseDelegate> onMouseDown;
    std::map<int, MouseDelegate> onMouseUp;
    std::map<int, MouseDelegate> onMouseMove;
+   TouchDelegate onTouchPinch{nullptr};
+   TouchDelegate onTouchRotate{nullptr};
+   std::set<SDL_FingerID> fingers;
 
-   bool ctrlDown;
+   bool ctrlDown{false};
 
 #ifdef __EMSCRIPTEN__
    std::string canvas_id_;
@@ -81,10 +86,10 @@ private:
       SwapPending
    };
 
-   RenderState wnd_state;
+   RenderState wnd_state{RenderState::Updated};
 
    //bool requiresExpose;
-   bool takeScreenshot;
+   bool takeScreenshot{false};
    std::string screenshot_file;
 
    void probeGLContextSupport(bool legacyGlOnly);
@@ -95,6 +100,7 @@ private:
    void mouseEventUp(SDL_MouseButtonEvent& eb);
    void keyEvent(SDL_Keysym& ks);
    void keyEvent(char c);
+   void multiGestureEvent(SDL_MultiGestureEvent & e);
 
    std::string saved_keys;
 public:
@@ -126,6 +132,9 @@ public:
    void setOnMouseUp(int btn, MouseDelegate func) { onMouseUp[btn] = func; }
    void setOnMouseMove(int btn, MouseDelegate func) { onMouseMove[btn] = func; }
 
+   void setTouchPinchCallback(TouchDelegate cb) { onTouchPinch = cb; }
+   void setTouchRotateCallback(TouchDelegate cb) { onTouchRotate = cb; }
+
    void clearEvents()
    {
       onIdle = nullptr;
@@ -137,11 +146,11 @@ public:
       onMouseMove.clear();
    }
 
-   void callKeyDown(SDL_Keycode k)
+   void callKeyDown(SDL_Keycode k, Uint16 mod=0)
    {
       if (onKeyDown[k])
       {
-         onKeyDown[k](0);
+         onKeyDown[k](mod);
       }
    }
 

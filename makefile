@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+# Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 # at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 # LICENSE and NOTICE for details. LLNL-CODE-443271.
 #
@@ -229,7 +229,7 @@ COMMON_SOURCE_FILES = $(filter-out \
 HEADER_FILES = \
  lib/gl/attr_traits.hpp lib/gl/platform_gl.hpp lib/gl/renderer.hpp lib/gl/shader.hpp \
  lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp lib/gl/types.hpp \
- lib/aux_vis.hpp lib/font.hpp lib/gl2ps.h lib/logo.hpp lib/material.hpp \
+ lib/aux_vis.hpp lib/font.hpp lib/geom_utils.hpp lib/gl2ps.h lib/logo.hpp lib/material.hpp \
  lib/openglvis.hpp lib/palettes.hpp lib/sdl.hpp lib/sdl_helper.hpp \
  lib/sdl_mac.hpp lib/sdl_x11.hpp lib/stream_reader.hpp lib/threads.hpp lib/visual.hpp \
  lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp \

@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -593,7 +593,7 @@ void CoreGLDevice::processLineXfbBuffer(CaptureBuffer& cbuf,
 
 
 void CoreGLDevice::captureXfbBuffer(
-   CaptureBuffer& cbuf, int hnd)
+   PaletteState& pal, CaptureBuffer& cbuf, int hnd)
 {
    if (hnd == 0) { return; }
    if (vbos[hnd].count == 0) { return; }
@@ -626,8 +626,8 @@ void CoreGLDevice::captureXfbBuffer(
 
 #else
 
-void CoreGLDevice::captureXfbBuffer(
-   CaptureBuffer& cbuf, int hnd)
+void CoreGLDevice::captureXfbBuffer(PaletteState & /*unused*/,
+                                    CaptureBuffer& /*unused*/, int /*unused*/)
 {
    std::cerr << "CoreGLDevice::captureXfbBuffer: "
              << "Not implemented for WebGL." << std::endl;

@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -37,6 +37,76 @@ using namespace std;
 
 namespace gl3
 {
+
+namespace resource
+{
+// RAII scope guard for OpenGL handles.
+template<void(*GLFinalizer)(GLuint)>
+class Handle
+{
+   GLuint hnd;
+public:
+   Handle() : hnd{0} {}
+   Handle(GLuint h) : hnd{h} {}
+   ~Handle() { if (hnd) { GLFinalizer(hnd); } }
+   Handle(Handle&& other)
+      : hnd{other.hnd} { other.hnd = 0; }
+   Handle& operator = (Handle&& other) noexcept
+   {
+      if (this != &other)
+      {
+         hnd = other.hnd;
+         other.hnd = 0;
+      }
+      return *this;
+   }
+   operator GLuint() const { return hnd; }
+};
+
+inline void boCleanup(GLuint vbo_hnd)
+{
+   glDeleteBuffers(1, &vbo_hnd);
+}
+
+inline void dspListCleanup(GLuint dlist)
+{
+   glDeleteLists(dlist, 1);
+}
+
+inline void prgmCleanup(GLuint prgm)
+{
+   glDeleteProgram(prgm);
+}
+
+inline void vaoCleanup(GLuint vao)
+{
+   glDeleteVertexArrays(1, &vao);
+}
+
+inline void texCleanup(GLuint tex)
+{
+   glDeleteTextures(1, &tex);
+}
+
+inline void fboCleanup(GLuint fbo)
+{
+   glDeleteFramebuffers(1, &fbo);
+}
+
+inline void rboCleanup(GLuint rbo)
+{
+   glDeleteRenderbuffers(1, &rbo);
+}
+
+using BufObjHandle = Handle<boCleanup>;
+using DispListHandle = Handle<dspListCleanup>;
+using VtxArrayHandle = Handle<vaoCleanup>;
+using ShaderPrgmHandle = Handle<prgmCleanup>;
+using TextureHandle = Handle<texCleanup>;
+using FBOHandle = Handle<fboCleanup>;
+using RenderBufHandle = Handle<rboCleanup>;
+
+} // end namespace resource
 
 struct GlMatrix
 {

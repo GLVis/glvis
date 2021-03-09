@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -7397,110 +7397,109 @@ void Init_Visit_Calewhite_Palette()
 
 void Init_Palettes()
 {
-   // init rainbow palette
-   for (int i = 0; i < RGB_Palette_23_Size; i++)
+   static bool first_init = true;
+   if (first_init)
    {
-      double t = double(i) / (RGB_Palette_23_Size-1), s, r, g, b;
-      // t *= 3.0; // red to red
-      t *= 2.5; // red to purple
-      if (t < 1.0)
+      // init rainbow palette
+      for (int i = 0; i < RGB_Palette_23_Size; i++)
       {
-         s = sin(t * M_PI);
-         if (t < 0.5)
+         double t = double(i) / (RGB_Palette_23_Size-1), s, r, g, b;
+         // t *= 3.0; // red to red
+         t *= 2.5; // red to purple
+         if (t < 1.0)
          {
-            r = 1.0;
-            g = s;
+            s = sin(t * M_PI);
+            if (t < 0.5)
+            {
+               r = 1.0;
+               g = s;
+            }
+            else
+            {
+               r = s;
+               g = 1.0;
+            }
+            b = 0.0;
+         }
+         else if (t < 2.0)
+         {
+            s = sin((t - 1.0) * M_PI);
+            if (t < 1.5)
+            {
+               g = 1.0;
+               b = s;
+            }
+            else
+            {
+               g = s;
+               b = 1.0;
+            }
+            r = 0.0;
          }
          else
          {
-            r = s;
-            g = 1.0;
+            s = sin((t - 2.0) * M_PI);
+            if (t < 2.5)
+            {
+               r = s;
+               b = 1.0;
+            }
+            else
+            {
+               r = 1.0;
+               b = s;
+            }
+            g = 0.0;
          }
-         b = 0.0;
+         RGB_Palette_23[i][0] = r;
+         RGB_Palette_23[i][1] = g;
+         RGB_Palette_23[i][2] = b;
       }
-      else if (t < 2.0)
+
+      // init vivid palette
+      const int ns = 7;
+      const double ts[ns] = { 0., 3./16., 4./16., 1./2., 12./16., 13./16., 1. };
+
+      const double rs[ns] = { 0.0, 0.0, 0.0, 1.0, 0.9, 1.0, 0.5 };
+      const double gs[ns] = { 0.0, 1.0, 0.9, 1.0, 0.0, 0.0, 0.0 };
+      const double bs[ns] = { 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0 };
+      const double rc[ns-1] = { 1.0, 1.0, 1.3, 1.0, 1.0, 1.2 };
+      const double gc[ns-1] = { 1.2, 1.0, 1.0, 1.4, 1.0, 1.0 };
+      const double bc[ns-1] = { 1.0, 1.0, 1.0, 1.0, 1.6, 1.0 };
+
+      for (int i = 0; i < RGB_Palette_13_Size; i++)
       {
-         s = sin((t - 1.0) * M_PI);
-         if (t < 1.5)
-         {
-            g = 1.0;
-            b = s;
-         }
-         else
-         {
-            g = s;
-            b = 1.0;
-         }
-         r = 0.0;
+         double t = double(i) / (RGB_Palette_13_Size-1), r, g, b;
+         int k;
+         for (k = 1; k < ns; k++)
+            if (t >= ts[k-1] && t <= ts[k])
+            {
+               break;
+            }
+         t = (t - ts[k-1]) / (ts[k] - ts[k-1]);
+         r = (1.0 - t) * corr(rc[k-1], rs[k-1]) + t * corr(rc[k-1], rs[k]);
+         g = (1.0 - t) * corr(gc[k-1], gs[k-1]) + t * corr(gc[k-1], gs[k]);
+         b = (1.0 - t) * corr(bc[k-1], bs[k-1]) + t * corr(bc[k-1], bs[k]);
+         RGB_Palette_13[i][0] = corr(1./rc[k-1], r);
+         RGB_Palette_13[i][1] = corr(1./gc[k-1], g);
+         RGB_Palette_13[i][2] = corr(1./bc[k-1], b);
       }
-      else
+
+      Init_Visit_Calewhite_Palette();
+
+      // init gray palette
+      for (int i = 0; i < RGB_Palette_36_Size; i++)
       {
-         s = sin((t - 2.0) * M_PI);
-         if (t < 2.5)
-         {
-            r = s;
-            b = 1.0;
-         }
-         else
-         {
-            r = 1.0;
-            b = s;
-         }
-         g = 0.0;
+         double t = double(i) / (RGB_Palette_36_Size-1);
+         RGB_Palette_36[i][0] = t;
+         RGB_Palette_36[i][1] = t;
+         RGB_Palette_36[i][2] = t;
       }
-      RGB_Palette_23[i][0] = r;
-      RGB_Palette_23[i][1] = g;
-      RGB_Palette_23[i][2] = b;
-   }
-
-   // init vivid palette
-   const int ns = 7;
-   const double ts[ns] = { 0., 3./16., 4./16., 1./2., 12./16., 13./16., 1. };
-
-   const double rs[ns] = { 0.0, 0.0, 0.0, 1.0, 0.9, 1.0, 0.5 };
-   const double gs[ns] = { 0.0, 1.0, 0.9, 1.0, 0.0, 0.0, 0.0 };
-   const double bs[ns] = { 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0 };
-   const double rc[ns-1] = { 1.0, 1.0, 1.3, 1.0, 1.0, 1.2 };
-   const double gc[ns-1] = { 1.2, 1.0, 1.0, 1.4, 1.0, 1.0 };
-   const double bc[ns-1] = { 1.0, 1.0, 1.0, 1.0, 1.6, 1.0 };
-
-   for (int i = 0; i < RGB_Palette_13_Size; i++)
-   {
-      double t = double(i) / (RGB_Palette_13_Size-1), r, g, b;
-      int k;
-      for (k = 1; k < ns; k++)
-         if (t >= ts[k-1] && t <= ts[k])
-         {
-            break;
-         }
-      t = (t - ts[k-1]) / (ts[k] - ts[k-1]);
-      r = (1.0 - t) * corr(rc[k-1], rs[k-1]) + t * corr(rc[k-1], rs[k]);
-      g = (1.0 - t) * corr(gc[k-1], gs[k-1]) + t * corr(gc[k-1], gs[k]);
-      b = (1.0 - t) * corr(bc[k-1], bs[k-1]) + t * corr(bc[k-1], bs[k]);
-      RGB_Palette_13[i][0] = corr(1./rc[k-1], r);
-      RGB_Palette_13[i][1] = corr(1./gc[k-1], g);
-      RGB_Palette_13[i][2] = corr(1./bc[k-1], b);
-   }
-
-   Init_Visit_Calewhite_Palette();
-
-   // init gray palette
-   for (int i = 0; i < RGB_Palette_36_Size; i++)
-   {
-      double t = double(i) / (RGB_Palette_36_Size-1);
-      RGB_Palette_36[i][0] = t;
-      RGB_Palette_36[i][1] = t;
-      RGB_Palette_36[i][2] = t;
+      first_init = false;
    }
 }
 
-bool first_init = true;
-GLuint palette_tex[Num_RGB_Palettes][2];
-GLuint alpha_tex;
-int curr_palette = 2;
-int use_smooth = 0;
-
-int Choose_Palette()
+int PaletteState::ChoosePalette()
 {
    const int buflen = 256;
    char buffer[buflen];
@@ -7541,14 +7540,11 @@ int Choose_Palette()
 }
 
 
-int RepeatPaletteTimes = 1;
-int MaxTextureSize;
-GLenum rgba_internal;
-
 /* *
  * Generates a discrete texture from the given palette.
  */
-void PaletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
+void PaletteState::ToTextureDiscrete(double * palette, size_t plt_size,
+                                     GLuint tex)
 {
    vector<array<float,4>> texture_buf(plt_size);
 
@@ -7622,7 +7618,8 @@ void PaletteToTextureDiscrete(double * palette, size_t plt_size, GLuint tex)
 /* *
  * Generates a smooth texture from the given palette.
  */
-void PaletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
+void PaletteState::ToTextureSmooth(double * palette, size_t plt_size,
+                                   GLuint tex)
 {
    vector<array<float,4>> texture_buf(MaxTextureSize);
    glBindTexture(GL_TEXTURE_2D, tex);
@@ -7689,18 +7686,15 @@ void PaletteToTextureSmooth(double * palette, size_t plt_size, GLuint tex)
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
-void paletteRebind()
+PaletteState::PaletteState()
+   : palette_tex(Num_RGB_Palettes)
+   , first_init(false)
 {
-   GetAppWindow()->getRenderer()
-   .setColorTexture(palette_tex[curr_palette][use_smooth]);
-   GetAppWindow()->getRenderer().setAlphaTexture(alpha_tex);
 }
 
-GLenum alpha_channel;
-
-void paletteInit()
+void PaletteState::Init()
 {
-   if (first_init)
+   if (!first_init)
    {
       glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MaxTextureSize);
       if (MaxTextureSize < 4096)
@@ -7710,81 +7704,122 @@ void paletteInit()
       MaxTextureSize = std::min(MaxTextureSize, 4096);
       Init_Palettes();
 
-      glGenTextures(Num_RGB_Palettes * 2, &(palette_tex[0][0]));
-      glGenTextures(1, &alpha_tex);
-      first_init = false;
-   }
-   GLenum alpha_internal;
-   if (gl3::GLDevice::useLegacyTextureFmts())
-   {
-      alpha_internal = GL_ALPHA;
-      alpha_channel = GL_ALPHA;
-      rgba_internal = GL_RGBA;
-   }
-   else
-   {
-      // WebGL 2 requires sized internal format for float texture
-      alpha_internal = GL_R32F;
-      alpha_channel = GL_RED;
-      rgba_internal = GL_RGBA32F;
+      GLuint paletteTexIds[Num_RGB_Palettes][2];
+      GLuint alphaTexId;
+
+      glGenTextures(Num_RGB_Palettes * 2, &(paletteTexIds[0][0]));
+      glGenTextures(1, &alphaTexId);
+
+      for (int ipal = 0; ipal < Num_RGB_Palettes; ipal++)
+      {
+         palette_tex[ipal][0] = paletteTexIds[ipal][0];
+         palette_tex[ipal][1] = paletteTexIds[ipal][1];
+      }
+      alpha_tex = alphaTexId;
+
+      GLenum alpha_internal;
+      if (gl3::GLDevice::useLegacyTextureFmts())
+      {
+         alpha_internal = GL_ALPHA;
+         alpha_channel = GL_ALPHA;
+         rgba_internal = GL_RGBA;
+      }
+      else
+      {
+         // WebGL 2 requires sized internal format for float texture
+         alpha_internal = GL_R32F;
+         alpha_channel = GL_RED;
+         rgba_internal = GL_RGBA32F;
+      }
+      // set alpha texture to 1.0
+      std::vector<float> alphaTexData(MaxTextureSize * 2);
+      std::fill(alphaTexData.begin(), alphaTexData.end(), 1.0f);
+      glActiveTexture(GL_TEXTURE1);
+      glBindTexture(GL_TEXTURE_2D, alpha_tex);
+      glTexImage2D(GL_TEXTURE_2D, 0, alpha_internal, MaxTextureSize, 2, 0,
+                   alpha_channel, GL_FLOAT, alphaTexData.data());
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+      glActiveTexture(GL_TEXTURE0);
+      first_init = true;
    }
 
    for (int i = 0; i < Num_RGB_Palettes; i++)
    {
-      PaletteToTextureDiscrete(RGB_Palettes[i], RGB_Palettes_Sizes[i],
-                               palette_tex[i][0]);
-      PaletteToTextureSmooth(RGB_Palettes[i], RGB_Palettes_Sizes[i],
-                             palette_tex[i][1]);
+      ToTextureDiscrete(RGB_Palettes[i], RGB_Palettes_Sizes[i],
+                        palette_tex[i][0]);
+      ToTextureSmooth(RGB_Palettes[i], RGB_Palettes_Sizes[i],
+                      palette_tex[i][1]);
    }
-   // set alpha texture to 1.0
-   std::vector<float> alphaTexData(MaxTextureSize * 2);
-   std::fill(alphaTexData.begin(), alphaTexData.end(), 1.0f);
-   glActiveTexture(GL_TEXTURE1);
-   glBindTexture(GL_TEXTURE_2D, alpha_tex);
-   glTexImage2D(GL_TEXTURE_2D, 0, alpha_internal, MaxTextureSize, 2, 0,
-                alpha_channel, GL_FLOAT, alphaTexData.data());
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-   glActiveTexture(GL_TEXTURE0);
-   paletteRebind();
 }
 
-void paletteUseDiscrete()
+
+
+double PaletteState::GetColorCoord(double val, double min, double max)
 {
-   use_smooth = 0;
-   paletteRebind();
+   // static double eps = 1e-24;
+   static const double eps = 0.0;
+   if (use_logscale)
+   {
+      if (val < min)
+      {
+         val = min;
+      }
+      if (val > max)
+      {
+         val = max;
+      }
+      return log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps);
+   }
+   else
+   {
+      return ((val-min)/(max-min));
+   }
 }
 
-void paletteUseSmooth()
+void PaletteState::GetColorFromVal(double val, float * rgba)
 {
-   use_smooth = 1;
-   paletteRebind();
+   int palSize = RGB_Palettes_Sizes[curr_palette];
+   const double* palData = RGB_Palettes[curr_palette];
+   val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
+   int i = (int) floor( val );
+   double t = val - i;
+
+   const double* pal;
+   if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
+       ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
+   {
+      pal = palData + 3 * ( i % (palSize-1) );
+   }
+   else
+   {
+      pal = palData + 3 * ( (palSize-2) - i % (palSize-1) );
+      t = 1.0 - t;
+   }
+   rgba[0] = (1.0 - t) * pal[0] + t * pal[3];
+   rgba[1] = (1.0 - t) * pal[1] + t * pal[4];
+   rgba[2] = (1.0 - t) * pal[2] + t * pal[5];
+   rgba[3] = 1.f;
 }
 
-void paletteSet(int num)
-{
-   curr_palette = num;
-   paletteRebind();
-}
-
-double * paletteGet()
+const double * PaletteState::GetData() const
 {
    return RGB_Palettes[curr_palette];
 }
 
-int paletteGetSize(int pal)
+int PaletteState::GetSize(int pal) const
 {
    if (pal == -1)
    {
       return RGB_Palettes_Sizes[curr_palette];
    }
-   return RGB_Palettes_Sizes[curr_palette];
+   return RGB_Palettes_Sizes[pal];
 }
 
-void GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
+void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
 {
    std::vector<float> alphaTexData(MaxTextureSize);
    if (matAlpha >= 1.0)
@@ -7818,22 +7853,22 @@ void GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
    glActiveTexture(GL_TEXTURE0);
 }
 
-void Next_RGB_Palette()
+void PaletteState::NextIndex()
 {
-   paletteSet((curr_palette + 1) % Num_RGB_Palettes);
+   SetIndex((curr_palette + 1) % Num_RGB_Palettes);
 }
 
-void Prev_RGB_Palette()
+void PaletteState::PrevIndex()
 {
-   paletteSet((curr_palette == 0) ? Num_RGB_Palettes - 1 :
-              curr_palette - 1);
+   SetIndex((curr_palette == 0) ? Num_RGB_Palettes - 1 :
+            curr_palette - 1);
 }
 
-int Select_New_RGB_Palette()
+int PaletteState::SelectNewRGBPalette()
 {
-   int pal = Choose_Palette();
+   int pal = ChoosePalette();
 
-   paletteSet(pal);
+   SetIndex(pal);
 
    return pal;
 }

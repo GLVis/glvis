@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -115,15 +115,15 @@ void MeshRenderer::render(const RenderQueue& queue)
    {
       return !renderPair.first.contains_translucent;
    });
-   GLDevice::RenderBufHandle renderBufs[2];
-   GLDevice::FBOHandle msaaFb;
+   RenderBufHandle renderBufs[2];
+   FBOHandle msaaFb;
    if (feat_use_fbo_antialias && msaa_enable)
    {
       GLuint colorBuf, depthBuf;
       glGenRenderbuffers(1, &colorBuf);
       glGenRenderbuffers(1, &depthBuf);
-      renderBufs[0] = GLDevice::RenderBufHandle(colorBuf);
-      renderBufs[1] = GLDevice::RenderBufHandle(depthBuf);
+      renderBufs[0] = RenderBufHandle(colorBuf);
+      renderBufs[1] = RenderBufHandle(depthBuf);
 
       GLuint fbo;
       glGenFramebuffers(1, &fbo);
@@ -154,7 +154,7 @@ void MeshRenderer::render(const RenderQueue& queue)
       }
       else
       {
-         msaaFb = GLDevice::FBOHandle(fbo);
+         msaaFb = FBOHandle(fbo);
       }
 #ifndef __EMSCRIPTEN__
       glEnable(GL_MULTISAMPLE);
@@ -252,11 +252,11 @@ void MeshRenderer::render(const RenderQueue& queue)
       int height = vp[3];
       GLuint colorBufId;
       glGenRenderbuffers(1, &colorBufId);
-      GLDevice::RenderBufHandle colorBuf(colorBufId);
+      RenderBufHandle colorBuf(colorBufId);
 
       GLuint fboId;
       glGenFramebuffers(1, &fboId);
-      GLDevice::FBOHandle resolveFb(fboId);
+      FBOHandle resolveFb(fboId);
 
       glBindRenderbuffer(GL_RENDERBUFFER, colorBuf);
       glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
@@ -351,13 +351,13 @@ CaptureBuffer MeshRenderer::capture(const RenderQueue& queue)
       device->attachTexture(GLDevice::SAMPLER_ALPHA, alpha_tex);
       for (auto buf : tex_bufs)
       {
-         device->captureXfbBuffer(cbuf, buf);
+         device->captureXfbBuffer(*pal, cbuf, buf);
       }
       device->detachTexture(GLDevice::SAMPLER_COLOR);
       device->detachTexture(GLDevice::SAMPLER_ALPHA);
       for (auto buf : no_tex_bufs)
       {
-         device->captureXfbBuffer(cbuf, buf);
+         device->captureXfbBuffer(*pal, cbuf, buf);
       }
       if (!params.contains_translucent)
       {

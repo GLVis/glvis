@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -18,12 +18,6 @@
 #include "sdl.hpp"
 #include "font.hpp"
 #include "openglvis.hpp"
-
-extern GLuint fontbase;
-extern float MatAlpha;
-extern float MatAlphaCenter;
-extern int RepeatPaletteTimes;
-extern int PaletteNumColors;
 
 /// Initializes the visualization and some keys.
 int InitVisualization(const char name[], int x, int y, int w, int h);
@@ -58,6 +52,8 @@ void MiddleButtonUp  (EventInfo *event);
 void RightButtonDown (EventInfo *event);
 void RightButtonLoc  (EventInfo *event);
 void RightButtonUp   (EventInfo *event);
+
+void TouchPinch(SDL_MultiGestureEvent & e);
 
 void KeyCtrlP();
 void KeyS();
@@ -113,11 +109,6 @@ void SendKeySequence(const char *seq);
 // update the visualization window.
 void CallKeySequence(const char *seq);
 
-extern int MySetColorLogscale;
-double GetColorCoord(double val, double min, double max);
-void GetColorFromVal(double val, float * rgba);
-void MySetColor(gl3::GlBuilder& builder, double val);
-void MySetColor(gl3::GlBuilder& builder, double val, double min, double max);
 
 void SetUseTexture(int ut);
 int GetUseTexture();

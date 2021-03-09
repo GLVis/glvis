@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -20,9 +20,12 @@
 #include "platform_gl.hpp"
 #include "types.hpp"
 #include "../material.hpp"
+#include "../palettes.hpp"
 
 namespace gl3
 {
+
+using namespace resource;
 
 const int LIGHTS_MAX = 3;
 #ifdef GLVIS_MS_LINEWIDTH
@@ -100,79 +103,6 @@ protected:
    glm::mat4 proj_mtx;
 
    std::array<float, 4> static_color;
-
-   // RAII scope guard for OpenGL handles.
-   template<void(*GLFinalizer)(GLuint)>
-   class Handle
-   {
-      GLuint hnd;
-   public:
-      Handle() : hnd{0} {}
-      Handle(GLuint h) : hnd{h} {}
-      ~Handle() { if (hnd) { GLFinalizer(hnd); } }
-      Handle(Handle&& other)
-         : hnd{other.hnd} { other.hnd = 0; }
-      Handle& operator = (Handle&& other) noexcept
-      {
-         if (this != &other)
-         {
-            hnd = other.hnd;
-            other.hnd = 0;
-         }
-         return *this;
-      }
-      operator GLuint() const { return hnd; }
-   };
-
-   static void boCleanup(GLuint vbo_hnd)
-   {
-      glDeleteBuffers(1, &vbo_hnd);
-   }
-
-   static void dspListCleanup(GLuint dlist)
-   {
-      glDeleteLists(dlist, 1);
-   }
-
-   static void prgmCleanup(GLuint prgm)
-   {
-      glDeleteProgram(prgm);
-   }
-
-   static void shdrCleanup(GLuint shdr)
-   {
-       glDeleteShader(shdr);
-   }
-
-   static void vaoCleanup(GLuint vao)
-   {
-      glDeleteVertexArrays(1, &vao);
-   }
-
-   static void texCleanup(GLuint tex)
-   {
-      glDeleteTextures(1, &tex);
-   }
-
-   static void fboCleanup(GLuint fbo)
-   {
-      glDeleteFramebuffers(1, &fbo);
-   }
-
-   static void rboCleanup(GLuint rbo)
-   {
-      glDeleteRenderbuffers(1, &rbo);
-   }
-public:
-
-   using BufObjHandle = Handle<boCleanup>;
-   using DispListHandle = Handle<dspListCleanup>;
-   using VtxArrayHandle = Handle<vaoCleanup>;
-   using ShaderPrgmHandle = Handle<prgmCleanup>;
-   using ShaderHandle = Handle<shdrCleanup>;
-   using TextureHandle = Handle<texCleanup>;
-   using FBOHandle = Handle<fboCleanup>;
-   using RenderBufHandle = Handle<rboCleanup>;
 
 protected:
    TextureHandle passthrough_texture;
@@ -256,7 +186,8 @@ public:
    virtual void exitXfbMode() {}
    // Capture the next drawn vertex buffer to a feedback buffer instead of
    // drawing to screen.
-   virtual void captureXfbBuffer(CaptureBuffer& capture, int hnd) = 0;
+   virtual void captureXfbBuffer(PaletteState& pal, CaptureBuffer& capture,
+                                 int hnd) = 0;
    // Capture the next text buffer instead of drawing to screen.
    void captureXfbBuffer(CaptureBuffer& capture, const TextBuffer& t_buf);
 
@@ -269,6 +200,7 @@ class MeshRenderer
    int msaa_samples;
    GLuint color_tex, alpha_tex, font_tex;
    float line_w, line_w_aa;
+   PaletteState* pal;
 
    bool feat_use_fbo_antialias;
    void init();
@@ -295,6 +227,7 @@ public:
    {
       device.reset(new TDevice(device));
    }
+   void setPalette(PaletteState* pal) { this->pal = pal; }
 
    // Sets the texture handle of the color palette.
    void setColorTexture(GLuint tex_h) { color_tex = tex_h; }

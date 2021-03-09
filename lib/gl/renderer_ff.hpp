@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -57,7 +57,7 @@ public:
    void bufferToDevice(TextBuffer& t_buf) override;
    void drawDeviceBuffer(int hnd) override;
    void drawDeviceBuffer(const TextBuffer& t_buf) override;
-   void captureXfbBuffer(CaptureBuffer& cbuf, int hnd) override;
+   void captureXfbBuffer(PaletteState& pal, CaptureBuffer& cbuf, int hnd) override;
 };
 
 }

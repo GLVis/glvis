@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -21,6 +21,7 @@ std::string extra_caption; // used in extern context
 mfem::GeometryRefiner GLVisGeometryRefiner; // used in extern context
 
 static VisualizationSceneScalarData * vs = nullptr;
+StreamState stream_state;
 
 namespace js
 {
@@ -54,18 +55,26 @@ bool startVisualization(const std::string input, const std::string data_type,
                         int w, int h)
 {
    std::stringstream ss(input);
-   const int field_type = ReadStream(ss, data_type);
+
+   // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
+   const int field_type = stream_state.ReadStream(ss, data_type);
 
    // reset antialiasing
    GetAppWindow()->getRenderer().setAntialiasing(0);
 
    std::string line;
+   double minv = 0.0, maxv = 0.0;
    while (ss >> line)
    {
       if (line == "keys")
       {
          std::cout << "parsing 'keys'" << std::endl;
          ss >> stream_state.keys;
+      }
+      else if (line == "valuerange")
+      {
+         std::cout << "parsing 'valuerange'" << std::endl;
+         ss >> minv >> maxv;
       }
       else
       {
@@ -96,13 +105,6 @@ bool startVisualization(const std::string input, const std::string data_type,
       if (stream_state.mesh->SpaceDimension() == 2)
       {
          VisualizationSceneSolution * vss;
-         if (field_type == 2)
-         {
-            // Use the 'bone' palette when visualizing a 2D mesh only
-            paletteSet(4);
-         }
-         // Otherwise, the 'jet-like' palette is used in 2D see vssolution.cpp
-
          if (stream_state.normals.Size() > 0)
          {
             vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
@@ -121,6 +123,9 @@ bool startVisualization(const std::string input, const std::string data_type,
             vs->OrthogonalProjection = 1;
             vs->SetLight(0);
             vs->Zoom(1.8);
+            // Use the 'bone' palette when visualizing a 2D mesh only (otherwise
+            // the 'jet-like' palette is used in 2D, see vssolution.cpp).
+            vs->palette.SetIndex(4);
          }
       }
       else if (stream_state.mesh->SpaceDimension() == 3)
@@ -130,22 +135,22 @@ bool startVisualization(const std::string input, const std::string data_type,
                                                      stream_state.sol);
          if (stream_state.grid_f)
          {
-            vss->SetGridFunction(stream_state.grid_f);
+            vss->SetGridFunction(stream_state.grid_f.get());
          }
          if (field_type == 2)
          {
             if (stream_state.mesh->Dimension() == 3)
             {
                // Use the 'white' palette when visualizing a 3D volume mesh only
-               // paletteSet(4);
-               paletteSet(11);
+               // vs->palette.SetIndex(4);
+               vs->palette.SetIndex(11);
                vss->SetLightMatIdx(4);
             }
             else
             {
                // Use the 'bone' palette when visualizing a surface mesh only
                // (the same as when visualizing a 2D mesh only)
-               paletteSet(4);
+               vs->palette.SetIndex(4);
             }
             // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
 
@@ -183,7 +188,9 @@ bool startVisualization(const std::string input, const std::string data_type,
       {
          if (stream_state.grid_f)
          {
-            stream_state.grid_f = ProjectVectorFEGridFunction(stream_state.grid_f);
+            GridFunction* proj_grid_f = ProjectVectorFEGridFunction(
+                                           stream_state.grid_f.get());
+            stream_state.grid_f.reset(proj_grid_f);
             vs = new VisualizationSceneVector3d(*stream_state.grid_f);
          }
          else
@@ -219,6 +226,11 @@ bool startVisualization(const std::string input, const std::string data_type,
 
    CallKeySequence(stream_state.keys.c_str());
 
+   if (minv || maxv)
+   {
+      vs->SetValueRange(minv, maxv);
+   }
+
    SendExposeEvent();
    return true;
 }
@@ -235,55 +247,16 @@ int updateVisualization(std::string data_type, std::string stream)
       return 1;
    }
 
-   auto * new_m = new Mesh(ss, 1, 0, stream_state.fix_elem_orient);
-   auto * new_g = new GridFunction(new_m, ss);
+   StreamState new_state;
+   new_state.ReadStream(ss, data_type);
    double mesh_range = -1.0;
 
-   if (new_m->SpaceDimension() == stream_state.mesh->SpaceDimension() &&
-       new_g->VectorDim() == stream_state.grid_f->VectorDim())
+   if (stream_state.SetNewMeshAndSolution(std::move(new_state), vs))
    {
-      if (new_m->SpaceDimension() == 2)
-      {
-         if (new_g->VectorDim() == 1)
-         {
-            VisualizationSceneSolution *vss =
-               dynamic_cast<VisualizationSceneSolution *>(vs);
-            new_g->GetNodalValues(stream_state.sol);
-            vss->NewMeshAndSolution(new_m, &stream_state.sol, new_g);
-         }
-         else
-         {
-            VisualizationSceneVector *vsv =
-               dynamic_cast<VisualizationSceneVector *>(vs);
-            vsv->NewMeshAndSolution(*new_g);
-         }
-      }
-      else
-      {
-         if (new_g->VectorDim() == 1)
-         {
-            VisualizationSceneSolution3d *vss =
-               dynamic_cast<VisualizationSceneSolution3d *>(vs);
-            new_g->GetNodalValues(stream_state.sol);
-            vss->NewMeshAndSolution(new_m, &stream_state.sol, new_g);
-         }
-         else
-         {
-            new_g = ProjectVectorFEGridFunction(new_g);
-            VisualizationSceneVector3d *vss =
-               dynamic_cast<VisualizationSceneVector3d *>(vs);
-            vss->NewMeshAndSolution(new_m, new_g);
-         }
-      }
       if (mesh_range > 0.0)
       {
          vs->SetValueRange(-mesh_range, mesh_range);
       }
-
-      delete stream_state.grid_f;
-      stream_state.grid_f = new_g;
-      delete stream_state.mesh;
-      stream_state.mesh = new_m;
 
       SendExposeEvent();
       return 0;
@@ -291,8 +264,6 @@ int updateVisualization(std::string data_type, std::string stream)
    else
    {
       cout << "Stream: field type does not match!" << endl;
-      delete new_g;
-      delete new_m;
       return 1;
    }
 }
@@ -325,6 +296,20 @@ void setKeyboardListeningElementId(const std::string & id)
    SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, id.c_str());
 }
 
+void processKeys(const std::string & keys)
+{
+   CallKeySequence(keys.c_str());
+}
+
+void processKey(int sym, bool ctrl=false, bool shift=false, bool alt=false)
+{
+   Uint16 mod = 0;
+   mod |= ctrl ? KMOD_CTRL : 0;
+   mod |= shift ? KMOD_SHIFT : 0;
+   mod |= alt ? KMOD_ALT : 0;
+   GetAppWindow()->callKeyDown(sym, mod);
+}
+
 void setupResizeEventCallback(const std::string & id)
 {
    // typedef EM_BOOL (*em_ui_callback_func)(int eventType, const EmscriptenUiEvent *uiEvent, void *userData);
@@ -351,6 +336,8 @@ std::string getHelpString()
 }
 } // namespace js
 
+// Info on type conversion:
+// https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html#built-in-type-conversions
 namespace em = emscripten;
 EMSCRIPTEN_BINDINGS(js_funcs)
 {
@@ -368,4 +355,6 @@ EMSCRIPTEN_BINDINGS(js_funcs)
    em::function("setCanvasId", &js::setCanvasId);
    em::function("setupResizeEventCallback", &js::setupResizeEventCallback);
    em::function("getHelpString", &js::getHelpString);
+   em::function("processKeys", &js::processKeys);
+   em::function("processKey", &js::processKey);
 }

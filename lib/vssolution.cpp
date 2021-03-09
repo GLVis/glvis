@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -476,8 +476,7 @@ void VisualizationSceneSolution::Init()
 
    VisualizationSceneScalarData::Init();  // Calls FindNewBox() !!!
 
-   paletteSet(2); // use the 'jet-like' palette in 2D
-   SetUseTexture(0);
+   palette.SetIndex(2); // use the 'jet-like' palette in 2D
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
    CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*x[0]+(0.5+eps)*x[1]);
@@ -991,9 +990,9 @@ void VisualizationSceneSolution::ToggleLogscale(bool print)
 {
    if (logscale || LogscaleRange())
    {
-      // we do not change 'MySetColorLogscale' here. It is set to 0 in
+      // we do not change the palette logscale setting here. It is set to 0 in
       // Prepare() since we apply logarithmic scaling to the values.
-      // In PrepareVectorField() we set 'MySetColorLogscale' to 'logscale'.
+      // In PrepareVectorField() we call 'palette.SetUseLogscale(logscale)'.
       logscale = !logscale;
       SetLogA();
       SetLevelLines(minv, maxv, nl);
@@ -1039,58 +1038,6 @@ void DrawNumberedMarker(gl3::GlDrawable& buff, const double x[3], double dx,
    buff.addText(x[0], x[1], x[2], std::to_string(n));
 }
 
-void DrawTriangle(gl3::GlDrawable& buff,
-                  const double (&pts)[4][3], const double (&cv)[4],
-                  const double minv, const double maxv)
-{
-   double nor[3];
-   if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
-   {
-      return;
-   }
-
-   std::array<float, 2> texcoord[3];
-   std::array<float, 3> fpts[3];
-   std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
-
-   for (int i = 0; i < 3; i++)
-   {
-
-      texcoord[i] = { static_cast<float>(GetColorCoord(cv[i], minv, maxv)), 1.0 };
-      fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
-   }
-   buff.addTriangle<gl3::VertexNormTex>(
-   {fpts[0], fnorm, texcoord[0]},
-   {fpts[1], fnorm, texcoord[1]},
-   {fpts[2], fnorm, texcoord[2]});
-}
-
-void DrawQuad(gl3::GlDrawable& buff,
-              const double (&pts)[4][3], const double (&cv)[4],
-              const double minv, const double maxv)
-{
-   double nor[3];
-   if (Compute3DUnitNormal(pts[0], pts[1], pts[2], nor))
-   {
-      return;
-   }
-
-   std::array<float, 2> texcoord[4];
-   std::array<float, 3> fpts[4];
-   std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
-
-   for (int i = 0; i < 4; i++)
-   {
-      texcoord[i] = { static_cast<float>(GetColorCoord(cv[i], minv, maxv)), 1.0 };
-      fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
-   }
-   buff.addQuad<gl3::VertexNormTex>(
-   {fpts[0], fnorm, texcoord[0]},
-   {fpts[1], fnorm, texcoord[1]},
-   {fpts[2], fnorm, texcoord[2]},
-   {fpts[3], fnorm, texcoord[3]});
-}
-
 void RemoveFPErrors(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
                     const int n, const Array<int> &ind, Array<int> &f_ind)
 {
@@ -1119,122 +1066,6 @@ void RemoveFPErrors(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
    }
    f_ind.SetSize(o);
 }
-
-void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals,
-               DenseMatrix &normals,
-               const int n, const Array<int> &ind, const double minv,
-               const double maxv, const int normals_opt)
-{
-   gl3::GlBuilder poly = drawable.createBuilder();
-   double na[3];
-
-   if (normals_opt == 1 || normals_opt == -2)
-   {
-      normals.SetSize(3, pts.Width());
-      normals = 0.;
-      for (int i = 0; i < ind.Size(); i += n)
-      {
-         int j;
-         if (n == 3)
-            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
-                                    &pts(0, ind[i+2]), na);
-         else
-            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
-                                    &pts(0, ind[i+2]), &pts(0, ind[i+3]), na);
-         if (j == 0)
-            for ( ; j < n; j++)
-               for (int k = 0; k < 3; k++)
-               {
-                  normals(k, ind[i+j]) += na[k];
-               }
-      }
-   }
-
-   if (normals_opt != 0 && normals_opt != -1)
-   {
-      std::vector<gl3::VertexNormTex> vertices;
-      std::vector<int> indices;
-      vertices.reserve(pts.Size());
-      indices.reserve(ind.Size());
-      for (int i = 0; i < pts.Width(); i++)
-      {
-         vertices.emplace_back(
-            gl3::VertexNormTex
-         {
-            {(float) pts(0, i), (float) pts(1, i), (float) pts(2, i)},
-            {(float) normals(0, i), (float) normals(1, i), (float) normals(2, i)},
-            {(float) GetColorCoord(vals(i), minv, maxv), 1.0 }
-         });
-      }
-      if (normals_opt > 0)
-      {
-         for (int i = 0; i < ind.Size(); i++)
-         {
-            indices.emplace_back(ind[i]);
-         }
-      }
-      else
-      {
-         for (int i = ind.Size()-1; i >= 0; i--)
-         {
-            indices.emplace_back(ind[i]);
-         }
-      }
-      if (n == 3)
-      {
-         drawable.addTriangleIndexed(vertices, indices);
-      }
-      else
-      {
-         drawable.addQuadIndexed(vertices, indices);
-      }
-   }
-   else
-   {
-      if (n == 3)
-      {
-         poly.glBegin(GL_TRIANGLES);
-      }
-      else
-      {
-         poly.glBegin(GL_QUADS);
-      }
-      for (int i = 0; i < ind.Size(); i += n)
-      {
-         int j;
-         if (n == 3)
-            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
-                                    &pts(0, ind[i+2]), na);
-         else
-            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
-                                    &pts(0, ind[i+2]), &pts(0, ind[i+3]), na);
-         if (j == 0)
-         {
-            if (normals_opt == 0)
-            {
-               poly.glNormal3dv(na);
-               for ( ; j < n; j++)
-               {
-                  MySetColor(poly, vals(ind[i+j]), minv, maxv);
-                  poly.glVertex3dv(&pts(0, ind[i+j]));
-               }
-            }
-            else
-            {
-               poly.glNormal3d(-na[0], -na[1], -na[2]);
-               for (j = n-1; j >= 0; j--)
-               {
-                  MySetColor(poly, vals(ind[i+j]), minv, maxv);
-                  poly.glVertex3dv(&pts(0, ind[i+j]));
-               }
-            }
-         }
-      }
-      poly.glEnd();
-   }
-}
-
-
 
 void VisualizationSceneSolution::PrepareWithNormals()
 {
@@ -1426,7 +1257,7 @@ void VisualizationSceneSolution::PrepareFlat2()
 
 void VisualizationSceneSolution::Prepare()
 {
-   MySetColorLogscale = 0;
+   palette.SetUseLogscale(0);
 
    switch (shading)
    {
@@ -2318,7 +2149,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    params.use_clip_plane = draw_cp;
    double* cp_eqn = CuttingPlane->Equation();
    params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};
-   params.contains_translucent = MatAlpha < 1.0;
+   params.contains_translucent = matAlpha < 1.0;
    if (drawelems)
    {
       // draw elements
@@ -2334,7 +2165,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &order_buf);
    }
-   params.contains_translucent = MatAlpha < 1.0;
+   params.contains_translucent = matAlpha < 1.0;
    params.mesh_material = VisualizationScene::BLK_MAT;
    // everything below will be drawn in "black"
    params.static_color = GetLineColor();

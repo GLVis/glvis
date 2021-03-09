@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+# Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 # at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 # LICENSE and NOTICE for details. LLNL-CODE-443271.
 #
@@ -91,6 +91,7 @@ list(APPEND _glvis_compile_defs "GLVIS_MS_LINEWIDTH=${GLVIS_MS_LINEWIDTH}")
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug|debug|DEBUG")
   list(APPEND _glvis_compile_defs "GLVIS_DEBUG")
+  list(APPEND _glvis_compile_opts "-Wall")
 endif()
 
 # Include paths and libraries needed by MFEM

@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -19,21 +19,16 @@
 
 using namespace std;
 
-void SetMeshSolution(Mesh *mesh, GridFunction *&grid_f, bool save_coloring);
 extern const char *strings_off_on[]; // defined in vsdata.cpp
 
 GLVisCommand *glvis_command = NULL;
 
 GLVisCommand::GLVisCommand(
-   VisualizationSceneScalarData **_vs, Mesh **_mesh, GridFunction **_grid_f,
-   Vector *_sol, bool *_keep_attr, bool *_fix_elem_orient)
+   VisualizationSceneScalarData **_vs, StreamState& state, bool *_keep_attr)
+   : curr_state(state)
 {
    vs        = _vs;
-   mesh      = _mesh;
-   grid_f    = _grid_f;
-   sol       = _sol;
    keep_attr = _keep_attr;
-   fix_elem_orient = _fix_elem_orient;
 
    pthread_mutex_init(&glvis_mutex, NULL);
    pthread_cond_init(&glvis_cond, NULL);
@@ -105,15 +100,16 @@ void GLVisCommand::unlock()
    pthread_mutex_unlock(&glvis_mutex);
 }
 
-int GLVisCommand::NewMeshAndSolution(Mesh *_new_m, GridFunction *_new_g)
+int GLVisCommand::NewMeshAndSolution(std::unique_ptr<Mesh> _new_m,
+                                     std::unique_ptr<GridFunction> _new_g)
 {
    if (lock() < 0)
    {
       return -1;
    }
    command = NEW_MESH_AND_SOLUTION;
-   new_m = _new_m;
-   new_g = _new_g;
+   new_state.mesh = std::move(_new_m);
+   new_state.grid_f = std::move(_new_g);
    if (signal() < 0)
    {
       return -2;
@@ -442,63 +438,23 @@ int GLVisCommand::Execute()
       case NEW_MESH_AND_SOLUTION:
       {
          double mesh_range = -1.0;
-         if (new_g == NULL)
+         if (!new_state.grid_f)
          {
-            SetMeshSolution(new_m, new_g, false);
-            mesh_range = new_g->Max() + 1.0;
+            new_state.save_coloring = false;
+            new_state.SetMeshSolution();
+            mesh_range = new_state.grid_f->Max() + 1.0;
          }
-         if (new_m->SpaceDimension() == (*mesh)->SpaceDimension() &&
-             new_g->VectorDim() == (*grid_f)->VectorDim())
+         if (curr_state.SetNewMeshAndSolution(std::move(new_state), *vs))
          {
-            if (new_m->SpaceDimension() == 2)
-            {
-               if (new_g->VectorDim() == 1)
-               {
-                  VisualizationSceneSolution *vss =
-                     dynamic_cast<VisualizationSceneSolution *>(*vs);
-                  new_g->GetNodalValues(*sol);
-                  vss->NewMeshAndSolution(new_m, sol, new_g);
-               }
-               else
-               {
-                  VisualizationSceneVector *vsv =
-                     dynamic_cast<VisualizationSceneVector *>(*vs);
-                  vsv->NewMeshAndSolution(*new_g);
-               }
-            }
-            else
-            {
-               if (new_g->VectorDim() == 1)
-               {
-                  VisualizationSceneSolution3d *vss =
-                     dynamic_cast<VisualizationSceneSolution3d *>(*vs);
-                  new_g->GetNodalValues(*sol);
-                  vss->NewMeshAndSolution(new_m, sol, new_g);
-               }
-               else
-               {
-                  new_g = ProjectVectorFEGridFunction(new_g);
-                  VisualizationSceneVector3d *vss =
-                     dynamic_cast<VisualizationSceneVector3d *>(*vs);
-                  vss->NewMeshAndSolution(new_m, new_g);
-               }
-            }
             if (mesh_range > 0.0)
             {
                (*vs)->SetValueRange(-mesh_range, mesh_range);
             }
-            delete (*grid_f);
-            *grid_f = new_g;
-            delete (*mesh);
-            *mesh = new_m;
-
             MyExpose();
          }
          else
          {
             cout << "Stream: field type does not match!" << endl;
-            delete new_g;
-            delete new_m;
          }
          if (autopause)
          {
@@ -684,7 +640,7 @@ int GLVisCommand::Execute()
       case PALETTE:
       {
          cout << "Command: palette: " << palette << endl;
-         paletteSet(palette-1);
+         (*vs)->palette.SetIndex(palette-1);
          if (!GetUseTexture())
          {
             (*vs)->EventUpdateColors();
@@ -696,8 +652,8 @@ int GLVisCommand::Execute()
       case PALETTE_REPEAT:
       {
          cout << "Command: palette_repeat: " << palette_repeat << endl;
-         RepeatPaletteTimes = palette_repeat;
-         paletteInit();
+         (*vs)->palette.SetRepeatTimes(palette_repeat);
+         (*vs)->palette.Init();
 
          if (!GetUseTexture())
          {
@@ -762,8 +718,8 @@ void GLVisCommand::Terminate()
       switch (command)
       {
          case NEW_MESH_AND_SOLUTION:
-            delete new_g;
-            delete new_m;
+            new_state.mesh.release();
+            new_state.grid_f.release();
             break;
       }
       unlock();
@@ -822,9 +778,6 @@ communication_thread::~communication_thread()
       pthread_cancel(tid);
       pthread_join(tid, NULL);
    }
-
-   delete new_g;
-   delete new_m;
 }
 
 // defined in glvis.cpp
@@ -850,23 +803,24 @@ void *communication_thread::execute(void *p)
           _this->ident == "parallel")
       {
          bool fix_elem_orient = glvis_command->FixElementOrientations();
+         StreamState tmp;
          if (_this->ident == "mesh")
          {
-            _this->new_m = new Mesh(*_this->is[0], 1, 0, fix_elem_orient);
+            tmp.mesh.reset(new Mesh(*_this->is[0], 1, 0, fix_elem_orient));
             if (!(*_this->is[0]))
             {
                break;
             }
-            _this->new_g = NULL;
+            tmp.grid_f = NULL;
          }
          else if (_this->ident == "solution")
          {
-            _this->new_m = new Mesh(*_this->is[0], 1, 0, fix_elem_orient);
+            tmp.mesh.reset(new Mesh(*_this->is[0], 1, 0, fix_elem_orient));
             if (!(*_this->is[0]))
             {
                break;
             }
-            _this->new_g = new GridFunction(_this->new_m, *_this->is[0]);
+            tmp.grid_f.reset(new GridFunction(tmp.mesh.get(), *_this->is[0]));
             if (!(*_this->is[0]))
             {
                break;
@@ -911,8 +865,8 @@ void *communication_thread::execute(void *p)
                *_this->is[np] >> _this->ident >> ws; // "parallel"
             }
             while (1);
-            _this->new_m = new Mesh(mesh_array, nproc);
-            _this->new_g = new GridFunction(_this->new_m, gf_array, nproc);
+            tmp.mesh.reset(new Mesh(mesh_array, nproc));
+            tmp.grid_f.reset(new GridFunction(tmp.mesh.get(), gf_array, nproc));
 
             for (int p = 0; p < nproc; p++)
             {
@@ -925,15 +879,13 @@ void *communication_thread::execute(void *p)
 
          // cout << "Stream: new solution" << endl;
 
-         Extrude1DMeshAndSolution(&_this->new_m, &_this->new_g, NULL);
+         tmp.Extrude1DMeshAndSolution();
 
-         if (glvis_command->NewMeshAndSolution(_this->new_m, _this->new_g))
+         if (glvis_command->NewMeshAndSolution(std::move(tmp.mesh),
+                                               std::move(tmp.grid_f)))
          {
             goto comm_terminate;
          }
-
-         _this->new_m = NULL;
-         _this->new_g = NULL;
       }
       else if (_this->ident == "screenshot")
       {

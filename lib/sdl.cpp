@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -98,16 +98,7 @@ bool SdlWindow::isGlInitialized()
 // Initialize static member
 Uint32 SdlWindow::glvis_event_type = (Uint32)(-1);
 
-SdlWindow::SdlWindow()
-   : onIdle(nullptr)
-   , onExpose(nullptr)
-   , onReshape(nullptr)
-   , ctrlDown(false)
-   , wnd_state(RenderState::Updated)
-   , takeScreenshot(false)
-   , saved_keys("")
-{
-}
+SdlWindow::SdlWindow() {}
 
 // Setup the correct OpenGL context flags in SDL for when we actually open the
 // window.
@@ -595,10 +586,27 @@ void SdlWindow::keyEvent(char c)
    }
 }
 
+void SdlWindow::multiGestureEvent(SDL_MultiGestureEvent & e)
+{
+   if (e.numFingers == 2)
+   {
+      if (onTouchPinch && fabs(e.dDist) > 0.00002)
+      {
+         onTouchPinch(e);
+      }
+
+      if (onTouchRotate)
+      {
+         onTouchRotate(e);
+      }
+   }
+}
+
 void SdlWindow::mainIter()
 {
    SDL_Event e;
    static bool useIdle = false;
+   static bool disable_mouse = false;
    if (SDL_PollEvent(&e))
    {
       bool keep_going;
@@ -612,6 +620,20 @@ void SdlWindow::mainIter()
                break;
             case SDL_WINDOWEVENT:
                windowEvent(e.window);
+               break;
+            case SDL_FINGERDOWN:
+               fingers.insert(e.tfinger.fingerId);
+               if (fingers.size() >= 2) { disable_mouse = true; }
+               keep_going = true;
+               break;
+            case SDL_FINGERUP:
+               fingers.erase(e.tfinger.fingerId);
+               if (fingers.size() < 2) { disable_mouse = false; }
+               keep_going = true;
+               break;
+            case SDL_MULTIGESTURE:
+               multiGestureEvent(e.mgesture);
+               keep_going = true;
                break;
             case SDL_KEYDOWN:
                keyEvent(e.key.keysym);
@@ -627,15 +649,15 @@ void SdlWindow::mainIter()
                keyEvent(e.text.text[0]);
                break;
             case SDL_MOUSEMOTION:
-               motionEvent(e.motion);
+               if (!disable_mouse) { motionEvent(e.motion); }
                // continue processing events
                keep_going = true;
                break;
             case SDL_MOUSEBUTTONDOWN:
-               mouseEventDown(e.button);
+               if (!disable_mouse) { mouseEventDown(e.button); }
                break;
             case SDL_MOUSEBUTTONUP:
-               mouseEventUp(e.button);
+               if (!disable_mouse) { mouseEventUp(e.button); }
                break;
          }
       }

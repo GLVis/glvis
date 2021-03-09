@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+# Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 # at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 # LICENSE and NOTICE for details. LLNL-CODE-443271.
 #
@@ -18,5 +18,5 @@ add_custom_command(
     DEPENDS logo.rgba
     COMMENT "Generating logo.rgba.bin.o")
 
-add_library(glvis_logo OBJECT
+add_library(glvis_logo STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/logo.rgba.bin.cpp)

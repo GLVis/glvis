@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -35,9 +35,6 @@ using namespace mfem;
 
 int visualize = 0;
 VisualizationScene * locscene;
-
-float MatAlpha = 1.0;
-float MatAlphaCenter = 0.5;
 
 #ifdef GLVIS_MULTISAMPLE
 static int glvis_multisample = GLVIS_MULTISAMPLE;
@@ -82,23 +79,18 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
       {
          return 1;
       }
-
    }
    else
    {
       wnd->clearEvents();
-      paletteRebind();
    }
 
 #ifdef GLVIS_DEBUG
    cout << "Window should be up" << endl;
 #endif
-   paletteInit();
    InitFont();
    wnd->getRenderer().setLineWidth(line_w);
    wnd->getRenderer().setLineWidthMS(line_w_aa);
-
-   SetUseTexture(0);
 
    // auxReshapeFunc (MyReshape); // not needed, MyExpose calls it
    // auxReshapeFunc (NULL);
@@ -114,6 +106,8 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    wnd->setOnMouseDown(SDL_BUTTON_RIGHT, RightButtonDown);
    wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
    wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
+
+   wnd->setTouchPinchCallback(TouchPinch);
 
    // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
    wnd->setOnKeyDown (SDLK_s, KeyS);
@@ -323,6 +317,7 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
       // SendKeySequence(keys);
       CallKeySequence(keys);
    }
+   wnd->getRenderer().setPalette(&locscene->palette);
 }
 
 void RunVisualization()
@@ -382,6 +377,10 @@ void MyReshape(GLsizei w, GLsizei h)
 void MyExpose(GLsizei w, GLsizei h)
 {
    MyReshape (w, h);
+   GLuint color_tex = locscene->palette.GetColorTexture();
+   GLuint alpha_tex = locscene->palette.GetAlphaTexture();
+   wnd->getRenderer().setColorTexture(color_tex);
+   wnd->getRenderer().setAlphaTexture(alpha_tex);
    gl3::SceneInfo frame = locscene->GetSceneObjs();
    for (auto drawable_ptr : frame.needs_buffering)
    {
@@ -735,6 +734,13 @@ void RightButtonLoc (EventInfo *event)
 
 void RightButtonUp (EventInfo*)
 {}
+
+void TouchPinch(SDL_MultiGestureEvent & e)
+{
+   // Scale or Zoom?
+   locscene->Zoom(exp(e.dDist*10));
+   SendExposeEvent();
+}
 
 #if defined(GLVIS_USE_LIBTIFF)
 const char *glvis_screenshot_ext = ".tif";
@@ -1456,89 +1462,20 @@ void SetWindowTitle(const char *title)
    wnd->setWindowTitle(title);
 }
 
-int MySetColorLogscale = 0;
-extern int RepeatPaletteTimes;
-int PaletteNumColors   = 0;
-int UseTexture         = 0;
-
-double GetColorCoord(double val, double min, double max)
-{
-   // static double eps = 1e-24;
-   static const double eps = 0.0;
-   if (MySetColorLogscale)
-   {
-      if (val < min)
-      {
-         val = min;
-      }
-      if (val > max)
-      {
-         val = max;
-      }
-      return log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps);
-   }
-   else
-   {
-      return ((val-min)/(max-min));
-   }
-}
-
-void GetColorFromVal(double val, float * rgba)
-{
-   int palSize = paletteGetSize();
-   val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
-   int i = (int) floor( val );
-   double t = val - i;
-
-   double* pal;
-   if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
-       ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
-   {
-      pal = paletteGet() + 3 * ( i % (palSize-1) );
-   }
-   else
-   {
-      pal = paletteGet() + 3 * ( (palSize-2) -
-                                 i % (palSize-1) );
-      t = 1.0 - t;
-   }
-   rgba[0] = (1.0 - t) * pal[0] + t * pal[3];
-   rgba[1] = (1.0 - t) * pal[1] + t * pal[4];
-   rgba[2] = (1.0 - t) * pal[2] + t * pal[5];
-   rgba[3] = 1.f;
-}
-
-void MySetColor (gl3::GlBuilder& builder, double val, double min, double max)
-{
-   MySetColor(builder, GetColorCoord(val, min, max));
-}
-
-void MySetColor (gl3::GlBuilder& builder, double val)
-{
-   if (val < 0.0) { val = 0.0; }
-   if (val > 1.0) { val = 1.0; }
-
-   builder.glTexCoord2f(val, 1.0);
-}
-
 int GetUseTexture()
 {
-   return UseTexture;
+   return locscene->palette.GetSmoothSetting();
 }
 
 void SetUseTexture(int ut)
 {
-   if (UseTexture != ut)
+   if (ut == 0)
    {
-      UseTexture = ut;
-      if (UseTexture == 0)
-      {
-         paletteUseDiscrete();
-      }
-      else
-      {
-         paletteUseSmooth();
-      }
+      locscene->palette.UseDiscrete();
+   }
+   else
+   {
+      locscene->palette.UseSmooth();
    }
 }
 

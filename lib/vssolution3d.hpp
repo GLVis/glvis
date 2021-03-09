@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -182,13 +182,5 @@ public:
    }
    virtual int GetDrawMesh() { return drawmesh; }
 };
-
-int Normalize(DenseMatrix &normals);
-
-int Compute3DUnitNormal(const double p1[], const double p2[],
-                        const double p3[], double nor[]);
-
-int Compute3DUnitNormal (const double p1[], const double p2[],
-                         const double p3[], const double p4[], double nor[]);
 
 #endif
