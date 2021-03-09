@@ -92,11 +92,11 @@ bool CoreGLDevice::compileShaders()
 {
    std::unordered_map<int, std::string> attribMap =
    {
-       { CoreGLDevice::ATTR_VERTEX, "vertex"},
-       { CoreGLDevice::ATTR_TEXT_VERTEX, "textVertex"},
-       { CoreGLDevice::ATTR_NORMAL, "normal"},
-       { CoreGLDevice::ATTR_COLOR, "color"},
-       { CoreGLDevice::ATTR_TEXCOORD0, "texCoord0"}
+      { CoreGLDevice::ATTR_VERTEX, "vertex"},
+      { CoreGLDevice::ATTR_TEXT_VERTEX, "textVertex"},
+      { CoreGLDevice::ATTR_NORMAL, "normal"},
+      { CoreGLDevice::ATTR_COLOR, "color"},
+      { CoreGLDevice::ATTR_TEXCOORD0, "texCoord0"}
    };
 
    if (!default_prgm.create(DEFAULT_VS, DEFAULT_FS, attribMap, 1))
@@ -135,26 +135,26 @@ void CoreGLDevice::initializeShaderState(const ShaderProgram& prog)
    uniforms = prog.getUniformMap();
    for (const auto& uf : unif_list)
    {
-       if (uniforms.find(uf) == uniforms.end())
-       {
+      if (uniforms.find(uf) == uniforms.end())
+      {
 #ifdef GLVIS_DEBUG
          std::cerr << "Uniform \"" << uf
                    << "\" missing in shader, ignoring." << std::endl;
 #endif
          // set uniform index to -1 so glUniform ignores data
          uniforms.emplace(uf, -1);
-       }
+      }
    }
 #ifdef GLVIS_DEBUG
    unordered_set<string> expectedUnifs(unif_list.begin(), unif_list.end());
    for (const auto& pairunif : uniforms)
    {
-       if (expectedUnifs.find(pairunif.first) == expectedUnifs.end())
-       {
+      if (expectedUnifs.find(pairunif.first) == expectedUnifs.end())
+      {
          std::cerr << "Warning: unexpected uniform \""
                    << pairunif.first
                    << "\" found in shader." << std::endl;
-       }
+      }
    }
 #endif
    glUniform1i(uniforms["colorTex"], 0);
