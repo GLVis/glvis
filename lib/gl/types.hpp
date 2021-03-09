@@ -78,6 +78,11 @@ inline void prgmCleanup(GLuint prgm)
    glDeleteProgram(prgm);
 }
 
+inline void shdrCleanup(GLuint shdr)
+{
+   glDeleteShader(shdr);
+}
+
 inline void vaoCleanup(GLuint vao)
 {
    glDeleteVertexArrays(1, &vao);
@@ -102,6 +107,7 @@ using BufObjHandle = Handle<boCleanup>;
 using DispListHandle = Handle<dspListCleanup>;
 using VtxArrayHandle = Handle<vaoCleanup>;
 using ShaderPrgmHandle = Handle<prgmCleanup>;
+using ShaderHandle = Handle<shdrCleanup>;
 using TextureHandle = Handle<texCleanup>;
 using FBOHandle = Handle<fboCleanup>;
 using RenderBufHandle = Handle<rboCleanup>;

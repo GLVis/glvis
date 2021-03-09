@@ -58,9 +58,9 @@ private:
     std::unordered_map<int, std::string> attrib_idx;
     int num_outputs = 0;
 
-    GLDevice::ShaderPrgmHandle program_id = 0;
-    GLDevice::ShaderHandle vertex_shader = 0;
-    GLDevice::ShaderHandle fragment_shader = 0;
+    ShaderPrgmHandle program_id = 0;
+    ShaderHandle vertex_shader = 0;
+    ShaderHandle fragment_shader = 0;
     bool is_compiled = false;
     std::unordered_map<std::string, GLuint> uniform_idx;
 };
