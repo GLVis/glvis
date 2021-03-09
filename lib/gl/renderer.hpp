@@ -204,8 +204,6 @@ class MeshRenderer
 
    bool feat_use_fbo_antialias;
    void init();
-
-   void renderImpl(GlDrawable* drawable);
 public:
    MeshRenderer()
       : msaa_enable(false)
