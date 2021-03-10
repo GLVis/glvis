@@ -231,12 +231,14 @@ bool ShaderProgram::linkShaders(const std::vector<GLuint>& shaders)
                            attrib_pair.second.c_str());
    }
 
+#ifndef __EMSCRIPTEN__
    // Bind fragment output variables to MRT indices.
    for (int i = 0; i < num_outputs; i++)
    {
       std::string fragOutVar = "fragColor_" + std::to_string(i);
       glBindFragDataLocation(program_id, i, fragOutVar.c_str());
    }
+#endif
 
    for (GLuint i : shaders)
    {
