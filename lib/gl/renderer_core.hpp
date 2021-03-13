@@ -12,6 +12,7 @@
 #ifndef GLVIS_RENDERER_CORE_HPP
 #define GLVIS_RENDERER_CORE_HPP
 #include "renderer.hpp"
+#include "shader.hpp"
 
 namespace gl3
 {
@@ -37,17 +38,11 @@ public:
    };
 
 private:
-   ShaderPrgmHandle default_prgm;
-   ShaderPrgmHandle feedback_prgm;
+   ShaderProgram default_prgm;
+   ShaderProgram feedback_prgm;
    VtxArrayHandle global_vao;
 
    BufObjHandle feedback_vbo;
-
-   enum class RenderMode
-   {
-      Default,
-      Feedback
-   };
 
    const static std::vector<std::string> unif_list;
 
@@ -67,7 +62,7 @@ private:
    std::vector<VBOData> vbos;
 
    bool compileShaders();
-   void initializeShaderState(RenderMode mode);
+   void initializeShaderState(const ShaderProgram& prog);
 
    template<typename T>
    void drawDeviceBufferImpl(GLenum shape, int count, bool indexed);
@@ -79,7 +74,7 @@ private:
 
 public:
    CoreGLDevice()
-      : default_prgm(0), feedback_prgm(0), global_vao(0)
+      : global_vao(0)
    {
       vbos.emplace_back(VBOData{}); // dummy for index 0
    }
@@ -104,13 +99,19 @@ public:
    void initXfbMode() override
    {
       glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, feedback_vbo);
-      initializeShaderState(RenderMode::Feedback);
+      initializeShaderState(feedback_prgm);
       glEnable(GL_RASTERIZER_DISCARD);
    }
    void exitXfbMode() override
    {
       glDisable(GL_RASTERIZER_DISCARD);
-      initializeShaderState(RenderMode::Default);
+      initializeShaderState(default_prgm);
+      glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
+   }
+   void bindExternalProgram(const ShaderProgram& prog)
+   {
+      glDisable(GL_RASTERIZER_DISCARD);
+      initializeShaderState(prog);
       glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
    }
    void captureXfbBuffer(PaletteState& pal, CaptureBuffer& cbuf, int hnd) override;

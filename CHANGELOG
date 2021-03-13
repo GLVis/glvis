@@ -18,7 +18,7 @@ Version 4.0.1 (development)
 
 - Various bugfixes and improvements related to the JavaScript version.
 
-- Refactoring of palette handling code.
+- Refactoring of rendering components, including palette and shader handling.
 
 - Replace pthreads with C++11 standard thread library.
 
