@@ -46,5 +46,11 @@ struct StreamState
                               VisualizationScene* vs);
 };
 
+// Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec
+// or Raviart-Thomas space) with a discontinuous piece-wise polynomial Cartesian
+// product vector grid function of the same order.
+std::unique_ptr<mfem::GridFunction>
+ProjectVectorFEGridFunction(std::unique_ptr<mfem::GridFunction> gf);
+
 
 #endif // GLVIS_STREAM_READER_HPP

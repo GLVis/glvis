@@ -93,8 +93,6 @@ int ReadInputStreams(StreamState& state);
 
 void CloseInputStreams(bool);
 
-GridFunction *ProjectVectorFEGridFunction(GridFunction*);
-
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
 bool GLVisInitVis(int field_type)
@@ -210,9 +208,8 @@ bool GLVisInitVis(int field_type)
       {
          if (stream_state.grid_f)
          {
-            GridFunction* proj_grid_f = ProjectVectorFEGridFunction(
-                                           stream_state.grid_f.get());
-            stream_state.grid_f.reset(proj_grid_f);
+            stream_state.grid_f
+               = ProjectVectorFEGridFunction(std::move(stream_state.grid_f));
             vs = new VisualizationSceneVector3d(*stream_state.grid_f);
          }
          else
