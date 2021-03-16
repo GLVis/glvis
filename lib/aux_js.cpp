@@ -28,29 +28,6 @@ namespace js
 
 using namespace mfem;
 
-// Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec
-// or Raviart-Thomas space) with a discontinuous piece-wise polynomial Cartesian
-// product vector grid function of the same order.
-GridFunction *ProjectVectorFEGridFunction(GridFunction *gf)
-{
-   if ((gf->VectorDim() == 3) && (gf->FESpace()->GetVDim() == 1))
-   {
-      int p = gf->FESpace()->GetOrder(0);
-      cout << "Switching to order " << p
-           << " discontinuous vector grid function..." << endl;
-      int dim = gf->FESpace()->GetMesh()->Dimension();
-      FiniteElementCollection *d_fec = new L2_FECollection(p, dim, 1);
-      FiniteElementSpace *d_fespace =
-         new FiniteElementSpace(gf->FESpace()->GetMesh(), d_fec, 3);
-      GridFunction *d_gf = new GridFunction(d_fespace);
-      d_gf->MakeOwner(d_fec);
-      gf->ProjectVectorFieldOn(*d_gf);
-      delete gf;
-      return d_gf;
-   }
-   return gf;
-}
-
 bool startVisualization(const std::string input, const std::string data_type,
                         int w, int h)
 {
@@ -188,9 +165,8 @@ bool startVisualization(const std::string input, const std::string data_type,
       {
          if (stream_state.grid_f)
          {
-            GridFunction* proj_grid_f = ProjectVectorFEGridFunction(
-                                           stream_state.grid_f.get());
-            stream_state.grid_f.reset(proj_grid_f);
+            stream_state.grid_f
+               = ProjectVectorFEGridFunction(std::move(stream_state.grid_f));
             vs = new VisualizationSceneVector3d(*stream_state.grid_f);
          }
          else

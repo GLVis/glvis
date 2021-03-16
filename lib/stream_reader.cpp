@@ -336,7 +336,8 @@ int StreamState::ReadStream(istream &is, const string &data_type)
 // Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec
 // or Raviart-Thomas space) with a discontinuous piece-wise polynomial Cartesian
 // product vector grid function of the same order.
-GridFunction *ProjectVectorFEGridFunction(GridFunction *gf)
+std::unique_ptr<GridFunction>
+ProjectVectorFEGridFunction(std::unique_ptr<GridFunction> gf)
 {
    if ((gf->VectorDim() == 3) && (gf->FESpace()->GetVDim() == 1))
    {
@@ -350,7 +351,7 @@ GridFunction *ProjectVectorFEGridFunction(GridFunction *gf)
       GridFunction *d_gf = new GridFunction(d_fespace);
       d_gf->MakeOwner(d_fec);
       gf->ProjectVectorFieldOn(*d_gf);
-      return d_gf;
+      gf.reset(d_gf);
    }
    return gf;
 }
@@ -390,12 +391,11 @@ bool StreamState::SetNewMeshAndSolution(StreamState new_state,
          }
          else
          {
-            GridFunction* proj_new_g = ProjectVectorFEGridFunction(new_g.get());
-            new_g.reset(proj_new_g);
+            new_g = ProjectVectorFEGridFunction(std::move(new_g));
 
             VisualizationSceneVector3d *vss =
                dynamic_cast<VisualizationSceneVector3d *>(vs);
-            vss->NewMeshAndSolution(new_m.get(), proj_new_g);
+            vss->NewMeshAndSolution(new_m.get(), new_g.get());
          }
       }
       grid_f = std::move(new_g);

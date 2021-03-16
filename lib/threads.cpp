@@ -408,8 +408,6 @@ int GLVisCommand::Autopause(const char *mode)
    return 0;
 }
 
-extern GridFunction *ProjectVectorFEGridFunction(GridFunction*);
-
 int GLVisCommand::Execute()
 {
    char c;
