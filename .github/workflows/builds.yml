@@ -66,7 +66,7 @@ jobs:
 
     - name: install Hypre
       if: steps.hypre-cache.outputs.cache-hit != 'true'
-      uses: mfem/mfem/.github/actions/install-hypre@master
+      uses: mfem/mfem-actions/build-hypre@master
       with:
         hypre-url: ${{ env.HYPRE_URL }}
         hypre-archive: ${{ env.HYPRE_ARCHIVE }}
@@ -83,7 +83,7 @@ jobs:
 
     - name: install Metis
       if: steps.metis-cache.outputs.cache-hit != 'true'
-      uses: mfem/mfem/.github/actions/install-metis@master
+      uses: mfem/mfem-actions/build-metis@master
       with:
         metis-url: ${{ env.METIS_URL }}
         metis-archive: ${{ env.METIS_ARCHIVE }}
@@ -112,7 +112,7 @@ jobs:
 
     - name: install MFEM
       if: steps.mfem-cache.outputs.cache-hit != 'true'
-      uses: mfem/mfem/.github/actions/install-mfem@master
+      uses: mfem/mfem-actions/build-mfem@master
       with:
         mfem-repo: ${{ env.MFEM_REPO }}
         mfem-branch: ${{ env.MFEM_BRANCH }}
