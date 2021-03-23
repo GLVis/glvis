@@ -1,0 +1,138 @@
+# Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+# at the Lawrence Livermore National Laboratory. All Rights reserved. See files
+# LICENSE and NOTICE for details. LLNL-CODE-443271.
+#
+# This file is part of the GLVis visualization tool and library. For more
+# information and source code availability see https://glvis.org.
+#
+# GLVis is free software; you can redistribute it and/or modify it under the
+# terms of the BSD-3 license. We welcome feedback and contributions, see file
+# CONTRIBUTING.md for details.
+
+# GLVis - an OpenGL visualization server based on the MFEM library
+
+name: builds
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  HYPRE_URL: https://computation.llnl.gov/project/linear_solvers/download
+  HYPRE_ARCHIVE: hypre-2.19.0.tar.gz
+  HYPRE_TOP_DIR: hypre-2.19.0
+  METIS_ARCHIVE: metis-4.0.3.tar.gz
+  METIS_TOP_DIR: metis-4.0.3
+  MFEM_REPO: https://github.com/mfem/mfem.git
+  MFEM_BRANCH: master
+  MFEM_TOP_DIR: mfem
+
+jobs:
+  builds-and-tests:
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, macos-10.15]
+        target: [debug, optim]
+        build-system: [make]
+        # 'include' allows to
+        # - add a variable without creating a new matrix dimension.
+        # - add a new combination ('build-system: cmake' case here)
+        include:
+          - os: ubuntu-18.04
+            target: optim
+            build-system: cmake
+    name: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}-${{ matrix.build-system }}
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: get MPI (Linux)
+      run: |
+        sudo apt-get install mpich libmpich-dev
+        export MAKE_CXX_FLAG="MPICXX=mpic++"
+
+    # Get Hypre through cache, or install it.
+    # Install will only run on cache miss.
+    - name: cache Hypre install
+      id: hypre-cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ env.HYPRE_TOP_DIR }}
+        key: ${{ runner.os }}-build-${{ env.HYPRE_TOP_DIR }}-v1
+
+    - name: install Hypre
+      if: steps.hypre-cache.outputs.cache-hit != 'true'
+      uses: mfem/mfem/.github/actions/install-hypre@master
+      with:
+        hypre-url: ${{ env.HYPRE_URL }}
+        hypre-archive: ${{ env.HYPRE_ARCHIVE }}
+        hypre-dir: ${{ env.HYPRE_TOP_DIR }}
+
+    # Get Metis through cache, or install it.
+    # Install will only run on cache miss.
+    - name: cache Metis install
+      id: metis-cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ env.METIS_TOP_DIR }}
+        key: ${{ runner.os }}-build-${{ env.METIS_TOP_DIR }}-v1
+
+    - name: install Metis
+      if: steps.metis-cache.outputs.cache-hit != 'true'
+      uses: mfem/mfem/.github/actions/install-metis@master
+      with:
+        metis-url: ${{ env.METIS_URL }}
+        metis-archive: ${{ env.METIS_ARCHIVE }}
+        metis-dir: ${{ env.METIS_TOP_DIR }}
+
+    # make generic links to libraries for MFEM install
+    - name: configure links
+      run: |
+        echo "Hypre symlink:"
+        ln -s $HYPRE_TOP_DIR hypre;
+        echo "Metis symlink:"
+        ln -s $METIS_TOP_DIR metis-4.0;
+
+    - name: MFEM master commit
+      run: |
+        echo "MFEM_COMMIT=$(git ls-remote --heads ${{ env.MFEM_REPO }} ${{ env.MFEM_BRANCH }} | awk '{print $1;}')" >> $GITHUB_ENV
+
+    # Get MFEM through cache, or install it.
+    # Install will only run on cache miss.
+    - name: cache MFEM install
+      id: mfem-cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ env.MFEM_TOP_DIR }}
+        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-v2
+
+    - name: install MFEM
+      if: steps.mfem-cache.outputs.cache-hit != 'true'
+      uses: mfem/mfem/.github/actions/install-mfem
+      with:
+        mfem-repo: ${{ env.MFEM_REPO }}
+        mfem-branch: ${{ env.MFEM_BRANCH }}
+        mfem-dir: ${{ env.MFEM_TOP_DIR }}
+
+    # Install GlVis dependencies with package manager
+    - name: get deps (Linux)
+      run: |
+        sudo apt-get install libfontconfig1-dev libfreetype-dev libsdl2-dev libglew-dev libglm-dev libpng-dev
+
+    - name: get deps (MacOS)
+      run: |
+        brew install fontconfig freetype sdl2 glew glm libpng
+
+    - name: checkout GlVis
+      uses: actions/checkout@v2
+      with:
+        path: glvis
+
+    - name: build GlVis
+      run: |
+        cd glvis && make -j
+
