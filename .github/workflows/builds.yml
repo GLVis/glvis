@@ -75,7 +75,6 @@ jobs:
       if: steps.hypre-cache.outputs.cache-hit != 'true'
       uses: mfem/mfem-actions/build-hypre@master
       with:
-        hypre-url: ${{ env.HYPRE_URL }}
         hypre-archive: ${{ env.HYPRE_ARCHIVE }}
         hypre-dir: ${{ env.HYPRE_TOP_DIR }}
 
@@ -92,7 +91,6 @@ jobs:
       if: steps.metis-cache.outputs.cache-hit != 'true'
       uses: mfem/mfem-actions/build-metis@master
       with:
-        metis-url: ${{ env.METIS_URL }}
         metis-archive: ${{ env.METIS_ARCHIVE }}
         metis-dir: ${{ env.METIS_TOP_DIR }}
 
