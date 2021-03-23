@@ -51,8 +51,16 @@ jobs:
 
     steps:
     - name: get MPI (Linux)
+      if: matrix.os == 'ubuntu-18.04'
       run: |
         sudo apt-get install mpich libmpich-dev
+        export MAKE_CXX_FLAG="MPICXX=mpic++"
+
+    - name: get MPI (MacOS)
+      if: matrix.os == 'macos-10.15'
+      run: |
+        export HOMEBREW_NO_INSTALL_CLEANUP=1
+        brew install openmpi
         export MAKE_CXX_FLAG="MPICXX=mpic++"
 
     # Get Hypre through cache, or install it.
@@ -120,11 +128,14 @@ jobs:
 
     # Install GlVis dependencies with package manager
     - name: get deps (Linux)
+      if: matrix.os == 'ubuntu-18.04'
       run: |
         sudo apt-get install libfontconfig1-dev libfreetype-dev libsdl2-dev libglew-dev libglm-dev libpng-dev
 
     - name: get deps (MacOS)
+      if: matrix.os == 'macos-10.15'
       run: |
+        export HOMEBREW_NO_INSTALL_CLEANUP=1
         brew install fontconfig freetype sdl2 glew glm libpng
 
     - name: checkout GlVis
