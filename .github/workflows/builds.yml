@@ -112,7 +112,7 @@ jobs:
 
     - name: install MFEM
       if: steps.mfem-cache.outputs.cache-hit != 'true'
-      uses: mfem/mfem/.github/actions/install-mfem
+      uses: mfem/mfem/.github/actions/install-mfem@master
       with:
         mfem-repo: ${{ env.MFEM_REPO }}
         mfem-branch: ${{ env.MFEM_BRANCH }}
