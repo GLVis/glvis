@@ -22,7 +22,6 @@ on:
       - master
 
 env:
-  HYPRE_URL: https://computation.llnl.gov/project/linear_solvers/download
   HYPRE_ARCHIVE: hypre-2.19.0.tar.gz
   HYPRE_TOP_DIR: hypre-2.19.0
   METIS_ARCHIVE: metis-4.0.3.tar.gz
