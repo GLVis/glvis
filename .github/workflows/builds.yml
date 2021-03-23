@@ -26,7 +26,6 @@ env:
   HYPRE_TOP_DIR: hypre-2.19.0
   METIS_ARCHIVE: metis-4.0.3.tar.gz
   METIS_TOP_DIR: metis-4.0.3
-  MFEM_REPO: https://github.com/mfem/mfem.git
   MFEM_BRANCH: master
   MFEM_TOP_DIR: mfem
 
@@ -119,9 +118,11 @@ jobs:
       if: steps.mfem-cache.outputs.cache-hit != 'true'
       uses: mfem/mfem-actions/build-mfem@master
       with:
-        mfem-repo: ${{ env.MFEM_REPO }}
+        os: ${{ matrix.os }}
+        hypre-dir: ${{ env.HYPRE_TOP_DIR }}
+        metis-dir: ${{ env.METIS_TOP_DIR }}
         mfem-branch: ${{ env.MFEM_BRANCH }}
-        mfem-dir: ${{ env.MFEM_TOP_DIR }}
+        mfem-dir: mfem
 
     # Install GlVis dependencies with package manager
     - name: get deps (Linux)
