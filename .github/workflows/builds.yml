@@ -43,7 +43,7 @@ jobs:
           - os: ubuntu-18.04
             target: optim
             build-system: cmake
-    name: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}-${{ matrix.build-system }}
+    name: ${{ matrix.os }}-${{ matrix.target }}--${{ matrix.build-system }}
 
     runs-on: ${{ matrix.os }}
 
@@ -119,6 +119,7 @@ jobs:
       uses: mfem/mfem-actions/build-mfem@master
       with:
         os: ${{ matrix.os }}
+        target: ${{ matrix.target }}
         hypre-dir: ${{ env.HYPRE_TOP_DIR }}
         metis-dir: ${{ env.METIS_TOP_DIR }}
         mfem-branch: ${{ env.MFEM_BRANCH }}
@@ -143,5 +144,8 @@ jobs:
 
     - name: build GlVis
       run: |
-        cd glvis && make -j
+        glvis_target = ""
+        [[ ${{ matrix.target }} == "optim" ]] && glvis_target= "opt";
+        [[ ${{ matrix.target }} == "debug" ]] && glvis_target= "debug";
+        cd glvis && make ${glvis_target} -j
 
