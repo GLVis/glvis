@@ -18,15 +18,12 @@ on:
     branches:
       - master
   pull_request:
-    branches:
-      - master
 
 env:
   HYPRE_ARCHIVE: v2.19.0.tar.gz
   HYPRE_TOP_DIR: hypre-2.19.0
   METIS_ARCHIVE: metis-4.0.3.tar.gz
   METIS_TOP_DIR: metis-4.0.3
-  MFEM_BRANCH: master
   MFEM_TOP_DIR: mfem
 
 jobs:
@@ -103,7 +100,7 @@ jobs:
 
     - name: MFEM master commit
       run: |
-        echo "MFEM_COMMIT=$(git ls-remote --heads ${{ env.MFEM_REPO }} ${{ env.MFEM_BRANCH }} | awk '{print $1;}')" >> $GITHUB_ENV
+        echo "MFEM_COMMIT=$(git ls-remote --heads https://github.com/mfem/mfem.git master | awk '{print $1;}')" >> $GITHUB_ENV
 
     # Get MFEM through cache, or install it.
     # Install will only run on cache miss.
@@ -112,8 +109,13 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.MFEM_TOP_DIR }}
-        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-v2
+        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-v2
 
+    # We are using the defaults of the MFEM action here, which is to use master
+    # branch. There is an implicit assumption here that mfem master hasn't
+    # changed since the 'MFEM master commit' step.
+    # Also, if we apply to MFEM build the same target as GLVis. This may be
+    # superfluous.
     - name: install MFEM
       if: steps.mfem-cache.outputs.cache-hit != 'true'
       uses: mfem/mfem-actions/build-mfem@master
@@ -122,8 +124,7 @@ jobs:
         target: ${{ matrix.target }}
         hypre-dir: ${{ env.HYPRE_TOP_DIR }}
         metis-dir: ${{ env.METIS_TOP_DIR }}
-        mfem-branch: ${{ env.MFEM_BRANCH }}
-        mfem-dir: mfem
+        mfem-dir: ${{ env.MFEM_TOP_DIR }}
 
     # Install GlVis dependencies with package manager
     - name: get deps (Linux)
@@ -137,12 +138,12 @@ jobs:
         export HOMEBREW_NO_INSTALL_CLEANUP=1
         brew install fontconfig freetype sdl2 glew glm libpng
 
-    - name: checkout GlVis
+    - name: checkout GLVis
       uses: actions/checkout@v2
       with:
         path: glvis
 
-    - name: build GlVis
+    - name: build GLVis
       run: |
         glvis_target=""
         [[ ${{ matrix.target }} == "optim" ]] && glvis_target="opt";
