@@ -58,32 +58,32 @@ jobs:
         brew install openmpi
         export MAKE_CXX_FLAG="MPICXX=mpic++"
 
-    # Get Hypre through cache, or install it.
+    # Get Hypre through cache, or build it.
     # Install will only run on cache miss.
-    - name: cache Hypre install
+    - name: cache hypre
       id: hypre-cache
       uses: actions/cache@v2
       with:
         path: ${{ env.HYPRE_TOP_DIR }}
         key: ${{ runner.os }}-build-${{ env.HYPRE_TOP_DIR }}-v1
 
-    - name: install Hypre
+    - name: build hypre
       if: steps.hypre-cache.outputs.cache-hit != 'true'
       uses: mfem/mfem-actions/build-hypre@master
       with:
         hypre-archive: ${{ env.HYPRE_ARCHIVE }}
         hypre-dir: ${{ env.HYPRE_TOP_DIR }}
 
-    # Get Metis through cache, or install it.
+    # Get Metis through cache, or build it.
     # Install will only run on cache miss.
-    - name: cache Metis install
+    - name: cache metis
       id: metis-cache
       uses: actions/cache@v2
       with:
         path: ${{ env.METIS_TOP_DIR }}
         key: ${{ runner.os }}-build-${{ env.METIS_TOP_DIR }}-v1
 
-    - name: install Metis
+    - name: build metis
       if: steps.metis-cache.outputs.cache-hit != 'true'
       uses: mfem/mfem-actions/build-metis@master
       with:
@@ -94,9 +94,9 @@ jobs:
       run: |
         echo "MFEM_COMMIT=$(git ls-remote --heads https://github.com/mfem/mfem.git master | awk '{print $1;}')" >> $GITHUB_ENV
 
-    # Get MFEM through cache, or install it.
+    # Get MFEM through cache, or build it.
     # Install will only run on cache miss.
-    - name: cache MFEM install
+    - name: cache mfem
       id: mfem-cache
       uses: actions/cache@v2
       with:
@@ -108,7 +108,7 @@ jobs:
     # changed since the 'MFEM master commit' step.
     # Also, if we apply to MFEM build the same target as GLVis. This may be
     # superfluous.
-    - name: install MFEM
+    - name: build mfem
       if: steps.mfem-cache.outputs.cache-hit != 'true'
       uses: mfem/mfem-actions/build-mfem@master
       with:
