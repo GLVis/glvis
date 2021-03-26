@@ -56,6 +56,9 @@ public:
 
    void bind() const { glUseProgram(program_id); }
 
+   void setOutputFramebuffer(const FBOHandle& fbo);
+   void setDefaultDrawFramebuffer();
+
 private:
    static void GetGLSLVersion();
 
@@ -65,6 +68,7 @@ private:
    void mapShaderUniforms();
 
    static int glsl_version;
+   static bool glsl_es;
    std::unordered_map<int, std::string> attrib_idx;
    int num_outputs = 0;
 

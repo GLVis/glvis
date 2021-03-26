@@ -11,6 +11,7 @@
 
 #include "attr_traits.hpp"
 #include "renderer_core.hpp"
+#include "renderer_print.hpp"
 #include "../aux_vis.hpp"
 
 #include <regex>
@@ -244,7 +245,7 @@ void CoreGLDevice::setClipPlaneEqn(const std::array<double, 4> &eqn)
    glUniform4fv(uniforms["clipPlane"], 1, glm::value_ptr(clip_plane));
 }
 
-void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
+void CoreGLDevice::bufferToDevice(ArrayLayout layout, IVertexBuffer &buf)
 {
    if (buf.getHandle() == 0)
    {
@@ -264,7 +265,7 @@ void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
                 buf.getData(), GL_STATIC_DRAW);
 }
 
-void CoreGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
+void CoreGLDevice::bufferToDevice(ArrayLayout layout, IIndexedBuffer& buf)
 {
    if (buf.getHandle() == 0)
    {

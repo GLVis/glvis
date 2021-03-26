@@ -26,7 +26,7 @@ class FFGLDevice : public GLDevice
       DispListHandle list;
       GLenum shape;
       size_t count;
-      array_layout layout;
+      ArrayLayout layout;
    };
    std::vector<DispListData_> disp_lists;
 
@@ -52,8 +52,8 @@ public:
    void setClipPlaneUse(bool enable) override;
    void setClipPlaneEqn(const std::array<double, 4>& eqn) override;
 
-   void bufferToDevice(array_layout layout, IVertexBuffer& buf) override;
-   void bufferToDevice(array_layout layout, IIndexedBuffer& buf) override;
+   void bufferToDevice(ArrayLayout layout, IVertexBuffer& buf) override;
+   void bufferToDevice(ArrayLayout layout, IIndexedBuffer& buf) override;
    void bufferToDevice(TextBuffer& t_buf) override;
    void drawDeviceBuffer(int hnd) override;
    void drawDeviceBuffer(const TextBuffer& t_buf) override;

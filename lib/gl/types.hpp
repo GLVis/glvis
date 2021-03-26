@@ -165,7 +165,7 @@ struct GlMatrix
    }
 };
 
-enum array_layout
+enum ArrayLayout
 {
    LAYOUT_VTX = 0,
    LAYOUT_VTX_NORMAL,
@@ -203,10 +203,11 @@ struct alignas(16) Vertex
    std::array<float, 3> coord;
 
    static Vertex create(double * d)
-{
-   return Vertex {(float) d[0], (float) d[1], (float) d[2]};
-}
-static const int layout = LAYOUT_VTX;
+   {
+      return Vertex {(float) d[0], (float) d[1], (float) d[2]};
+   }
+
+   static const ArrayLayout layout = LAYOUT_VTX;
 };
 
 struct alignas(16) VertexColor
@@ -214,7 +215,7 @@ struct alignas(16) VertexColor
    std::array<float, 3> coord;
    std::array<uint8_t, 4> color;
 
-   static const int layout = LAYOUT_VTX_COLOR;
+   static const ArrayLayout layout = LAYOUT_VTX_COLOR;
 };
 
 struct alignas(16) VertexTex
@@ -222,7 +223,7 @@ struct alignas(16) VertexTex
    std::array<float, 3> coord;
    std::array<float, 2> texCoord;
 
-   static const int layout = LAYOUT_VTX_TEXTURE0;
+   static const ArrayLayout layout = LAYOUT_VTX_TEXTURE0;
 };
 
 struct alignas(16) VertexNorm
@@ -230,7 +231,7 @@ struct alignas(16) VertexNorm
    std::array<float, 3> coord;
    std::array<float, 3> norm;
 
-   static const int layout = LAYOUT_VTX_NORMAL;
+   static const ArrayLayout layout = LAYOUT_VTX_NORMAL;
 };
 
 struct alignas(16) VertexNormColor
@@ -239,7 +240,7 @@ struct alignas(16) VertexNormColor
    std::array<float, 3> norm;
    std::array<uint8_t, 4> color;
 
-   static const int layout = LAYOUT_VTX_NORMAL_COLOR;
+   static const ArrayLayout layout = LAYOUT_VTX_NORMAL_COLOR;
 };
 
 struct alignas(16) VertexNormTex
@@ -248,7 +249,7 @@ struct alignas(16) VertexNormTex
    std::array<float, 3> norm;
    std::array<float, 2> texCoord;
 
-   static const int layout = LAYOUT_VTX_NORMAL_TEXTURE0;
+   static const ArrayLayout layout = LAYOUT_VTX_NORMAL_TEXTURE0;
 };
 
 
@@ -449,6 +450,8 @@ public:
    virtual void clear() = 0;
    /// Gets the number of vertices contained in the buffer.
    virtual size_t count() const = 0;
+   /// Gets the vertex format held by the buffer.
+   virtual ArrayLayout getVertexLayout() const = 0;
    /// Gets the primitive type contained by the vertex buffer.
    virtual GLenum getShape() const = 0;
    /// Gets the stride between vertices.
@@ -473,6 +476,7 @@ public:
    virtual void clear() { vertex_data.clear(); }
    virtual size_t count() const { return vertex_data.size(); }
 
+   virtual ArrayLayout getVertexLayout() const { return T::layout; }
    virtual GLenum getShape() const { return primitive; }
    virtual size_t getStride() const { return sizeof(T); }
 
@@ -520,6 +524,7 @@ public:
 
    virtual size_t count() const { return vertex_data.size(); }
 
+   virtual ArrayLayout getVertexLayout() const { return T::layout; }
    virtual GLenum getShape() const { return primitive; }
    virtual size_t getStride() const { return sizeof(T); }
 
@@ -543,7 +548,7 @@ public:
    }
 };
 
-class TextBuffer : public IVertexBuffer
+class TextBuffer
 {
 public:
    struct Entry
@@ -560,10 +565,14 @@ public:
 private:
    std::vector<Entry> vertex_data;
    size_t num_chars;
+   int handle = 0;
 
 public:
    TextBuffer() : num_chars(0) { }
    ~TextBuffer() { }
+
+   int getHandle() const { return handle; }
+   void setHandle(int dev_hnd) { handle = dev_hnd; }
 
    /// Adds a text element at the specified local space (pre-transform)
    /// coordinates.
@@ -650,6 +659,29 @@ private:
              (indexed_buffers[Vert::layout][idx].get());
    }
 public:
+
+   std::vector<IVertexBuffer*> getArrayBuffers() const
+   {
+      std::vector<IVertexBuffer*> out_buffers;
+      for (int i = 0; i < NUM_LAYOUTS; i++)
+      {
+         for (size_t j = 0; j < NUM_SHAPES; j++)
+         {
+            if (buffers[i][j])
+            {
+               out_buffers.emplace_back(buffers[i][j].get());
+            }
+            if (indexed_buffers[i][j])
+            {
+               out_buffers.emplace_back(indexed_buffers[i][j].get());
+            }
+         }
+      }
+      return out_buffers;
+   }
+
+   TextBuffer& getTextBuffer() { return text_buffer; }
+   const TextBuffer& getTextBuffer() const { return text_buffer; }
 
    /// Adds a string at the given position in object coordinates.
    void addText(float x, float y, float z, const std::string& text)

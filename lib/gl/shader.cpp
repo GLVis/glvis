@@ -58,7 +58,40 @@ bool ShaderProgram::create(std::string vertexShader,
    return is_compiled;
 }
 
+void ShaderProgram::setOutputFramebuffer(const FBOHandle& fbo)
+{
+   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+   if (num_outputs == 0)
+   {
+      std::cerr << "Warning: shader has no outputs." << std::endl;
+      return;
+   }
+   vector<GLenum> output_bufs(num_outputs);
+   for (int iout = 0; iout < num_outputs; iout++)
+   {
+      output_bufs[iout] = GL_COLOR_ATTACHMENT0 + iout;
+   }
+   glDrawBuffers(num_outputs, output_bufs.data());
+}
+
+void ShaderProgram::setDefaultDrawFramebuffer()
+{
+   if (num_outputs == 0)
+   {
+      std::cerr << "Warning: shader has no outputs." << std::endl;
+   }
+   if (num_outputs > 1)
+   {
+      std::cerr << "Warning: attempting to set a shader with more than one "
+                << "output on the default framebuffer.";
+   }
+   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+   GLenum back_buf = GL_BACK;
+   glDrawBuffers(1, &back_buf);
+}
+
 int ShaderProgram::glsl_version = -1;
+bool ShaderProgram::glsl_es = false;
 
 void ShaderProgram::GetGLSLVersion()
 {
@@ -116,6 +149,7 @@ void ShaderProgram::GetGLSLVersion()
       {
          glsl_version = 300;
       }
+      glsl_es = true;
 #endif
       std::cerr << "Using GLSL " << glsl_version << std::endl;
    }
@@ -149,12 +183,11 @@ std::string ShaderProgram::formatShader(const std::string& inShader,
             outputString += std::to_string(i) + ";\n";
             if (glsl_version > 130 && glsl_version < 330)
             {
-
                formatted = outputString + formatted;
                formatted = std::regex_replace(formatted, std::regex(indexString),
                                               "fragColor");
             }
-            else if (glsl_version >= 330)
+            else if (glsl_version >= 330 || (glsl_version == 300 && glsl_es))
             {
                std::string layoutString = "layout(location = ";
                layoutString += std::to_string(i) + ") ";

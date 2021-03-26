@@ -12,6 +12,8 @@
 list(APPEND SOURCES
   gl/renderer.cpp
   gl/renderer_core.cpp
+  gl/renderer_msaa.cpp
+  gl/renderer_print.cpp
   gl/shader.cpp
   gl/types.cpp
   aux_vis.cpp
@@ -32,6 +34,8 @@ list(APPEND HEADERS
   gl/platform_gl.hpp
   gl/renderer.hpp
   gl/renderer_core.hpp
+  gl/renderer_msaa.hpp
+  gl/renderer_print.hpp
   gl/shader.hpp
   gl/types.hpp
   aux_vis.hpp

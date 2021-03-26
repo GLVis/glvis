@@ -33,6 +33,9 @@ using namespace mfem;
 #include <fontconfig/fontconfig.h>
 #endif
 
+#include "gl/renderer_msaa.hpp"
+#include "gl/renderer_print.hpp"
+
 int visualize = 0;
 VisualizationScene * locscene;
 
@@ -41,6 +44,7 @@ static int glvis_multisample = GLVIS_MULTISAMPLE;
 #else
 static int glvis_multisample = -1;
 #endif
+bool multisample_status = false;
 
 float line_w = 1.f;
 float line_w_aa = gl3::LINE_WIDTH_AA;
@@ -89,8 +93,6 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    cout << "Window should be up" << endl;
 #endif
    InitFont();
-   wnd->getRenderer().setLineWidth(line_w);
-   wnd->getRenderer().setLineWidthMS(line_w_aa);
 
    // auxReshapeFunc (MyReshape); // not needed, MyExpose calls it
    // auxReshapeFunc (NULL);
@@ -109,6 +111,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 
    wnd->setTouchPinchCallback(TouchPinch);
 
+   wnd->setOnKeyDown('A', KeyAPressed);
    // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
    wnd->setOnKeyDown (SDLK_s, KeyS);
    wnd->setOnKeyDown ('S', KeyS);
@@ -317,7 +320,6 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
       // SendKeySequence(keys);
       CallKeySequence(keys);
    }
-   wnd->getRenderer().setPalette(&locscene->palette);
 }
 
 void RunVisualization()
@@ -377,16 +379,21 @@ void MyReshape(GLsizei w, GLsizei h)
 void MyExpose(GLsizei w, GLsizei h)
 {
    MyReshape (w, h);
-   GLuint color_tex = locscene->palette.GetColorTexture();
-   GLuint alpha_tex = locscene->palette.GetAlphaTexture();
-   wnd->getRenderer().setColorTexture(color_tex);
-   wnd->getRenderer().setAlphaTexture(alpha_tex);
+   gl3::DefaultPass rndr_main_pass;
+   gl3::MultisamplePass rndr_msaa_pass;
+   rndr_main_pass.setFontTexture(GetFont()->getFontTex());
+   rndr_main_pass.setPalette(locscene->palette);
+   // Set antialiasing parameters
+   rndr_msaa_pass.SetAntialiasing(multisample_status);
+   rndr_msaa_pass.SetNumSamples(GetMultisample());
+   rndr_msaa_pass.SetLineWidth(line_w);
+   rndr_msaa_pass.SetLineWidthMS(line_w_aa);
    gl3::SceneInfo frame = locscene->GetSceneObjs();
    for (auto drawable_ptr : frame.needs_buffering)
    {
       wnd->getRenderer().buffer(drawable_ptr);
    }
-   wnd->getRenderer().render(frame.queue);
+   wnd->getRenderer().render({&rndr_main_pass}, {&rndr_msaa_pass}, frame.queue);
 }
 
 void MyExpose()
@@ -1096,6 +1103,8 @@ void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
    }
 }
 
+gl3::CapturePass print_pass;
+
 void KeyCtrlP()
 {
 #ifdef __EMSCRIPTEN__
@@ -1126,7 +1135,10 @@ void KeyCtrlP()
                        GL2PS_NO_BLENDING |
                        GL2PS_NO_OPENGL_CONTEXT,
                        GL_RGBA, 0, NULL, 16, 16, 16, 0, fp, "a" );
-      gl3::CaptureBuffer cbuf = wnd->getRenderer().capture(wnd_scn.queue);
+      print_pass.setFontTexture(GetFont()->getFontTex());
+      print_pass.setPalette(locscene->palette);
+      wnd->getRenderer().render( {&print_pass}, {}, wnd_scn.queue);
+      gl3::CaptureBuffer cbuf = print_pass.GetLastCaptureBuffer();
       PrintCaptureBuffer(cbuf);
       gl2psEndPage();
    }
@@ -1135,6 +1147,28 @@ void KeyCtrlP()
    cout << "done" << endl;
    wnd->signalExpose();
 #endif
+}
+
+
+void KeyAPressed()
+{
+   if (glvis_multisample < 0)
+   {
+       cout << "Multisampling disabled." << endl;
+       return;
+   }
+   multisample_status = !multisample_status;
+
+   if (multisample_status)
+   {
+       cout << "Multisampling/Antialiasing: on" << endl;
+   }
+   else
+   {
+       cout << "Multisampling/Antialiasing: off" << endl;
+   }
+
+   SendExposeEvent();
 }
 
 void KeyQPressed()
@@ -1501,18 +1535,13 @@ void SetLineWidth(float width)
    line_w = width;
    if (wnd)
    {
-      wnd->getRenderer().setLineWidth(line_w);
+      wnd->getRenderer().SetLineWidth(line_w);
    }
 }
 
 void SetLineWidthMS(float width_ms)
 {
    line_w_aa = width_ms;
-   if (wnd)
-   {
-      wnd->getRenderer().setLineWidthMS(line_w_aa);
-   }
-
 }
 
 float GetLineWidth()
@@ -1580,7 +1609,6 @@ void InitFont()
               << endl;
       }
    }
-   wnd->getRenderer().setFontTexture(glvis_font.getFontTex());
 }
 
 GlVisFont * GetFont()
