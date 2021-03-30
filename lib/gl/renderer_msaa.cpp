@@ -147,7 +147,7 @@ void MultisamplePass::PostRender()
 #ifndef __EMSCRIPTEN__
       glDisable(GL_MULTISAMPLE);
 #endif
-      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, *target);
       glBindFramebuffer(GL_READ_FRAMEBUFFER, resolveFb);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       glBlitFramebuffer(0, 0, width, height,

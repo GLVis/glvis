@@ -42,6 +42,17 @@ bool GLDevice::useLegacyTextureFmts()
 #endif
 }
 
+void GLDevice::attachFramebuffer(const FBOHandle& fbo)
+{
+   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+   GLenum drawOutput = GL_BACK;
+   if (fbo != 0)
+   {
+      drawOutput = GL_COLOR_ATTACHMENT0;
+   }
+   glDrawBuffers(1, &drawOutput);
+}
+
 void DefaultPass::Render(const RenderQueue& queue)
 {
    // elements containing opaque objects should be rendered first
@@ -51,6 +62,7 @@ void DefaultPass::Render(const RenderQueue& queue)
    {
       return !renderPair.first.contains_translucent;
    });
+   device->attachFramebuffer(*target);
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    int color_tex = palette->GetColorTexture();
    int alpha_tex = palette->GetAlphaTexture();
@@ -146,12 +158,16 @@ void MeshRenderer::render(const vector<IMainRenderPass*>& main_passes,
    }
    // Step 2: Setup the framebuffer with the first extra pass, and render the
    //         queue with the main passes.
+   FBOHandle default_target(0);
+   std::reference_wrapper<const FBOHandle> curr_out = default_target;
    if (extra_passes.size() > 0)
    {
       extra_passes[0]->PreRender();
+      curr_out = extra_passes[0]->GetSourceFramebuffer();
    }
    for (int ipass = 0; ipass < main_passes.size(); ipass++)
    {
+      main_passes[ipass]->SetTargetFramebuffer(curr_out);
       main_passes[ipass]->PreRender();
       main_passes[ipass]->Render(matched_queues[ipass]);
       main_passes[ipass]->PostRender();
@@ -163,8 +179,10 @@ void MeshRenderer::render(const vector<IMainRenderPass*>& main_passes,
       {
          // Finalize last stage's results onto next stage
          extra_passes[ipass]->PreRender();
+         curr_out = extra_passes[ipass]->GetSourceFramebuffer();
          extra_passes[ipass-1]->PostRender();
       }
+      extra_passes[extra_passes.size() - 1]->SetTargetFramebuffer(default_target);
       extra_passes[extra_passes.size() - 1]->PostRender();
    }
 }

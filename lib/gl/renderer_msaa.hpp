@@ -25,6 +25,18 @@ public:
    virtual void PreRender();
    virtual void PostRender();
 
+   virtual const FBOHandle& GetSourceFramebuffer() const
+   {
+      if (msaa_enable && msaaFb)
+      {
+         return msaaFb;
+      }
+      else
+      {
+         return IRenderPass::default_target;
+      }
+   }
+
    void SetAntialiasing(bool aa_status);
    bool GetAntialiasing() { return msaa_enable; }
    void SetNumSamples(int samples)
