@@ -35,6 +35,7 @@ using namespace mfem;
 
 #include "gl/renderer_msaa.hpp"
 #include "gl/renderer_print.hpp"
+#include "gl/depth_peel_oit.hpp"
 
 int visualize = 0;
 VisualizationScene * locscene;
@@ -379,10 +380,20 @@ void MyReshape(GLsizei w, GLsizei h)
 void MyExpose(GLsizei w, GLsizei h)
 {
    MyReshape (w, h);
+   bool use_depth_peel = true;
    gl3::DefaultPass rndr_main_pass;
+   gl3::DepthPeeler rndr_depth_peeled;
+   if (!use_depth_peel)
+   {
+       rndr_main_pass.setFontTexture(GetFont()->getFontTex());
+       rndr_main_pass.setPalette(locscene->palette);
+   }
+   else
+   {
+       rndr_depth_peeled.setFontTexture(GetFont()->getFontTex());
+       rndr_depth_peeled.setPalette(locscene->palette);
+   }
    gl3::MultisamplePass rndr_msaa_pass;
-   rndr_main_pass.setFontTexture(GetFont()->getFontTex());
-   rndr_main_pass.setPalette(locscene->palette);
    // Set antialiasing parameters
    rndr_msaa_pass.SetAntialiasing(multisample_status);
    rndr_msaa_pass.SetNumSamples(GetMultisample());
@@ -393,7 +404,14 @@ void MyExpose(GLsizei w, GLsizei h)
    {
       wnd->getRenderer().buffer(drawable_ptr);
    }
-   wnd->getRenderer().render({&rndr_main_pass}, {&rndr_msaa_pass}, frame.queue);
+   if (!use_depth_peel)
+   {
+      wnd->getRenderer().render({&rndr_main_pass}, {&rndr_msaa_pass}, frame.queue);
+   }
+   else
+   {
+      wnd->getRenderer().render({&rndr_depth_peeled}, {&rndr_msaa_pass}, frame.queue);
+   }
 }
 
 void MyExpose()
