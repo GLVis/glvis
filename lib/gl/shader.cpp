@@ -177,15 +177,19 @@ std::string ShaderProgram::formatShader(const std::string& inShader,
          // although gl_FragColor was deprecated in GLSL 1.3
          for (int i = 0; i < num_outputs; i++)
          {
-            std::string indexString = "gl_FragData[";
-            indexString += std::to_string(i) + "]";
+            std::string indexString = "gl_FragData\\[";
+            indexString += std::to_string(i) + "\\]";
             std::string outputString = "out vec4 fragColor_";
             outputString += std::to_string(i) + ";\n";
+            if (glsl_version > 130)
+            {
+               formatted = std::regex_replace(formatted, std::regex(indexString),
+                                              "fragColor_" + std::to_string(i));
+            }
             if (glsl_version > 130 && glsl_version < 330)
             {
+               // append output variable specifications without layout specifiers
                formatted = outputString + formatted;
-               formatted = std::regex_replace(formatted, std::regex(indexString),
-                                              "fragColor");
             }
             else if (glsl_version >= 330 || (glsl_version == 300 && glsl_es))
             {
@@ -243,7 +247,7 @@ GLuint ShaderProgram::compileShader(const std::string& inShader,
    // glGetObjectParameteriv
    if (stat == GL_FALSE)
    {
-      std::cerr << "failed to compile shader" << std::endl;
+      std::cerr << "Failed to compile shader" << std::endl;
       int err_len;
       glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &err_len);
       char *error_text = new char[err_len];
