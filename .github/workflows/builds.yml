@@ -91,6 +91,7 @@ jobs:
         metis-dir: ${{ env.METIS_TOP_DIR }}
 
     # make generic links to libraries for MFEM install
+    # Those links are already created by build-mfem action, but not when the cache is used...
     - name: configure links
       run: |
         echo "Hypre symlink:"
