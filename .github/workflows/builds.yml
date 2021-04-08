@@ -66,7 +66,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.HYPRE_TOP_DIR }}
-        key: ${{ runner.os }}-build-${{ env.HYPRE_TOP_DIR }}-v1
+        key: ${{ runner.os }}-build-${{ env.HYPRE_TOP_DIR }}-v2
 
     - name: build hypre
       if: steps.hypre-cache.outputs.cache-hit != 'true'
@@ -82,7 +82,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.METIS_TOP_DIR }}
-        key: ${{ runner.os }}-build-${{ env.METIS_TOP_DIR }}-v1
+        key: ${{ runner.os }}-build-${{ env.METIS_TOP_DIR }}-v2
 
     - name: build metis
       if: steps.metis-cache.outputs.cache-hit != 'true'
@@ -111,7 +111,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.MFEM_TOP_DIR }}
-        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-v2
+        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-v3
 
     # We are using the defaults of the MFEM action here, which is to use master
     # branch. There is an implicit assumption here that mfem master hasn't
