@@ -25,6 +25,7 @@ env:
   METIS_ARCHIVE: metis-4.0.3.tar.gz
   METIS_TOP_DIR: metis-4.0.3
   MFEM_TOP_DIR: mfem
+  MFEM_BRANCH: master
 
 jobs:
   builds-and-tests:
@@ -40,7 +41,7 @@ jobs:
           - os: ubuntu-18.04
             target: optim
             build-system: cmake
-    name: ${{ matrix.os }}-${{ matrix.target }}--${{ matrix.build-system }}
+    name: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.build-system }}
 
     runs-on: ${{ matrix.os }}
 
@@ -99,9 +100,9 @@ jobs:
         echo "Metis symlink:"
         ln -s $METIS_TOP_DIR metis-4.0;
 
-    - name: MFEM master commit
+    - name: MFEM ${{ env.MFEM_BRANCH }} commit
       run: |
-        echo "MFEM_COMMIT=$(git ls-remote --heads https://github.com/mfem/mfem.git master | awk '{print $1;}')" >> $GITHUB_ENV
+        echo "MFEM_COMMIT=$(git ls-remote --heads https://github.com/mfem/mfem.git ${{ env.MFEM_BRANCH }} | awk '{print $1;}')" >> $GITHUB_ENV
 
     # Get MFEM through cache, or build it.
     # Install will only run on cache miss.
@@ -126,6 +127,7 @@ jobs:
         hypre-dir: ${{ env.HYPRE_TOP_DIR }}
         metis-dir: ${{ env.METIS_TOP_DIR }}
         mfem-dir: ${{ env.MFEM_TOP_DIR }}
+        mfem-branch: ${{ env.MFEM_BRANCH }}
 
     # Install GlVis dependencies with package manager
     - name: get deps (Linux)
