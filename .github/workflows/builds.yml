@@ -90,6 +90,14 @@ jobs:
         metis-archive: ${{ env.METIS_ARCHIVE }}
         metis-dir: ${{ env.METIS_TOP_DIR }}
 
+    # make generic links to libraries for MFEM install
+    - name: configure links
+      run: |
+        echo "Hypre symlink:"
+        ln -s $HYPRE_TOP_DIR hypre;
+        echo "Metis symlink:"
+        ln -s $METIS_TOP_DIR metis-4.0;
+
     - name: MFEM master commit
       run: |
         echo "MFEM_COMMIT=$(git ls-remote --heads https://github.com/mfem/mfem.git master | awk '{print $1;}')" >> $GITHUB_ENV
