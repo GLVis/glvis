@@ -165,6 +165,6 @@ jobs:
         cd glvis && mkdir build && cd build
         cmake \
           -D CMAKE_BUILD_TYPE:STRING=${{ matrix.target }} \
-          -D MFEM_DIR=${{ env.MFEM_TOP_DIR }}/build \
+          -D mfem_DIR=${{ env.MFEM_TOP_DIR }}/build \
           ..
 
