@@ -39,7 +39,7 @@ jobs:
         # - add a new combination ('build-system: cmake' case here)
         include:
           - os: ubuntu-18.04
-            target: optim
+            target: Release
             build-system: cmake
     name: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.build-system }}
 
@@ -128,6 +128,7 @@ jobs:
         metis-dir: ${{ env.METIS_TOP_DIR }}
         mfem-dir: ${{ env.MFEM_TOP_DIR }}
         mfem-branch: ${{ env.MFEM_BRANCH }}
+        build-system: ${{ matrix.build-system }}
 
     # Install GlVis dependencies with package manager
     - name: get deps (Linux)
@@ -146,10 +147,22 @@ jobs:
       with:
         path: glvis
 
-    - name: build GLVis
+    - name: build GLVis (make)
+      if: matrix.build-system == 'make'
       run: |
         glvis_target=""
         [[ ${{ matrix.target }} == "optim" ]] && glvis_target="opt";
         [[ ${{ matrix.target }} == "debug" ]] && glvis_target="debug";
         cd glvis && make ${glvis_target} -j
+
+    - name: build GLVis (cmake)
+      if: matrix.build-system == 'cmake'
+      run: |
+        cd glvis && mkdir build && cd build
+        cmake ${glvis_target} -j
+        cmake \
+          -G Ninja \
+          -D CMAKE_BUILD_TYPE:STRING=${{ matrix.target }} \
+          -D MFEM_DIR=${{ env.MFEM_TOP_DIR }} \
+          ..
 
