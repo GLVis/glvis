@@ -55,7 +55,7 @@ jobs:
     - name: get MPI (MacOS)
       if: matrix.os == 'macos-10.15'
       run: |
-        export HOMEBREW_NO_INSTALL_CLEANUP=1
+        #export HOMEBREW_NO_INSTALL_CLEANUP=1
         brew install openmpi
         export MAKE_CXX_FLAG="MPICXX=mpic++"
 
