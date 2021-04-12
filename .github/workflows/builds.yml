@@ -163,7 +163,6 @@ jobs:
       if: matrix.build-system == 'cmake'
       run: |
         cd glvis && mkdir build && cd build
-        cmake ${glvis_target} -j
         cmake \
           -G Ninja \
           -D CMAKE_BUILD_TYPE:STRING=${{ matrix.target }} \
