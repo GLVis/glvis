@@ -162,10 +162,16 @@ jobs:
     - name: build GLVis (cmake)
       if: matrix.build-system == 'cmake'
       run: |
+        ls
+        ls mfem
+        ls mfem/build
+        echo ${{ env.MFEM_TOP_DIR }}
+        ls ${{ env.MFEM_TOP_DIR }}
+        ls ${{ env.MFEM_TOP_DIR }}/build
         cd glvis && mkdir build && cd build
         cmake \
           -D CMAKE_BUILD_TYPE:STRING=${{ matrix.target }} \
-          -D mfem_DIR=${{ env.MFEM_TOP_DIR }}/build \
+          -D mfem_DIR:PATH=${{ env.MFEM_TOP_DIR }}/build \
           ..
         make -j3
 
