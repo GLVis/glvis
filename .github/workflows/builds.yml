@@ -123,7 +123,7 @@ jobs:
     # Also, if we apply to MFEM build the same target as GLVis. This may be
     # superfluous.
     - name: build mfem
-      if: steps.mfem-cache.outputs.cache-hit != 'true'
+      if: steps.cache-mfem.outputs.cache-hit != 'true'
       uses: mfem/github-actions/build-mfem@master
       with:
         os: ${{ matrix.os }}
