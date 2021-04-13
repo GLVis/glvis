@@ -167,4 +167,5 @@ jobs:
           -D CMAKE_BUILD_TYPE:STRING=${{ matrix.target }} \
           -D mfem_DIR=${{ env.MFEM_TOP_DIR }}/build \
           ..
+        cmake --build -j
 
