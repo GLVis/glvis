@@ -111,6 +111,7 @@ jobs:
     # Get MFEM through cache, or build it.
     # Install will only run on cache miss.
     - name: cache mfem
+      id: cache-mfem
       uses: actions/cache@v2
       with:
         path: ${{ env.MFEM_TOP_DIR }}
