@@ -106,7 +106,7 @@ jobs:
 
     - name: MFEM ${{ env.MFEM_BRANCH }} commit
       run: |
-        echo "MFEM_COMMIT=$(git ls-remote --heads https://github.com/mfem/mfem.git ${{ env.MFEM_BRANCH }} | awk '{print $1;}')" >> $GITHUB_ENV
+        echo "MFEM_COMMIT=$(git ls-remote --heads https://github.com/mfem/mfem.git ${MFEM_BRANCH} | awk '{print $1;}')" >> $GITHUB_ENV
 
     # Get MFEM through cache, or build it.
     # Install will only run on cache miss.
@@ -139,6 +139,10 @@ jobs:
       if: matrix.os == 'ubuntu-18.04'
       run: |
         sudo apt-get install libfontconfig1-dev libfreetype6-dev libsdl2-dev libglew-dev libglm-dev libpng-dev
+
+    - name: Set up Homebrew
+      if: matrix.os == 'macos-10.15'
+      uses: Homebrew/actions/setup-homebrew@master
 
     - name: get deps (MacOS)
       if: matrix.os == 'macos-10.15'
