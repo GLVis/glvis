@@ -31,9 +31,9 @@ jobs:
   builds-and-tests:
     strategy:
       matrix:
-        #os: [ubuntu-18.04, macos-10.15]
-        #target: [debug, optim]
-        #build-system: [make]
+        os: [ubuntu-18.04, macos-10.15]
+        target: [debug, optim]
+        build-system: [make]
         # 'include' allows to
         # - add a variable without creating a new matrix dimension.
         # - add a new combination ('build-system: cmake' case here)
@@ -116,11 +116,6 @@ jobs:
         path: ${{ env.MFEM_TOP_DIR }}
         key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-v3
 
-    - uses: actions/upload-artifact@v2
-      with:
-        name: cache_contents
-        path: ${{ env.MFEM_TOP_DIR }}
-
     # We are using the defaults of the MFEM action here, which is to use master
     # branch. There is an implicit assumption here that mfem master hasn't
     # changed since the 'MFEM master commit' step.
@@ -161,7 +156,7 @@ jobs:
         glvis_target=""
         [[ ${{ matrix.target }} == "optim" ]] && glvis_target="opt";
         [[ ${{ matrix.target }} == "debug" ]] && glvis_target="debug";
-        cd glvis && make ${glvis_target} -j
+        cd glvis && make ${glvis_target} -j3
 
     - name: build GLVis (cmake)
       if: matrix.build-system == 'cmake'
@@ -171,5 +166,5 @@ jobs:
           -D CMAKE_BUILD_TYPE:STRING=${{ matrix.target }} \
           -D mfem_DIR=${{ env.MFEM_TOP_DIR }}/build \
           ..
-        cmake --build -j
+        make -j3
 
