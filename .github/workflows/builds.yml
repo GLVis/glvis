@@ -111,11 +111,15 @@ jobs:
     # Get MFEM through cache, or build it.
     # Install will only run on cache miss.
     - name: cache mfem
-      id: mfem-cache
       uses: actions/cache@v2
       with:
         path: ${{ env.MFEM_TOP_DIR }}
         key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-v3
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: cache_contents
+        path: ${{ env.MFEM_TOP_DIR }}
 
     # We are using the defaults of the MFEM action here, which is to use master
     # branch. There is an implicit assumption here that mfem master hasn't
