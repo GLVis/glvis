@@ -74,7 +74,7 @@ jobs:
 
     - name: build hypre
       if: steps.hypre-cache.outputs.cache-hit != 'true'
-      uses: mfem/github-actions/build-hypre@master
+      uses: mfem/github-actions/build-hypre@feature/bernede1/cmake-build-type
       with:
         hypre-archive: ${{ env.HYPRE_ARCHIVE }}
         hypre-dir: ${{ env.HYPRE_TOP_DIR }}
@@ -90,7 +90,7 @@ jobs:
 
     - name: build metis
       if: steps.metis-cache.outputs.cache-hit != 'true'
-      uses: mfem/github-actions/build-metis@master
+      uses: mfem/github-actions/build-metis@feature/bernede1/cmake-build-type
       with:
         metis-archive: ${{ env.METIS_ARCHIVE }}
         metis-dir: ${{ env.METIS_TOP_DIR }}
@@ -124,7 +124,7 @@ jobs:
     # superfluous.
     - name: build mfem
       if: steps.cache-mfem.outputs.cache-hit != 'true'
-      uses: mfem/github-actions/build-mfem@master
+      uses: mfem/github-actions/build-mfem@feature/bernede1/cmake-build-type
       with:
         os: ${{ matrix.os }}
         target: ${{ matrix.target }}
