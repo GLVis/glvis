@@ -55,6 +55,8 @@ void GLDevice::attachFramebuffer(const FBOHandle& fbo)
 
 void DefaultPass::Render(const RenderQueue& queue)
 {
+   auto clear_color = device->getClearColor();
+   glClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
    // elements containing opaque objects should be rendered first
    RenderQueue sorted_queue = queue;
    std::stable_partition(sorted_queue.begin(), sorted_queue.end(),

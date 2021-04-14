@@ -75,6 +75,7 @@ protected:
    glm::mat4 proj_mtx;
 
    std::array<float, 4> static_color;
+   std::array<float, 4> clear_color { 1.f, 1.f, 1.f, 1.f };
 
    bool blend_enabled = false;
 
@@ -126,6 +127,10 @@ public:
    void getViewport(GLint (&vp)[4]);
    // Set the color to use, if a color attribute is not provided.
    void setStaticColor(const std::array<float, 4>& rgba) { static_color = rgba; }
+   // Set the background clear color to use.
+   void setClearColor(const std::array<float, 4>& rgba) { clear_color = rgba; }
+   // Gets the current background color.
+   std::array<float, 4> getClearColor() const { return clear_color; }
 
    // === Render pipeline functions ===
 
@@ -249,7 +254,8 @@ public:
    }
    float GetLineWidth() { return line_w; }
 
-   void setClearColor(float r, float g, float b, float a) { glClearColor(r, g, b, a); }
+   void setClearColor(float r, float g, float b, float a)
+   { device->setClearColor({r,g,b,a}); }
    void setViewport(GLsizei w, GLsizei h) { device->setViewport(w, h); }
 
    void render(const std::vector<IMainRenderPass*>& main_passes,

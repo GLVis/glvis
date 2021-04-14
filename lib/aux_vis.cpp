@@ -380,7 +380,7 @@ void MyReshape(GLsizei w, GLsizei h)
 void MyExpose(GLsizei w, GLsizei h)
 {
    MyReshape (w, h);
-   bool use_depth_peel = true;
+   bool use_depth_peel = !(locscene->matAlpha == 1.0);
    gl3::DefaultPass rndr_main_pass;
    gl3::DepthPeeler rndr_depth_peeled;
    if (!use_depth_peel)

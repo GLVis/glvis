@@ -289,7 +289,8 @@ void DepthPeeler::PostRender()
 
    finalize_prgm.bind();
    finalize_prgm.setOutputFramebuffer(*target);
-   glClearColor(0, 0, 0, 1);
+   auto clear_color = device->getClearColor();
+   glClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
    glClear(GL_COLOR_BUFFER_BIT);
    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
