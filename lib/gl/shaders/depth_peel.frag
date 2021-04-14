@@ -53,12 +53,12 @@ void main()
    float thisDepth = gl_FragCoord.z;
    float alphaMultiplier = 1.0 - lastFrontColor.a;
 
-   gl_FragData[0].xy = vec2(-MAX_DEPTH);
    gl_FragData[1] = lastFrontColor;
    gl_FragData[2] = vec4(0.0);
 
    if (thisDepth < nearestDepth || thisDepth > farthestDepth)
    {
+       gl_FragData[0].xy = vec2(-MAX_DEPTH);
        return;
    }
 
@@ -68,6 +68,7 @@ void main()
        return;
    }
 
+   gl_FragData[0].xy = vec2(-MAX_DEPTH);
    vec4 color = fColor * texture2D(colorTex, vec2(fTexCoord));
    color = blinnPhong(fPosition, fNormal, color);
 #ifdef USE_ALPHA
@@ -79,7 +80,7 @@ void main()
     if (thisDepth == nearestDepth)
     {
         gl_FragData[1].rgb += color.rgb * color.a * alphaMultiplier;
-        gl_FragData[2].a = 1.0 - alphaMultiplier * (1.0 - color.a);
+        gl_FragData[1].a = 1.0 - alphaMultiplier * (1.0 - color.a);
     }
     else
     {

@@ -47,7 +47,7 @@ void DepthPeeler::SetGLDevice(GLDevice* dev)
             -1.f, 1.f, 1.f, -1.f, 1.f, 1.f,
          };
       glBindBuffer(GL_ARRAY_BUFFER, vbo);
-      glBufferData(GL_ARRAY_BUFFER, 12, quad_verts, GL_STATIC_DRAW);
+      glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), quad_verts, GL_STATIC_DRAW);
       glBindBuffer(GL_ARRAY_BUFFER, 0);
    }
 
@@ -79,6 +79,16 @@ void DepthPeeler::SetGLDevice(GLDevice* dev)
 
    for (int i = 0; i < 2; i++)
    {
+      {
+         GLuint fb_ids[2], tex_ids[3];
+         glGenFramebuffers(2, fb_ids);
+         glGenTextures(3, tex_ids);
+         main_peel_fbs[i] = fb_ids[0];
+         color_fbs[i] = fb_ids[1];
+         frontColorTex[i] = tex_ids[0];
+         backColorTex[i] = tex_ids[1];
+         depthTex[i] = tex_ids[2];
+      }
       glBindFramebuffer(GL_FRAMEBUFFER, main_peel_fbs[i]);
 
       glBindTexture(GL_TEXTURE_2D, depthTex[i]);
@@ -118,6 +128,13 @@ void DepthPeeler::SetGLDevice(GLDevice* dev)
                              backColorTex[i], 0);
    }
 
+   {
+      GLuint fb_id, tex_id;
+      glGenFramebuffers(1, &fb_id);
+      glGenTextures(1, &tex_id);
+      blend_back_fb = fb_id;
+      backBlendTex = tex_id;
+   }
    glBindFramebuffer(GL_FRAMEBUFFER, blend_back_fb);
    glBindTexture(GL_TEXTURE_2D, backBlendTex);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -171,7 +188,7 @@ void DepthPeeler::DoRenderPass(int i, const RenderQueue& queue)
       GLenum depthBufs = GL_COLOR_ATTACHMENT0;
       glBindFramebuffer(GL_DRAW_FRAMEBUFFER, main_peel_fbs[dst_i]);
       glDrawBuffers(1, &depthBufs);
-      glClearColor(MAX_DEPTH, MAX_DEPTH, 0, 0);
+      glClearColor(-10., -10., 0, 0);
       glClear(GL_COLOR_BUFFER_BIT);
 
       GLenum colorBufs[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
@@ -184,7 +201,6 @@ void DepthPeeler::DoRenderPass(int i, const RenderQueue& queue)
    // Setup main peel program and framebuffer
    dynamic_cast<CoreGLDevice*>(device)->bindExternalProgram(main_prgm);
    main_prgm.setOutputFramebuffer(main_peel_fbs[dst_i]);
-   glBlendEquation(GL_MAX);
 
    // Bind source depth and front color texture
    glActiveTexture(GL_TEXTURE0 + 2);
@@ -198,7 +214,9 @@ void DepthPeeler::DoRenderPass(int i, const RenderQueue& queue)
 
    int color_tex = palette->GetColorTexture();
    int alpha_tex = palette->GetAlphaTexture();
-   device->enableDepthWrite();
+   glDisable(GL_DEPTH_TEST);
+   device->enableBlend();
+   glBlendEquation(GL_MAX);
    // Render the geometry to peel
    for (auto& geom : queue)
    {
@@ -248,8 +266,8 @@ void DepthPeeler::DoRenderPass(int i, const RenderQueue& queue)
    }
 
    // Blend just-written back layer separately
-   blend_prgm.setOutputFramebuffer(blend_back_fb);
    blend_prgm.bind();
+   blend_prgm.setOutputFramebuffer(blend_back_fb);
    glBlendEquation(GL_FUNC_ADD);
    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE,
                        GL_ONE_MINUS_SRC_ALPHA);
@@ -269,8 +287,8 @@ void DepthPeeler::PostRender()
 {
    int src_i = (NUM_PASSES+1) % 2;
 
-   finalize_prgm.setOutputFramebuffer(*target);
    finalize_prgm.bind();
+   finalize_prgm.setOutputFramebuffer(*target);
    glClearColor(0, 0, 0, 1);
    glClear(GL_COLOR_BUFFER_BIT);
    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);

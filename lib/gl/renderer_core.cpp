@@ -147,14 +147,17 @@ void CoreGLDevice::initializeShaderState(const ShaderProgram& prog)
       }
    }
 #ifdef GLVIS_DEBUG
-   unordered_set<string> expectedUnifs(unif_list.begin(), unif_list.end());
-   for (const auto& pairunif : uniforms)
+   if (prog == default_prgm)
    {
-      if (expectedUnifs.find(pairunif.first) == expectedUnifs.end())
+      unordered_set<string> expectedUnifs(unif_list.begin(), unif_list.end());
+      for (const auto& pairunif : uniforms)
       {
-         std::cerr << "Warning: unexpected uniform \""
-                   << pairunif.first
-                   << "\" found in shader." << std::endl;
+         if (expectedUnifs.find(pairunif.first) == expectedUnifs.end())
+         {
+            std::cerr << "Warning: unexpected uniform \""
+                      << pairunif.first
+                      << "\" found in shader." << std::endl;
+         }
       }
    }
 #endif

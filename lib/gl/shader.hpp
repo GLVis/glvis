@@ -59,6 +59,11 @@ public:
    void setOutputFramebuffer(const FBOHandle& fbo);
    void setDefaultDrawFramebuffer();
 
+   bool operator== (const ShaderProgram& other) const
+   {
+      return program_id == other.program_id;
+   }
+
 private:
    static void GetGLSLVersion();
 
