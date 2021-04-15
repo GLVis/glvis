@@ -102,7 +102,7 @@ public:
       initializeShaderState(feedback_prgm);
       glEnable(GL_RASTERIZER_DISCARD);
    }
-   void exitXfbMode() override
+   void initRenderMode() override
    {
       glDisable(GL_RASTERIZER_DISCARD);
       initializeShaderState(default_prgm);

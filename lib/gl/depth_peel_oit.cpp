@@ -176,7 +176,6 @@ void DepthPeeler::PreRender()
       glClear(GL_COLOR_BUFFER_BIT);
    }
    device->enableBlend();
-   device->enableDepthWrite();
 }
 
 void DepthPeeler::DoRenderPass(int i, const RenderQueue& queue)
@@ -214,8 +213,6 @@ void DepthPeeler::DoRenderPass(int i, const RenderQueue& queue)
 
    int color_tex = palette->GetColorTexture();
    int alpha_tex = palette->GetAlphaTexture();
-   glDisable(GL_DEPTH_TEST);
-   device->enableBlend();
    glBlendEquation(GL_MAX);
    // Render the geometry to peel
    for (auto& geom : queue)
@@ -308,6 +305,11 @@ void DepthPeeler::PostRender()
    glVertexAttribPointer(CoreGLDevice::ATTR_VERTEX,
                          2, GL_FLOAT, false, 0, 0);
    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+   // Reset to the default program state
+   device->initRenderMode();
+   glBlendEquation(GL_FUNC_ADD);
+   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void DepthPeeler::Render(const RenderQueue& queue)

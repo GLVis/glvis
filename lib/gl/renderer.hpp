@@ -165,7 +165,7 @@ public:
    // Initializes state needed for transform feedback.
    virtual void initXfbMode() {}
    // Prepares state when exiting transform feedback.
-   virtual void exitXfbMode() {}
+   virtual void initRenderMode() {}
    // Capture the next drawn vertex buffer to a feedback buffer instead of
    // drawing to screen.
    virtual void captureXfbBuffer(PaletteState& pal, CaptureBuffer& capture,

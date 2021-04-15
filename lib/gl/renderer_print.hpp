@@ -55,7 +55,7 @@ public:
 
    virtual void PreRender() { device->initXfbMode(); }
    virtual void Render(const RenderQueue& queued);
-   virtual void PostRender() { device->exitXfbMode(); }
+   virtual void PostRender() { device->initRenderMode(); }
 
    CaptureBuffer GetLastCaptureBuffer()
    {
