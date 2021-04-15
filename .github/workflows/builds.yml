@@ -31,17 +31,28 @@ jobs:
   builds-and-tests:
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-10.15]
-        target: [debug, optim]
-        build-system: [make]
-        # 'include' allows to
-        # - add a variable without creating a new matrix dimension.
-        # - add a new combination ('build-system: cmake' case here)
         include:
           - os: ubuntu-18.04
+            target: optim
+            mpi: sequential
+            build-system: make
+          - os: ubuntu-18.04
+            target: debug
+            mpi: parallel
+            build-system: make
+          - os: macos-10.15
+            target: optim
+            mpi: sequential
+            build-system: make
+          - os: macos-10.15
+            target: debug
+            mpi: parallel
+            build-system: make
+          - os: ubuntu-18.04
             target: Release
+            mpi: sequential
             build-system: cmake
-    name: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.build-system }}
+    name: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}-${{ matrix.build-system }}
 
     runs-on: ${{ matrix.os }}
 
