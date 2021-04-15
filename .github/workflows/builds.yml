@@ -176,7 +176,7 @@ jobs:
     - name: build GLVis (cmake)
       if: matrix.build-system == 'cmake'
       run: |
-        glvis_target="Release"
+        build_type="Release"
         [[ ${{ matrix.target }} == "debug" ]] && build_type="Debug";
         cd glvis && mkdir build && cd build
         cmake \
