@@ -169,7 +169,7 @@ jobs:
     - name: build GLVis (make)
       if: matrix.build-system == 'make'
       run: |
-        glvis_target="optim"
+        glvis_target="opt"
         [[ ${{ matrix.target }} == "debug" ]] && glvis_target="debug";
         cd glvis && make ${glvis_target} -j3
 
