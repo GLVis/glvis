@@ -34,6 +34,8 @@ private:
    const double MAX_DEPTH = 10.0;
    const int NUM_PASSES = 4;
 
+   void RenderOpaque(const RenderQueue& queue);
+
    void DoRenderPass(int i, const RenderQueue& queue);
 
    MeshRenderer* renderer;
@@ -45,12 +47,14 @@ private:
    TextureHandle depthTex[2];
    TextureHandle frontColorTex[2];
    TextureHandle backColorTex[2];
+   TextureHandle opaqueColorTex, opaqueDepthTex;
 
    TextureHandle backBlendTex;
 
    FBOHandle main_peel_fbs[2];
    FBOHandle color_fbs[2];
    FBOHandle blend_back_fb;
+   FBOHandle opaque_fb;
 
    // Drawing full-screen rectangles
    BufObjHandle rect_buf;

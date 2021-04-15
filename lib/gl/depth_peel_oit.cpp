@@ -77,6 +77,38 @@ void DepthPeeler::SetGLDevice(GLDevice* dev)
    int tex_w = vp[2];
    int tex_h = vp[3];
 
+   {
+      GLuint fb_id;
+      GLuint tex_ids[2];
+      glGenFramebuffers(1, &fb_id);
+      glGenTextures(2, tex_ids);
+      opaque_fb = fb_id;
+      opaqueColorTex = tex_ids[0];
+      opaqueDepthTex = tex_ids[1];
+
+      glBindFramebuffer(GL_FRAMEBUFFER, opaque_fb);
+
+      glBindTexture(GL_TEXTURE_2D, opaqueColorTex);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, tex_w, tex_h, 0, GL_RGBA,
+                   GL_HALF_FLOAT, nullptr);
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                             opaqueColorTex, 0);
+
+      glBindTexture(GL_TEXTURE_2D, opaqueDepthTex);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, tex_w, tex_h, 0,
+                   GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                             opaqueDepthTex, 0);
+   }
+
    for (int i = 0; i < 2; i++)
    {
       {
@@ -120,6 +152,9 @@ void DepthPeeler::SetGLDevice(GLDevice* dev)
                    GL_HALF_FLOAT, nullptr);
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D,
                              backColorTex[i], 0);
+
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                             opaqueDepthTex, 0);
 
       glBindFramebuffer(GL_FRAMEBUFFER, color_fbs[i]);
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
@@ -178,6 +213,33 @@ void DepthPeeler::PreRender()
    device->enableBlend();
 }
 
+void DepthPeeler::RenderOpaque(const RenderQueue& queue)
+{
+   GLint vp[4];
+   device->getViewport(vp);
+   int tex_w = vp[2];
+   int tex_h = vp[3];
+   DefaultPass opaque_pass;
+   opaque_pass.SetGLDevice(device);
+   opaque_pass.SetTargetFramebuffer(opaque_fb);
+   opaque_pass.setPalette(*palette);
+   opaque_pass.setFontTexture(font_tex);
+   // Render opaque pass objects - this fills in the correct depth attachment
+   // texture for the depth testing of translucent peels.
+   opaque_pass.PreRender();
+   opaque_pass.Render(queue);
+   opaque_pass.PostRender();
+   // The opaque object depth data will be passed onto the peeling render
+   // passes, so all we need to do now is to blit the color data to the output
+   // framebuffer.
+   glBindFramebuffer(GL_READ_FRAMEBUFFER, opaque_fb);
+   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, *target);
+   glBlitFramebuffer(0, 0, tex_w, tex_h,
+                     0, 0, tex_w, tex_h,
+                     GL_COLOR_BUFFER_BIT,
+                     GL_LINEAR);
+}
+
 void DepthPeeler::DoRenderPass(int i, const RenderQueue& queue)
 {
    int src_i = i % 2;
@@ -214,6 +276,7 @@ void DepthPeeler::DoRenderPass(int i, const RenderQueue& queue)
    int color_tex = palette->GetColorTexture();
    int alpha_tex = palette->GetAlphaTexture();
    glBlendEquation(GL_MAX);
+   glDepthMask(GL_FALSE);
    // Render the geometry to peel
    for (auto& geom : queue)
    {
@@ -261,6 +324,7 @@ void DepthPeeler::DoRenderPass(int i, const RenderQueue& queue)
       device->setNumLights(0);
       device->drawDeviceBuffer(curr_drawable->getTextBuffer());
    }
+   glDepthMask(GL_TRUE);
 
    // Blend just-written back layer separately
    blend_prgm.bind();
@@ -286,9 +350,6 @@ void DepthPeeler::PostRender()
 
    finalize_prgm.bind();
    finalize_prgm.setOutputFramebuffer(*target);
-   auto clear_color = device->getClearColor();
-   glClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
-   glClear(GL_COLOR_BUFFER_BIT);
    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
    glActiveTexture(GL_TEXTURE0);
@@ -314,9 +375,23 @@ void DepthPeeler::PostRender()
 
 void DepthPeeler::Render(const RenderQueue& queue)
 {
+   // elements containing opaque objects should be rendered first
+   RenderQueue sorted_queue = queue;
+   auto begin_translucent =
+      std::stable_partition(sorted_queue.begin(), sorted_queue.end(),
+                            [](RenderQueue::value_type& renderPair)
+   {
+      return !renderPair.first.contains_translucent;
+   });
+   // Partition into two queues, one with opaque objects and one with
+   // translucent objects
+   RenderQueue opaque_queue(sorted_queue.begin(), begin_translucent);
+   RenderQueue translucent_queue(begin_translucent, sorted_queue.end());
+
+   RenderOpaque(opaque_queue);
    for (int i = 0; i < NUM_PASSES; i++)
    {
-      DoRenderPass(i, queue);
+      DoRenderPass(i, translucent_queue);
    }
 }
 
