@@ -126,7 +126,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.MFEM_TOP_DIR }}
-        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-v3
+        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-${{ matrix.build-system}}-v1
 
     # We are using the defaults of the MFEM action here, which is to use master
     # branch. There is an implicit assumption here that mfem master hasn't
