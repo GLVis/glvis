@@ -144,6 +144,7 @@ jobs:
         mfem-dir: ${{ env.MFEM_TOP_DIR }}
         mfem-branch: ${{ env.MFEM_BRANCH }}
         build-system: ${{ matrix.build-system }}
+        mpi: ${{ matrix.mpi }}
 
     # Install GlVis dependencies with package manager
     - name: get deps (Linux)
