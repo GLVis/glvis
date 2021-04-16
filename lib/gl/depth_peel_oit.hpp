@@ -20,6 +20,7 @@ namespace gl3
 
 class DepthPeeler : public IMainRenderPass
 {
+public:
    virtual void SetGLDevice(GLDevice* device);
 
    virtual bool Filter(const RenderParams& param)
@@ -37,8 +38,6 @@ private:
    void RenderOpaque(const RenderQueue& queue);
 
    void DoRenderPass(int i, const RenderQueue& queue);
-
-   MeshRenderer* renderer;
 
    ShaderProgram main_prgm;
    ShaderProgram blend_prgm;
