@@ -149,7 +149,7 @@ void MeshRenderer::render(const vector<IMainRenderPass*>& main_passes,
    std::vector<RenderQueue> matched_queues(main_passes.size());
    for (auto drawable : queued)
    {
-      for (int ipass = 0; ipass < main_passes.size(); ipass++)
+      for (size_t ipass = 0; ipass < main_passes.size(); ipass++)
       {
          if (main_passes[ipass]->Filter(drawable.first))
          {
@@ -167,7 +167,7 @@ void MeshRenderer::render(const vector<IMainRenderPass*>& main_passes,
       extra_passes[0]->PreRender();
       curr_out = extra_passes[0]->GetSourceFramebuffer();
    }
-   for (int ipass = 0; ipass < main_passes.size(); ipass++)
+   for (size_t ipass = 0; ipass < main_passes.size(); ipass++)
    {
       main_passes[ipass]->SetTargetFramebuffer(curr_out);
       main_passes[ipass]->PreRender();
@@ -177,7 +177,7 @@ void MeshRenderer::render(const vector<IMainRenderPass*>& main_passes,
 
    if (extra_passes.size() > 0)
    {
-      for (int ipass = 1; ipass < extra_passes.size(); ipass++)
+      for (size_t ipass = 1; ipass < extra_passes.size(); ipass++)
       {
          // Finalize last stage's results onto next stage
          extra_passes[ipass]->PreRender();
