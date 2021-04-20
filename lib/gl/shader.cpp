@@ -137,27 +137,28 @@ std::string ShaderProgram::formatShader(const std::string& inShader,
       else if (shaderType == GL_FRAGMENT_SHADER)
       {
          formatted = std::regex_replace(formatted, std::regex("varying"), "in");
-
-         // requires GL_ARB_explicit_attrib_location extension or GLSL 3.30
-         // although gl_FragColor was deprecated in GLSL 1.3
          for (int i = 0; i < num_outputs; i++)
          {
             std::string indexString = "gl_FragData[";
             indexString += std::to_string(i) + "]";
             std::string outputString = "out vec4 fragColor_";
             outputString += std::to_string(i) + ";\n";
-            if (glsl_version > 130 && glsl_version < 330)
+            if (glsl_version >= 300)
             {
-
-               formatted = outputString + formatted;
-               formatted = std::regex_replace(formatted, std::regex(indexString),
-                                              "fragColor");
-            }
-            else if (glsl_version >= 330)
-            {
+               // GLSL/OpenGL 3.30+ or WebGL 2 (GLSL 3.00 ES):
+               // Prefer in-shader output index setting.
                std::string layoutString = "layout(location = ";
                layoutString += std::to_string(i) + ") ";
                formatted = layoutString + outputString + formatted;
+            }
+            else
+            {
+               // GLSL 1.30-1.50 (OpenGL 3.0-3.2):
+               // No in-shader output indexing.
+               // Output locations will be set using glBindFragDataLocation.
+               formatted = outputString + formatted;
+               formatted = std::regex_replace(formatted, std::regex(indexString),
+                                              "fragColor");
             }
             if (i == 0)
             {
@@ -242,11 +243,14 @@ bool ShaderProgram::linkShaders(const std::vector<GLuint>& shaders)
    }
 
 #ifndef __EMSCRIPTEN__
-   // Bind fragment output variables to MRT indices.
-   for (int i = 0; i < num_outputs; i++)
+   if (glsl_version >= 130 && glsl_version < 300)
    {
-      std::string fragOutVar = "fragColor_" + std::to_string(i);
-      glBindFragDataLocation(program_id, i, fragOutVar.c_str());
+      // Bind fragment output variables to MRT indices.
+      for (int i = 0; i < num_outputs; i++)
+      {
+         std::string fragOutVar = "fragColor_" + std::to_string(i);
+         glBindFragDataLocation(program_id, i, fragOutVar.c_str());
+      }
    }
 #endif
 
