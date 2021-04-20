@@ -65,6 +65,7 @@ private:
    void mapShaderUniforms();
 
    static int glsl_version;
+   const static bool glsl_is_es;
    std::unordered_map<int, std::string> attrib_idx;
    int num_outputs = 0;
 

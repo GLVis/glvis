@@ -12,13 +12,6 @@
 #include "shader.hpp"
 #include <regex>
 
-#ifdef __EMSCRIPTEN__
-// TODO: for webgl glsl the version ends in "es": #version GLSL_VER es
-const std::string GLSL_HEADER = "precision mediump float;\n";
-#else
-const std::string GLSL_HEADER = "#version GLSL_VER\n";
-#endif
-
 namespace gl3
 {
 
@@ -59,6 +52,11 @@ bool ShaderProgram::create(std::string vertexShader,
 }
 
 int ShaderProgram::glsl_version = -1;
+#ifndef __EMSCRIPTEN__
+const bool ShaderProgram::glsl_is_es = false;
+#else
+const bool ShaderProgram::glsl_is_es = true;
+#endif
 
 void ShaderProgram::GetGLSLVersion()
 {
@@ -117,7 +115,9 @@ void ShaderProgram::GetGLSLVersion()
          glsl_version = 300;
       }
 #endif
-      std::cerr << "Using GLSL " << glsl_version << std::endl;
+      std::cerr << "Using GLSL " << glsl_version;
+      if (glsl_is_es) { std::cerr << " ES"; }
+      std::cerr << std::endl;
    }
 }
 
@@ -134,7 +134,6 @@ std::string ShaderProgram::formatShader(const std::string& inShader,
          formatted = std::regex_replace(formatted, std::regex("attribute"), "in");
          formatted = std::regex_replace(formatted, std::regex("varying"), "out");
       }
-
       else if (shaderType == GL_FRAGMENT_SHADER)
       {
          formatted = std::regex_replace(formatted, std::regex("varying"), "in");
@@ -167,7 +166,6 @@ std::string ShaderProgram::formatShader(const std::string& inShader,
             }
          }
       }
-
       else
       {
          std::cerr << "buildShaderString: unknown shader type" << std::endl;
@@ -181,16 +179,28 @@ std::string ShaderProgram::formatShader(const std::string& inShader,
    {
       formatted = "#define USE_ALPHA\n" + formatted;
    }
-   // add the header
-   formatted = std::regex_replace(GLSL_HEADER, std::regex("GLSL_VER"),
-                                  std::to_string(glsl_version)) + formatted;
-#ifdef __EMSCRIPTEN__
-   // special prepend for WebGL 2 shaders
-   if (glsl_version == 300)
+
+   if (glsl_is_es)
    {
-      formatted = "#version 300 es\n" + formatted;
+      // Add precision specifier - required for WebGL
+      formatted = "precision mediump float;\n" + formatted;
+      if (num_outputs > 1 && glsl_version == 100)
+      {
+         // Enable WEBGL_draw_buffers in the shader
+         formatted = "#extension GL_EXT_draw_buffers : require\n" + formatted;
+      }
+      if (glsl_version == 300)
+      {
+         // WebGL 2 shaders require explicit version setting
+         formatted = "#version 300 es\n" + formatted;
+      }
    }
-#endif
+   else
+   {
+      // Append version setting for all desktop shaders
+      formatted = std::regex_replace("#version GLSL_VER\n", std::regex("GLSL_VER"),
+                                     std::to_string(glsl_version)) + formatted;
+   }
 
    return formatted;
 }
