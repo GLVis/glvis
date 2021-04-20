@@ -31,17 +31,28 @@ jobs:
   builds-and-tests:
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-10.15]
-        target: [debug, optim]
-        build-system: [make]
-        # 'include' allows to
-        # - add a variable without creating a new matrix dimension.
-        # - add a new combination ('build-system: cmake' case here)
         include:
           - os: ubuntu-18.04
-            target: Release
+            target: optim
+            mpi: sequential
+            build-system: make
+          - os: ubuntu-18.04
+            target: debug
+            mpi: parallel
+            build-system: make
+          - os: macos-10.15
+            target: optim
+            mpi: sequential
+            build-system: make
+          - os: macos-10.15
+            target: debug
+            mpi: parallel
+            build-system: make
+          - os: ubuntu-18.04
+            target: optim
+            mpi: sequential
             build-system: cmake
-    name: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.build-system }}
+    name: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}-${{ matrix.build-system }}
 
     runs-on: ${{ matrix.os }}
 
@@ -49,6 +60,7 @@ jobs:
     - name: get MPI (Linux)
       if: matrix.os == 'ubuntu-18.04'
       run: |
+        sudo apt-get update
         sudo apt-get install mpich libmpich-dev
         export MAKE_CXX_FLAG="MPICXX=mpic++"
 
@@ -115,7 +127,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.MFEM_TOP_DIR }}
-        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-v3
+        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-${{ matrix.build-system}}-v1
 
     # We are using the defaults of the MFEM action here, which is to use master
     # branch. There is an implicit assumption here that mfem master hasn't
@@ -133,11 +145,13 @@ jobs:
         mfem-dir: ${{ env.MFEM_TOP_DIR }}
         mfem-branch: ${{ env.MFEM_BRANCH }}
         build-system: ${{ matrix.build-system }}
+        mpi: ${{ matrix.mpi }}
 
     # Install GlVis dependencies with package manager
     - name: get deps (Linux)
       if: matrix.os == 'ubuntu-18.04'
       run: |
+        sudo apt-get update
         sudo apt-get install libfontconfig1-dev libfreetype6-dev libsdl2-dev libglew-dev libglm-dev libpng-dev
 
     - name: Set up Homebrew
@@ -158,17 +172,18 @@ jobs:
     - name: build GLVis (make)
       if: matrix.build-system == 'make'
       run: |
-        glvis_target=""
-        [[ ${{ matrix.target }} == "optim" ]] && glvis_target="opt";
+        glvis_target="opt"
         [[ ${{ matrix.target }} == "debug" ]] && glvis_target="debug";
         cd glvis && make ${glvis_target} -j3
 
     - name: build GLVis (cmake)
       if: matrix.build-system == 'cmake'
       run: |
+        build_type="Release"
+        [[ ${{ matrix.target }} == "debug" ]] && build_type="Debug";
         cd glvis && mkdir build && cd build
         cmake \
-          -D CMAKE_BUILD_TYPE:STRING=${{ matrix.target }} \
+          -D CMAKE_BUILD_TYPE:STRING=${build_type} \
           -D mfem_DIR:PATH=${GITHUB_WORKSPACE}/${MFEM_TOP_DIR}/build \
           ..
         make -j3
