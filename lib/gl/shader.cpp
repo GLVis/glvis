@@ -157,9 +157,11 @@ std::string ShaderProgram::formatShader(const std::string& inShader,
                // No in-shader output indexing.
                // Output locations will be set using glBindFragDataLocation.
                formatted = outputString + formatted;
-               formatted = std::regex_replace(formatted, std::regex(indexString),
-                                              "fragColor");
             }
+            std::string indexStringRgx = "gl_FragData\\[";
+            indexStringRgx += std::to_string(i) + "\\]";
+            formatted = std::regex_replace(formatted, std::regex(indexStringRgx),
+                                           "fragColor_" + std::to_string(i));
             if (i == 0)
             {
                formatted = std::regex_replace(formatted, std::regex("gl_FragColor"),
