@@ -385,13 +385,13 @@ void MyExpose(GLsizei w, GLsizei h)
    gl3::DepthPeeler rndr_depth_peeled;
    if (!use_depth_peel)
    {
-       rndr_main_pass.setFontTexture(GetFont()->getFontTex());
-       rndr_main_pass.setPalette(locscene->palette);
+      rndr_main_pass.setFontTexture(GetFont()->getFontTex());
+      rndr_main_pass.setPalette(locscene->palette);
    }
    else
    {
-       rndr_depth_peeled.setFontTexture(GetFont()->getFontTex());
-       rndr_depth_peeled.setPalette(locscene->palette);
+      rndr_depth_peeled.setFontTexture(GetFont()->getFontTex());
+      rndr_depth_peeled.setPalette(locscene->palette);
    }
    gl3::MultisamplePass rndr_msaa_pass;
    // Set antialiasing parameters
@@ -1172,18 +1172,18 @@ void KeyAPressed()
 {
    if (glvis_multisample < 0)
    {
-       cout << "Multisampling disabled." << endl;
-       return;
+      cout << "Multisampling disabled." << endl;
+      return;
    }
    multisample_status = !multisample_status;
 
    if (multisample_status)
    {
-       cout << "Multisampling/Antialiasing: on" << endl;
+      cout << "Multisampling/Antialiasing: on" << endl;
    }
    else
    {
-       cout << "Multisampling/Antialiasing: off" << endl;
+      cout << "Multisampling/Antialiasing: off" << endl;
    }
 
    SendExposeEvent();

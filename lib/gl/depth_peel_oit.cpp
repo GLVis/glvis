@@ -44,8 +44,8 @@ void DepthPeeler::SetGLDevice(GLDevice* dev)
       float quad_verts[] =
       {
          -1.f, 1.f, -1.f, -1.f, 1.f, -1.f,
-            -1.f, 1.f, 1.f, -1.f, 1.f, 1.f,
-         };
+         -1.f, 1.f, 1.f, -1.f, 1.f, 1.f,
+      };
       glBindBuffer(GL_ARRAY_BUFFER, vbo);
       glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), quad_verts, GL_STATIC_DRAW);
       glBindBuffer(GL_ARRAY_BUFFER, 0);
