@@ -247,6 +247,8 @@ public:
       device.reset(new TDevice(device));
    }
 
+   GLDevice* getDevice() const { return device.get(); }
+
    void SetLineWidth(float w)
    {
       line_w = w;

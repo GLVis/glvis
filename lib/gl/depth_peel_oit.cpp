@@ -44,8 +44,8 @@ void DepthPeeler::SetGLDevice(GLDevice* dev)
       float quad_verts[] =
       {
          -1.f, 1.f, -1.f, -1.f, 1.f, -1.f,
-         -1.f, 1.f, 1.f, -1.f, 1.f, 1.f,
-      };
+            -1.f, 1.f, 1.f, -1.f, 1.f, 1.f,
+         };
       glBindBuffer(GL_ARRAY_BUFFER, vbo);
       glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), quad_verts, GL_STATIC_DRAW);
       glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -71,7 +71,10 @@ void DepthPeeler::SetGLDevice(GLDevice* dev)
    {
       std::cerr << "Unable to create depth peeling blending program." << std::endl;
    }
+}
 
+void DepthPeeler::CreateScreenPeelObjs()
+{
    GLint vp[4];
    device->getViewport(vp);
    int tex_w = vp[2];
@@ -187,6 +190,7 @@ void DepthPeeler::SetGLDevice(GLDevice* dev)
 
 void DepthPeeler::PreRender()
 {
+   CreateScreenPeelObjs();
    // Clear back blend buffer
    {
       GLenum blendBufs = GL_COLOR_ATTACHMENT0;

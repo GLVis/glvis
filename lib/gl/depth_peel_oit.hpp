@@ -35,6 +35,8 @@ private:
    const double MAX_DEPTH = 10.0;
    const int NUM_PASSES = 4;
 
+   void CreateScreenPeelObjs();
+
    void RenderOpaque(const RenderQueue& queue);
 
    void DoRenderPass(int i, const RenderQueue& queue);

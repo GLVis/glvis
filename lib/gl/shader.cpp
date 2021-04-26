@@ -261,6 +261,11 @@ GLuint ShaderProgram::compileShader(const std::string& inShader,
 
 bool ShaderProgram::linkShaders(const std::vector<GLuint>& shaders)
 {
+   program_id = glCreateProgram();
+   if (program_id == 0)
+   {
+      std::cerr << "Failed to create an OpenGL program object." << std::endl;
+   }
    // Bind all incoming attributes to their VAO indices.
    for (auto attrib_pair : attrib_idx)
    {

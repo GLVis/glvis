@@ -53,6 +53,10 @@ float line_w_aa = gl3::LINE_WIDTH_AA;
 SdlWindow * wnd = nullptr;
 bool wndLegacyGl = false;
 
+gl3::DefaultPass rndr_main_pass;
+gl3::DepthPeeler rndr_depth_peeled;
+gl3::MultisamplePass rndr_msaa_pass;
+
 SdlWindow * GetAppWindow()
 {
    return wnd;
@@ -89,6 +93,10 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    {
       wnd->clearEvents();
    }
+
+   rndr_main_pass.SetGLDevice(wnd->getRenderer().getDevice());
+   rndr_msaa_pass.SetGLDevice(wnd->getRenderer().getDevice());
+   rndr_depth_peeled.SetGLDevice(wnd->getRenderer().getDevice());
 
 #ifdef GLVIS_DEBUG
    cout << "Window should be up" << endl;
@@ -381,8 +389,6 @@ void MyExpose(GLsizei w, GLsizei h)
 {
    MyReshape (w, h);
    bool use_depth_peel = !(locscene->matAlpha == 1.0);
-   gl3::DefaultPass rndr_main_pass;
-   gl3::DepthPeeler rndr_depth_peeled;
    if (!use_depth_peel)
    {
       rndr_main_pass.setFontTexture(GetFont()->getFontTex());
@@ -393,7 +399,6 @@ void MyExpose(GLsizei w, GLsizei h)
       rndr_depth_peeled.setFontTexture(GetFont()->getFontTex());
       rndr_depth_peeled.setPalette(locscene->palette);
    }
-   gl3::MultisamplePass rndr_msaa_pass;
    // Set antialiasing parameters
    rndr_msaa_pass.SetAntialiasing(multisample_status);
    rndr_msaa_pass.SetNumSamples(GetMultisample());

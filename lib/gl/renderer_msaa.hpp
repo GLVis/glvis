@@ -42,6 +42,14 @@ public:
    void SetNumSamples(int samples)
    {
       msaa_samples = samples;
+      if (msaa_samples > max_msaa_samples)
+      {
+         std::cerr << "GL_MAX_SAMPLES = " << max_msaa_samples
+                   << " but requested " << msaa_samples << "x MSAA. ";
+         std::cerr << "Setting antialiasing mode to "
+                   << max_msaa_samples << "x MSAA." << endl;
+         msaa_samples = max_msaa_samples;
+      }
    }
    int GetNumSamples() { return msaa_samples; }
 
@@ -50,9 +58,12 @@ public:
    void SetLineWidthMS(float w);
    float GetLineWidthMS() { return line_w_aa; }
 private:
-   bool feat_use_fbo_antialias;
+   void CreateFramebuffer();
+
+   bool feat_use_fbo_antialias = false;
    bool msaa_enable{false};
-   int msaa_samples;
+   int max_msaa_samples = 1;
+   int msaa_samples = 1;
    float line_w, line_w_aa;
 
    RenderBufHandle renderBufs[2];

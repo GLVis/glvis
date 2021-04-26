@@ -136,14 +136,6 @@ void MeshRenderer::render(const vector<IMainRenderPass*>& main_passes,
                           const vector<IRenderPass*>& extra_passes,
                           const RenderQueue& queued)
 {
-   for (IMainRenderPass* pass : main_passes)
-   {
-      pass->SetGLDevice(device.get());
-   }
-   for (IRenderPass* pass : extra_passes)
-   {
-      pass->SetGLDevice(device.get());
-   }
    // Step 1: Match renderables in the queue with the *first* render pass that
    //         can handle them.
    std::vector<RenderQueue> matched_queues(main_passes.size());

@@ -23,11 +23,6 @@ class ShaderProgram
 public:
    ShaderProgram()
    {
-      program_id = glCreateProgram();
-      if (program_id == 0)
-      {
-         std::cerr << "Failed to create an OpenGL program object." << std::endl;
-      }
    }
 
    bool create(std::string vertexShader,

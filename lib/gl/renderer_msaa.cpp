@@ -17,7 +17,6 @@ namespace gl3
 void MultisamplePass::SetGLDevice(GLDevice* dev)
 {
    IRenderPass::SetGLDevice(dev);
-   int max_msaa_samples;
 #ifdef __EMSCRIPTEN__
    const std::string versionString
       = reinterpret_cast<const char*>(glGetString(GL_VERSION));
@@ -32,54 +31,47 @@ void MultisamplePass::SetGLDevice(GLDevice* dev)
    feat_use_fbo_antialias = GLEW_VERSION_3_0;
    glGetIntegerv(GL_MAX_SAMPLES, &max_msaa_samples);
 #endif
-   if (msaa_samples > max_msaa_samples)
+}
+
+void MultisamplePass::CreateFramebuffer()
+{
+   GLuint colorBuf, depthBuf;
+   glGenRenderbuffers(1, &colorBuf);
+   glGenRenderbuffers(1, &depthBuf);
+   renderBufs[0] = RenderBufHandle(colorBuf);
+   renderBufs[1] = RenderBufHandle(depthBuf);
+
+   GLuint fbo;
+   glGenFramebuffers(1, &fbo);
+
+   int vp[4];
+   device->getViewport(vp);
+   int width = vp[2];
+   int height = vp[3];
+   glBindRenderbuffer(GL_RENDERBUFFER, colorBuf);
+   glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_samples,
+                                    GL_RGBA8, width, height);
+   glBindRenderbuffer(GL_RENDERBUFFER, depthBuf);
+   glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_samples,
+                                    GL_DEPTH_COMPONENT24, width, height);
+   glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                             GL_RENDERBUFFER, colorBuf);
+   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                             GL_RENDERBUFFER, depthBuf);
+
+   if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
    {
-      std::cerr << "GL_MAX_SAMPLES = " << max_msaa_samples
-                << " but requested " << msaa_samples << "x MSAA. ";
-      std::cerr << "Setting antialiasing mode to "
-                << max_msaa_samples << "x MSAA." << endl;
-      msaa_samples = max_msaa_samples;
+      cerr << "Unable to create multisampled renderbuffer." << flush;
+      glDeleteFramebuffers(1, &fbo);
    }
-   if (feat_use_fbo_antialias)
+   else
    {
-      GLuint colorBuf, depthBuf;
-      glGenRenderbuffers(1, &colorBuf);
-      glGenRenderbuffers(1, &depthBuf);
-      renderBufs[0] = RenderBufHandle(colorBuf);
-      renderBufs[1] = RenderBufHandle(depthBuf);
-
-      GLuint fbo;
-      glGenFramebuffers(1, &fbo);
-
-      int vp[4];
-      device->getViewport(vp);
-      int width = vp[2];
-      int height = vp[3];
-      glBindRenderbuffer(GL_RENDERBUFFER, colorBuf);
-      glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_samples,
-                                       GL_RGBA8, width, height);
-      glBindRenderbuffer(GL_RENDERBUFFER, depthBuf);
-      glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_samples,
-                                       GL_DEPTH_COMPONENT24, width, height);
-      glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-      glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                                GL_RENDERBUFFER, colorBuf);
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                                GL_RENDERBUFFER, depthBuf);
-
-      if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-      {
-         cerr << "Unable to create multisampled renderbuffer." << flush;
-         glDeleteFramebuffers(1, &fbo);
-      }
-      else
-      {
-         msaaFb = FBOHandle(fbo);
-      }
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      msaaFb = FBOHandle(fbo);
    }
+   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void MultisamplePass::PreRender()
@@ -88,6 +80,7 @@ void MultisamplePass::PreRender()
    {
       if (feat_use_fbo_antialias)
       {
+         CreateFramebuffer();
          glBindFramebuffer(GL_FRAMEBUFFER, msaaFb);
       }
       else
