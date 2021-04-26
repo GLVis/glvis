@@ -185,8 +185,11 @@ std::string ShaderProgram::formatShader(const std::string& inShader,
 
    if (glsl_is_es)
    {
-      // Add precision specifier - required for WebGL
-      formatted = "precision mediump float;\n" + formatted;
+      if (shaderType == GL_FRAGMENT_SHADER)
+      {
+         // Add precision specifier - required for WebGL fragment shaders
+         formatted = "precision mediump float;\n" + formatted;
+      }
       if (num_outputs > 1 && glsl_version == 100)
       {
          // Enable WEBGL_draw_buffers in the shader
