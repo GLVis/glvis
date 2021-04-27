@@ -31,7 +31,7 @@ void fragmentClipPlane()
    }
 }
 
-#define MAX_DEPTH 10.0
+#define MAX_DEPTH 1.0
 
 // location 0: depth
 // location 1: front color

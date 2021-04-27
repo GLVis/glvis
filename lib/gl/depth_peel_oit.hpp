@@ -32,7 +32,7 @@ public:
    virtual void Render(const RenderQueue& queue);
    virtual void PostRender();
 private:
-   const double MAX_DEPTH = 10.0;
+   const double MAX_DEPTH = 1.0;
    const int NUM_PASSES = 4;
 
    void CreateScreenPeelObjs();
@@ -40,6 +40,12 @@ private:
    void RenderOpaque(const RenderQueue& queue);
 
    void DoRenderPass(int i, const RenderQueue& queue);
+
+   TextureHandle CreateScreenTexture(GLenum internalFmt,
+                                     GLenum format,
+                                     GLenum type);
+
+   int screen_w, screen_h;
 
    ShaderProgram main_prgm;
    ShaderProgram blend_prgm;

@@ -34,6 +34,24 @@ const std::string DepthPeelFS[] =
 namespace gl3
 {
 
+TextureHandle DepthPeeler::CreateScreenTexture(GLenum internalFmt,
+                                               GLenum format,
+                                               GLenum type)
+{
+    GLuint tex_id;
+    glGenTextures(1, &tex_id);
+
+    TextureHandle texture = tex_id;
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFmt, screen_w, screen_h, 0, format,
+                 type, nullptr);
+    return texture;
+}
+
 void DepthPeeler::SetGLDevice(GLDevice* dev)
 {
    IMainRenderPass::SetGLDevice(dev);
@@ -77,37 +95,22 @@ void DepthPeeler::CreateScreenPeelObjs()
 {
    GLint vp[4];
    device->getViewport(vp);
-   int tex_w = vp[2];
-   int tex_h = vp[3];
+   screen_w = vp[2];
+   screen_h = vp[3];
 
    {
       GLuint fb_id;
-      GLuint tex_ids[2];
       glGenFramebuffers(1, &fb_id);
-      glGenTextures(2, tex_ids);
       opaque_fb = fb_id;
-      opaqueColorTex = tex_ids[0];
-      opaqueDepthTex = tex_ids[1];
 
       glBindFramebuffer(GL_FRAMEBUFFER, opaque_fb);
 
-      glBindTexture(GL_TEXTURE_2D, opaqueColorTex);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, tex_w, tex_h, 0, GL_RGBA,
-                   GL_HALF_FLOAT, nullptr);
+      opaqueColorTex = CreateScreenTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);
+      opaqueDepthTex = CreateScreenTexture(GL_DEPTH_COMPONENT,
+                                           GL_DEPTH_COMPONENT,
+                                           GL_UNSIGNED_INT);
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                              opaqueColorTex, 0);
-
-      glBindTexture(GL_TEXTURE_2D, opaqueDepthTex);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, tex_w, tex_h, 0,
-                   GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
                              opaqueDepthTex, 0);
    }
@@ -115,44 +118,23 @@ void DepthPeeler::CreateScreenPeelObjs()
    for (int i = 0; i < 2; i++)
    {
       {
-         GLuint fb_ids[2], tex_ids[3];
+         GLuint fb_ids[2];
          glGenFramebuffers(2, fb_ids);
-         glGenTextures(3, tex_ids);
          main_peel_fbs[i] = fb_ids[0];
          color_fbs[i] = fb_ids[1];
-         frontColorTex[i] = tex_ids[0];
-         backColorTex[i] = tex_ids[1];
-         depthTex[i] = tex_ids[2];
       }
-      glBindFramebuffer(GL_FRAMEBUFFER, main_peel_fbs[i]);
 
-      glBindTexture(GL_TEXTURE_2D, depthTex[i]);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, tex_w, tex_h, 0, GL_RG, GL_FLOAT,
-                   nullptr);
+      depthTex[i] = CreateScreenTexture(GL_RG32F, GL_RG, GL_FLOAT);
+      frontColorTex[i] = CreateScreenTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);
+      backColorTex[i] = CreateScreenTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);
+
+      glBindFramebuffer(GL_FRAMEBUFFER, main_peel_fbs[i]);
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                              depthTex[i], 0);
 
-      glBindTexture(GL_TEXTURE_2D, frontColorTex[i]);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, tex_w, tex_h, 0, GL_RGBA,
-                   GL_HALF_FLOAT, nullptr);
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D,
                              frontColorTex[i], 0);
 
-      glBindTexture(GL_TEXTURE_2D, backColorTex[i]);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, tex_w, tex_h, 0, GL_RGBA,
-                   GL_HALF_FLOAT, nullptr);
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D,
                              backColorTex[i], 0);
 
@@ -167,20 +149,12 @@ void DepthPeeler::CreateScreenPeelObjs()
    }
 
    {
-      GLuint fb_id, tex_id;
+      GLuint fb_id;
       glGenFramebuffers(1, &fb_id);
-      glGenTextures(1, &tex_id);
       blend_back_fb = fb_id;
-      backBlendTex = tex_id;
    }
+   backBlendTex = CreateScreenTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);
    glBindFramebuffer(GL_FRAMEBUFFER, blend_back_fb);
-   glBindTexture(GL_TEXTURE_2D, backBlendTex);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, tex_w, tex_h, 0, GL_RGBA,
-                GL_HALF_FLOAT, nullptr);
    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                           backBlendTex, 0);
 
@@ -253,7 +227,7 @@ void DepthPeeler::DoRenderPass(int i, const RenderQueue& queue)
       GLenum depthBufs = GL_COLOR_ATTACHMENT0;
       glBindFramebuffer(GL_DRAW_FRAMEBUFFER, main_peel_fbs[dst_i]);
       glDrawBuffers(1, &depthBufs);
-      glClearColor(-10., -10., 0, 0);
+      glClearColor(-1., -1., 0, 0);
       glClear(GL_COLOR_BUFFER_BIT);
 
       GLenum colorBufs[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
