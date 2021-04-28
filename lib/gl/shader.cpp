@@ -214,7 +214,7 @@ std::string ShaderProgram::formatShader(const std::string& inShader,
       formatted = std::regex_replace(formatted, std::regex("texture2D"), "texture");
    }
 
-   if (GLDevice::useLegacyTextureFmts())
+   if (!GLDevice::isOpenGL3())
    {
       formatted = "#define USE_ALPHA\n" + formatted;
    }

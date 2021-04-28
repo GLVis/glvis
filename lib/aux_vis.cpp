@@ -1607,7 +1607,7 @@ void InitFont()
 {
    // This function is called after the window is created.
    GLenum alphaChannel =
-      gl3::GLDevice::useLegacyTextureFmts() ? GL_ALPHA : GL_RED;
+      gl3::GLDevice::isOpenGL3() ? GL_RED : GL_ALPHA;
    glvis_font.setAlphaChannel(alphaChannel);
    bool try_fc_patterns = true;
    if (!priority_font.empty())

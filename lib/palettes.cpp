@@ -7718,18 +7718,18 @@ void PaletteState::Init()
       alpha_tex = alphaTexId;
 
       GLenum alpha_internal;
-      if (gl3::GLDevice::useLegacyTextureFmts())
-      {
-         alpha_internal = GL_ALPHA;
-         alpha_channel = GL_ALPHA;
-         rgba_internal = GL_RGBA;
-      }
-      else
+      if (gl3::GLDevice::isOpenGL3())
       {
          // WebGL 2 requires sized internal format for float texture
          alpha_internal = GL_R32F;
          alpha_channel = GL_RED;
          rgba_internal = GL_RGBA32F;
+      }
+      else
+      {
+         alpha_internal = GL_ALPHA;
+         alpha_channel = GL_ALPHA;
+         rgba_internal = GL_RGBA;
       }
       // set alpha texture to 1.0
       std::vector<float> alphaTexData(MaxTextureSize * 2);

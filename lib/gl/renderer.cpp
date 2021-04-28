@@ -24,21 +24,21 @@ namespace gl3
 // unsized formats like GL_RED and GL_RGBA no longer support floating-point
 // data being passed in, so use of the sized internal formats is obligatory in
 // WebGL 2.
-bool GLDevice::useLegacyTextureFmts()
+bool GLDevice::isOpenGL3()
 {
 #ifdef __EMSCRIPTEN__
    const std::string versionString
       = reinterpret_cast<const char*>(glGetString(GL_VERSION));
    if (versionString.find("OpenGL ES 3.0") != std::string::npos)
    {
-      return false;
+      return true;
    }
    else
    {
-      return true;
+      return false;
    }
 #else
-   return !GLEW_VERSION_3_0;
+   return GLEW_VERSION_3_0;
 #endif
 }
 

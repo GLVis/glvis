@@ -110,7 +110,7 @@ public:
 
    // If true, use unsized internal formats and GL_ALPHA for single-channel
    // data. Otherwise, use the newer sized internal formats and GL_RED.
-   static bool useLegacyTextureFmts();
+   static bool isOpenGL3();
 
    void enableBlend() { blend_enabled = true; glEnable(GL_BLEND); }
    void disableBlend() { blend_enabled = false; glDisable(GL_BLEND); }
