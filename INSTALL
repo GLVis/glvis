@@ -186,10 +186,10 @@ Some building considerations
 
   2) Build GLVis with SDL 2.0.12, the last version which appears to avoid the
      error. Steps for manually building SDL2 from source are located under the
-     'Dependency building instructions' section. You may need to add a
+     'Dependency building instructions' section below. You may need to add a
      '--disable-video-x11' switch to the ./configure command.
-     Note that while this method avoids the hard error, and allows for real-
-     time visualization, occasional hangs have been reported with this method.
+     Note that while this avoids the hard error, and allows for real-time
+     visualization, occasional hangs have been reported with this method.
 
 Dependency building instructions
 ================================
