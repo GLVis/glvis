@@ -324,7 +324,7 @@ void DepthPeeler::DoRenderPass(int i, const RenderQueue& queue)
 
 void DepthPeeler::PostRender()
 {
-   int src_i = (NUM_PASSES+1) % 2;
+   int src_i = NUM_PASSES % 2;
 
    finalize_prgm.bind();
    finalize_prgm.setOutputFramebuffer(*target);
