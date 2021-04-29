@@ -65,7 +65,7 @@ void Framebuffer::BlitFrom(const Framebuffer &fb_from, int w, int h,
    if (GLDevice::isOpenGL3())
    {
       glBindFramebuffer(GL_DRAW_FRAMEBUFFER, handle);
-      glBindFramebuffer(GL_READ_FRAMEBUFFER, fb_from);
+      glBindFramebuffer(GL_READ_FRAMEBUFFER, fb_from.handle);
       glBlitFramebuffer(0, 0, w, h,
                         0, 0, w, h,
                         GL_COLOR_BUFFER_BIT, filter);
