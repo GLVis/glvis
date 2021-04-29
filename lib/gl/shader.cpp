@@ -234,6 +234,19 @@ bool ShaderProgram::linkShaders(const std::vector<GLuint>& shaders)
    {
       std::cerr << "Failed to create an OpenGL program object." << std::endl;
    }
+   // Set transform feedback varyings, if any
+   if (!xfrm_varyings.empty())
+   {
+       std::vector<const char*> varyings_c_str;
+       for (const std::string& var : xfrm_varyings)
+       {
+           varyings_c_str.push_back(var.c_str());
+       }
+       glTransformFeedbackVaryings(program_id,
+                                   xfrm_varyings.size(),
+                                   varyings_c_str.data(),
+                                   GL_INTERLEAVED_ATTRIBS);
+   }
    // Bind all incoming attributes to their VAO indices.
    for (auto attrib_pair : attrib_idx)
    {

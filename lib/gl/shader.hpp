@@ -32,6 +32,11 @@ public:
 
    bool isCompiled() const { return is_compiled; }
 
+   void setFeedbackVaryings(const std::vector<std::string>& varyings)
+   {
+       xfrm_varyings = varyings;
+   }
+
    int uniform(std::string uniformName) const
    {
       auto unifId = uniform_idx.find(uniformName);
@@ -74,6 +79,7 @@ private:
    ShaderHandle fragment_shader = 0;
    bool is_compiled = false;
    std::unordered_map<std::string, GLuint> uniform_idx;
+   std::vector<std::string> xfrm_varyings;
 };
 
 }

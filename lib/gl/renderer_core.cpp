@@ -110,14 +110,7 @@ bool CoreGLDevice::compileShaders()
 #ifndef __EMSCRIPTEN__
    if (GLEW_EXT_transform_feedback || GLEW_VERSION_3_0)
    {
-      const char * xfrm_varyings[] =
-      {
-         "gl_Position",
-         "fColor",
-         "fClipCoord",
-      };
-      glTransformFeedbackVaryings(feedback_prgm.getProgramId(), 3, xfrm_varyings,
-                                  GL_INTERLEAVED_ATTRIBS);
+      feedback_prgm.setFeedbackVaryings({"gl_Position", "fColor", "fClipCoord"});
 
       if (!feedback_prgm.create(PRINTING_VS, PRINTING_FS, attribMap, 1))
       {
