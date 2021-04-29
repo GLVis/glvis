@@ -58,38 +58,6 @@ bool ShaderProgram::create(std::string vertexShader,
    return is_compiled;
 }
 
-void ShaderProgram::setOutputFramebuffer(const FBOHandle& fbo)
-{
-   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-   if (num_outputs == 0)
-   {
-      std::cerr << "Warning: shader has no outputs." << std::endl;
-      return;
-   }
-   vector<GLenum> output_bufs(num_outputs);
-   for (int iout = 0; iout < num_outputs; iout++)
-   {
-      output_bufs[iout] = GL_COLOR_ATTACHMENT0 + iout;
-   }
-   glDrawBuffers(num_outputs, output_bufs.data());
-}
-
-void ShaderProgram::setDefaultDrawFramebuffer()
-{
-   if (num_outputs == 0)
-   {
-      std::cerr << "Warning: shader has no outputs." << std::endl;
-   }
-   if (num_outputs > 1)
-   {
-      std::cerr << "Warning: attempting to set a shader with more than one "
-                << "output on the default framebuffer.";
-   }
-   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-   GLenum back_buf = GL_BACK;
-   glDrawBuffers(1, &back_buf);
-}
-
 int ShaderProgram::glsl_version = -1;
 bool ShaderProgram::glsl_es = false;
 

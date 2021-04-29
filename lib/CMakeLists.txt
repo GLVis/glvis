@@ -10,6 +10,7 @@
 # CONTRIBUTING.md for details.
 
 list(APPEND SOURCES
+  gl/framebuffer.cpp
   gl/renderer.cpp
   gl/renderer_core.cpp
   gl/renderer_msaa.cpp
@@ -31,6 +32,7 @@ list(APPEND SOURCES
   vsvector3d.cpp)
 
 list(APPEND HEADERS
+  gl/framebuffer.hpp
   gl/attr_traits.hpp
   gl/platform_gl.hpp
   gl/renderer.hpp

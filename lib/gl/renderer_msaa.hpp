@@ -25,7 +25,7 @@ public:
    virtual void PreRender();
    virtual void PostRender();
 
-   virtual const FBOHandle& GetSourceFramebuffer() const
+   virtual const Framebuffer& GetSourceFramebuffer() const
    {
       if (msaa_enable && msaaFb)
       {
@@ -67,7 +67,7 @@ private:
    float line_w, line_w_aa;
 
    RenderBufHandle renderBufs[2];
-   FBOHandle msaaFb;
+   Framebuffer msaaFb;
 };
 
 }

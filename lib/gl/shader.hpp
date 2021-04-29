@@ -51,9 +51,6 @@ public:
 
    void bind() const { glUseProgram(program_id); }
 
-   void setOutputFramebuffer(const FBOHandle& fbo);
-   void setDefaultDrawFramebuffer();
-
    bool operator== (const ShaderProgram& other) const
    {
       return program_id == other.program_id;

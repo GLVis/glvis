@@ -42,17 +42,6 @@ bool GLDevice::isOpenGL3()
 #endif
 }
 
-void GLDevice::attachFramebuffer(const FBOHandle& fbo)
-{
-   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-   GLenum drawOutput = GL_BACK;
-   if (fbo != 0)
-   {
-      drawOutput = GL_COLOR_ATTACHMENT0;
-   }
-   glDrawBuffers(1, &drawOutput);
-}
-
 void DefaultPass::Render(const RenderQueue& queue)
 {
    auto clear_color = device->getClearColor();
@@ -64,7 +53,7 @@ void DefaultPass::Render(const RenderQueue& queue)
    {
       return !renderPair.first.contains_translucent;
    });
-   device->attachFramebuffer(*target);
+   target->Bind(1);
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    int color_tex = palette->GetColorTexture();
    int alpha_tex = palette->GetAlphaTexture();
@@ -152,8 +141,8 @@ void MeshRenderer::render(const vector<IMainRenderPass*>& main_passes,
    }
    // Step 2: Setup the framebuffer with the first extra pass, and render the
    //         queue with the main passes.
-   FBOHandle default_target(0);
-   std::reference_wrapper<const FBOHandle> curr_out = default_target;
+   Framebuffer default_target;
+   std::reference_wrapper<const Framebuffer> curr_out = default_target;
    if (extra_passes.size() > 0)
    {
       extra_passes[0]->PreRender();

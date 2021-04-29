@@ -19,6 +19,7 @@
 
 #include "platform_gl.hpp"
 #include "types.hpp"
+#include "framebuffer.hpp"
 #include "../material.hpp"
 #include "../palettes.hpp"
 
@@ -106,8 +107,6 @@ public:
       glBindTexture(GL_TEXTURE_2D, tex_id);
    };
 
-   void attachFramebuffer(const FBOHandle& fbo);
-
    // If true, use unsized internal formats and GL_ALPHA for single-channel
    // data. Otherwise, use the newer sized internal formats and GL_RED.
    static bool isOpenGL3();
@@ -183,14 +182,14 @@ public:
    virtual void PreRender() = 0;
    virtual void PostRender() = 0;
 
-   virtual const FBOHandle& GetSourceFramebuffer() const
+   virtual const Framebuffer& GetSourceFramebuffer() const
    { return default_target; }
 
-   virtual void SetTargetFramebuffer(const FBOHandle& fbo) { target = &fbo; }
+   virtual void SetTargetFramebuffer(const Framebuffer& fbo) { target = &fbo; }
 protected:
    GLDevice* device;
-   const FBOHandle* target = nullptr;
-   const FBOHandle default_target{0};
+   const Framebuffer* target = nullptr;
+   const Framebuffer default_target;
 };
 
 // Generic interface for an action on a queue of renderable objects.

@@ -14,6 +14,7 @@
 
 #include "renderer.hpp"
 #include "shader.hpp"
+#include "framebuffer.hpp"
 
 namespace gl3
 {
@@ -58,10 +59,10 @@ private:
 
    TextureHandle backBlendTex;
 
-   FBOHandle main_peel_fbs[2];
-   FBOHandle color_fbs[2];
-   FBOHandle blend_back_fb;
-   FBOHandle opaque_fb;
+   Framebuffer main_peel_fbs[2];
+   Framebuffer color_fbs[2];
+   Framebuffer blend_back_fb;
+   Framebuffer opaque_fb;
 
    // Drawing full-screen rectangles
    BufObjHandle rect_buf;

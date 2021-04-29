@@ -41,9 +41,6 @@ void MultisamplePass::CreateFramebuffer()
    renderBufs[0] = RenderBufHandle(colorBuf);
    renderBufs[1] = RenderBufHandle(depthBuf);
 
-   GLuint fbo;
-   glGenFramebuffers(1, &fbo);
-
    int vp[4];
    device->getViewport(vp);
    int width = vp[2];
@@ -56,20 +53,14 @@ void MultisamplePass::CreateFramebuffer()
                                     GL_DEPTH_COMPONENT24, width, height);
    glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                             GL_RENDERBUFFER, colorBuf);
-   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                             GL_RENDERBUFFER, depthBuf);
-
-   if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+   msaaFb.Init();
+   msaaFb.Attach(GL_COLOR_ATTACHMENT0, colorBuf);
+   msaaFb.Attach(GL_DEPTH_ATTACHMENT, depthBuf);
+   if (msaaFb.IsComplete())
    {
       cerr << "Unable to create multisampled renderbuffer." << flush;
-      glDeleteFramebuffers(1, &fbo);
-   }
-   else
-   {
-      msaaFb = FBOHandle(fbo);
+      // Reset to default framebuffer
+      msaaFb = Framebuffer{};
    }
    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -81,7 +72,7 @@ void MultisamplePass::PreRender()
       if (feat_use_fbo_antialias)
       {
          CreateFramebuffer();
-         glBindFramebuffer(GL_FRAMEBUFFER, msaaFb);
+         msaaFb.Bind();
       }
       else
       {
@@ -111,42 +102,20 @@ void MultisamplePass::PostRender()
       glGenRenderbuffers(1, &colorBufId);
       RenderBufHandle colorBuf(colorBufId);
 
-      GLuint fboId;
-      glGenFramebuffers(1, &fboId);
-      FBOHandle resolveFb(fboId);
+      Framebuffer resolveFb;
+      resolveFb.Init();
 
       glBindRenderbuffer(GL_RENDERBUFFER, colorBuf);
       glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
       glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-      glBindFramebuffer(GL_FRAMEBUFFER, resolveFb);
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                                GL_RENDERBUFFER, colorBuf);
-
-      if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-      {
-         cerr << "Unable to create resolve renderbuffer." << endl;
-         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-      }
-
+      resolveFb.Attach(GL_COLOR_ATTACHMENT0, colorBuf);
       // bind our draw framebuffer and blit the multisampled image
-      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, resolveFb);
-      glBindFramebuffer(GL_READ_FRAMEBUFFER, msaaFb);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      glBlitFramebuffer(0, 0, width, height,
-                        0, 0, width, height,
-                        GL_COLOR_BUFFER_BIT,
-                        GL_NEAREST);
+      resolveFb.BlitFrom(msaaFb, width, height);
 #ifndef __EMSCRIPTEN__
       glDisable(GL_MULTISAMPLE);
 #endif
-      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, *target);
-      glBindFramebuffer(GL_READ_FRAMEBUFFER, resolveFb);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      glBlitFramebuffer(0, 0, width, height,
-                        0, 0, width, height,
-                        GL_COLOR_BUFFER_BIT,
-                        GL_LINEAR);
+      target->BlitFrom(resolveFb, width, height, GL_LINEAR);
    }
    else if (msaa_enable && !feat_use_fbo_antialias)
    {
