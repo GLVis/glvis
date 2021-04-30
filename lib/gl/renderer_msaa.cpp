@@ -54,9 +54,9 @@ void MultisamplePass::CreateFramebuffer()
    glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
    msaaFb.Init();
-   msaaFb.Attach(GL_COLOR_ATTACHMENT0, colorBuf);
-   msaaFb.Attach(GL_DEPTH_ATTACHMENT, depthBuf);
-   if (msaaFb.IsComplete())
+   msaaFb.Attach(GL_COLOR_ATTACHMENT0, renderBufs[0]);
+   msaaFb.Attach(GL_DEPTH_ATTACHMENT, renderBufs[1]);
+   if (!msaaFb.IsComplete())
    {
       cerr << "Unable to create multisampled renderbuffer." << flush;
       // Reset to default framebuffer
