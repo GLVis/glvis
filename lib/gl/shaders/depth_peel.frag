@@ -23,14 +23,6 @@ varying vec2 fTexCoord;
 uniform bool useClipPlane;
 varying float fClipVal;
 
-void fragmentClipPlane()
-{
-   if (useClipPlane && fClipVal < 0.0)
-   {
-      discard;
-   }
-}
-
 #define MAX_DEPTH 1.0
 
 // location 0: depth
@@ -43,8 +35,6 @@ void fragmentClipPlane()
 
 void main()
 {
-   fragmentClipPlane();
-
    ivec2 iFragCoord = ivec2(gl_FragCoord.xy);
    vec2 lastDepths = texelFetch(lastDepthTex, iFragCoord, 0).xy;
    vec4 lastFrontColor = texelFetch(lastFrontColorTex, iFragCoord, 0);
@@ -57,6 +47,12 @@ void main()
    gl_FragData[2] = vec4(0.0);
 
    if (thisDepth < nearestDepth || thisDepth > farthestDepth)
+   {
+       gl_FragData[0].xy = vec2(-MAX_DEPTH);
+       return;
+   }
+
+   if (useClipPlane && fClipVal < 0.0)
    {
        gl_FragData[0].xy = vec2(-MAX_DEPTH);
        return;
