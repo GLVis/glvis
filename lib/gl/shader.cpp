@@ -12,13 +12,6 @@
 #include "shader.hpp"
 #include <regex>
 
-#ifdef __EMSCRIPTEN__
-// TODO: for webgl glsl the version ends in "es": #version GLSL_VER es
-const std::string GLSL_HEADER = "precision mediump float;\n";
-#else
-const std::string GLSL_HEADER = "#version GLSL_VER\n";
-#endif
-
 namespace gl3
 {
 
@@ -59,6 +52,11 @@ bool ShaderProgram::create(std::string vertexShader,
 }
 
 int ShaderProgram::glsl_version = -1;
+#ifndef __EMSCRIPTEN__
+const bool ShaderProgram::glsl_is_es = false;
+#else
+const bool ShaderProgram::glsl_is_es = true;
+#endif
 
 void ShaderProgram::GetGLSLVersion()
 {
@@ -117,7 +115,9 @@ void ShaderProgram::GetGLSLVersion()
          glsl_version = 300;
       }
 #endif
-      std::cerr << "Using GLSL " << glsl_version << std::endl;
+      std::cerr << "Using GLSL " << glsl_version;
+      if (glsl_is_es) { std::cerr << " ES"; }
+      std::cerr << std::endl;
    }
 }
 
@@ -134,32 +134,34 @@ std::string ShaderProgram::formatShader(const std::string& inShader,
          formatted = std::regex_replace(formatted, std::regex("attribute"), "in");
          formatted = std::regex_replace(formatted, std::regex("varying"), "out");
       }
-
       else if (shaderType == GL_FRAGMENT_SHADER)
       {
          formatted = std::regex_replace(formatted, std::regex("varying"), "in");
-
-         // requires GL_ARB_explicit_attrib_location extension or GLSL 3.30
-         // although gl_FragColor was deprecated in GLSL 1.3
          for (int i = 0; i < num_outputs; i++)
          {
             std::string indexString = "gl_FragData[";
             indexString += std::to_string(i) + "]";
             std::string outputString = "out vec4 fragColor_";
             outputString += std::to_string(i) + ";\n";
-            if (glsl_version > 130 && glsl_version < 330)
+            if (glsl_version >= 300)
             {
-
-               formatted = outputString + formatted;
-               formatted = std::regex_replace(formatted, std::regex(indexString),
-                                              "fragColor");
-            }
-            else if (glsl_version >= 330)
-            {
+               // GLSL/OpenGL 3.30+ or WebGL 2 (GLSL 3.00 ES):
+               // Prefer in-shader output index setting.
                std::string layoutString = "layout(location = ";
                layoutString += std::to_string(i) + ") ";
                formatted = layoutString + outputString + formatted;
             }
+            else
+            {
+               // GLSL 1.30-1.50 (OpenGL 3.0-3.2):
+               // No in-shader output indexing.
+               // Output locations will be set using glBindFragDataLocation.
+               formatted = outputString + formatted;
+            }
+            std::string indexStringRgx = "gl_FragData\\[";
+            indexStringRgx += std::to_string(i) + "\\]";
+            formatted = std::regex_replace(formatted, std::regex(indexStringRgx),
+                                           "fragColor_" + std::to_string(i));
             if (i == 0)
             {
                formatted = std::regex_replace(formatted, std::regex("gl_FragColor"),
@@ -167,7 +169,6 @@ std::string ShaderProgram::formatShader(const std::string& inShader,
             }
          }
       }
-
       else
       {
          std::cerr << "buildShaderString: unknown shader type" << std::endl;
@@ -181,16 +182,31 @@ std::string ShaderProgram::formatShader(const std::string& inShader,
    {
       formatted = "#define USE_ALPHA\n" + formatted;
    }
-   // add the header
-   formatted = std::regex_replace(GLSL_HEADER, std::regex("GLSL_VER"),
-                                  std::to_string(glsl_version)) + formatted;
-#ifdef __EMSCRIPTEN__
-   // special prepend for WebGL 2 shaders
-   if (glsl_version == 300)
+
+   if (glsl_is_es)
    {
-      formatted = "#version 300 es\n" + formatted;
+      if (shaderType == GL_FRAGMENT_SHADER)
+      {
+         // Add precision specifier - required for WebGL fragment shaders
+         formatted = "precision mediump float;\n" + formatted;
+      }
+      if (num_outputs > 1 && glsl_version == 100)
+      {
+         // Enable WEBGL_draw_buffers in the shader
+         formatted = "#extension GL_EXT_draw_buffers : require\n" + formatted;
+      }
+      if (glsl_version == 300)
+      {
+         // WebGL 2 shaders require explicit version setting
+         formatted = "#version 300 es\n" + formatted;
+      }
    }
-#endif
+   else
+   {
+      // Append version setting for all desktop shaders
+      formatted = std::regex_replace("#version GLSL_VER\n", std::regex("GLSL_VER"),
+                                     std::to_string(glsl_version)) + formatted;
+   }
 
    return formatted;
 }
@@ -232,11 +248,14 @@ bool ShaderProgram::linkShaders(const std::vector<GLuint>& shaders)
    }
 
 #ifndef __EMSCRIPTEN__
-   // Bind fragment output variables to MRT indices.
-   for (int i = 0; i < num_outputs; i++)
+   if (glsl_version >= 130 && glsl_version < 300)
    {
-      std::string fragOutVar = "fragColor_" + std::to_string(i);
-      glBindFragDataLocation(program_id, i, fragOutVar.c_str());
+      // Bind fragment output variables to MRT indices.
+      for (int i = 0; i < num_outputs; i++)
+      {
+         std::string fragOutVar = "fragColor_" + std::to_string(i);
+         glBindFragDataLocation(program_id, i, fragOutVar.c_str());
+      }
    }
 #endif
 
