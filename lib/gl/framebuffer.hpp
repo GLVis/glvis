@@ -102,7 +102,7 @@ public:
                                 GL_RENDERBUFFER, renderbuf_handle);
    }
 
-   void Bind(int nbufs = 0) const
+   void Bind(unsigned int nbufs = 0) const
    {
       glBindFramebuffer(GL_FRAMEBUFFER, handle);
       if (handle == 0)
