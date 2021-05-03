@@ -212,7 +212,7 @@ Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
 # generated with 'echo lib/gl/*.c* lib/*.c*', does not include lib/*.m (Obj-C)
 ALL_SOURCE_FILES = \
- lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/framebuffer.hpp lib/gl/renderer_ff.cpp \
+ lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/framebuffer.cpp lib/gl/renderer_ff.cpp \
  lib/gl/depth_peel_oit.cpp lib/gl/renderer_msaa.cpp lib/gl/renderer_print.cpp \
  lib/gl/shader.cpp lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp lib/font.cpp \
  lib/gl2ps.c lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp \
