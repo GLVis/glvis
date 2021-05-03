@@ -260,7 +260,6 @@ void DepthPeeler::DoRenderPass(int i, const RenderQueue& queue)
       device->setNumLights(0);
       device->drawDeviceBuffer(curr_drawable->getTextBuffer());
    }
-   glDepthMask(GL_TRUE);
 
    // Blend just-written back layer separately
    blend_prgm.bind();
@@ -278,6 +277,7 @@ void DepthPeeler::DoRenderPass(int i, const RenderQueue& queue)
    glVertexAttribPointer(CoreGLDevice::ATTR_VERTEX,
                          2, GL_FLOAT, false, 0, 0);
    glDrawArrays(GL_TRIANGLES, 0, 6);
+   glDepthMask(GL_TRUE);
 }
 
 void DepthPeeler::PostRender()
@@ -286,6 +286,7 @@ void DepthPeeler::PostRender()
 
    finalize_prgm.bind();
    target->Bind();
+   glClear(GL_DEPTH_BUFFER_BIT);
    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
    glActiveTexture(GL_TEXTURE0);
