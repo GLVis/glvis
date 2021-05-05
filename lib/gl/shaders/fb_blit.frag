@@ -12,8 +12,10 @@ R"(
 
 uniform sampler2D sourceColor;
 
+uniform ivec2 texDims;
+
 void main()
 {
-    gl_FragColor = texture2D(sourceColor, gl_FragCoord.xy);
+    gl_FragColor = texture2D(sourceColor, gl_FragCoord.xy / vec2(texDims));
 }
 )"

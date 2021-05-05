@@ -90,6 +90,7 @@ void Framebuffer::BlitFrom(const Framebuffer &fb_from, int w, int h,
                    << "of source framebuffer" << std::endl;
          return;
       }
+      glUniform2i(blit_shader.uniform("texDims"), w, h);
       glUniform1i(blit_shader.uniform("sourceColor"), 0);
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, texture_src);
