@@ -23,6 +23,17 @@ varying vec2 fTexCoord;
 uniform bool useClipPlane;
 varying float fClipVal;
 
+uniform ivec2 screenCoords;
+vec4 getScreenTexel(sampler2D tex, vec2 coords)
+{
+#if __VERSION__ < 140
+   vec2 normalizedCoords = coords / vec2(screenCoords);
+   return texture2D(tex, normalizedCoords);
+#else
+   return texelFetch(tex, ivec2(coords), 0);
+#endif
+}
+
 #define MAX_DEPTH 1.0
 
 // location 0: depth
@@ -35,9 +46,8 @@ varying float fClipVal;
 
 void main()
 {
-   ivec2 iFragCoord = ivec2(gl_FragCoord.xy);
-   vec2 lastDepths = texelFetch(lastDepthTex, iFragCoord, 0).xy;
-   vec4 lastFrontColor = texelFetch(lastFrontColorTex, iFragCoord, 0);
+   vec2 lastDepths = getScreenTexel(lastDepthTex, gl_FragCoord.xy).xy;
+   vec4 lastFrontColor = getScreenTexel(lastFrontColorTex, gl_FragCoord.xy);
    float nearestDepth = -lastDepths.x;
    float farthestDepth = lastDepths.y;
    float thisDepth = gl_FragCoord.z;

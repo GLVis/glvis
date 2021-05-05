@@ -106,18 +106,42 @@ void DepthPeeler::CreateScreenPeelObjs()
    screen_w = vp[2];
    screen_h = vp[3];
 
-   opaqueColorTex = CreateScreenTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);
-   opaqueDepthTex = CreateScreenTexture(GL_DEPTH_COMPONENT,
-                                        GL_DEPTH_COMPONENT,
-                                        GL_UNSIGNED_INT);
+   if (GLDevice::isOpenGL3())
+   {
+      backBlendTex = CreateScreenTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);
+      opaqueColorTex = CreateScreenTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);
+      opaqueDepthTex = CreateScreenTexture(GL_DEPTH_COMPONENT24,
+                                           GL_DEPTH_COMPONENT,
+                                           GL_UNSIGNED_INT);
+   }
+   else
+   {
+      backBlendTex = CreateScreenTexture(GL_RGBA, GL_RGBA, GL_FLOAT);
+      opaqueColorTex = CreateScreenTexture(GL_RGBA, GL_RGBA, GL_FLOAT);
+      opaqueDepthTex = CreateScreenTexture(GL_DEPTH_COMPONENT,
+                                           GL_DEPTH_COMPONENT,
+                                           GL_UNSIGNED_INT);
+   }
+
+   blend_back_fb.Attach(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, backBlendTex);
+
    opaque_fb.Attach(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, opaqueColorTex);
    opaque_fb.Attach(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, opaqueDepthTex);
 
    for (int i = 0; i < 2; i++)
    {
-      depthTex[i] = CreateScreenTexture(GL_RG32F, GL_RG, GL_FLOAT);
-      frontColorTex[i] = CreateScreenTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);
-      backColorTex[i] = CreateScreenTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);
+      if (GLDevice::isOpenGL3())
+      {
+         depthTex[i] = CreateScreenTexture(GL_RG32F, GL_RG, GL_FLOAT);
+         frontColorTex[i] = CreateScreenTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);
+         backColorTex[i] = CreateScreenTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);
+      }
+      else
+      {
+         depthTex[i] = CreateScreenTexture(GL_RGBA, GL_RGBA, GL_FLOAT);
+         frontColorTex[i] = CreateScreenTexture(GL_RGBA, GL_RGBA, GL_FLOAT);
+         backColorTex[i] = CreateScreenTexture(GL_RGBA, GL_RGBA, GL_FLOAT);
+      }
 
       main_peel_fbs[i].Attach(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, depthTex[i]);
       main_peel_fbs[i].Attach(GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, frontColorTex[i]);
@@ -127,9 +151,6 @@ void DepthPeeler::CreateScreenPeelObjs()
       color_fbs[i].Attach(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frontColorTex[i]);
       color_fbs[i].Attach(GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, backColorTex[i]);
    }
-
-   backBlendTex = CreateScreenTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);
-   blend_back_fb.Attach(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, backBlendTex);
 
    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -198,6 +219,10 @@ void DepthPeeler::DoRenderPass(int i, const RenderQueue& queue)
    // Setup main peel program and framebuffer
    dynamic_cast<CoreGLDevice*>(device)->bindExternalProgram(main_prgm);
    main_peel_fbs[dst_i].Bind();
+   if (main_prgm.uniform("screenCoords") != -1)
+   {
+      glUniform2i(main_prgm.uniform("screenCoords"), screen_w, screen_h);
+   }
 
    // Bind source depth and front color texture
    glActiveTexture(GL_TEXTURE0 + 2);
@@ -268,6 +293,11 @@ void DepthPeeler::DoRenderPass(int i, const RenderQueue& queue)
    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE,
                        GL_ONE_MINUS_SRC_ALPHA);
 
+   if (blend_prgm.uniform("screenCoords") != -1)
+   {
+      glUniform2i(blend_prgm.uniform("screenCoords"), screen_w, screen_h);
+   }
+
    glActiveTexture(GL_TEXTURE0 + 2);
    glBindTexture(GL_TEXTURE_2D, backColorTex[dst_i]);
    glUniform1i(blend_prgm.uniform("lastBackColor"), 2);
@@ -294,6 +324,11 @@ void DepthPeeler::PostRender()
 
    glActiveTexture(GL_TEXTURE0 + 1);
    glBindTexture(GL_TEXTURE_2D, backBlendTex);
+
+   if (finalize_prgm.uniform("screenCoords") != -1)
+   {
+      glUniform2i(finalize_prgm.uniform("screenCoords"), screen_w, screen_h);
+   }
 
    glUniform1i(finalize_prgm.uniform("lastFrontColor"), 0);
    glUniform1i(finalize_prgm.uniform("lastBackColor"), 1);

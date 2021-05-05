@@ -94,6 +94,8 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
       wnd->clearEvents();
    }
 
+   multisample_status = false;
+
    rndr_main_pass.SetGLDevice(wnd->getRenderer().getDevice());
    rndr_msaa_pass.SetGLDevice(wnd->getRenderer().getDevice());
    rndr_depth_peeled.SetGLDevice(wnd->getRenderer().getDevice());

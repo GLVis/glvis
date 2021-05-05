@@ -13,15 +13,25 @@ R"(
 uniform sampler2D lastFrontColor;
 uniform sampler2D lastBackColor;
 
+uniform ivec2 screenCoords;
+vec4 getScreenTexel(sampler2D tex, vec2 coords)
+{
+#if __VERSION__ < 140
+   vec2 normalizedCoords = coords / vec2(screenCoords);
+   return texture2D(tex, normalizedCoords);
+#else
+   return texelFetch(tex, ivec2(coords), 0);
+#endif
+}
+
 // adapted from "Order Independent Transparency with Dual Depth Peeling":
 // http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.193.3485&rep=rep1&type=pdf
 // and https://github.com/tsherif/webgl2examples/blob/master/oit-dual-depth-peeling.html
 
 void main()
 {
-    ivec2 iQuadCoord = ivec2(gl_FragCoord.xy);
-    vec4 frontColor = texelFetch(lastFrontColor, iQuadCoord, 0);
-    vec4 backColor  = texelFetch(lastBackColor, iQuadCoord, 0);
+    vec4 frontColor = getScreenTexel(lastFrontColor, gl_FragCoord.xy);
+    vec4 backColor  = getScreenTexel(lastBackColor, gl_FragCoord.xy);
     float alphaMultiplier = 1.0 - frontColor.a;
 
     gl_FragColor.rgb = frontColor.rgb + alphaMultiplier * backColor.rgb;
