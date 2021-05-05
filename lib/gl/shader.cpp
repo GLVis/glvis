@@ -114,7 +114,6 @@ void ShaderProgram::GetGLSLVersion()
       {
          glsl_version = 300;
       }
-      glsl_es = true;
 #endif
       std::cerr << "Using GLSL " << glsl_version;
       if (glsl_is_es) { std::cerr << " ES"; }
@@ -140,8 +139,6 @@ std::string ShaderProgram::formatShader(const std::string& inShader,
          formatted = std::regex_replace(formatted, std::regex("varying"), "in");
          for (int i = 0; i < num_outputs; i++)
          {
-            std::string indexString = "gl_FragData[";
-            indexString += std::to_string(i) + "]";
             std::string outputString = "out vec4 fragColor_";
             outputString += std::to_string(i) + ";\n";
             if (glsl_version >= 300)
@@ -249,15 +246,17 @@ bool ShaderProgram::linkShaders(const std::vector<GLuint>& shaders)
    // Set transform feedback varyings, if any
    if (!xfrm_varyings.empty())
    {
-       std::vector<const char*> varyings_c_str;
-       for (const std::string& var : xfrm_varyings)
-       {
-           varyings_c_str.push_back(var.c_str());
-       }
-       glTransformFeedbackVaryings(program_id,
-                                   xfrm_varyings.size(),
-                                   varyings_c_str.data(),
-                                   GL_INTERLEAVED_ATTRIBS);
+      std::vector<const char*> varyings_c_str;
+      for (const std::string& var : xfrm_varyings)
+      {
+         varyings_c_str.push_back(var.c_str());
+      }
+#ifndef __EMSCRIPTEN__
+      glTransformFeedbackVaryings(program_id,
+                                  xfrm_varyings.size(),
+                                  varyings_c_str.data(),
+                                  GL_INTERLEAVED_ATTRIBS);
+#endif
    }
    // Bind all incoming attributes to their VAO indices.
    for (auto attrib_pair : attrib_idx)

@@ -34,7 +34,7 @@ public:
 
    void setFeedbackVaryings(const std::vector<std::string>& varyings)
    {
-       xfrm_varyings = varyings;
+      xfrm_varyings = varyings;
    }
 
    int uniform(std::string uniformName) const
