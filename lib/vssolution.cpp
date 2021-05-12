@@ -193,7 +193,7 @@ static void SwitchAttribute(VisualizationSceneSolution* vssol,
 static void KeyF9Pressed(GLVisWindow* wnd, GLenum state)
 {
    VisualizationSceneSolution* vssol
-       = dynamic_cast<VisualizationSceneSolution*>(wnd->getScene());
+      = dynamic_cast<VisualizationSceneSolution*>(wnd->getScene());
    if (!(state & KMOD_SHIFT))
    {
       SwitchAttribute(vssol, +1, vssol->attr_to_show, vssol->el_attr_to_show, false);
@@ -208,7 +208,7 @@ static void KeyF9Pressed(GLVisWindow* wnd, GLenum state)
 static void KeyF10Pressed(GLVisWindow* wnd, GLenum state)
 {
    VisualizationSceneSolution* vssol
-       = dynamic_cast<VisualizationSceneSolution*>(wnd->getScene());
+      = dynamic_cast<VisualizationSceneSolution*>(wnd->getScene());
    if (!(state & KMOD_SHIFT))
    {
       SwitchAttribute(vssol, -1, vssol->attr_to_show, vssol->el_attr_to_show, false);
@@ -223,7 +223,7 @@ static void KeyF10Pressed(GLVisWindow* wnd, GLenum state)
 static void KeyoPressed(GLVisWindow* wnd, GLenum state)
 {
    VisualizationSceneSolution* vssol
-       = dynamic_cast<VisualizationSceneSolution*>(wnd->getScene());
+      = dynamic_cast<VisualizationSceneSolution*>(wnd->getScene());
    if (state & KMOD_CTRL)
    {
       vssol -> ToggleDrawOrdering();

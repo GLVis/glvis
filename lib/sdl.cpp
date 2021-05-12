@@ -204,7 +204,8 @@ void SdlWindow::probeGLContextSupport(bool legacyGlOnly)
 #endif
 }
 
-bool SdlWindow::createWindow(const std::string& title, int x, int y, int w, int h,
+bool SdlWindow::createWindow(const std::string& title, int x, int y, int w,
+                             int h,
                              bool legacyGlOnly)
 {
    if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
@@ -668,19 +669,19 @@ void SdlWindow::mainIter()
       bool sleep = onIdle();
       if (sleep)
       {
-          // Wait for the next event (without consuming CPU cycles, if possible)
-          // See also: SdlWindow::signalLoop()
-          if (platform)
-          {
-              platform->WaitEvent();
-          }
-          else
-          {
-              if (!SDL_PollEvent(nullptr))
-              {
-                  std::this_thread::sleep_for(std::chrono::milliseconds(8));
-              }
-          }
+         // Wait for the next event (without consuming CPU cycles, if possible)
+         // See also: SdlWindow::signalLoop()
+         if (platform)
+         {
+            platform->WaitEvent();
+         }
+         else
+         {
+            if (!SDL_PollEvent(nullptr))
+            {
+               std::this_thread::sleep_for(std::chrono::milliseconds(8));
+            }
+         }
       }
    }
 #else

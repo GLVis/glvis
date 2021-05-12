@@ -54,9 +54,9 @@ public:
 
    void SetDPIParams(bool is_hidpi, int ppi_w, int ppi_h)
    {
-       this->is_hidpi = is_hidpi;
-       this->ppi_w = ppi_w;
-       this->ppi_h = ppi_h;
+      this->is_hidpi = is_hidpi;
+      this->ppi_w = ppi_w;
+      this->ppi_h = ppi_h;
    }
 
    bool LoadFont(const std::string& path, int font_index, int font_size);

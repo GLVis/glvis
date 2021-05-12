@@ -397,7 +397,8 @@ StreamState::CreateVisualizationScene(GLVisWindow* wnd, int field_type)
       }
       else if (mesh->SpaceDimension() == 3)
       {
-         VisualizationSceneSolution3d *vss = new VisualizationSceneSolution3d(*mesh, sol);
+         VisualizationSceneSolution3d *vss = new VisualizationSceneSolution3d(*mesh,
+                                                                              sol);
          // initialize events and initial scene state
          vss->Init(wnd);
          vs.reset(vss);

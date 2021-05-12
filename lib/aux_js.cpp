@@ -65,7 +65,7 @@ bool startVisualization(const std::string input, const std::string data_type,
 
    try
    {
-       mainWindow = new GLVisWindow("glvis", 0, 0, w, h, false);
+      mainWindow = new GLVisWindow("glvis", 0, 0, w, h, false);
    }
    catch (std::runtime_error& ex)
    {
@@ -73,10 +73,10 @@ bool startVisualization(const std::string input, const std::string data_type,
            << ex.what() << endl;
       return false;
    }
-   catch(...)
+   catch (...)
    {
-       cerr << "Initializing the visualization failed - unknown error."
-            << endl;
+      cerr << "Initializing the visualization failed - unknown error."
+           << endl;
       return false;
    }
 
@@ -195,7 +195,7 @@ std::string getHelpString()
 
 void ResizeWindow(int w, int h)
 {
-    mainWindow->ResizeWindow(w, h);
+   mainWindow->ResizeWindow(w, h);
 }
 
 int GetUseTexture()

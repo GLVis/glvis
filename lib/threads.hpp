@@ -161,7 +161,8 @@ private:
    void execute();
 
 public:
-   communication_thread(GLVisCommand* parent_cmd, const Array<std::istream *> &_is);
+   communication_thread(GLVisCommand* parent_cmd,
+                        const Array<std::istream *> &_is);
 
    ~communication_thread();
 };

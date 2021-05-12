@@ -420,7 +420,7 @@ int GLVisCommand::Execute()
    }
 
    VisualizationSceneScalarData* vs
-       = dynamic_cast<VisualizationSceneScalarData*>(window->getScene());
+      = dynamic_cast<VisualizationSceneScalarData*>(window->getScene());
 
    switch (command)
    {
@@ -440,7 +440,7 @@ int GLVisCommand::Execute()
          {
             if (mesh_range > 0.0)
             {
-                vs->SetValueRange(-mesh_range, mesh_range);
+               vs->SetValueRange(-mesh_range, mesh_range);
             }
             window->MyExpose();
          }
@@ -510,7 +510,7 @@ int GLVisCommand::Execute()
          cout << "Command: axis_labels: '" << axis_label_x << "' '"
               << axis_label_y << "' '" << axis_label_z << "'" << endl;
          vs->SetAxisLabels(axis_label_x.c_str(), axis_label_y.c_str(),
-                              axis_label_z.c_str());
+                           axis_label_z.c_str());
          window->MyExpose();
          break;
       }

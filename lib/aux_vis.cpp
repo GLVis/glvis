@@ -47,53 +47,55 @@ void MainLoop(GLVisWindow* wnd);
 
 struct GLVisWindow::RotationControl
 {
-    GLVisWindow* wnd;
-    double xang = 0., yang = 0.;
-    gl3::GlMatrix srot;
-    double sph_t, sph_u;
-    GLint oldx, oldy, startx, starty;
+   GLVisWindow* wnd;
+   double xang = 0., yang = 0.;
+   gl3::GlMatrix srot;
+   double sph_t, sph_u;
+   GLint oldx, oldy, startx, starty;
 
-    bool constrained_spinning = 0;
+   bool constrained_spinning = 0;
 
-    void LeftButtonDown  (EventInfo *event);
-    void LeftButtonLoc   (EventInfo *event);
-    void LeftButtonUp    (EventInfo *event);
-    void MiddleButtonDown(EventInfo *event);
-    void MiddleButtonLoc (EventInfo *event);
-    void MiddleButtonUp  (EventInfo *event);
-    void RightButtonDown (EventInfo *event);
-    void RightButtonLoc  (EventInfo *event);
-    void RightButtonUp   (EventInfo *event);
+   void LeftButtonDown  (EventInfo *event);
+   void LeftButtonLoc   (EventInfo *event);
+   void LeftButtonUp    (EventInfo *event);
+   void MiddleButtonDown(EventInfo *event);
+   void MiddleButtonLoc (EventInfo *event);
+   void MiddleButtonUp  (EventInfo *event);
+   void RightButtonDown (EventInfo *event);
+   void RightButtonLoc  (EventInfo *event);
+   void RightButtonUp   (EventInfo *event);
 
-    void CheckSpin();
-    void Key0Pressed();
-    void KeyDeletePressed();
-    void KeyEnterPressed();
-    MouseDelegate CreateMouseEvent(void (GLVisWindow::RotationControl::*func)(EventInfo*))
-    {
-        return [this, func](EventInfo* ei) { (this->*func)(ei); };
-    }
+   void CheckSpin();
+   void Key0Pressed();
+   void KeyDeletePressed();
+   void KeyEnterPressed();
+   MouseDelegate CreateMouseEvent(void (GLVisWindow::RotationControl::*func)(
+                                     EventInfo*))
+   {
+      return [this, func](EventInfo* ei) { (this->*func)(ei); };
+   }
 
 };
 
 template<typename T>
 KeyDelegate CreateKeyEvent(T* inst, void (T::*func)())
 {
-    return [inst, func](GLenum) { (inst->*func)(); };
+   return [inst, func](GLenum) { (inst->*func)(); };
 }
 
 void GLVisWindow::KeyPrint(GLenum mod)
 {
-    if (mod & KMOD_CTRL)
-    {
-        PrintToPDF();
-    }
+   if (mod & KMOD_CTRL)
+   {
+      PrintToPDF();
+   }
 }
 
-GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool legacyGlOnly)
-    : locscene(nullptr)
-    , idle_funcs(0)
-    , rot_data(new RotationControl)
+GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h,
+                         bool legacyGlOnly)
+   : locscene(nullptr)
+   , idle_funcs(0)
+   , rot_data(new RotationControl)
 {
 
 #ifdef GLVIS_DEBUG
@@ -116,19 +118,31 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
    // auxReshapeFunc (MyReshape); // not needed, MyExpose calls it
    // auxReshapeFunc (NULL);
    wnd->setOnExpose([this]() { MyExpose(); });
-   auto LeftButtonDown   = rot_data->CreateMouseEvent(&RotationControl::LeftButtonDown);
-   auto LeftButtonUp     = rot_data->CreateMouseEvent(&RotationControl::LeftButtonUp);
-   auto LeftButtonLoc    = rot_data->CreateMouseEvent(&RotationControl::LeftButtonLoc);
-   auto MiddleButtonDown = rot_data->CreateMouseEvent(&RotationControl::MiddleButtonDown);
-   auto MiddleButtonUp   = rot_data->CreateMouseEvent(&RotationControl::MiddleButtonUp);
-   auto MiddleButtonLoc  = rot_data->CreateMouseEvent(&RotationControl::MiddleButtonLoc);
-   auto RightButtonDown  = rot_data->CreateMouseEvent(&RotationControl::RightButtonDown);
-   auto RightButtonUp    = rot_data->CreateMouseEvent(&RotationControl::RightButtonUp);
-   auto RightButtonLoc   = rot_data->CreateMouseEvent(&RotationControl::RightButtonLoc);
+   auto LeftButtonDown   = rot_data->CreateMouseEvent(
+                              &RotationControl::LeftButtonDown);
+   auto LeftButtonUp     = rot_data->CreateMouseEvent(
+                              &RotationControl::LeftButtonUp);
+   auto LeftButtonLoc    = rot_data->CreateMouseEvent(
+                              &RotationControl::LeftButtonLoc);
+   auto MiddleButtonDown = rot_data->CreateMouseEvent(
+                              &RotationControl::MiddleButtonDown);
+   auto MiddleButtonUp   = rot_data->CreateMouseEvent(
+                              &RotationControl::MiddleButtonUp);
+   auto MiddleButtonLoc  = rot_data->CreateMouseEvent(
+                              &RotationControl::MiddleButtonLoc);
+   auto RightButtonDown  = rot_data->CreateMouseEvent(
+                              &RotationControl::RightButtonDown);
+   auto RightButtonUp    = rot_data->CreateMouseEvent(
+                              &RotationControl::RightButtonUp);
+   auto RightButtonLoc   = rot_data->CreateMouseEvent(
+                              &RotationControl::RightButtonLoc);
 
-   auto Key0Pressed = CreateKeyEvent(rot_data.get(), &RotationControl::Key0Pressed);
-   auto KeyEnterPressed = CreateKeyEvent(rot_data.get(), &RotationControl::KeyEnterPressed);
-   auto KeyDeletePressed = CreateKeyEvent(rot_data.get(), &RotationControl::KeyDeletePressed);
+   auto Key0Pressed = CreateKeyEvent(rot_data.get(),
+                                     &RotationControl::Key0Pressed);
+   auto KeyEnterPressed = CreateKeyEvent(rot_data.get(),
+                                         &RotationControl::KeyEnterPressed);
+   auto KeyDeletePressed = CreateKeyEvent(rot_data.get(),
+                                          &RotationControl::KeyDeletePressed);
 
    wnd->setOnMouseDown(SDL_BUTTON_LEFT, LeftButtonDown);
    wnd->setOnMouseUp(SDL_BUTTON_LEFT, LeftButtonUp);
@@ -219,10 +233,10 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
 GLVisWindow::~GLVisWindow()
 {
 #ifndef __EMSCRIPTEN__
-    if (glvis_command)
-    {
-        glvis_command->Terminate();
-    }
+   if (glvis_command)
+   {
+      glvis_command->Terminate();
+   }
 #endif
 }
 
@@ -266,27 +280,28 @@ void GLVisWindow::InitVisualization(int field_type, StreamState state,
 void GLVisWindow::SetupHandledKey(int key)
 {
    wnd->setOnKeyDown(key,
-      [this, key](GLenum e)
-      {
-         if (internal_keyevents.find(key) != internal_keyevents.end())
-         { internal_keyevents[key](e); }
-         if (keyevents.find(key) != keyevents.end())
-         { keyevents[key](e); }
-      });
+                     [this, key](GLenum e)
+   {
+      if (internal_keyevents.find(key) != internal_keyevents.end())
+      { internal_keyevents[key](e); }
+      if (keyevents.find(key) != keyevents.end())
+      { keyevents[key](e); }
+   });
 }
 
 void GLVisWindow::SetKeyEventHandler(int key, void (GLVisWindow::*handler)())
 {
-    auto handlerWrapper = [this, handler](GLenum) { (this->*handler)(); };
-    internal_keyevents[key] = handlerWrapper;
-    SetupHandledKey(key);
+   auto handlerWrapper = [this, handler](GLenum) { (this->*handler)(); };
+   internal_keyevents[key] = handlerWrapper;
+   SetupHandledKey(key);
 }
 
-void GLVisWindow::SetKeyEventHandler(int key, void (GLVisWindow::*handler)(GLenum))
+void GLVisWindow::SetKeyEventHandler(int key,
+                                     void (GLVisWindow::*handler)(GLenum))
 {
-    auto handlerWrapper = [this, handler](GLenum mod) { (this->*handler)(mod); };
-    internal_keyevents[key] = handlerWrapper;
-    SetupHandledKey(key);
+   auto handlerWrapper = [this, handler](GLenum mod) { (this->*handler)(mod); };
+   internal_keyevents[key] = handlerWrapper;
+   SetupHandledKey(key);
 }
 
 void GLVisWindow::SendKeySequence(const char *seq)
@@ -397,7 +412,7 @@ void GLVisWindow::CallKeySequence(const char *seq)
 void GLVisWindow::RunVisualization()
 {
    visualize = 1;
-   wnd->setOnIdle([this](){return MainIdleFunc();});
+   wnd->setOnIdle([this]() {return MainIdleFunc();});
 #ifndef __EMSCRIPTEN__
    wnd->mainLoop();
 #endif
@@ -481,13 +496,13 @@ bool GLVisWindow::CommunicationIdleFunc()
    int status = glvis_command->Execute();
    if (status < 0)
    {
-       cout << "GLVisCommand signalled exit" << endl;
-       wnd->signalQuit();
+      cout << "GLVisCommand signalled exit" << endl;
+      wnd->signalQuit();
    }
    else if (status == 1)
    {
-       // no commands right now - main loop should sleep
-       return true;
+      // no commands right now - main loop should sleep
+      return true;
    }
    return false;
 }
@@ -499,35 +514,35 @@ bool GLVisWindow::MainIdleFunc()
    if (glvis_command && visualize == 1
        && !(idle_funcs.Size() > 0 && use_idle))
    {
-       // Execute the next event from the communication thread if:
-       //  - a valid GLVisCommand has been set
-       //  - the communication thread is not stopped
-       //  - The idle function flag is not set, or no idle functions have been
-       //    registered
-       sleep = CommunicationIdleFunc();
-       if (idle_funcs.Size() > 0) { sleep = false; }
+      // Execute the next event from the communication thread if:
+      //  - a valid GLVisCommand has been set
+      //  - the communication thread is not stopped
+      //  - The idle function flag is not set, or no idle functions have been
+      //    registered
+      sleep = CommunicationIdleFunc();
+      if (idle_funcs.Size() > 0) { sleep = false; }
    }
    else if (idle_funcs.Size() > 0)
    {
-       last_idle_func = (last_idle_func + 1) % idle_funcs.Size();
-       if (idle_funcs[last_idle_func])
-       {
-           (*idle_funcs[last_idle_func])(this);
-       }
-       // Continue executing idle functions
-       sleep = false;
+      last_idle_func = (last_idle_func + 1) % idle_funcs.Size();
+      if (idle_funcs[last_idle_func])
+      {
+         (*idle_funcs[last_idle_func])(this);
+      }
+      // Continue executing idle functions
+      sleep = false;
    }
    use_idle = !use_idle;
 #else
    if (idle_funcs.Size() > 0)
    {
-       last_idle_func = (last_idle_func + 1) % idle_funcs.Size();
-       if (idle_funcs[last_idle_func])
-       {
-           (*idle_funcs[last_idle_func])(this);
-       }
-       // Continue executing idle functions
-       sleep = false;
+      last_idle_func = (last_idle_func + 1) % idle_funcs.Size();
+      if (idle_funcs[last_idle_func])
+      {
+         (*idle_funcs[last_idle_func])(this);
+      }
+      // Continue executing idle functions
+      sleep = false;
    }
 #endif
    return sleep;
@@ -537,7 +552,7 @@ void GLVisWindow::AddIdleFunc(GLVisWindow::IdleFPtr Func)
 {
    idle_funcs.Union(Func);
    use_idle = false;
-   wnd->setOnIdle([this](){return MainIdleFunc();});
+   wnd->setOnIdle([this]() {return MainIdleFunc();});
 }
 
 void GLVisWindow::RemoveIdleFunc(GLVisWindow::IdleFPtr Func)
@@ -552,7 +567,7 @@ void GLVisWindow::RemoveIdleFunc(GLVisWindow::IdleFPtr Func)
 
 void MainLoop(GLVisWindow* wnd)
 {
-    wnd->MainLoop();
+   wnd->MainLoop();
 }
 
 void GLVisWindow::MainLoop()
@@ -897,9 +912,9 @@ void GLVisWindow::Screenshot(std::string filename)
          snprintf(fname, 20, "GLVis_s%02d", p++);
          wnd->screenshot(fname);
       }
-      else 
+      else
       {
-          wnd->screenshot(filename);
+         wnd->screenshot(filename);
       }
       cout << "done" << endl;
    }
@@ -1010,14 +1025,14 @@ void GLVisWindow::ThreadsPauseFunc(GLenum state)
 #ifndef __EMSCRIPTEN__
    if (glvis_command)
    {
-       if (state & KMOD_CTRL)
-       {
-           glvis_command->ToggleAutopause();
-       }
-       else
-       {
-           ToggleThreads();
-       }
+      if (state & KMOD_CTRL)
+      {
+         glvis_command->ToggleAutopause();
+      }
+      else
+      {
+         ToggleThreads();
+      }
    }
 #endif
 }

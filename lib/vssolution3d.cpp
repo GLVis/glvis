@@ -280,7 +280,7 @@ void VisualizationSceneSolution3d::TranslateCPBack()
 void KeyoPressed(GLVisWindow* wnd, GLenum state)
 {
    VisualizationSceneSolution3d* vssol3d
-       = dynamic_cast<VisualizationSceneSolution3d*>(wnd->getScene());
+      = dynamic_cast<VisualizationSceneSolution3d*>(wnd->getScene());
    if (state & KMOD_CTRL)
    {
       vssol3d -> ToggleDrawOrdering();
@@ -308,7 +308,7 @@ void KeyoPressed(GLVisWindow* wnd, GLenum state)
 static void KeyOPressed(GLVisWindow* wnd)
 {
    VisualizationSceneSolution3d* vssol3d
-       = dynamic_cast<VisualizationSceneSolution3d*>(wnd->getScene());
+      = dynamic_cast<VisualizationSceneSolution3d*>(wnd->getScene());
    if (vssol3d -> TimesToRefine > 1)
    {
       cout << "Subdivision factor = " << --vssol3d->TimesToRefine << endl;

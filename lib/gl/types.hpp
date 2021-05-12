@@ -203,10 +203,10 @@ struct alignas(16) Vertex
    std::array<float, 3> coord;
 
    static Vertex create(double * d)
-{
-   return Vertex {(float) d[0], (float) d[1], (float) d[2]};
-}
-static const int layout = LAYOUT_VTX;
+   {
+      return Vertex {(float) d[0], (float) d[1], (float) d[2]};
+   }
+   static const int layout = LAYOUT_VTX;
 };
 
 struct alignas(16) VertexColor

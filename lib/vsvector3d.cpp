@@ -105,18 +105,26 @@ extern GeometryRefiner GLVisGeometryRefiner;
 void VisualizationSceneVector3d::NextDisplacement()
 {
    if (drawdisp)
+   {
       ianimd =( (ianimd + 1) % (ianimmax + 1) );
+   }
    else
+   {
       ianim =( (ianim + 1) % (ianimmax + 1) );
+   }
    NPressed();
 }
 
 void VisualizationSceneVector3d::PrevDisplacement()
 {
    if (drawdisp)
+   {
       ianimd = ((ianimd + ianimmax) % (ianimmax + 1));
+   }
    else
+   {
       ianim = ((ianim + ianimmax) % (ianimmax + 1));
+   }
    NPressed();
 }
 
@@ -360,14 +368,20 @@ void VisualizationSceneVector3d::Init(GLVisWindow* wnd)
       wnd->AddKeyEvent('b', &SceneType::PrevDisplacement);
       wnd->AddKeyEvent('B', &SceneType::PrevDisplacement);
 
-      wnd->AddKeyEvent('u', &SceneType::NextVectorFieldLevel); // Keys u, U are also used in
-      wnd->AddKeyEvent('U', &SceneType::PrevVectorFieldLevel); // VisualizationSceneSolution3d
+      wnd->AddKeyEvent('u',
+                       &SceneType::NextVectorFieldLevel); // Keys u, U are also used in
+      wnd->AddKeyEvent('U',
+                       &SceneType::PrevVectorFieldLevel); // VisualizationSceneSolution3d
 
-      wnd->AddKeyEvent('w', &SceneType::AddVectorFieldLevel); // Keys w, W are also used in
-      wnd->AddKeyEvent('W', &SceneType::RemoveVectorFieldLevel); // VisualizationSceneSolution3d
+      wnd->AddKeyEvent('w',
+                       &SceneType::AddVectorFieldLevel); // Keys w, W are also used in
+      wnd->AddKeyEvent('W',
+                       &SceneType::RemoveVectorFieldLevel); // VisualizationSceneSolution3d
 
-      wnd->AddKeyEvent('v', &SceneType::NextVectorField); // Keys v, V are also used in
-      wnd->AddKeyEvent('V', &SceneType::PrevVectorField); // VisualizationSceneSolution3d
+      wnd->AddKeyEvent('v',
+                       &SceneType::NextVectorField); // Keys v, V are also used in
+      wnd->AddKeyEvent('V',
+                       &SceneType::PrevVectorField); // VisualizationSceneSolution3d
 
       wnd->AddKeyEvent('F', &SceneType::ToggleScalarFunction);
    }

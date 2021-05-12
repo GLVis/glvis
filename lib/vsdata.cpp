@@ -474,7 +474,7 @@ void VisualizationSceneScalarData::QueryCaption()
 void Key_Mod_a_Pressed(GLVisWindow* wnd, GLenum state)
 {
    VisualizationSceneScalarData * vsdata
-       = dynamic_cast<VisualizationSceneScalarData*>(wnd->getScene());
+      = dynamic_cast<VisualizationSceneScalarData*>(wnd->getScene());
    if (state & KMOD_CTRL)
    {
       static const char *autoscale_modes[] = { "off", "on", "value", "mesh" };
@@ -516,7 +516,7 @@ void VisualizationSceneScalarData::Reset3DView()
 void KeypPressed(GLVisWindow* wnd, GLenum state)
 {
    VisualizationSceneScalarData * vsdata
-       = dynamic_cast<VisualizationSceneScalarData*>(wnd->getScene());
+      = dynamic_cast<VisualizationSceneScalarData*>(wnd->getScene());
    // KMOD_CTRL handled by KeyPrintPDF in aux_vis.cpp
    if (!(state & KMOD_CTRL))
    {
@@ -527,7 +527,7 @@ void KeypPressed(GLVisWindow* wnd, GLenum state)
 void KeyPPressed(GLVisWindow* wnd)
 {
    VisualizationSceneScalarData * vsdata
-       = dynamic_cast<VisualizationSceneScalarData*>(wnd->getScene());
+      = dynamic_cast<VisualizationSceneScalarData*>(wnd->getScene());
    vsdata->palette.PrevIndex();
 }
 
@@ -588,7 +588,7 @@ void VisualizationSceneScalarData::QueryPaletteSettings()
 void KeyF7Pressed(GLVisWindow* wnd, GLenum state)
 {
    VisualizationSceneScalarData * vsdata
-       = dynamic_cast<VisualizationSceneScalarData*>(wnd->getScene());
+      = dynamic_cast<VisualizationSceneScalarData*>(wnd->getScene());
    if (state & KMOD_SHIFT)
    {
       cout << "Current bounding box:\n"
@@ -1057,8 +1057,9 @@ void VisualizationSceneScalarData::Init(GLVisWindow* wnd)
 
    autoscale = 1;
 
-   saved_key_func = [wnd]() -> std::string {
-       return wnd->getSdl()->getSavedKeys();
+   saved_key_func = [wnd]() -> std::string
+   {
+      return wnd->getSdl()->getSavedKeys();
    };
 }
 
