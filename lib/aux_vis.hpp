@@ -42,6 +42,8 @@ public:
 
    void SetFont(const std::string& fn);
 
+   StreamState& getStreamState() { return prob_state; }
+
    VisualizationScene* getScene() { return locscene.get(); }
 
    GlVisFont* getFont() { return &font; }

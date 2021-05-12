@@ -57,7 +57,6 @@ string      extra_caption;
 
 // Global variables
 int input = 1;
-StreamState stream_state;
 GLVisWindow * mainWindow = nullptr;
 
 GeometryRefiner GLVisGeometryRefiner;
@@ -96,7 +95,7 @@ void CloseInputStreams(bool);
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
-bool GLVisInitVis(int field_type)
+bool GLVisInitVis(StreamState stream_state, int field_type)
 {
    if (field_type < 0 || field_type > 2)
    {
@@ -287,6 +286,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
 
    VisualizationSceneScalarData* vs
        = static_cast<VisualizationSceneScalarData*>(wnd->getScene());
+   StreamState& stream_state = wnd->getStreamState();
    istream &scr = *script;
    string word;
    int done_one_command = 0;
@@ -656,12 +656,13 @@ void ScriptControl(GLVisWindow* wnd)
    }
 }
 
-void PlayScript(istream &scr)
+void PlayScript(istream &scr, StreamState stream_state)
 {
    string word;
 
    scr_min_val = numeric_limits<double>::infinity();
    scr_max_val = -scr_min_val;
+
 
    // read initializing commands
    while (1)
@@ -722,8 +723,9 @@ void PlayScript(istream &scr)
    scr_level = scr_running = 0;
    script = &scr;
    stream_state.keys.clear();
+   int ftype = (stream_state.grid_f->VectorDim() == 1) ? 0 : 1;
 
-   if (GLVisInitVis((stream_state.grid_f->VectorDim() == 1) ? 0 : 1))
+   if (GLVisInitVis(std::move(stream_state), ftype))
    {
       mainWindow->AddKeyEvent(SDLK_SPACE, ScriptControl, false);
       GLVisStartVis();
@@ -751,6 +753,8 @@ int main (int argc, char *argv[])
    double      line_width    = 1.0;
    double      ms_line_width = gl3::LINE_WIDTH_AA;
    int         geom_ref_type = Quadrature1D::ClosedUniform;
+
+   StreamState stream_state;
 
    OptionsParser args(argc, argv);
 
@@ -899,7 +903,7 @@ int main (int argc, char *argv[])
       ifs >> data_type >> ws;
       int ft = stream_state.ReadStream(ifs, data_type);
       input_streams.Append(&ifs);
-      if (GLVisInitVis(ft))
+      if (GLVisInitVis(std::move(stream_state), ft))
       {
          GLVisStartVis();
       }
@@ -915,7 +919,7 @@ int main (int argc, char *argv[])
          cout << "Can not open script: " << script_file << endl;
          return 1;
       }
-      PlayScript(scr);
+      PlayScript(scr, std::move(stream_state));
       return 0;
    }
 
@@ -1160,7 +1164,7 @@ int main (int argc, char *argv[])
                      delete isock;
                      ft = ReadInputStreams(stream_state);
                   }
-                  if (GLVisInitVis(ft))
+                  if (GLVisInitVis(std::move(stream_state), ft))
                   {
                      GLVisStartVis();
                   }
@@ -1205,7 +1209,7 @@ int main (int argc, char *argv[])
       {
          field_type = (use_soln) ? 0 : 2;
       }
-      if (GLVisInitVis(field_type))
+      if (GLVisInitVis(std::move(stream_state), field_type))
       {
          GLVisStartVis();
       }
