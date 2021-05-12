@@ -156,6 +156,9 @@ private:
     void MyReshape(GLsizei w, GLsizei h);
     void MyExpose(GLsizei w, GLsizei h);
 
+    // Internal event handler for touch screen actions
+    void TouchPinch(SDL_MultiGestureEvent & e);
+
     // Internal event handlers for small scene rotations
     void Key1Pressed();
     void Key2Pressed();
@@ -211,7 +214,6 @@ private:
     std::unique_ptr<RotationControl> rot_data;
 
 };
-void TouchPinch(SDL_MultiGestureEvent & e);
 
 
 

@@ -140,7 +140,10 @@ GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h, bool lega
    wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
    wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
 
-   wnd->setTouchPinchCallback(TouchPinch);
+   TouchDelegate onTouch = [this](SDL_MultiGestureEvent& e)
+   { this->TouchPinch(e); };
+
+   wnd->setTouchPinchCallback(onTouch);
    SetKeyEventHandler('A', &GLVisWindow::ToggleAntialiasing);
 
    SetKeyEventHandler ('p', &GLVisWindow::KeyPrint);
@@ -861,7 +864,7 @@ void GLVisWindow::ToggleAntialiasing()
    SendExposeEvent();
 }
 
-void TouchPinch(SDL_MultiGestureEvent & e)
+void GLVisWindow::TouchPinch(SDL_MultiGestureEvent & e)
 {
    // Scale or Zoom?
    locscene->Zoom(exp(e.dDist*10));

@@ -27,7 +27,7 @@ struct EventInfo
    SDL_Keymod keymod;
 };
 
-typedef void (*TouchDelegate)(SDL_MultiGestureEvent&);
+typedef std::function<void(SDL_MultiGestureEvent&)> TouchDelegate;
 typedef std::function<void(EventInfo*)> MouseDelegate;
 typedef std::function<void(GLenum)> KeyDelegate;
 typedef std::function<void(int, int)> WindowDelegate;

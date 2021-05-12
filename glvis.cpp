@@ -528,7 +528,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
          scr >> stream_state.keys;
          cout << "Script: keys: '" << stream_state.keys << "'" << endl;
          // SendKeySequence(keys.c_str());
-         CallKeySequence(stream_state.keys.c_str());
+         wnd->CallKeySequence(stream_state.keys.c_str());
          wnd->MyExpose();
       }
       else if (word == "palette")
