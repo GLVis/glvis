@@ -59,9 +59,6 @@ string      extra_caption;
 int input = 1;
 StreamState stream_state;
 GLVisWindow * mainWindow = nullptr;
-VisualizationSceneScalarData *vs = NULL;
-GLVisCommand *glvis_command = nullptr;
-communication_thread *comm_thread = NULL;
 
 GeometryRefiner GLVisGeometryRefiner;
 
@@ -288,6 +285,8 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
       return;
    }
 
+   VisualizationSceneScalarData* vs
+       = static_cast<VisualizationSceneScalarData*>(wnd->getScene());
    istream &scr = *script;
    string word;
    int done_one_command = 0;
