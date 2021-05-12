@@ -138,13 +138,13 @@ public:
    ~GLVisCommand();
 };
 
-extern GLVisCommand *glvis_command;
-
 class communication_thread
 {
 private:
    // streams to read data from
    Array<std::istream *> &is;
+
+   GLVisCommand* glvis_command;
 
    // data that may be dynamically allocated by the thread
    std::unique_ptr<Mesh> new_m;
@@ -159,7 +159,7 @@ private:
    void execute();
 
 public:
-   communication_thread(Array<std::istream *> &_is);
+   communication_thread(GLVisCommand* parent_cmd, Array<std::istream *> &_is);
 
    ~communication_thread();
 };

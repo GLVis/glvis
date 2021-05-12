@@ -20,6 +20,10 @@
 #include "sdl.hpp"
 #include "font.hpp"
 #include "openglvis.hpp"
+#include "stream_reader.hpp"
+
+class GLVisCommand;
+class communication_thread;
 
 class GLVisWindow
 {
@@ -32,6 +36,9 @@ public:
 
     void SetVisualizationScene(VisualizationScene * scene,
                                int view = 3, const char *keys = NULL);
+
+    void SetGLVisCommand(GLVisCommand* cmd, communication_thread* cthread);
+
     void SetFont(const std::string& fn);
 
     VisualizationScene* getScene() { return locscene; }
@@ -101,7 +108,8 @@ private:
     void SetKeyEventHandler(int key, void (GLVisWindow::*handler)());
     void SetKeyEventHandler(int key, void (GLVisWindow::*handler)(GLenum));
 
-    void MainIdleFunc();
+    bool MainIdleFunc();
+    bool CommunicationIdleFunc();
 
     void MyReshape(GLsizei w, GLsizei h);
     void MyExpose(GLsizei w, GLsizei h);
@@ -131,6 +139,9 @@ private:
 
     std::unique_ptr<SdlWindow> wnd;
     VisualizationScene* locscene;
+    GLVisCommand* glvis_command = nullptr;
+    communication_thread* comm_thread = nullptr;
+    bool use_idle = false;
 
     // Idle function callbacks
     mfem::Array<IdleFPtr> idle_funcs{};

@@ -46,7 +46,6 @@ using std::endl;
 #endif
 
 extern int GetMultisample();
-extern int visualize;
 
 struct SdlWindow::Handle
 {
@@ -666,42 +665,22 @@ void SdlWindow::mainIter()
 #ifndef __EMSCRIPTEN__
    else if (onIdle)
    {
-      if (glvis_command == NULL || visualize == 2 || useIdle)
+      bool sleep = onIdle();
+      if (sleep)
       {
-         onIdle();
-      }
-      else
-      {
-         if (glvis_command->Execute() < 0)
-         {
-            running = false;
-         }
-      }
-      useIdle = !useIdle;
-   }
-   else
-   {
-      int status;
-      if (glvis_command && visualize == 1 &&
-          (status = glvis_command->Execute()) != 1)
-      {
-         if (status < 0) { running = false; }
-      }
-      else
-      {
-         // Wait for the next event (without consuming CPU cycles, if possible)
-         // See also: SdlWindow::signalLoop()
-         if (platform)
-         {
-            platform->WaitEvent();
-         }
-         else
-         {
-            if (!SDL_PollEvent(nullptr))
-            {
-               std::this_thread::sleep_for(std::chrono::milliseconds(8));
-            }
-         }
+          // Wait for the next event (without consuming CPU cycles, if possible)
+          // See also: SdlWindow::signalLoop()
+          if (platform)
+          {
+              platform->WaitEvent();
+          }
+          else
+          {
+              if (!SDL_PollEvent(nullptr))
+              {
+                  std::this_thread::sleep_for(std::chrono::milliseconds(8));
+              }
+          }
       }
    }
 #else
@@ -730,7 +709,6 @@ void SdlWindow::mainLoop()
       ((SdlWindow*) arg)->mainIter();
    }, this, 0, true);
 #else
-   visualize = 1;
    while (running)
    {
       mainIter();
