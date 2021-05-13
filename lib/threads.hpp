@@ -58,6 +58,8 @@ private:
       PALETTE_REPEAT = 20
    };
 
+   std::atomic<bool> command_ready{false};
+
    // command to be executed
    int command;
 

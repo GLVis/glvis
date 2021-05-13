@@ -56,6 +56,8 @@ int GLVisCommand::lock()
 
 int GLVisCommand::signal()
 {
+   command_ready = true;
+
    SdlWindow *sdl_window = GetAppWindow();
    if (sdl_window)
    {
@@ -67,6 +69,8 @@ int GLVisCommand::signal()
 
 void GLVisCommand::unlock()
 {
+   command_ready = false;
+
    lock_guard<mutex> scope_lock(glvis_mutex);
    num_waiting--;
    if (num_waiting > 0)
@@ -391,12 +395,9 @@ int GLVisCommand::Autopause(const char *mode)
 
 int GLVisCommand::Execute()
 {
+   if (!command_ready)
    {
-      lock_guard<mutex> scope_lock(glvis_mutex);
-      if (num_waiting == 0)
-      {
-         return 1;
-      }
+      return 1;
    }
 
    switch (command)
