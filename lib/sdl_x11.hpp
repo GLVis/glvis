@@ -121,7 +121,7 @@ public:
    void SendEvent()
    {
        char c = 's';
-       if (write(pfd[1], &c, 1) != 1)
+       if (write(event_pfd[1], &c, 1) != 1)
        {
          perror("write()");
          exit(EXIT_FAILURE);
