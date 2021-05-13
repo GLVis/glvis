@@ -16,13 +16,15 @@
 
 #include "sdl_helper.hpp"
 #include "gl/platform_gl.hpp"
-#include "threads.hpp"
 #include <poll.h>
+
+#include <unistd.h>    // pipe, fcntl, write
+#include <fcntl.h>     // fcntl
+#include <cerrno>      // errno, EAGAIN
+#include <cstdio>      // perror
 #ifdef SDL_VIDEO_DRIVER_X11_XINPUT2
 #include <X11/extensions/XInput2.h>
 #endif // SDL_VIDEO_DRIVER_X11_XINPUT2
-
-extern int visualize;
 
 class SdlX11Platform final : public SdlNativePlatform
 {
@@ -69,7 +71,23 @@ public:
       SDL_UnloadObject(lib);
 #endif
 #endif // SDL_VIDEO_DRIVER_X11_XINPUT2
+
+      // Create pipe for external events
+      if (pipe(event_pfd) == -1)
+      {
+         perror("pipe()");
+         exit(EXIT_FAILURE);
+      }
+      int flag = fcntl(event_pfd[0], F_GETFL);
+      fcntl(event_pfd[0], F_SETFL, flag | O_NONBLOCK);
    }
+
+   ~SdlX11Platform()
+   {
+       close(event_pfd[0]);
+       close(event_pfd[1]);
+   }
+
    void WaitEvent()
    {
       int nstr, nfd = 1;
@@ -78,13 +96,11 @@ public:
       pfd[0].fd     = ConnectionNumber(disp);
       pfd[0].events = POLLIN;
       pfd[0].revents = 0;
-      if (glvis_command && visualize == 1)
-      {
-         pfd[1].fd     = glvis_command->ReadFD();
-         pfd[1].events = POLLIN;
-         pfd[1].revents = 0;
-         nfd = 2;
-      }
+
+      pfd[1].fd     = event_pfd[0];
+      pfd[1].events = POLLIN;
+      pfd[1].revents = 0;
+
       do
       {
          nstr = poll(pfd, nfd, -1);
@@ -92,12 +108,30 @@ public:
       while (nstr == -1 && errno == EINTR);
 
       if (nstr == -1) { perror("poll()"); }
+
+      int n = 0;
+      // Read out the pending GLVisCommand-sent events, if any
+      do
+      {
+          char c[10];
+          n = read(event_pfd[0], c, 10);
+      }
+      while (n > 0);
    }
-   void SendEvent() {}
+   void SendEvent()
+   {
+       char c = 's';
+       if (write(pfd[1], &c, 1) != 1)
+       {
+         perror("write()");
+         exit(EXIT_FAILURE);
+       }
+   }
 
 private:
    Display* disp;
    Window wnd;
+   int event_pfd[2]; // pfd[0] -- reading, pfd[1] -- writing
 };
 
 #endif // SDL_VIDEO_DRIVER_X11
