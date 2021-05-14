@@ -90,7 +90,7 @@ public:
 
    void WaitEvent()
    {
-      int nstr, nfd = 1;
+      int nstr, nfd = 2;
       struct pollfd pfd[2];
 
       pfd[0].fd     = ConnectionNumber(disp);
