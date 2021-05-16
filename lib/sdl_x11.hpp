@@ -84,8 +84,8 @@ public:
 
    ~SdlX11Platform()
    {
-       close(event_pfd[0]);
-       close(event_pfd[1]);
+      close(event_pfd[0]);
+      close(event_pfd[1]);
    }
 
    void WaitEvent()
@@ -113,19 +113,19 @@ public:
       // Read out the pending GLVisCommand-sent events, if any
       do
       {
-          char c[10];
-          n = read(event_pfd[0], c, 10);
+         char c[10];
+         n = read(event_pfd[0], c, 10);
       }
       while (n > 0);
    }
    void SendEvent()
    {
-       char c = 's';
-       if (write(event_pfd[1], &c, 1) != 1)
-       {
+      char c = 's';
+      if (write(event_pfd[1], &c, 1) != 1)
+      {
          perror("write()");
          exit(EXIT_FAILURE);
-       }
+      }
    }
 
 private:
