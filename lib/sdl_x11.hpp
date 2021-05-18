@@ -90,8 +90,9 @@ public:
 
    void WaitEvent()
    {
-      int nstr, nfd = 2;
-      struct pollfd pfd[2];
+      constexpr int nfd = 2;
+      int nstr;
+      struct pollfd pfd[nfd];
 
       pfd[0].fd     = ConnectionNumber(disp);
       pfd[0].events = POLLIN;
@@ -113,15 +114,15 @@ public:
       // Read out the pending GLVisCommand-sent events, if any
       do
       {
-         char c[10];
-         n = read(event_pfd[0], c, 10);
+         std::array<char, 16> buf;
+         n = read(event_pfd[0], buf.data(), buf.size());
       }
       while (n > 0);
    }
    void SendEvent()
    {
       char c = 's';
-      if (write(event_pfd[1], &c, 1) != 1)
+      if (write(event_pfd[1], &c, sizeof(c)) != 1)
       {
          perror("write()");
          exit(EXIT_FAILURE);
