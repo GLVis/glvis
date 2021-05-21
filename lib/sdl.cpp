@@ -12,6 +12,7 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <future>
 #include "sdl.hpp"
 #include "threads.hpp"
 #include "aux_vis.hpp"
@@ -102,7 +103,7 @@ public:
 
    // Handles all SDL operations that are expected to be handled on the main
    // SDL thread (i.e. events and window creation)
-   void MainLoop()
+   void MainLoop(bool server_mode)
    {
       if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
       {
@@ -125,43 +126,49 @@ public:
       sdl_init = true;
       while (1)
       {
-         // Process all pending create window commands
-         unordered_map<thread::id, CreateWindowCmd> window_tmp;
+         // Process all pending window commands
+         vector<SdlCtrlCommand> pending_cmds;
          {
-            lock_guard<mutex> req_lock{window_create_mtx};
-            window_tmp = std::move(window_create_reqs);
+            lock_guard<mutex> cmd_lock{window_cmd_mtx};
+            pending_cmds = std::move(window_cmds);
          }
 
-         for (auto it = window_tmp.begin(); it != window_tmp.end(); ++it)
+         for (SdlCtrlCommand& cmd : pending_cmds)
          {
-            createWindowImpl(it->second);
-         }
-
-         {
-            lock_guard<mutex> ready_lock{window_create_mtx};
-            window_ready = std::move(window_tmp);
-         }
-         // Let waiting window workers get their created handles
-         window_created.notify_all();
-
-         // Process all pending delete window commands
-         {
-            lock_guard<mutex> req_lock{window_delete_mtx};
-            // Handle destructors will be called when the temporary vector is
-            // freed.
-            vector<unique_ptr<Handle>> to_delete = std::move(windows_to_delete);
-            for (int ihnd = 0; ihnd < to_delete.size(); ihnd++)
+            switch (cmd.type)
             {
-               if (to_delete[ihnd])
-               {
-                  int wnd_id = SDL_GetWindowID(to_delete[ihnd]->hwnd);
-                  hwnd_to_window.erase(wnd_id);
-                  wnd_events.erase(wnd_id);
-                  num_windows--;
-               }
+               case SdlCmdType::Create:
+                  createWindowImpl(*cmd.cmd_create);
+                  break;
+               case SdlCmdType::Delete:
+                  if (cmd.cmd_delete)
+                  {
+                     unique_ptr<Handle> to_delete = std::move(cmd.cmd_delete);
+                     int wnd_id = SDL_GetWindowID(to_delete->hwnd);
+                     hwnd_to_window.erase(wnd_id);
+                     wnd_events.erase(wnd_id);
+                     num_windows--;
+                  }
+                  break;
+               case SdlCmdType::SetTitle:
+                  SDL_SetWindowTitle(cmd.handle->hwnd, cmd.cmd_title.c_str());
+                  break;
+               case SdlCmdType::SetSize:
+                  SDL_SetWindowSize(cmd.handle->hwnd,
+                                    cmd.cmd_set_size.first,
+                                    cmd.cmd_set_size.second);
+                  break;
+               case SdlCmdType::SetPosition:
+                  SDL_SetWindowPosition(cmd.handle->hwnd,
+                                        cmd.cmd_set_position.first,
+                                        cmd.cmd_set_position.second);
+                  break;
+               default:
+                  cerr << "Error in main thread: unknown window control command.\n";
+                  break;
             }
          }
-         if (num_windows == 0)
+         if (!server_mode && num_windows == 0)
          {
             break; // all windows closed
          }
@@ -261,30 +268,22 @@ public:
                                      const std::string& title, int x, int y,
                                      int w, int h, bool legacyGlOnly)
    {
-      std::thread::id this_thread_id = std::this_thread::get_id();
-      CreateWindowCmd new_cmd { wnd, title, x, y, w, h, legacyGlOnly, false };
+      CreateWindowCmd cmd_create = { wnd, title, x, y, w, h, legacyGlOnly, false };
+      future<unique_ptr<Handle>> res_handle = cmd_create.out_handle.get_future();
+
+      SdlCtrlCommand main_thread_cmd;
+      main_thread_cmd.type = SdlCmdType::Create;
+      main_thread_cmd.cmd_create = &cmd_create;
+
       // Move our create request into the pending queue
       {
-         lock_guard<mutex> req_lock{window_create_mtx};
-         window_create_reqs[this_thread_id] = std::move(new_cmd);
+         lock_guard<mutex> req_lock{window_cmd_mtx};
+         window_cmds.emplace_back(std::move(main_thread_cmd));
       }
       // Wake up the main thread to create our window
       if (platform) { platform->SendEvent(); }
 
-      unique_ptr<Handle> out_hnd;
-      {
-         unique_lock<mutex> wnd_lock{window_create_mtx};
-         // Wait for window to be created in main thread
-         window_created.wait(wnd_lock, [this, this_thread_id]()
-         {
-            return window_ready.find(this_thread_id) != window_ready.end();
-         });
-
-         // Remove window creation command from the pending map
-         auto it = window_ready.find(this_thread_id);
-         out_hnd = std::move(it->second.out_handle);
-         window_ready.erase(it);
-      }
+      unique_ptr<Handle> out_hnd = res_handle.get();
       if (out_hnd->isInitialized())
       {
          // Make the OpenGL context current on the worker thread.
@@ -300,9 +299,62 @@ public:
    // the corresponding OpenGL context.
    void DeleteHandle(std::unique_ptr<Handle> to_delete)
    {
-      lock_guard<mutex> delete_lock{window_delete_mtx};
-      windows_to_delete.emplace_back(std::move(to_delete));
+      SdlCtrlCommand main_thread_cmd;
+      main_thread_cmd.type = SdlCmdType::Delete;
+      main_thread_cmd.cmd_delete = std::move(to_delete);
+
+      {
+          lock_guard<mutex> req_lock{window_cmd_mtx};
+          window_cmds.emplace_back(std::move(main_thread_cmd));
+      }
+      if (platform) { platform->SendEvent(); }
    }
+
+   // Issues a command on the main thread to set the window title.
+   void SetWindowTitle(Handle* handle, std::string title)
+   {
+      SdlCtrlCommand main_thread_cmd;
+      main_thread_cmd.type = SdlCmdType::SetTitle;
+      main_thread_cmd.handle = handle;
+      main_thread_cmd.cmd_title = std::move(title);
+
+      {
+          lock_guard<mutex> req_lock{window_cmd_mtx};
+          window_cmds.emplace_back(std::move(main_thread_cmd));
+      }
+      if (platform) { platform->SendEvent(); }
+   }
+
+   // Issues a command on the main thread to set the window size.
+   void SetWindowSize(Handle* handle, int w, int h)
+   {
+      SdlCtrlCommand main_thread_cmd;
+      main_thread_cmd.type = SdlCmdType::SetSize;
+      main_thread_cmd.handle = handle;
+      main_thread_cmd.cmd_set_size = {w, h};
+
+      {
+          lock_guard<mutex> req_lock{window_cmd_mtx};
+          window_cmds.emplace_back(std::move(main_thread_cmd));
+      }
+      if (platform) { platform->SendEvent(); }
+   }
+
+   // Issues a command on the main thread to set the window position.
+   void SetWindowPosition(Handle* handle, int x, int y)
+   {
+      SdlCtrlCommand main_thread_cmd;
+      main_thread_cmd.type = SdlCmdType::SetPosition;
+      main_thread_cmd.handle = handle;
+      main_thread_cmd.cmd_set_position = {x, y};
+
+      {
+          lock_guard<mutex> req_lock{window_cmd_mtx};
+          window_cmds.emplace_back(std::move(main_thread_cmd));
+      }
+      if (platform) { platform->SendEvent(); }
+   }
+
 private:
    struct CreateWindowCmd
    {
@@ -311,7 +363,29 @@ private:
       int x, y, w, h;
       bool legacy_gl_only;
       bool window_create_executed;
-      std::unique_ptr<Handle> out_handle;
+      promise<unique_ptr<Handle>> out_handle;
+   };
+
+   enum class SdlCmdType
+   {
+      None,
+      Create,
+      Delete,
+      SetTitle,
+      SetSize,
+      SetPosition
+   };
+
+   struct SdlCtrlCommand
+   {
+      SdlCmdType type {SdlCmdType::None};
+
+      Handle*                  handle {nullptr};
+      CreateWindowCmd*         cmd_create;
+      unique_ptr<Handle>       cmd_delete;
+      string                   cmd_title;
+      pair<int, int>           cmd_set_size;
+      pair<int, int>           cmd_set_position;
    };
 
    template<typename T>
@@ -332,20 +406,13 @@ private:
    atomic<bool> terminating {false};
 
    // -------------------------------------------------------------------------
-   // Objects for handling creation of window handles by worker threads.
+   // Objects for handling passing of window control commands to the main event
+   // loop.
 
-   mutex window_create_mtx;
-   condition_variable window_created;
-   unordered_map<std::thread::id, CreateWindowCmd> window_create_reqs;
-   unordered_map<std::thread::id, CreateWindowCmd> window_ready;
+   mutex window_cmd_mtx;
+   vector<SdlCtrlCommand> window_cmds;
 
    int num_windows {-1}; // -1: waiting for window to be created
-
-   // -------------------------------------------------------------------------
-   // Objects for handling deletion of window handles by worker threads.
-
-   mutex window_delete_mtx;
-   vector<unique_ptr<Handle>> windows_to_delete;
 
    // -------------------------------------------------------------------------
    // Objects for handling dispatching events from the main event loop to
@@ -370,9 +437,9 @@ bool SdlWindow::isGlInitialized()
 
 SdlWindow::SdlWindow() {}
 
-void SdlWindow::StartSDL()
+void SdlWindow::StartSDL(bool server_mode)
 {
-   main_thread.MainLoop();
+   main_thread.MainLoop(server_mode);
 }
 
 // Setup the correct OpenGL context flags in SDL for when we actually open the
@@ -524,12 +591,13 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
    probeGLContextSupport(cmd.legacy_gl_only);
-   cmd.out_handle.reset(new Handle(cmd.title, cmd.x, cmd.y, cmd.w, cmd.h,
-                                   win_flags));
+   unique_ptr<Handle> new_handle;
+   new_handle.reset(new Handle(cmd.title, cmd.x, cmd.y, cmd.w, cmd.h,
+                               win_flags));
    cmd.window_create_executed = true;
 
    // at this point, window should be up
-   if (!cmd.out_handle->isInitialized())
+   if (!new_handle->isInitialized())
    {
       PRINT_DEBUG("failed." << endl);
       cerr << "FATAL: window and/or OpenGL context creation failed." << endl;
@@ -540,15 +608,20 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
       PRINT_DEBUG("Handle for window created." << endl);
    }
 
+#ifndef __EMSCRIPTEN__
+   SDL_GL_SetSwapInterval(0);
+   glEnable(GL_DEBUG_OUTPUT);
+#endif
+
    // Register window internally in the main thread so it can receive events
-   int wnd_id = SDL_GetWindowID(cmd.out_handle->hwnd);
+   int wnd_id = SDL_GetWindowID(new_handle->hwnd);
    hwnd_to_window[wnd_id] = cmd.wnd;
 
    if (!platform)
    {
       SDL_SysWMinfo sysinfo;
       SDL_VERSION(&sysinfo.version);
-      if (!SDL_GetWindowWMInfo(cmd.out_handle->hwnd, &sysinfo))
+      if (!SDL_GetWindowWMInfo(new_handle->hwnd, &sysinfo))
       {
          sysinfo.subsystem = SDL_SYSWM_UNKNOWN;
       }
@@ -596,7 +669,7 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
                                   0xFF000000);
       if (iconSurf)
       {
-         SDL_SetWindowIcon(cmd.out_handle->hwnd, iconSurf);
+         SDL_SetWindowIcon(new_handle->hwnd, iconSurf);
          SDL_FreeSurface(iconSurf);
       }
       else
@@ -608,7 +681,7 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
    // Detect if we are using a high-dpi display and resize the window unless it
    // was already resized by SDL's underlying backend.
    {
-      Handle* handle = cmd.out_handle.get();
+      Handle* handle = new_handle.get();
       SdlWindow* wnd = cmd.wnd;
       int scr_w, scr_h, pix_w, pix_h, wdpi, hdpi;
       // SDL_GetWindowSize() -- size in "screen coordinates"
@@ -658,15 +731,16 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
    // Unset GL context in this thread
    {
       lock_guard<mutex> ctx_lock{gl_ctx_mtx};
-      SDL_GL_MakeCurrent(cmd.out_handle->hwnd, nullptr);
+      SDL_GL_MakeCurrent(new_handle->hwnd, nullptr);
    }
 
-   SDL_ShowWindow(cmd.out_handle->hwnd);
+   SDL_ShowWindow(new_handle->hwnd);
    if (num_windows == -1)
    {
       num_windows = 0;
    }
    num_windows++;
+   cmd.out_handle.set_value(std::move(new_handle));
 }
 
 bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
@@ -681,11 +755,6 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
    {
       return false;
    }
-
-#ifndef __EMSCRIPTEN__
-   SDL_GL_SetSwapInterval(0);
-   glEnable(GL_DEBUG_OUTPUT);
-#endif
 
    GLenum err = glewInit();
    if (err != GLEW_OK)
@@ -1138,32 +1207,23 @@ void SdlWindow::setWindowTitle(std::string& title)
 
 void SdlWindow::setWindowTitle(const char * title)
 {
-   if (handle)
-   {
-      SDL_SetWindowTitle(handle->hwnd, title);
-   }
+   main_thread.SetWindowTitle(handle.get(), title);
 }
 
 void SdlWindow::setWindowSize(int w, int h)
 {
-   if (handle)
-   {
-      SDL_SetWindowSize(handle->hwnd, pixel_scale_x*w, pixel_scale_y*h);
-   }
+   main_thread.SetWindowSize(handle.get(), pixel_scale_x*w, pixel_scale_y*h);
 }
 
 void SdlWindow::setWindowPos(int x, int y)
 {
-   if (handle)
-   {
-      bool uc_x = SDL_WINDOWPOS_ISUNDEFINED(x) ||
-                  SDL_WINDOWPOS_ISCENTERED(x);
-      bool uc_y = SDL_WINDOWPOS_ISUNDEFINED(y) ||
-                  SDL_WINDOWPOS_ISCENTERED(y);
-      SDL_SetWindowPosition(handle->hwnd,
-                            uc_x ? x : pixel_scale_x*x,
-                            uc_y ? y : pixel_scale_y*y);
-   }
+   bool uc_x = SDL_WINDOWPOS_ISUNDEFINED(x) ||
+               SDL_WINDOWPOS_ISCENTERED(x);
+   bool uc_y = SDL_WINDOWPOS_ISUNDEFINED(y) ||
+               SDL_WINDOWPOS_ISCENTERED(y);
+   main_thread.SetWindowPosition(handle.get(),
+                                 uc_x ? x : pixel_scale_x*x,
+                                 uc_y ? y : pixel_scale_y*y);
 }
 
 void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)

@@ -19,7 +19,7 @@
 #include "font.hpp"
 #include "openglvis.hpp"
 
-void SDLMainLoop();
+void SDLMainLoop(bool server_mode = false);
 
 /// Initializes the visualization and some keys.
 int InitVisualization(const char name[], int x, int y, int w, int h);
