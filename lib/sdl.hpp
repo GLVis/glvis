@@ -17,6 +17,8 @@
 #include <functional>
 #include <map>
 #include <set>
+#include <mutex>
+#include <deque>
 #include "gl/renderer.hpp"
 #include "sdl_helper.hpp"
 
@@ -38,6 +40,10 @@ class SdlWindow
 {
 private:
    struct Handle;
+   struct MainThread;
+
+   static MainThread main_thread;
+
    std::unique_ptr<Handle> handle;
    std::unique_ptr<gl3::MeshRenderer> renderer;
    static const int high_dpi_threshold = 144;
@@ -56,7 +62,6 @@ private:
 
    std::unique_ptr<SdlNativePlatform> platform;
 
-   static Uint32 glvis_event_type;
 
    bool running;
 
@@ -69,7 +74,6 @@ private:
    std::map<int, MouseDelegate> onMouseMove;
    TouchDelegate onTouchPinch{nullptr};
    TouchDelegate onTouchRotate{nullptr};
-   std::set<SDL_FingerID> fingers;
 
    bool ctrlDown{false};
 
@@ -93,7 +97,6 @@ private:
    bool takeScreenshot{false};
    std::string screenshot_file;
 
-   void probeGLContextSupport(bool legacyGlOnly);
    // internal event handlers
    void windowEvent(SDL_WindowEvent& ew);
    void motionEvent(SDL_MouseMotionEvent& em);
@@ -103,7 +106,23 @@ private:
    void keyEvent(char c);
    void multiGestureEvent(SDL_MultiGestureEvent & e);
 
+   // Hand off events to the SdlWindow. Intended to be called by the main SDL
+   // thread in MainThread::MainLoop().
+   void queueEvents(std::vector<SDL_Event> events)
+   {
+      {
+         std::lock_guard<std::mutex> evt_guard{event_mutex};
+         waiting_events.insert(waiting_events.end(), events.begin(), events.end());
+      }
+      events_available.notify_all();
+   }
+
    std::string saved_keys;
+
+   std::condition_variable events_available;
+   std::mutex event_mutex;
+   // The window-specific events collected by the main event thread.
+   std::deque<SDL_Event> waiting_events;
 public:
    SdlWindow();
    ~SdlWindow();
@@ -112,6 +131,7 @@ public:
    /// fails.
    bool createWindow(const char * title, int x, int y, int w, int h,
                      bool legacyGlOnly);
+
    /// Runs the window loop.
    void mainLoop();
    void mainIter();

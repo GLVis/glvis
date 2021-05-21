@@ -89,19 +89,280 @@ struct SdlWindow::Handle
    }
 };
 
+struct SdlWindow::MainThread
+{
+public:
+   MainThread()
+   {
+      // Create thread to handle all SDL-related commands
+      event_thread = std::thread(&MainThread::MainLoop, this);
+   }
+
+   ~MainThread()
+   {
+      terminating = true;
+   }
+
+   bool SdlInitialized() const { return sdl_init; }
+
+   Uint32 GetCustomEvent() const { return glvis_event_type; }
+
+   // Handles all SDL operations that are expected to be handled on the main
+   // SDL thread (i.e. events and window creation)
+   void MainLoop()
+   {
+      if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
+      {
+         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
+         {
+            cerr << "FATAL: Failed to initialize SDL: " << SDL_GetError() << endl;
+         }
+         SDL_EnableScreenSaver();
+         glvis_event_type = SDL_RegisterEvents(1);
+         if (glvis_event_type == (Uint32)(-1))
+         {
+            cerr << "SDL_RegisterEvents(1) failed: " << SDL_GetError() << endl;
+         }
+      }
+
+      SDL_version sdl_ver;
+      SDL_GetVersion(&sdl_ver);
+      PRINT_DEBUG("Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor
+                  << "." << (int)sdl_ver.patch << std::endl);
+      sdl_init = true;
+      while (1)
+      {
+         if (terminating) { break; }
+         // Process all pending create window commands
+         unordered_map<thread::id, CreateWindowCmd> window_tmp;
+         {
+            lock_guard<mutex> req_lock{window_create_mtx};
+            window_tmp = std::move(window_create_reqs);
+         }
+
+         for (auto it = window_tmp.begin(); it != window_tmp.end(); ++it)
+         {
+            createWindowImpl(it->second);
+         }
+
+         {
+            lock_guard<mutex> ready_lock{window_create_mtx};
+            window_ready = std::move(window_tmp);
+         }
+         // Let waiting window workers get their created handles
+         window_created.notify_all();
+
+         // Process all pending delete window commands
+         {
+            lock_guard<mutex> req_lock{window_delete_mtx};
+            // Handle destructors will be called when the temporary vector is
+            // freed.
+            vector<unique_ptr<Handle>> to_delete = std::move(windows_to_delete);
+         }
+
+         // Dequeue all events from the system window manager
+         SDL_Event e;
+         while (SDL_PollEvent(&e))
+         {
+            unsigned int windowId = -1;
+            bool sendToAll = false;
+            switch (e.type)
+            {
+               case SDL_QUIT:
+                  sendToAll = true;
+                  terminating = true;
+                  break;
+               case SDL_WINDOWEVENT:
+                  windowId = getWindowID(e.window);
+                  break;
+               case SDL_FINGERDOWN:
+                  fingers.insert(e.tfinger.fingerId);
+                  if (fingers.size() >= 2) { disable_mouse = true; }
+                  break;
+               case SDL_FINGERUP:
+                  fingers.erase(e.tfinger.fingerId);
+                  if (fingers.size() < 2) { disable_mouse = false; }
+                  break;
+               case SDL_MULTIGESTURE:
+                  // No window ID is provided with multigesture events. We'll
+                  // have to use focus status within the windows themselves in
+                  // order to resolve the correct target.
+                  sendToAll = true;
+                  break;
+               case SDL_KEYDOWN:
+               case SDL_KEYUP:
+                  windowId = getWindowID(e.key);
+                  break;
+               case SDL_TEXTINPUT:
+                  windowId = getWindowID(e.text);
+                  break;
+               case SDL_MOUSEMOTION:
+                  if (!disable_mouse) { windowId = getWindowID(e.motion); }
+                  break;
+               case SDL_MOUSEBUTTONDOWN:
+               case SDL_MOUSEBUTTONUP:
+                  windowId = getWindowID(e.button);
+                  break;
+            }
+            if (sendToAll == true)
+            {
+               for (auto wnds : hwnd_to_window)
+               {
+                  int windowId = wnds.first;
+                  wnd_events[windowId].emplace_back(e);
+               }
+            }
+            else if (windowId != -1)
+            {
+               wnd_events[windowId].emplace_back(e);
+            }
+         }
+         // Send events to window worker threads
+         for (auto wnds : hwnd_to_window)
+         {
+            int windowId = wnds.first;
+            SdlWindow* wnd = wnds.second;
+            if (!wnd_events[windowId].empty())
+            {
+               wnd->queueEvents(std::move(wnd_events[windowId]));
+            }
+            else
+            {
+               // Wake up the worker thread anyways, to execute onIdle
+               wnd->queueEvents({});
+            }
+         }
+         // Wait for the next event (without consuming CPU cycles, if possible)
+         // See also: SdlWindow::signalLoop()
+         if (platform)
+         {
+            platform->WaitEvent();
+         }
+         else
+         {
+            if (!SDL_PollEvent(nullptr))
+            {
+               std::this_thread::sleep_for(std::chrono::milliseconds(8));
+            }
+         }
+      }
+   }
+
+   // Executed from a window worker thread. Returns a handle to a new window
+   // and associated OpenGL context.
+   std::unique_ptr<Handle> GetHandle(SdlWindow* wnd,
+                                     const std::string& title, int x, int y,
+                                     int w, int h, bool legacyGlOnly)
+   {
+      std::thread::id this_thread_id = std::this_thread::get_id();
+      CreateWindowCmd new_cmd { wnd, title, x, y, w, h, legacyGlOnly, false };
+      // Move our create request into the pending queue
+      {
+         lock_guard<mutex> req_lock{window_create_mtx};
+         window_create_reqs[this_thread_id] = std::move(new_cmd);
+      }
+      // Wake up the main thread to create our window
+      platform->SendEvent();
+
+      unique_ptr<Handle> out_hnd;
+      {
+         unique_lock<mutex> wnd_lock{window_create_mtx};
+         // Wait for window to be created in main thread
+         window_created.wait(wnd_lock, [this, this_thread_id]()
+         {
+            return window_ready[this_thread_id].window_create_executed;
+         });
+
+         // Remove window creation command from the pending map
+         auto it = window_ready.find(this_thread_id);
+         out_hnd = std::move(it->second.out_handle);
+         window_ready.erase(it);
+      }
+      if (out_hnd->isInitialized())
+      {
+         // Make the OpenGL context current on the worker thread.
+         // Since SDL calls aren't guaranteed to be thread-safe, we guard
+         // the call to SDL_GL_MakeCurrent.
+         lock_guard<mutex> ctx_lock{gl_ctx_mtx};
+         SDL_GL_MakeCurrent(out_hnd->hwnd, out_hnd->gl_ctx);
+      }
+      return out_hnd;
+   }
+
+   // Executed from a window worker thread. Deletes a handle to a window and
+   // the corresponding OpenGL context.
+   void DeleteHandle(std::unique_ptr<Handle> to_delete)
+   {
+      lock_guard<mutex> delete_lock{window_delete_mtx};
+      windows_to_delete.emplace_back(std::move(to_delete));
+   }
+private:
+   struct CreateWindowCmd
+   {
+      SdlWindow* wnd;
+      std::string title;
+      int x, y, w, h;
+      bool legacy_gl_only;
+      bool window_create_executed;
+      std::unique_ptr<Handle> out_handle;
+   };
+
+   template<typename T>
+   Uint32 getWindowID(const T& eventStruct)
+   {
+      return eventStruct.windowID;
+   }
+
+   void probeGLContextSupport(bool legacyGlOnly);
+
+   void createWindowImpl(CreateWindowCmd& cmd);
+
+   Uint32 glvis_event_type {(Uint32)-1};
+   bool sdl_init {false};
+
+   atomic<bool> terminating {false};
+   thread event_thread;
+
+   // -------------------------------------------------------------------------
+   // Objects for handling creation of window handles by worker threads.
+
+   mutex window_create_mtx;
+   condition_variable window_created;
+   unordered_map<std::thread::id, CreateWindowCmd> window_create_reqs;
+   unordered_map<std::thread::id, CreateWindowCmd> window_ready;
+
+   // -------------------------------------------------------------------------
+   // Objects for handling deletion of window handles by worker threads.
+
+   mutex window_delete_mtx;
+   vector<unique_ptr<Handle>> windows_to_delete;
+
+   // -------------------------------------------------------------------------
+   // Objects for handling dispatching events from the main event loop to
+   // worker threads.
+
+   unordered_map<int, SdlWindow*> hwnd_to_window;
+   unordered_map<int, vector<SDL_Event>> wnd_events;
+   std::set<SDL_FingerID> fingers;
+   bool disable_mouse {false};
+
+   mutex gl_ctx_mtx;
+
+   unique_ptr<SdlNativePlatform> platform;
+};
+
+SdlWindow::MainThread SdlWindow::main_thread{};
+
 bool SdlWindow::isGlInitialized()
 {
    return (handle->gl_ctx != 0);
 }
 
-// Initialize static member
-Uint32 SdlWindow::glvis_event_type = (Uint32)(-1);
-
 SdlWindow::SdlWindow() {}
 
 // Setup the correct OpenGL context flags in SDL for when we actually open the
 // window.
-void SdlWindow::probeGLContextSupport(bool legacyGlOnly)
+void SdlWindow::MainThread::probeGLContextSupport(bool legacyGlOnly)
 {
    Uint32 win_flags_hidden = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN;
 #ifndef __EMSCRIPTEN__
@@ -204,31 +465,8 @@ void SdlWindow::probeGLContextSupport(bool legacyGlOnly)
 #endif
 }
 
-bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
-                             bool legacyGlOnly)
+void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
 {
-   if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
-   {
-      if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
-      {
-         cerr << "FATAL: Failed to initialize SDL: " << SDL_GetError() << endl;
-         return false;
-      }
-      SDL_EnableScreenSaver();
-      if (glvis_event_type == (Uint32)(-1))
-      {
-         glvis_event_type = SDL_RegisterEvents(1);
-         if (glvis_event_type == (Uint32)(-1))
-         {
-            cerr << "SDL_RegisterEvents(1) failed: " << SDL_GetError() << endl;
-            return false;
-         }
-      }
-   }
-
-   // destroy any existing SDL window
-   handle.reset();
-
    Uint32 win_flags = SDL_WINDOW_OPENGL;
    // Hide window until we adjust its size for high-dpi displays
    win_flags |= SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN;
@@ -237,19 +475,64 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
 #endif
    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
-   probeGLContextSupport(legacyGlOnly);
-   handle.reset(new Handle(title, x, y, w, h, win_flags));
+   probeGLContextSupport(cmd.legacy_gl_only);
+   cmd.out_handle.reset(new Handle(cmd.title, cmd.x, cmd.y, cmd.w, cmd.h,
+                                   win_flags));
+   cmd.window_create_executed = true;
 
    // at this point, window should be up
-   if (!handle->isInitialized())
+   if (!cmd.out_handle->isInitialized())
    {
       PRINT_DEBUG("failed." << endl);
       cerr << "FATAL: window and/or OpenGL context creation failed." << endl;
-      return false;
+      return;
    }
    else
    {
-      PRINT_DEBUG("done." << endl);
+      PRINT_DEBUG("Handle for window created." << endl);
+   }
+
+   // Register window internally in the main thread so it can receive events
+   int wnd_id = SDL_GetWindowID(cmd.out_handle->hwnd);
+   hwnd_to_window[wnd_id] = cmd.wnd;
+
+   // Unset GL context in this thread
+   {
+      lock_guard<mutex> ctx_lock{gl_ctx_mtx};
+      SDL_GL_MakeCurrent(cmd.out_handle->hwnd, nullptr);
+   }
+
+   if (!platform)
+   {
+      SDL_SysWMinfo sysinfo;
+      SDL_VERSION(&sysinfo.version);
+      if (!SDL_GetWindowWMInfo(cmd.out_handle->hwnd, &sysinfo))
+      {
+         sysinfo.subsystem = SDL_SYSWM_UNKNOWN;
+      }
+      switch (sysinfo.subsystem)
+      {
+#if defined(SDL_VIDEO_DRIVER_X11)
+         case SDL_SYSWM_X11:
+         {
+            // Disable XInput extension events since they are generated even
+            // outside the GLVis window.
+            Display *dpy = sysinfo.info.x11.display;
+            Window win = sysinfo.info.x11.window;
+            platform.reset(new SdlX11Platform(dpy, win));
+         }
+         break;
+#elif defined(SDL_VIDEO_DRIVER_COCOA)
+         case SDL_SYSWM_COCOA:
+         {
+            platform.reset(new SdlCocoaPlatform);
+         }
+         break;
+#endif
+         default:
+            // unhandled window manager
+            break;
+      }
    }
 
    const int PixelStride = 4;
@@ -271,13 +554,32 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
                                   0xFF000000);
       if (iconSurf)
       {
-         SDL_SetWindowIcon(handle->hwnd, iconSurf);
+         SDL_SetWindowIcon(cmd.out_handle->hwnd, iconSurf);
          SDL_FreeSurface(iconSurf);
       }
       else
       {
          PRINT_DEBUG("Unable to set window logo: " << SDL_GetError() << endl);
       }
+   }
+}
+
+bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
+                             bool legacyGlOnly)
+{
+   if (!SdlWindow::main_thread.SdlInitialized())
+   {
+      return false;
+   }
+
+   // create a new SDL window
+   handle = SdlWindow::main_thread.GetHandle(this, title, x, y, w, h,
+                                             legacyGlOnly);
+
+   // at this point, window should be up
+   if (!handle->isInitialized())
+   {
+      return false;
    }
 
 #ifndef __EMSCRIPTEN__
@@ -296,11 +598,6 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
    // print versions
    PRINT_DEBUG("Using GLEW " << glewGetString(GLEW_VERSION) << std::endl);
    PRINT_DEBUG("Using GL " << glGetString(GL_VERSION) << std::endl);
-
-   SDL_version sdl_ver;
-   SDL_GetVersion(&sdl_ver);
-   PRINT_DEBUG("Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor
-               << "." << (int)sdl_ver.patch << std::endl);
 
    renderer.reset(new gl3::MeshRenderer);
    renderer->setSamplesMSAA(GetMultisample());
@@ -394,43 +691,15 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
               << sdl_pixel_scale_y*pixel_scale_y << endl;
       }
    }
-   SDL_ShowWindow(handle->hwnd);
-
-   SDL_SysWMinfo sysinfo;
-   SDL_VERSION(&sysinfo.version);
-   if (!SDL_GetWindowWMInfo(handle->hwnd, &sysinfo))
-   {
-      sysinfo.subsystem = SDL_SYSWM_UNKNOWN;
-   }
-   switch (sysinfo.subsystem)
-   {
-#if defined(SDL_VIDEO_DRIVER_X11)
-      case SDL_SYSWM_X11:
-      {
-         // Disable XInput extension events since they are generated even
-         // outside the GLVis window.
-         Display *dpy = sysinfo.info.x11.display;
-         Window win = sysinfo.info.x11.window;
-         platform.reset(new SdlX11Platform(dpy, win));
-      }
-      break;
-#elif defined(SDL_VIDEO_DRIVER_COCOA)
-      case SDL_SYSWM_COCOA:
-      {
-         platform.reset(new SdlCocoaPlatform);
-      }
-      break;
-#endif
-      default:
-         // unhandled window manager
-         break;
-   }
 
    return true;
 }
 
-// defined here because the Handle destructor needs to be visible
-SdlWindow::~SdlWindow() {}
+SdlWindow::~SdlWindow()
+{
+   // Let the main SDL thread delete the handles
+   SdlWindow::main_thread.DeleteHandle(std::move(handle));
+}
 
 void SdlWindow::windowEvent(SDL_WindowEvent& ew)
 {
@@ -603,13 +872,24 @@ void SdlWindow::multiGestureEvent(SDL_MultiGestureEvent & e)
 
 void SdlWindow::mainIter()
 {
-   SDL_Event e;
-   static bool disable_mouse = false;
-   if (SDL_PollEvent(&e))
+   bool events_pending = false;
+   {
+      lock_guard<mutex> evt_guard{event_mutex};
+      events_pending = !waiting_events.empty();
+   }
+   if (events_pending)
    {
       bool keep_going;
       do
       {
+         SDL_Event e;
+         // Fetch next event from the queue
+         {
+            lock_guard<mutex> evt_guard{event_mutex};
+            e = waiting_events.front();
+            waiting_events.pop_front();
+            events_pending = !waiting_events.empty();
+         }
          keep_going = false;
          switch (e.type)
          {
@@ -618,16 +898,6 @@ void SdlWindow::mainIter()
                break;
             case SDL_WINDOWEVENT:
                windowEvent(e.window);
-               break;
-            case SDL_FINGERDOWN:
-               fingers.insert(e.tfinger.fingerId);
-               if (fingers.size() >= 2) { disable_mouse = true; }
-               keep_going = true;
-               break;
-            case SDL_FINGERUP:
-               fingers.erase(e.tfinger.fingerId);
-               if (fingers.size() < 2) { disable_mouse = false; }
-               keep_going = true;
                break;
             case SDL_MULTIGESTURE:
                multiGestureEvent(e.mgesture);
@@ -647,19 +917,19 @@ void SdlWindow::mainIter()
                keyEvent(e.text.text[0]);
                break;
             case SDL_MOUSEMOTION:
-               if (!disable_mouse) { motionEvent(e.motion); }
+               motionEvent(e.motion);
                // continue processing events
                keep_going = true;
                break;
             case SDL_MOUSEBUTTONDOWN:
-               if (!disable_mouse) { mouseEventDown(e.button); }
+               mouseEventDown(e.button);
                break;
             case SDL_MOUSEBUTTONUP:
-               if (!disable_mouse) { mouseEventUp(e.button); }
+               mouseEventUp(e.button);
                break;
          }
       }
-      while (keep_going && SDL_PollEvent(&e));
+      while (keep_going && events_pending);
    }
 #ifndef __EMSCRIPTEN__
    else if (onIdle)
@@ -667,29 +937,15 @@ void SdlWindow::mainIter()
       bool sleep = onIdle();
       if (sleep)
       {
-         // Wait for the next event (without consuming CPU cycles, if possible)
-         // See also: SdlWindow::signalLoop()
-         if (platform)
-         {
-            platform->WaitEvent();
-         }
-         else
-         {
-            if (!SDL_PollEvent(nullptr))
-            {
-               std::this_thread::sleep_for(std::chrono::milliseconds(8));
-            }
-         }
+         // Wait for next wakeup event from main event thread
+         unique_lock<mutex> event_lock{event_mutex};
+         events_available.wait(event_lock);
       }
    }
 #else
    else if (onIdle)
    {
       onIdle();
-   }
-   else
-   {
-      // pass
    }
 #endif
    if (wnd_state == RenderState::ExposePending)
@@ -736,7 +992,7 @@ void SdlWindow::signalLoop()
    {
       SDL_Event event;
       SDL_memset(&event, 0, sizeof(event));
-      event.type = glvis_event_type;
+      event.type = main_thread.GetCustomEvent();
       const int glvis_event_code = 1;
       event.user.code = glvis_event_code;
       event.user.data1 = nullptr;
