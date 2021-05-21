@@ -94,13 +94,6 @@ struct SdlWindow::MainThread
 public:
    MainThread()
    {
-      // Create thread to handle all SDL-related commands
-      event_thread = std::thread(&MainThread::MainLoop, this);
-   }
-
-   ~MainThread()
-   {
-      terminating = true;
    }
 
    bool SdlInitialized() const { return sdl_init; }
@@ -132,7 +125,6 @@ public:
       sdl_init = true;
       while (1)
       {
-         if (terminating) { break; }
          // Process all pending create window commands
          unordered_map<thread::id, CreateWindowCmd> window_tmp;
          {
@@ -158,6 +150,20 @@ public:
             // Handle destructors will be called when the temporary vector is
             // freed.
             vector<unique_ptr<Handle>> to_delete = std::move(windows_to_delete);
+            for (int ihnd = 0; ihnd < to_delete.size(); ihnd++)
+            {
+               if (to_delete[ihnd])
+               {
+                  int wnd_id = SDL_GetWindowID(to_delete[ihnd]->hwnd);
+                  hwnd_to_window.erase(wnd_id);
+                  wnd_events.erase(wnd_id);
+                  num_windows--;
+               }
+            }
+         }
+         if (num_windows == 0)
+         {
+            break; // all windows closed
          }
 
          // Dequeue all events from the system window manager
@@ -217,6 +223,7 @@ public:
                wnd_events[windowId].emplace_back(e);
             }
          }
+         if (terminating) { break; }
          // Send events to window worker threads
          for (auto wnds : hwnd_to_window)
          {
@@ -262,7 +269,7 @@ public:
          window_create_reqs[this_thread_id] = std::move(new_cmd);
       }
       // Wake up the main thread to create our window
-      platform->SendEvent();
+      if (platform) { platform->SendEvent(); }
 
       unique_ptr<Handle> out_hnd;
       {
@@ -270,7 +277,7 @@ public:
          // Wait for window to be created in main thread
          window_created.wait(wnd_lock, [this, this_thread_id]()
          {
-            return window_ready[this_thread_id].window_create_executed;
+            return window_ready.find(this_thread_id) != window_ready.end();
          });
 
          // Remove window creation command from the pending map
@@ -315,13 +322,14 @@ private:
 
    void probeGLContextSupport(bool legacyGlOnly);
 
+   void getDpi(Handle* handle, int& wdpi, int& hdpi);
+
    void createWindowImpl(CreateWindowCmd& cmd);
 
    Uint32 glvis_event_type {(Uint32)-1};
    bool sdl_init {false};
 
    atomic<bool> terminating {false};
-   thread event_thread;
 
    // -------------------------------------------------------------------------
    // Objects for handling creation of window handles by worker threads.
@@ -330,6 +338,8 @@ private:
    condition_variable window_created;
    unordered_map<std::thread::id, CreateWindowCmd> window_create_reqs;
    unordered_map<std::thread::id, CreateWindowCmd> window_ready;
+
+   int num_windows {-1}; // -1: waiting for window to be created
 
    // -------------------------------------------------------------------------
    // Objects for handling deletion of window handles by worker threads.
@@ -359,6 +369,11 @@ bool SdlWindow::isGlInitialized()
 }
 
 SdlWindow::SdlWindow() {}
+
+void SdlWindow::StartSDL()
+{
+   main_thread.MainLoop();
+}
 
 // Setup the correct OpenGL context flags in SDL for when we actually open the
 // window.
@@ -465,6 +480,39 @@ void SdlWindow::MainThread::probeGLContextSupport(bool legacyGlOnly)
 #endif
 }
 
+const int default_dpi = 72;
+void SdlWindow::MainThread::getDpi(Handle* handle, int& w, int& h)
+{
+   w = default_dpi;
+   h = default_dpi;
+   if (!handle)
+   {
+      PRINT_DEBUG("warning: unable to get dpi: handle is null" << endl);
+      return;
+   }
+   int disp = SDL_GetWindowDisplayIndex(handle->hwnd);
+   if (disp < 0)
+   {
+      PRINT_DEBUG("warning: problem getting display index: " << SDL_GetError()
+                  << endl);
+      PRINT_DEBUG("returning default dpi of " << default_dpi << endl);
+      return;
+   }
+
+   float f_w, f_h;
+   if (SDL_GetDisplayDPI(disp, NULL, &f_w, &f_h))
+   {
+      PRINT_DEBUG("warning: problem getting dpi, setting to " << default_dpi
+                  << ": " << SDL_GetError() << endl);
+   }
+   else
+   {
+      PRINT_DEBUG("Screen DPI: w = " << f_w << " ppi, h = " << f_h << " ppi");
+      w = f_w + 0.5f;
+      h = f_h + 0.5f;
+      PRINT_DEBUG(" (" << w << " x " << h << ')' << endl);
+   }
+}
 void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
 {
    Uint32 win_flags = SDL_WINDOW_OPENGL;
@@ -495,12 +543,6 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
    // Register window internally in the main thread so it can receive events
    int wnd_id = SDL_GetWindowID(cmd.out_handle->hwnd);
    hwnd_to_window[wnd_id] = cmd.wnd;
-
-   // Unset GL context in this thread
-   {
-      lock_guard<mutex> ctx_lock{gl_ctx_mtx};
-      SDL_GL_MakeCurrent(cmd.out_handle->hwnd, nullptr);
-   }
 
    if (!platform)
    {
@@ -562,16 +604,74 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
          PRINT_DEBUG("Unable to set window logo: " << SDL_GetError() << endl);
       }
    }
+
+   // Detect if we are using a high-dpi display and resize the window unless it
+   // was already resized by SDL's underlying backend.
+   {
+      Handle* handle = cmd.out_handle.get();
+      SdlWindow* wnd = cmd.wnd;
+      int scr_w, scr_h, pix_w, pix_h, wdpi, hdpi;
+      // SDL_GetWindowSize() -- size in "screen coordinates"
+      SDL_GetWindowSize(handle->hwnd, &scr_w, &scr_h);
+      // SDL_GL_GetDrawableSize() -- size in pixels
+      SDL_GL_GetDrawableSize(handle->hwnd, &pix_w, &pix_h);
+      wnd->high_dpi = false;
+      wnd->pixel_scale_x = wnd->pixel_scale_y = 1.0f;
+      float sdl_pixel_scale_x = 1.0f, sdl_pixel_scale_y = 1.0f;
+      // If "screen" and "pixel" sizes are different, assume high-dpi and no
+      // need to scale the window.
+      if (scr_w == pix_w && scr_h == pix_h)
+      {
+         getDpi(handle, wdpi, hdpi);
+         if (std::max(wdpi, hdpi) >= high_dpi_threshold)
+         {
+            wnd->high_dpi = true;
+            wnd->pixel_scale_x = wnd->pixel_scale_y = 2.0f;
+            // the following two calls use 'pixel_scale_*'
+            SDL_SetWindowSize(handle->hwnd,
+                              wnd->pixel_scale_x*cmd.w,
+                              wnd->pixel_scale_y*cmd.h);
+            bool uc_x = SDL_WINDOWPOS_ISUNDEFINED(cmd.x) ||
+                        SDL_WINDOWPOS_ISCENTERED(cmd.x);
+            bool uc_y = SDL_WINDOWPOS_ISUNDEFINED(cmd.y) ||
+                        SDL_WINDOWPOS_ISCENTERED(cmd.y);
+            SDL_SetWindowPosition(handle->hwnd,
+                                  uc_x ? cmd.x : wnd->pixel_scale_x*cmd.x,
+                                  uc_y ? cmd.y : wnd->pixel_scale_y*cmd.y);
+         }
+      }
+      else
+      {
+         wnd->high_dpi = true;
+         // keep 'pixel_scale_*' = 1, scaling is done inside SDL
+         sdl_pixel_scale_x = float(pix_w)/scr_w;
+         sdl_pixel_scale_y = float(pix_h)/scr_h;
+      }
+      if (wnd->high_dpi)
+      {
+         cout << "High-dpi display detected: using window scaling: "
+              << sdl_pixel_scale_x*wnd->pixel_scale_x << " x "
+              << sdl_pixel_scale_y*wnd->pixel_scale_y << endl;
+      }
+   }
+
+   // Unset GL context in this thread
+   {
+      lock_guard<mutex> ctx_lock{gl_ctx_mtx};
+      SDL_GL_MakeCurrent(cmd.out_handle->hwnd, nullptr);
+   }
+
+   SDL_ShowWindow(cmd.out_handle->hwnd);
+   if (num_windows == -1)
+   {
+      num_windows = 0;
+   }
+   num_windows++;
 }
 
 bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
                              bool legacyGlOnly)
 {
-   if (!SdlWindow::main_thread.SdlInitialized())
-   {
-      return false;
-   }
-
    // create a new SDL window
    handle = SdlWindow::main_thread.GetHandle(this, title, x, y, w, h,
                                              legacyGlOnly);
@@ -652,46 +752,6 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
    renderer->setDevice<gl3::CoreGLDevice>();
 #endif
 
-   // Detect if we are using a high-dpi display and resize the window unless it
-   // was already resized by SDL's underlying backend.
-   {
-      int scr_w, scr_h, pix_w, pix_h, wdpi, hdpi;
-      // SDL_GetWindowSize() -- size in "screen coordinates"
-      SDL_GetWindowSize(handle->hwnd, &scr_w, &scr_h);
-      // SDL_GL_GetDrawableSize() -- size in pixels
-      SDL_GL_GetDrawableSize(handle->hwnd, &pix_w, &pix_h);
-      high_dpi = false;
-      pixel_scale_x = pixel_scale_y = 1.0f;
-      float sdl_pixel_scale_x = 1.0f, sdl_pixel_scale_y = 1.0f;
-      // If "screen" and "pixel" sizes are different, assume high-dpi and no
-      // need to scale the window.
-      if (scr_w == pix_w && scr_h == pix_h)
-      {
-         getDpi(wdpi, hdpi);
-         if (std::max(wdpi, hdpi) >= high_dpi_threshold)
-         {
-            high_dpi = true;
-            pixel_scale_x = pixel_scale_y = 2.0f;
-            // the following two calls use 'pixel_scale_*'
-            setWindowSize(w, h);
-            setWindowPos(x, y);
-         }
-      }
-      else
-      {
-         high_dpi = true;
-         // keep 'pixel_scale_*' = 1, scaling is done inside SDL
-         sdl_pixel_scale_x = float(pix_w)/scr_w;
-         sdl_pixel_scale_y = float(pix_h)/scr_h;
-      }
-      if (high_dpi)
-      {
-         cout << "High-dpi display detected: using window scaling: "
-              << sdl_pixel_scale_x*pixel_scale_x << " x "
-              << sdl_pixel_scale_y*pixel_scale_y << endl;
-      }
-   }
-
    return true;
 }
 
@@ -717,6 +777,8 @@ void SdlWindow::windowEvent(SDL_WindowEvent& ew)
             wnd_state = RenderState::ExposePending;
          }
          break;
+      case SDL_WINDOWEVENT_CLOSE:
+         running = false;
       default:
          break;
    }
@@ -1036,7 +1098,6 @@ void SdlWindow::getGLDrawSize(int& w, int& h)
    SDL_GL_GetDrawableSize(handle->hwnd, &w, &h);
 }
 
-const int default_dpi = 72;
 void SdlWindow::getDpi(int& w, int& h)
 {
    w = default_dpi;

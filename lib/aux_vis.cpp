@@ -48,6 +48,10 @@ float line_w_aa = gl3::LINE_WIDTH_AA;
 
 thread_local SdlWindow * wnd = nullptr;
 bool wndLegacyGl = false;
+void SDLMainLoop()
+{
+   SdlWindow::StartSDL();
+}
 
 SdlWindow * GetAppWindow()
 {

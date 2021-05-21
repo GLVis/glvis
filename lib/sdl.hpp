@@ -62,7 +62,6 @@ private:
 
    std::unique_ptr<SdlNativePlatform> platform;
 
-
    bool running;
 
    IdleDelegate onIdle{nullptr};
@@ -110,6 +109,7 @@ private:
    // thread in MainThread::MainLoop().
    void queueEvents(std::vector<SDL_Event> events)
    {
+      if (running)
       {
          std::lock_guard<std::mutex> evt_guard{event_mutex};
          waiting_events.insert(waiting_events.end(), events.begin(), events.end());
@@ -126,6 +126,10 @@ private:
 public:
    SdlWindow();
    ~SdlWindow();
+
+   // Initializes SDL2 and starts the main loop. Should be called from the main
+   // thread only.
+   static void StartSDL();
 
    /// Creates a new OpenGL window. Returns false if SDL or OpenGL initialization
    /// fails.

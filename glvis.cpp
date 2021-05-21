@@ -1028,10 +1028,24 @@ int main (int argc, char *argv[])
       ifs >> data_type >> ws;
       int ft = stream_state.ReadStream(ifs, data_type);
       input_streams.Append(&ifs);
-      if (GLVisInitVis(ft))
+      std::thread worker_thread
       {
-         GLVisStartVis();
-      }
+         [&](StreamState local_state, Array<istream*> is)
+         {
+            // set the thread-local StreamState and input streams
+            input_streams = is;
+            stream_state = std::move(local_state);
+            if (GLVisInitVis(ft))
+            {
+               GLVisStartVis();
+            }
+         },
+         std::move(stream_state),
+         input_streams
+      };
+
+      SDLMainLoop();
+      worker_thread.join();
       return 0;
    }
 
