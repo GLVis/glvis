@@ -20,7 +20,7 @@ Version 4.0.1 (development)
 
 - Refactoring of rendering components, including palette and shader handling.
 
-- Replace pthreads with C++11 standard thread library.
+- Replace pthreads and POSIX-specific code with C++11 standard thread library.
 
 
 Version 4.0, released on Dec 11, 2020

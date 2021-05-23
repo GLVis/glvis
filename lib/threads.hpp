@@ -32,7 +32,6 @@ private:
 
    int num_waiting;
    bool terminating;
-   int pfd[2];  // pfd[0] -- reading, pfd[1] -- writing
 
    enum
    {
@@ -58,6 +57,8 @@ private:
       AXIS_LABELS = 19,
       PALETTE_REPEAT = 20
    };
+
+   std::atomic<bool> command_ready{false};
 
    // command to be executed
    int command;
@@ -95,9 +96,6 @@ public:
    // called by the main execution thread
    GLVisCommand(VisualizationSceneScalarData **_vs,
                 StreamState& thread_state, bool *_keep_attr);
-
-   // to be used by the main execution (visualization) thread
-   int ReadFD() { return pfd[0]; }
 
    // to be used by worker threads
    bool KeepAttrib() { return *keep_attr; } // may need to sync this
