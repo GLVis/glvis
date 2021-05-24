@@ -24,90 +24,28 @@ namespace gl3
 // unsized formats like GL_RED and GL_RGBA no longer support floating-point
 // data being passed in, so use of the sized internal formats is obligatory in
 // WebGL 2.
-bool GLDevice::useLegacyTextureFmts()
+bool GLDevice::isOpenGL3()
 {
 #ifdef __EMSCRIPTEN__
    const std::string versionString
       = reinterpret_cast<const char*>(glGetString(GL_VERSION));
    if (versionString.find("OpenGL ES 3.0") != std::string::npos)
    {
-      return false;
+      return true;
    }
    else
    {
-      return true;
+      return false;
    }
 #else
-   return !GLEW_VERSION_3_0;
+   return GLEW_VERSION_3_0;
 #endif
 }
 
-void MeshRenderer::setAntialiasing(bool aa_status)
+void DefaultPass::Render(const RenderQueue& queue)
 {
-   if (msaa_enable != aa_status)
-   {
-      msaa_enable = aa_status;
-      if (msaa_enable)
-      {
-         if (!feat_use_fbo_antialias)
-         {
-            glEnable(GL_MULTISAMPLE);
-            glEnable(GL_LINE_SMOOTH);
-            device->enableBlend();
-         }
-         device->setLineWidth(line_w_aa);
-      }
-      else
-      {
-         if (!feat_use_fbo_antialias)
-         {
-            glDisable(GL_MULTISAMPLE);
-            glDisable(GL_LINE_SMOOTH);
-            device->disableBlend();
-         }
-         device->setLineWidth(line_w);
-      }
-   }
-}
-
-void MeshRenderer::setLineWidth(float w)
-{
-   line_w = w;
-   if (device && !msaa_enable)
-   {
-      device->setLineWidth(line_w);
-   }
-}
-
-void MeshRenderer::setLineWidthMS(float w)
-{
-   line_w_aa = w;
-   if (device && msaa_enable)
-   {
-      device->setLineWidth(line_w_aa);
-   }
-}
-
-void MeshRenderer::init()
-{
-#ifdef __EMSCRIPTEN__
-   const std::string versionString
-      = reinterpret_cast<const char*>(glGetString(GL_VERSION));
-   bool is_webgl2 = (versionString.find("OpenGL ES 3.0") != std::string::npos);
-   feat_use_fbo_antialias = is_webgl2;
-   if (feat_use_fbo_antialias)
-   {
-      glGetIntegerv(GL_MAX_SAMPLES, &msaa_samples);
-   }
-#else
-   // TODO: we could also support ARB_framebuffer_object
-   feat_use_fbo_antialias = GLEW_VERSION_3_0;
-   glGetIntegerv(GL_MAX_SAMPLES, &msaa_samples);
-#endif
-}
-
-void MeshRenderer::render(const RenderQueue& queue)
-{
+   auto clear_color = device->getClearColor();
+   glClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
    // elements containing opaque objects should be rendered first
    RenderQueue sorted_queue = queue;
    std::stable_partition(sorted_queue.begin(), sorted_queue.end(),
@@ -115,52 +53,11 @@ void MeshRenderer::render(const RenderQueue& queue)
    {
       return !renderPair.first.contains_translucent;
    });
-   RenderBufHandle renderBufs[2];
-   FBOHandle msaaFb;
-   if (feat_use_fbo_antialias && msaa_enable)
-   {
-      GLuint colorBuf, depthBuf;
-      glGenRenderbuffers(1, &colorBuf);
-      glGenRenderbuffers(1, &depthBuf);
-      renderBufs[0] = RenderBufHandle(colorBuf);
-      renderBufs[1] = RenderBufHandle(depthBuf);
-
-      GLuint fbo;
-      glGenFramebuffers(1, &fbo);
-
-      int vp[4];
-      device->getViewport(vp);
-      int width = vp[2];
-      int height = vp[3];
-      glBindRenderbuffer(GL_RENDERBUFFER, colorBuf);
-      glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_samples,
-                                       GL_RGBA8, width, height);
-      glBindRenderbuffer(GL_RENDERBUFFER, depthBuf);
-      glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_samples,
-                                       GL_DEPTH_COMPONENT24, width, height);
-      glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-      glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                                GL_RENDERBUFFER, colorBuf);
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                                GL_RENDERBUFFER, depthBuf);
-
-      if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-      {
-         cerr << "Unable to create multisampled renderbuffer." << flush;
-         glDeleteFramebuffers(1, &fbo);
-         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-      }
-      else
-      {
-         msaaFb = FBOHandle(fbo);
-      }
-#ifndef __EMSCRIPTEN__
-      glEnable(GL_MULTISAMPLE);
-#endif
-   }
+   target->Bind(1);
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+   int color_tex = palette->GetColorTexture();
+   int alpha_tex = palette->GetAlphaTexture();
+   bool always_blend = device->isBlendEnabled();
    for (auto& q_elem : sorted_queue)
    {
       const RenderParams& params = q_elem.first;
@@ -177,38 +74,20 @@ void MeshRenderer::render(const RenderQueue& queue)
       device->setClipPlaneEqn(params.clip_plane_eqn);
       // aggregate buffers with common parameters
       std::vector<int> tex_bufs, no_tex_bufs;
-      std::vector<TextBuffer*> text_bufs;
       GlDrawable* curr_drawable = q_elem.second;
-      for (int i = 0; i < NUM_LAYOUTS; i++)
+      auto buffers = curr_drawable->getArrayBuffers();
+      for (const IVertexBuffer* buf : buffers)
       {
-         for (size_t j = 0; j < GlDrawable::NUM_SHAPES; j++)
+         if (buf->getVertexLayout() == LAYOUT_VTX_TEXTURE0
+             || buf->getVertexLayout() == LAYOUT_VTX_NORMAL_TEXTURE0)
          {
-            if (curr_drawable->buffers[i][j])
-            {
-               if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0)
-               {
-                  tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->getHandle());
-               }
-               else
-               {
-                  no_tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->getHandle());
-               }
-            }
-            if (curr_drawable->indexed_buffers[i][j])
-            {
-               if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0)
-               {
-                  tex_bufs.emplace_back(curr_drawable->indexed_buffers[i][j].get()->getHandle());
-               }
-               else
-               {
-                  no_tex_bufs.emplace_back(
-                     curr_drawable->indexed_buffers[i][j].get()->getHandle());
-               }
-            }
+            tex_bufs.emplace_back(buf->getHandle());
+         }
+         else
+         {
+            no_tex_bufs.emplace_back(buf->getHandle());
          }
       }
-      text_bufs.emplace_back(&curr_drawable->text_buffer);
       if (params.contains_translucent)
       {
          device->enableBlend();
@@ -236,162 +115,77 @@ void MeshRenderer::render(const RenderQueue& queue)
       }
       device->attachTexture(1, font_tex);
       device->setNumLights(0);
-      for (TextBuffer* buf : text_bufs)
-      {
-         device->drawDeviceBuffer(*buf);
-      }
+      device->drawDeviceBuffer(curr_drawable->getTextBuffer());
       device->enableDepthWrite();
-      if (feat_use_fbo_antialias || !msaa_enable) { device->disableBlend(); }
-   }
-   if (feat_use_fbo_antialias && msaa_enable && msaaFb)
-   {
-      device->enableBlend();
-      int vp[4];
-      device->getViewport(vp);
-      int width = vp[2];
-      int height = vp[3];
-      GLuint colorBufId;
-      glGenRenderbuffers(1, &colorBufId);
-      RenderBufHandle colorBuf(colorBufId);
-
-      GLuint fboId;
-      glGenFramebuffers(1, &fboId);
-      FBOHandle resolveFb(fboId);
-
-      glBindRenderbuffer(GL_RENDERBUFFER, colorBuf);
-      glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
-      glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-      glBindFramebuffer(GL_FRAMEBUFFER, resolveFb);
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                                GL_RENDERBUFFER, colorBuf);
-
-      if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-      {
-         cerr << "Unable to create resolve renderbuffer." << endl;
-         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-      }
-
-      // bind our draw framebuffer and blit the multisampled image
-      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, resolveFb);
-      glBindFramebuffer(GL_READ_FRAMEBUFFER, msaaFb);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      glBlitFramebuffer(0, 0, width, height,
-                        0, 0, width, height,
-                        GL_COLOR_BUFFER_BIT,
-                        GL_NEAREST);
-#ifndef __EMSCRIPTEN__
-      glDisable(GL_MULTISAMPLE);
-#endif
-      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-      glBindFramebuffer(GL_READ_FRAMEBUFFER, resolveFb);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      glBlitFramebuffer(0, 0, width, height,
-                        0, 0, width, height,
-                        GL_COLOR_BUFFER_BIT,
-                        GL_LINEAR);
-      device->disableBlend();
+      if (!always_blend) { device->disableBlend(); }
    }
 }
 
-CaptureBuffer MeshRenderer::capture(const RenderQueue& queue)
+void MeshRenderer::render(const vector<IMainRenderPass*>& main_passes,
+                          const vector<IRenderPass*>& extra_passes,
+                          const RenderQueue& queued)
 {
-   CaptureBuffer cbuf;
-   device->initXfbMode();
-   for (auto& q_elem : queue)
+   // Step 1: Match renderables in the queue with the *first* render pass that
+   //         can handle them.
+   std::vector<RenderQueue> matched_queues(main_passes.size());
+   for (auto drawable : queued)
    {
-      const RenderParams& params = q_elem.first;
-      device->setTransformMatrices(params.model_view.mtx, params.projection.mtx);
-      device->setMaterial(params.mesh_material);
-      device->setNumLights(params.num_pt_lights);
-      for (int i = 0; i < params.num_pt_lights; i++)
+      for (size_t ipass = 0; ipass < main_passes.size(); ipass++)
       {
-         device->setPointLight(i, params.lights[i]);
-      }
-      device->setAmbientLight(params.light_amb_scene);
-      device->setStaticColor(params.static_color);
-      device->setClipPlaneUse(params.use_clip_plane);
-      device->setClipPlaneEqn(params.clip_plane_eqn);
-      // aggregate buffers with common parameters
-      std::vector<int> tex_bufs, no_tex_bufs;
-      std::vector<TextBuffer*> text_bufs;
-      GlDrawable* curr_drawable = q_elem.second;
-      for (int i = 0; i < NUM_LAYOUTS; i++)
-      {
-         for (size_t j = 0; j < GlDrawable::NUM_SHAPES; j++)
+         if (main_passes[ipass]->Filter(drawable.first))
          {
-            if (curr_drawable->buffers[i][j])
-            {
-               if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0)
-               {
-                  tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->getHandle());
-               }
-               else
-               {
-                  no_tex_bufs.emplace_back(curr_drawable->buffers[i][j].get()->getHandle());
-               }
-            }
-            if (curr_drawable->indexed_buffers[i][j])
-            {
-               if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0)
-               {
-                  tex_bufs.emplace_back(curr_drawable->indexed_buffers[i][j].get()->getHandle());
-               }
-               else
-               {
-                  no_tex_bufs.emplace_back(
-                     curr_drawable->indexed_buffers[i][j].get()->getHandle());
-               }
-            }
+            matched_queues[ipass].emplace_back(drawable);
+            break;
          }
       }
-      text_bufs.emplace_back(&curr_drawable->text_buffer);
-
-      device->attachTexture(GLDevice::SAMPLER_COLOR, color_tex);
-      device->attachTexture(GLDevice::SAMPLER_ALPHA, alpha_tex);
-      for (auto buf : tex_bufs)
-      {
-         device->captureXfbBuffer(*pal, cbuf, buf);
-      }
-      device->detachTexture(GLDevice::SAMPLER_COLOR);
-      device->detachTexture(GLDevice::SAMPLER_ALPHA);
-      for (auto buf : no_tex_bufs)
-      {
-         device->captureXfbBuffer(*pal, cbuf, buf);
-      }
-      if (!params.contains_translucent)
-      {
-         device->enableBlend();
-         device->disableDepthWrite();
-      }
-      device->attachTexture(1, font_tex);
-      device->setNumLights(0);
-      for (TextBuffer* buf : text_bufs)
-      {
-         device->captureXfbBuffer(cbuf, *buf);
-      }
    }
-   device->exitXfbMode();
-   return cbuf;
+   // Step 2: Setup the framebuffer with the first extra pass, and render the
+   //         queue with the main passes.
+   Framebuffer default_target;
+   std::reference_wrapper<const Framebuffer> curr_out = default_target;
+   if (extra_passes.size() > 0)
+   {
+      extra_passes[0]->PreRender();
+      curr_out = extra_passes[0]->GetSourceFramebuffer();
+   }
+   for (size_t ipass = 0; ipass < main_passes.size(); ipass++)
+   {
+      main_passes[ipass]->SetTargetFramebuffer(curr_out);
+      main_passes[ipass]->PreRender();
+      main_passes[ipass]->Render(matched_queues[ipass]);
+      main_passes[ipass]->PostRender();
+   }
+
+   if (extra_passes.size() > 0)
+   {
+      for (size_t ipass = 1; ipass < extra_passes.size(); ipass++)
+      {
+         // Finalize last stage's results onto next stage
+         extra_passes[ipass]->PreRender();
+         curr_out = extra_passes[ipass]->GetSourceFramebuffer();
+         extra_passes[ipass-1]->PostRender();
+      }
+      extra_passes[extra_passes.size() - 1]->SetTargetFramebuffer(default_target);
+      extra_passes[extra_passes.size() - 1]->PostRender();
+   }
 }
 
 void MeshRenderer::buffer(GlDrawable* buf)
 {
-   for (int i = 0; i < NUM_LAYOUTS; i++)
+   auto buffers = buf->getArrayBuffers();
+   for (IVertexBuffer* buf : buffers)
    {
-      for (size_t j = 0; j < GlDrawable::NUM_SHAPES; j++)
+      IIndexedBuffer* ibuf = dynamic_cast<IIndexedBuffer*>(buf);
+      if (ibuf)
       {
-         if (buf->buffers[i][j])
-         {
-            device->bufferToDevice((array_layout) i, *(buf->buffers[i][j].get()));
-         }
-         if (buf->indexed_buffers[i][j])
-         {
-            device->bufferToDevice((array_layout) i, *(buf->indexed_buffers[i][j].get()));
-         }
+         device->bufferToDevice(buf->getVertexLayout(), *ibuf);
+      }
+      else
+      {
+         device->bufferToDevice(buf->getVertexLayout(), *buf);
       }
    }
-   device->bufferToDevice(buf->text_buffer);
+   device->bufferToDevice(buf->getTextBuffer());
 }
 
 void GLDevice::init()
@@ -439,20 +233,6 @@ void GLDevice::setTransformMatrices(glm::mat4 model_view, glm::mat4 projection)
 {
    model_view_mtx = model_view;
    proj_mtx = projection;
-}
-
-void GLDevice::captureXfbBuffer(CaptureBuffer& capture, const TextBuffer& t_buf)
-{
-   for (const auto& entry : t_buf)
-   {
-      glm::vec3 raster = glm::project(
-                            glm::vec3(entry.rx, entry.ry, entry.rz),
-                            model_view_mtx,
-                            proj_mtx,
-                            glm::vec4(0, 0, vp_width, vp_height));
-      capture.text.emplace_back(raster, glm::make_vec4(static_color.data()),
-                                entry.text);
-   }
 }
 
 }

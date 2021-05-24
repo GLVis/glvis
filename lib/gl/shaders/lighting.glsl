@@ -67,6 +67,6 @@ vec4 blinnPhong(in vec3 pos, in vec3 norm, in vec4 color)
       float specular_factor = max(dot(half_v, norm), 0.0);
       lit_color += lights[i].specular * material.specular * pow(specular_factor, material.shininess);
    }
-   return lit_color;
+   return vec4(lit_color.rgb, color.a);
 }
 )"

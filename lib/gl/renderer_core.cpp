@@ -11,6 +11,7 @@
 
 #include "attr_traits.hpp"
 #include "renderer_core.hpp"
+#include "renderer_print.hpp"
 #include "../aux_vis.hpp"
 
 #include <regex>
@@ -109,14 +110,7 @@ bool CoreGLDevice::compileShaders()
 #ifndef __EMSCRIPTEN__
    if (GLEW_EXT_transform_feedback || GLEW_VERSION_3_0)
    {
-      const char * xfrm_varyings[] =
-      {
-         "gl_Position",
-         "fColor",
-         "fClipCoord",
-      };
-      glTransformFeedbackVaryings(feedback_prgm.getProgramId(), 3, xfrm_varyings,
-                                  GL_INTERLEAVED_ATTRIBS);
+      feedback_prgm.setFeedbackVaryings({"gl_Position", "fColor", "fClipCoord"});
 
       if (!feedback_prgm.create(PRINTING_VS, PRINTING_FS, attribMap, 1))
       {
@@ -146,14 +140,17 @@ void CoreGLDevice::initializeShaderState(const ShaderProgram& prog)
       }
    }
 #ifdef GLVIS_DEBUG
-   unordered_set<string> expectedUnifs(unif_list.begin(), unif_list.end());
-   for (const auto& pairunif : uniforms)
+   if (prog == default_prgm)
    {
-      if (expectedUnifs.find(pairunif.first) == expectedUnifs.end())
+      unordered_set<string> expectedUnifs(unif_list.begin(), unif_list.end());
+      for (const auto& pairunif : uniforms)
       {
-         std::cerr << "Warning: unexpected uniform \""
-                   << pairunif.first
-                   << "\" found in shader." << std::endl;
+         if (expectedUnifs.find(pairunif.first) == expectedUnifs.end())
+         {
+            std::cerr << "Warning: unexpected uniform \""
+                      << pairunif.first
+                      << "\" found in shader." << std::endl;
+         }
       }
    }
 #endif
@@ -244,7 +241,7 @@ void CoreGLDevice::setClipPlaneEqn(const std::array<double, 4> &eqn)
    glUniform4fv(uniforms["clipPlane"], 1, glm::value_ptr(clip_plane));
 }
 
-void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
+void CoreGLDevice::bufferToDevice(ArrayLayout layout, IVertexBuffer &buf)
 {
    if (buf.getHandle() == 0)
    {
@@ -264,7 +261,7 @@ void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
                 buf.getData(), GL_STATIC_DRAW);
 }
 
-void CoreGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
+void CoreGLDevice::bufferToDevice(ArrayLayout layout, IIndexedBuffer& buf)
 {
    if (buf.getHandle() == 0)
    {

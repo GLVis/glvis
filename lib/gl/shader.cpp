@@ -139,8 +139,6 @@ std::string ShaderProgram::formatShader(const std::string& inShader,
          formatted = std::regex_replace(formatted, std::regex("varying"), "in");
          for (int i = 0; i < num_outputs; i++)
          {
-            std::string indexString = "gl_FragData[";
-            indexString += std::to_string(i) + "]";
             std::string outputString = "out vec4 fragColor_";
             outputString += std::to_string(i) + ";\n";
             if (glsl_version >= 300)
@@ -178,7 +176,7 @@ std::string ShaderProgram::formatShader(const std::string& inShader,
       formatted = std::regex_replace(formatted, std::regex("texture2D"), "texture");
    }
 
-   if (GLDevice::useLegacyTextureFmts())
+   if (!GLDevice::isOpenGL3())
    {
       formatted = "#define USE_ALPHA\n" + formatted;
    }
@@ -226,7 +224,7 @@ GLuint ShaderProgram::compileShader(const std::string& inShader,
    // glGetObjectParameteriv
    if (stat == GL_FALSE)
    {
-      std::cerr << "failed to compile shader" << std::endl;
+      std::cerr << "Failed to compile shader" << std::endl;
       int err_len;
       glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &err_len);
       char *error_text = new char[err_len];
@@ -240,6 +238,26 @@ GLuint ShaderProgram::compileShader(const std::string& inShader,
 
 bool ShaderProgram::linkShaders(const std::vector<GLuint>& shaders)
 {
+   program_id = glCreateProgram();
+   if (program_id == 0)
+   {
+      std::cerr << "Failed to create an OpenGL program object." << std::endl;
+   }
+   // Set transform feedback varyings, if any
+   if (!xfrm_varyings.empty())
+   {
+      std::vector<const char*> varyings_c_str;
+      for (const std::string& var : xfrm_varyings)
+      {
+         varyings_c_str.push_back(var.c_str());
+      }
+#ifndef __EMSCRIPTEN__
+      glTransformFeedbackVaryings(program_id,
+                                  xfrm_varyings.size(),
+                                  varyings_c_str.data(),
+                                  GL_INTERLEAVED_ATTRIBS);
+#endif
+   }
    // Bind all incoming attributes to their VAO indices.
    for (auto attrib_pair : attrib_idx)
    {

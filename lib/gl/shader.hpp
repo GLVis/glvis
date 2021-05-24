@@ -23,11 +23,6 @@ class ShaderProgram
 public:
    ShaderProgram()
    {
-      program_id = glCreateProgram();
-      if (program_id == 0)
-      {
-         std::cerr << "Failed to create an OpenGL program object." << std::endl;
-      }
    }
 
    bool create(std::string vertexShader,
@@ -36,6 +31,11 @@ public:
                int numOutputs);
 
    bool isCompiled() const { return is_compiled; }
+
+   void setFeedbackVaryings(const std::vector<std::string>& varyings)
+   {
+      xfrm_varyings = varyings;
+   }
 
    int uniform(std::string uniformName) const
    {
@@ -56,6 +56,11 @@ public:
 
    void bind() const { glUseProgram(program_id); }
 
+   bool operator== (const ShaderProgram& other) const
+   {
+      return program_id == other.program_id;
+   }
+
 private:
    static void GetGLSLVersion();
 
@@ -74,6 +79,7 @@ private:
    ShaderHandle fragment_shader = 0;
    bool is_compiled = false;
    std::unordered_map<std::string, GLuint> uniform_idx;
+   std::vector<std::string> xfrm_varyings;
 };
 
 }

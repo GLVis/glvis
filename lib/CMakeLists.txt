@@ -10,8 +10,12 @@
 # CONTRIBUTING.md for details.
 
 list(APPEND SOURCES
+  gl/framebuffer.cpp
   gl/renderer.cpp
   gl/renderer_core.cpp
+  gl/renderer_msaa.cpp
+  gl/renderer_print.cpp
+  gl/depth_peel_oit.cpp
   gl/shader.cpp
   gl/types.cpp
   aux_vis.cpp
@@ -28,10 +32,14 @@ list(APPEND SOURCES
   vsvector3d.cpp)
 
 list(APPEND HEADERS
+  gl/framebuffer.hpp
   gl/attr_traits.hpp
   gl/platform_gl.hpp
   gl/renderer.hpp
   gl/renderer_core.hpp
+  gl/renderer_msaa.hpp
+  gl/renderer_print.hpp
+  gl/depth_peel_oit.hpp
   gl/shader.hpp
   gl/types.hpp
   aux_vis.hpp

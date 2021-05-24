@@ -36,9 +36,6 @@ bool startVisualization(const std::string input, const std::string data_type,
    // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
    const int field_type = stream_state.ReadStream(ss, data_type);
 
-   // reset antialiasing
-   GetAppWindow()->getRenderer().setAntialiasing(0);
-
    std::string line;
    double minv = 0.0, maxv = 0.0;
    while (ss >> line)

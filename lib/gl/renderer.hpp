@@ -19,6 +19,7 @@
 
 #include "platform_gl.hpp"
 #include "types.hpp"
+#include "framebuffer.hpp"
 #include "../material.hpp"
 #include "../palettes.hpp"
 
@@ -57,40 +58,12 @@ struct RenderParams
 
 typedef vector<pair<RenderParams, GlDrawable*>> RenderQueue;
 
+struct CaptureBuffer;
+
 struct SceneInfo
 {
    vector<GlDrawable*> needs_buffering;
    RenderQueue queue;
-};
-
-struct FeedbackVertex
-{
-   glm::vec3 position;
-   glm::vec4 color;
-
-   FeedbackVertex() = default;
-   FeedbackVertex(glm::vec3 pos, glm::vec4 c)
-      : position(pos), color(c) { }
-   FeedbackVertex(glm::vec4 pos, glm::vec4 c)
-      : position(pos), color(c) { }
-};
-
-struct FeedbackText
-{
-   glm::vec3 offset;
-   glm::vec4 color;
-   std::string text;
-
-   FeedbackText() = default;
-   FeedbackText(glm::vec3 t_off, glm::vec4 t_color, std::string txt)
-      : offset(t_off), color(t_color), text(std::move(txt)) { }
-};
-
-struct CaptureBuffer
-{
-   vector<FeedbackVertex> lines;
-   vector<FeedbackVertex> triangles;
-   vector<FeedbackText> text;
 };
 
 // OpenGL device interface representing rendering capabilities
@@ -103,6 +76,9 @@ protected:
    glm::mat4 proj_mtx;
 
    std::array<float, 4> static_color;
+   std::array<float, 4> clear_color { 1.f, 1.f, 1.f, 1.f };
+
+   bool blend_enabled = false;
 
 protected:
    TextureHandle passthrough_texture;
@@ -133,10 +109,11 @@ public:
 
    // If true, use unsized internal formats and GL_ALPHA for single-channel
    // data. Otherwise, use the newer sized internal formats and GL_RED.
-   static bool useLegacyTextureFmts();
+   static bool isOpenGL3();
 
-   void enableBlend() { glEnable(GL_BLEND); }
-   void disableBlend() { glDisable(GL_BLEND); }
+   void enableBlend() { blend_enabled = true; glEnable(GL_BLEND); }
+   void disableBlend() { blend_enabled = false; glDisable(GL_BLEND); }
+   bool isBlendEnabled() { return blend_enabled; }
    void enableDepthWrite() { glDepthMask(GL_TRUE); }
    void disableDepthWrite() { glDepthMask(GL_FALSE); }
    void setLineWidth(float w) { glLineWidth(w); }
@@ -149,6 +126,10 @@ public:
    void getViewport(GLint (&vp)[4]);
    // Set the color to use, if a color attribute is not provided.
    void setStaticColor(const std::array<float, 4>& rgba) { static_color = rgba; }
+   // Set the background clear color to use.
+   void setClearColor(const std::array<float, 4>& rgba) { clear_color = rgba; }
+   // Gets the current background color.
+   std::array<float, 4> getClearColor() const { return clear_color; }
 
    // === Render pipeline functions ===
 
@@ -171,8 +152,8 @@ public:
    // === Buffer management functions ===
 
    // Load a client-side vertex buffer into a device buffer.
-   virtual void bufferToDevice(array_layout layout, IVertexBuffer& buf) = 0;
-   virtual void bufferToDevice(array_layout layout, IIndexedBuffer& buf) = 0;
+   virtual void bufferToDevice(ArrayLayout layout, IVertexBuffer& buf) = 0;
+   virtual void bufferToDevice(ArrayLayout layout, IIndexedBuffer& buf) = 0;
    virtual void bufferToDevice(TextBuffer& t_buf) = 0;
    // Draw the data loaded in a device buffer.
    virtual void drawDeviceBuffer(int hnd) = 0;
@@ -183,7 +164,7 @@ public:
    // Initializes state needed for transform feedback.
    virtual void initXfbMode() {}
    // Prepares state when exiting transform feedback.
-   virtual void exitXfbMode() {}
+   virtual void initRenderMode() {}
    // Capture the next drawn vertex buffer to a feedback buffer instead of
    // drawing to screen.
    virtual void captureXfbBuffer(PaletteState& pal, CaptureBuffer& capture,
@@ -193,23 +174,63 @@ public:
 
 };
 
+class IRenderPass
+{
+public:
+   IRenderPass() { }
+   virtual void SetGLDevice(GLDevice* dev) { device = dev; }
+   virtual void PreRender() = 0;
+   virtual void PostRender() = 0;
+
+   virtual const Framebuffer& GetSourceFramebuffer() const
+   { return default_target; }
+
+   virtual void SetTargetFramebuffer(const Framebuffer& fbo) { target = &fbo; }
+protected:
+   GLDevice* device;
+   const Framebuffer* target = nullptr;
+   const Framebuffer default_target;
+};
+
+// Generic interface for an action on a queue of renderable objects.
+class IMainRenderPass : public IRenderPass
+{
+public:
+   IMainRenderPass() { }
+   // If the class will handle objects with the given set of render
+   // parameters, returns true.
+   virtual bool Filter(const RenderParams& param) = 0;
+   // Renders objects in the queue to the setup output surfaces.
+   virtual void Render(const RenderQueue& queue) = 0;
+   // Sets the palette state for this render pass.
+   void setPalette(PaletteState& pal) { palette = &pal; }
+   // Sets the texture handle of the font atlas.
+   void setFontTexture(GLuint tex_h) { font_tex = tex_h; }
+protected:
+   bool use_default_output = true;
+   PaletteState* palette = nullptr;
+   GLuint font_tex = 0;
+};
+
+class DefaultPass : public IMainRenderPass
+{
+public:
+   DefaultPass() { }
+   virtual bool Filter(const RenderParams& param) { return true; }
+
+   virtual void PreRender() {}
+   virtual void Render(const RenderQueue& queued);
+   virtual void PostRender() {}
+};
+
 class MeshRenderer
 {
    unique_ptr<GLDevice> device;
-   bool msaa_enable;
-   int msaa_samples;
-   GLuint color_tex, alpha_tex, font_tex;
-   float line_w, line_w_aa;
-   PaletteState* pal;
+   float line_w;
 
-   bool feat_use_fbo_antialias;
-   void init();
 public:
    MeshRenderer()
-      : msaa_enable(false)
-      , msaa_samples(0)
-      , line_w(1.f)
-      , line_w_aa(LINE_WIDTH_AA) { init(); }
+      : line_w(1.f) { }
 
    template<typename TDevice>
    void setDevice()
@@ -217,7 +238,6 @@ public:
       device.reset(new TDevice());
       device->setLineWidth(line_w);
       device->init();
-      msaa_enable = false;
    }
 
    template<typename TDevice>
@@ -225,43 +245,23 @@ public:
    {
       device.reset(new TDevice(device));
    }
-   void setPalette(PaletteState* pal) { this->pal = pal; }
 
-   // Sets the texture handle of the color palette.
-   void setColorTexture(GLuint tex_h) { color_tex = tex_h; }
-   // Sets the texture handle of the alpha texture.
-   void setAlphaTexture(GLuint tex_h) { alpha_tex = tex_h; }
-   // Sets the texture handle of the font atlas.
-   void setFontTexture(GLuint tex_h) { font_tex = tex_h; }
+   GLDevice* getDevice() const { return device.get(); }
 
-   void setAntialiasing(bool aa_status);
-   bool getAntialiasing() { return msaa_enable; }
-   void setSamplesMSAA(int samples)
+   void SetLineWidth(float w)
    {
-      if (msaa_samples < samples)
-      {
-         std::cerr << "GL_MAX_SAMPLES = " << msaa_samples
-                   << " but requested " << samples << "x MSAA. ";
-         std::cerr << "Setting antialiasing mode to "
-                   << msaa_samples << "x MSAA." << endl;
-      }
-      else
-      {
-         msaa_samples = samples;
-      }
+      line_w = w;
+      if (device) { device->setLineWidth(w); }
    }
-   int getSamplesMSAA() { return msaa_samples; }
+   float GetLineWidth() { return line_w; }
 
-   void setLineWidth(float w);
-   float getLineWidth() { return line_w; }
-   void setLineWidthMS(float w);
-   float getLineWidthMS() { return line_w_aa; }
-
-   void setClearColor(float r, float g, float b, float a) { glClearColor(r, g, b, a); }
+   void setClearColor(float r, float g, float b, float a)
+   { device->setClearColor({r,g,b,a}); }
    void setViewport(GLsizei w, GLsizei h) { device->setViewport(w, h); }
 
-   void render(const RenderQueue& queued);
-   CaptureBuffer capture(const RenderQueue& queued);
+   void render(const std::vector<IMainRenderPass*>& main_passes,
+               const std::vector<IRenderPass*>& extra_passes,
+               const RenderQueue& queued);
 
    void buffer(GlDrawable* buf);
 };

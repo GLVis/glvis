@@ -740,18 +740,6 @@ void KeyKPressed()
    SendExposeEvent();
 }
 
-void KeyAPressed()
-{
-   bool curr_aa = GetAppWindow()->getRenderer().getAntialiasing();
-   GetAppWindow()->getRenderer().setAntialiasing(!curr_aa);
-
-   cout << "Multisampling/Antialiasing: "
-        << strings_off_on[!curr_aa ? 1 : 0] << endl;
-
-   // vsdata -> EventUpdateColors();
-   SendExposeEvent();
-}
-
 void KeyCommaPressed()
 {
    locscene->matAlphaCenter -= 0.25;
@@ -1111,7 +1099,6 @@ void VisualizationSceneScalarData::Init()
 
       // wnd->setOnKeyDown('a', KeyaPressed);
       wnd->setOnKeyDown('a', Key_Mod_a_Pressed);
-      wnd->setOnKeyDown('A', KeyAPressed);
 
       wnd->setOnKeyDown('r', KeyrPressed);
       wnd->setOnKeyDown('R', KeyRPressed);
