@@ -605,7 +605,6 @@ void SdlWindow::multiGestureEvent(SDL_MultiGestureEvent & e)
 void SdlWindow::mainIter()
 {
    SDL_Event e;
-   static bool useIdle = false;
    static bool disable_mouse = false;
    if (SDL_PollEvent(&e))
    {
