@@ -9,11 +9,6 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#include <unistd.h>    // pipe, fcntl, write
-#include <fcntl.h>     // fcntl
-#include <cerrno>      // errno, EAGAIN
-#include <cstdio>      // perror
-
 #include "visual.hpp"
 #include "palettes.hpp"
 
@@ -29,14 +24,6 @@ GLVisCommand::GLVisCommand(
 
    num_waiting = 0;
    terminating = false;
-   if (pipe(pfd) == -1)
-   {
-      perror("pipe()");
-      exit(EXIT_FAILURE);
-   }
-   int flag = fcntl(pfd[0], F_GETFL);
-   fcntl(pfd[0], F_SETFL, flag | O_NONBLOCK);
-
    command = NO_COMMAND;
 
    autopause = 0;
@@ -66,11 +53,7 @@ int GLVisCommand::lock()
 
 int GLVisCommand::signal()
 {
-   char c = 's';
-   if (write(pfd[1], &c, 1) != 1)
-   {
-      return -1;
-   }
+   command_ready = true;
 
    SdlWindow *sdl_window = window->getSdl();
    if (sdl_window)
@@ -83,6 +66,8 @@ int GLVisCommand::signal()
 
 void GLVisCommand::unlock()
 {
+   command_ready = false;
+
    lock_guard<mutex> scope_lock(glvis_mutex);
    num_waiting--;
    if (num_waiting > 0)
@@ -407,16 +392,9 @@ int GLVisCommand::Autopause(const char *mode)
 
 int GLVisCommand::Execute()
 {
-   char c;
-   int n = read(pfd[0], &c, 1);
-
-   if (n == -1 && errno == EAGAIN)
+   if (!command_ready)
    {
       return 1;
-   }
-   if (n != 1 || c != 's')
-   {
-      return -1;
    }
 
    VisualizationSceneScalarData* vs
@@ -685,23 +663,9 @@ int GLVisCommand::Execute()
 
 void GLVisCommand::Terminate()
 {
-   char c;
-   int n = read(pfd[0], &c, 1);
-
    {
       lock_guard<mutex> scope_lock(glvis_mutex);
       terminating = true;
-   }
-   if (n == 1 && c == 's')
-   {
-      switch (command)
-      {
-         case NEW_MESH_AND_SOLUTION:
-            new_state.mesh.release();
-            new_state.grid_f.release();
-            break;
-      }
-      unlock();
    }
    {
       lock_guard<mutex> scope_lock(glvis_mutex);
@@ -733,8 +697,6 @@ GLVisCommand::~GLVisCommand()
       cout << "\nGLVisCommand::~GLVisCommand() : num_waiting = "
            << num_waiting << '\n' << endl;
    }
-   close(pfd[0]);
-   close(pfd[1]);
 }
 
 communication_thread::communication_thread(GLVisCommand* parent_cmd,
