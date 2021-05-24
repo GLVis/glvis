@@ -170,7 +170,7 @@ public:
          }
          if (!server_mode && num_windows == 0)
          {
-            break; // all windows closed
+            terminating = true; // all windows closed
          }
 
          // Dequeue all events from the system window manager
@@ -182,8 +182,10 @@ public:
             switch (e.type)
             {
                case SDL_QUIT:
-                  sendToAll = true;
-                  terminating = true;
+                  if (!server_mode)
+                  {
+                     terminating = true;
+                  }
                   break;
                case SDL_WINDOWEVENT:
                   windowId = getWindowID(e.window);
@@ -230,7 +232,6 @@ public:
                wnd_events[windowId].emplace_back(e);
             }
          }
-         if (terminating) { break; }
          // Send events to window worker threads
          for (auto wnds : hwnd_to_window)
          {
@@ -246,6 +247,7 @@ public:
                wnd->queueEvents({});
             }
          }
+         if (terminating) { break; }
          // Wait for the next event (without consuming CPU cycles, if possible)
          // See also: SdlWindow::signalLoop()
          if (platform)
@@ -303,11 +305,7 @@ public:
       main_thread_cmd.type = SdlCmdType::Delete;
       main_thread_cmd.cmd_delete = std::move(to_delete);
 
-      {
-          lock_guard<mutex> req_lock{window_cmd_mtx};
-          window_cmds.emplace_back(std::move(main_thread_cmd));
-      }
-      if (platform) { platform->SendEvent(); }
+      queueWindowEvent(std::move(main_thread_cmd));
    }
 
    // Issues a command on the main thread to set the window title.
@@ -318,11 +316,7 @@ public:
       main_thread_cmd.handle = handle;
       main_thread_cmd.cmd_title = std::move(title);
 
-      {
-          lock_guard<mutex> req_lock{window_cmd_mtx};
-          window_cmds.emplace_back(std::move(main_thread_cmd));
-      }
-      if (platform) { platform->SendEvent(); }
+      queueWindowEvent(std::move(main_thread_cmd));
    }
 
    // Issues a command on the main thread to set the window size.
@@ -333,11 +327,7 @@ public:
       main_thread_cmd.handle = handle;
       main_thread_cmd.cmd_set_size = {w, h};
 
-      {
-          lock_guard<mutex> req_lock{window_cmd_mtx};
-          window_cmds.emplace_back(std::move(main_thread_cmd));
-      }
-      if (platform) { platform->SendEvent(); }
+      queueWindowEvent(std::move(main_thread_cmd));
    }
 
    // Issues a command on the main thread to set the window position.
@@ -348,10 +338,11 @@ public:
       main_thread_cmd.handle = handle;
       main_thread_cmd.cmd_set_position = {x, y};
 
-      {
-          lock_guard<mutex> req_lock{window_cmd_mtx};
-          window_cmds.emplace_back(std::move(main_thread_cmd));
-      }
+      queueWindowEvent(std::move(main_thread_cmd));
+   }
+
+   void SendEvent()
+   {
       if (platform) { platform->SendEvent(); }
    }
 
@@ -387,6 +378,15 @@ private:
       pair<int, int>           cmd_set_size;
       pair<int, int>           cmd_set_position;
    };
+
+   void queueWindowEvent(SdlCtrlCommand cmd)
+   {
+      {
+         lock_guard<mutex> req_lock{window_cmd_mtx};
+         window_cmds.emplace_back(std::move(cmd));
+      }
+      if (platform) { platform->SendEvent(); }
+   }
 
    template<typename T>
    Uint32 getWindowID(const T& eventStruct)
@@ -834,12 +834,6 @@ void SdlWindow::windowEvent(SDL_WindowEvent& ew)
 {
    switch (ew.event)
    {
-      case SDL_WINDOWEVENT_SIZE_CHANGED:
-         if (onReshape)
-         {
-            onReshape(ew.data1, ew.data2);
-         }
-         break;
       case SDL_WINDOWEVENT_EXPOSED:
          if (onExpose)
          {
@@ -848,6 +842,11 @@ void SdlWindow::windowEvent(SDL_WindowEvent& ew)
          break;
       case SDL_WINDOWEVENT_CLOSE:
          running = false;
+         break;
+      case SDL_WINDOWEVENT_MOVED:
+      case SDL_WINDOWEVENT_RESIZED:
+         swap_before_expose = true;
+         break;
       default:
          break;
    }
@@ -1029,6 +1028,10 @@ void SdlWindow::mainIter()
                break;
             case SDL_WINDOWEVENT:
                windowEvent(e.window);
+               if (wnd_state != RenderState::ExposePending)
+               {
+                  keep_going = true;
+               }
                break;
             case SDL_MULTIGESTURE:
                multiGestureEvent(e.mgesture);
@@ -1081,6 +1084,22 @@ void SdlWindow::mainIter()
 #endif
    if (wnd_state == RenderState::ExposePending)
    {
+#ifdef SDL_VIDEO_DRIVER_COCOA
+      // There is some weird behavior with SDL on Cocoa, where the swap
+      // immediately following a resize event causes the most recent onExpose()
+      // to display incorrectly. I suspect it has something to do with
+      // [NSOpenGLContext update] getting called after the context flush within
+      // Cocoa_GL_SwapBuffers().
+      //
+      // To work around this, we do an extra swap before onExpose() so that the
+      // [NSOpenGLContext update] call is done before we start rendering to the
+      // back buffer.
+      if (swap_before_expose)
+      {
+         SDL_GL_SwapWindow(handle->hwnd);
+         swap_before_expose = false;
+      }
+#endif
       onExpose();
       wnd_state = RenderState::SwapPending;
    }
@@ -1115,21 +1134,7 @@ void SdlWindow::mainLoop()
 void SdlWindow::signalLoop()
 {
    // Note: not executed from the main thread
-   if (platform)
-   {
-      platform->SendEvent();
-   }
-   else
-   {
-      SDL_Event event;
-      SDL_memset(&event, 0, sizeof(event));
-      event.type = main_thread.GetCustomEvent();
-      const int glvis_event_code = 1;
-      event.user.code = glvis_event_code;
-      event.user.data1 = nullptr;
-      event.user.data2 = nullptr;
-      SDL_PushEvent(&event);
-   }
+   main_thread.SendEvent();
 }
 
 void SdlWindow::getWindowSize(int& w, int& h)
@@ -1213,6 +1218,7 @@ void SdlWindow::setWindowTitle(const char * title)
 void SdlWindow::setWindowSize(int w, int h)
 {
    main_thread.SetWindowSize(handle.get(), pixel_scale_x*w, pixel_scale_y*h);
+   swap_before_expose = true;
 }
 
 void SdlWindow::setWindowPos(int x, int y)
@@ -1224,6 +1230,7 @@ void SdlWindow::setWindowPos(int x, int y)
    main_thread.SetWindowPosition(handle.get(),
                                  uc_x ? x : pixel_scale_x*x,
                                  uc_y ? y : pixel_scale_y*y);
+   swap_before_expose = true;
 }
 
 void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)

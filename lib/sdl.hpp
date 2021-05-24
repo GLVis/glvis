@@ -60,8 +60,6 @@ private:
    //   scaled "screen coordinates" on all high-dpi displays.
    float pixel_scale_x = 1.0f, pixel_scale_y = 1.0f;
 
-   std::unique_ptr<SdlNativePlatform> platform;
-
    bool running;
 
    IdleDelegate onIdle{nullptr};
@@ -91,6 +89,8 @@ private:
    };
 
    RenderState wnd_state{RenderState::Updated};
+
+   bool swap_before_expose{false};
 
    //bool requiresExpose;
    bool takeScreenshot{false};
