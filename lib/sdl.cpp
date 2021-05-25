@@ -169,10 +169,7 @@ public:
             switch (e.type)
             {
                case SDL_QUIT:
-                  if (!server_mode)
-                  {
-                     terminating = true;
-                  }
+                  terminating = exitDialog();
                   break;
                case SDL_WINDOWEVENT:
                   windowId = getWindowID(e.window);
@@ -372,6 +369,36 @@ private:
          window_cmds.emplace_back(std::move(cmd));
       }
       if (platform) { platform->SendEvent(); }
+   }
+
+   bool exitDialog()
+   {
+      const int ID_Exit = 1;
+      const int ID_Continue = 2;
+      const SDL_MessageBoxButtonData buttons[] =
+      {
+         {0, ID_Exit, "Yes"},
+         {SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, ID_Continue, "No"}
+      };
+
+      const SDL_MessageBoxData request_box
+      {
+         SDL_MESSAGEBOX_INFORMATION,
+         nullptr,
+         "GLVis Server",
+         "Stop GLVis server thread?",
+         2,
+         buttons,
+         nullptr
+      };
+
+      int button_id;
+      if (SDL_ShowMessageBox(&request_box, &button_id) < 0)
+      {
+         return true;
+      }
+
+      return button_id == ID_Exit;
    }
 
    template<typename T>
