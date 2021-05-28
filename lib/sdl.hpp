@@ -39,12 +39,42 @@ typedef bool (*IdleDelegate)();
 class SdlWindow
 {
 private:
-   struct Handle;
+   struct Handle
+   {
+      SDL_Window * hwnd{nullptr};
+      SDL_GLContext gl_ctx{};
+
+      Handle() = default;
+
+      Handle(const std::string& title, int x, int y, int w, int h,
+             Uint32 wndflags);
+
+      ~Handle();
+
+      Handle(Handle&& other)
+         : hwnd(other.hwnd), gl_ctx(other.gl_ctx)
+      {
+         other.hwnd = nullptr;
+         other.gl_ctx = 0;
+      }
+
+      Handle& operator= (Handle&& other)
+      {
+         std::swap(hwnd, other.hwnd);
+         std::swap(gl_ctx, other.gl_ctx);
+         return *this;
+      }
+
+      bool isInitialized() const
+      {
+         return (hwnd != nullptr && gl_ctx != 0);
+      }
+   };
    struct MainThread;
 
    static MainThread main_thread;
 
-   std::unique_ptr<Handle> handle;
+   Handle handle;
    std::unique_ptr<gl3::MeshRenderer> renderer;
    static const int high_dpi_threshold = 144;
    // The display is high-dpi when:
@@ -207,8 +237,8 @@ public:
 
    void swapBuffer();
 
-   operator bool() { return (bool) handle ; }
-   bool isWindowInitialized() { return (bool) handle; }
+   operator bool() { return handle.isInitialized(); }
+   bool isWindowInitialized() { return handle.isInitialized(); }
    /// Returns true if the OpenGL context was successfully initialized.
    bool isGlInitialized();
 

@@ -48,47 +48,38 @@ using std::endl;
 
 extern int GetMultisample();
 
-struct SdlWindow::Handle
+SdlWindow::Handle::Handle(const std::string& title, int x, int y, int w, int h,
+                          Uint32 wndflags)
+   : hwnd(nullptr)
+   , gl_ctx(0)
 {
-   SDL_Window * hwnd;
-   SDL_GLContext gl_ctx;
-   Handle(const std::string& title, int x, int y, int w, int h,
-          Uint32 wndflags)
-      : hwnd(nullptr)
-      , gl_ctx(0)
+   hwnd = SDL_CreateWindow(title.c_str(), x, y, w, h, wndflags);
+   if (!hwnd)
    {
-      hwnd = SDL_CreateWindow(title.c_str(), x, y, w, h, wndflags);
-      if (!hwnd)
-      {
-         PRINT_DEBUG("SDL window creation failed with error: "
-                     << SDL_GetError() << endl);
-         return;
-      }
-      gl_ctx = SDL_GL_CreateContext(hwnd);
-      if (!gl_ctx)
-      {
-         PRINT_DEBUG("OpenGL context creation failed with error: "
-                     << SDL_GetError() << endl);
-      }
+      PRINT_DEBUG("SDL window creation failed with error: "
+                  << SDL_GetError() << endl);
+      return;
    }
+   gl_ctx = SDL_GL_CreateContext(hwnd);
+   if (!gl_ctx)
+   {
+      PRINT_DEBUG("OpenGL context creation failed with error: "
+                  << SDL_GetError() << endl);
+   }
+}
 
-   ~Handle()
+SdlWindow::Handle::~Handle()
+{
+   if (gl_ctx)
    {
-      if (gl_ctx)
-      {
-         SDL_GL_DeleteContext(gl_ctx);
-      }
-      if (hwnd)
-      {
-         SDL_DestroyWindow(hwnd);
-      }
+      SDL_GL_DeleteContext(gl_ctx);
    }
+   if (hwnd)
+   {
+      SDL_DestroyWindow(hwnd);
+   }
+}
 
-   bool isInitialized()
-   {
-      return (hwnd != nullptr && gl_ctx != 0);
-   }
-};
 
 struct SdlWindow::MainThread
 {
@@ -141,10 +132,10 @@ public:
                   createWindowImpl(*cmd.cmd_create);
                   break;
                case SdlCmdType::Delete:
-                  if (cmd.cmd_delete)
+                  if (cmd.cmd_delete.isInitialized())
                   {
-                     unique_ptr<Handle> to_delete = std::move(cmd.cmd_delete);
-                     int wnd_id = SDL_GetWindowID(to_delete->hwnd);
+                     Handle to_delete = std::move(cmd.cmd_delete);
+                     int wnd_id = SDL_GetWindowID(to_delete.hwnd);
                      hwnd_to_window.erase(wnd_id);
                      wnd_events.erase(wnd_id);
                      num_windows--;
@@ -266,12 +257,11 @@ public:
 
    // Executed from a window worker thread. Returns a handle to a new window
    // and associated OpenGL context.
-   std::unique_ptr<Handle> GetHandle(SdlWindow* wnd,
-                                     const std::string& title, int x, int y,
-                                     int w, int h, bool legacyGlOnly)
+   Handle GetHandle(SdlWindow* wnd, const std::string& title,
+                    int x, int y, int w, int h, bool legacyGlOnly)
    {
       CreateWindowCmd cmd_create = { wnd, title, x, y, w, h, legacyGlOnly, false };
-      future<unique_ptr<Handle>> res_handle = cmd_create.out_handle.get_future();
+      future<Handle> res_handle = cmd_create.out_handle.get_future();
 
       SdlCtrlCommand main_thread_cmd;
       main_thread_cmd.type = SdlCmdType::Create;
@@ -285,21 +275,21 @@ public:
       // Wake up the main thread to create our window
       if (platform) { platform->SendEvent(); }
 
-      unique_ptr<Handle> out_hnd = res_handle.get();
-      if (out_hnd->isInitialized())
+      Handle out_hnd = res_handle.get();
+      if (out_hnd.isInitialized())
       {
          // Make the OpenGL context current on the worker thread.
          // Since SDL calls aren't guaranteed to be thread-safe, we guard
          // the call to SDL_GL_MakeCurrent.
          lock_guard<mutex> ctx_lock{gl_ctx_mtx};
-         SDL_GL_MakeCurrent(out_hnd->hwnd, out_hnd->gl_ctx);
+         SDL_GL_MakeCurrent(out_hnd.hwnd, out_hnd.gl_ctx);
       }
       return out_hnd;
    }
 
    // Executed from a window worker thread. Deletes a handle to a window and
    // the corresponding OpenGL context.
-   void DeleteHandle(std::unique_ptr<Handle> to_delete)
+   void DeleteHandle(Handle to_delete)
    {
       SdlCtrlCommand main_thread_cmd;
       main_thread_cmd.type = SdlCmdType::Delete;
@@ -309,33 +299,33 @@ public:
    }
 
    // Issues a command on the main thread to set the window title.
-   void SetWindowTitle(Handle* handle, std::string title)
+   void SetWindowTitle(const Handle& handle, std::string title)
    {
       SdlCtrlCommand main_thread_cmd;
       main_thread_cmd.type = SdlCmdType::SetTitle;
-      main_thread_cmd.handle = handle;
+      main_thread_cmd.handle = &handle;
       main_thread_cmd.cmd_title = std::move(title);
 
       queueWindowEvent(std::move(main_thread_cmd));
    }
 
    // Issues a command on the main thread to set the window size.
-   void SetWindowSize(Handle* handle, int w, int h)
+   void SetWindowSize(const Handle& handle, int w, int h)
    {
       SdlCtrlCommand main_thread_cmd;
       main_thread_cmd.type = SdlCmdType::SetSize;
-      main_thread_cmd.handle = handle;
+      main_thread_cmd.handle = &handle;
       main_thread_cmd.cmd_set_size = {w, h};
 
       queueWindowEvent(std::move(main_thread_cmd));
    }
 
    // Issues a command on the main thread to set the window position.
-   void SetWindowPosition(Handle* handle, int x, int y)
+   void SetWindowPosition(const Handle& handle, int x, int y)
    {
       SdlCtrlCommand main_thread_cmd;
       main_thread_cmd.type = SdlCmdType::SetPosition;
-      main_thread_cmd.handle = handle;
+      main_thread_cmd.handle = &handle;
       main_thread_cmd.cmd_set_position = {x, y};
 
       queueWindowEvent(std::move(main_thread_cmd));
@@ -354,7 +344,7 @@ private:
       int x, y, w, h;
       bool legacy_gl_only;
       bool window_create_executed;
-      promise<unique_ptr<Handle>> out_handle;
+      promise<Handle> out_handle;
    };
 
    enum class SdlCmdType
@@ -371,9 +361,9 @@ private:
    {
       SdlCmdType type {SdlCmdType::None};
 
-      Handle*                  handle {nullptr};
+      const Handle*            handle {nullptr};
       CreateWindowCmd*         cmd_create;
-      unique_ptr<Handle>       cmd_delete;
+      Handle                   cmd_delete;
       string                   cmd_title;
       pair<int, int>           cmd_set_size;
       pair<int, int>           cmd_set_position;
@@ -396,7 +386,7 @@ private:
 
    void probeGLContextSupport(bool legacyGlOnly);
 
-   void getDpi(Handle* handle, int& wdpi, int& hdpi);
+   void getDpi(const Handle& handle, int& wdpi, int& hdpi);
 
    void createWindowImpl(CreateWindowCmd& cmd);
 
@@ -432,7 +422,7 @@ SdlWindow::MainThread SdlWindow::main_thread{};
 
 bool SdlWindow::isGlInitialized()
 {
-   return (handle->gl_ctx != 0);
+   return (handle.gl_ctx != 0);
 }
 
 SdlWindow::SdlWindow() {}
@@ -548,16 +538,16 @@ void SdlWindow::MainThread::probeGLContextSupport(bool legacyGlOnly)
 }
 
 const int default_dpi = 72;
-void SdlWindow::MainThread::getDpi(Handle* handle, int& w, int& h)
+void SdlWindow::MainThread::getDpi(const Handle& handle, int& w, int& h)
 {
    w = default_dpi;
    h = default_dpi;
-   if (!handle)
+   if (!handle.isInitialized())
    {
       PRINT_DEBUG("warning: unable to get dpi: handle is null" << endl);
       return;
    }
-   int disp = SDL_GetWindowDisplayIndex(handle->hwnd);
+   int disp = SDL_GetWindowDisplayIndex(handle.hwnd);
    if (disp < 0)
    {
       PRINT_DEBUG("warning: problem getting display index: " << SDL_GetError()
@@ -591,13 +581,11 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
    probeGLContextSupport(cmd.legacy_gl_only);
-   unique_ptr<Handle> new_handle;
-   new_handle.reset(new Handle(cmd.title, cmd.x, cmd.y, cmd.w, cmd.h,
-                               win_flags));
+   Handle new_handle(cmd.title, cmd.x, cmd.y, cmd.w, cmd.h, win_flags);
    cmd.window_create_executed = true;
 
    // at this point, window should be up
-   if (!new_handle->isInitialized())
+   if (!new_handle.isInitialized())
    {
       PRINT_DEBUG("failed." << endl);
       cerr << "FATAL: window and/or OpenGL context creation failed." << endl;
@@ -614,14 +602,14 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
 #endif
 
    // Register window internally in the main thread so it can receive events
-   int wnd_id = SDL_GetWindowID(new_handle->hwnd);
+   int wnd_id = SDL_GetWindowID(new_handle.hwnd);
    hwnd_to_window[wnd_id] = cmd.wnd;
 
    if (!platform)
    {
       SDL_SysWMinfo sysinfo;
       SDL_VERSION(&sysinfo.version);
-      if (!SDL_GetWindowWMInfo(new_handle->hwnd, &sysinfo))
+      if (!SDL_GetWindowWMInfo(new_handle.hwnd, &sysinfo))
       {
          sysinfo.subsystem = SDL_SYSWM_UNKNOWN;
       }
@@ -669,7 +657,7 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
                                   0xFF000000);
       if (iconSurf)
       {
-         SDL_SetWindowIcon(new_handle->hwnd, iconSurf);
+         SDL_SetWindowIcon(new_handle.hwnd, iconSurf);
          SDL_FreeSurface(iconSurf);
       }
       else
@@ -681,13 +669,12 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
    // Detect if we are using a high-dpi display and resize the window unless it
    // was already resized by SDL's underlying backend.
    {
-      Handle* handle = new_handle.get();
       SdlWindow* wnd = cmd.wnd;
       int scr_w, scr_h, pix_w, pix_h, wdpi, hdpi;
       // SDL_GetWindowSize() -- size in "screen coordinates"
-      SDL_GetWindowSize(handle->hwnd, &scr_w, &scr_h);
+      SDL_GetWindowSize(new_handle.hwnd, &scr_w, &scr_h);
       // SDL_GL_GetDrawableSize() -- size in pixels
-      SDL_GL_GetDrawableSize(handle->hwnd, &pix_w, &pix_h);
+      SDL_GL_GetDrawableSize(new_handle.hwnd, &pix_w, &pix_h);
       wnd->high_dpi = false;
       wnd->pixel_scale_x = wnd->pixel_scale_y = 1.0f;
       float sdl_pixel_scale_x = 1.0f, sdl_pixel_scale_y = 1.0f;
@@ -695,20 +682,20 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
       // need to scale the window.
       if (scr_w == pix_w && scr_h == pix_h)
       {
-         getDpi(handle, wdpi, hdpi);
+         getDpi(new_handle, wdpi, hdpi);
          if (std::max(wdpi, hdpi) >= high_dpi_threshold)
          {
             wnd->high_dpi = true;
             wnd->pixel_scale_x = wnd->pixel_scale_y = 2.0f;
             // the following two calls use 'pixel_scale_*'
-            SDL_SetWindowSize(handle->hwnd,
+            SDL_SetWindowSize(new_handle.hwnd,
                               wnd->pixel_scale_x*cmd.w,
                               wnd->pixel_scale_y*cmd.h);
             bool uc_x = SDL_WINDOWPOS_ISUNDEFINED(cmd.x) ||
                         SDL_WINDOWPOS_ISCENTERED(cmd.x);
             bool uc_y = SDL_WINDOWPOS_ISUNDEFINED(cmd.y) ||
                         SDL_WINDOWPOS_ISCENTERED(cmd.y);
-            SDL_SetWindowPosition(handle->hwnd,
+            SDL_SetWindowPosition(new_handle.hwnd,
                                   uc_x ? cmd.x : wnd->pixel_scale_x*cmd.x,
                                   uc_y ? cmd.y : wnd->pixel_scale_y*cmd.y);
          }
@@ -731,10 +718,10 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
    // Unset GL context in this thread
    {
       lock_guard<mutex> ctx_lock{gl_ctx_mtx};
-      SDL_GL_MakeCurrent(new_handle->hwnd, nullptr);
+      SDL_GL_MakeCurrent(new_handle.hwnd, nullptr);
    }
 
-   SDL_ShowWindow(new_handle->hwnd);
+   SDL_ShowWindow(new_handle.hwnd);
    if (num_windows == -1)
    {
       num_windows = 0;
@@ -751,7 +738,7 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
                                              legacyGlOnly);
 
    // at this point, window should be up
-   if (!handle->isInitialized())
+   if (!handle.isInitialized())
    {
       return false;
    }
@@ -1096,7 +1083,7 @@ void SdlWindow::mainIter()
       // back buffer.
       if (swap_before_expose)
       {
-         SDL_GL_SwapWindow(handle->hwnd);
+         SDL_GL_SwapWindow(handle.hwnd);
          swap_before_expose = false;
       }
 #endif
@@ -1119,7 +1106,7 @@ void SdlWindow::mainLoop()
       mainIter();
       if (wnd_state == RenderState::SwapPending)
       {
-         SDL_GL_SwapWindow(handle->hwnd);
+         SDL_GL_SwapWindow(handle.hwnd);
          wnd_state = RenderState::Updated;
       }
       if (takeScreenshot)
@@ -1141,7 +1128,7 @@ void SdlWindow::getWindowSize(int& w, int& h)
 {
    w = 0;
    h = 0;
-   if (handle)
+   if (handle.isInitialized())
    {
 #ifdef __EMSCRIPTEN__
       if (canvas_id_.empty())
@@ -1160,7 +1147,7 @@ void SdlWindow::getWindowSize(int& w, int& h)
          return;
       }
 #else
-      SDL_GetWindowSize(handle->hwnd, &w, &h);
+      SDL_GetWindowSize(handle.hwnd, &w, &h);
 #endif
       w /= pixel_scale_x;
       h /= pixel_scale_y;
@@ -1169,19 +1156,19 @@ void SdlWindow::getWindowSize(int& w, int& h)
 
 void SdlWindow::getGLDrawSize(int& w, int& h)
 {
-   SDL_GL_GetDrawableSize(handle->hwnd, &w, &h);
+   SDL_GL_GetDrawableSize(handle.hwnd, &w, &h);
 }
 
 void SdlWindow::getDpi(int& w, int& h)
 {
    w = default_dpi;
    h = default_dpi;
-   if (!handle)
+   if (!handle.isInitialized())
    {
       PRINT_DEBUG("warning: unable to get dpi: handle is null" << endl);
       return;
    }
-   int disp = SDL_GetWindowDisplayIndex(handle->hwnd);
+   int disp = SDL_GetWindowDisplayIndex(handle.hwnd);
    if (disp < 0)
    {
       PRINT_DEBUG("warning: problem getting display index: " << SDL_GetError()
@@ -1212,12 +1199,12 @@ void SdlWindow::setWindowTitle(std::string& title)
 
 void SdlWindow::setWindowTitle(const char * title)
 {
-   main_thread.SetWindowTitle(handle.get(), title);
+   main_thread.SetWindowTitle(handle, title);
 }
 
 void SdlWindow::setWindowSize(int w, int h)
 {
-   main_thread.SetWindowSize(handle.get(), pixel_scale_x*w, pixel_scale_y*h);
+   main_thread.SetWindowSize(handle, pixel_scale_x*w, pixel_scale_y*h);
    swap_before_expose = true;
 }
 
@@ -1227,7 +1214,7 @@ void SdlWindow::setWindowPos(int x, int y)
                SDL_WINDOWPOS_ISCENTERED(x);
    bool uc_y = SDL_WINDOWPOS_ISUNDEFINED(y) ||
                SDL_WINDOWPOS_ISCENTERED(y);
-   main_thread.SetWindowPosition(handle.get(),
+   main_thread.SetWindowPosition(handle,
                                  uc_x ? x : pixel_scale_x*x,
                                  uc_y ? y : pixel_scale_y*y);
    swap_before_expose = true;
@@ -1252,5 +1239,5 @@ void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
 
 void SdlWindow::swapBuffer()
 {
-   SDL_GL_SwapWindow(handle->hwnd);
+   SDL_GL_SwapWindow(handle.hwnd);
 }
