@@ -21,8 +21,8 @@ using namespace mfem;
 using namespace std;
 
 
-VisualizationSceneSolution3d *vssol3d;
-extern GeometryRefiner GLVisGeometryRefiner;
+thread_local VisualizationSceneSolution3d *vssol3d;
+extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 // Definitions of some more keys
 

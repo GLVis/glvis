@@ -55,11 +55,12 @@ string      extra_caption;
 
 // Global variables
 int input = 1;
-StreamState stream_state;
-VisualizationSceneScalarData *vs = NULL;
-communication_thread *comm_thread = NULL;
+thread_local StreamState stream_state;
+thread_local VisualizationSceneScalarData *vs = NULL;
+extern thread_local GLVisCommand* glvis_command;
+thread_local communication_thread *comm_thread = NULL;
 
-GeometryRefiner GLVisGeometryRefiner;
+thread_local GeometryRefiner GLVisGeometryRefiner;
 
 const char *window_titles[] = { "GLVis [scalar data]",
                                 "GLVis [vector data]", "GLVis [mesh]"
@@ -70,7 +71,7 @@ int scr_level = 0;
 Vector *init_nodes = NULL;
 double scr_min_val, scr_max_val;
 
-Array<istream *> input_streams;
+thread_local Array<istream *> input_streams;
 
 extern char **environ;
 
@@ -115,7 +116,7 @@ bool GLVisInitVis(int field_type)
    {
       GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
       glvis_command = new GLVisCommand(&vs, stream_state, &keep_attr);
-      comm_thread = new communication_thread(input_streams);
+      comm_thread = new communication_thread(input_streams, glvis_command);
    }
 
    double mesh_range = -1.0;

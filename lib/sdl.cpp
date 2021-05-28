@@ -46,7 +46,8 @@ using std::endl;
 #endif
 
 extern int GetMultisample();
-extern int visualize;
+extern thread_local int visualize;
+extern thread_local GLVisCommand* glvis_command;
 
 struct SdlWindow::Handle
 {

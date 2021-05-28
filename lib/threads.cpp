@@ -16,7 +16,6 @@ using namespace std;
 
 extern const char *strings_off_on[]; // defined in vsdata.cpp
 
-GLVisCommand *glvis_command = NULL;
 
 GLVisCommand::GLVisCommand(
    VisualizationSceneScalarData **_vs, StreamState& state, bool *_keep_attr)
@@ -713,8 +712,9 @@ GLVisCommand::~GLVisCommand()
    }
 }
 
-communication_thread::communication_thread(Array<istream *> &_is)
-   : is(_is)
+communication_thread::communication_thread(const Array<istream *> &_is,
+                                           GLVisCommand* cmd)
+   : is(_is), glvis_command(cmd)
 {
    new_m = NULL;
    new_g = NULL;

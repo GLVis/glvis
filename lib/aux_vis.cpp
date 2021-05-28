@@ -33,8 +33,9 @@ using namespace mfem;
 #include <fontconfig/fontconfig.h>
 #endif
 
-int visualize = 0;
-VisualizationScene * locscene;
+thread_local int visualize = 0;
+thread_local VisualizationScene * locscene;
+thread_local GLVisCommand *glvis_command = NULL;
 
 #ifdef GLVIS_MULTISAMPLE
 static int glvis_multisample = GLVIS_MULTISAMPLE;
@@ -45,7 +46,7 @@ static int glvis_multisample = -1;
 float line_w = 1.f;
 float line_w_aa = gl3::LINE_WIDTH_AA;
 
-SdlWindow * wnd = nullptr;
+thread_local SdlWindow * wnd = nullptr;
 bool wndLegacyGl = false;
 
 SdlWindow * GetAppWindow()
@@ -236,7 +237,7 @@ void SendKeySequence(const char *seq)
 }
 
 
-static bool disableSendExposeEvent = false;
+thread_local bool disableSendExposeEvent = false;
 
 void CallKeySequence(const char *seq)
 {
@@ -398,8 +399,8 @@ void MyExpose()
 }
 
 
-Array<void (*)()> IdleFuncs;
-int LastIdleFunc;
+thread_local Array<void (*)()> IdleFuncs;
+thread_local int LastIdleFunc;
 
 void InitIdleFuncs()
 {
@@ -433,12 +434,12 @@ void RemoveIdleFunc(void (*Func)(void))
 }
 
 
-double xang = 0., yang = 0.;
-gl3::GlMatrix srot;
-double sph_t, sph_u;
-static GLint oldx, oldy, startx, starty;
+thread_local double xang = 0., yang = 0.;
+thread_local gl3::GlMatrix srot;
+thread_local double sph_t, sph_u;
+thread_local GLint oldx, oldy, startx, starty;
 
-int constrained_spinning = 0;
+thread_local int constrained_spinning = 0;
 
 
 void MainLoop()
@@ -1548,7 +1549,7 @@ vector<string> fc_font_patterns =
 constexpr int default_font_size = 12;
 int font_size = default_font_size;
 
-GlVisFont glvis_font;
+thread_local GlVisFont glvis_font;
 std::string priority_font;
 
 void InitFont()
