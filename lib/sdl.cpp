@@ -46,8 +46,6 @@ using std::endl;
 #endif
 
 extern int GetMultisample();
-extern thread_local int visualize;
-extern thread_local GLVisCommand* glvis_command;
 
 struct SdlWindow::Handle
 {
@@ -606,7 +604,6 @@ void SdlWindow::multiGestureEvent(SDL_MultiGestureEvent & e)
 void SdlWindow::mainIter()
 {
    SDL_Event e;
-   static bool useIdle = false;
    static bool disable_mouse = false;
    if (SDL_PollEvent(&e))
    {
@@ -667,28 +664,8 @@ void SdlWindow::mainIter()
 #ifndef __EMSCRIPTEN__
    else if (onIdle)
    {
-      if (glvis_command == NULL || visualize == 2 || useIdle)
-      {
-         onIdle();
-      }
-      else
-      {
-         if (glvis_command->Execute() < 0)
-         {
-            running = false;
-         }
-      }
-      useIdle = !useIdle;
-   }
-   else
-   {
-      int status;
-      if (glvis_command && visualize == 1 &&
-          (status = glvis_command->Execute()) != 1)
-      {
-         if (status < 0) { running = false; }
-      }
-      else
+      bool sleep = onIdle();
+      if (sleep)
       {
          // Wait for the next event (without consuming CPU cycles, if possible)
          // See also: SdlWindow::signalLoop()
@@ -731,7 +708,6 @@ void SdlWindow::mainLoop()
       ((SdlWindow*) arg)->mainIter();
    }, this, 0, true);
 #else
-   visualize = 1;
    while (running)
    {
       mainIter();

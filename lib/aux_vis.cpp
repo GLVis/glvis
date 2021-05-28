@@ -323,6 +323,7 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
 
 void RunVisualization()
 {
+   visualize = 1;
 #ifndef __EMSCRIPTEN__
    wnd->mainLoop();
 #endif
@@ -401,16 +402,75 @@ void MyExpose()
 
 thread_local Array<void (*)()> IdleFuncs;
 thread_local int LastIdleFunc;
+thread_local bool use_idle = false;
+
+bool MainIdleFunc();
 
 void InitIdleFuncs()
 {
    IdleFuncs.SetSize(0);
    LastIdleFunc = 0;
-   wnd->setOnIdle(NULL);
+   if (glvis_command)
+   {
+      wnd->setOnIdle(MainIdleFunc);
+   }
 }
 
-void MainIdleFunc()
+bool CommunicationIdleFunc()
 {
+   int status = glvis_command->Execute();
+   if (status < 0)
+   {
+      cout << "GLVisCommand signalled exit" << endl;
+      wnd->signalQuit();
+   }
+   else if (status == 1)
+   {
+      // no commands right now - main loop should sleep
+      return true;
+   }
+   return false;
+}
+
+bool MainIdleFunc()
+{
+   bool sleep = true;
+#ifndef __EMSCRIPTEN__
+   if (glvis_command && visualize == 1
+       && !(IdleFuncs.Size() > 0 && use_idle))
+   {
+      // Execute the next event from the communication thread if:
+      //  - a valid GLVisCommand has been set
+      //  - the communication thread is not stopped
+      //  - The idle function flag is not set, or no idle functions have been
+      //    registered
+      sleep = CommunicationIdleFunc();
+      if (IdleFuncs.Size() > 0) { sleep = false; }
+   }
+   else if (IdleFuncs.Size() > 0)
+   {
+      LastIdleFunc = (LastIdleFunc + 1) % IdleFuncs.Size();
+      if (IdleFuncs[LastIdleFunc])
+      {
+         (*IdleFuncs[LastIdleFunc])();
+      }
+      // Continue executing idle functions
+      sleep = false;
+   }
+   use_idle = !use_idle;
+#else
+   if (IdleFuncs.Size() > 0)
+   {
+      LastIdleFunc = (LastIdleFunc + 1) % IdleFuncs.Size();
+      if (IdleFuncs[LastIdleFunc])
+      {
+         (*IdleFuncs[LastIdleFunc])(this);
+      }
+      // Continue executing idle functions
+      sleep = false;
+   }
+#endif
+   return sleep;
    LastIdleFunc = (LastIdleFunc + 1) % IdleFuncs.Size();
    if (IdleFuncs[LastIdleFunc])
    {
@@ -427,7 +487,7 @@ void AddIdleFunc(void (*Func)(void))
 void RemoveIdleFunc(void (*Func)(void))
 {
    IdleFuncs.DeleteFirst(Func);
-   if (IdleFuncs.Size() == 0)
+   if (IdleFuncs.Size() == 0 && glvis_command == nullptr)
    {
       wnd->setOnIdle(NULL);
    }
