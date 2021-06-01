@@ -882,6 +882,11 @@ struct Session
       state.save_coloring = save_coloring;
    }
 
+   Session(int other_ft, StreamState other_state)
+      : state(std::move(other_state))
+      , ft(other_ft)
+   { }
+
    ~Session()
    {
       if (handler.joinable())
@@ -933,8 +938,21 @@ struct Session
       handler = std::thread {funcThread, std::move(state), ft, input_streams};
    }
 
-   void StartSavedSession(std::string stream_file)
+   bool StartSavedSession(std::string stream_file)
    {
+      ifstream ifs(stream_file);
+      if (!ifs)
+      {
+         cout << "Can not open stream file: " << stream_file << endl;
+         return false;
+      }
+      string data_type;
+      ifs >> data_type >> ws;
+      ft = state.ReadStream(ifs, data_type);
+      input_streams.Append(&ifs);
+
+      StartSession();
+      return true;
    }
 };
 
@@ -1112,6 +1130,8 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
          }
          ofs.close();
          cout << "Data saved in " << tmp_file << endl;
+
+         new_session.StartSavedSession(tmp_file);
       }
       else
       {
@@ -1298,33 +1318,15 @@ int main (int argc, char *argv[])
    // check for saved stream file
    if (stream_file != string_none)
    {
-      ifstream ifs(stream_file);
-      if (!ifs)
+      Session stream_session(stream_state.fix_elem_orient,
+                             stream_state.save_coloring);
+
+      if (!stream_session.StartSavedSession(stream_file))
       {
-         cout << "Can not open stream file: " << stream_file << endl;
          return 1;
       }
-      ifs >> data_type >> ws;
-      int ft = stream_state.ReadStream(ifs, data_type);
-      input_streams.Append(&ifs);
-      std::thread worker_thread
-      {
-         [&](StreamState local_state, Array<istream*> is)
-         {
-            // set the thread-local StreamState and input streams
-            input_streams = is;
-            stream_state = std::move(local_state);
-            if (GLVisInitVis(ft))
-            {
-               GLVisStartVis();
-            }
-         },
-         std::move(stream_state),
-         input_streams
-      };
 
       SDLMainLoop();
-      worker_thread.join();
       return 0;
    }
 
@@ -1401,10 +1403,10 @@ int main (int argc, char *argv[])
       {
          field_type = (use_soln) ? 0 : 2;
       }
-      if (GLVisInitVis(field_type))
-      {
-         GLVisStartVis();
-      }
+      Session single_session(field_type, std::move(stream_state));
+      single_session.StartSession();
+
+      SDLMainLoop();
    }
 
    cout << "Thank you for using GLVis." << endl;
