@@ -128,13 +128,13 @@ int updateVisualization(std::string data_type, std::string stream)
 
 void iterVisualization()
 {
-   GetAppWindow()->mainIter();
+   mainWindow->getSdl()->mainIter();
 }
 
 void setCanvasId(const std::string & id)
 {
    std::cout << "glvis: setting canvas id to " << id << std::endl;
-   GetAppWindow()->setCanvasId(id);
+   mainWindow->getSdl()->setCanvasId(id);
 }
 
 void disableKeyHandling()
@@ -156,7 +156,7 @@ void setKeyboardListeningElementId(const std::string & id)
 
 void processKeys(const std::string & keys)
 {
-   CallKeySequence(keys.c_str());
+   mainWindow->CallKeySequence(keys.c_str());
 }
 
 void processKey(int sym, bool ctrl=false, bool shift=false, bool alt=false)
@@ -165,7 +165,7 @@ void processKey(int sym, bool ctrl=false, bool shift=false, bool alt=false)
    mod |= ctrl ? KMOD_CTRL : 0;
    mod |= shift ? KMOD_SHIFT : 0;
    mod |= alt ? KMOD_ALT : 0;
-   GetAppWindow()->callKeyDown(sym, mod);
+   mainWindow->getSdl()->callKeyDown(sym, mod);
 }
 
 void setupResizeEventCallback(const std::string & id)
@@ -189,7 +189,7 @@ void setupResizeEventCallback(const std::string & id)
 std::string getHelpString()
 {
    VisualizationSceneScalarData* vss
-      = dynamic_cast<VisualizationSceneScalarData*>(GetVisualizationScene());
+      = dynamic_cast<VisualizationSceneScalarData*>(mainWindow->getScene());
    return vss->GetHelpString();
 }
 
@@ -215,6 +215,11 @@ void SetUseTexture(int ut)
    }
 }
 
+void SendExposeEvent()
+{
+   mainWindow->SendExposeEvent();
+}
+
 } // namespace js
 
 // Info on type conversion:
@@ -225,7 +230,7 @@ EMSCRIPTEN_BINDINGS(js_funcs)
    em::function("startVisualization", &js::startVisualization);
    em::function("updateVisualization", &js::updateVisualization);
    em::function("iterVisualization", &js::iterVisualization);
-   em::function("sendExposeEvent", &SendExposeEvent);
+   em::function("sendExposeEvent", &js::SendExposeEvent);
    em::function("disableKeyHanding", &js::disableKeyHandling);
    em::function("enableKeyHandling", &js::enableKeyHandling);
    em::function("setKeyboardListeningElementId",
