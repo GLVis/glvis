@@ -14,8 +14,8 @@
 
 #include <array>
 
-#include "openglvis.hpp"
 #include "mfem.hpp"
+#include "openglvis.hpp"
 
 using namespace mfem;
 

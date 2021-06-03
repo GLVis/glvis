@@ -15,9 +15,9 @@
 #include "gl/platform_gl.hpp"
 #include "gl/types.hpp"
 
+#include "openglvis.hpp"
 #include "sdl.hpp"
 #include "font.hpp"
-#include "openglvis.hpp"
 
 void SDLMainLoop(bool server_mode = false);
 

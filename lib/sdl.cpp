@@ -13,12 +13,12 @@
 #include <chrono>
 #include <thread>
 #include <future>
-#include "sdl.hpp"
 #include "threads.hpp"
 #include "aux_vis.hpp"
 #include "logo.hpp"
 #include "gl/renderer_core.hpp"
 #include "gl/renderer_ff.hpp"
+#include "sdl.hpp"
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #include <emscripten/html5.h>
