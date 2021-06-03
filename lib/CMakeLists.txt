@@ -20,6 +20,7 @@ list(APPEND SOURCES
   openglvis.cpp
   palettes.cpp
   sdl.cpp
+  sdl_helper.cpp
   stream_reader.cpp
   vsdata.cpp
   vssolution.cpp
@@ -71,7 +72,7 @@ if(EMSCRIPTEN)
   target_link_libraries(libglvis PUBLIC "${_glvis_libraries}")
 else()
   # Desktop build target
-  list(APPEND SOURCES gl/renderer_ff.cpp threads.cpp gl2ps.c)
+  list(APPEND SOURCES gl/renderer_ff.cpp threads.cpp gl2ps.c sdl_x11.cpp)
   list(APPEND HEADERS gl/renderer_ff.hpp threads.hpp gl2ps.h sdl_x11.hpp)
   if (APPLE)
     list(APPEND SOURCES sdl_mac.mm)

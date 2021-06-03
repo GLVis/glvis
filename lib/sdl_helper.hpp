@@ -12,10 +12,22 @@
 #ifndef GLVIS_SDL_HELPER_HPP
 #define GLVIS_SDL_HELPER_HPP
 
+#include "gl/platform_gl.hpp"
+#include <memory>
+
 class SdlNativePlatform
 {
 public:
+   static std::unique_ptr<SdlNativePlatform> Create(SDL_Window* window);
+
    virtual ~SdlNativePlatform() = default;
+
+   // Registers the window handle with this platform handler, in order to
+   // wait for events. This is needed for X11, which has one event pipe
+   // per window.
+   virtual void RegisterWindow(SDL_Window* window) { }
+   // Unregisters the window handle.
+   virtual void UnregisterWindow(SDL_Window* window) { }
    // SDL_WaitEvent only polls for events and sleeps, instead of actually
    // blocking. This method calls the system-native blocking event pump.
    virtual void WaitEvent() = 0;

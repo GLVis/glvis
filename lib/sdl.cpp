@@ -30,11 +30,6 @@
 #if defined(SDL_VIDEO_DRIVER_COCOA)
 #include "sdl_mac.hpp"
 #endif
-#ifndef __EMSCRIPTEN__
-#include <SDL2/SDL_syswm.h>
-#else
-#include <SDL_syswm.h>
-#endif
 
 
 using std::cerr;
@@ -135,6 +130,7 @@ public:
                   if (cmd.cmd_delete.isInitialized())
                   {
                      Handle to_delete = std::move(cmd.cmd_delete);
+                     platform->UnregisterWindow(to_delete.hwnd);
                      int wnd_id = SDL_GetWindowID(to_delete.hwnd);
                      hwnd_to_window.erase(wnd_id);
                      wnd_events.erase(wnd_id);
@@ -607,36 +603,9 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
 
    if (!platform)
    {
-      SDL_SysWMinfo sysinfo;
-      SDL_VERSION(&sysinfo.version);
-      if (!SDL_GetWindowWMInfo(new_handle.hwnd, &sysinfo))
-      {
-         sysinfo.subsystem = SDL_SYSWM_UNKNOWN;
-      }
-      switch (sysinfo.subsystem)
-      {
-#if defined(SDL_VIDEO_DRIVER_X11)
-         case SDL_SYSWM_X11:
-         {
-            // Disable XInput extension events since they are generated even
-            // outside the GLVis window.
-            Display *dpy = sysinfo.info.x11.display;
-            Window win = sysinfo.info.x11.window;
-            platform.reset(new SdlX11Platform(dpy, win));
-         }
-         break;
-#elif defined(SDL_VIDEO_DRIVER_COCOA)
-         case SDL_SYSWM_COCOA:
-         {
-            platform.reset(new SdlCocoaPlatform);
-         }
-         break;
-#endif
-         default:
-            // unhandled window manager
-            break;
-      }
+      platform = SdlNativePlatform::Create(new_handle.hwnd);
    }
+   platform->RegisterWindow(new_handle.hwnd);
 
    const int PixelStride = 4;
    int stride = (int) sqrt(logo_rgba_len / PixelStride);
