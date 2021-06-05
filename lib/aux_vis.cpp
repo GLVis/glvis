@@ -271,9 +271,9 @@ void GLVisWindow::InitVisualization(int field_type, StreamState state,
       AddIdleFunc(::MainLoop);
    }
 
-   if (state.keys == "")
+   if (!prob_state.keys.empty())
    {
-      CallKeySequence(state.keys.c_str());
+      CallKeySequence(prob_state.keys.c_str());
    }
 }
 
@@ -491,6 +491,7 @@ void GLVisWindow::MyExpose()
    wnd->signalSwap();
 }
 
+#ifndef __EMSCRIPTEN__
 bool GLVisWindow::CommunicationIdleFunc()
 {
    int status = glvis_command->Execute();
@@ -506,6 +507,7 @@ bool GLVisWindow::CommunicationIdleFunc()
    }
    return false;
 }
+#endif
 
 bool GLVisWindow::MainIdleFunc()
 {
@@ -561,7 +563,11 @@ void GLVisWindow::RemoveIdleFunc(GLVisWindow::IdleFPtr Func)
    if (idle_funcs.Size() == 0)
    {
       use_idle = false;
+#ifndef __EMSCRIPTEN__
       if (!glvis_command) { wnd->setOnIdle(nullptr); }
+#else
+      wnd->setOnIdle(nullptr);
+#endif
    }
 }
 

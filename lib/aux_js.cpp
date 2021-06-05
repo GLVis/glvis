@@ -20,10 +20,9 @@ std::string plot_caption;
 std::string extra_caption; // used in extern context
 mfem::GeometryRefiner GLVisGeometryRefiner; // used in extern context
 
-static VisualizationSceneScalarData * vs = nullptr;
-StreamState stream_state;
-GLVisWindow * mainWindow = nullptr;
-bool keep_attr = false;
+static GLVisWindow * mainWindow = nullptr;
+static VisualizationSceneScalarData * vssd = nullptr;
+static bool keep_attr = false;
 
 namespace js
 {
@@ -33,8 +32,10 @@ using namespace mfem;
 bool startVisualization(const std::string input, const std::string data_type,
                         int w, int h)
 {
+   delete mainWindow;
    std::stringstream ss(input);
 
+   StreamState stream_state;
    // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
    const int field_type = stream_state.ReadStream(ss, data_type);
 
@@ -80,15 +81,13 @@ bool startVisualization(const std::string input, const std::string data_type,
       return false;
    }
 
-   delete vs;
-   vs = nullptr;
-
    double mesh_range = -1.0;
    mainWindow->InitVisualization(field_type, std::move(stream_state), keep_attr);
+   vssd = dynamic_cast<VisualizationSceneScalarData*>(mainWindow->getScene());
 
    if (minv || maxv)
    {
-      vs->SetValueRange(minv, maxv);
+      vssd->SetValueRange(minv, maxv);
    }
    mainWindow->SendExposeEvent();
    return true;
@@ -110,11 +109,12 @@ int updateVisualization(std::string data_type, std::string stream)
    new_state.ReadStream(ss, data_type);
    double mesh_range = -1.0;
 
-   if (stream_state.SetNewMeshAndSolution(std::move(new_state), vs))
+   StreamState & stream_state = mainWindow->getStreamState();
+   if (stream_state.SetNewMeshAndSolution(std::move(new_state), vssd))
    {
       if (mesh_range > 0.0)
       {
-         vs->SetValueRange(-mesh_range, mesh_range);
+         vssd->SetValueRange(-mesh_range, mesh_range);
       }
       mainWindow->SendExposeEvent();
       return 0;
@@ -188,9 +188,7 @@ void setupResizeEventCallback(const std::string & id)
 
 std::string getHelpString()
 {
-   VisualizationSceneScalarData* vss
-      = dynamic_cast<VisualizationSceneScalarData*>(mainWindow->getScene());
-   return vss->GetHelpString();
+   return vssd->GetHelpString();
 }
 
 void ResizeWindow(int w, int h)
@@ -200,18 +198,18 @@ void ResizeWindow(int w, int h)
 
 int GetUseTexture()
 {
-   return vs->palette.GetSmoothSetting();
+   return vssd->palette.GetSmoothSetting();
 }
 
 void SetUseTexture(int ut)
 {
    if (ut == 0)
    {
-      vs->palette.UseDiscrete();
+      vssd->palette.UseDiscrete();
    }
    else
    {
-      vs->palette.UseSmooth();
+      vssd->palette.UseSmooth();
    }
 }
 

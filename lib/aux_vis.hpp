@@ -22,8 +22,10 @@
 #include "openglvis.hpp"
 #include "stream_reader.hpp"
 
+#ifndef __EMSCRIPTEN__
 class GLVisCommand;
 class communication_thread;
+#endif
 
 class GLVisWindow
 {
@@ -154,7 +156,9 @@ private:
    void SetKeyEventHandler(int key, void (GLVisWindow::*handler)(GLenum));
 
    bool MainIdleFunc();
+#ifndef __EMSCRIPTEN__
    bool CommunicationIdleFunc();
+#endif
 
    void MyReshape(GLsizei w, GLsizei h);
    void MyExpose(GLsizei w, GLsizei h);
@@ -191,8 +195,10 @@ private:
 
    std::unique_ptr<SdlWindow> wnd;
    std::unique_ptr<VisualizationScene> locscene;
+#ifndef __EMSCRIPTEN__
    std::unique_ptr<GLVisCommand> glvis_command;
    std::unique_ptr<communication_thread> comm_thread;
+#endif
    StreamState prob_state;
    bool use_idle = false;
 
