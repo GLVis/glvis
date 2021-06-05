@@ -71,8 +71,6 @@ int scr_level = 0;
 Vector *init_nodes = NULL;
 double scr_min_val, scr_max_val;
 
-thread_local Array<istream *> input_streams;
-
 extern char **environ;
 
 void PrintSampleUsage(ostream &out);
@@ -90,13 +88,11 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                                const char *sol_prefix, StreamState& state,
                                int keep_attr);
 
-int ReadInputStreams(StreamState& state);
-
-void CloseInputStreams(bool);
+int ReadInputStreams(StreamState& state, const Array<istream*>& input_streams);
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
-bool GLVisInitVis(int field_type)
+bool GLVisInitVis(int field_type, const Array<istream*>& input_streams)
 {
    if (field_type < 0 || field_type > 2)
    {
@@ -250,7 +246,7 @@ void GLVisStartVis()
 {
    RunVisualization(); // deletes vs
    vs = NULL;
-   if (input_streams.Size() > 0)
+   if (glvis_command)
    {
       glvis_command->Terminate();
       delete comm_thread;
@@ -848,7 +844,7 @@ void PlayScript(istream &scr)
       {
          // set the thread-local StreamState
          stream_state = std::move(local_state);
-         if (GLVisInitVis((stream_state.grid_f->VectorDim() == 1) ? 0 : 1))
+         if (GLVisInitVis((stream_state.grid_f->VectorDim() == 1) ? 0 : 1, {}))
          {
             GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
             GLVisStartVis();
@@ -870,6 +866,7 @@ void PlayScript(istream &scr)
 
 struct Session
 {
+   ifstream save_file;
    Array<istream*> input_streams;
    StreamState state;
    int ft = -1;
@@ -895,8 +892,6 @@ struct Session
       }
       for (int i = 0; i < input_streams.Size(); i++)
       {
-         socketstream *sock = dynamic_cast<socketstream*>(input_streams[i]);
-         if (sock) { sock->rdbuf()->socketbuf::close(); }
          delete input_streams[i];
       }
       input_streams.DeleteAll();
@@ -925,12 +920,12 @@ struct Session
    void StartSession()
    {
       auto funcThread =
-         [&](StreamState state, int ft, Array<istream*> is)
+         [&](StreamState state, int ft, const Array<istream*>& is)
       {
+         // Set thread-local stream state
          stream_state = std::move(state);
-         input_streams = is;
 
-         if (GLVisInitVis(ft))
+         if (GLVisInitVis(ft, is))
          {
             GLVisStartVis();
          }
@@ -940,16 +935,16 @@ struct Session
 
    bool StartSavedSession(std::string stream_file)
    {
-      ifstream ifs(stream_file);
-      if (!ifs)
+      save_file.open(stream_file);
+      if (!save_file)
       {
          cout << "Can not open stream file: " << stream_file << endl;
          return false;
       }
       string data_type;
-      ifs >> data_type >> ws;
-      ft = state.ReadStream(ifs, data_type);
-      input_streams.Append(&ifs);
+      save_file >> data_type >> ws;
+      ft = state.ReadStream(save_file, data_type);
+      input_streams.Append(&save_file);
 
       StartSession();
       return true;
@@ -1122,7 +1117,7 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
          }
          else
          {
-            ReadInputStreams(new_session.state);
+            ReadInputStreams(new_session.state, input_streams);
             ofs.precision(8);
             ofs << "solution\n";
             new_session.state.mesh->Print(ofs);
@@ -1143,7 +1138,7 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
          else
          {
             delete isock;
-            new_session.ft = ReadInputStreams(new_session.state);
+            new_session.ft = ReadInputStreams(new_session.state, input_streams);
          }
          // Pass ownership of input streams into session object
          new_session.input_streams = input_streams;
@@ -1652,7 +1647,7 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    return err;
 }
 
-int ReadInputStreams(StreamState& state)
+int ReadInputStreams(StreamState& state, const Array<istream*>& input_streams)
 {
    int nproc = input_streams.Size();
    Array<Mesh *> mesh_array(nproc);
@@ -1725,16 +1720,3 @@ int ReadInputStreams(StreamState& state)
    return field_type;
 }
 
-void CloseInputStreams(bool parent)
-{
-   for (int i = 0; i < input_streams.Size(); i++)
-   {
-      if (parent)
-      {
-         socketstream *sock = dynamic_cast<socketstream*>(input_streams[i]);
-         if (sock) { sock->rdbuf()->socketbuf::close(); }
-      }
-      delete input_streams[i];
-   }
-   input_streams.DeleteAll();
-}
