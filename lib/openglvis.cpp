@@ -450,7 +450,9 @@ void VisualizationScene::Zoom(double factor)
    }
    else
    {
+#ifndef M_PI
       const double M_PI = glm::pi<double>();
+#endif
       double va = ViewAngle * ( M_PI / 360.0 );
       ViewAngle = atan( tan( va ) / factor ) * (360.0 / M_PI);
    }
