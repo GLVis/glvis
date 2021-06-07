@@ -11,6 +11,7 @@
 
 #include <future>
 #include <thread>
+#include <climits>
 
 #include "sdl_main.hpp"
 #include "sdl_helper.hpp"
