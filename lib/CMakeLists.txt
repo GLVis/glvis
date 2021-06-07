@@ -21,6 +21,7 @@ list(APPEND SOURCES
   palettes.cpp
   sdl.cpp
   sdl_helper.cpp
+  sdl_main.cpp
   stream_reader.cpp
   vsdata.cpp
   vssolution.cpp
@@ -44,6 +45,7 @@ list(APPEND HEADERS
   palettes.hpp
   sdl.hpp
   sdl_helper.hpp
+  sdl_main.hpp
   sdl_mac.hpp
   stream_reader.hpp
   visual.hpp

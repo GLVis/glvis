@@ -37,9 +37,12 @@ typedef void (*WindowDelegate)(int, int);
 typedef void (*Delegate)();
 typedef bool (*IdleDelegate)();
 
+class SdlMainThread;
+
 class SdlWindow
 {
 private:
+   friend class SdlMainThread;
    struct Handle
    {
       SDL_Window * hwnd{nullptr};
@@ -71,9 +74,6 @@ private:
          return (hwnd != nullptr && gl_ctx != 0);
       }
    };
-   struct MainThread;
-
-   static MainThread& GetMainThread();
 
    Handle handle;
    std::unique_ptr<gl3::MeshRenderer> renderer;
