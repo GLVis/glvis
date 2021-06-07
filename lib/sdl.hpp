@@ -16,7 +16,6 @@
 #include <memory>
 #include <functional>
 #include <map>
-#include <set>
 #include <mutex>
 #include <condition_variable>
 #include <deque>

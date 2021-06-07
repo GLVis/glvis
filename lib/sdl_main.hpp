@@ -12,6 +12,9 @@
 #ifndef GLVIS_SDL_MAIN_HPP
 #define GLVIS_SDL_MAIN_HPP
 
+#include <atomic>
+#include <set>
+
 #include "sdl.hpp"
 
 class SdlMainThread

@@ -10,10 +10,6 @@
 // CONTRIBUTING.md for details.
 
 #include <iostream>
-#include <chrono>
-#include <thread>
-#include <future>
-#include "threads.hpp"
 #include "aux_vis.hpp"
 #include "gl/renderer_core.hpp"
 #include "gl/renderer_ff.hpp"
