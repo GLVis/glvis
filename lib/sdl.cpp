@@ -167,7 +167,7 @@ public:
          SDL_Event e;
          while (SDL_PollEvent(&e))
          {
-            unsigned int windowId = -1;
+            unsigned int windowId = UINT_MAX;
             bool sendToAll = false;
             switch (e.type)
             {
@@ -221,7 +221,7 @@ public:
                   wnd_events[windowId].emplace_back(e);
                }
             }
-            else if (windowId != -1)
+            else if (windowId != UINT_MAX)
             {
                wnd_events[windowId].emplace_back(e);
             }

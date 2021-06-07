@@ -37,7 +37,6 @@ const char *sol_file        = string_none;
 const char *vec_sol_file    = string_none;
 const char *gfunc_file      = string_none;
 const char *arg_keys        = string_none;
-int         np              = 0;
 int         pad_digits      = 6;
 int         gf_component    = -1;
 bool        keep_attr       = false;
@@ -81,7 +80,7 @@ void ReadSerial(StreamState& state);
 void SetGridFunction(StreamState& state);
 
 // read the mesh and the solution from multiple files
-void ReadParallel(StreamState& state);
+void ReadParallel(int np, StreamState& state);
 
 int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                                const char *sol_prefix, StreamState& state,
@@ -912,16 +911,16 @@ struct Session
 
    bool StartSavedSession(std::string stream_file)
    {
-      ifstream ifs(stream_file);
-      if (!ifs)
+      unique_ptr<ifstream> ifs(new ifstream(stream_file));
+      if (!(*ifs))
       {
          cout << "Can not open stream file: " << stream_file << endl;
          return false;
       }
       string data_type;
-      ifs >> data_type >> ws;
-      ft = state.ReadStream(ifs, data_type);
-      input_streams.emplace_back(new ifstream{std::move(ifs)});
+      *ifs >> data_type >> ws;
+      ft = state.ReadStream(*ifs, data_type);
+      input_streams.emplace_back(std::move(ifs));
 
       StartSession();
       return true;
@@ -933,7 +932,8 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
 {
    std::vector<Session> current_sessions;
    string data_type;
-   int viscount = 0, nproc = 1, proc = 0;
+   int viscount = 0;
+   unsigned int nproc = 1, proc = 0;
 
 #ifdef MFEM_USE_GNUTLS
    unique_ptr<GnuTLS_global_state> state;
@@ -1009,7 +1009,7 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
       if (data_type == "parallel")
       {
          par_data = 1;
-         np = 0;
+         unsigned int np = 0;
          do
          {
             *isock >> nproc >> proc;
@@ -1128,7 +1128,7 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
 int main (int argc, char *argv[])
 {
    // variables for command line arguments
-   bool        multi_session = false;   // not added as option
+   int         np            = 0;
    bool        mac           = false;
    const char *stream_file   = string_none;
    const char *script_file   = string_none;
@@ -1348,7 +1348,7 @@ int main (int argc, char *argv[])
    {
       if (input & 256)
       {
-         ReadParallel(stream_state);
+         ReadParallel(np, stream_state);
       }
       else
       {
@@ -1493,7 +1493,7 @@ void SetGridFunction(StreamState& state)
 }
 
 
-void ReadParallel(StreamState& state)
+void ReadParallel(int np, StreamState& state)
 {
    int err;
 
