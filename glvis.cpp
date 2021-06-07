@@ -19,7 +19,6 @@
 #include <cstdio>
 #include <cstring>
 #include <ctime>
-#include <csignal>
 
 #include <unistd.h>
 
@@ -1337,12 +1336,6 @@ int main (int argc, char *argv[])
    // server mode, read the mesh and the solution from a socket
    if (input == 1)
    {
-      // get rid of zombies
-      if (multi_session)
-      {
-         signal(SIGCHLD, SIG_IGN);
-      }
-
       // Run server in new thread
       std::thread serverThread{GLVisServer, portnum, mac,
                                stream_state.fix_elem_orient,

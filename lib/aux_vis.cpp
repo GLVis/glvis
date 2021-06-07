@@ -13,7 +13,7 @@
 #include <sstream>
 #include <fstream>
 #include <cmath>
-#include <ctime>
+#include <chrono>
 
 #include "mfem.hpp"
 using namespace mfem;
@@ -509,7 +509,6 @@ thread_local int constrained_spinning = 0;
 void MainLoop()
 {
    static int p = 1;
-   struct timespec req;
    if (locscene->spinning)
    {
       if (!constrained_spinning)
@@ -522,9 +521,7 @@ void MainLoop()
          locscene->PreRotate(xang, 0.0, 0.0, 1.0);
          SendExposeEvent();
       }
-      req.tv_sec  = 0;
-      req.tv_nsec = 10000000;
-      nanosleep (&req, NULL);  // sleep for 0.01 seconds
+      std::this_thread::sleep_for(std::chrono::milliseconds{10}); // sleep for 0.01 seconds
    }
    if (locscene->movie)
    {

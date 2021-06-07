@@ -13,7 +13,8 @@
 #define GLVIS_SDL_X11_HPP
 
 #include "sdl_helper.hpp"
-#include "gl/platform_gl.hpp"
+
+#ifdef SDL_VIDEO_DRIVER_X11
 
 #include <unordered_map>
 
@@ -65,5 +66,7 @@ private:
    int event_pfd[2]; // pfd[0] -- reading, pfd[1] -- writing
    std::unordered_map<SDL_Window*, int> display_fds;
 };
+
+#endif // SDL_VIDEO_DRIVER_X11
 
 #endif // GLVIS_SDL_X11_HPP
