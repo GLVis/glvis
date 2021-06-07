@@ -18,7 +18,8 @@
 
 std::string plot_caption;
 std::string extra_caption; // used in extern context
-mfem::GeometryRefiner GLVisGeometryRefiner; // used in extern context
+thread_local mfem::GeometryRefiner
+GLVisGeometryRefiner; // used in extern context
 
 static VisualizationSceneScalarData * vs = nullptr;
 StreamState stream_state;

@@ -232,6 +232,8 @@ else(NOT EMSCRIPTEN)
   # OpenGL, SDL2, and GLEW are provided by the Emscripten runtime
   # Enable SDL2
   list(APPEND _emscripten_opts "-s USE_SDL=2")
+  list(APPEND _emscripten_opts
+      "-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0")
 
   # Set WebGL options
   list(APPEND _emscripten_opts

@@ -81,16 +81,6 @@ struct SdlWindow::MainThread
 public:
    MainThread()
    {
-   }
-
-   bool SdlInitialized() const { return sdl_init; }
-
-   Uint32 GetCustomEvent() const { return glvis_event_type; }
-
-   // Handles all SDL operations that are expected to be handled on the main
-   // SDL thread (i.e. events and window creation)
-   void MainLoop(bool server_mode)
-   {
       if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
       {
          if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
@@ -110,6 +100,104 @@ public:
       PRINT_DEBUG("Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor
                   << "." << (int)sdl_ver.patch << std::endl);
       sdl_init = true;
+   }
+
+   // If called, all SDL window operations are run immediately; this is for
+   // running in a single-threaded mode.
+   void SetSingleThread() { sdl_multithread = false; }
+
+   bool SdlInitialized() const { return sdl_init; }
+
+   Uint32 GetCustomEvent() const { return glvis_event_type; }
+
+   // Dequeues all incoming events from SDL, and queues them up to their
+   // matching windows.
+   void DispatchSDLEvents()
+   {
+      SDL_Event e;
+      while (SDL_PollEvent(&e))
+      {
+         unsigned int windowId = UINT_MAX;
+         bool sendToAll = false;
+         switch (e.type)
+         {
+            case SDL_QUIT:
+               if (server_mode)
+               {
+                  terminating = exitDialog();
+               }
+               else
+               {
+                  terminating = true;
+               }
+               break;
+            case SDL_WINDOWEVENT:
+               windowId = getWindowID(e.window);
+               break;
+            case SDL_FINGERDOWN:
+               fingers.insert(e.tfinger.fingerId);
+               if (fingers.size() >= 2) { disable_mouse = true; }
+               break;
+            case SDL_FINGERUP:
+               fingers.erase(e.tfinger.fingerId);
+               if (fingers.size() < 2) { disable_mouse = false; }
+               break;
+            case SDL_MULTIGESTURE:
+               // No window ID is provided with multigesture events. We'll
+               // have to use focus status within the windows themselves in
+               // order to resolve the correct target.
+               sendToAll = true;
+               break;
+            case SDL_KEYDOWN:
+            case SDL_KEYUP:
+               windowId = getWindowID(e.key);
+               break;
+            case SDL_TEXTINPUT:
+               windowId = getWindowID(e.text);
+               break;
+            case SDL_MOUSEMOTION:
+               if (!disable_mouse) { windowId = getWindowID(e.motion); }
+               break;
+            case SDL_MOUSEBUTTONDOWN:
+            case SDL_MOUSEBUTTONUP:
+               windowId = getWindowID(e.button);
+               break;
+         }
+         if (sendToAll == true)
+         {
+            for (auto wnds : hwnd_to_window)
+            {
+               int windowId = wnds.first;
+               wnd_events[windowId].emplace_back(e);
+            }
+         }
+         else if (windowId != UINT_MAX)
+         {
+            wnd_events[windowId].emplace_back(e);
+         }
+      }
+      // Send events to window worker threads
+      for (auto wnds : hwnd_to_window)
+      {
+         int windowId = wnds.first;
+         SdlWindow* wnd = wnds.second;
+         if (!wnd_events[windowId].empty())
+         {
+            wnd->queueEvents(std::move(wnd_events[windowId]));
+         }
+         else
+         {
+            // Wake up the worker thread anyways, to execute onIdle
+            wnd->queueEvents({});
+         }
+      }
+   }
+
+   // Handles all SDL operations that are expected to be handled on the main
+   // SDL thread (i.e. events and window creation)
+   void MainLoop(bool server_mode)
+   {
+      this->server_mode = server_mode;
       while (1)
       {
          // Process all pending window commands
@@ -121,126 +209,14 @@ public:
 
          for (SdlCtrlCommand& cmd : pending_cmds)
          {
-            switch (cmd.type)
-            {
-               case SdlCmdType::Create:
-                  createWindowImpl(*cmd.cmd_create);
-                  break;
-               case SdlCmdType::Delete:
-                  if (cmd.cmd_delete.isInitialized())
-                  {
-                     Handle to_delete = std::move(cmd.cmd_delete);
-                     if (platform)
-                     {
-                        platform->UnregisterWindow(to_delete.hwnd);
-                     }
-                     int wnd_id = SDL_GetWindowID(to_delete.hwnd);
-                     hwnd_to_window.erase(wnd_id);
-                     wnd_events.erase(wnd_id);
-                     num_windows--;
-                  }
-                  break;
-               case SdlCmdType::SetTitle:
-                  SDL_SetWindowTitle(cmd.handle->hwnd, cmd.cmd_title.c_str());
-                  break;
-               case SdlCmdType::SetSize:
-                  SDL_SetWindowSize(cmd.handle->hwnd,
-                                    cmd.cmd_set_size.first,
-                                    cmd.cmd_set_size.second);
-                  break;
-               case SdlCmdType::SetPosition:
-                  SDL_SetWindowPosition(cmd.handle->hwnd,
-                                        cmd.cmd_set_position.first,
-                                        cmd.cmd_set_position.second);
-                  break;
-               default:
-                  cerr << "Error in main thread: unknown window control command.\n";
-                  break;
-            }
+            handleWindowCmdImpl(cmd);
          }
          if (!server_mode && num_windows == 0)
          {
             terminating = true; // all windows closed
          }
 
-         // Dequeue all events from the system window manager
-         SDL_Event e;
-         while (SDL_PollEvent(&e))
-         {
-            unsigned int windowId = UINT_MAX;
-            bool sendToAll = false;
-            switch (e.type)
-            {
-               case SDL_QUIT:
-                  if (server_mode)
-                  {
-                     terminating = exitDialog();
-                  }
-                  else
-                  {
-                     terminating = true;
-                  }
-                  break;
-               case SDL_WINDOWEVENT:
-                  windowId = getWindowID(e.window);
-                  break;
-               case SDL_FINGERDOWN:
-                  fingers.insert(e.tfinger.fingerId);
-                  if (fingers.size() >= 2) { disable_mouse = true; }
-                  break;
-               case SDL_FINGERUP:
-                  fingers.erase(e.tfinger.fingerId);
-                  if (fingers.size() < 2) { disable_mouse = false; }
-                  break;
-               case SDL_MULTIGESTURE:
-                  // No window ID is provided with multigesture events. We'll
-                  // have to use focus status within the windows themselves in
-                  // order to resolve the correct target.
-                  sendToAll = true;
-                  break;
-               case SDL_KEYDOWN:
-               case SDL_KEYUP:
-                  windowId = getWindowID(e.key);
-                  break;
-               case SDL_TEXTINPUT:
-                  windowId = getWindowID(e.text);
-                  break;
-               case SDL_MOUSEMOTION:
-                  if (!disable_mouse) { windowId = getWindowID(e.motion); }
-                  break;
-               case SDL_MOUSEBUTTONDOWN:
-               case SDL_MOUSEBUTTONUP:
-                  windowId = getWindowID(e.button);
-                  break;
-            }
-            if (sendToAll == true)
-            {
-               for (auto wnds : hwnd_to_window)
-               {
-                  int windowId = wnds.first;
-                  wnd_events[windowId].emplace_back(e);
-               }
-            }
-            else if (windowId != UINT_MAX)
-            {
-               wnd_events[windowId].emplace_back(e);
-            }
-         }
-         // Send events to window worker threads
-         for (auto wnds : hwnd_to_window)
-         {
-            int windowId = wnds.first;
-            SdlWindow* wnd = wnds.second;
-            if (!wnd_events[windowId].empty())
-            {
-               wnd->queueEvents(std::move(wnd_events[windowId]));
-            }
-            else
-            {
-               // Wake up the worker thread anyways, to execute onIdle
-               wnd->queueEvents({});
-            }
-         }
+         DispatchSDLEvents();
          if (terminating) { break; }
          // Wait for the next event (without consuming CPU cycles, if possible)
          // See also: SdlWindow::signalLoop()
@@ -270,13 +246,7 @@ public:
       main_thread_cmd.type = SdlCmdType::Create;
       main_thread_cmd.cmd_create = &cmd_create;
 
-      // Move our create request into the pending queue
-      {
-         lock_guard<mutex> req_lock{window_cmd_mtx};
-         window_cmds.emplace_back(std::move(main_thread_cmd));
-      }
-      // Wake up the main thread to create our window
-      if (platform) { platform->SendEvent(); }
+      queueWindowEvent(std::move(main_thread_cmd));
 
       Handle out_hnd = res_handle.get();
       if (out_hnd.isInitialized())
@@ -374,11 +344,21 @@ private:
 
    void queueWindowEvent(SdlCtrlCommand cmd)
    {
+      if (sdl_multithread)
       {
-         lock_guard<mutex> req_lock{window_cmd_mtx};
-         window_cmds.emplace_back(std::move(cmd));
+         // queue up our event
+         {
+            lock_guard<mutex> req_lock{window_cmd_mtx};
+            window_cmds.emplace_back(std::move(cmd));
+         }
+         // wake up the main thread to handle our event
+         if (platform) { platform->SendEvent(); }
       }
-      if (platform) { platform->SendEvent(); }
+      else
+      {
+         // call the underlying SDL command immediately
+         handleWindowCmdImpl(cmd);
+      }
    }
 
    bool exitDialog()
@@ -417,6 +397,46 @@ private:
       return eventStruct.windowID;
    }
 
+   void handleWindowCmdImpl(SdlCtrlCommand& cmd)
+   {
+      switch (cmd.type)
+      {
+         case SdlCmdType::Create:
+            createWindowImpl(*cmd.cmd_create);
+            break;
+         case SdlCmdType::Delete:
+            if (cmd.cmd_delete.isInitialized())
+            {
+               Handle to_delete = std::move(cmd.cmd_delete);
+               if (platform)
+               {
+                  platform->UnregisterWindow(to_delete.hwnd);
+               }
+               int wnd_id = SDL_GetWindowID(to_delete.hwnd);
+               hwnd_to_window.erase(wnd_id);
+               wnd_events.erase(wnd_id);
+               num_windows--;
+            }
+            break;
+         case SdlCmdType::SetTitle:
+            SDL_SetWindowTitle(cmd.handle->hwnd, cmd.cmd_title.c_str());
+            break;
+         case SdlCmdType::SetSize:
+            SDL_SetWindowSize(cmd.handle->hwnd,
+                              cmd.cmd_set_size.first,
+                              cmd.cmd_set_size.second);
+            break;
+         case SdlCmdType::SetPosition:
+            SDL_SetWindowPosition(cmd.handle->hwnd,
+                                  cmd.cmd_set_position.first,
+                                  cmd.cmd_set_position.second);
+            break;
+         default:
+            cerr << "Error in main thread: unknown window control command.\n";
+            break;
+      }
+   }
+
    void probeGLContextSupport(bool legacyGlOnly);
 
    void getDpi(const Handle& handle, int& wdpi, int& hdpi);
@@ -425,6 +445,9 @@ private:
 
    Uint32 glvis_event_type {(Uint32)-1};
    bool sdl_init {false};
+   bool sdl_multithread {true};
+
+   bool server_mode {false};
 
    atomic<bool> terminating {false};
 
@@ -451,7 +474,11 @@ private:
    unique_ptr<SdlNativePlatform> platform;
 };
 
-SdlWindow::MainThread SdlWindow::main_thread{};
+SdlWindow::MainThread& SdlWindow::GetMainThread()
+{
+   static SdlWindow::MainThread inst;
+   return inst;
+}
 
 bool SdlWindow::isGlInitialized()
 {
@@ -462,7 +489,7 @@ SdlWindow::SdlWindow() {}
 
 void SdlWindow::StartSDL(bool server_mode)
 {
-   main_thread.MainLoop(server_mode);
+   GetMainThread().MainLoop(server_mode);
 }
 
 // Setup the correct OpenGL context flags in SDL for when we actually open the
@@ -744,9 +771,13 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
 bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
                              bool legacyGlOnly)
 {
+#ifdef __EMSCRIPTEN__
+   is_multithreaded = false;
+   SdlWindow::GetMainThread().SetSingleThread();
+#endif
    // create a new SDL window
-   handle = SdlWindow::main_thread.GetHandle(this, title, x, y, w, h,
-                                             legacyGlOnly);
+   handle = SdlWindow::GetMainThread().GetHandle(this, title, x, y, w, h,
+                                                 legacyGlOnly);
 
    // at this point, window should be up
    if (!handle.isInitialized())
@@ -825,7 +856,7 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
 SdlWindow::~SdlWindow()
 {
    // Let the main SDL thread delete the handles
-   SdlWindow::main_thread.DeleteHandle(std::move(handle));
+   SdlWindow::GetMainThread().DeleteHandle(std::move(handle));
 }
 
 void SdlWindow::windowEvent(SDL_WindowEvent& ew)
@@ -1000,6 +1031,11 @@ void SdlWindow::multiGestureEvent(SDL_MultiGestureEvent & e)
 
 void SdlWindow::mainIter()
 {
+   if (!is_multithreaded)
+   {
+      // Pull events from GetMainThread() object
+      SdlWindow::GetMainThread().DispatchSDLEvents();
+   }
    bool events_pending = false;
    {
       lock_guard<mutex> evt_guard{event_mutex};
@@ -1063,23 +1099,16 @@ void SdlWindow::mainIter()
       }
       while (keep_going && events_pending);
    }
-#ifndef __EMSCRIPTEN__
    else if (onIdle)
    {
       bool sleep = onIdle();
-      if (sleep)
+      if (is_multithreaded && sleep)
       {
          // Wait for next wakeup event from main event thread
          unique_lock<mutex> event_lock{event_mutex};
          events_available.wait(event_lock);
       }
    }
-#else
-   else if (onIdle)
-   {
-      onIdle();
-   }
-#endif
    if (wnd_state == RenderState::ExposePending)
    {
 #ifdef SDL_VIDEO_DRIVER_COCOA
@@ -1132,7 +1161,7 @@ void SdlWindow::mainLoop()
 void SdlWindow::signalLoop()
 {
    // Note: not executed from the main thread
-   main_thread.SendEvent();
+   GetMainThread().SendEvent();
 }
 
 void SdlWindow::getWindowSize(int& w, int& h)
@@ -1210,12 +1239,12 @@ void SdlWindow::setWindowTitle(std::string& title)
 
 void SdlWindow::setWindowTitle(const char * title)
 {
-   main_thread.SetWindowTitle(handle, title);
+   GetMainThread().SetWindowTitle(handle, title);
 }
 
 void SdlWindow::setWindowSize(int w, int h)
 {
-   main_thread.SetWindowSize(handle, pixel_scale_x*w, pixel_scale_y*h);
+   GetMainThread().SetWindowSize(handle, pixel_scale_x*w, pixel_scale_y*h);
    swap_before_expose = true;
 }
 
@@ -1225,9 +1254,9 @@ void SdlWindow::setWindowPos(int x, int y)
                SDL_WINDOWPOS_ISCENTERED(x);
    bool uc_y = SDL_WINDOWPOS_ISUNDEFINED(y) ||
                SDL_WINDOWPOS_ISCENTERED(y);
-   main_thread.SetWindowPosition(handle,
-                                 uc_x ? x : pixel_scale_x*x,
-                                 uc_y ? y : pixel_scale_y*y);
+   GetMainThread().SetWindowPosition(handle,
+                                     uc_x ? x : pixel_scale_x*x,
+                                     uc_y ? y : pixel_scale_y*y);
    swap_before_expose = true;
 }
 

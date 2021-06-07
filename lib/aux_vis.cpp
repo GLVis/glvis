@@ -468,7 +468,7 @@ bool MainIdleFunc()
       LastIdleFunc = (LastIdleFunc + 1) % IdleFuncs.Size();
       if (IdleFuncs[LastIdleFunc])
       {
-         (*IdleFuncs[LastIdleFunc])(this);
+         (*IdleFuncs[LastIdleFunc])();
       }
       // Continue executing idle functions
       sleep = false;

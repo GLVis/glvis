@@ -73,7 +73,7 @@ private:
    };
    struct MainThread;
 
-   static MainThread main_thread;
+   static MainThread& GetMainThread();
 
    Handle handle;
    std::unique_ptr<gl3::MeshRenderer> renderer;
@@ -136,6 +136,8 @@ private:
    void keyEvent(char c);
    void multiGestureEvent(SDL_MultiGestureEvent & e);
 
+   bool is_multithreaded{true};
+
    // Hand off events to the SdlWindow. Intended to be called by the main SDL
    // thread in MainThread::MainLoop().
    void queueEvents(std::vector<SDL_Event> events)
@@ -144,7 +146,10 @@ private:
          std::lock_guard<std::mutex> evt_guard{event_mutex};
          waiting_events.insert(waiting_events.end(), events.begin(), events.end());
       }
-      events_available.notify_all();
+      if (is_multithreaded)
+      {
+         events_available.notify_all();
+      }
    }
 
    std::string saved_keys;
