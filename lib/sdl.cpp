@@ -130,7 +130,10 @@ public:
                   if (cmd.cmd_delete.isInitialized())
                   {
                      Handle to_delete = std::move(cmd.cmd_delete);
-                     platform->UnregisterWindow(to_delete.hwnd);
+                     if (platform)
+                     {
+                        platform->UnregisterWindow(to_delete.hwnd);
+                     }
                      int wnd_id = SDL_GetWindowID(to_delete.hwnd);
                      hwnd_to_window.erase(wnd_id);
                      wnd_events.erase(wnd_id);
@@ -632,7 +635,10 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
    {
       platform = SdlNativePlatform::Create(new_handle.hwnd);
    }
-   platform->RegisterWindow(new_handle.hwnd);
+   if (platform)
+   {
+      platform->RegisterWindow(new_handle.hwnd);
+   }
 
    const int PixelStride = 4;
    int stride = (int) sqrt(logo_rgba_len / PixelStride);
