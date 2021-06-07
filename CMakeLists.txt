@@ -88,6 +88,9 @@ set(_glvis_libraries)
 
 list(APPEND _glvis_compile_defs "GLVIS_MULTISAMPLE=${GLVIS_MULTISAMPLE}")
 list(APPEND _glvis_compile_defs "GLVIS_MS_LINEWIDTH=${GLVIS_MS_LINEWIDTH}")
+if (NOT WIN32)
+  list(APPEND _glvis_compile_defs "GLVIS_USE_LOGO")
+endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug|debug|DEBUG")
   list(APPEND _glvis_compile_defs "GLVIS_DEBUG")
@@ -111,7 +114,9 @@ if (NOT EMSCRIPTEN)
   find_package(SDL2 QUIET HINTS ${SDL2_DIR})
   # The SDL2 target 'SDL2::SDL2' is not always defined, so instead we use
   # directly 'SDL2_INCLUDE_DIRS' and 'SDL2_LIBRARIES'.
-  if (SDL2_INCLUDE_DIRS AND SDL2_LIBRARIES)
+  if (TARGET SDL2::SDL2)
+    list(APPEND _glvis_libraries SDL2::SDL2)
+  elseif (SDL2_INCLUDE_DIRS AND SDL2_LIBRARIES)
     # SDL2_INCLUDE_DIRS is defined with 'SDL2' at the end of the path we need to
     # strip that.
     set(new_list_)
@@ -120,6 +125,8 @@ if (NOT EMSCRIPTEN)
       list(APPEND new_list_ "${new_path_}")
     endforeach()
     set(SDL2_INCLUDE_DIRS ${new_list_})
+    list(APPEND _glvis_include_dirs "${SDL2_INCLUDE_DIRS}")
+    list(APPEND _glvis_libraries "${SDL2_LIBRARIES}")
   else()
     # find_package() did not work; try more direct approach.
     set(SDL2_DIR ${SDL2_DIR_SAVE})
@@ -134,9 +141,9 @@ if (NOT EMSCRIPTEN)
     if (NOT (SDL2_INCLUDE_DIRS AND SDL2_LIBRARIES))
       message(FATAL_ERROR "SDL2 library not found. Please set SDL2_DIR.")
     endif()
+    list(APPEND _glvis_include_dirs "${SDL2_INCLUDE_DIRS}")
+    list(APPEND _glvis_libraries "${SDL2_LIBRARIES}")
   endif()
-  list(APPEND _glvis_include_dirs "${SDL2_INCLUDE_DIRS}")
-  list(APPEND _glvis_libraries "${SDL2_LIBRARIES}")
   message(STATUS "SDL2 found: ${SDL2_LIBRARIES}")
   message(STATUS "SDL2_INCLUDE_DIRS = ${SDL2_INCLUDE_DIRS}")
 
@@ -276,7 +283,14 @@ if(NOT EMSCRIPTEN)
   add_executable(glvis-exe glvis.cpp)
   set_target_properties(glvis-exe PROPERTIES OUTPUT_NAME glvis)
 
-  target_link_libraries(glvis-exe PRIVATE glvis glvis_logo)
+  target_link_libraries(glvis-exe PRIVATE glvis)
+
+  if (WIN32)
+    set_target_properties(glvis-exe PROPERTIES WIN32_EXECUTABLE TRUE)
+    target_link_libraries(glvis-exe PRIVATE SDL2::SDL2main)
+  else()
+    target_link_libraries(glvis-exe PRIVATE glvis_logo)
+  endif (WIN32)
 
   # Install the executable
   install(TARGETS glvis-exe RUNTIME DESTINATION bin)

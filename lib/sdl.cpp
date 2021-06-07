@@ -647,6 +647,7 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
       platform->RegisterWindow(new_handle.hwnd);
    }
 
+#ifdef GLVIS_USE_LOGO
    const int PixelStride = 4;
    int stride = (int) sqrt(logo_rgba_len / PixelStride);
    if (unsigned(stride * stride * PixelStride) != logo_rgba_len)
@@ -674,6 +675,7 @@ void SdlWindow::MainThread::createWindowImpl(CreateWindowCmd& cmd)
          PRINT_DEBUG("Unable to set window logo: " << SDL_GetError() << endl);
       }
    }
+#endif // GLVIS_USE_LOGO
 
    // Detect if we are using a high-dpi display and resize the window unless it
    // was already resized by SDL's underlying backend.

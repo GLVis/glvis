@@ -24,6 +24,8 @@ void GlDrawable::addCone(float x, float y, float z,
    float phi   = acos(vz/rhos);
    float theta = atan2 (vy, vx);
 
+   const double M_PI = glm::pi<double>();
+
    glm::mat4 mtx(1.0);
    mtx = glm::translate(mtx, glm::vec3(x, y, z));
    mtx = glm::rotate(mtx, theta, glm::vec3(0.f, 0.f, 1.f));

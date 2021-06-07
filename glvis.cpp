@@ -20,8 +20,6 @@
 #include <cstring>
 #include <ctime>
 
-#include <unistd.h>
-
 #include "mfem.hpp"
 #include "lib/palettes.hpp"
 #include "lib/visual.hpp"
