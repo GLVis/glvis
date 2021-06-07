@@ -73,6 +73,8 @@ double scr_min_val, scr_max_val;
 
 extern char **environ;
 
+using StreamCollection = vector<unique_ptr<istream>>;
+
 void PrintSampleUsage(ostream &out);
 
 // read the mesh and the solution from a file
@@ -88,11 +90,11 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                                const char *sol_prefix, StreamState& state,
                                int keep_attr);
 
-int ReadInputStreams(StreamState& state, const Array<istream*>& input_streams);
+int ReadInputStreams(StreamState& state, const StreamCollection& input_streams);
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
-bool GLVisInitVis(int field_type, const Array<istream*>& input_streams)
+bool GLVisInitVis(int field_type, StreamCollection input_streams)
 {
    if (field_type < 0 || field_type > 2)
    {
@@ -108,11 +110,11 @@ bool GLVisInitVis(int field_type, const Array<istream*>& input_streams)
       return false;
    }
 
-   if (input_streams.Size() > 0)
+   if (input_streams.size() > 0)
    {
       GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
       glvis_command = new GLVisCommand(&vs, stream_state, &keep_attr);
-      comm_thread = new communication_thread(input_streams, glvis_command);
+      comm_thread = new communication_thread(std::move(input_streams), glvis_command);
    }
 
    double mesh_range = -1.0;
@@ -866,8 +868,7 @@ void PlayScript(istream &scr)
 
 struct Session
 {
-   ifstream save_file;
-   Array<istream*> input_streams;
+   StreamCollection input_streams;
    StreamState state;
    int ft = -1;
    std::thread handler;
@@ -890,61 +891,40 @@ struct Session
       {
          handler.join();
       }
-      for (int i = 0; i < input_streams.Size(); i++)
-      {
-         delete input_streams[i];
-      }
-      input_streams.DeleteAll();
    }
 
-   Session(Session&& from)
-      : state(std::move(from.state))
-      , ft(from.ft)
-      , handler(std::move(from.handler))
-   {
-      Swap(input_streams, from.input_streams);
-      from.ft = -1;
-      from.state = {};
-      from.handler = {};
-   }
-
-   Session& operator= (Session&& from)
-   {
-      Swap(input_streams, from.input_streams);
-      std::swap(state, from.state);
-      std::swap(ft, from.ft);
-      std::swap(handler, from.handler);
-      return *this;
-   }
+   Session(Session&& from) = default;
+   Session& operator= (Session&& from) = default;
 
    void StartSession()
    {
       auto funcThread =
-         [&](StreamState state, int ft, const Array<istream*>& is)
+         [&](StreamState state, int ft, StreamCollection is)
       {
          // Set thread-local stream state
          stream_state = std::move(state);
 
-         if (GLVisInitVis(ft, is))
+         if (GLVisInitVis(ft, std::move(is)))
          {
             GLVisStartVis();
          }
       };
-      handler = std::thread {funcThread, std::move(state), ft, input_streams};
+      handler = std::thread {funcThread,
+                             std::move(state), ft, std::move(input_streams)};
    }
 
    bool StartSavedSession(std::string stream_file)
    {
-      save_file.open(stream_file);
-      if (!save_file)
+      ifstream ifs(stream_file);
+      if (!ifs)
       {
          cout << "Can not open stream file: " << stream_file << endl;
          return false;
       }
       string data_type;
-      save_file >> data_type >> ws;
-      ft = state.ReadStream(save_file, data_type);
-      input_streams.Append(&save_file);
+      ifs >> data_type >> ws;
+      ft = state.ReadStream(ifs, data_type);
+      input_streams.emplace_back(new ifstream{std::move(ifs)});
 
       StartSession();
       return true;
@@ -1013,7 +993,7 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
 #else
       isock = secure ? new socketstream(*params) : new socketstream(false);
 #endif
-      Array<istream*> input_streams;
+      vector<unique_ptr<istream>> input_streams;
       while (server.accept(*isock) < 0)
       {
 #ifdef GLVIS_DEBUG
@@ -1047,15 +1027,14 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
                   cout << "Invalid number of processors: " << nproc << endl;
                   mfem_error();
                }
-               input_streams.SetSize(nproc);
-               input_streams = NULL;
+               input_streams.resize(nproc);
             }
             else
             {
-               if (nproc != input_streams.Size())
+               if (nproc != input_streams.size())
                {
                   cout << "Unexpected number of processors: " << nproc
-                       << ", expected: " << input_streams.Size() << endl;
+                       << ", expected: " << input_streams.size() << endl;
                   mfem_error();
                }
             }
@@ -1072,7 +1051,7 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
                mfem_error();
             }
 
-            input_streams[proc] = isock;
+            input_streams[proc].reset(isock);
 #ifndef MFEM_USE_GNUTLS
             isock = new socketstream;
 #else
@@ -1133,7 +1112,7 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
          if (!par_data)
          {
             new_session.ft = new_session.state.ReadStream(*isock, data_type);
-            new_session.input_streams.Append(isock);
+            new_session.input_streams.emplace_back(isock);
          }
          else
          {
@@ -1141,9 +1120,7 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
             new_session.ft = ReadInputStreams(new_session.state, input_streams);
          }
          // Pass ownership of input streams into session object
-         new_session.input_streams = input_streams;
-         input_streams.DeleteAll();
-
+         new_session.input_streams = std::move(input_streams);
          new_session.StartSession();
       }
       current_sessions.emplace_back(std::move(new_session));
@@ -1647,9 +1624,9 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    return err;
 }
 
-int ReadInputStreams(StreamState& state, const Array<istream*>& input_streams)
+int ReadInputStreams(StreamState& state, const StreamCollection& input_streams)
 {
-   int nproc = input_streams.Size();
+   int nproc = input_streams.size();
    Array<Mesh *> mesh_array(nproc);
    Array<GridFunction *> gf_array(nproc);
    string data_type;

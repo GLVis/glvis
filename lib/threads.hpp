@@ -138,9 +138,12 @@ public:
 
 class communication_thread
 {
+public:
+   using StreamCollection = std::vector<std::unique_ptr<std::istream>>;
+
 private:
    // streams to read data from
-   Array<std::istream *> is;
+   StreamCollection is;
 
    GLVisCommand* glvis_command;
 
@@ -157,7 +160,7 @@ private:
    void execute();
 
 public:
-   communication_thread(const Array<std::istream *> &_is, GLVisCommand* cmd);
+   communication_thread(StreamCollection _is, GLVisCommand* cmd);
 
    ~communication_thread();
 };
