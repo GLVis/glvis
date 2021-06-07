@@ -172,7 +172,14 @@ public:
             switch (e.type)
             {
                case SDL_QUIT:
-                  terminating = exitDialog();
+                  if (server_mode)
+                  {
+                     terminating = exitDialog();
+                  }
+                  else
+                  {
+                     terminating = true;
+                  }
                   break;
                case SDL_WINDOWEVENT:
                   windowId = getWindowID(e.window);
