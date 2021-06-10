@@ -2825,8 +2825,8 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines2()
    }
 }
 
-int triangle_counter;
-int quad_counter;
+thread_local int triangle_counter;
+thread_local int quad_counter;
 
 void VisualizationSceneSolution3d::DrawTetLevelSurf(
    gl3::GlDrawable& target,

@@ -839,7 +839,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
    updated_bufs.emplace_back(&displine_buf);
 }
 
-double new_maxlen;
+thread_local double new_maxlen;
 
 void VisualizationSceneVector::DrawVector(double px, double py, double vx,
                                           double vy, double cval)
