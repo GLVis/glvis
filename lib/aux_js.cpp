@@ -32,7 +32,6 @@ using namespace mfem;
 bool startVisualization(const std::string input, const std::string data_type,
                         int w, int h)
 {
-   delete mainWindow;
    std::stringstream ss(input);
 
    StreamState stream_state;
@@ -64,21 +63,24 @@ bool startVisualization(const std::string input, const std::string data_type,
       return false;
    }
 
-   try
+   if (mainWindow == nullptr)
    {
-      mainWindow = new GLVisWindow("glvis", 0, 0, w, h, false);
-   }
-   catch (std::runtime_error& ex)
-   {
-      cerr << "Initializing the visualization failed: " << endl
-           << ex.what() << endl;
-      return false;
-   }
-   catch (...)
-   {
-      cerr << "Initializing the visualization failed - unknown error."
-           << endl;
-      return false;
+      try
+      {
+         mainWindow = new GLVisWindow("glvis", 0, 0, w, h, false);
+      }
+      catch (std::runtime_error& ex)
+      {
+         cerr << "Initializing the visualization failed: " << endl
+              << ex.what() << endl;
+         return false;
+      }
+      catch (...)
+      {
+         cerr << "Initializing the visualization failed - unknown error."
+              << endl;
+         return false;
+      }
    }
 
    double mesh_range = -1.0;
