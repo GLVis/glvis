@@ -288,3 +288,15 @@ if(NOT EMSCRIPTEN)
   endif (MFEM_USE_GNUTLS)
 
 endif(NOT EMSCRIPTEN)
+
+if(ENABLE_TESTS)
+
+add_custom_command(
+    TARGET glvis-exe POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/glvis_driver.py
+        ${CMAKE_CURRENT_BINARY_DIR}/glvis_driver.py
+    DEPENDS glvis_driver.py
+    COMMENT "Copying glvis_driver.py")
+
+endif(ENABLE_TESTS)
