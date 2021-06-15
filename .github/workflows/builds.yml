@@ -184,6 +184,7 @@ jobs:
         cd glvis && mkdir build && cd build
         cmake \
           -D CMAKE_BUILD_TYPE:STRING=${build_type} \
+          -D ENABLE_TESTS:BOOL=TRUE \
           -D mfem_DIR:PATH=${GITHUB_WORKSPACE}/${MFEM_TOP_DIR}/build \
           ..
         make -j3
