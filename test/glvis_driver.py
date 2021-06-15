@@ -27,10 +27,10 @@ test_cases = {
 screenshot_keys = "Sq"
 screenshot_file = "GLVis_s01.png"
 
-def test_case(exec_path, baseline, t_group, t_name, cmd):
+def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
     print("Testing {0}:{1}...".format(t_group, t_name))
     full_screenshot_cmd = cmd + screenshot_keys
-    cmd = "{0} -k \"{1}\"".format(exec_path, full_screenshot_cmd)
+    cmd = "{0} {1} -k \"{2}\"".format(exec_path, exec_args, full_screenshot_cmd)
     print("Test: {}".format(cmd))
     os.system(cmd + " > /dev/null 2>&1")
     if not os.path.exists(t_group):
@@ -64,14 +64,14 @@ def test_case(exec_path, baseline, t_group, t_name, cmd):
         print("[PASS] Images match.")
     return diff <= 0.001
 
-def main(exec_path, tgroup, baseline):
+def main(exec_path, exec_args, tgroup, baseline):
     try:
         os.remove(screenshot_file)
     except OSError:
         pass
     all_tests_passed = True
     for testname, cmds in test_cases.items():
-        result = test_case(exec_path, baseline, tgroup, testname, cmds)
+        result = test_case(exec_path, exec_args, baseline, tgroup, testname, cmds)
         all_tests_passed = all_tests_passed and result
 
     if all_tests_passed:
@@ -81,8 +81,9 @@ def main(exec_path, tgroup, baseline):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-e", "--exec_cmd", help="Path to the GLVis command")
+    parser.add_argument("-e", "--exec_cmd", help="Path to the GLVis executable")
+    parser.add_argument("-a", "--exec_args", help="Arguments to pass to GLVis.")
     parser.add_argument("-n", "--group_name", help="Name of the test group.")
     parser.add_argument("-b", "--baseline", help="Path to test baseline.")
     args = parser.parse_args()
-    main(args.exec_cmd, args.group_name, args.baseline)
+    main(args.exec_cmd, args.exec_args, args.group_name, args.baseline)
