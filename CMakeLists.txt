@@ -303,8 +303,8 @@ enable_testing()
 
 set(TEST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/test")
 
-add_test(quad_scalar_gf
-    COMMAND python3 glvis_driver.py
+add_test(NAME quad_scalar_gf
+         COMMAND python3 glvis_driver.py
                 -e ${CMAKE_CURRENT_BINARY_DIR}/glvis
                 -a "-m ${TEST_DIR}/quad.vtk -g ${TEST_DIR}/quad.gf" -n quad_scalar)
 
