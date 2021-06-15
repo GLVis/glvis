@@ -314,8 +314,7 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
 
    if (keys)
    {
-      // SendKeySequence(keys);
-      CallKeySequence(keys);
+      SendKeySequence(keys);
    }
    wnd->getRenderer().setPalette(&locscene->palette);
 }
