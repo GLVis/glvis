@@ -4,16 +4,16 @@ import os
 import cv2
 
 test_cases = {
-    "magnify": "*",
+    "magnify": "*****",
     "axes1": "a",
     "axes2": "aa",
     "mesh1": "m",
     "mesh2": "mm",
     "cut_plane": "i",
-    "cut_plane_rotate": "iy",
-    "cut_plane_rotate_back": "iyyYY",
-    "cut_plane_transl": "iz",
-    "cut_plane_transl_back": "izzZZ",
+    "cut_plane_rotate": "iyyyy",
+    "cut_plane_rotate_back": "iyyyyYYYY",
+    "cut_plane_transl": "izzzz",
+    "cut_plane_transl_back": "izzzzZZZZ",
     "orient2d_1": "R",
     "orient2d_2": "RR",
     "orient2d_3": "RRR",
@@ -32,26 +32,36 @@ def test_case(exec_path, baseline, t_group, t_name, cmd):
     full_screenshot_cmd = cmd + screenshot_keys
     cmd = "{0} -k \"{1}\"".format(exec_path, full_screenshot_cmd)
     print("Test: {}".format(cmd))
-    os.system(cmd)
+    os.system(cmd + " > /dev/null 2>&1")
     if not os.path.exists(t_group):
         os.mkdir(t_group)
     output_name = "{0}/{1}.png".format(t_group, t_name)
-    baseline_name = "{0}/{1}.png".format(baseline, t_name)
-    os.system("mv {0} {1}".format(screenshot_file, output_name))
 
+    ret = os.system("mv {0} {1}".format(screenshot_file, output_name))
+    if ret != 0:
+        print("[FAIL] GLVis exited with error code {}.".format(ret))
+        return False
+
+    # Try to open output image
     output_img = cv2.imread(output_name)
     if output_img is None:
         print("[FAIL] Could not open output image.")
         return False
-    baseline_img = cv2.imread(baseline_name)
+
+    # Try to open baseline image
+    baseline_img = None
+    if baseline:
+        baseline_name = "{0}/{1}.png".format(baseline, t_name)
+        baseline_img = cv2.imread(baseline_name)
     if baseline_img is None:
         print("[IGNORE] No baseline exists to compare against.")
         return True
-
     diff_img = cv2.subtract(output_img, baseline_img)
     diff = cv2.norm(diff_img)
     if diff > 0.001:
         print("[FAIL] Output and baseline differ by more than 0.1%")
+    else:
+        print("[PASS] Images match.")
     return diff <= 0.001
 
 def main(exec_path, tgroup, baseline):
