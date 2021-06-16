@@ -267,7 +267,7 @@ void SdlMainThread::queueWindowEvent(SdlCtrlCommand cmd)
          window_cmds.emplace_back(std::move(cmd));
       }
       // wake up the main thread to handle our event
-      if (platform) { platform->SendEvent(); }
+      SendEvent();
    }
    else
    {
@@ -518,9 +518,14 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
    int wnd_id = SDL_GetWindowID(new_handle.hwnd);
    hwnd_to_window[wnd_id] = cmd.wnd;
 
-   if (!platform)
    {
-      platform = SdlNativePlatform::Create(new_handle.hwnd);
+      lock_guard<mutex> platform_lk{event_mtx};
+      if (!platform)
+      {
+         platform = SdlNativePlatform::Create(new_handle.hwnd);
+         try_create_platform = true;
+      }
+      event_cv.notify_all();
    }
    if (platform)
    {

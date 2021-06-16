@@ -14,6 +14,7 @@
 
 #include <atomic>
 #include <set>
+#include <condition_variable>
 
 #include "sdl.hpp"
 
@@ -62,7 +63,12 @@ public:
    // Wakes up the main thread, if sleeping.
    void SendEvent()
    {
-      if (platform) { platform->SendEvent(); }
+      std::unique_lock<std::mutex> platform_lk{event_mtx};
+      event_cv.wait(platform_lk, [this]() { return try_create_platform; });
+      if (platform)
+      {
+         platform->SendEvent();
+      }
    }
 
 private:
@@ -127,6 +133,9 @@ private:
 
    mutex gl_ctx_mtx;
 
+   mutex event_mtx;
+   condition_variable event_cv;
+   bool try_create_platform{false};
    unique_ptr<SdlNativePlatform> platform;
 };
 
