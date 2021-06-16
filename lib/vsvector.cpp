@@ -257,11 +257,6 @@ VisualizationSceneVector::VisualizationSceneVector(GridFunction &vgf)
 
    sol = new Vector(mesh -> GetNV());
 
-   //  VisualizationSceneSolution::Init()  sets rsol = NULL !
-   {
-      SetGridFunction(vgf);
-   }
-
    mesh->GetNodes(vc0);
    if (vc0.Size() != vgf.Size())
    {
@@ -458,7 +453,12 @@ void VisualizationSceneVector::Init(GLVisWindow* wnd)
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
    }
 
+   // VisualizationSceneSolution::Init() sets rsol = null
    VisualizationSceneSolution::Init(wnd);
+   if (VecGridF)
+   {
+      SetGridFunction(*VecGridF);
+   }
 
    PrepareVectorField();
    // PrepareDisplacedMesh(); // called by PrepareLines()
