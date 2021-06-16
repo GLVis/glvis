@@ -46,8 +46,8 @@ int         window_w        = 400;
 int         window_h        = 350;
 const char *window_title    = string_default;
 const char *c_plot_caption  = string_none;
-string      plot_caption;
-string      extra_caption;
+thread_local string      plot_caption;
+thread_local string      extra_caption;
 
 // Global variables
 int input = 1;
@@ -841,6 +841,10 @@ void PlayScript(istream &scr)
       {
          // set the thread-local StreamState
          stream_state = std::move(local_state);
+         if (c_plot_caption != string_none)
+         {
+            plot_caption = c_plot_caption;
+         }
          if (GLVisInitVis((stream_state.grid_f->VectorDim() == 1) ? 0 : 1, {}))
          {
             GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
@@ -892,6 +896,10 @@ struct Session
       {
          // Set thread-local stream state
          stream_state = std::move(state);
+         if (c_plot_caption != string_none)
+         {
+            plot_caption = c_plot_caption;
+         }
 
          if (GLVisInitVis(ft, std::move(is)))
          {
@@ -1047,7 +1055,7 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
             isock.reset(new socketstream);
 #else
             isock.reset(secure ? new socketstream(*params) :
-                    new socketstream(false));
+                        new socketstream(false));
 #endif
             np++;
             if (np == nproc)

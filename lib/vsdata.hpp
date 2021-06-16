@@ -19,8 +19,8 @@
 
 using namespace mfem;
 
-extern std::string plot_caption; // defined in glvis.cpp
-extern std::string extra_caption; // defined in glvis.cpp
+extern thread_local std::string plot_caption; // defined in glvis.cpp
+extern thread_local std::string extra_caption; // defined in glvis.cpp
 
 class Plane
 {
