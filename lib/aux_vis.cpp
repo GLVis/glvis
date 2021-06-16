@@ -248,7 +248,7 @@ void GLVisWindow::InitVisualization(int field_type, StreamState state,
 #ifndef __EMSCRIPTEN__
    if (input_streams.Size() > 0)
    {
-      glvis_command.reset(new GLVisCommand(this, prob_state, &keep_attr));
+      glvis_command.reset(new GLVisCommand(this, keep_attr));
       comm_thread.reset(new communication_thread(glvis_command.get(), input_streams));
    }
 #endif

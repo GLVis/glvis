@@ -26,8 +26,7 @@ class GLVisCommand
 private:
    // Pointers to global GLVis data
    GLVisWindow*         window;
-   StreamState&         curr_state;
-   bool                 *keep_attr;
+   bool                 keep_attr;
 
    std::mutex glvis_mutex;
    std::condition_variable glvis_cond;
@@ -96,12 +95,11 @@ private:
 
 public:
    // called by the main execution thread
-   GLVisCommand(GLVisWindow* parent,
-                StreamState& thread_state, bool *_keep_attr);
+   GLVisCommand(GLVisWindow* parent, bool _keep_attr);
 
    // to be used by worker threads
-   bool KeepAttrib() { return *keep_attr; } // may need to sync this
-   bool FixElementOrientations() { return curr_state.fix_elem_orient; }
+   bool KeepAttrib() const { return keep_attr; } // may need to sync this
+   bool FixElementOrientations() const;
 
    // called by worker threads
    int NewMeshAndSolution(std::unique_ptr<Mesh> _new_m,

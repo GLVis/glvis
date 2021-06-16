@@ -17,16 +17,19 @@ using namespace std;
 extern const char *strings_off_on[]; // defined in vsdata.cpp
 
 GLVisCommand::GLVisCommand(
-   GLVisWindow* wnd, StreamState& state, bool *_keep_attr)
-   : window(wnd), curr_state(state)
+   GLVisWindow* wnd, bool _keep_attr)
+   : window(wnd), keep_attr(_keep_attr)
 {
-   keep_attr = _keep_attr;
-
    num_waiting = 0;
    terminating = false;
    command = NO_COMMAND;
 
    autopause = 0;
+}
+
+bool GLVisCommand::FixElementOrientations() const
+{
+   return window->getStreamState().fix_elem_orient;
 }
 
 int GLVisCommand::lock()
@@ -414,7 +417,7 @@ int GLVisCommand::Execute()
             new_state.SetMeshSolution();
             mesh_range = new_state.grid_f->Max() + 1.0;
          }
-         if (curr_state.SetNewMeshAndSolution(std::move(new_state), vs))
+         if (window->getStreamState().SetNewMeshAndSolution(std::move(new_state), vs))
          {
             if (mesh_range > 0.0)
             {
