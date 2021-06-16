@@ -107,8 +107,8 @@ bool GLVisInitVis(StreamState stream_state, int field_type)
 
    try
    {
-       mainWindow = new GLVisWindow(win_title, window_x, window_y,
-                                    window_w, window_h, legacy_gl_ctx);
+      mainWindow = new GLVisWindow(win_title, window_x, window_y,
+                                   window_w, window_h, legacy_gl_ctx);
    }
    catch (std::runtime_error& ex)
    {
@@ -116,15 +116,15 @@ bool GLVisInitVis(StreamState stream_state, int field_type)
            << ex.what() << endl;
       return false;
    }
-   catch(...)
+   catch (...)
    {
-       cerr << "Initializing the visualization failed - unknown error."
-            << endl;
+      cerr << "Initializing the visualization failed - unknown error."
+           << endl;
       return false;
    }
    if (font_name != string_default)
    {
-       mainWindow->SetFont(font_name);
+      mainWindow->SetFont(font_name);
    }
 
    mainWindow->InitVisualization(field_type, std::move(stream_state),
@@ -285,7 +285,7 @@ void ExecuteScriptCommand(GLVisWindow* wnd)
    }
 
    VisualizationSceneScalarData* vs
-       = static_cast<VisualizationSceneScalarData*>(wnd->getScene());
+      = static_cast<VisualizationSceneScalarData*>(wnd->getScene());
    StreamState& stream_state = wnd->getStreamState();
    istream &scr = *script;
    string word;

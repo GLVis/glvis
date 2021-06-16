@@ -73,10 +73,10 @@ glm::mat4 Camera::RotMatrix()
    double mat[16] =
    {
       -left[0], up[0], -dir[0], 0.0,
-         -left[1], up[1], -dir[1], 0.0,
-         -left[2], up[2], -dir[2], 0.0,
-         0.0, 0.0, 0.0, 1.0
-      };
+      -left[1], up[1], -dir[1], 0.0,
+      -left[2], up[2], -dir[2], 0.0,
+      0.0, 0.0, 0.0, 1.0
+   };
    return glm::make_mat4(mat);
 }
 
@@ -86,10 +86,10 @@ glm::mat4 Camera::TransposeRotMatrix()
    double mat_t[16] =
    {
       -left[0], -left[1], -left[2], 0.0,
-         up[0],    up[1],    up[2],   0.0,
-         -dir[0],  -dir[1],  -dir[2],  0.0,
-         0.0, 0.0, 0.0, 1.0
-      };
+      up[0],    up[1],    up[2],   0.0,
+      -dir[0],  -dir[1],  -dir[2],  0.0,
+      0.0, 0.0, 0.0, 1.0
+   };
    return glm::make_mat4(mat_t);
 }
 
