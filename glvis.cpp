@@ -284,7 +284,6 @@ int ScriptReadSolution(istream &scr, StreamState& state)
       if (!isol)
       {
          cout << "Can not open solution file: " << sword << endl;
-         state.mesh.release();
          return 2;
       }
       state.grid_f.reset(new GridFunction(state.mesh.get(), isol));
@@ -979,11 +978,11 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
    while (1)
    {
 
-      socketstream *isock;
+      unique_ptr<socketstream> isock;
 #ifndef MFEM_USE_GNUTLS
-      isock = new socketstream;
+      isock.reset(new socketstream);
 #else
-      isock = secure ? new socketstream(*params) : new socketstream(false);
+      isock.reset(secure ? new socketstream(*params) : new socketstream(false));
 #endif
       vector<unique_ptr<istream>> input_streams;
       while (server.accept(*isock) < 0)
@@ -1043,12 +1042,12 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
                mfem_error();
             }
 
-            input_streams[proc].reset(isock);
+            input_streams[proc] = std::move(isock);
 #ifndef MFEM_USE_GNUTLS
-            isock = new socketstream;
+            isock.reset(new socketstream);
 #else
-            isock = secure ? new socketstream(*params) :
-                    new socketstream(false);
+            isock.reset(secure ? new socketstream(*params) :
+                    new socketstream(false));
 #endif
             np++;
             if (np == nproc)
@@ -1104,11 +1103,10 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
          if (!par_data)
          {
             new_session.ft = new_session.state.ReadStream(*isock, data_type);
-            input_streams.emplace_back(isock);
+            input_streams.emplace_back(std::move(isock));
          }
          else
          {
-            delete isock;
             new_session.ft = ReadInputStreams(new_session.state, input_streams);
          }
          // Pass ownership of input streams into session object
@@ -1116,7 +1114,6 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
          new_session.StartSession();
       }
       current_sessions.emplace_back(std::move(new_session));
-      isock = nullptr;
    }
 }
 
