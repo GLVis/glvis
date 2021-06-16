@@ -21,7 +21,6 @@ using namespace mfem;
 using namespace std;
 
 
-VisualizationSceneSolution3d *vssol3d;
 extern GeometryRefiner GLVisGeometryRefiner;
 
 // Definitions of some more keys
@@ -103,18 +102,6 @@ std::string VisualizationSceneSolution3d::GetHelpString() const
       << "| left  + Ctrl + Shift - z-Spinning  |" << endl
       << "+------------------------------------+" << endl;
    return os.str();
-}
-
-static void KeyiPressed()
-{
-   vssol3d -> ToggleCuttingPlane();
-   SendExposeEvent();
-}
-
-static void KeyIPressed()
-{
-   vssol3d -> ToggleCPAlgorithm();
-   SendExposeEvent();
 }
 
 void VisualizationSceneSolution3d::PrepareOrderingCurve()
@@ -248,91 +235,57 @@ void VisualizationSceneSolution3d::CPMoved()
    }
 }
 
-static void KeyxPressed()
+void VisualizationSceneSolution3d::RotateCPPhi()
 {
-   vssol3d -> CuttingPlane -> IncreasePhi();
-   vssol3d -> FindNodePos();
-   vssol3d -> CPMoved();
-   SendExposeEvent();
+   CuttingPlane -> IncreasePhi();
+   FindNodePos();
+   CPMoved();
 }
 
-static void KeyXPressed()
+void VisualizationSceneSolution3d::RotateCPPhiBack()
 {
-   vssol3d -> CuttingPlane -> DecreasePhi();
-   vssol3d -> FindNodePos();
-   vssol3d -> CPMoved();
-   SendExposeEvent();
+   CuttingPlane -> DecreasePhi();
+   FindNodePos();
+   CPMoved();
 }
 
-static void KeyyPressed()
+void VisualizationSceneSolution3d::RotateCPTheta()
 {
-   vssol3d -> CuttingPlane -> IncreaseTheta();
-   vssol3d -> FindNodePos();
-   vssol3d -> CPMoved();
-   SendExposeEvent();
+   CuttingPlane -> IncreaseTheta();
+   FindNodePos();
+   CPMoved();
 }
 
-static void KeyYPressed()
+void VisualizationSceneSolution3d::RotateCPThetaBack()
 {
-   vssol3d -> CuttingPlane -> DecreaseTheta();
-   vssol3d -> FindNodePos();
-   vssol3d -> CPMoved();
-   SendExposeEvent();
+   CuttingPlane -> DecreaseTheta();
+   FindNodePos();
+   CPMoved();
 }
 
-static void KeyzPressed()
+void VisualizationSceneSolution3d::TranslateCP()
 {
-   vssol3d -> CuttingPlane -> IncreaseDistance();
-   vssol3d -> FindNodePos();
-   vssol3d -> CPMoved();
-   SendExposeEvent();
+   CuttingPlane -> IncreaseDistance();
+   FindNodePos();
+   CPMoved();
 }
 
-static void KeyZPressed()
+void VisualizationSceneSolution3d::TranslateCPBack()
 {
-   vssol3d -> CuttingPlane -> DecreaseDistance();
-   vssol3d -> FindNodePos();
-   vssol3d -> CPMoved();
-   SendExposeEvent();
+   CuttingPlane -> DecreaseDistance();
+   FindNodePos();
+   CPMoved();
 }
 
-static void KeymPressed()
+void KeyoPressed(GLVisWindow* wnd, GLenum state)
 {
-   vssol3d -> ToggleDrawMesh();
-   SendExposeEvent();
-}
-
-static void KeyePressed()
-{
-   vssol3d -> ToggleDrawElems();
-   SendExposeEvent();
-}
-
-static void KeyMPressed()
-{
-   vssol3d -> ToggleCPDrawMesh();
-   SendExposeEvent();
-}
-
-static void KeyEPressed()
-{
-   vssol3d -> ToggleCPDrawElems();
-   SendExposeEvent();
-}
-
-static void KeyFPressed()
-{
-   vssol3d -> ToggleShading();
-   SendExposeEvent();
-}
-
-static void KeyoPressed(GLenum state)
-{
+   VisualizationSceneSolution3d* vssol3d
+      = dynamic_cast<VisualizationSceneSolution3d*>(wnd->getScene());
    if (state & KMOD_CTRL)
    {
       vssol3d -> ToggleDrawOrdering();
       vssol3d -> PrepareOrderingCurve();
-      SendExposeEvent();
+      wnd -> SendExposeEvent();
    }
    else
    {
@@ -346,14 +299,16 @@ static void KeyoPressed(GLenum state)
             vssol3d -> PrepareLines();
             vssol3d -> CPPrepare();
             vssol3d -> PrepareLevelSurf();
-            SendExposeEvent();
+            wnd -> SendExposeEvent();
          }
       }
    }
 }
 
-static void KeyOPressed()
+static void KeyOPressed(GLVisWindow* wnd)
 {
+   VisualizationSceneSolution3d* vssol3d
+      = dynamic_cast<VisualizationSceneSolution3d*>(wnd->getScene());
    if (vssol3d -> TimesToRefine > 1)
    {
       cout << "Subdivision factor = " << --vssol3d->TimesToRefine << endl;
@@ -364,166 +319,167 @@ static void KeyOPressed()
          vssol3d -> PrepareLines();
          vssol3d -> CPPrepare();
          vssol3d -> PrepareLevelSurf();
-         SendExposeEvent();
+         wnd -> SendExposeEvent();
       }
    }
 }
 
-static void KeywPressed()
+bool VisualizationSceneSolution3d::MoveUpBdrElems()
 {
-   if (vssol3d -> GetShading() == 2)
+   if (GetShading() == 2)
    {
-      if ( fabs(vssol3d -> FaceShiftScale += 0.01) < 0.001 )
+      if ( fabs(FaceShiftScale += 0.01) < 0.001 )
       {
-         vssol3d -> FaceShiftScale = 0.0;
+         FaceShiftScale = 0.0;
       }
-      cout << "New Shift Scale: " << vssol3d -> FaceShiftScale
+      cout << "New Shift Scale: " << FaceShiftScale
            << endl;
-      vssol3d -> Prepare();
-      vssol3d -> PrepareLines();
-      vssol3d -> CPPrepare();
-      SendExposeEvent();
+      Prepare();
+      PrepareLines();
+      CPPrepare();
+      return true;
    }
+   return false;
 }
 
-static void KeyWPressed()
+bool VisualizationSceneSolution3d::MoveDownBdrElems()
 {
-   if (vssol3d -> GetShading() == 2)
+   if (GetShading() == 2)
    {
-      if ( fabs(vssol3d -> FaceShiftScale -= 0.01) < 0.001 )
+      if ( fabs(FaceShiftScale -= 0.01) < 0.001 )
       {
-         vssol3d -> FaceShiftScale = 0.0;
+         FaceShiftScale = 0.0;
       }
-      cout << "New Shift Scale: " << vssol3d -> FaceShiftScale
+      cout << "New Shift Scale: " << FaceShiftScale
            << endl;
-      vssol3d -> Prepare();
-      vssol3d -> PrepareLines();
-      vssol3d -> CPPrepare();
-      SendExposeEvent();
+      Prepare();
+      PrepareLines();
+      CPPrepare();
+      return true;
    }
+   return false;
 }
 
-static void KeyuPressed()
+void VisualizationSceneSolution3d::MoveUpLevelSurf()
 {
-   vssol3d -> MoveLevelSurf(+1);
-   SendExposeEvent();
+   MoveLevelSurf(+1);
 }
 
-static void KeyUPressed()
+void VisualizationSceneSolution3d::MoveDownLevelSurf()
 {
-   vssol3d -> MoveLevelSurf(-1);
-   SendExposeEvent();
+   MoveLevelSurf(-1);
 }
 
-static void KeyvPressed()
+void VisualizationSceneSolution3d::AddLevelSurf()
 {
-   vssol3d -> NumberOfLevelSurf(+1);
-   SendExposeEvent();
+   NumberOfLevelSurf(+1);
 }
 
-static void KeyVPressed()
+void VisualizationSceneSolution3d::RemoveLevelSurf()
 {
-   vssol3d -> NumberOfLevelSurf(-1);
-   SendExposeEvent();
+   NumberOfLevelSurf(-1);
 }
 
 static int magic_key_pressed = 0;
-void ToggleMagicKey()
+void ToggleMagicKey(GLVisWindow* wnd)
 {
    magic_key_pressed = 1-magic_key_pressed;
 }
 
-static void KeyF3Pressed()
+bool VisualizationSceneSolution3d::ShrinkBoundaryElems()
 {
-   if (vssol3d->GetShading() == 2)
+   if (GetShading() == 2)
    {
-      if (vssol3d->GetMesh()->Dimension() == 3 && vssol3d->bdrc.Width() == 0)
+      if (GetMesh()->Dimension() == 3 && bdrc.Width() == 0)
       {
-         vssol3d->ComputeBdrAttrCenter();
+         ComputeBdrAttrCenter();
       }
-      if (vssol3d->GetMesh()->Dimension() == 2 && vssol3d->matc.Width() == 0)
+      if (GetMesh()->Dimension() == 2 && matc.Width() == 0)
       {
-         vssol3d->ComputeElemAttrCenter();
+         ComputeElemAttrCenter();
       }
-      vssol3d->shrink *= 0.9;
+      shrink *= 0.9;
       if (magic_key_pressed)
       {
-         vssol3d -> Scale(1.11111111111111111111111);
+         Scale(1.11111111111111111111111);
       }
-      vssol3d->Prepare();
-      vssol3d->PrepareLines();
-      SendExposeEvent();
+      Prepare();
+      PrepareLines();
+      return true;
    }
+   return false;
 }
 
-static void KeyF4Pressed()
+bool VisualizationSceneSolution3d::ZoomBoundaryElems()
 {
-   if (vssol3d->GetShading() == 2)
+   if (GetShading() == 2)
    {
-      if (vssol3d->GetMesh()->Dimension() == 3 && vssol3d->bdrc.Width() == 0)
+      if (GetMesh()->Dimension() == 3 && bdrc.Width() == 0)
       {
-         vssol3d->ComputeBdrAttrCenter();
+         ComputeBdrAttrCenter();
       }
-      if (vssol3d->GetMesh()->Dimension() == 2 && vssol3d->matc.Width() == 0)
+      if (GetMesh()->Dimension() == 2 && matc.Width() == 0)
       {
-         vssol3d->ComputeElemAttrCenter();
+         ComputeElemAttrCenter();
       }
-      vssol3d->shrink *= 1.11111111111111111111111;
+      shrink *= 1.11111111111111111111111;
       if (magic_key_pressed)
       {
-         vssol3d -> Scale(0.9);
+         Scale(0.9);
       }
-      vssol3d->Prepare();
-      vssol3d->PrepareLines();
-      SendExposeEvent();
+      Prepare();
+      PrepareLines();
+      return true;
    }
+   return false;
 }
 
-static void KeyF11Pressed()
+bool VisualizationSceneSolution3d::ShrinkMatSubdomains()
 {
-   if (vssol3d->GetShading() == 2)
+   if (GetShading() == 2)
    {
-      if (vssol3d->matc.Width() == 0)
+      if (matc.Width() == 0)
       {
-         vssol3d->ComputeElemAttrCenter();
+         ComputeElemAttrCenter();
       }
-      vssol3d->shrinkmat *= 0.9;
+      shrinkmat *= 0.9;
       if (magic_key_pressed)
       {
-         vssol3d -> Scale(1.11111111111111111111111);
+         Scale(1.11111111111111111111111);
       }
-      vssol3d->Prepare();
-      vssol3d->PrepareLines();
-      SendExposeEvent();
+      Prepare();
+      PrepareLines();
+      return true;
    }
+   return false;
 }
 
-static void KeyF12Pressed()
+bool VisualizationSceneSolution3d::ZoomMatSubdomains()
 {
-   if (vssol3d->GetShading() == 2)
+   if (GetShading() == 2)
    {
-      if (vssol3d->matc.Width() == 0)
+      if (matc.Width() == 0)
       {
-         vssol3d->ComputeElemAttrCenter();
+         ComputeElemAttrCenter();
       }
-      vssol3d->shrinkmat *= 1.11111111111111111111111;
+      shrinkmat *= 1.11111111111111111111111;
       if (magic_key_pressed)
       {
-         vssol3d -> Scale(0.9);
+         Scale(0.9);
       }
-      vssol3d->Prepare();
-      vssol3d->PrepareLines();
-      SendExposeEvent();
+      Prepare();
+      PrepareLines();
+      return true;
    }
+   return false;
 }
 
-static void KeyF8Pressed()
+void VisualizationSceneSolution3d::QueryToggleSubdomains()
 {
-   Mesh &mesh = *vssol3d->GetMesh();
-   int dim = mesh.Dimension();
-   const Array<int> &all_attr = ((dim == 3) ? mesh.bdr_attributes :
-                                 mesh.attributes);
-   Array<int> &attr_marker = vssol3d->bdr_attr_to_show;
+   int dim = mesh->Dimension();
+   const Array<int> &all_attr = ((dim == 3) ? mesh->bdr_attributes :
+                                 mesh->attributes);
+   Array<int> &attr_marker = bdr_attr_to_show;
    int attr;
    Array<int> attr_list(&attr, 1);
 
@@ -537,17 +493,15 @@ static void KeyF8Pressed()
 
    cout << ((dim == 3) ? "Bdr a" : "A") << "ttribute to toggle : " << flush;
    cin >> attr;
-   vssol3d->ToggleAttributes(attr_list);
-   SendExposeEvent();
+   ToggleAttributes(attr_list);
 }
 
-static void KeyF9Pressed()
+void VisualizationSceneSolution3d::WalkNextSubdomain()
 {
-   Mesh &mesh = *vssol3d->GetMesh();
-   int dim = mesh.Dimension();
-   const Array<int> &attr_list = ((dim == 3) ? mesh.bdr_attributes :
-                                  mesh.attributes);
-   Array<int> &attr_marker = vssol3d->bdr_attr_to_show;
+   int dim = mesh->Dimension();
+   const Array<int> &attr_list = ((dim == 3) ? mesh->bdr_attributes :
+                                  mesh->attributes);
+   Array<int> &attr_marker = bdr_attr_to_show;
    int attr, n, j, i;
 
    if (attr_list.Size() == 0)
@@ -581,18 +535,16 @@ static void KeyF9Pressed()
       cout << "Showing " << ((dim == 3) ? "bdr " : "") << "attribute "
            << attr << endl;
    }
-   vssol3d -> PrepareLines();
-   vssol3d -> Prepare();
-   SendExposeEvent();
+   PrepareLines();
+   Prepare();
 }
 
-static void KeyF10Pressed()
+void VisualizationSceneSolution3d::WalkPrevSubdomain()
 {
-   Mesh &mesh = *vssol3d->GetMesh();
-   int dim = mesh.Dimension();
-   const Array<int> &attr_list = ((dim == 3) ? mesh.bdr_attributes :
-                                  mesh.attributes);
-   Array<int> &attr_marker = vssol3d->bdr_attr_to_show;
+   int dim = mesh->Dimension();
+   const Array<int> &attr_list = ((dim == 3) ? mesh->bdr_attributes :
+                                  mesh->attributes);
+   Array<int> &attr_marker = bdr_attr_to_show;
    int attr, n, j, i;
 
    if (attr_list.Size() == 0)
@@ -627,9 +579,8 @@ static void KeyF10Pressed()
       cout << "Showing " << ((dim == 3) ? "bdr " : "") << "attribute "
            << attr << endl;
    }
-   vssol3d -> PrepareLines();
-   vssol3d -> Prepare();
-   SendExposeEvent();
+   PrepareLines();
+   Prepare();
 }
 
 VisualizationSceneSolution3d::VisualizationSceneSolution3d()
@@ -640,15 +591,11 @@ VisualizationSceneSolution3d::VisualizationSceneSolution3d(Mesh &m, Vector &s)
    mesh = &m;
    sol = &s;
    GridF = NULL;
-
-   Init();
 }
 
 
-void VisualizationSceneSolution3d::Init()
+void VisualizationSceneSolution3d::Init(GLVisWindow* wnd)
 {
-   vssol3d = this;
-
    cplane = 0;
    cp_drawmesh = 0; cp_drawelems = 1;
    drawlsurf = 0;
@@ -687,7 +634,7 @@ void VisualizationSceneSolution3d::Init()
    }
    bdr_attr_to_show = 1;
 
-   VisualizationSceneScalarData::Init(); // calls FindNewBox
+   VisualizationSceneScalarData::Init(wnd); // calls FindNewBox
 
    FindNewValueRange(false);
 
@@ -696,7 +643,8 @@ void VisualizationSceneSolution3d::Init()
    palette.SetIndex(12); // use the 'vivid' palette in 3D
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
-   CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*x[0]+(0.5+eps)*x[1]);
+   CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*x[0]+(0.5+eps)*x[1],
+                            x, y, z);
 
    nlevels = 1;
 
@@ -706,50 +654,51 @@ void VisualizationSceneSolution3d::Init()
    // if (!init)
    {
       // init = 1;
+      using SceneType = VisualizationSceneSolution3d;
 
-      wnd->setOnKeyDown('m', KeymPressed);
-      wnd->setOnKeyDown('M', KeyMPressed);
+      wnd->AddKeyEvent('m', &SceneType::ToggleDrawMesh);
+      wnd->AddKeyEvent('M', &SceneType::ToggleCPDrawMesh);
 
-      wnd->setOnKeyDown('e', KeyePressed);
-      wnd->setOnKeyDown('E', KeyEPressed);
+      wnd->AddKeyEvent('e', &SceneType::ToggleDrawElems);
+      wnd->AddKeyEvent('E', &SceneType::ToggleCPDrawElems);
 
-      wnd->setOnKeyDown('f', KeyFPressed);
-      // wnd->setOnKeyDown('F', KeyFPressed);
+      wnd->AddKeyEvent('f', &SceneType::ToggleShading);
+      // wnd->AddKeyEvent('F', KeyFPressed);
 
-      wnd->setOnKeyDown('i', KeyiPressed);
-      wnd->setOnKeyDown('I', KeyIPressed);
+      wnd->AddKeyEvent('i', &SceneType::ToggleCuttingPlane);
+      wnd->AddKeyEvent('I', &SceneType::ToggleCPAlgorithm);
 
-      wnd->setOnKeyDown('o', KeyoPressed);
-      wnd->setOnKeyDown('O', KeyOPressed);
+      wnd->AddKeyEvent('o', KeyoPressed, false);
+      wnd->AddKeyEvent('O', KeyOPressed, false);
 
-      wnd->setOnKeyDown('w', KeywPressed);
-      wnd->setOnKeyDown('W', KeyWPressed);
+      wnd->AddKeyEvent('w', &SceneType::MoveUpBdrElems);
+      wnd->AddKeyEvent('W', &SceneType::MoveDownBdrElems);
 
-      wnd->setOnKeyDown('x', KeyxPressed);
-      wnd->setOnKeyDown('X', KeyXPressed);
+      wnd->AddKeyEvent('x', &SceneType::RotateCPPhi);
+      wnd->AddKeyEvent('X', &SceneType::RotateCPPhiBack);
 
-      wnd->setOnKeyDown('y', KeyyPressed);
-      wnd->setOnKeyDown('Y', KeyYPressed);
+      wnd->AddKeyEvent('y', &SceneType::RotateCPTheta);
+      wnd->AddKeyEvent('Y', &SceneType::RotateCPThetaBack);
 
-      wnd->setOnKeyDown('z', KeyzPressed);
-      wnd->setOnKeyDown('Z', KeyZPressed);
+      wnd->AddKeyEvent('z', &SceneType::TranslateCP);
+      wnd->AddKeyEvent('Z', &SceneType::TranslateCPBack);
 
-      wnd->setOnKeyDown('u', KeyuPressed);
-      wnd->setOnKeyDown('U', KeyUPressed);
+      wnd->AddKeyEvent('u', &SceneType::MoveUpLevelSurf);
+      wnd->AddKeyEvent('U', &SceneType::MoveDownLevelSurf);
 
-      wnd->setOnKeyDown('v', KeyvPressed);
-      wnd->setOnKeyDown('V', KeyVPressed);
+      wnd->AddKeyEvent('v', &SceneType::AddLevelSurf);
+      wnd->AddKeyEvent('V', &SceneType::RemoveLevelSurf);
 
-      wnd->setOnKeyDown(SDLK_F3, KeyF3Pressed);
-      wnd->setOnKeyDown(SDLK_F4, KeyF4Pressed);
-      wnd->setOnKeyDown(SDLK_NUMLOCKCLEAR, ToggleMagicKey);
+      wnd->AddKeyEvent(SDLK_F3, &SceneType::ShrinkBoundaryElems);
+      wnd->AddKeyEvent(SDLK_F4, &SceneType::ZoomBoundaryElems);
+      wnd->AddKeyEvent(SDLK_NUMLOCKCLEAR, ToggleMagicKey, false);
 
-      wnd->setOnKeyDown(SDLK_F8, KeyF8Pressed);
-      wnd->setOnKeyDown(SDLK_F9, KeyF9Pressed);
-      wnd->setOnKeyDown(SDLK_F10, KeyF10Pressed);
+      wnd->AddKeyEvent(SDLK_F8, &SceneType::QueryToggleSubdomains);
+      wnd->AddKeyEvent(SDLK_F9, &SceneType::WalkNextSubdomain);
+      wnd->AddKeyEvent(SDLK_F10, &SceneType::WalkPrevSubdomain);
 
-      wnd->setOnKeyDown(SDLK_F11, KeyF11Pressed);
-      wnd->setOnKeyDown(SDLK_F12, KeyF12Pressed);
+      wnd->AddKeyEvent(SDLK_F11, &SceneType::ShrinkMatSubdomains);
+      wnd->AddKeyEvent(SDLK_F12, &SceneType::ZoomMatSubdomains);
    }
    Prepare();
    PrepareLines();

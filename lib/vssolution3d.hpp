@@ -44,8 +44,6 @@ protected:
 
    GridFunction *GridF;
 
-   void Init();
-
    void GetFaceNormals(const int FaceNo, const int side,
                        const IntegrationRule &ir, DenseMatrix &normals);
 
@@ -93,6 +91,31 @@ protected:
       return (n < vertices.Size());
    }
 
+   void RotateCPPhi();
+   void RotateCPPhiBack();
+   void RotateCPTheta();
+   void RotateCPThetaBack();
+   void TranslateCP();
+   void TranslateCPBack();
+
+   bool MoveUpBdrElems();
+   bool MoveDownBdrElems();
+
+   void MoveUpLevelSurf();
+   void MoveDownLevelSurf();
+   void AddLevelSurf();
+   void RemoveLevelSurf();
+
+   void QueryToggleSubdomains();
+   void WalkNextSubdomain();
+   void WalkPrevSubdomain();
+
+   bool ShrinkBoundaryElems();
+   bool ZoomBoundaryElems();
+   bool ShrinkMatSubdomains();
+   bool ZoomMatSubdomains();
+
+
 public:
    int TimesToRefine;
    double FaceShiftScale;
@@ -101,6 +124,8 @@ public:
 
    VisualizationSceneSolution3d();
    VisualizationSceneSolution3d(Mesh & m, Vector & s);
+
+   virtual void Init(GLVisWindow* wnd);
 
    void SetGridFunction (GridFunction *gf) { GridF = gf; }
 

@@ -27,8 +27,6 @@ protected:
    gl3::GlDrawable displine_buf;
    GridFunction *VecGridF;
 
-   void Init();
-
    virtual void GetRefinedValues(int i, const IntegrationRule &ir,
                                  Vector &vals, DenseMatrix &tr);
    virtual int GetRefinedValuesAndNormals(int i, const IntegrationRule &ir,
@@ -44,6 +42,18 @@ protected:
    Vector vc0;
    IsoparametricTransformation T0;
 
+   int ianim = 0;
+   const int ianimmax = 10;
+
+   void NextDisplacement();
+   void PrevDisplacement();
+
+   void QueryArrowScaling();
+
+   int key_u_func = 0;
+   void ToggleKeyUFunc();
+   void DoKeyU();
+
 public:
    VisualizationSceneVector(Mesh &m, Vector &sx, Vector &sy);
    VisualizationSceneVector(GridFunction &vgf);
@@ -52,9 +62,10 @@ public:
 
    virtual ~VisualizationSceneVector();
 
+   virtual void Init(GLVisWindow* wnd);
+
    virtual std::string GetHelpString() const;
 
-   void NPressed();
    void PrepareDisplacedMesh();
    virtual void PrepareLines()
    { VisualizationSceneSolution::PrepareLines(); PrepareDisplacedMesh(); }

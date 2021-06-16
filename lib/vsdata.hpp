@@ -13,14 +13,12 @@
 #define GLVIS_VSDATA_HPP
 
 #include <array>
+#include <utility>
 
 #include "openglvis.hpp"
 #include "mfem.hpp"
 
 using namespace mfem;
-
-extern std::string plot_caption; // defined in glvis.cpp
-extern std::string extra_caption; // defined in glvis.cpp
 
 class Plane
 {
@@ -36,7 +34,8 @@ private:
    double phi_step, theta_step, rho_step;
 
 public:
-   Plane(double A,double B,double C,double D);
+   Plane(double A,double B,double C,double D,
+         double (&bbx)[2], double (&bby)[2], double (&bbz)[2]);
    inline double * Equation() { return eqn; }
    inline double Transform(double x, double y, double z)
    { return eqn[0]*x+eqn[1]*y+eqn[2]*z+eqn[3]; }
@@ -60,6 +59,11 @@ protected:
 
    double minv, maxv;
 
+   int window_w, window_h;
+   int draw_w, draw_h;
+
+   std::string plot_caption = "";
+   std::string extra_caption = "";
    std::string a_label_x, a_label_y, a_label_z;
 
    int scaling, colorbar, drawaxes;
@@ -72,8 +76,6 @@ protected:
    gl3::GlDrawable ruler_buf;
    gl3::GlDrawable caption_buf;
    int caption_w, caption_h;
-
-   void Init();
 
    int arrow_type, arrow_scaling_type;
 
@@ -126,6 +128,19 @@ protected:
 
    void Cone(gl3::GlBuilder& builder, glm::mat4 transform);
 
+   // stored function that gets saved keys from SdlWindow
+   std::function<std::string()> saved_key_func;
+
+   void PrintHelpString();
+   void QueryCaption();
+   void QueryLevelLines();
+   void QueryPaletteSettings();
+   void QueryLightPosition();
+   void NextLightMatSetting();
+   void RedrawColors();
+   void ToggleBackground();
+   void ToggleLogscale();
+
 public:
    Plane *CuttingPlane;
    int key_r_state;
@@ -140,6 +155,8 @@ public:
    VisualizationSceneScalarData (Mesh & m, Vector & s);
 
    virtual ~VisualizationSceneScalarData();
+
+   virtual void Init(GLVisWindow* wnd);
 
    virtual std::string GetHelpString() const { return ""; }
 
@@ -196,6 +213,11 @@ public:
 
    Mesh *GetMesh() { return mesh; }
 
+   void UpdateWindowSize(int w, int h, int gl_w, int gl_h)
+   {
+      window_w = w; window_h = h;
+      draw_w = gl_w; draw_h = gl_h;
+   }
    virtual gl3::SceneInfo GetSceneObjs();
 
    double &GetMinV() { return minv; }
@@ -239,6 +261,7 @@ public:
                         Array<double> * level = NULL,
                         Array<double> * levels = NULL);
 
+   void SetCaption(std::string caption) { plot_caption = caption; }
    void SetAxisLabels(const char * a_x, const char * a_y, const char * a_z);
 
    void PrepareAxes();
@@ -263,7 +286,8 @@ public:
 
    void ToggleTexture();
 
-   void Toggle2DView();
+   virtual void Reset3DView();
+   virtual void Toggle2DView();
 
    void SetAutoscale(int _autoscale);
    int GetAutoscale() const { return autoscale; }

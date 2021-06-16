@@ -35,6 +35,9 @@ struct StreamState
 
    int ReadStream(std::istream &is, const std::string &data_type);
 
+   std::unique_ptr<VisualizationScene> CreateVisualizationScene(GLVisWindow* wnd,
+                                                                int field_type);
+
    /// Sets a new mesh and solution from another StreamState object, and
    /// updates the given VisualizationScene pointer with the new data.
    ///

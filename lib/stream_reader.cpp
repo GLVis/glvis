@@ -356,6 +356,133 @@ ProjectVectorFEGridFunction(std::unique_ptr<GridFunction> gf)
    return gf;
 }
 
+std::unique_ptr<VisualizationScene>
+StreamState::CreateVisualizationScene(GLVisWindow* wnd, int field_type)
+{
+   std::unique_ptr<VisualizationSceneScalarData> vs;
+   double mesh_range = -1.0;
+   if (field_type == 0 || field_type == 2)
+   {
+      if (grid_f)
+      {
+         grid_f->GetNodalValues(sol);
+      }
+      if (mesh->SpaceDimension() == 2)
+      {
+         VisualizationSceneSolution *vss;
+         if (normals.Size() > 0)
+         {
+            vss = new VisualizationSceneSolution(*mesh, sol, &normals);
+         }
+         else
+         {
+            vss = new VisualizationSceneSolution(*mesh, sol);
+         }
+         // initialize events and initial scene state
+         vss->Init(wnd);
+         vs.reset(vss);
+         if (grid_f)
+         {
+            vss->SetGridFunction(*grid_f);
+         }
+         if (field_type == 2)
+         {
+            vss->OrthogonalProjection = 1;
+            vss->SetLight(false);
+            vss->Zoom(1.8);
+            // Use the 'bone' palette when visualizing a 2D mesh only (otherwise
+            // the 'jet-like' palette is used in 2D, see vssolution.cpp).
+            vss->palette.SetIndex(4);
+         }
+      }
+      else if (mesh->SpaceDimension() == 3)
+      {
+         VisualizationSceneSolution3d *vss = new VisualizationSceneSolution3d(*mesh,
+                                                                              sol);
+         // initialize events and initial scene state
+         vss->Init(wnd);
+         vs.reset(vss);
+         if (grid_f)
+         {
+            vss->SetGridFunction(grid_f.get());
+         }
+         if (field_type == 2)
+         {
+            if (mesh->Dimension() == 3)
+            {
+               // Use the 'white' palette when visualizing a 3D volume mesh only
+               vss->palette.SetIndex(11);
+               vss->SetLightMatIdx(4);
+            }
+            else
+            {
+               // Use the 'bone' palette when visualizing a surface mesh only
+               vss->palette.SetIndex(4);
+            }
+            // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
+            vss->ToggleDrawAxes();
+            vss->ToggleDrawMesh();
+         }
+      }
+      if (field_type == 2)
+      {
+         if (grid_f)
+         {
+            mesh_range = grid_f->Max() + 1.0;
+         }
+         else
+         {
+            mesh_range = sol.Max() + 1.0;
+         }
+      }
+   }
+   else if (field_type == 1)
+   {
+      if (mesh->SpaceDimension() == 2)
+      {
+         if (grid_f)
+         {
+            vs.reset(new VisualizationSceneVector(*grid_f));
+         }
+         else
+         {
+            vs.reset(new VisualizationSceneVector(*mesh, solu, solv));
+         }
+      }
+      else if (mesh->SpaceDimension() == 3)
+      {
+         if (grid_f)
+         {
+            grid_f = ProjectVectorFEGridFunction(std::move(grid_f));
+            vs.reset(new VisualizationSceneVector3d(*grid_f));
+         }
+         else
+         {
+            vs.reset(new VisualizationSceneVector3d(*mesh, solu, solv, solw));
+         }
+      }
+      // initialize events and initial scene state
+      vs->Init(wnd);
+   }
+
+   if (vs)
+   {
+      // increase the refinement factors if visualizing a GridFunction
+      if (grid_f)
+      {
+         vs->AutoRefine();
+         vs->SetShading(2, true);
+      }
+      if (mesh_range > 0.0)
+      {
+         vs->SetValueRange(-mesh_range, mesh_range);
+         vs->SetAutoscale(0);
+      }
+   }
+   return vs;
+}
+
+
 bool StreamState::SetNewMeshAndSolution(StreamState new_state,
                                         VisualizationScene* vs)
 {

@@ -24,8 +24,6 @@ using namespace mfem;
 using namespace std;
 
 
-VisualizationSceneSolution *vssol;
-extern VisualizationScene  *locscene;
 extern GeometryRefiner GLVisGeometryRefiner;
 
 #ifdef GLVIS_ISFINITE
@@ -122,15 +120,15 @@ std::string VisualizationSceneSolution::GetHelpString() const
    return os.str();
 }
 
-static void KeyF8Pressed()
+void VisualizationSceneSolution::QueryToggleSubdomains()
 {
    int attr;
    Array<int> attr_list(&attr, 1);
-   const Array<int> &all_attr = vssol->GetMesh()->attributes;
+   const Array<int> &all_attr = GetMesh()->attributes;
 
    cout << "El attributes ON: ";
    for (int i = 0; i < all_attr.Size(); i++)
-      if (vssol->el_attr_to_show[all_attr[i]-1])
+      if (el_attr_to_show[all_attr[i]-1])
       {
          cout << " " << all_attr[i];
       }
@@ -138,11 +136,11 @@ static void KeyF8Pressed()
 
    cout << "El attribute to toggle : " << flush;
    cin >> attr;
-   vssol->ToggleAttributes(attr_list);
-   SendExposeEvent();
+   ToggleAttributes(attr_list);
 }
 
-static void SwitchAttribute(int increment, int &attribute,
+static void SwitchAttribute(VisualizationSceneSolution* vssol,
+                            int increment, int &attribute,
                             Array<int> &attribute_marker,
                             bool bdr)
 {
@@ -190,115 +188,108 @@ static void SwitchAttribute(int increment, int &attribute,
       vssol->PrepareLines();
       vssol->Prepare();
    }
-   SendExposeEvent();
 }
 
-static void KeyF9Pressed(GLenum state)
+static void KeyF9Pressed(GLVisWindow* wnd, GLenum state)
 {
+   VisualizationSceneSolution* vssol
+      = dynamic_cast<VisualizationSceneSolution*>(wnd->getScene());
    if (!(state & KMOD_SHIFT))
    {
-      SwitchAttribute(+1, vssol->attr_to_show, vssol->el_attr_to_show, false);
+      SwitchAttribute(vssol, +1, vssol->attr_to_show, vssol->el_attr_to_show, false);
    }
    else
    {
-      SwitchAttribute(+1, vssol->bdr_attr_to_show, vssol->bdr_el_attr_to_show,
+      SwitchAttribute(vssol, +1, vssol->bdr_attr_to_show, vssol->bdr_el_attr_to_show,
                       true);
    }
 }
 
-static void KeyF10Pressed(GLenum state)
+static void KeyF10Pressed(GLVisWindow* wnd, GLenum state)
 {
+   VisualizationSceneSolution* vssol
+      = dynamic_cast<VisualizationSceneSolution*>(wnd->getScene());
    if (!(state & KMOD_SHIFT))
    {
-      SwitchAttribute(-1, vssol->attr_to_show, vssol->el_attr_to_show, false);
+      SwitchAttribute(vssol, -1, vssol->attr_to_show, vssol->el_attr_to_show, false);
    }
    else
    {
-      SwitchAttribute(-1, vssol->bdr_attr_to_show, vssol->bdr_el_attr_to_show,
+      SwitchAttribute(vssol, -1, vssol->bdr_attr_to_show, vssol->bdr_el_attr_to_show,
                       true);
    }
 }
 
-static void KeyBPressed()
+static void KeyoPressed(GLVisWindow* wnd, GLenum state)
 {
-   vssol -> ToggleDrawBdr();
-   SendExposeEvent();
-}
-
-static void KeyMPressed()
-{
-   vssol -> ToggleDrawMesh();
-   SendExposeEvent();
-}
-
-static void KeyNPressed()
-{
-   vssol -> ToggleDrawNumberings();
-   SendExposeEvent();
-}
-
-int refine_func = 0;
-
-static void KeyoPressed(GLenum state)
-{
+   VisualizationSceneSolution* vssol
+      = dynamic_cast<VisualizationSceneSolution*>(wnd->getScene());
    if (state & KMOD_CTRL)
    {
       vssol -> ToggleDrawOrdering();
       vssol -> PrepareOrderingCurve();
-      SendExposeEvent();
+      wnd->SendExposeEvent();
    }
    else
    {
-      int update = 1;
-      switch (refine_func)
-      {
-         case 0:
-            vssol -> TimesToRefine += vssol -> EdgeRefineFactor;
-            break;
-         case 1:
-            if (vssol -> TimesToRefine > vssol -> EdgeRefineFactor)
-            {
-               vssol -> TimesToRefine -= vssol -> EdgeRefineFactor;
-            }
-            else
-            {
-               update = 0;
-            }
-            break;
-         case 2:
-            vssol -> TimesToRefine /= vssol -> EdgeRefineFactor;
-            vssol -> EdgeRefineFactor ++;
-            vssol -> TimesToRefine *= vssol -> EdgeRefineFactor;
-            break;
-         case 3:
-            if (vssol -> EdgeRefineFactor > 1)
-            {
-               vssol -> TimesToRefine /= vssol -> EdgeRefineFactor;
-               vssol -> EdgeRefineFactor --;
-               vssol -> TimesToRefine *= vssol -> EdgeRefineFactor;
-            }
-            else
-            {
-               update = 0;
-            }
-            break;
-      }
-      if (update && vssol -> shading == 2)
-      {
-         vssol -> DoAutoscale(false);
-         vssol -> PrepareLines();
-         vssol -> PrepareBoundary();
-         vssol -> Prepare();
-         vssol -> PrepareLevelCurves();
-         vssol -> PrepareCP();
-         SendExposeEvent();
-      }
-      cout << "Subdivision factors = " << vssol -> TimesToRefine
-           << ", " << vssol -> EdgeRefineFactor << endl;
+      vssol -> DoRefineFunc();
+      wnd->SendExposeEvent();
    }
 }
 
-static void KeyOPressed(GLenum state)
+bool VisualizationSceneSolution::DoRefineFunc()
+{
+   int update = 1;
+   switch (refine_func)
+   {
+      case 0:
+         TimesToRefine += EdgeRefineFactor;
+         break;
+      case 1:
+         if (TimesToRefine > EdgeRefineFactor)
+         {
+            TimesToRefine -= EdgeRefineFactor;
+         }
+         else
+         {
+            update = 0;
+         }
+         break;
+      case 2:
+         TimesToRefine /= EdgeRefineFactor;
+         EdgeRefineFactor ++;
+         TimesToRefine *= EdgeRefineFactor;
+         break;
+      case 3:
+         if (EdgeRefineFactor > 1)
+         {
+            TimesToRefine /= EdgeRefineFactor;
+            EdgeRefineFactor --;
+            TimesToRefine *= EdgeRefineFactor;
+         }
+         else
+         {
+            update = 0;
+         }
+         break;
+   }
+   cout << "Subdivision factors = " << TimesToRefine
+        << ", " << EdgeRefineFactor << endl;
+   if (update && shading == 2)
+   {
+      DoAutoscale(false);
+      PrepareLines();
+      PrepareBoundary();
+      Prepare();
+      PrepareLevelCurves();
+      PrepareCP();
+      return true;
+   }
+   return false;
+}
+
+//static void KeyOPressed(GLenum state)
+void VisualizationSceneSolution::ToggleRefineFunc()
 {
    refine_func = (refine_func+1)%4;
    cout << "Key 'o' will: ";
@@ -319,118 +310,100 @@ static void KeyOPressed(GLenum state)
    }
 }
 
-static void KeyEPressed()
-{
-   vssol -> ToggleDrawElems();
-   SendExposeEvent();
-}
-
-static void KeyFPressed()
-{
-   vssol -> ToggleShading();
-   SendExposeEvent();
-}
-
-void KeyiPressed()
-{
-   vssol->ToggleDrawCP();
-   SendExposeEvent();
-}
-
 void KeyIPressed()
 {
    // no-op, available
 }
 
-static void KeyyPressed()
+void VisualizationSceneSolution::RotateCP()
 {
-   vssol->CuttingPlane->IncreaseTheta();
-   vssol->PrepareCP();
-   SendExposeEvent();
+   CuttingPlane->IncreaseTheta();
+   PrepareCP();
 }
 
-static void KeyYPressed()
+void VisualizationSceneSolution::RotateCPBack()
 {
-   vssol->CuttingPlane->DecreaseTheta();
-   vssol->PrepareCP();
-   SendExposeEvent();
+   CuttingPlane->DecreaseTheta();
+   PrepareCP();
 }
 
-static void KeyzPressed()
+void VisualizationSceneSolution::TranslateCP()
 {
-   vssol->CuttingPlane->IncreaseDistance();
-   vssol->PrepareCP();
-   SendExposeEvent();
+   CuttingPlane->IncreaseDistance();
+   PrepareCP();
 }
 
-static void KeyZPressed()
+void VisualizationSceneSolution::TranslateCPBack()
 {
-   vssol->CuttingPlane->DecreaseDistance();
-   vssol->PrepareCP();
-   SendExposeEvent();
+   CuttingPlane->DecreaseDistance();
+   PrepareCP();
 }
 
-static void KeyF3Pressed()
+bool VisualizationSceneSolution::ShrinkElements()
 {
-   if (vssol->shading == 2)
+   if (shading == 2)
    {
-      vssol->shrink *= 0.9;
-      vssol->Prepare();
-      vssol->PrepareLines();
-      vssol->PrepareLevelCurves();
-      vssol->PrepareNumbering();
-      vssol->PrepareOrderingCurve();
-      SendExposeEvent();
+      shrink *= 0.9;
+      Prepare();
+      PrepareLines();
+      PrepareLevelCurves();
+      PrepareNumbering();
+      PrepareOrderingCurve();
+      return true;
    }
+   return false;
 }
 
-static void KeyF4Pressed()
+bool VisualizationSceneSolution::ZoomElements()
 {
-   if (vssol->shading == 2)
+   if (shading == 2)
    {
-      vssol->shrink *= 1.11111111111111111111111;
-      vssol->Prepare();
-      vssol->PrepareLines();
-      vssol->PrepareLevelCurves();
-      vssol->PrepareNumbering();
-      SendExposeEvent();
+      shrink *= 1.11111111111111111111111;
+      Prepare();
+      PrepareLines();
+      PrepareLevelCurves();
+      PrepareNumbering();
+      return true;
    }
+   return false;
 }
 
-static void KeyF11Pressed()
+bool VisualizationSceneSolution::ShrinkMatSubdomains()
 {
-   if (vssol->shading == 2)
+   if (shading == 2)
    {
-      if (vssol->matc.Width() == 0)
+      if (matc.Width() == 0)
       {
-         vssol->ComputeElemAttrCenter();
+         ComputeElemAttrCenter();
       }
-      vssol->shrinkmat *= 0.9;
-      vssol->Prepare();
-      vssol->PrepareLines();
-      vssol->PrepareBoundary();
-      vssol->PrepareLevelCurves();
-      vssol->PrepareNumbering();
-      SendExposeEvent();
+      shrinkmat *= 0.9;
+      Prepare();
+      PrepareLines();
+      PrepareBoundary();
+      PrepareLevelCurves();
+      PrepareNumbering();
+      return true;
    }
+   return false;
 }
 
-static void KeyF12Pressed()
+bool VisualizationSceneSolution::ZoomMatSubdomains()
 {
-   if (vssol->shading == 2)
+   if (shading == 2)
    {
-      if (vssol->matc.Width() == 0)
+      if (matc.Width() == 0)
       {
-         vssol->ComputeElemAttrCenter();
+         ComputeElemAttrCenter();
       }
-      vssol->shrinkmat *= 1.11111111111111111111111;
-      vssol->Prepare();
-      vssol->PrepareLines();
-      vssol->PrepareBoundary();
-      vssol->PrepareLevelCurves();
-      vssol->PrepareNumbering();
-      SendExposeEvent();
+      shrinkmat *= 1.11111111111111111111111;
+      Prepare();
+      PrepareLines();
+      PrepareBoundary();
+      PrepareLevelCurves();
+      PrepareNumbering();
+      return true;
    }
+   return false;
 }
 
 VisualizationSceneSolution::VisualizationSceneSolution()
@@ -444,14 +417,11 @@ VisualizationSceneSolution::VisualizationSceneSolution(
    mesh = &m;
    sol = &s;
    v_normals = normals;
-
-   Init();
 }
 
-void VisualizationSceneSolution::Init()
+void VisualizationSceneSolution::Init(GLVisWindow* wnd)
 {
    rsol  = NULL;
-   vssol = this;
 
    drawelems = shading = 1;
    drawmesh  = 0;
@@ -474,52 +444,54 @@ void VisualizationSceneSolution::Init()
 
    drawbdr = 0;
 
-   VisualizationSceneScalarData::Init();  // Calls FindNewBox() !!!
+   VisualizationSceneScalarData::Init(wnd);  // Calls FindNewBox() !!!
 
    palette.SetIndex(2); // use the 'jet-like' palette in 2D
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
-   CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*x[0]+(0.5+eps)*x[1]);
+   CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*x[0]+(0.5+eps)*x[1],
+                            x, y, z);
    draw_cp = 0;
 
    // static int init = 0;
    // if (!init)
    {
       // init = 1;
+      using SceneType = VisualizationSceneSolution;
 
-      wnd->setOnKeyDown('b', KeyBPressed);
-      wnd->setOnKeyDown('B', KeyBPressed);
+      wnd->AddKeyEvent('b', &SceneType::ToggleDrawBdr);
+      wnd->AddKeyEvent('B', &SceneType::ToggleDrawBdr);
 
-      wnd->setOnKeyDown('m', KeyMPressed);
-      wnd->setOnKeyDown('M', KeyMPressed);
+      wnd->AddKeyEvent('m', &SceneType::ToggleDrawMesh);
+      wnd->AddKeyEvent('M', &SceneType::ToggleDrawMesh);
 
-      wnd->setOnKeyDown('n', KeyNPressed);
-      wnd->setOnKeyDown('N', KeyNPressed);
+      wnd->AddKeyEvent('n', &SceneType::ToggleDrawNumberings);
+      wnd->AddKeyEvent('N', &SceneType::ToggleDrawNumberings);
 
-      wnd->setOnKeyDown('o', KeyoPressed);
-      wnd->setOnKeyDown('O', KeyOPressed);
+      wnd->AddKeyEvent('o', KeyoPressed, false); // expose handled in function
+      wnd->AddKeyEvent('O', &SceneType::ToggleRefineFunc);
 
-      wnd->setOnKeyDown('e', KeyEPressed);
-      wnd->setOnKeyDown('E', KeyEPressed);
+      wnd->AddKeyEvent('e', &SceneType::ToggleDrawElems);
+      wnd->AddKeyEvent('E', &SceneType::ToggleDrawElems);
 
-      wnd->setOnKeyDown('f', KeyFPressed);
-      wnd->setOnKeyDown('F', KeyFPressed);
+      wnd->AddKeyEvent('f', &SceneType::ToggleShading);
+      wnd->AddKeyEvent('F', &SceneType::ToggleShading);
 
-      wnd->setOnKeyDown('i', KeyiPressed);
-      wnd->setOnKeyDown('I', KeyIPressed);
+      wnd->AddKeyEvent('i', &SceneType::ToggleDrawCP);
+      //wnd->AddKeyEvent('I', KeyIPressed);
 
-      wnd->setOnKeyDown('y', KeyyPressed);
-      wnd->setOnKeyDown('Y', KeyYPressed);
-      wnd->setOnKeyDown('z', KeyzPressed);
-      wnd->setOnKeyDown('Z', KeyZPressed);
+      wnd->AddKeyEvent('y', &SceneType::RotateCP);
+      wnd->AddKeyEvent('Y', &SceneType::RotateCPBack);
+      wnd->AddKeyEvent('z', &SceneType::TranslateCP);
+      wnd->AddKeyEvent('Z', &SceneType::TranslateCPBack);
 
-      wnd->setOnKeyDown(SDLK_F3, KeyF3Pressed);
-      wnd->setOnKeyDown(SDLK_F4, KeyF4Pressed);
-      wnd->setOnKeyDown(SDLK_F8, KeyF8Pressed);
-      wnd->setOnKeyDown(SDLK_F9,  KeyF9Pressed);
-      wnd->setOnKeyDown(SDLK_F10, KeyF10Pressed);
-      wnd->setOnKeyDown(SDLK_F11, KeyF11Pressed);
-      wnd->setOnKeyDown(SDLK_F12, KeyF12Pressed);
+      wnd->AddKeyEvent(SDLK_F3, &SceneType::ShrinkElements);
+      wnd->AddKeyEvent(SDLK_F4, &SceneType::ZoomElements);
+      wnd->AddKeyEvent(SDLK_F8, &SceneType::QueryToggleSubdomains);
+      wnd->AddKeyEvent(SDLK_F9,  KeyF9Pressed);
+      wnd->AddKeyEvent(SDLK_F10, KeyF10Pressed);
+      wnd->AddKeyEvent(SDLK_F11, &SceneType::ShrinkMatSubdomains);
+      wnd->AddKeyEvent(SDLK_F12, &SceneType::ZoomMatSubdomains);
    }
 
    Prepare();

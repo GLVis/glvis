@@ -44,8 +44,6 @@ protected:
    gl3::GlDrawable order_buf;
    gl3::GlDrawable order_noarrow_buf;
 
-   void Init();
-
    void FindNewBox(double rx[], double ry[], double rval[]);
 
    void DrawCPLine(gl3::GlBuilder& bld,
@@ -74,6 +72,22 @@ protected:
    // slow.  Turn it off above some entity count.
    static const int MAX_RENDER_NUMBERING = 1000;
 
+   void RotateCP();
+   void RotateCPBack();
+   void TranslateCP();
+   void TranslateCPBack();
+
+   bool ShrinkElements();
+   bool ZoomElements();
+
+   void QueryToggleSubdomains();
+
+   bool ShrinkMatSubdomains();
+   bool ZoomMatSubdomains();
+
+   int refine_func = 0;
+
+
 public:
    int shading, TimesToRefine, EdgeRefineFactor;
 
@@ -84,6 +98,8 @@ public:
    VisualizationSceneSolution(Mesh &m, Vector &s, Vector *normals = NULL);
 
    virtual ~VisualizationSceneSolution();
+
+   virtual void Init(GLVisWindow* wnd);
 
    virtual std::string GetHelpString() const;
 
@@ -153,6 +169,8 @@ public:
 
    void ToggleDrawCP() { draw_cp = !draw_cp; PrepareCP(); }
 
+   void ToggleRefineFunc();
+   bool DoRefineFunc();
    virtual void SetRefineFactors(int, int);
    virtual void AutoRefine();
    virtual void ToggleAttributes(Array<int> &attr_list);

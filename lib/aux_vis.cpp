@@ -14,6 +14,7 @@
 #include <fstream>
 #include <cmath>
 #include <ctime>
+#include <exception>
 
 #include "mfem.hpp"
 using namespace mfem;
@@ -33,9 +34,6 @@ using namespace mfem;
 #include <fontconfig/fontconfig.h>
 #endif
 
-int visualize = 0;
-VisualizationScene * locscene;
-
 #ifdef GLVIS_MULTISAMPLE
 static int glvis_multisample = GLVIS_MULTISAMPLE;
 #else
@@ -45,57 +43,106 @@ static int glvis_multisample = -1;
 float line_w = 1.f;
 float line_w_aa = gl3::LINE_WIDTH_AA;
 
-SdlWindow * wnd = nullptr;
-bool wndLegacyGl = false;
+void MainLoop(GLVisWindow* wnd);
 
-SdlWindow * GetAppWindow()
+struct GLVisWindow::RotationControl
 {
-   return wnd;
+   GLVisWindow* wnd;
+   double xang = 0., yang = 0.;
+   gl3::GlMatrix srot;
+   double sph_t, sph_u;
+   GLint oldx, oldy, startx, starty;
+
+   bool constrained_spinning = 0;
+
+   void LeftButtonDown  (EventInfo *event);
+   void LeftButtonLoc   (EventInfo *event);
+   void LeftButtonUp    (EventInfo *event);
+   void MiddleButtonDown(EventInfo *event);
+   void MiddleButtonLoc (EventInfo *event);
+   void MiddleButtonUp  (EventInfo *event);
+   void RightButtonDown (EventInfo *event);
+   void RightButtonLoc  (EventInfo *event);
+   void RightButtonUp   (EventInfo *event);
+
+   void CheckSpin();
+   void Key0Pressed();
+   void KeyDeletePressed();
+   void KeyEnterPressed();
+   MouseDelegate CreateMouseEvent(void (GLVisWindow::RotationControl::*func)(
+                                     EventInfo*))
+   {
+      return [this, func](EventInfo* ei) { (this->*func)(ei); };
+   }
+
+};
+
+template<typename T>
+KeyDelegate CreateKeyEvent(T* inst, void (T::*func)())
+{
+   return [inst, func](GLenum) { (inst->*func)(); };
 }
 
-VisualizationScene * GetVisualizationScene()
+void GLVisWindow::KeyPrint(GLenum mod)
 {
-   return locscene;
+   if (mod & KMOD_CTRL)
+   {
+      PrintToPDF();
+   }
 }
 
-void SetLegacyGLOnly(bool status)
-{
-   wndLegacyGl = true;
-}
-
-void MyExpose(GLsizei w, GLsizei h);
-void MyExpose();
-
-int InitVisualization (const char name[], int x, int y, int w, int h)
+GLVisWindow::GLVisWindow(std::string name, int x, int y, int w, int h,
+                         bool legacyGlOnly)
+   : locscene(nullptr)
+   , idle_funcs(0)
+   , rot_data(new RotationControl)
 {
 
 #ifdef GLVIS_DEBUG
    cout << "OpenGL Visualization" << endl;
 #endif
-   if (!wnd)
+   rot_data->wnd = this;
+   wnd.reset(new SdlWindow());
+   if (!wnd->createWindow(name, x, y, w, h, legacyGlOnly))
    {
-      wnd = new SdlWindow();
-      if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
-      {
-         return 1;
-      }
+      throw std::runtime_error("Could not create an SDL window.");
    }
-   else
-   {
-      wnd->clearEvents();
-   }
-
 #ifdef GLVIS_DEBUG
    cout << "Window should be up" << endl;
 #endif
    InitFont();
+   wnd->getRenderer().setFont(&font);
    wnd->getRenderer().setLineWidth(line_w);
    wnd->getRenderer().setLineWidthMS(line_w_aa);
 
    // auxReshapeFunc (MyReshape); // not needed, MyExpose calls it
    // auxReshapeFunc (NULL);
-   void (*exposeFunc)(void) = MyExpose;
-   wnd->setOnExpose(exposeFunc);
+   wnd->setOnExpose([this]() { MyExpose(); });
+   auto LeftButtonDown   = rot_data->CreateMouseEvent(
+                              &RotationControl::LeftButtonDown);
+   auto LeftButtonUp     = rot_data->CreateMouseEvent(
+                              &RotationControl::LeftButtonUp);
+   auto LeftButtonLoc    = rot_data->CreateMouseEvent(
+                              &RotationControl::LeftButtonLoc);
+   auto MiddleButtonDown = rot_data->CreateMouseEvent(
+                              &RotationControl::MiddleButtonDown);
+   auto MiddleButtonUp   = rot_data->CreateMouseEvent(
+                              &RotationControl::MiddleButtonUp);
+   auto MiddleButtonLoc  = rot_data->CreateMouseEvent(
+                              &RotationControl::MiddleButtonLoc);
+   auto RightButtonDown  = rot_data->CreateMouseEvent(
+                              &RotationControl::RightButtonDown);
+   auto RightButtonUp    = rot_data->CreateMouseEvent(
+                              &RotationControl::RightButtonUp);
+   auto RightButtonLoc   = rot_data->CreateMouseEvent(
+                              &RotationControl::RightButtonLoc);
+
+   auto Key0Pressed = CreateKeyEvent(rot_data.get(),
+                                     &RotationControl::Key0Pressed);
+   auto KeyEnterPressed = CreateKeyEvent(rot_data.get(),
+                                         &RotationControl::KeyEnterPressed);
+   auto KeyDeletePressed = CreateKeyEvent(rot_data.get(),
+                                          &RotationControl::KeyDeletePressed);
 
    wnd->setOnMouseDown(SDL_BUTTON_LEFT, LeftButtonDown);
    wnd->setOnMouseUp(SDL_BUTTON_LEFT, LeftButtonUp);
@@ -107,33 +154,39 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
    wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
 
-   wnd->setTouchPinchCallback(TouchPinch);
+   TouchDelegate onTouch = [this](SDL_MultiGestureEvent& e)
+   { this->TouchPinch(e); };
 
-   // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
-   wnd->setOnKeyDown (SDLK_s, KeyS);
-   wnd->setOnKeyDown ('S', KeyS);
+   wnd->setTouchPinchCallback(onTouch);
+   SetKeyEventHandler('A', &GLVisWindow::ToggleAntialiasing);
 
-   wnd->setOnKeyDown (SDLK_q, KeyQPressed);
+   SetKeyEventHandler ('p', &GLVisWindow::KeyPrint);
+   SetKeyEventHandler ('r', &GLVisWindow::StopSpinning);
+   SetKeyEventHandler ('R', &GLVisWindow::StopSpinning);
+   SetKeyEventHandler (SDLK_s, &GLVisWindow::Screenshot);
+   SetKeyEventHandler ('S', &GLVisWindow::Screenshot);
+
+   SetKeyEventHandler (SDLK_q, &GLVisWindow::Quit);
    // wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
 
-   wnd->setOnKeyDown (SDLK_LEFT, KeyLeftPressed);
-   wnd->setOnKeyDown (SDLK_RIGHT, KeyRightPressed);
-   wnd->setOnKeyDown (SDLK_UP, KeyUpPressed);
-   wnd->setOnKeyDown (SDLK_DOWN, KeyDownPressed);
+   SetKeyEventHandler (SDLK_LEFT, &GLVisWindow::KeyLeftPressed);
+   SetKeyEventHandler (SDLK_RIGHT, &GLVisWindow::KeyRightPressed);
+   SetKeyEventHandler (SDLK_UP, &GLVisWindow::KeyUpPressed);
+   SetKeyEventHandler (SDLK_DOWN, &GLVisWindow::KeyDownPressed);
 
    wnd->setOnKeyDown (SDLK_KP_0, Key0Pressed);
-   wnd->setOnKeyDown (SDLK_KP_1, Key1Pressed);
-   wnd->setOnKeyDown (SDLK_KP_2, Key2Pressed);
-   wnd->setOnKeyDown (SDLK_KP_3, Key3Pressed);
-   wnd->setOnKeyDown (SDLK_KP_4, Key4Pressed);
-   wnd->setOnKeyDown (SDLK_KP_5, Key5Pressed);
-   wnd->setOnKeyDown (SDLK_KP_6, Key6Pressed);
-   wnd->setOnKeyDown (SDLK_KP_7, Key7Pressed);
-   wnd->setOnKeyDown (SDLK_KP_8, Key8Pressed);
-   wnd->setOnKeyDown (SDLK_KP_9, Key9Pressed);
+   SetKeyEventHandler (SDLK_KP_1, &GLVisWindow::Key1Pressed);
+   SetKeyEventHandler (SDLK_KP_2, &GLVisWindow::Key2Pressed);
+   SetKeyEventHandler (SDLK_KP_3, &GLVisWindow::Key3Pressed);
+   SetKeyEventHandler (SDLK_KP_4, &GLVisWindow::Key4Pressed);
+   SetKeyEventHandler (SDLK_KP_5, &GLVisWindow::Key5Pressed);
+   SetKeyEventHandler (SDLK_KP_6, &GLVisWindow::Key6Pressed);
+   SetKeyEventHandler (SDLK_KP_7, &GLVisWindow::Key7Pressed);
+   SetKeyEventHandler (SDLK_KP_8, &GLVisWindow::Key8Pressed);
+   SetKeyEventHandler (SDLK_KP_9, &GLVisWindow::Key9Pressed);
 
-   wnd->setOnKeyDown (SDLK_KP_MEMSUBTRACT, KeyMinusPressed);
-   wnd->setOnKeyDown (SDLK_KP_MEMADD, KeyPlusPressed);
+   SetKeyEventHandler (SDLK_KP_MEMSUBTRACT, &GLVisWindow::KeyMinusPressed);
+   SetKeyEventHandler (SDLK_KP_MEMADD, &GLVisWindow::KeyPlusPressed);
 
    wnd->setOnKeyDown (SDLK_KP_DECIMAL, KeyDeletePressed);
    wnd->setOnKeyDown (SDLK_KP_ENTER, KeyEnterPressed);
@@ -142,48 +195,116 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    wnd->setOnKeyDown (SDLK_RETURN, KeyEnterPressed);
 
    wnd->setOnKeyDown (SDLK_0, Key0Pressed);
-   wnd->setOnKeyDown (SDLK_1, Key1Pressed);
-   wnd->setOnKeyDown (SDLK_2, Key2Pressed);
-   wnd->setOnKeyDown (SDLK_3, Key3Pressed);
-   wnd->setOnKeyDown (SDLK_4, Key4Pressed);
-   wnd->setOnKeyDown (SDLK_5, Key5Pressed);
-   wnd->setOnKeyDown (SDLK_6, Key6Pressed);
-   wnd->setOnKeyDown (SDLK_7, Key7Pressed);
-   wnd->setOnKeyDown (SDLK_8, Key8Pressed);
-   wnd->setOnKeyDown (SDLK_9, Key9Pressed);
+   SetKeyEventHandler (SDLK_1, &GLVisWindow::Key1Pressed);
+   SetKeyEventHandler (SDLK_2, &GLVisWindow::Key2Pressed);
+   SetKeyEventHandler (SDLK_3, &GLVisWindow::Key3Pressed);
+   SetKeyEventHandler (SDLK_4, &GLVisWindow::Key4Pressed);
+   SetKeyEventHandler (SDLK_5, &GLVisWindow::Key5Pressed);
+   SetKeyEventHandler (SDLK_6, &GLVisWindow::Key6Pressed);
+   SetKeyEventHandler (SDLK_7, &GLVisWindow::Key7Pressed);
+   SetKeyEventHandler (SDLK_8, &GLVisWindow::Key8Pressed);
+   SetKeyEventHandler (SDLK_9, &GLVisWindow::Key9Pressed);
 
-   wnd->setOnKeyDown (SDLK_MINUS, KeyMinusPressed);
-   wnd->setOnKeyDown (SDLK_PLUS, KeyPlusPressed);
-   wnd->setOnKeyDown (SDLK_EQUALS, KeyPlusPressed);
+   SetKeyEventHandler (SDLK_MINUS, &GLVisWindow::KeyMinusPressed);
+   SetKeyEventHandler (SDLK_PLUS, &GLVisWindow::KeyPlusPressed);
+   SetKeyEventHandler (SDLK_EQUALS, &GLVisWindow::KeyPlusPressed);
 
-   wnd->setOnKeyDown (SDLK_j, KeyJPressed);
+   SetKeyEventHandler (SDLK_j, &GLVisWindow::KeyJPressed);
    // wnd->setOnKeyDown (AUX_J, KeyJPressed);
 
-   wnd->setOnKeyDown (SDLK_KP_MULTIPLY, ZoomIn);
-   wnd->setOnKeyDown (SDLK_KP_DIVIDE, ZoomOut);
+   SetKeyEventHandler (SDLK_KP_MULTIPLY, &GLVisWindow::ZoomIn);
+   SetKeyEventHandler (SDLK_KP_DIVIDE, &GLVisWindow::ZoomOut);
 
-   wnd->setOnKeyDown (SDLK_ASTERISK, ZoomIn);
-   wnd->setOnKeyDown (SDLK_SLASH, ZoomOut);
+   SetKeyEventHandler (SDLK_ASTERISK, &GLVisWindow::ZoomIn);
+   SetKeyEventHandler (SDLK_SLASH, &GLVisWindow::ZoomOut);
 
-   wnd->setOnKeyDown (SDLK_LEFTBRACKET, ScaleDown);
-   wnd->setOnKeyDown (SDLK_RIGHTBRACKET, ScaleUp);
-   wnd->setOnKeyDown (SDLK_AT, LookAt);
+   SetKeyEventHandler (SDLK_LEFTBRACKET, &GLVisWindow::ScaleDown);
+   SetKeyEventHandler (SDLK_RIGHTBRACKET, &GLVisWindow::ScaleUp);
+   SetKeyEventHandler (SDLK_AT, &GLVisWindow::LookAt);
+
+   SetKeyEventHandler (SDLK_SPACE, &GLVisWindow::ThreadsPauseFunc);
 
 #ifndef __EMSCRIPTEN__
-   wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
-   wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
-
-   if (locscene)
-   {
-      delete locscene;
-   }
+   SetKeyEventHandler(SDLK_LEFTPAREN, &GLVisWindow::ShrinkWindow);
+   SetKeyEventHandler(SDLK_RIGHTPAREN, &GLVisWindow::EnlargeWindow);
 #endif
-   locscene = nullptr;
-
-   return 0;
 }
 
-void SendKeySequence(const char *seq)
+GLVisWindow::~GLVisWindow()
+{
+#ifndef __EMSCRIPTEN__
+   if (glvis_command)
+   {
+      glvis_command->Terminate();
+   }
+#endif
+}
+
+void GLVisWindow::InitVisualization(int field_type, StreamState state,
+                                    bool& keep_attr,
+                                    const mfem::Array<istream*>& input_streams)
+{
+   prob_state = std::move(state);
+#ifndef __EMSCRIPTEN__
+   if (input_streams.Size() > 0)
+   {
+      glvis_command.reset(new GLVisCommand(this, keep_attr));
+      comm_thread.reset(new communication_thread(glvis_command.get(), input_streams));
+   }
+#endif
+
+   locscene = prob_state.CreateVisualizationScene(this, field_type);
+
+   if (prob_state.mesh->SpaceDimension() == 2 && field_type == 2)
+   {
+      locscene->view = 2;
+      locscene->CenterObject2D();
+   }
+   else
+   {
+      locscene->view = 3;
+      locscene->CenterObject();
+   }
+
+   if (locscene->spinning)
+   {
+      AddIdleFunc(::MainLoop);
+   }
+
+   if (!prob_state.keys.empty())
+   {
+      CallKeySequence(prob_state.keys.c_str());
+   }
+}
+
+void GLVisWindow::SetupHandledKey(int key)
+{
+   wnd->setOnKeyDown(key,
+                     [this, key](GLenum e)
+   {
+      if (internal_keyevents.find(key) != internal_keyevents.end())
+      { internal_keyevents[key](e); }
+      if (keyevents.find(key) != keyevents.end())
+      { keyevents[key](e); }
+   });
+}
+
+void GLVisWindow::SetKeyEventHandler(int key, void (GLVisWindow::*handler)())
+{
+   auto handlerWrapper = [this, handler](GLenum) { (this->*handler)(); };
+   internal_keyevents[key] = handlerWrapper;
+   SetupHandledKey(key);
+}
+
+void GLVisWindow::SetKeyEventHandler(int key,
+                                     void (GLVisWindow::*handler)(GLenum))
+{
+   auto handlerWrapper = [this, handler](GLenum mod) { (this->*handler)(mod); };
+   internal_keyevents[key] = handlerWrapper;
+   SetupHandledKey(key);
+}
+
+void GLVisWindow::SendKeySequence(const char *seq)
 {
    for (const char* key = seq; *key != '\0'; key++)
    {
@@ -236,9 +357,7 @@ void SendKeySequence(const char *seq)
 }
 
 
-static bool disableSendExposeEvent = false;
-
-void CallKeySequence(const char *seq)
+void GLVisWindow::CallKeySequence(const char *seq)
 {
    const char *key = seq;
 
@@ -290,54 +409,22 @@ void CallKeySequence(const char *seq)
    disableSendExposeEvent = false;
 }
 
-void InitIdleFuncs();
-
-void SetVisualizationScene(VisualizationScene * scene, int view,
-                           const char *keys)
+void GLVisWindow::RunVisualization()
 {
-   locscene = scene;
-   locscene -> view = view;
-   if (view == 2)
-   {
-      scene -> CenterObject2D();
-   }
-   else
-   {
-      scene -> CenterObject();
-   }
-
-   InitIdleFuncs();
-   if (scene -> spinning)
-   {
-      AddIdleFunc(MainLoop);
-   }
-
-   if (keys)
-   {
-      // SendKeySequence(keys);
-      CallKeySequence(keys);
-   }
-   wnd->getRenderer().setPalette(&locscene->palette);
-}
-
-void RunVisualization()
-{
+   visualize = 1;
+   wnd->setOnIdle([this]() {return MainIdleFunc();});
 #ifndef __EMSCRIPTEN__
    wnd->mainLoop();
 #endif
-   InitIdleFuncs();
-   delete locscene;
-   delete wnd;
-   wnd = nullptr;
 }
 
-void SendExposeEvent()
+void GLVisWindow::SendExposeEvent()
 {
    if (disableSendExposeEvent) { return; }
    wnd->signalExpose();
 }
 
-void MyReshape(GLsizei w, GLsizei h)
+void GLVisWindow::MyReshape(GLsizei w, GLsizei h)
 {
    wnd->getRenderer().setViewport(w, h);
 
@@ -374,13 +461,20 @@ void MyReshape(GLsizei w, GLsizei h)
    locscene->SetProjectionMtx(projmtx.mtx);
 }
 
-void MyExpose(GLsizei w, GLsizei h)
+void GLVisWindow::MyExpose(GLsizei w, GLsizei h)
 {
    MyReshape (w, h);
    GLuint color_tex = locscene->palette.GetColorTexture();
    GLuint alpha_tex = locscene->palette.GetAlphaTexture();
    wnd->getRenderer().setColorTexture(color_tex);
    wnd->getRenderer().setAlphaTexture(alpha_tex);
+
+   std::array<float, 4> bgcol = locscene->GetBackgroundColor();
+   wnd->getRenderer().setClearColor(bgcol[0], bgcol[1], bgcol[2], bgcol[3]);
+
+   int wnd_w, wnd_h;
+   wnd->getWindowSize(wnd_w, wnd_h);
+   locscene->UpdateWindowSize(wnd_w, wnd_h, w, h);
    gl3::SceneInfo frame = locscene->GetSceneObjs();
    for (auto drawable_ptr : frame.needs_buffering)
    {
@@ -389,7 +483,7 @@ void MyExpose(GLsizei w, GLsizei h)
    wnd->getRenderer().render(frame.queue);
 }
 
-void MyExpose()
+void GLVisWindow::MyExpose()
 {
    int w, h;
    wnd->getGLDrawSize(w, h);
@@ -397,57 +491,100 @@ void MyExpose()
    wnd->signalSwap();
 }
 
-
-Array<void (*)()> IdleFuncs;
-int LastIdleFunc;
-
-void InitIdleFuncs()
+#ifndef __EMSCRIPTEN__
+bool GLVisWindow::CommunicationIdleFunc()
 {
-   IdleFuncs.SetSize(0);
-   LastIdleFunc = 0;
-   wnd->setOnIdle(NULL);
+   int status = glvis_command->Execute();
+   if (status < 0)
+   {
+      cout << "GLVisCommand signalled exit" << endl;
+      wnd->signalQuit();
+   }
+   else if (status == 1)
+   {
+      // no commands right now - main loop should sleep
+      return true;
+   }
+   return false;
+}
+#endif
+
+bool GLVisWindow::MainIdleFunc()
+{
+   bool sleep = true;
+#ifndef __EMSCRIPTEN__
+   if (glvis_command && visualize == 1
+       && !(idle_funcs.Size() > 0 && use_idle))
+   {
+      // Execute the next event from the communication thread if:
+      //  - a valid GLVisCommand has been set
+      //  - the communication thread is not stopped
+      //  - The idle function flag is not set, or no idle functions have been
+      //    registered
+      sleep = CommunicationIdleFunc();
+      if (idle_funcs.Size() > 0) { sleep = false; }
+   }
+   else if (idle_funcs.Size() > 0)
+   {
+      last_idle_func = (last_idle_func + 1) % idle_funcs.Size();
+      if (idle_funcs[last_idle_func])
+      {
+         (*idle_funcs[last_idle_func])(this);
+      }
+      // Continue executing idle functions
+      sleep = false;
+   }
+   use_idle = !use_idle;
+#else
+   if (idle_funcs.Size() > 0)
+   {
+      last_idle_func = (last_idle_func + 1) % idle_funcs.Size();
+      if (idle_funcs[last_idle_func])
+      {
+         (*idle_funcs[last_idle_func])(this);
+      }
+      // Continue executing idle functions
+      sleep = false;
+   }
+#endif
+   return sleep;
 }
 
-void MainIdleFunc()
+void GLVisWindow::AddIdleFunc(GLVisWindow::IdleFPtr Func)
 {
-   LastIdleFunc = (LastIdleFunc + 1) % IdleFuncs.Size();
-   if (IdleFuncs[LastIdleFunc])
+   idle_funcs.Union(Func);
+   use_idle = false;
+   wnd->setOnIdle([this]() {return MainIdleFunc();});
+}
+
+void GLVisWindow::RemoveIdleFunc(GLVisWindow::IdleFPtr Func)
+{
+   idle_funcs.DeleteFirst(Func);
+   if (idle_funcs.Size() == 0)
    {
-      (*IdleFuncs[LastIdleFunc])();
+      use_idle = false;
+#ifndef __EMSCRIPTEN__
+      if (!glvis_command) { wnd->setOnIdle(nullptr); }
+#else
+      wnd->setOnIdle(nullptr);
+#endif
    }
 }
 
-void AddIdleFunc(void (*Func)(void))
+void MainLoop(GLVisWindow* wnd)
 {
-   IdleFuncs.Union(Func);
-   wnd->setOnIdle(MainIdleFunc);
+   wnd->MainLoop();
 }
 
-void RemoveIdleFunc(void (*Func)(void))
-{
-   IdleFuncs.DeleteFirst(Func);
-   if (IdleFuncs.Size() == 0)
-   {
-      wnd->setOnIdle(NULL);
-   }
-}
-
-
-double xang = 0., yang = 0.;
-gl3::GlMatrix srot;
-double sph_t, sph_u;
-static GLint oldx, oldy, startx, starty;
-
-int constrained_spinning = 0;
-
-
-void MainLoop()
+void GLVisWindow::MainLoop()
 {
    static int p = 1;
    struct timespec req;
+   double xang = rot_data->xang;
+   double yang = rot_data->yang;
    if (locscene->spinning)
    {
-      if (!constrained_spinning)
+      if (!rot_data->constrained_spinning)
       {
          locscene->Rotate(xang, yang);
          SendExposeEvent();
@@ -476,14 +613,14 @@ inline double sqr(double t)
    return t*t;
 }
 
-inline void ComputeSphereAngles(int &newx, int &newy,
+inline void ComputeSphereAngles(int viewport_w, int viewport_h,
+                                int &newx, int &newy,
                                 double &new_sph_u, double &new_sph_t)
 {
-   GLint viewport[4] = { 0, 0, 0, 0 };
+   GLint viewport[4] = { 0, 0, viewport_w, viewport_h };
    double r, x, y, rr;
    const double maxr = 0.996194698091745532295;
 
-   wnd->getGLDrawSize(viewport[2], viewport[3]);
    r = sqrt(sqr(viewport[2])+sqr(viewport[3]))*M_SQRT1_2;
 
    x = double(newx-viewport[0]-viewport[2]/2) / r;
@@ -499,41 +636,45 @@ inline void ComputeSphereAngles(int &newx, int &newy,
    new_sph_t = atan2(y, x);
 }
 
-void LeftButtonDown (EventInfo *event)
+void GLVisWindow::RotationControl::LeftButtonDown (EventInfo *event)
 {
-   locscene -> spinning = 0;
-   RemoveIdleFunc(MainLoop);
+   wnd->StopSpinning();
 
    oldx = event->mouse_x;
    oldy = event->mouse_y;
 
-   ComputeSphereAngles(oldx, oldy, sph_u, sph_t);
+   int vp_w, vp_h;
+   wnd->wnd->getGLDrawSize(vp_w, vp_h);
+
+   ComputeSphereAngles(vp_w, vp_h, oldx, oldy, sph_u, sph_t);
 
    srot.identity();
-   srot.mult(locscene->cam.RotMatrix());
-   srot.mult(locscene->rotmat);
+   srot.mult(wnd->locscene->cam.RotMatrix());
+   srot.mult(wnd->locscene->rotmat);
 
    startx = oldx;
    starty = oldy;
 }
 
-void LeftButtonLoc (EventInfo *event)
+void GLVisWindow::RotationControl::LeftButtonLoc (EventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
-   int sendexpose = 1;
 
    if (event->keymod & KMOD_CTRL)
    {
       if (event->keymod & KMOD_SHIFT)
       {
-         locscene->PreRotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
+         wnd->locscene->PreRotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
       }
       else
       {
          double new_sph_u, new_sph_t;
 
-         ComputeSphereAngles(newx, newy, new_sph_u, new_sph_t);
+         int vp_w, vp_h;
+         wnd->wnd->getGLDrawSize(vp_w, vp_h);
+
+         ComputeSphereAngles(vp_w, vp_h, newx, newy, new_sph_u, new_sph_t);
 
          gl3::GlMatrix newrot;
          newrot.identity();
@@ -546,36 +687,33 @@ void LeftButtonLoc (EventInfo *event)
          inprod = InnerProd(scoord, ncoord);
          CrossProd(scoord, ncoord, cross);
 
-         newrot.mult(locscene->cam.TransposeRotMatrix());
+         newrot.mult(wnd->locscene->cam.TransposeRotMatrix());
          newrot.rotate(acos(inprod)*(180.0/M_PI), cross[0], cross[1], cross[2]);
          newrot.mult(srot.mtx);
-         locscene->rotmat = newrot.mtx;
+         wnd->locscene->rotmat = newrot.mtx;
       }
    }
    else if (event->keymod & KMOD_ALT)
    {
-      locscene->Rotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
+      wnd->locscene->Rotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
    }
    else if (event->keymod & KMOD_SHIFT)
    {
-      locscene->Rotate(double(newx-oldx)/2, double(newy-oldy)/2);
+      wnd->locscene->Rotate(double(newx-oldx)/2, double(newy-oldy)/2);
    }
    else
    {
-      locscene->Rotate(double(newy-oldy)/2, 1.0, 0.0, 0.0);
-      locscene->PreRotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
+      wnd->locscene->Rotate(double(newy-oldy)/2, 1.0, 0.0, 0.0);
+      wnd->locscene->PreRotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
    }
 
    oldx = newx;
    oldy = newy;
 
-   if (sendexpose)
-   {
-      SendExposeEvent();
-   }
+   wnd->SendExposeEvent();
 }
 
-void LeftButtonUp (EventInfo *event)
+void GLVisWindow::RotationControl::LeftButtonUp (EventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -585,8 +723,8 @@ void LeftButtonUp (EventInfo *event)
 
    if ( (event->keymod & KMOD_SHIFT) && (xang != 0.0 || yang != 0.0) )
    {
-      locscene -> spinning = 1;
-      AddIdleFunc(MainLoop);
+      wnd->locscene -> spinning = 1;
+      wnd->AddIdleFunc(::MainLoop);
       if (xang > 20) { xang = 20; } if (xang < -20) { xang = -20; }
       if (yang > 20) { yang = 20; } if (yang < -20) { yang = -20; }
 
@@ -601,13 +739,13 @@ void LeftButtonUp (EventInfo *event)
    }
 }
 
-void MiddleButtonDown (EventInfo *event)
+void GLVisWindow::RotationControl::MiddleButtonDown (EventInfo *event)
 {
    startx = oldx = event->mouse_x;
    starty = oldy = event->mouse_y;
 }
 
-void MiddleButtonLoc (EventInfo *event)
+void GLVisWindow::RotationControl::MiddleButtonLoc (EventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -617,15 +755,15 @@ void MiddleButtonLoc (EventInfo *event)
       int w, h;
       double TrX, TrY, scale;
 
-      if (locscene->OrthogonalProjection)
+      if (wnd->locscene->OrthogonalProjection)
       {
-         scale = locscene->ViewScale;
+         scale = wnd->locscene->ViewScale;
       }
       else
       {
-         scale = 0.4142135623730950488/tan(locscene->ViewAngle*(M_PI/360));
+         scale = 0.4142135623730950488/tan(wnd->locscene->ViewAngle*(M_PI/360));
       }
-      wnd->getGLDrawSize(w, h);
+      wnd->wnd->getGLDrawSize(w, h);
       if (w < h)
       {
          scale *= w;
@@ -636,12 +774,12 @@ void MiddleButtonLoc (EventInfo *event)
       }
       TrX = 2.0*double(oldx-newx)/scale;
       TrY = 2.0*double(newy-oldy)/scale;
-      locscene->ViewCenterX += TrX;
-      locscene->ViewCenterY += TrY;
+      wnd->locscene->ViewCenterX += TrX;
+      wnd->locscene->ViewCenterY += TrY;
    }
    else
    {
-      // locscene->Translate((double)(newx-oldx)/200,(double)(newy-oldy)/200);
+      // wnd->locscene->Translate((double)(newx-oldx)/200,(double)(newy-oldy)/200);
 
       double dx = double(newx-oldx)/400;
       double dy = double(oldy-newy)/400;
@@ -651,40 +789,40 @@ void MiddleButtonLoc (EventInfo *event)
          double sx = double(newx-startx)/400;
          double sy = double(starty-newy)/400;
 
-         locscene->cam.TurnLeftRight(dx-sx);
-         locscene->cam.TurnUpDown(sy-dy);
+         wnd->locscene->cam.TurnLeftRight(dx-sx);
+         wnd->locscene->cam.TurnUpDown(sy-dy);
 
-         locscene->cam.TurnUpDown(-sy);
-         locscene->cam.TurnLeftRight(sx);
+         wnd->locscene->cam.TurnUpDown(-sy);
+         wnd->locscene->cam.TurnLeftRight(sx);
       }
       else if (event->keymod & KMOD_ALT) // ctrl + alt
       {
-         locscene->cam.MoveForwardBackward(dy);
-         locscene->cam.TiltLeftRight(-dx);
+         wnd->locscene->cam.MoveForwardBackward(dy);
+         wnd->locscene->cam.TiltLeftRight(-dx);
       }
       else // ctrl
       {
-         locscene->cam.MoveLeftRight(dx);
-         locscene->cam.MoveUpDown(-dy);
+         wnd->locscene->cam.MoveLeftRight(dx);
+         wnd->locscene->cam.MoveUpDown(-dy);
       }
    }
 
-   SendExposeEvent();
+   wnd->SendExposeEvent();
 
    oldx = newx;
    oldy = newy;
 }
 
-void MiddleButtonUp (EventInfo*)
+void GLVisWindow::RotationControl::MiddleButtonUp (EventInfo*)
 {}
 
-void RightButtonDown (EventInfo *event)
+void GLVisWindow::RotationControl::RightButtonDown (EventInfo *event)
 {
    startx = oldx = event->mouse_x;
    starty = oldy = event->mouse_y;
 }
 
-void RightButtonLoc (EventInfo *event)
+void GLVisWindow::RotationControl::RightButtonLoc (EventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -715,318 +853,46 @@ void RightButtonLoc (EventInfo *event)
          x = 0.; y = 0.; z = -1.;
       }
       cout << "(x,y,z) = (" << x << ',' << y << ',' << z << ')' << endl;
-      locscene->SetLight0CustomPos({(float)x, (float)y, (float)z, 0.f});
+      wnd->locscene->SetLight0CustomPos({(float)x, (float)y, (float)z, 0.f});
    }
    else if ( !( event->keymod & KMOD_CTRL ) )
    {
-      locscene -> Zoom (exp ( double (oldy-newy) / 100 ));
+      wnd->locscene -> Zoom (exp ( double (oldy-newy) / 100 ));
    }
    else
    {
-      locscene -> Scale ( exp ( double (oldy-newy) / 50 ) );
+      wnd->locscene -> Scale ( exp ( double (oldy-newy) / 50 ) );
    }
 
-   SendExposeEvent();
+   wnd->SendExposeEvent();
 
    oldx = newx;
    oldy = newy;
 }
 
-void RightButtonUp (EventInfo*)
+void GLVisWindow::RotationControl::RightButtonUp (EventInfo*)
 {}
 
-void TouchPinch(SDL_MultiGestureEvent & e)
+void GLVisWindow::ToggleAntialiasing()
+{
+   bool curr_aa = wnd->getRenderer().getAntialiasing();
+   wnd->getRenderer().setAntialiasing(!curr_aa);
+   const std::string strings_off_on[2] = { "off", "on" };
+
+   cout << "Multisampling/Antialiasing: "
+        << strings_off_on[!curr_aa ? 1 : 0] << endl;
+
+   SendExposeEvent();
+}
+
+void GLVisWindow::TouchPinch(SDL_MultiGestureEvent & e)
 {
    // Scale or Zoom?
    locscene->Zoom(exp(e.dDist*10));
    SendExposeEvent();
 }
 
-#if defined(GLVIS_USE_LIBTIFF)
-const char *glvis_screenshot_ext = ".tif";
-#elif defined(GLVIS_USE_LIBPNG)
-const char *glvis_screenshot_ext = ".png";
-#else
-const char *glvis_screenshot_ext = ".bmp";
-#endif
-
-// https://wiki.libsdl.org/SDL_CreateRGBSurfaceFrom
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-Uint32 rmask = 0xff000000;
-Uint32 gmask = 0x00ff0000;
-Uint32 bmask = 0x0000ff00:
-               Uint32 amask = 0x000000ff;
-#else // little endian, like x86
-Uint32 rmask = 0x000000ff;
-Uint32 gmask = 0x0000ff00;
-Uint32 bmask = 0x00ff0000;
-Uint32 amask = 0xff000000;
-#endif
-
-// https://halfgeek.org/wiki/Vertically_invert_a_surface_in_SDL
-#define SDL_LOCKIFMUST(s) (SDL_MUSTLOCK(s) ? SDL_LockSurface(s) : 0)
-#define SDL_UNLOCKIFMUST(s) { if(SDL_MUSTLOCK(s)) SDL_UnlockSurface(s); }
-
-int InvertSurfaceVertical(SDL_Surface *surface)
-{
-   Uint8 *t, *a, *b, *last;
-   Uint16 pitch;
-
-   if ( SDL_LOCKIFMUST(surface) < 0 )
-   {
-      return -2;
-   }
-
-   /* do nothing unless at least two lines */
-   if (surface->h < 2)
-   {
-      SDL_UNLOCKIFMUST(surface);
-      return 0;
-   }
-
-   /* get a place to store a line */
-   pitch = surface->pitch;
-   t = (Uint8*)malloc(pitch);
-
-   if (t == NULL)
-   {
-      SDL_UNLOCKIFMUST(surface);
-      return -2;
-   }
-
-   /* get first line; it's about to be trampled */
-   memcpy(t,surface->pixels,pitch);
-
-   /* now, shuffle the rest so it's almost correct */
-   a = (Uint8*)surface->pixels;
-   last = a + pitch * (surface->h - 1);
-   b = last;
-
-   while (a < b)
-   {
-      memcpy(a,b,pitch);
-      a += pitch;
-      memcpy(b,a,pitch);
-      b -= pitch;
-   }
-
-   /* in this shuffled state, the bottom slice is too far down */
-   memmove( b, b+pitch, last-b );
-
-   /* now we can put back that first row--in the last place */
-   memcpy(last,t,pitch);
-
-   /* everything is in the right place; close up. */
-   free(t);
-   SDL_UNLOCKIFMUST(surface);
-
-   return 0;
-}
-
-int Screenshot(const char *fname, bool convert)
-{
-#ifdef GLVIS_DEBUG
-   cout << "Screenshot: glFinish() ... " << flush;
-#endif
-   glFinish();
-#ifdef GLVIS_DEBUG
-   cout << "done." << endl;
-#endif
-#ifndef __EMSCRIPTEN__
-   if (wnd->isExposePending())
-   {
-      MFEM_WARNING("Expose pending, some events may not have been handled." << endl);
-   }
-   string filename = fname;
-   string convert_name = fname;
-   bool call_convert = false;
-   if (convert)
-   {
-      // check the extension of 'fname' to see if convert is needed
-      size_t ext_size = strlen(glvis_screenshot_ext);
-      if (filename.size() < ext_size ||
-          filename.compare(filename.size() - ext_size,
-                           ext_size, glvis_screenshot_ext) != 0)
-      {
-         call_convert = true;
-         filename += glvis_screenshot_ext;
-      }
-   }
-   else // do not call convert
-   {
-      filename += glvis_screenshot_ext;
-   }
-
-   int w, h;
-   wnd->getGLDrawSize(w, h);
-   if (wnd->isSwapPending())
-   {
-#if GLVIS_DEBUG
-      cerr << "Screenshot: reading image data from back buffer..." << endl;
-#endif
-      glReadBuffer(GL_BACK);
-   }
-   else
-   {
-#if GLVIS_DEBUG
-      cerr << "Screenshot: reading image data from front buffer..." << endl;
-#endif
-      glReadBuffer(GL_FRONT);
-   }
-#if defined(GLVIS_USE_LIBTIFF)
-   // Save a TIFF image. This requires the libtiff library, see www.libtiff.org
-   TIFF* image;
-
-   // MyExpose(w,h);
-
-   unsigned char *pixels = new unsigned char[3*w];
-   if (!pixels)
-   {
-      return 1;
-   }
-
-   image = TIFFOpen(filename.c_str(), "w");
-   if (!image)
-   {
-      delete [] pixels;
-      return 2;
-   }
-
-   TIFFSetField(image, TIFFTAG_IMAGEWIDTH, w);
-   TIFFSetField(image, TIFFTAG_IMAGELENGTH, h);
-   TIFFSetField(image, TIFFTAG_BITSPERSAMPLE, 8);
-   TIFFSetField(image, TIFFTAG_COMPRESSION, COMPRESSION_PACKBITS);
-   TIFFSetField(image, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
-   TIFFSetField(image, TIFFTAG_SAMPLESPERPIXEL, 3);
-   TIFFSetField(image, TIFFTAG_ROWSPERSTRIP, 1);
-   TIFFSetField(image, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
-   TIFFSetField(image, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-   for (int i = 0; i < h; i++)
-   {
-      glReadPixels(0, h-i-1, w, 1, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-      if (TIFFWriteScanline(image, pixels, i, 0) < 0)
-      {
-         TIFFClose(image);
-         delete [] pixels;
-         return 3;
-      }
-   }
-
-   TIFFFlushData(image);
-   TIFFClose(image);
-   delete [] pixels;
-
-#elif defined(GLVIS_USE_LIBPNG)
-   // Save as png image. Requires libpng.
-
-   png_byte *pixels = new png_byte[3*w];
-   if (!pixels)
-   {
-      return 1;
-   }
-
-   png_structp png_ptr =
-      png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-   if (!png_ptr)
-   {
-      delete [] pixels;
-      return 1;
-   }
-   png_infop info_ptr = png_create_info_struct(png_ptr);
-   if (!info_ptr)
-   {
-      png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
-      delete [] pixels;
-      return 1;
-   }
-
-   FILE *fp = fopen(filename.c_str(), "wb");
-   if (!fp)
-   {
-      png_destroy_write_struct(&png_ptr, &info_ptr);
-      delete [] pixels;
-      return 2;
-   }
-
-   if (setjmp(png_jmpbuf(png_ptr)))
-   {
-      fclose(fp);
-      png_destroy_write_struct(&png_ptr, &info_ptr);
-      delete [] pixels;
-      return 3;
-   }
-
-   png_uint_32 ppi = wnd->isHighDpi() ? 144 : 72; // pixels/inch
-   png_uint_32 ppm = ppi/0.0254 + 0.5;            // pixels/meter
-   png_set_pHYs(png_ptr, info_ptr, ppm, ppm, PNG_RESOLUTION_METER);
-
-   png_init_io(png_ptr, fp);
-   png_set_IHDR(png_ptr, info_ptr, w, h, 8, PNG_COLOR_TYPE_RGB,
-                PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
-                PNG_FILTER_TYPE_DEFAULT);
-
-   png_write_info(png_ptr, info_ptr);
-   for (int i = 0; i < h; i++)
-   {
-      glReadPixels(0, h-1-i, w, 1, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-      png_write_row(png_ptr, pixels);
-   }
-   png_write_end(png_ptr, info_ptr);
-
-   fclose(fp);
-   png_destroy_write_struct(&png_ptr, &info_ptr);
-   delete [] pixels;
-
-#else
-   // use SDL for screenshots
-
-   // https://stackoverflow.com/questions/20233469/how-do-i-take-and-save-a-bmp-screenshot-in-sdl-2
-   unsigned char * pixels = new unsigned char[w*h*4]; // 4 bytes for RGBA
-   glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-
-   SDL_Surface * surf = SDL_CreateRGBSurfaceFrom(pixels, w, h, 8*4, w*4, rmask,
-                                                 gmask, bmask, amask);
-   if (surf == nullptr)
-   {
-      std::cerr << "unable to take screenshot: " << SDL_GetError() << std::endl;
-   }
-   else
-   {
-      if (InvertSurfaceVertical(surf))
-      {
-         std::cerr << "failed to invert surface, your screenshot may be upside down" <<
-                   std::endl;
-      }
-      SDL_SaveBMP(surf, filename.c_str());
-      SDL_FreeSurface(surf);
-      // automatically convert to png if not being used
-      if (!call_convert)
-      {
-         call_convert = true;
-         convert_name += ".png";
-      }
-   }
-   delete [] pixels;
-#endif
-
-   if (call_convert)
-   {
-      ostringstream cmd;
-      cmd << "convert " << filename << ' ' << convert_name;
-      if (system(cmd.str().c_str()))
-      {
-         return 1;
-      }
-      remove(filename.c_str());
-   }
-   return 0;
-#else
-   cout << "Screenshots not yet implemented for JS" << endl;
-   return 1;
-#endif
-}
-
-void KeyS()
+void GLVisWindow::Screenshot(std::string filename)
 {
    static int p = 1;
 
@@ -1046,9 +912,16 @@ void KeyS()
    else
    {
       cout << "Taking snapshot number " << p << "... ";
-      char fname[20];
-      snprintf(fname, 20, "GLVis_s%02d", p++);
-      wnd->screenshot(fname);
+      if (filename == "")
+      {
+         char fname[20];
+         snprintf(fname, 20, "GLVis_s%02d", p++);
+         wnd->screenshot(fname);
+      }
+      else
+      {
+         wnd->screenshot(filename);
+      }
       cout << "done" << endl;
    }
 }
@@ -1096,7 +969,7 @@ void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
    }
 }
 
-void KeyCtrlP()
+void GLVisWindow::PrintToPDF()
 {
 #ifdef __EMSCRIPTEN__
    cerr << "Printing in WebGL is not supported at this time." << endl;
@@ -1137,13 +1010,13 @@ void KeyCtrlP()
 #endif
 }
 
-void KeyQPressed()
+void GLVisWindow::Quit()
 {
    wnd->signalQuit();
    visualize = 0;
 }
 
-void ToggleThreads()
+void GLVisWindow::ToggleThreads()
 {
    static const char *state[] = { "running", "stopped" };
    if (visualize > 0 && visualize < 3)
@@ -1153,19 +1026,24 @@ void ToggleThreads()
    }
 }
 
-void ThreadsPauseFunc(GLenum state)
+void GLVisWindow::ThreadsPauseFunc(GLenum state)
 {
-   if (state & KMOD_CTRL)
+#ifndef __EMSCRIPTEN__
+   if (glvis_command)
    {
-      glvis_command->ToggleAutopause();
+      if (state & KMOD_CTRL)
+      {
+         glvis_command->ToggleAutopause();
+      }
+      else
+      {
+         ToggleThreads();
+      }
    }
-   else
-   {
-      ToggleThreads();
-   }
+#endif
 }
 
-void ThreadsStop()
+void GLVisWindow::ThreadsStop()
 {
    if (visualize == 1)
    {
@@ -1173,7 +1051,7 @@ void ThreadsStop()
    }
 }
 
-void ThreadsRun()
+void GLVisWindow::ThreadsRun()
 {
    if (visualize == 2)
    {
@@ -1181,7 +1059,7 @@ void ThreadsRun()
    }
 }
 
-void CheckSpin()
+void GLVisWindow::RotationControl::CheckSpin()
 {
    if (fabs(xang) < 1.e-2)
    {
@@ -1189,22 +1067,21 @@ void CheckSpin()
    }
    if (xang != 0. || yang != 0.)
    {
-      locscene->spinning = 1;
-      AddIdleFunc(MainLoop);
+      wnd->locscene->spinning = 1;
+      wnd->AddIdleFunc(::MainLoop);
    }
    else
    {
-      locscene->spinning = 0;
-      RemoveIdleFunc(MainLoop);
+      wnd->StopSpinning();
    }
    cout << "Spin angle: " << xang << " degrees / frame" << endl;
 }
 
 const double xang_step = 0.2; // angle in degrees
 
-void Key0Pressed()
+void GLVisWindow::RotationControl::Key0Pressed()
 {
-   if (!locscene -> spinning)
+   if (!wnd->locscene -> spinning)
    {
       xang = 0;
    }
@@ -1212,27 +1089,26 @@ void Key0Pressed()
    CheckSpin();
 }
 
-void KeyDeletePressed()
+void GLVisWindow::RotationControl::KeyDeletePressed()
 {
-   if (locscene -> spinning)
+   if (wnd->locscene -> spinning)
    {
       xang = yang = 0.;
-      locscene -> spinning = 0;
-      RemoveIdleFunc(MainLoop);
+      wnd->StopSpinning();
       constrained_spinning = 1;
    }
    else
    {
       xang = xang_step;
-      locscene -> spinning = 1;
-      AddIdleFunc(MainLoop);
+      wnd->locscene -> spinning = 1;
+      wnd->AddIdleFunc(::MainLoop);
       constrained_spinning = 1;
    }
 }
 
-void KeyEnterPressed()
+void GLVisWindow::RotationControl::KeyEnterPressed()
 {
-   if (!locscene -> spinning)
+   if (!wnd->locscene -> spinning)
    {
       xang = 0;
    }
@@ -1240,31 +1116,31 @@ void KeyEnterPressed()
    CheckSpin();
 }
 
-void Key7Pressed()
+void GLVisWindow::Key7Pressed()
 {
    locscene->PreRotate(1.0, 0.0, -1.0, 0.0);
    SendExposeEvent();
 }
 
-void Key8Pressed()
+void GLVisWindow::Key8Pressed()
 {
    locscene->Rotate(0.0, -1.0);
    SendExposeEvent();
 }
 
-void Key9Pressed()
+void GLVisWindow::Key9Pressed()
 {
    locscene->PreRotate(-1.0, 1.0, 0.0, 0.0);
    SendExposeEvent();
 }
 
-void Key4Pressed()
+void GLVisWindow::Key4Pressed()
 {
    locscene->PreRotate(-1.0, 0.0, 0.0, 1.0);
    SendExposeEvent();
 }
 
-void Key5Pressed()
+void GLVisWindow::Key5Pressed()
 {
    if (locscene->view == 2)
    {
@@ -1277,31 +1153,31 @@ void Key5Pressed()
    SendExposeEvent();
 }
 
-void Key6Pressed()
+void GLVisWindow::Key6Pressed()
 {
    locscene->PreRotate(1.0, 0.0, 0.0, 1.0);
    SendExposeEvent();
 }
 
-void Key1Pressed()
+void GLVisWindow::Key1Pressed()
 {
    locscene->PreRotate(1.0, 1.0, 0.0, 0.0);
    SendExposeEvent();
 }
 
-void Key2Pressed()
+void GLVisWindow::Key2Pressed()
 {
    locscene->Rotate(1.0, 1.0, 0.0, 0.0);
    SendExposeEvent();
 }
 
-void Key3Pressed()
+void GLVisWindow::Key3Pressed()
 {
    locscene->PreRotate(1.0, 0.0, 1.0, 0.0);
    SendExposeEvent();
 }
 
-void ShiftView(double dx, double dy)
+void ShiftView(VisualizationScene* locscene, double dx, double dy)
 {
    double scale;
    if (locscene->OrthogonalProjection)
@@ -1316,11 +1192,11 @@ void ShiftView(double dx, double dy)
    locscene->ViewCenterY += dy/scale;
 }
 
-void KeyLeftPressed(GLenum state)
+void GLVisWindow::KeyLeftPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
-      ShiftView(0.05, 0.);
+      ShiftView(locscene.get(), 0.05, 0.);
    }
    else
    {
@@ -1329,11 +1205,11 @@ void KeyLeftPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyRightPressed(GLenum state)
+void GLVisWindow::KeyRightPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
-      ShiftView(-0.05, 0.);
+      ShiftView(locscene.get(), -0.05, 0.);
    }
    else
    {
@@ -1342,11 +1218,11 @@ void KeyRightPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyUpPressed(GLenum state)
+void GLVisWindow::KeyUpPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
-      ShiftView(0., -0.05);
+      ShiftView(locscene.get(), 0., -0.05);
    }
    else
    {
@@ -1355,11 +1231,11 @@ void KeyUpPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyDownPressed(GLenum state)
+void GLVisWindow::KeyDownPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
-      ShiftView(0., 0.05);
+      ShiftView(locscene.get(), 0., 0.05);
    }
    else
    {
@@ -1368,49 +1244,55 @@ void KeyDownPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyJPressed()
+void GLVisWindow::KeyJPressed()
 {
-   locscene->OrthogonalProjection = !(locscene->OrthogonalProjection);
+   locscene->ToggleProjectionMode();
    SendExposeEvent();
 }
 
-void KeyMinusPressed()
+void GLVisWindow::KeyMinusPressed()
 {
    locscene -> Scale(1., 1., 1./1.1);
    SendExposeEvent();
 }
 
-void KeyPlusPressed()
+void GLVisWindow::KeyPlusPressed()
 {
    locscene -> Scale(1., 1., 1.1);
    SendExposeEvent();
 }
 
-void ZoomIn()
+void GLVisWindow::StopSpinning()
+{
+   locscene -> spinning = 0;
+   RemoveIdleFunc(::MainLoop);
+}
+
+void GLVisWindow::ZoomIn()
 {
    locscene->Zoom(exp (0.05));
    SendExposeEvent();
 }
 
-void ZoomOut()
+void GLVisWindow::ZoomOut()
 {
    locscene->Zoom(exp (-0.05));
    SendExposeEvent();
 }
 
-void ScaleUp()
+void GLVisWindow::ScaleUp()
 {
    locscene->Scale(1.025);
    SendExposeEvent();
 }
 
-void ScaleDown()
+void GLVisWindow::ScaleDown()
 {
    locscene->Scale(1.0/1.025);
    SendExposeEvent();
 }
 
-void LookAt()
+void GLVisWindow::LookAt()
 {
    cout << "ViewCenter = (" << locscene->ViewCenterX << ','
         << locscene->ViewCenterY << ")\nNew x = " << flush;
@@ -1422,7 +1304,7 @@ void LookAt()
 
 const double window_scale_factor = 1.1;
 
-void ShrinkWindow()
+void GLVisWindow::ShrinkWindow()
 {
    int w, h;
    wnd->getWindowSize(w, h);
@@ -1434,7 +1316,7 @@ void ShrinkWindow()
    ResizeWindow(w, h);
 }
 
-void EnlargeWindow()
+void GLVisWindow::EnlargeWindow()
 {
    int w, h;
    wnd->getWindowSize(w, h);
@@ -1446,37 +1328,20 @@ void EnlargeWindow()
    ResizeWindow(w, h);
 }
 
-void MoveResizeWindow(int x, int y, int w, int h)
+void GLVisWindow::MoveResizeWindow(int x, int y, int w, int h)
 {
    wnd->setWindowSize(w, h);
    wnd->setWindowPos(x, y);
 }
 
-void ResizeWindow(int w, int h)
+void GLVisWindow::ResizeWindow(int w, int h)
 {
    wnd->setWindowSize(w, h);
 }
 
-void SetWindowTitle(const char *title)
+void GLVisWindow::SetWindowTitle(const char *title)
 {
    wnd->setWindowTitle(title);
-}
-
-int GetUseTexture()
-{
-   return locscene->palette.GetSmoothSetting();
-}
-
-void SetUseTexture(int ut)
-{
-   if (ut == 0)
-   {
-      locscene->palette.UseDiscrete();
-   }
-   else
-   {
-      locscene->palette.UseSmooth();
-   }
 }
 
 int GetMultisample()
@@ -1499,20 +1364,11 @@ void SetMultisample(int m)
 void SetLineWidth(float width)
 {
    line_w = width;
-   if (wnd)
-   {
-      wnd->getRenderer().setLineWidth(line_w);
-   }
 }
 
 void SetLineWidthMS(float width_ms)
 {
    line_w_aa = width_ms;
-   if (wnd)
-   {
-      wnd->getRenderer().setLineWidthMS(line_w_aa);
-   }
-
 }
 
 float GetLineWidth()
@@ -1545,23 +1401,27 @@ vector<string> fc_font_patterns =
    "Helvetica:style=Regular",
 };
 
-constexpr int default_font_size = 12;
-int font_size = default_font_size;
+//constexpr int default_font_size = 12;
+//int font_size = default_font_size;
 
-GlVisFont glvis_font;
-std::string priority_font;
+//GlVisFont glvis_font;
+//std::string priority_font;
 
-void InitFont()
+void GLVisWindow::InitFont()
 {
    // This function is called after the window is created.
    GLenum alphaChannel =
       gl3::GLDevice::useLegacyTextureFmts() ? GL_ALPHA : GL_RED;
-   glvis_font.setAlphaChannel(alphaChannel);
+   int ppi_w, ppi_h;
+   wnd->getDpi(ppi_w, ppi_h);
+   bool is_hidpi = wnd->isHighDpi();
+   font.SetDPIParams(is_hidpi, ppi_w, ppi_h);
+   font.setAlphaChannel(alphaChannel);
    bool try_fc_patterns = true;
    if (!priority_font.empty())
    {
       if (SetFont({priority_font}, font_size) ||
-          glvis_font.LoadFont(priority_font, 0, font_size))
+          font.LoadFont(priority_font, 0, font_size))
       {
          try_fc_patterns = false;
       }
@@ -1580,18 +1440,13 @@ void InitFont()
               << endl;
       }
    }
-   wnd->getRenderer().setFontTexture(glvis_font.getFontTex());
+   wnd->getRenderer().setFontTexture(font.getFontTex());
 }
 
-GlVisFont * GetFont()
-{
-   return &glvis_font;
-}
-
-bool SetFont(const vector<std::string>& font_patterns, int height)
+bool GLVisWindow::SetFont(const vector<std::string>& font_patterns, int height)
 {
 #ifdef __EMSCRIPTEN__
-   return glvis_font.LoadFont("OpenSans.ttf", 0, height);
+   return font.LoadFont("OpenSans.ttf", 0, height);
 #else
    if (!FcInit())
    {
@@ -1654,7 +1509,7 @@ bool SetFont(const vector<std::string>& font_patterns, int height)
       FcFontSetDestroy(fs);
       if (font_file != std::string(""))
       {
-         if (glvis_font.LoadFont(font_file, font_index, height))
+         if (font.LoadFont(font_file, font_index, height))
          {
             break;
          }
@@ -1668,11 +1523,11 @@ bool SetFont(const vector<std::string>& font_patterns, int height)
 
    FcFini();
 
-   return glvis_font.isFontLoaded();
+   return font.isFontLoaded();
 #endif
 }
 
-void SetFont(const std::string& fn)
+void GLVisWindow::SetFont(const std::string& fn)
 {
    priority_font = fn;
    size_t pos = priority_font.rfind('-');

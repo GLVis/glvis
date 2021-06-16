@@ -99,76 +99,51 @@ std::string VisualizationSceneVector::GetHelpString() const
    return os.str();
 }
 
-VisualizationSceneVector  * vsvector;
-extern VisualizationScene * locscene;
-extern VisualizationSceneSolution * vssol;
 extern GeometryRefiner GLVisGeometryRefiner;
 
-static int ianim = 0;
-static int ianimmax = 10;
-
-void KeyDPressed()
-{
-   vsvector -> ToggleDisplacements();
-   SendExposeEvent();
-}
-
-void KeyNPressed()
+void VisualizationSceneVector::NextDisplacement()
 {
    ianim = (ianim + 1) % (ianimmax + 1);
-   vsvector -> NPressed();
-}
-
-void KeyBPressed()
-{
-   ianim = (ianim + ianimmax) % (ianimmax + 1);
-   vsvector -> NPressed();
-}
-
-void VisualizationSceneVector::NPressed()
-{
    if (drawdisp == 0)
    {
       drawdisp = 1;
       ianim = 0;
    }
-
    PrepareDisplacedMesh();
-
-   SendExposeEvent();
 }
 
-void KeyvPressed()
+void VisualizationSceneVector::PrevDisplacement()
 {
-   vsvector -> ToggleVectorField();
-   SendExposeEvent();
+   ianim = (ianim + ianimmax) % (ianimmax + 1);
+   if (drawdisp == 0)
+   {
+      drawdisp = 1;
+      ianim = 0;
+   }
+   PrepareDisplacedMesh();
 }
 
-void KeyVPressed()
+void VisualizationSceneVector::QueryArrowScaling()
 {
    cout << "New arrow scale: " << flush;
-   cin >> vsvector -> ArrowScale;
-   cout << "New arrow scale = " << vsvector -> ArrowScale << endl;
-   vsvector -> PrepareVectorField();
-   SendExposeEvent();
+   cin >> ArrowScale;
+   cout << "New arrow scale = " << ArrowScale << endl;
+   PrepareVectorField();
 }
 
-int key_u_func = 0;
-
-void KeyuPressed()
+void VisualizationSceneVector::DoKeyU()
 {
    int update = 1;
-
    switch (key_u_func)
    {
       case 0:
-         vsvector->RefineFactor++;
+         RefineFactor++;
          break;
 
       case 1:
-         if (vsvector->RefineFactor > 1)
+         if (RefineFactor > 1)
          {
-            vsvector->RefineFactor--;
+            RefineFactor--;
          }
          else
          {
@@ -177,8 +152,7 @@ void KeyuPressed()
          break;
 
       case 2:
-         vsvector->CycleVec2Scalar(1);
-         SendExposeEvent();
+         CycleVec2Scalar(1);
          break;
    }
 
@@ -186,13 +160,11 @@ void KeyuPressed()
    {
       case 0:
       case 1:
-         if (update && vsvector->shading == 2)
+         if (update && shading == 2)
          {
-            vsvector->PrepareVectorField();
-            SendExposeEvent();
+            PrepareVectorField();
          }
-         cout << "Vector subdivision factor = "
-              << vsvector->RefineFactor << endl;
+         cout << "Vector subdivision factor = " << RefineFactor << endl;
          break;
 
       case 2:
@@ -200,7 +172,7 @@ void KeyuPressed()
    }
 }
 
-void KeyUPressed()
+void VisualizationSceneVector::ToggleKeyUFunc()
 {
    key_u_func = (key_u_func+1)%3;
    cout << "Key 'u' will: ";
@@ -262,8 +234,6 @@ VisualizationSceneVector::VisualizationSceneVector(Mesh & m,
    sol  = new Vector(mesh -> GetNV());
 
    VecGridF = NULL;
-
-   Init();
 }
 
 VisualizationSceneVector::VisualizationSceneVector(GridFunction &vgf)
@@ -286,12 +256,6 @@ VisualizationSceneVector::VisualizationSceneVector(GridFunction &vgf)
    vgf.GetNodalValues (*soly, 2);
 
    sol = new Vector(mesh -> GetNV());
-
-   //  VisualizationSceneSolution::Init()  sets rsol = NULL !
-   {
-      Init();
-      SetGridFunction(vgf);
-   }
 
    mesh->GetNodes(vc0);
    if (vc0.Size() != vgf.Size())
@@ -475,7 +439,7 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
    PrepareVectorField();
 }
 
-void VisualizationSceneVector::Init()
+void VisualizationSceneVector::Init(GLVisWindow* wnd)
 {
    drawdisp = 0;
    drawvector = 0;
@@ -489,26 +453,30 @@ void VisualizationSceneVector::Init()
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
    }
 
-   VisualizationSceneSolution::Init();
+   // VisualizationSceneSolution::Init() sets rsol = null
+   VisualizationSceneSolution::Init(wnd);
+   if (VecGridF)
+   {
+      SetGridFunction(*VecGridF);
+   }
 
    PrepareVectorField();
    // PrepareDisplacedMesh(); // called by PrepareLines()
-
-   vsvector = this;
 
    // static int init = 0;
    // if (!init)
    {
       // init = 1;
+      using SceneType = VisualizationSceneVector;
 
-      wnd->setOnKeyDown('d', KeyDPressed);
-      wnd->setOnKeyDown('D', KeyDPressed);
-      wnd->setOnKeyDown('n', KeyNPressed);
-      wnd->setOnKeyDown('b', KeyBPressed);
-      wnd->setOnKeyDown('v', KeyvPressed);
-      wnd->setOnKeyDown('V', KeyVPressed);
-      wnd->setOnKeyDown('u', KeyuPressed);
-      wnd->setOnKeyDown('U', KeyUPressed);
+      wnd->AddKeyEvent('d', &SceneType::ToggleDisplacements);
+      wnd->AddKeyEvent('D', &SceneType::ToggleDisplacements);
+      wnd->AddKeyEvent('n', &SceneType::NextDisplacement);
+      wnd->AddKeyEvent('b', &SceneType::PrevDisplacement);
+      wnd->AddKeyEvent('v', &SceneType::ToggleVectorField);
+      wnd->AddKeyEvent('V', &SceneType::QueryArrowScaling);
+      wnd->AddKeyEvent('u', &SceneType::DoKeyU);
+      wnd->AddKeyEvent('U', &SceneType::ToggleKeyUFunc);
    }
 
    // Vec2Scalar is VecLength

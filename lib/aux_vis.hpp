@@ -12,107 +12,223 @@
 #ifndef GLVIS_AUX_VIS_HPP
 #define GLVIS_AUX_VIS_HPP
 
+#include "mfem.hpp"
+
 #include "gl/platform_gl.hpp"
 #include "gl/types.hpp"
 
 #include "sdl.hpp"
 #include "font.hpp"
 #include "openglvis.hpp"
+#include "stream_reader.hpp"
 
-/// Initializes the visualization and some keys.
-int InitVisualization(const char name[], int x, int y, int w, int h);
+#ifndef __EMSCRIPTEN__
+class GLVisCommand;
+class communication_thread;
+#endif
 
-void SetVisualizationScene(VisualizationScene * scene,
-                           int view = 3, const char *keys = NULL);
+class GLVisWindow
+{
+public:
+   using IdleFPtr = void(*)(GLVisWindow* wnd);
+   using KeyEvent = void(*)(GLVisWindow* wnd, int keystate);
 
-/// Start the infinite visualization loop.
-void RunVisualization();
+   /// Initializes the visualization and some keys.
+   GLVisWindow(std::string name, int x, int y, int w, int h, bool legacyGlOnly);
 
-/// Send expose event. In our case MyReshape is executed and Draw after it.
-void SendExposeEvent();
+   ~GLVisWindow();
 
-void MyExpose();
+   void InitVisualization(int field_type, StreamState state,
+                          bool& keep_attr,
+                          const mfem::Array<istream*>& input_streams = {});
 
-void MainLoop();
+   void SetFont(const std::string& fn);
 
-SdlWindow * GetAppWindow();
-VisualizationScene * GetVisualizationScene();
+   StreamState& getStreamState() { return prob_state; }
 
-void SetLegacyGLOnly(bool status);
+   VisualizationScene* getScene() { return locscene.get(); }
 
-void AddIdleFunc(void (*Func)(void));
-void RemoveIdleFunc(void (*Func)(void));
+   GlVisFont* getFont() { return &font; }
 
-void LeftButtonDown  (EventInfo *event);
-void LeftButtonLoc   (EventInfo *event);
-void LeftButtonUp    (EventInfo *event);
-void MiddleButtonDown(EventInfo *event);
-void MiddleButtonLoc (EventInfo *event);
-void MiddleButtonUp  (EventInfo *event);
-void RightButtonDown (EventInfo *event);
-void RightButtonLoc  (EventInfo *event);
-void RightButtonUp   (EventInfo *event);
+   SdlWindow* getSdl() { return wnd.get(); }
 
-void TouchPinch(SDL_MultiGestureEvent & e);
+   /// Start the infinite visualization loop.
+   void RunVisualization();
 
-void KeyCtrlP();
-void KeyS();
-void KeyQPressed();
-void ToggleThreads();
-void ThreadsPauseFunc(GLenum);
-void ThreadsStop();
-void ThreadsRun();
+   /// Send expose event. In our case MyReshape is executed and Draw after it.
+   void SendExposeEvent();
 
-void Key1Pressed();
-void Key2Pressed();
-void Key3Pressed();
-void Key4Pressed();
-void Key5Pressed();
-void Key6Pressed();
-void Key7Pressed();
-void Key8Pressed();
-void Key9Pressed();
+   void MyExpose();
 
-void Key0Pressed();
-void KeyDeletePressed();
-void KeyEnterPressed();
+   /// Send a sequence of keystrokes to the visualization window
+   void SendKeySequence(const char *seq);
 
-void KeyLeftPressed(GLenum);
-void KeyRightPressed(GLenum);
-void KeyUpPressed(GLenum);
-void KeyDownPressed(GLenum);
-void KeyJPressed();
-void KeyMinusPressed();
-void KeyPlusPressed();
+   // Directly call the functions assigned to the given keys. Unlike the above
+   // function, SendKeySequence(), this function does not send X events and
+   // actually disables the function SendExposeEvent() used by many of the
+   // functions assigned to keys. Call MyExpose() after calling this function to
+   // update the visualization window.
+   void CallKeySequence(const char *seq);
 
-void ZoomIn();
-void ZoomOut();
-void ScaleUp();
-void ScaleDown();
-void LookAt();
-void ShrinkWindow();
-void EnlargeWindow();
-void MoveResizeWindow(int x, int y, int w, int h);
-void ResizeWindow(int w, int h);
-void SetWindowTitle(const char *title);
+   void AddIdleFunc(IdleFPtr func);
+   void RemoveIdleFunc(IdleFPtr func);
+
+   void ThreadsStop();
+   void ThreadsRun();
+   void ToggleThreads();
+
+   void MainLoop();
+
+   void Quit();
+
+   void ToggleAntialiasing();
+   void Screenshot() { Screenshot(""); }
+   void Screenshot(std::string filename);
+   void PrintToPDF();
+
+   void ZoomIn();
+   void ZoomOut();
+   void ScaleUp();
+   void ScaleDown();
+   void LookAt();
+   void ShrinkWindow();
+   void EnlargeWindow();
+   void MoveResizeWindow(int x, int y, int w, int h);
+   void ResizeWindow(int w, int h);
+   void SetWindowTitle(const char *title);
+
+   /// Adds a conditionally-updatable scene event.
+   template<typename TScene>
+   void AddKeyEvent(int key, bool (TScene::*eh)())
+   {
+      auto wrapped_eh = [this, eh](GLenum e)
+      {
+         TScene* pScene = dynamic_cast<TScene*>(locscene.get());
+         bool exposeAfter = (pScene->*eh)();
+         if (exposeAfter) { SendExposeEvent(); }
+      };
+      keyevents[key] = wrapped_eh;
+      SetupHandledKey(key);
+   }
+
+   template<typename TScene>
+   void AddKeyEvent(int key, void (TScene::*eh)(), bool exposeAfter = true)
+   {
+      auto wrapped_eh = [this, eh, exposeAfter](GLenum e)
+      {
+         TScene* pScene = dynamic_cast<TScene*>(locscene.get());
+         (pScene->*eh)();
+         if (exposeAfter) { SendExposeEvent(); }
+      };
+      keyevents[key] = wrapped_eh;
+      SetupHandledKey(key);
+   }
+
+   void AddKeyEvent(int key, void (*eh)(GLVisWindow*), bool exposeAfter = true)
+   {
+      auto wrapped_eh = [this, eh, exposeAfter](GLenum e)
+      {
+         (*eh)(this);
+         if (exposeAfter) { SendExposeEvent(); }
+      };
+      keyevents[key] = wrapped_eh;
+      SetupHandledKey(key);
+   }
+
+   void AddKeyEvent(int key, void (*eh)(GLVisWindow*, GLenum),
+                    bool exposeAfter = true)
+   {
+      auto wrapped_eh = [this, eh, exposeAfter](GLenum e)
+      {
+         (*eh)(this, e);
+         if (exposeAfter) { SendExposeEvent(); }
+      };
+      keyevents[key] = wrapped_eh;
+      SetupHandledKey(key);
+   }
+private:
+   void InitFont();
+   bool SetFont(const vector<std::string>& patterns, int height);
+
+   void SetupHandledKey(int key);
+
+   void SetKeyEventHandler(int key, void (GLVisWindow::*handler)());
+   void SetKeyEventHandler(int key, void (GLVisWindow::*handler)(GLenum));
+
+   bool MainIdleFunc();
+#ifndef __EMSCRIPTEN__
+   bool CommunicationIdleFunc();
+#endif
+
+   void MyReshape(GLsizei w, GLsizei h);
+   void MyExpose(GLsizei w, GLsizei h);
+
+   // Internal event handler for touch screen actions
+   void TouchPinch(SDL_MultiGestureEvent & e);
+
+   // Internal event handlers for small scene rotations
+   void Key1Pressed();
+   void Key2Pressed();
+   void Key3Pressed();
+   void Key4Pressed();
+   void Key5Pressed();
+   void Key6Pressed();
+   void Key7Pressed();
+   void Key8Pressed();
+   void Key9Pressed();
+
+   // Internal event handlers for other scene rotations, transformations
+   void KeyLeftPressed(GLenum);
+   void KeyRightPressed(GLenum);
+   void KeyUpPressed(GLenum);
+   void KeyDownPressed(GLenum);
+   void KeyJPressed();
+   void KeyMinusPressed();
+   void KeyPlusPressed();
+
+   void StopSpinning();
+
+   // Internal event handler for toggling state of threads
+   void ThreadsPauseFunc(GLenum);
+
+   void KeyPrint(GLenum);
+
+   std::unique_ptr<SdlWindow> wnd;
+   std::unique_ptr<VisualizationScene> locscene;
+#ifndef __EMSCRIPTEN__
+   std::unique_ptr<GLVisCommand> glvis_command;
+   std::unique_ptr<communication_thread> comm_thread;
+#endif
+   StreamState prob_state;
+   bool use_idle = false;
+
+   // Idle function callbacks
+   mfem::Array<IdleFPtr> idle_funcs{};
+   int last_idle_func = 0;
+
+   // internal_keyevents keeps internal event handlers, which will be called
+   // before an event handler in keyevents
+   std::unordered_map<int, KeyDelegate> internal_keyevents;
+   std::unordered_map<int, KeyDelegate> keyevents;
+
+   int visualize = 0;
+
+   bool disableSendExposeEvent = false;
+
+   GlVisFont font;
+   std::string priority_font;
+   int font_size = 12;
+
+   struct RotationControl;
+   std::unique_ptr<RotationControl> rot_data;
+
+};
+
+
 
 /// Take a screenshot using libtiff, libpng or sdl2
-int Screenshot(const char *fname, bool convert = false);
+//int Screenshot(const char *fname, bool convert = false);
 
-/// Send a sequence of keystrokes to the visualization window
-void SendKeySequence(const char *seq);
-
-// Directly call the functions assigned to the given keys. Unlike the above
-// function, SendKeySequence(), this function does not send X events and
-// actually disables the function SendExposeEvent() used by many of the
-// functions assigned to keys. Call MyExpose() after calling this function to
-// update the visualization window.
-void CallKeySequence(const char *seq);
-
-
-void SetUseTexture(int ut);
-int GetUseTexture();
-void Set_Texture_Image();
 int GetMultisample();
 void SetMultisample(int m);
 
@@ -120,10 +236,5 @@ void SetLineWidth(float width);
 float GetLineWidth();
 void SetLineWidthMS(float width_ms);
 float GetLineWidthMS();
-
-void InitFont();
-GlVisFont * GetFont();
-bool SetFont(const vector<std::string>& patterns, int height);
-void SetFont(const std::string& fn);
 
 #endif

@@ -48,16 +48,16 @@ int         window_x        = 0; // not a command line option
 int         window_y        = 0; // not a command line option
 int         window_w        = 400;
 int         window_h        = 350;
+bool        legacy_gl_ctx   = false;
 const char *window_title    = string_default;
 const char *c_plot_caption  = string_none;
+const char *font_name       = string_default;
 string      plot_caption;
 string      extra_caption;
 
 // Global variables
 int input = 1;
-StreamState stream_state;
-VisualizationSceneScalarData *vs = NULL;
-communication_thread *comm_thread = NULL;
+GLVisWindow * mainWindow = nullptr;
 
 GeometryRefiner GLVisGeometryRefiner;
 
@@ -95,7 +95,7 @@ void CloseInputStreams(bool);
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
-bool GLVisInitVis(int field_type)
+bool GLVisInitVis(StreamState stream_state, int field_type)
 {
    if (field_type < 0 || field_type > 2)
    {
@@ -105,157 +105,38 @@ bool GLVisInitVis(int field_type)
    const char *win_title = (window_title == string_default) ?
                            window_titles[field_type] : window_title;
 
-   if (InitVisualization(win_title, window_x, window_y, window_w, window_h))
+   try
    {
-      cerr << "Initializing the visualization failed." << endl;
+      mainWindow = new GLVisWindow(win_title, window_x, window_y,
+                                   window_w, window_h, legacy_gl_ctx);
+   }
+   catch (std::runtime_error& ex)
+   {
+      cerr << "Initializing the visualization failed: " << endl
+           << ex.what() << endl;
       return false;
    }
-
-   if (input_streams.Size() > 0)
+   catch (...)
    {
-      GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
-      glvis_command = new GLVisCommand(&vs, stream_state, &keep_attr);
-      comm_thread = new communication_thread(input_streams);
+      cerr << "Initializing the visualization failed - unknown error."
+           << endl;
+      return false;
+   }
+   if (font_name != string_default)
+   {
+      mainWindow->SetFont(font_name);
    }
 
-   double mesh_range = -1.0;
-   if (field_type == 0 || field_type == 2)
-   {
-      if (stream_state.grid_f)
-      {
-         stream_state.grid_f->GetNodalValues(stream_state.sol);
-      }
-      if (stream_state.mesh->SpaceDimension() == 2)
-      {
-         VisualizationSceneSolution * vss;
-         if (stream_state.normals.Size() > 0)
-         {
-            vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
-                                                      &stream_state.normals);
-         }
-         else
-         {
-            vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol);
-         }
-         if (stream_state.grid_f)
-         {
-            vss->SetGridFunction(*stream_state.grid_f);
-         }
-         if (field_type == 2)
-         {
-            vs->OrthogonalProjection = 1;
-            vs->SetLight(false);
-            vs->Zoom(1.8);
-            // Use the 'bone' palette when visualizing a 2D mesh only (otherwise
-            // the 'jet-like' palette is used in 2D, see vssolution.cpp).
-            vs->palette.SetIndex(4);
-         }
-      }
-      else if (stream_state.mesh->SpaceDimension() == 3)
-      {
-         VisualizationSceneSolution3d * vss;
-         vs = vss = new VisualizationSceneSolution3d(*stream_state.mesh,
-                                                     stream_state.sol);
-         if (stream_state.grid_f)
-         {
-            vss->SetGridFunction(stream_state.grid_f.get());
-         }
-         if (field_type == 2)
-         {
-            if (stream_state.mesh->Dimension() == 3)
-            {
-               // Use the 'white' palette when visualizing a 3D volume mesh only
-               vss->palette.SetIndex(11);
-               vss->SetLightMatIdx(4);
-            }
-            else
-            {
-               // Use the 'bone' palette when visualizing a surface mesh only
-               vss->palette.SetIndex(4);
-            }
-            // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
-            vss->ToggleDrawAxes();
-            vss->ToggleDrawMesh();
-         }
-      }
-      if (field_type == 2)
-      {
-         if (stream_state.grid_f)
-         {
-            mesh_range = stream_state.grid_f->Max() + 1.0;
-         }
-         else
-         {
-            mesh_range = stream_state.sol.Max() + 1.0;
-         }
-      }
-   }
-   else if (field_type == 1)
-   {
-      if (stream_state.mesh->SpaceDimension() == 2)
-      {
-         if (stream_state.grid_f)
-         {
-            vs = new VisualizationSceneVector(*stream_state.grid_f);
-         }
-         else
-         {
-            vs = new VisualizationSceneVector(*stream_state.mesh, stream_state.solu,
-                                              stream_state.solv);
-         }
-      }
-      else if (stream_state.mesh->SpaceDimension() == 3)
-      {
-         if (stream_state.grid_f)
-         {
-            stream_state.grid_f
-               = ProjectVectorFEGridFunction(std::move(stream_state.grid_f));
-            vs = new VisualizationSceneVector3d(*stream_state.grid_f);
-         }
-         else
-         {
-            vs = new VisualizationSceneVector3d(*stream_state.mesh, stream_state.solu,
-                                                stream_state.solv, stream_state.solw);
-         }
-      }
-   }
+   mainWindow->InitVisualization(field_type, std::move(stream_state),
+                                 keep_attr, input_streams);
 
-   if (vs)
-   {
-      // increase the refinement factors if visualizing a GridFunction
-      if (stream_state.grid_f)
-      {
-         vs->AutoRefine();
-         vs->SetShading(2, true);
-      }
-      if (mesh_range > 0.0)
-      {
-         vs->SetValueRange(-mesh_range, mesh_range);
-         vs->SetAutoscale(0);
-      }
-      if (stream_state.mesh->SpaceDimension() == 2 && field_type == 2)
-      {
-         SetVisualizationScene(vs, 2, stream_state.keys.c_str());
-      }
-      else
-      {
-         SetVisualizationScene(vs, 3, stream_state.keys.c_str());
-      }
-   }
    return true;
 }
 
 void GLVisStartVis()
 {
-   RunVisualization(); // deletes vs
-   vs = NULL;
-   if (input_streams.Size() > 0)
-   {
-      glvis_command->Terminate();
-      delete comm_thread;
-      delete glvis_command;
-      glvis_command = NULL;
-   }
+   mainWindow->RunVisualization(); // deletes vs
+   delete mainWindow;
    cout << "GLVis window closed." << endl;
 }
 
@@ -395,7 +276,7 @@ int ScriptReadDisplMesh(istream &scr, StreamState& state)
    return 0;
 }
 
-void ExecuteScriptCommand()
+void ExecuteScriptCommand(GLVisWindow* wnd)
 {
    if (!script)
    {
@@ -403,6 +284,9 @@ void ExecuteScriptCommand()
       return;
    }
 
+   VisualizationSceneScalarData* vs
+      = static_cast<VisualizationSceneScalarData*>(wnd->getScene());
+   StreamState& stream_state = wnd->getStreamState();
    istream &scr = *script;
    string word;
    int done_one_command = 0;
@@ -470,7 +354,7 @@ void ExecuteScriptCommand()
 
          if (stream_state.SetNewMeshAndSolution(std::move(new_state), vs))
          {
-            MyExpose();
+            wnd->MyExpose();
          }
          else
          {
@@ -483,12 +367,9 @@ void ExecuteScriptCommand()
 
          cout << "Script: screenshot: " << flush;
 
-         if (Screenshot(word.c_str(), true))
-         {
-            cout << "Screenshot(" << word << ") failed." << endl;
-            done_one_command = 1;
-            continue;
-         }
+
+
+         wnd->Screenshot(word.c_str());
          cout << "-> " << word << endl;
 
          if (scr_min_val > vs->GetMinV())
@@ -505,7 +386,7 @@ void ExecuteScriptCommand()
          scr >> vs->ViewCenterX >> vs->ViewCenterY;
          cout << "Script: viewcenter: "
               << vs->ViewCenterX << ' ' << vs->ViewCenterY << endl;
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word ==  "perspective")
       {
@@ -524,7 +405,7 @@ void ExecuteScriptCommand()
             cout << '?';
          }
          cout << endl;
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word ==  "light")
       {
@@ -543,7 +424,7 @@ void ExecuteScriptCommand()
             cout << '?';
          }
          cout << endl;
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "view")
       {
@@ -551,7 +432,7 @@ void ExecuteScriptCommand()
          scr >> theta >> phi;
          cout << "Script: view: " << theta << ' ' << phi << endl;
          vs->SetView(theta, phi);
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "zoom")
       {
@@ -559,7 +440,7 @@ void ExecuteScriptCommand()
          scr >> factor;
          cout << "Script: zoom: " << factor << endl;
          vs->Zoom(factor);
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "shading")
       {
@@ -582,7 +463,7 @@ void ExecuteScriptCommand()
          {
             vs->SetShading(s, false);
             cout << word << endl;
-            MyExpose();
+            wnd->MyExpose();
          }
          else
          {
@@ -596,7 +477,7 @@ void ExecuteScriptCommand()
          cout << "Script: subdivisions: " << flush;
          vs->SetRefineFactors(t, b);
          cout << t << ' ' << b << endl;
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "valuerange")
       {
@@ -605,7 +486,7 @@ void ExecuteScriptCommand()
          cout << "Script: valuerange: " << flush;
          vs->SetValueRange(min, max);
          cout << min << ' ' << max << endl;
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "autoscale")
       {
@@ -638,16 +519,16 @@ void ExecuteScriptCommand()
          scr >> window_x >> window_y >> window_w >> window_h;
          cout << "Script: window: " << window_x << ' ' << window_y
               << ' ' << window_w << ' ' << window_h << endl;
-         MoveResizeWindow(window_x, window_y, window_w, window_h);
-         MyExpose();
+         wnd->MoveResizeWindow(window_x, window_y, window_w, window_h);
+         wnd->MyExpose();
       }
       else if (word == "keys")
       {
          scr >> stream_state.keys;
          cout << "Script: keys: '" << stream_state.keys << "'" << endl;
          // SendKeySequence(keys.c_str());
-         CallKeySequence(stream_state.keys.c_str());
-         MyExpose();
+         wnd->CallKeySequence(stream_state.keys.c_str());
+         wnd->MyExpose();
       }
       else if (word == "palette")
       {
@@ -655,7 +536,7 @@ void ExecuteScriptCommand()
          scr >> pal;
          cout << "Script: palette: " << pal << endl;
          vs->palette.SetIndex(pal-1);
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "palette_repeat")
       {
@@ -664,7 +545,7 @@ void ExecuteScriptCommand()
          cout << "Script: palette_repeat: " << rpt_times << endl;
          vs->palette.SetRepeatTimes(rpt_times);
          vs->palette.Init();
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "toggle_attributes")
       {
@@ -686,7 +567,7 @@ void ExecuteScriptCommand()
          scr.get(); // read the end symbol: ';'
          cout << endl;
          vs->ToggleAttributes(attr_list);
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "rotmat")
       {
@@ -697,7 +578,7 @@ void ExecuteScriptCommand()
             cout << ' ' << vs->rotmat[i/4][i%4];
          }
          cout << endl;
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "camera")
       {
@@ -710,7 +591,7 @@ void ExecuteScriptCommand()
          }
          cout << endl;
          vs->cam.Set(cam);
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "scale")
       {
@@ -720,7 +601,7 @@ void ExecuteScriptCommand()
          cout << ' ' << scale;
          cout << endl;
          vs->Scale(scale);
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "translate")
       {
@@ -730,15 +611,16 @@ void ExecuteScriptCommand()
          cout << ' ' << x << ' ' << y << ' ' << z;
          cout << endl;
          vs->Translate(x, y, z);
-         MyExpose();
+         wnd->MyExpose();
       }
       else if (word == "plot_caption")
       {
          char delim;
          scr >> ws >> delim;
          getline(scr, plot_caption, delim);
+         vs->SetCaption(plot_caption);
          vs->PrepareCaption(); // turn on or off the caption
-         MyExpose();
+         wnd->MyExpose();
       }
       else
       {
@@ -749,37 +631,38 @@ void ExecuteScriptCommand()
    }
 }
 
-void ScriptControl();
+void ScriptControl(GLVisWindow* wnd);
 
-void ScriptIdleFunc()
+void ScriptIdleFunc(GLVisWindow* wnd)
 {
-   ExecuteScriptCommand();
+   ExecuteScriptCommand(wnd);
    if (scr_level == 0)
    {
-      ScriptControl();
+      ScriptControl(wnd);
    }
 }
 
-void ScriptControl()
+void ScriptControl(GLVisWindow* wnd)
 {
    if (scr_running)
    {
       scr_running = 0;
-      RemoveIdleFunc(ScriptIdleFunc);
+      wnd->RemoveIdleFunc(ScriptIdleFunc);
    }
    else
    {
       scr_running = 1;
-      AddIdleFunc(ScriptIdleFunc);
+      wnd->AddIdleFunc(ScriptIdleFunc);
    }
 }
 
-void PlayScript(istream &scr)
+void PlayScript(istream &scr, StreamState stream_state)
 {
    string word;
 
    scr_min_val = numeric_limits<double>::infinity();
    scr_max_val = -scr_min_val;
+
 
    // read initializing commands
    while (1)
@@ -840,10 +723,11 @@ void PlayScript(istream &scr)
    scr_level = scr_running = 0;
    script = &scr;
    stream_state.keys.clear();
+   int ftype = (stream_state.grid_f->VectorDim() == 1) ? 0 : 1;
 
-   if (GLVisInitVis((stream_state.grid_f->VectorDim() == 1) ? 0 : 1))
+   if (GLVisInitVis(std::move(stream_state), ftype))
    {
-      GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
+      mainWindow->AddKeyEvent(SDLK_SPACE, ScriptControl, false);
       GLVisStartVis();
    }
 
@@ -863,14 +747,14 @@ int main (int argc, char *argv[])
    bool        mac           = false;
    const char *stream_file   = string_none;
    const char *script_file   = string_none;
-   const char *font_name     = string_default;
    int         portnum       = 19916;
    bool        secure        = socketstream::secure_default;
    int         multisample   = GetMultisample();
    double      line_width    = 1.0;
    double      ms_line_width = gl3::LINE_WIDTH_AA;
    int         geom_ref_type = Quadrature1D::ClosedUniform;
-   bool        legacy_gl_ctx = false;
+
+   StreamState stream_state;
 
    OptionsParser args(argc, argv);
 
@@ -986,10 +870,6 @@ int main (int argc, char *argv[])
    {
       stream_state.keys = arg_keys;
    }
-   if (font_name != string_default)
-   {
-      SetFont(font_name);
-   }
    if (multisample != GetMultisample())
    {
       SetMultisample(multisample);
@@ -1005,10 +885,6 @@ int main (int argc, char *argv[])
    if (c_plot_caption != string_none)
    {
       plot_caption = c_plot_caption;
-   }
-   if (legacy_gl_ctx == true)
-   {
-      SetLegacyGLOnly(legacy_gl_ctx);
    }
 
    GLVisGeometryRefiner.SetType(geom_ref_type);
@@ -1027,7 +903,7 @@ int main (int argc, char *argv[])
       ifs >> data_type >> ws;
       int ft = stream_state.ReadStream(ifs, data_type);
       input_streams.Append(&ifs);
-      if (GLVisInitVis(ft))
+      if (GLVisInitVis(std::move(stream_state), ft))
       {
          GLVisStartVis();
       }
@@ -1043,7 +919,7 @@ int main (int argc, char *argv[])
          cout << "Can not open script: " << script_file << endl;
          return 1;
       }
-      PlayScript(scr);
+      PlayScript(scr, std::move(stream_state));
       return 0;
    }
 
@@ -1288,7 +1164,7 @@ int main (int argc, char *argv[])
                      delete isock;
                      ft = ReadInputStreams(stream_state);
                   }
-                  if (GLVisInitVis(ft))
+                  if (GLVisInitVis(std::move(stream_state), ft))
                   {
                      GLVisStartVis();
                   }
@@ -1333,7 +1209,7 @@ int main (int argc, char *argv[])
       {
          field_type = (use_soln) ? 0 : 2;
       }
-      if (GLVisInitVis(field_type))
+      if (GLVisInitVis(std::move(stream_state), field_type))
       {
          GLVisStartVis();
       }

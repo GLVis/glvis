@@ -27,11 +27,12 @@ struct EventInfo
    SDL_Keymod keymod;
 };
 
-typedef void (*TouchDelegate)(SDL_MultiGestureEvent&);
-typedef void (*MouseDelegate)(EventInfo*);
+typedef std::function<void(SDL_MultiGestureEvent&)> TouchDelegate;
+typedef std::function<void(EventInfo*)> MouseDelegate;
 typedef std::function<void(GLenum)> KeyDelegate;
-typedef void (*WindowDelegate)(int, int);
-typedef void (*Delegate)();
+typedef std::function<void(int, int)> WindowDelegate;
+typedef std::function<void()> Delegate;
+typedef std::function<bool()> IdleDelegate;
 
 class SdlWindow
 {
@@ -59,7 +60,7 @@ private:
 
    bool running;
 
-   Delegate onIdle{nullptr};
+   IdleDelegate onIdle{nullptr};
    Delegate onExpose{nullptr};
    WindowDelegate onReshape{nullptr};
    std::map<int, KeyDelegate> onKeyDown;
@@ -102,6 +103,8 @@ private:
    void keyEvent(char c);
    void multiGestureEvent(SDL_MultiGestureEvent & e);
 
+   int screenshotHelper(bool convert = false);
+
    std::string saved_keys;
 public:
    SdlWindow();
@@ -109,7 +112,7 @@ public:
 
    /// Creates a new OpenGL window. Returns false if SDL or OpenGL initialization
    /// fails.
-   bool createWindow(const char * title, int x, int y, int w, int h,
+   bool createWindow(const std::string& title, int x, int y, int w, int h,
                      bool legacyGlOnly);
    /// Runs the window loop.
    void mainLoop();
@@ -118,7 +121,7 @@ public:
    // Called by worker threads in GLVisCommand::signal()
    void signalLoop();
 
-   void setOnIdle(Delegate func) { onIdle = func; }
+   void setOnIdle(IdleDelegate func) { onIdle = func; }
    void setOnExpose(Delegate func) { onExpose = func; }
    void setOnReshape(WindowDelegate func) { onReshape = func; }
 

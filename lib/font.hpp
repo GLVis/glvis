@@ -47,7 +47,17 @@ private:
    FT_Library  library;
    FT_Face     face;
    bool        face_has_kerning;
+
+   bool is_hidpi;
+   int ppi_w, ppi_h;
 public:
+
+   void SetDPIParams(bool is_hidpi, int ppi_w, int ppi_h)
+   {
+      this->is_hidpi = is_hidpi;
+      this->ppi_w = ppi_w;
+      this->ppi_h = ppi_h;
+   }
 
    bool LoadFont(const std::string& path, int font_index, int font_size);
 
@@ -62,7 +72,9 @@ public:
    GlVisFont()
       : init(false),
         font_init(false),
-        face_has_kerning(false)
+        face_has_kerning(false),
+        is_hidpi(false),
+        ppi_w(96), ppi_h(96)
    {
       if (FT_Init_FreeType(&library))
       {

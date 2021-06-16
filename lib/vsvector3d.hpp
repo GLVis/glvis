@@ -28,11 +28,17 @@ protected:
    GridFunction *VecGridF;
    FiniteElementSpace *sfes;
 
-   void Init();
-
    Array<int> vflevel;
    Array<double> dvflevel;
 
+   void NextDisplacement();
+   void PrevDisplacement();
+   void NPressed();
+
+   void NextVectorField();
+   void PrevVectorField();
+   void NextVectorFieldLevel();
+   void PrevVectorFieldLevel();
 public:
    int ianim, ianimd, ianimmax, drawdisp;
 
@@ -43,15 +49,20 @@ public:
 
    virtual ~VisualizationSceneVector3d();
 
+   virtual void Init(GLVisWindow* wnd);
+
    virtual std::string GetHelpString() const;
 
-   void NPressed();
    virtual void PrepareFlat();
    virtual void Prepare();
    virtual void PrepareLines();
 
    void PrepareFlat2();
    void PrepareLines2();
+
+   // Overrides original event handlers defined in vsdata.cpp
+   virtual void Reset3DView();
+   virtual void Toggle2DView();
 
    void DrawVector (gl3::GlBuilder& builder,
                     int type, double v0, double v1, double v2,

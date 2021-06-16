@@ -46,7 +46,6 @@ using std::endl;
 #endif
 
 extern int GetMultisample();
-extern int visualize;
 
 struct SdlWindow::Handle
 {
@@ -205,7 +204,8 @@ void SdlWindow::probeGLContextSupport(bool legacyGlOnly)
 #endif
 }
 
-bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
+bool SdlWindow::createWindow(const std::string& title, int x, int y, int w,
+                             int h,
                              bool legacyGlOnly)
 {
    if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
@@ -605,7 +605,6 @@ void SdlWindow::multiGestureEvent(SDL_MultiGestureEvent & e)
 void SdlWindow::mainIter()
 {
    SDL_Event e;
-   static bool useIdle = false;
    static bool disable_mouse = false;
    if (SDL_PollEvent(&e))
    {
@@ -666,28 +665,8 @@ void SdlWindow::mainIter()
 #ifndef __EMSCRIPTEN__
    else if (onIdle)
    {
-      if (glvis_command == NULL || visualize == 2 || useIdle)
-      {
-         onIdle();
-      }
-      else
-      {
-         if (glvis_command->Execute() < 0)
-         {
-            running = false;
-         }
-      }
-      useIdle = !useIdle;
-   }
-   else
-   {
-      int status;
-      if (glvis_command && visualize == 1 &&
-          (status = glvis_command->Execute()) != 1)
-      {
-         if (status < 0) { running = false; }
-      }
-      else
+      bool sleep = onIdle();
+      if (sleep)
       {
          // Wait for the next event (without consuming CPU cycles, if possible)
          // See also: SdlWindow::signalLoop()
@@ -730,7 +709,6 @@ void SdlWindow::mainLoop()
       ((SdlWindow*) arg)->mainIter();
    }, this, 0, true);
 #else
-   visualize = 1;
    while (running)
    {
       mainIter();
@@ -741,7 +719,7 @@ void SdlWindow::mainLoop()
       }
       if (takeScreenshot)
       {
-         Screenshot(screenshot_file.c_str());
+         screenshotHelper();
          takeScreenshot = false;
       }
    }

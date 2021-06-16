@@ -14,11 +14,14 @@
 
 #include <cmath>
 #include "sdl.hpp"
+#include "font.hpp"
 #include "gl/types.hpp"
 #include "material.hpp"
 #include "palettes.hpp"
 #include "mfem.hpp"
 #include "geom_utils.hpp"
+
+class GLVisWindow;
 
 // Visualization header file
 
@@ -64,8 +67,6 @@ protected:
    // How to scale the visualized object(s)
    double xscale, yscale, zscale;
 
-   SdlWindow * wnd;
-
    glm::mat4 proj_mtx;
 
    enum
@@ -87,6 +88,7 @@ protected:
    int light_mat_idx;
    bool use_light;
 
+   GlVisFont* font = nullptr;
 
    gl3::RenderParams GetMeshDrawParams();
    glm::mat4 GetModelViewMtx();
@@ -134,6 +136,8 @@ public:
    VisualizationScene();
    virtual ~VisualizationScene();
 
+   virtual void Init(GLVisWindow* wnd);
+
    int spinning, OrthogonalProjection, print, movie;
    double ViewAngle, ViewScale;
    double ViewCenterX, ViewCenterY;
@@ -150,6 +154,8 @@ public:
    float matAlpha = 1.0;
    float matAlphaCenter = 0.5;
 
+   /// Needs to be called before GetSceneObjs()
+   virtual void UpdateWindowSize(int w, int h, int gl_w, int gl_h) = 0;
    virtual gl3::SceneInfo GetSceneObjs() = 0;
 
    void SetView(double theta, double phi);
@@ -166,15 +172,35 @@ public:
    void CenterObject();
    void CenterObject2D();
 
+   // Toggles between orthogonal and perspective projections.
+   void ToggleProjectionMode()
+   { OrthogonalProjection = !OrthogonalProjection; }
+
    void SetProjectionMtx(glm::mat4 projection) { proj_mtx = projection; }
    void SetLightMatIdx(unsigned i);
    int GetLightMatIdx() { return light_mat_idx; }
 
    void SetLight0CustomPos(std::array<float, 4> pos);
    void ToggleBackground();
+   std::array<float, 4> GetBackgroundColor()
+   {
+      if (background == BG_BLK)
+      {
+         return { 0.f, 0.f, 0.f, 1.f };
+      }
+      else
+      {
+         return { 1.f, 1.f, 1.f, 1.f };
+      }
+   }
 
    void GenerateAlphaTexture()
    { palette.GenerateAlphaTexture(matAlpha, matAlphaCenter); }
+
+   void DecrementAlpha();
+   void IncrementAlpha();
+   void DecrementAlphaCenter();
+   void IncrementAlphaCenter();
 
    /// This is set by SetVisualizationScene
    int view;

@@ -19,13 +19,14 @@
 #include <atomic>
 #include <condition_variable>
 
+class GLVisWindow;
+
 class GLVisCommand
 {
 private:
    // Pointers to global GLVis data
-   VisualizationSceneScalarData **vs;
-   StreamState&         curr_state;
-   bool                 *keep_attr;
+   GLVisWindow*         window;
+   bool                 keep_attr;
 
    std::mutex glvis_mutex;
    std::condition_variable glvis_cond;
@@ -94,12 +95,11 @@ private:
 
 public:
    // called by the main execution thread
-   GLVisCommand(VisualizationSceneScalarData **_vs,
-                StreamState& thread_state, bool *_keep_attr);
+   GLVisCommand(GLVisWindow* parent, bool _keep_attr);
 
    // to be used by worker threads
-   bool KeepAttrib() { return *keep_attr; } // may need to sync this
-   bool FixElementOrientations() { return curr_state.fix_elem_orient; }
+   bool KeepAttrib() const { return keep_attr; } // may need to sync this
+   bool FixElementOrientations() const;
 
    // called by worker threads
    int NewMeshAndSolution(std::unique_ptr<Mesh> _new_m,
@@ -136,13 +136,13 @@ public:
    ~GLVisCommand();
 };
 
-extern GLVisCommand *glvis_command;
-
 class communication_thread
 {
 private:
    // streams to read data from
-   Array<std::istream *> &is;
+   Array<std::istream *> is;
+
+   GLVisCommand* glvis_command;
 
    // data that may be dynamically allocated by the thread
    std::unique_ptr<Mesh> new_m;
@@ -157,7 +157,8 @@ private:
    void execute();
 
 public:
-   communication_thread(Array<std::istream *> &_is);
+   communication_thread(GLVisCommand* parent_cmd,
+                        const Array<std::istream *> &_is);
 
    ~communication_thread();
 };

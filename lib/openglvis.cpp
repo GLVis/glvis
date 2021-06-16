@@ -123,7 +123,6 @@ VisualizationScene::VisualizationScene()
    ViewCenterY = 0.0;
 
    background = BG_WHITE;
-   GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
    _use_cust_l0_pos = false;
    light_mat_idx = 3;
    use_light = true;
@@ -132,6 +131,11 @@ VisualizationScene::VisualizationScene()
 }
 
 VisualizationScene::~VisualizationScene() {}
+
+void VisualizationScene::Init(GLVisWindow* wnd)
+{
+   font = wnd->getFont();
+}
 
 void VisualizationScene
 ::DrawTriangle(gl3::GlDrawable& buff,
@@ -357,12 +361,10 @@ void VisualizationScene::ToggleBackground()
    if (background == BG_BLK)
    {
       background = BG_WHITE;
-      GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
    }
    else
    {
       background = BG_BLK;
-      GetAppWindow()->getRenderer().setClearColor(0.f, 0.f, 0.f, 1.f);
    }
 }
 
@@ -465,5 +467,43 @@ glm::mat4 VisualizationScene::GetModelViewMtx()
    modelView.scale(xscale, yscale, zscale);
    modelView.translate(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
    return modelView.mtx;
+}
+
+void VisualizationScene::DecrementAlpha()
+{
+   matAlpha -= 0.05;
+   if (matAlpha < 0.0)
+   {
+      matAlpha = 0.0;
+   }
+   GenerateAlphaTexture();
+}
+
+void VisualizationScene::IncrementAlpha()
+{
+   matAlpha += 0.05;
+   if (matAlpha > 1.0)
+   {
+      matAlpha = 1.0;
+   }
+   GenerateAlphaTexture();
+}
+
+void VisualizationScene::DecrementAlphaCenter()
+{
+   matAlphaCenter -= 0.25;
+   GenerateAlphaTexture();
+#ifdef GLVIS_DEBUG
+   cout << "MatAlphaCenter = " << matAlphaCenter << endl;
+#endif
+}
+
+void VisualizationScene::IncrementAlphaCenter()
+{
+   matAlphaCenter += 0.25;
+   GenerateAlphaTexture();
+#ifdef GLVIS_DEBUG
+   cout << "MatAlphaCenter = " << matAlphaCenter << endl;
+#endif
 }
 
