@@ -1109,7 +1109,7 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
          if (!par_data)
          {
             new_session.ft = new_session.state.ReadStream(*isock, data_type);
-            new_session.input_streams.emplace_back(isock);
+            input_streams.emplace_back(isock);
          }
          else
          {
