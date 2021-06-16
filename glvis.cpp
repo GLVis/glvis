@@ -881,13 +881,7 @@ struct Session
       , ft(other_ft)
    { }
 
-   ~Session()
-   {
-      if (handler.joinable())
-      {
-         handler.join();
-      }
-   }
+   ~Session() = default;
 
    Session(Session&& from) = default;
    Session& operator= (Session&& from) = default;
@@ -907,6 +901,7 @@ struct Session
       };
       handler = std::thread {funcThread,
                              std::move(state), ft, std::move(input_streams)};
+      handler.detach();
    }
 
    bool StartSavedSession(std::string stream_file)
