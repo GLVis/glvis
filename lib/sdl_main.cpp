@@ -68,6 +68,7 @@ SdlMainThread::SdlMainThread()
    SDL_GetVersion(&sdl_ver);
    std::cerr << "Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor
              << "." << (int)sdl_ver.patch << std::endl;
+
    sdl_init = true;
 }
 
@@ -89,13 +90,53 @@ void SdlMainThread::MainLoop(bool server_mode)
       {
          handleWindowCmdImpl(cmd);
       }
-      if (!server_mode && num_windows == 0)
+      // Check if all windows have been closed. Exiting via shortcut 'q' won't
+      // generate an SDL_QUIT event that can be handled in DispatchSDLEvents().
+      if (num_windows == 0)
       {
-         terminating = true; // all windows closed
+         terminating = true;
       }
 
       DispatchSDLEvents();
-      if (terminating) { break; }
+
+      // If we're running in server mode, prompt to make sure user wants to
+      // exit out of server process
+      if (terminating && server_mode)
+      {
+         bool queryQuit = exitDialog();
+         if (!queryQuit) { terminating = false; }
+      }
+
+      // At this point, we're ready to start cleaning up
+      if (terminating)
+      {
+         // Signal worker threads of all remaining open windows to terminate
+         for (auto wnds : hwnd_to_window)
+         {
+            SDL_Event sdl_quit;
+            sdl_quit.type = SDL_QUIT;
+            wnds.second->queueEvents({sdl_quit});
+         }
+         while (num_windows > 0)
+         {
+            // Process pending destroy window commands
+            vector<SdlCtrlCommand> pending_cmds;
+            {
+               lock_guard<mutex> cmd_lock{window_cmd_mtx};
+               pending_cmds = std::move(window_cmds);
+            }
+            for (SdlCtrlCommand& cmd : pending_cmds)
+            {
+               if (cmd.type == SdlCmdType::Delete)
+               {
+                  handleWindowCmdImpl(cmd);
+               }
+            }
+         }
+         // Exit main loop
+         break;
+      }
+
       // Wait for the next event (without consuming CPU cycles, if possible)
       // See also: SdlWindow::signalLoop()
       if (platform)
@@ -122,14 +163,7 @@ void SdlMainThread::DispatchSDLEvents()
       switch (e.type)
       {
          case SDL_QUIT:
-            if (server_mode)
-            {
-               terminating = exitDialog();
-            }
-            else
-            {
-               terminating = true;
-            }
+            terminating = true;
             break;
          case SDL_WINDOWEVENT:
             windowId = getWindowID(e.window);
@@ -278,6 +312,24 @@ void SdlMainThread::queueWindowEvent(SdlCtrlCommand cmd)
 
 bool SdlMainThread::exitDialog()
 {
+   // Create an empty window so we can raise focus
+   int flags = SDL_WINDOW_HIDDEN | SDL_WINDOW_ALLOW_HIGHDPI;
+   SDL_Window* dialog_handle = SDL_CreateWindow("GLVis Server",
+                                                SDL_WINDOWPOS_CENTERED,
+                                                SDL_WINDOWPOS_CENTERED,
+                                                400,
+                                                400,
+                                                flags);
+
+   // Destroys dialong_handle at end of scope
+   unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)>
+   delete_wnd(dialog_handle, SDL_DestroyWindow);
+
+   setWindowIcon(dialog_handle);
+
+   SDL_ShowWindow(dialog_handle);
+   SDL_RaiseWindow(dialog_handle);
+
    const int ID_Exit = 1;
    const int ID_Continue = 2;
    const SDL_MessageBoxButtonData buttons[] =
@@ -286,12 +338,17 @@ bool SdlMainThread::exitDialog()
       {SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, ID_Continue, "No"}
    };
 
+   std::string serverOnly = "Stop GLVis server thread?";
+   std::string serverAndWindows =
+      "Stop GLVis server thread and close all windows?";
+
    const SDL_MessageBoxData request_box
    {
       SDL_MESSAGEBOX_INFORMATION,
-      nullptr,
-      "GLVis Server",
-      "Stop GLVis server thread?",
+      dialog_handle,
+      "",
+      ((num_windows > 0) ? serverAndWindows.c_str()
+       : serverOnly.c_str()),
       2,
       buttons,
       nullptr
@@ -344,6 +401,39 @@ void SdlMainThread::handleWindowCmdImpl(SdlCtrlCommand& cmd)
          cerr << "Error in main thread: unknown window control command.\n";
          break;
    }
+}
+
+void SdlMainThread::setWindowIcon(SDL_Window* hwnd)
+{
+#ifdef GLVIS_USE_LOGO
+   const int PixelStride = 4;
+   int stride = (int) sqrt(logo_rgba_len / PixelStride);
+   if (unsigned(stride * stride * PixelStride) != logo_rgba_len)
+   {
+      cerr << "Unable to set window logo: icon size not square" << endl;
+   }
+   else
+   {
+      SDL_Surface* iconSurf =
+         SDL_CreateRGBSurfaceFrom(logo_rgba,
+                                  stride, stride,       // height, width
+                                  8 * PixelStride,      // depth
+                                  stride * PixelStride, // pitch
+                                  0x000000FF,
+                                  0x0000FF00,
+                                  0x00FF0000,
+                                  0xFF000000);
+      if (iconSurf)
+      {
+         SDL_SetWindowIcon(hwnd, iconSurf);
+         SDL_FreeSurface(iconSurf);
+      }
+      else
+      {
+         PRINT_DEBUG("Unable to set window logo: " << SDL_GetError() << endl);
+      }
+   }
+#endif // GLVIS_USE_LOGO
 }
 
 void SdlMainThread::probeGLContextSupport(bool legacyGlOnly)
@@ -532,35 +622,7 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
       platform->RegisterWindow(new_handle.hwnd);
    }
 
-#ifdef GLVIS_USE_LOGO
-   const int PixelStride = 4;
-   int stride = (int) sqrt(logo_rgba_len / PixelStride);
-   if (unsigned(stride * stride * PixelStride) != logo_rgba_len)
-   {
-      cerr << "Unable to set window logo: icon size not square" << endl;
-   }
-   else
-   {
-      SDL_Surface* iconSurf =
-         SDL_CreateRGBSurfaceFrom(logo_rgba,
-                                  stride, stride,       // height, width
-                                  8 * PixelStride,      // depth
-                                  stride * PixelStride, // pitch
-                                  0x000000FF,
-                                  0x0000FF00,
-                                  0x00FF0000,
-                                  0xFF000000);
-      if (iconSurf)
-      {
-         SDL_SetWindowIcon(new_handle.hwnd, iconSurf);
-         SDL_FreeSurface(iconSurf);
-      }
-      else
-      {
-         PRINT_DEBUG("Unable to set window logo: " << SDL_GetError() << endl);
-      }
-   }
-#endif // GLVIS_USE_LOGO
+   setWindowIcon(new_handle.hwnd);
 
    // Detect if we are using a high-dpi display and resize the window unless it
    // was already resized by SDL's underlying backend.
@@ -618,6 +680,7 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
    }
 
    SDL_ShowWindow(new_handle.hwnd);
+   SDL_RaiseWindow(new_handle.hwnd);
    if (num_windows == -1)
    {
       num_windows = 0;

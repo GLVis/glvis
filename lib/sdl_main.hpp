@@ -95,6 +95,8 @@ private:
 
    bool exitDialog();
 
+   void setWindowIcon(SDL_Window* hwnd);
+
    void handleWindowCmdImpl(SdlCtrlCommand& cmd);
 
    // Setup the correct OpenGL context flags in SDL for when we actually open the
@@ -111,7 +113,8 @@ private:
 
    bool server_mode {false};
 
-   atomic<bool> terminating {false};
+   // A flag indicating whether the main loop will *begin* terminating
+   bool terminating {false};
 
    // -------------------------------------------------------------------------
    // Objects for handling passing of window control commands to the main event
