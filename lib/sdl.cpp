@@ -20,6 +20,9 @@
 #include <emscripten/html5.h>
 #endif
 
+#ifdef SDL_VIDEO_DRIVER_COCOA
+#include "sdl_mac.hpp"
+#endif
 
 using std::cerr;
 using std::endl;
@@ -189,8 +192,25 @@ void SdlWindow::windowEvent(SDL_WindowEvent& ew)
          break;
       case SDL_WINDOWEVENT_MOVED:
       case SDL_WINDOWEVENT_RESIZED:
-         swap_before_expose = true;
-         break;
+#ifdef SDL_VIDEO_DRIVER_COCOA
+      {
+         // On SDL, when the OpenGL context is on a separate thread from the
+         // main thread, the call to [NSOpenGLContext update] after a resize or
+         // move event is only scheduled for after the next swap event. Any
+         // rendering/OpenGL commands occuring before this update will be
+         // corrupted.
+         //
+         // To avoid this issue, we just call [NSOpenGLContext update]
+         // immediately after the resize/move event.
+         SdlCocoaPlatform* platform =
+            dynamic_cast<SdlCocoaPlatform*>(GetMainThread().GetPlatform());
+         if (platform)
+         {
+            platform->ContextUpdate();
+         }
+      }
+#endif
+      break;
       default:
          break;
    }
@@ -426,22 +446,6 @@ void SdlWindow::mainIter()
    }
    if (wnd_state == RenderState::ExposePending)
    {
-#ifdef SDL_VIDEO_DRIVER_COCOA
-      // There is some weird behavior with SDL on Cocoa, where the swap
-      // immediately following a resize event causes the most recent onExpose()
-      // to display incorrectly. I suspect it has something to do with
-      // [NSOpenGLContext update] getting called after the context flush within
-      // Cocoa_GL_SwapBuffers().
-      //
-      // To work around this, we do an extra swap before onExpose() so that the
-      // [NSOpenGLContext update] call is done before we start rendering to the
-      // back buffer.
-      if (swap_before_expose)
-      {
-         SDL_GL_SwapWindow(handle.hwnd);
-         swap_before_expose = false;
-      }
-#endif
       onExpose();
       wnd_state = RenderState::SwapPending;
    }

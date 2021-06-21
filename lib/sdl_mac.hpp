@@ -18,6 +18,8 @@ class SdlCocoaPlatform final : public SdlNativePlatform
 public:
    void WaitEvent();
    void SendEvent();
+
+   void ContextUpdate();
 };
 
 #endif

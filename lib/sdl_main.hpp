@@ -71,6 +71,8 @@ public:
       }
    }
 
+   SdlNativePlatform* GetPlatform() const { return platform.get(); }
+
 private:
    struct CreateWindowCmd;
    struct SdlCtrlCommand;

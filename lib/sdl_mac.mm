@@ -36,3 +36,12 @@ void SdlCocoaPlatform::SendEvent()
                              data2:0]
           atStart:NO];
 }}
+
+void SdlCocoaPlatform::ContextUpdate()
+{ @autoreleasepool
+{
+   // This actually calls [SDLOpenGLContext update], which handles the dispatch
+   // to the main thread for us.
+   [[NSOpenGLContext currentContext] update];
+}
+}
