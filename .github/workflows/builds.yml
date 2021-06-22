@@ -218,7 +218,7 @@ jobs:
       if: matrix.build-system == 'cmake'
       uses: actions/upload-artifact@v2
       with: 
-        name: test-screenshots
+        name: test-screenshots-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}
         path: glvis/build/test_screenshots.tar.gz
 
 
