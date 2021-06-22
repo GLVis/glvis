@@ -72,17 +72,25 @@ def test_stream(exec_path, exec_args, save_file, baseline):
         exec_args = ""
     test_name = os.path.basename(save_file)
     print("Testing {}...".format(save_file))
-    cmd = "{0} {1} -saved {2}".format(exec_path, exec_args, save_file)
+
+
+    # Create new stream file with command to screenshot and close
+    stream_data = None
+    with open(save_file) as in_f:
+        stream_data = in_f.read()
+
+    output_name = "test.{}.png".format(test_name)
+    tmp_file = "test.saved"
+    with open(tmp_file, 'w') as out_f:
+        out_f.write(stream_data)
+        out_f.write("\nscreenshot {}\nkeys q".format(output_name))
+
+    # Run GLVis with modified stream file
+    cmd = "{0} {1} -saved {2}".format(exec_path, exec_args, tmp_file)
     print("Exec: {}".format(cmd))
     ret = os.system(cmd)
     if ret != 0:
         print("[FAIL] GLVis exited with error code {}.".format(ret))
-        return False
-    output_name = "test.{}.png".format(test_name)
-
-    ret = os.system("mv {0} {1}".format(screenshot_file, output_name))
-    if ret != 0:
-        print("[FAIL] Could not copy output image: exit code {}.".format(ret))
         return False
 
     # Try to open output image
