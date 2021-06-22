@@ -31,15 +31,18 @@ def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
     print("Testing {0}:{1}...".format(t_group, t_name))
     full_screenshot_cmd = cmd + screenshot_keys
     cmd = "{0} {1} -k \"{2}\"".format(exec_path, exec_args, full_screenshot_cmd)
-    print("Test: {}".format(cmd))
-    os.system(cmd + " > /dev/null 2>&1")
+    print("Exec: {}".format(cmd))
+    ret = os.system(cmd + " > /dev/null 2>&1")
+    if ret != 0:
+        print("[FAIL] GLVis exited with error code {}.".format(ret))
+        return False
     if not os.path.exists(t_group):
         os.mkdir(t_group)
     output_name = "{0}/{1}.png".format(t_group, t_name)
 
     ret = os.system("mv {0} {1}".format(screenshot_file, output_name))
     if ret != 0:
-        print("[FAIL] GLVis exited with error code {}.".format(ret))
+        print("[FAIL] Could not copy output image: exit code {}.".format(ret))
         return False
 
     # Try to open output image
@@ -64,7 +67,48 @@ def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
         print("[PASS] Images match.")
     return diff <= 0.001
 
-def main(exec_path, exec_args, tgroup, baseline):
+def test_stream(exec_path, exec_args, save_file, baseline):
+    if exec_args is None:
+        exec_args = ""
+    test_name = os.path.basename(save_file)
+    print("Testing {}...".format(save_file))
+    cmd = "{0} {1} -saved {2}".format(exec_path, exec_args, save_file)
+    print("Exec: {}".format(cmd))
+    ret = os.system(cmd + " > /dev/null 2>&1")
+    if ret != 0:
+        print("[FAIL] GLVis exited with error code {}.".format(ret))
+        return False
+    output_name = "test.{}.png".format(test_name)
+
+    ret = os.system("mv {0} {1}".format(screenshot_file, output_name))
+    if ret != 0:
+        print("[FAIL] Could not copy output image: exit code {}.".format(ret))
+        return False
+
+    # Try to open output image
+    output_img = cv2.imread(output_name)
+    if output_img is None:
+        print("[FAIL] Could not open output image.")
+        return False
+
+    # Try to open baseline image
+    baseline_img = None
+    if baseline:
+        baseline_name = "{0}/test.{1}.png".format(baseline, test_name)
+        baseline_img = cv2.imread(baseline_name)
+    if baseline_img is None:
+        print("[IGNORE] No baseline exists to compare against.")
+        return True
+    diff_img = cv2.subtract(output_img, baseline_img)
+    diff = cv2.norm(diff_img)
+    if diff > 0.001:
+        print("[FAIL] Output and baseline differ by more than 0.1%")
+    else:
+        print("[PASS] Images match.")
+    return diff <= 0.001
+
+
+def test_cmd(exec_path, exec_args, tgroup, baseline):
     try:
         os.remove(screenshot_file)
     except OSError:
@@ -81,9 +125,15 @@ def main(exec_path, exec_args, tgroup, baseline):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--save_stream", help="Path to a GLVis saved stream file.")
     parser.add_argument("-e", "--exec_cmd", help="Path to the GLVis executable")
     parser.add_argument("-a", "--exec_args", help="Arguments to pass to GLVis.")
     parser.add_argument("-n", "--group_name", help="Name of the test group.")
     parser.add_argument("-b", "--baseline", help="Path to test baseline.")
     args = parser.parse_args()
-    main(args.exec_cmd, args.exec_args, args.group_name, args.baseline)
+    if args.save_stream is not None:
+        result = test_stream(args.exec_cmd, args.exec_args, args.save_stream, args.baseline)
+        if not result:
+            sys.exit(1)
+    else:
+        test_cmd(args.exec_cmd, args.exec_args, args.group_name, args.baseline)

@@ -290,22 +290,7 @@ if(NOT EMSCRIPTEN)
 endif(NOT EMSCRIPTEN)
 
 if(ENABLE_TESTS)
+  enable_testing()
 
-add_custom_target(
-    glvis-test-driver ALL
-    COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/test/glvis_driver.py
-        ${CMAKE_CURRENT_BINARY_DIR}/glvis_driver.py
-    DEPENDS test/glvis_driver.py
-    COMMENT "Copying glvis_driver.py")
-
-enable_testing()
-
-set(TEST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/test")
-
-add_test(NAME quad_scalar_gf
-         COMMAND python3 glvis_driver.py
-                -e ${CMAKE_CURRENT_BINARY_DIR}/glvis
-                -a "-m ${TEST_DIR}/quad.vtk -g ${TEST_DIR}/quad.gf" -n quad_scalar)
-
+  add_subdirectory(test)
 endif(ENABLE_TESTS)
