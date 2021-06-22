@@ -31,16 +31,16 @@ jobs:
   builds-and-tests:
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-10.15]
+        os: [ubuntu-20.04, macos-10.15]
         target: [debug, optim]
         mpi: [sequential]
         build-system: [cmake]
         include:
-          - os: ubuntu-18.04
+          - os: ubuntu-20.04
             target: optim
             mpi: sequential
             build-system: make
-          - os: ubuntu-18.04
+          - os: ubuntu-20.04
             target: debug
             mpi: parallel
             build-system: make
@@ -58,7 +58,7 @@ jobs:
 
     steps:
     - name: get MPI (Linux)
-      if: matrix.os == 'ubuntu-18.04'
+      if: matrix.os == 'ubuntu-20.04'
       run: |
         sudo apt-get update
         sudo apt-get install mpich libmpich-dev
@@ -149,10 +149,10 @@ jobs:
 
     # Install GlVis dependencies with package manager
     - name: get deps (Linux)
-      if: matrix.os == 'ubuntu-18.04'
+      if: matrix.os == 'ubuntu-20.04'
       run: |
         sudo apt-get update
-        sudo apt-get install libfontconfig1-dev libfreetype6-dev libsdl2-dev libglew-dev libglm-dev libpng-dev xvfb mesa-utils
+        sudo apt-get install libfontconfig1-dev libfreetype6-dev libsdl2-dev libglew-dev libglm-dev libpng-dev
 
     - name: Set up Homebrew
       if: matrix.os == 'macos-10.15'
@@ -191,17 +191,24 @@ jobs:
         make -j3
 
     - name: setup Python
+      if: matrix.build-system == 'cmake'
       uses: actions/setup-python@v2
       with:
         python-version: 3.9
 
     - name: setup Python packages for testing
+      if: matrix.build-system == 'cmake'
       run: |
         python -m pip install --upgrade pip
         pip install opencv-python
 
+    - name: setup Linux testing dependencies
+      if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
+      run: |
+        sudo apt-get install xvfb mesa-utils
+
     - name: test GLVis (cmake/linux)
-      if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-18.04'
+      if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
       run: |
         cd glvis && cd build
         xvfb-run --auto-servernum glxinfo
