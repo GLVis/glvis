@@ -204,10 +204,20 @@ jobs:
       run: |
         cd glvis && cd build
         xvfb-run --auto-servernum ctest --verbose
+        tar czvf test_screenshots.tar.gz test/test.*.png
 
     - name: test GLVis (cmake/mac)
       if: matrix.build-system == 'cmake' && matrix.os == 'macos-10.15'
       run: |
         cd glvis && cd build
         ctest --verbose
+        tar czvf test_screenshots.tar.gz test/test.*.png
+
+    - name: upload test screenshots
+      if: matrix.build-system == 'cmake'
+      uses: actions/upload-artifact@v2
+      with: 
+        name: test-screenshots
+        path: glvis/build/test_screenshots.tar.gz
+
 
