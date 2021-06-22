@@ -74,7 +74,7 @@ def test_stream(exec_path, exec_args, save_file, baseline):
     print("Testing {}...".format(save_file))
     cmd = "{0} {1} -saved {2}".format(exec_path, exec_args, save_file)
     print("Exec: {}".format(cmd))
-    ret = os.system(cmd + " > /dev/null 2>&1")
+    ret = os.system(cmd)
     if ret != 0:
         print("[FAIL] GLVis exited with error code {}.".format(ret))
         return False

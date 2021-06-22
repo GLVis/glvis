@@ -31,6 +31,10 @@ jobs:
   builds-and-tests:
     strategy:
       matrix:
+        os: [ubuntu-18.04, macos-10.15]
+        target: [debug, optim]
+        mpi: [sequential]
+        build-system: [cmake]
         include:
           - os: ubuntu-18.04
             target: optim
@@ -48,10 +52,6 @@ jobs:
             target: debug
             mpi: parallel
             build-system: make
-          - os: ubuntu-18.04
-            target: optim
-            mpi: sequential
-            build-system: cmake
     name: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}-${{ matrix.build-system }}
 
     runs-on: ${{ matrix.os }}
@@ -204,6 +204,7 @@ jobs:
       if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-18.04'
       run: |
         cd glvis && cd build
+        xvfb-run --auto-servernum glxinfo
         xvfb-run --auto-servernum ctest --verbose
         tar czvf test_screenshots.tar.gz test/test.*.png
 
