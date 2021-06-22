@@ -152,7 +152,7 @@ jobs:
       if: matrix.os == 'ubuntu-18.04'
       run: |
         sudo apt-get update
-        sudo apt-get install libfontconfig1-dev libfreetype6-dev libsdl2-dev libglew-dev libglm-dev libpng-dev xvfb
+        sudo apt-get install libfontconfig1-dev libfreetype6-dev libsdl2-dev libglew-dev libglm-dev libpng-dev xvfb mesa-utils
 
     - name: Set up Homebrew
       if: matrix.os == 'macos-10.15'
