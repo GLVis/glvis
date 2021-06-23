@@ -2,7 +2,7 @@ import argparse
 import sys
 import os
 from skimage.io import imread
-from skimage.metrics import structural_similarity
+from skimage.metrics import peak_signal_noise_ratio
 
 test_cases = {
     "magnify": "*****",
@@ -28,6 +28,32 @@ test_cases = {
 screenshot_keys = "Sq"
 screenshot_file = "GLVis_s01.png"
 
+def compare_images(baseline_file, output_file):
+    # Try to open output image
+    output_img = imread(output_file)
+    if output_img is None:
+        print("[FAIL] Could not open output image.")
+        return False
+
+    # Try to open baseline image
+    baseline_img = imread(baseline_file)
+    if baseline_img is None:
+        print("[IGNORE] No baseline exists to compare against.")
+        return True
+
+    # Compare images with PSNR.
+    # When element meshes are overlaid, line rasterization differences can
+    # cause PSNR to drop to as low as 14 dB.
+    # Two completely different streams are usually around 7dB PSNR, so we split
+    # the difference and set the cutoff at 12 dB PSNR.
+    psnr = peak_signal_noise_ratio(baseline_img, output_img)
+    if psnr < 12:
+        print("[FAIL] Output and baseline are different.")
+        print("       actual psnr = {}, cutoff = 12".format(psnr))
+    else:
+        print("[PASS] Images match.")
+    return psnr >= 12
+
 def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
     print("Testing {0}:{1}...".format(t_group, t_name))
     full_screenshot_cmd = cmd + screenshot_keys
@@ -46,29 +72,12 @@ def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
         print("[FAIL] Could not copy output image: exit code {}.".format(ret))
         return False
 
-    # Try to open output image
-    output_img = imread(output_name)
-    if output_img is None:
-        print("[FAIL] Could not open output image.")
-        return False
-
-    # Try to open baseline image
-    baseline_img = None
     if baseline:
         baseline_name = "{0}/test.{1}.png".format(baseline, test_name)
-        baseline_img = imread(baseline_name)
-    if baseline_img is None:
+        return compare_images(baseline_name, output_name)
+    else:
         print("[IGNORE] No baseline exists to compare against.")
         return True
-
-    # Compare images with structural similarity metric
-    ssim = structural_similarity(output_img, baseline_img, multichannel=True)
-    if ssim < 0.95:
-        print("[FAIL] Output and baseline are structurally-dissimilar.")
-        print("         actual ssim = {}, cutoff = 0.95".format(ssim))
-    else:
-        print("[PASS] Images match.")
-    return ssim >= 0.95
 
 def test_stream(exec_path, exec_args, save_file, baseline):
     if exec_args is None:
@@ -98,29 +107,12 @@ def test_stream(exec_path, exec_args, save_file, baseline):
         print("[FAIL] GLVis exited with error code {}.".format(ret))
         return False
 
-    # Try to open output image
-    output_img = imread(output_name)
-    if output_img is None:
-        print("[FAIL] Could not open output image.")
-        return False
-
-    # Try to open baseline image
-    baseline_img = None
     if baseline:
         baseline_name = "{0}/test.{1}.png".format(baseline, test_name)
-        baseline_img = imread(baseline_name)
-    if baseline_img is None:
+        return compare_images(baseline_name, output_name)
+    else:
         print("[IGNORE] No baseline exists to compare against.")
         return True
-
-    # Compare images with structural similarity metric
-    ssim = structural_similarity(output_img, baseline_img, multichannel=True)
-    if ssim < 0.95:
-        print("[FAIL] Output and baseline are structurally-dissimilar.")
-        print("         actual ssim = {}, cutoff = 0.95".format(ssim))
-    else:
-        print("[PASS] Images match.")
-    return ssim >= 0.95
 
 
 def test_cmd(exec_path, exec_args, tgroup, baseline):
