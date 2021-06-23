@@ -47,7 +47,7 @@ foreach(test_name IN LISTS stream_tests)
            COMMAND python3 ${CMAKE_CURRENT_BINARY_DIR}/glvis_driver.py
            -e ${CMAKE_CURRENT_BINARY_DIR}/../glvis
            -s ${CMAKE_CURRENT_SOURCE_DIR}/data/${test_name}.saved
-           -b ${CMAKE_CURRENT_SOURCE_DIR}/baselines
+           # -b ${CMAKE_CURRENT_SOURCE_DIR}/baselines
            -a "-lw 1 -mslw 1")
 
 endforeach()
