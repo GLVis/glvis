@@ -167,7 +167,6 @@ jobs:
     - name: checkout GLVis
       uses: actions/checkout@v2
       with:
-        lfs: true
         path: glvis
 
     - name: build GLVis (make)
