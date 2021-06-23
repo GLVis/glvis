@@ -1,7 +1,8 @@
 import argparse
 import sys
 import os
-import cv2
+from skimage.io import imread
+from skimage.metrics import structural_similarity
 
 test_cases = {
     "magnify": "*****",
@@ -46,7 +47,7 @@ def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
         return False
 
     # Try to open output image
-    output_img = cv2.imread(output_name)
+    output_img = imread(output_name)
     if output_img is None:
         print("[FAIL] Could not open output image.")
         return False
@@ -54,18 +55,20 @@ def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
     # Try to open baseline image
     baseline_img = None
     if baseline:
-        baseline_name = "{0}/{1}.png".format(baseline, t_name)
-        baseline_img = cv2.imread(baseline_name)
+        baseline_name = "{0}/test.{1}.png".format(baseline, test_name)
+        baseline_img = imread(baseline_name)
     if baseline_img is None:
         print("[IGNORE] No baseline exists to compare against.")
         return True
-    diff_img = cv2.subtract(output_img, baseline_img)
-    diff = cv2.norm(diff_img)
-    if diff > 0.001:
-        print("[FAIL] Output and baseline differ by more than 0.1%")
+
+    # Compare images with structural similarity metric
+    ssim = structural_similarity(output_img, baseline_img, multichannel=True)
+    if ssim < 0.95:
+        print("[FAIL] Output and baseline are structurally-dissimilar.")
+        print("         actual ssim = {}, cutoff = 0.95".format(ssim))
     else:
         print("[PASS] Images match.")
-    return diff <= 0.001
+    return ssim >= 0.95
 
 def test_stream(exec_path, exec_args, save_file, baseline):
     if exec_args is None:
@@ -83,7 +86,9 @@ def test_stream(exec_path, exec_args, save_file, baseline):
     tmp_file = "test.saved"
     with open(tmp_file, 'w') as out_f:
         out_f.write(stream_data)
-        out_f.write("\nscreenshot {}\nkeys q".format(output_name))
+        out_f.write("\nwindow_size 800 600")
+        out_f.write("\nscreenshot {}".format(output_name))
+        out_f.write("\nkeys q")
 
     # Run GLVis with modified stream file
     cmd = "{0} {1} -saved {2}".format(exec_path, exec_args, tmp_file)
@@ -94,7 +99,7 @@ def test_stream(exec_path, exec_args, save_file, baseline):
         return False
 
     # Try to open output image
-    output_img = cv2.imread(output_name)
+    output_img = imread(output_name)
     if output_img is None:
         print("[FAIL] Could not open output image.")
         return False
@@ -103,17 +108,19 @@ def test_stream(exec_path, exec_args, save_file, baseline):
     baseline_img = None
     if baseline:
         baseline_name = "{0}/test.{1}.png".format(baseline, test_name)
-        baseline_img = cv2.imread(baseline_name)
+        baseline_img = imread(baseline_name)
     if baseline_img is None:
         print("[IGNORE] No baseline exists to compare against.")
         return True
-    diff_img = cv2.subtract(output_img, baseline_img)
-    diff = cv2.norm(diff_img)
-    if diff > 0.001:
-        print("[FAIL] Output and baseline differ by more than 0.1%")
+
+    # Compare images with structural similarity metric
+    ssim = structural_similarity(output_img, baseline_img, multichannel=True)
+    if ssim < 0.95:
+        print("[FAIL] Output and baseline are structurally-dissimilar.")
+        print("         actual ssim = {}, cutoff = 0.95".format(ssim))
     else:
         print("[PASS] Images match.")
-    return diff <= 0.001
+    return ssim >= 0.95
 
 
 def test_cmd(exec_path, exec_args, tgroup, baseline):

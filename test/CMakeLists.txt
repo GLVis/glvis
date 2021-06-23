@@ -46,7 +46,8 @@ foreach(test_name IN LISTS stream_tests)
   add_test(NAME stream_${test_name}
            COMMAND python3 ${CMAKE_CURRENT_BINARY_DIR}/glvis_driver.py
            -e ${CMAKE_CURRENT_BINARY_DIR}/../glvis
-           -s ${CMAKE_CURRENT_SOURCE_DIR}/data/${test_name}.saved)
+           -s ${CMAKE_CURRENT_SOURCE_DIR}/data/${test_name}.saved
+           -b ${CMAKE_CURRENT_SOURCE_DIR}/baselines)
 
 endforeach()
 
