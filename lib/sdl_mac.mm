@@ -12,36 +12,101 @@
 #include "sdl_mac.hpp"
 #import <Cocoa/Cocoa.h>
 
-void SdlCocoaPlatform::WaitEvent()
-{ @autoreleasepool
+#include <unordered_map>
+#include <mutex>
+
+std::unordered_map<int, NSOpenGLContext*>& GetContextMap()
 {
-   [NSApp nextEventMatchingMask:NSEventMaskAny
-          untilDate:[NSDate distantFuture]
-          inMode:NSDefaultRunLoopMode
-          dequeue:NO];
-}}
+   static std::unordered_map<int, NSOpenGLContext*> inst;
+   return inst;
+}
+
+inline bool AtLeastVersion(SDL_version sdl_ver, int major, int minor, int patch)
+{
+   return ((sdl_ver.major > major) ||
+           (sdl_ver.major == major && sdl_ver.minor > minor) ||
+           (sdl_ver.major == major && sdl_ver.minor == minor && sdl_ver.patch > patch));
+}
+
+void SdlCocoaPlatform::WaitEvent()
+{
+   @autoreleasepool
+   {
+      [NSApp nextEventMatchingMask:NSEventMaskAny
+             untilDate:[NSDate distantFuture]
+             inMode:NSDefaultRunLoopMode
+             dequeue:NO];
+   }
+}
 
 void SdlCocoaPlatform::SendEvent()
-{ @autoreleasepool
 {
-   NSPoint loc = {0., 0.};
-   [NSApp postEvent:[NSEvent otherEventWithType:NSEventTypeApplicationDefined
-                             location:loc
-                             modifierFlags:0
-                             timestamp:0.0
-                             windowNumber:0
-                             context:nil
-                             subtype:0
-                             data1:0
-                             data2:0]
-          atStart:NO];
-}}
+   @autoreleasepool
+   {
+      NSPoint loc = {0., 0.};
+      [NSApp postEvent:[NSEvent otherEventWithType:NSEventTypeApplicationDefined
+                        location:loc
+                        modifierFlags:0
+                        timestamp:0.0
+                        windowNumber:0
+                        context:nil
+                        subtype:0
+                        data1:0
+                        data2:0]
+             atStart:NO];
+   }
+}
+
+bool SdlCocoaPlatform::UseThreadWorkaround() const
+{
+   static bool first_call = true;
+   static bool value = false;
+   if (first_call)
+   {
+      SDL_version sdl_ver;
+      SDL_GetVersion(&sdl_ver);
+      value = !AtLeastVersion(sdl_ver, 2, 0, 14);
+      first_call = false;
+   }
+   return value;
+}
 
 void SdlCocoaPlatform::ContextUpdate()
-{ @autoreleasepool
 {
-   // This actually calls [SDLOpenGLContext update], which handles the dispatch
-   // to the main thread for us.
-   [[NSOpenGLContext currentContext] update];
+   @autoreleasepool
+   {
+      NSOpenGLContext* ctx = [NSOpenGLContext currentContext];
+      // This calls [SDLOpenGLContext update] defined in SDL_cocoaopengl.m
+      dispatch_sync(dispatch_get_main_queue(), ^{ [ctx update]; });
+   }
 }
+
+void SdlCocoaPlatform::ClearCurrentContext(int wnd_id)
+{
+   @autoreleasepool
+   {
+      NSOpenGLContext* ctx = [NSOpenGLContext currentContext];
+      GetContextMap().emplace(wnd_id, ctx);
+      [NSOpenGLContext clearCurrentContext];
+   }
+}
+
+void SdlCocoaPlatform::SetCurrentContext(int wnd_id)
+{
+   @autoreleasepool
+   {
+      NSOpenGLContext* ctx = GetContextMap()[wnd_id];
+      [ctx makeCurrentContext];
+   }
+}
+
+std::mutex swap_mtx;
+
+void SdlCocoaPlatform::SwapWindow()
+{
+   @autoreleasepool
+   {
+      std::lock_guard<std::mutex> lk{swap_mtx};
+      [[NSOpenGLContext currentContext] flushBuffer];
+   }
 }

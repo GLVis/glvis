@@ -17,6 +17,10 @@
 #include "sdl_helper.hpp"
 #include "logo.hpp"
 
+#ifdef SDL_VIDEO_DRIVER_COCOA
+#include "sdl_mac.hpp"
+#endif
+
 #ifdef GLVIS_DEBUG
 #define PRINT_DEBUG(s) std::cerr << s
 #else
@@ -46,7 +50,6 @@ struct SdlMainThread::SdlCtrlCommand
    pair<int, int>           cmd_set_size;
    pair<int, int>           cmd_set_position;
 };
-
 
 SdlMainThread::SdlMainThread()
 {
@@ -247,7 +250,23 @@ SdlMainThread::Handle SdlMainThread::GetHandle(SdlWindow* wnd,
       // Since SDL calls aren't guaranteed to be thread-safe, we guard
       // the call to SDL_GL_MakeCurrent.
       lock_guard<mutex> ctx_lock{gl_ctx_mtx};
+#ifdef SDL_VIDEO_DRIVER_COCOA
+      // TODO: Temporary workaround - after merge, everyone should update to
+      // latest SDL
+      SdlCocoaPlatform* mac_platform
+         = dynamic_cast<SdlCocoaPlatform*>(platform.get());
+      if (mac_platform && mac_platform->UseThreadWorkaround())
+      {
+         int wnd_id = SDL_GetWindowID(out_hnd.hwnd);
+         mac_platform->SetCurrentContext(wnd_id);
+      }
+      else
+      {
+         SDL_GL_MakeCurrent(out_hnd.hwnd, out_hnd.gl_ctx);
+      }
+#else
       SDL_GL_MakeCurrent(out_hnd.hwnd, out_hnd.gl_ctx);
+#endif
    }
    return out_hnd;
 }
@@ -676,7 +695,22 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
    // Unset GL context in this thread
    {
       lock_guard<mutex> ctx_lock{gl_ctx_mtx};
+#ifdef SDL_VIDEO_DRIVER_COCOA
+      // TODO: Temporary workaround - after merge, everyone should update to
+      // latest SDL
+      SdlCocoaPlatform* mac_platform
+         = dynamic_cast<SdlCocoaPlatform*>(platform.get());
+      if (mac_platform && mac_platform->UseThreadWorkaround())
+      {
+         mac_platform->ClearCurrentContext(wnd_id);
+      }
+      else
+      {
+         SDL_GL_MakeCurrent(new_handle.hwnd, nullptr);
+      }
+#else
       SDL_GL_MakeCurrent(new_handle.hwnd, nullptr);
+#endif
    }
 
    SDL_ShowWindow(new_handle.hwnd);

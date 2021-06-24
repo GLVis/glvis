@@ -465,7 +465,22 @@ void SdlWindow::mainLoop()
       mainIter();
       if (wnd_state == RenderState::SwapPending)
       {
+#ifdef SDL_VIDEO_DRIVER_COCOA
+         // TODO: Temporary workaround - after merge, everyone should update to
+         // latest SDL
+         SdlCocoaPlatform* mac_platform
+            = dynamic_cast<SdlCocoaPlatform*>(GetMainThread().GetPlatform());
+         if (mac_platform && mac_platform->UseThreadWorkaround())
+         {
+            mac_platform->SwapWindow();
+         }
+         else
+         {
+            SDL_GL_SwapWindow(handle.hwnd);
+         }
+#else
          SDL_GL_SwapWindow(handle.hwnd);
+#endif
          wnd_state = RenderState::Updated;
       }
       if (takeScreenshot)
