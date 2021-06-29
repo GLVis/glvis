@@ -125,6 +125,9 @@ GLVIS_MS_LINEWIDTH ?= $(if $(NOTMAC),1.4,1.0)
 DEFINES = -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
  -DGLVIS_MS_LINEWIDTH=$(GLVIS_MS_LINEWIDTH)\
  -DGLVIS_OGL3
+# Enable logo setting via SDL (disabled on Windows/CMake build)
+DEFINES += -DGLVIS_USE_LOGO
+
 GLVIS_FLAGS += $(DEFINES)
 
 # We don't want most of the stuff below because Emscripten handles that for us
