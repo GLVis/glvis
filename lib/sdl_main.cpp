@@ -351,59 +351,6 @@ void SdlMainThread::queueWindowEvent(SdlCtrlCommand cmd)
    }
 }
 
-bool SdlMainThread::exitDialog()
-{
-   // Create an empty window so we can raise focus
-   int flags = SDL_WINDOW_HIDDEN | SDL_WINDOW_ALLOW_HIGHDPI;
-   SDL_Window* dialog_handle = SDL_CreateWindow("GLVis Server",
-                                                SDL_WINDOWPOS_CENTERED,
-                                                SDL_WINDOWPOS_CENTERED,
-                                                400,
-                                                400,
-                                                flags);
-
-   // Destroys dialong_handle at end of scope
-   unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)>
-   delete_wnd(dialog_handle, SDL_DestroyWindow);
-
-   setWindowIcon(dialog_handle);
-
-   SDL_ShowWindow(dialog_handle);
-   SDL_RaiseWindow(dialog_handle);
-
-   const int ID_Exit = 1;
-   const int ID_Continue = 2;
-   const SDL_MessageBoxButtonData buttons[] =
-   {
-      {0, ID_Exit, "Yes"},
-      {SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, ID_Continue, "No"}
-   };
-
-   std::string serverOnly = "Stop GLVis server thread?";
-   std::string serverAndWindows =
-      "Stop GLVis server thread and close all windows?";
-
-   const SDL_MessageBoxData request_box
-   {
-      SDL_MESSAGEBOX_INFORMATION,
-      dialog_handle,
-      "",
-      ((num_windows > 0) ? serverAndWindows.c_str()
-       : serverOnly.c_str()),
-      2,
-      buttons,
-      nullptr
-   };
-
-   int button_id;
-   if (SDL_ShowMessageBox(&request_box, &button_id) < 0)
-   {
-      return true;
-   }
-
-   return button_id == ID_Exit;
-}
-
 void SdlMainThread::handleWindowCmdImpl(SdlCtrlCommand& cmd)
 {
    switch (cmd.type)

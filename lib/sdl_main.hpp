@@ -95,8 +95,6 @@ private:
       return eventStruct.windowID;
    }
 
-   bool exitDialog();
-
    void setWindowIcon(SDL_Window* hwnd);
 
    void handleWindowCmdImpl(SdlCtrlCommand& cmd);
