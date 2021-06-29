@@ -109,6 +109,8 @@ private:
 
    void createWindowImpl(CreateWindowCmd& cmd);
 
+   void handleBackgroundWindowEvent(SDL_WindowEvent e);
+
    Uint32 glvis_event_type {(Uint32)-1};
    bool sdl_init {false};
    bool sdl_multithread {true};
@@ -117,6 +119,7 @@ private:
 
    // A flag indicating whether the main loop will *begin* terminating
    bool terminating {false};
+   unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> bg_wnd{nullptr, SDL_DestroyWindow};
 
    // -------------------------------------------------------------------------
    // Objects for handling passing of window control commands to the main event

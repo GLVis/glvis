@@ -80,6 +80,22 @@ SdlMainThread::~SdlMainThread() = default;
 void SdlMainThread::MainLoop(bool server_mode)
 {
    this->server_mode = server_mode;
+   if (server_mode)
+   {
+      // Create a hidden window for dock icon and suppressing SDL_QUIT on last
+      // vis window closing
+      int flags = SDL_WINDOW_HIDDEN
+                  | SDL_WINDOW_BORDERLESS
+                  | SDL_WINDOW_ALLOW_HIGHDPI;
+      SDL_Window* bg_wnd_handle = SDL_CreateWindow("GLVis",
+                                                   SDL_WINDOWPOS_CENTERED,
+                                                   SDL_WINDOWPOS_CENTERED,
+                                                   1,
+                                                   1,
+                                                   flags);
+      setWindowIcon(bg_wnd_handle);
+      bg_wnd.reset(bg_wnd_handle);
+   }
    while (1)
    {
       // Process all pending window commands
@@ -93,22 +109,15 @@ void SdlMainThread::MainLoop(bool server_mode)
       {
          handleWindowCmdImpl(cmd);
       }
-      // Check if all windows have been closed. Exiting via shortcut 'q' won't
-      // generate an SDL_QUIT event that can be handled in DispatchSDLEvents().
-      if (num_windows == 0)
+      // Check if all windows have been closed, and we're not in server mode.
+      // Exiting via shortcut 'q' won't generate an SDL_QUIT event that can be
+      // handled in DispatchSDLEvents().
+      if (num_windows == 0 && !server_mode)
       {
          terminating = true;
       }
 
       DispatchSDLEvents();
-
-      // If we're running in server mode, prompt to make sure user wants to
-      // exit out of server process
-      if (terminating && server_mode)
-      {
-         bool queryQuit = exitDialog();
-         if (!queryQuit) { terminating = false; }
-      }
 
       // At this point, we're ready to start cleaning up
       if (terminating)
@@ -170,6 +179,10 @@ void SdlMainThread::DispatchSDLEvents()
             break;
          case SDL_WINDOWEVENT:
             windowId = getWindowID(e.window);
+            if (server_mode && (windowId == SDL_GetWindowID(bg_wnd.get())))
+            {
+               handleBackgroundWindowEvent(e.window);
+            }
             break;
          case SDL_FINGERDOWN:
             fingers.insert(e.tfinger.fingerId);
@@ -227,6 +240,15 @@ void SdlMainThread::DispatchSDLEvents()
          // Wake up the worker thread anyways, to execute onIdle
          wnd->queueEvents({});
       }
+   }
+}
+
+void SdlMainThread::handleBackgroundWindowEvent(SDL_WindowEvent e)
+{
+   // Background window should always stay hidden.
+   if (e.event == SDL_WINDOWEVENT_SHOWN)
+   {
+      SDL_HideWindow(bg_wnd.get());
    }
 }
 
