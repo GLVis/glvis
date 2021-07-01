@@ -25,6 +25,8 @@ Version 4.0.1 (development)
 - Added a new regression test suite based on generated screenshots of stream
   files.
 
+- Fixed an issue with black screenshots on certain OpenGL implementations.
+
 
 Version 4.0, released on Dec 11, 2020
 =====================================
