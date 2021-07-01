@@ -22,6 +22,9 @@ Version 4.0.1 (development)
 
 - Replace pthreads and POSIX-specific code with C++11 standard thread library.
 
+- Added a new regression test suite based on generated screenshots of stream
+  files.
+
 
 Version 4.0, released on Dec 11, 2020
 =====================================
