@@ -147,7 +147,7 @@ jobs:
         build-system: ${{ matrix.build-system }}
         mpi: ${{ matrix.mpi }}
 
-    # Install GlVis dependencies with package manager
+    # Install GLVis dependencies with package manager
     - name: get deps (Linux)
       if: matrix.os == 'ubuntu-20.04'
       run: |
@@ -225,8 +225,6 @@ jobs:
     - name: upload test screenshots
       if: matrix.build-system == 'cmake'
       uses: actions/upload-artifact@v2
-      with: 
+      with:
         name: test-screenshots-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}
         path: glvis/build/test_screenshots.tar.gz
-
-

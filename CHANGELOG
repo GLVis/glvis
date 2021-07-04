@@ -23,7 +23,7 @@ Version 4.0.1 (development)
 - Replace pthreads and POSIX-specific code with C++11 standard thread library.
 
 - Added a new regression test suite based on generated screenshots of stream
-  files.
+  files. See the README in the tests directory for more details.
 
 - Fixed an issue with black screenshots on certain OpenGL implementations.
 
