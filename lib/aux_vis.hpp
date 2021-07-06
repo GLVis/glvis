@@ -126,4 +126,6 @@ GlVisFont * GetFont();
 bool SetFont(const vector<std::string>& patterns, int height);
 void SetFont(const std::string& fn);
 
+void SetUseHiDPI(bool status);
+
 #endif

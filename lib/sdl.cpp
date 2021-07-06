@@ -47,6 +47,7 @@ using std::endl;
 
 extern int GetMultisample();
 extern int visualize;
+extern bool wndUseHiDPI;
 
 struct SdlWindow::Handle
 {
@@ -232,10 +233,14 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
 
    Uint32 win_flags = SDL_WINDOW_OPENGL;
    // Hide window until we adjust its size for high-dpi displays
-   win_flags |= SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN;
+   win_flags |= SDL_WINDOW_HIDDEN;
 #ifndef __EMSCRIPTEN__
    win_flags |= SDL_WINDOW_RESIZABLE;
 #endif
+   if (wndUseHiDPI)
+   {
+      win_flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+   }
    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
    probeGLContextSupport(legacyGlOnly);
@@ -358,6 +363,7 @@ bool SdlWindow::createWindow(const char * title, int x, int y, int w, int h,
 
    // Detect if we are using a high-dpi display and resize the window unless it
    // was already resized by SDL's underlying backend.
+   if (wndUseHiDPI)
    {
       int scr_w, scr_h, pix_w, pix_h, wdpi, hdpi;
       // SDL_GetWindowSize() -- size in "screen coordinates"

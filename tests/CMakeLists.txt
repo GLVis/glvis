@@ -48,7 +48,7 @@ foreach(test_name IN LISTS stream_tests)
            -e ${CMAKE_CURRENT_BINARY_DIR}/../glvis
            -s ${CMAKE_CURRENT_SOURCE_DIR}/data/streams/${test_name}.saved
            -b ${CMAKE_CURRENT_SOURCE_DIR}/data/baselines
-           -a "-lw 1 -mslw 1")
+           -a "-lw 1 -mslw 1 -nohidpi")
 
 endforeach()
 

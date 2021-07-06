@@ -47,6 +47,7 @@ float line_w_aa = gl3::LINE_WIDTH_AA;
 
 SdlWindow * wnd = nullptr;
 bool wndLegacyGl = false;
+bool wndUseHiDPI = false;
 
 SdlWindow * GetAppWindow()
 {
@@ -61,6 +62,11 @@ VisualizationScene * GetVisualizationScene()
 void SetLegacyGLOnly(bool status)
 {
    wndLegacyGl = true;
+}
+
+void SetUseHiDPI(bool status)
+{
+   wndUseHiDPI = status;
 }
 
 void MyExpose(GLsizei w, GLsizei h);
