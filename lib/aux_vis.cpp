@@ -871,7 +871,7 @@ int Screenshot(const char *fname, bool convert)
       cerr << "Screenshot: reading image data from front buffer..." << endl;
 #endif
       MFEM_WARNING("Screenshot: Reading from the front buffer is unreliable. "
-           << " Resulting screenshots may be incorrect." << endl);
+                   << " Resulting screenshots may be incorrect." << endl);
       glReadBuffer(GL_FRONT);
    }
 #if defined(GLVIS_USE_LIBTIFF)
