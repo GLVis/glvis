@@ -11,11 +11,11 @@
 
 Automated testing for GLVis
 ===========================
-This directory contains scripts and data for testing GLVis.
+This directory contains scripts and data for regression testing of GLVis:
 
 - `glvis_driver.py` is a Python script for running test cases and performing
   comparisons on generated screenshots. Currently, the only supported mode is
-  **stream-based testing**, where given a saved input stream, commands are added
+  *stream-based testing*, where given a saved input stream, commands are added
   to the end of the stream to generate a screenshot and exit. This screenshot
   can then be compared against a baseline image.
 
@@ -23,8 +23,8 @@ This directory contains scripts and data for testing GLVis.
   repository, [GLVis/data](https://github.com/GLVis/data), which is then linked
   into this repository as a submodule under the directory data.
 
-  To fetch the test data submodule, call `git submodule update --init` in your
-  clone of this repository.
+  To fetch the test data submodule, call `git submodule update --init` in an
+  existing clone of this repository.
 
 Dependencies
 ------------
@@ -37,7 +37,7 @@ The tests also expect `.png` images, so GLVis should be build with PNG support.
 
 CMake-based testing
 -------------------
-Our test cases for automated testing are defined using `CTest`, and can be found
+The test cases for automated testing are defined using `CTest`, and can be found
 in the `CMakeLists.txt` file in this directory. This is the method that is used
 by the Github Actions tests.
 
@@ -49,16 +49,20 @@ To run all the tests:
 
 Standalone testing
 ------------------
-You may want to run an individual test case, or CMake-based testing might not be
-available to you if you are using the makefile-based build system.
-
-The command to run the driver standalone is below:
+You can also run an individual test case outside of `CTest`, with the following
+command:
 
 ```sh
-  python3 glvis_driver.py -e [path to glvis] \
-                          -s [path to stream file] \
-                          -b [path to stream baseline *directory*] \
-                          -a [additional commands to pass to glvis]
+python3 glvis_driver.py -e [path to glvis] \
+                        -s [path to stream file] \
+                        -b [path to stream baseline *directory*] \
+                        -a [additional commands to pass to glvis]
+```
+
+for example
+
+```sh
+python3 glvis_driver.py -e ../glvis -s data/streams/shaper.saved -b data/baselines -a "-lw 1 -mslw 1"
 ```
 
 A screenshot named "test.[stream file name].png" will be generated. If no path
