@@ -85,7 +85,6 @@ def test_stream(exec_path, exec_args, save_file, baseline):
     test_name = os.path.basename(save_file)
     print("Testing {}...".format(save_file))
 
-
     # Create new stream file with command to screenshot and close
     stream_data = None
     with open(save_file) as in_f:
@@ -113,7 +112,6 @@ def test_stream(exec_path, exec_args, save_file, baseline):
     else:
         print("[IGNORE] No baseline exists to compare against.")
         return True
-
 
 def test_cmd(exec_path, exec_args, tgroup, baseline):
     try:
