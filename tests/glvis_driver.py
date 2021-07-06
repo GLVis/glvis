@@ -4,6 +4,11 @@ import os
 from skimage.io import imread
 from skimage.metrics import peak_signal_noise_ratio
 
+# Below are key commands that are passed to the -keys command-line argument for
+# glvis in order to perform testing on raw mesh/grid function data (i.e. non-
+# streams).
+#
+# Currently not in use.
 test_cases = {
     "magnify": "*****",
     "axes1": "a",
@@ -54,6 +59,8 @@ def compare_images(baseline_file, output_file):
         print("[PASS] Images match.")
     return psnr >= 12
 
+# Function to test a given glvis command with a variety of key-based commands.
+# Not currently in use.
 def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
     print("Testing {0}:{1}...".format(t_group, t_name))
     full_screenshot_cmd = cmd + screenshot_keys

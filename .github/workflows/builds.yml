@@ -211,6 +211,8 @@ jobs:
       if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
       run: |
         cd glvis && cd build
+        # xvfb ("X virtual framebuffer") is used to run X applications on
+        # headless Linux systems without graphics hardware.
         xvfb-run --auto-servernum glxinfo
         xvfb-run --auto-servernum ctest --verbose
         tar czvf test_screenshots.tar.gz tests/test.*.png

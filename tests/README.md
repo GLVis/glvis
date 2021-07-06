@@ -68,7 +68,14 @@ python3 glvis_driver.py -e ../glvis -s data/streams/shaper.saved -b data/baselin
 A screenshot named "test.[stream file name].png" will be generated. If no path
 to a stream baseline directory is given, the test will exit; otherwise it will
 attempt to find and open the corresponding screenshot in the baseline directory
-and run a peak signal-to-noise ratio comparison between the two images.
+and compare the two images.
+
+Details: Screenshot-based testing
+---------------------------------
+As implemented in the `glvis_driver.py` test,
+[peak signal-to-noise ratio (PSNR)](https://en.wikipedia.org/wiki/Peak_signal-to-noise_ratio)
+is used to determine similarity between the generated test screenshot and the
+baseline screenshot.
 
 The current cutoff for an image and its baseline is that PSNR must exceed 12dB;
 this is much lower than would normally be expected, but is necessary to handle
