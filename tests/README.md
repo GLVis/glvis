@@ -62,7 +62,7 @@ python3 glvis_driver.py -e [path to glvis] \
 for example
 
 ```sh
-python3 glvis_driver.py -e ../glvis -s data/streams/shaper.saved -b data/baselines -a "-lw 1 -mslw 1"
+python3 glvis_driver.py -e ../glvis -s data/streams/shaper.saved -b data/baselines -a "-lw 1 -mslw 1 -nohidpi"
 ```
 
 A screenshot named "test.[stream file name].png" will be generated. If no path
