@@ -437,6 +437,8 @@ int GLVisCommand::Execute()
       case SCREENSHOT:
       {
          cout << "Command: screenshot: " << flush;
+         // Ensure that we have something to copy from the back buffer
+         MyExpose();
          if (::Screenshot(screenshot_filename.c_str(), true))
          {
             cout << "Screenshot(" << screenshot_filename << ") failed." << endl;

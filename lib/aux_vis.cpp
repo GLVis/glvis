@@ -47,6 +47,7 @@ float line_w_aa = gl3::LINE_WIDTH_AA;
 
 SdlWindow * wnd = nullptr;
 bool wndLegacyGl = false;
+bool wndUseHiDPI = false;
 
 SdlWindow * GetAppWindow()
 {
@@ -61,6 +62,11 @@ VisualizationScene * GetVisualizationScene()
 void SetLegacyGLOnly(bool status)
 {
    wndLegacyGl = true;
+}
+
+void SetUseHiDPI(bool status)
+{
+   wndUseHiDPI = status;
 }
 
 void MyExpose(GLsizei w, GLsizei h);
@@ -314,8 +320,7 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
 
    if (keys)
    {
-      // SendKeySequence(keys);
-      CallKeySequence(keys);
+      SendKeySequence(keys);
    }
    wnd->getRenderer().setPalette(&locscene->palette);
 }
@@ -871,6 +876,8 @@ int Screenshot(const char *fname, bool convert)
 #if GLVIS_DEBUG
       cerr << "Screenshot: reading image data from front buffer..." << endl;
 #endif
+      MFEM_WARNING("Screenshot: Reading from the front buffer is unreliable. "
+                   << " Resulting screenshots may be incorrect." << endl);
       glReadBuffer(GL_FRONT);
    }
 #if defined(GLVIS_USE_LIBTIFF)
@@ -1051,6 +1058,7 @@ void KeyS()
       wnd->screenshot(fname);
       cout << "done" << endl;
    }
+   SendExposeEvent();
 }
 
 inline GL2PSvertex CreatePrintVtx(gl3::FeedbackVertex v)
