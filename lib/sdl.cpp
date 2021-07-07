@@ -192,25 +192,8 @@ void SdlWindow::windowEvent(SDL_WindowEvent& ew)
          break;
       case SDL_WINDOWEVENT_MOVED:
       case SDL_WINDOWEVENT_RESIZED:
-#ifdef SDL_VIDEO_DRIVER_COCOA
-      {
-         // On SDL, when the OpenGL context is on a separate thread from the
-         // main thread, the call to [NSOpenGLContext update] after a resize or
-         // move event is only scheduled for after the next swap event. Any
-         // rendering/OpenGL commands occuring before this update will be
-         // corrupted.
-         //
-         // To avoid this issue, we just call [NSOpenGLContext update]
-         // immediately after the resize/move event.
-         SdlCocoaPlatform* platform =
-            dynamic_cast<SdlCocoaPlatform*>(GetMainThread().GetPlatform());
-         if (platform)
-         {
-            platform->ContextUpdate();
-         }
-      }
-#endif
-      break;
+         update_before_expose = true;
+         break;
       default:
          break;
    }
@@ -446,6 +429,26 @@ void SdlWindow::mainIter()
    }
    if (wnd_state == RenderState::ExposePending)
    {
+#ifdef SDL_VIDEO_DRIVER_COCOA
+      if (update_before_expose)
+      {
+         // On SDL, when the OpenGL context is on a separate thread from the
+         // main thread, the call to [NSOpenGLContext update] after a resize or
+         // move event is only scheduled for after the next swap event. Any
+         // rendering/OpenGL commands occuring before this update will be
+         // corrupted.
+         //
+         // To avoid this issue, we just call [NSOpenGLContext update]
+         // immediately before the expose event.
+         SdlCocoaPlatform* platform =
+            dynamic_cast<SdlCocoaPlatform*>(GetMainThread().GetPlatform());
+         if (platform)
+         {
+            platform->ContextUpdate();
+         }
+         update_before_expose = false;
+      }
+#endif
       onExpose();
       wnd_state = RenderState::SwapPending;
    }
@@ -579,7 +582,8 @@ void SdlWindow::setWindowTitle(const char * title)
 void SdlWindow::setWindowSize(int w, int h)
 {
    GetMainThread().SetWindowSize(handle, pixel_scale_x*w, pixel_scale_y*h);
-   swap_before_expose = true;
+   update_before_expose = true;
+
 }
 
 void SdlWindow::setWindowPos(int x, int y)
@@ -591,7 +595,7 @@ void SdlWindow::setWindowPos(int x, int y)
    GetMainThread().SetWindowPosition(handle,
                                      uc_x ? x : pixel_scale_x*x,
                                      uc_y ? y : pixel_scale_y*y);
-   swap_before_expose = true;
+   update_before_expose = true;
 }
 
 void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)

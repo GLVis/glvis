@@ -120,7 +120,7 @@ private:
 
    RenderState wnd_state{RenderState::Updated};
 
-   bool swap_before_expose{false};
+   bool update_before_expose{false};
 
    //bool requiresExpose;
    bool takeScreenshot{false};
