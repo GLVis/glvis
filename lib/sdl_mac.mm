@@ -25,7 +25,7 @@ inline bool AtLeastVersion(SDL_version sdl_ver, int major, int minor, int patch)
 {
    return ((sdl_ver.major > major) ||
            (sdl_ver.major == major && sdl_ver.minor > minor) ||
-           (sdl_ver.major == major && sdl_ver.minor == minor && sdl_ver.patch > patch));
+           (sdl_ver.major == major && sdl_ver.minor == minor && sdl_ver.patch >= patch));
 }
 
 void SdlCocoaPlatform::WaitEvent()
