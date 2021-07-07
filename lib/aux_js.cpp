@@ -16,10 +16,10 @@
 #include <emscripten/bind.h>
 #include <emscripten/html5.h>
 
-std::string plot_caption;
-std::string extra_caption; // used in extern context
-thread_local mfem::GeometryRefiner
-GLVisGeometryRefiner; // used in extern context
+// used in extern context
+thread_local std::string plot_caption;
+thread_local std::string extra_caption;
+thread_local mfem::GeometryRefiner GLVisGeometryRefiner;
 
 static VisualizationSceneScalarData * vs = nullptr;
 StreamState stream_state;
