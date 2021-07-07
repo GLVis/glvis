@@ -69,8 +69,8 @@ SdlMainThread::SdlMainThread()
 
    SDL_version sdl_ver;
    SDL_GetVersion(&sdl_ver);
-   std::cerr << "Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor
-             << "." << (int)sdl_ver.patch << std::endl;
+   PRINT_DEBUG("Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor
+               << "." << (int)sdl_ver.patch << std::endl);
 
    sdl_init = true;
 }
