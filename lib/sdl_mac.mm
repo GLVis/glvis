@@ -32,8 +32,10 @@ void SdlCocoaPlatform::WaitEvent()
 {
    @autoreleasepool
    {
+      // We timeout the poll call after 500ms, just in case a pending SDL_QUIT
+      // needs to be pumped into the SDL event queue
       [NSApp nextEventMatchingMask:NSEventMaskAny
-             untilDate:[NSDate distantFuture]
+             untilDate:[NSDate dateWithTimeIntervalSinceNow:0.500]
              inMode:NSDefaultRunLoopMode
              dequeue:NO];
    }

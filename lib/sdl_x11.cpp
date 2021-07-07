@@ -109,7 +109,9 @@ void SdlX11Platform::WaitEvent()
    int nstr;
    do
    {
-      nstr = poll(pfd.data(), pfd.size(), -1);
+      // We timeout the poll call after 500ms, just in case a pending SDL_QUIT
+      // needs to be pumped into the SDL event queue
+      nstr = poll(pfd.data(), pfd.size(), 500);
    }
    while (nstr == -1 && errno == EINTR);
 
