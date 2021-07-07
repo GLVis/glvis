@@ -182,6 +182,7 @@ void SdlWindow::windowEvent(SDL_WindowEvent& ew)
    switch (ew.event)
    {
       case SDL_WINDOWEVENT_EXPOSED:
+         update_before_expose = true;
          if (onExpose)
          {
             wnd_state = RenderState::ExposePending;
