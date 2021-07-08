@@ -7401,9 +7401,6 @@ void Init_Palettes()
    static bool first_init = true;
    if (first_init)
    {
-#ifndef M_PI
-      const double M_PI = std::atan(1) * 4;
-#endif
       // init rainbow palette
       for (int i = 0; i < RGB_Palette_23_Size; i++)
       {

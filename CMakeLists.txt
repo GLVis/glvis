@@ -90,6 +90,8 @@ list(APPEND _glvis_compile_defs "GLVIS_MULTISAMPLE=${GLVIS_MULTISAMPLE}")
 list(APPEND _glvis_compile_defs "GLVIS_MS_LINEWIDTH=${GLVIS_MS_LINEWIDTH}")
 if (NOT WIN32)
   list(APPEND _glvis_compile_defs "GLVIS_USE_LOGO")
+else()
+  list(APPEND _glvis_compile_defs "_USE_MATH_DEFINES")
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug|debug|DEBUG")
