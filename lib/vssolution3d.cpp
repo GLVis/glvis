@@ -2433,17 +2433,25 @@ void VisualizationSceneSolution3d::CutRefinedElement(
 
    for (int i = 0; i < num_elems; i++)
    {
+      Geometry::Type egeom = geom;
       int vert_flag[8], cut_edges[8];
       const int *elem = elems + i*nv;
       const int *edge_vert;
-      int n = 0, n2;
+      int n = 0, n2, nev = 0;
       for (int j = 0; j < nv; j++)
       {
+         if (elem[j] < 0)
+         {
+            // This appears to be a tetrahedral subelement of a refined pyramid
+            egeom = Geometry::TETRAHEDRON;
+            break;
+         }
+         nev++;
          vert_flag[j] = (vert_dist(elem[j]) >= 0.0) ? n++, 1 : 0;
       }
-      if (n == 0 || n == nv) { continue; }
+      if (n == 0 || n == nev) { continue; }
 
-      CutElement(geom, vert_flag, &edge_vert, cut_edges, &n, &n2);
+      CutElement(egeom, vert_flag, &edge_vert, cut_edges, &n, &n2);
       // n  = number of intersected edges
       // n2 = number of intersected edges, second polygon
 
