@@ -18,6 +18,14 @@ class SdlCocoaPlatform final : public SdlNativePlatform
 public:
    void WaitEvent();
    void SendEvent();
+
+   void ContextUpdate();
+
+   // TODO: Workaround methods for SDL 2.0.12, delete in follow-up PR
+   bool UseThreadWorkaround() const;
+   void ClearCurrentContext(int wnd_id);
+   void SetCurrentContext(int wnd_id);
+   void SwapWindow();
 };
 
 #endif

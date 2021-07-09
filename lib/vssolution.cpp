@@ -24,9 +24,9 @@ using namespace mfem;
 using namespace std;
 
 
-VisualizationSceneSolution *vssol;
-extern VisualizationScene  *locscene;
-extern GeometryRefiner GLVisGeometryRefiner;
+thread_local VisualizationSceneSolution *vssol;
+extern thread_local VisualizationScene  *locscene;
+extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 #ifdef GLVIS_ISFINITE
 /* This test for INFs or NaNs is the same as the one used in hypre's PCG and

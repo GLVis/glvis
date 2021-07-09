@@ -125,6 +125,9 @@ GLVIS_MS_LINEWIDTH ?= $(if $(NOTMAC),1.4,1.0)
 DEFINES = -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
  -DGLVIS_MS_LINEWIDTH=$(GLVIS_MS_LINEWIDTH)\
  -DGLVIS_OGL3
+# Enable logo setting via SDL (disabled on Windows/CMake build)
+DEFINES += -DGLVIS_USE_LOGO
+
 GLVIS_FLAGS += $(DEFINES)
 
 # We don't want most of the stuff below because Emscripten handles that for us
@@ -215,10 +218,12 @@ ALL_SOURCE_FILES = \
  lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp \
  lib/gl/shader.cpp lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp lib/font.cpp \
  lib/gl2ps.c lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp \
- lib/stream_reader.cpp lib/threads.cpp lib/vsdata.cpp lib/vssolution.cpp \
- lib/vssolution3d.cpp lib/vsvector.cpp lib/vsvector3d.cpp
+ lib/sdl_helper.cpp lib/sdl_main.cpp lib/stream_reader.cpp lib/threads.cpp \
+ lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp \
+ lib/vsvector3d.cpp
 OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl_mac.mm)
-DESKTOP_ONLY_SOURCE_FILES = lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c
+DESKTOP_ONLY_SOURCE_FILES = \
+ lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c lib/sdl_x11.cpp
 WEB_ONLY_SOURCE_FILES = lib/aux_js.cpp
 LOGO_FILE = share/logo.rgba
 LOGO_FILE_CPP = $(LOGO_FILE).bin.cpp
@@ -231,9 +236,9 @@ HEADER_FILES = \
  lib/gl/shader.hpp lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp \
  lib/gl/types.hpp lib/aux_vis.hpp lib/font.hpp lib/geom_utils.hpp lib/gl2ps.h \
  lib/logo.hpp lib/material.hpp lib/openglvis.hpp lib/palettes.hpp lib/sdl.hpp \
- lib/sdl_helper.hpp lib/sdl_mac.hpp lib/sdl_x11.hpp lib/stream_reader.hpp \
- lib/threads.hpp lib/visual.hpp lib/vsdata.hpp lib/vssolution.hpp \
- lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp
+ lib/sdl_helper.hpp lib/sdl_mac.hpp lib/sdl_main.hpp lib/sdl_x11.hpp \
+ lib/stream_reader.hpp lib/threads.hpp lib/visual.hpp lib/vsdata.hpp \
+ lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp
 
 DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) $(DESKTOP_ONLY_SOURCE_FILES) $(LOGO_FILE_CPP)
 WEB_SOURCE_FILES     = $(COMMON_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES)
