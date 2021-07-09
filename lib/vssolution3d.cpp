@@ -3078,6 +3078,7 @@ int VisualizationSceneSolution3d::GetPyramidFaceSplits(
 }
 
 void VisualizationSceneSolution3d::DrawRefinedPyramidLevelSurf(
+   gl3::GlDrawable& target,
    const DenseMatrix &verts, const Vector &vals, const int *RG, const int np,
    const int face_splits, const DenseMatrix *grad)
 {
@@ -3094,16 +3095,16 @@ void VisualizationSceneSolution3d::DrawRefinedPyramidLevelSurf(
          for (int j = 0; j < 2; j++)
          {
             int m_ind[4];
-	    for (int i = 0; i < 4; i++)
-	    {
+            for (int i = 0; i < 4; i++)
+            {
                m_ind[i] = hv[pyr_tets[j][i]];
-	    }
-	    DrawTetLevelSurf(verts, vals, m_ind, levels, grad);
-	 }
+            }
+            DrawTetLevelSurf(target, verts, vals, m_ind, levels, grad);
+         }
       }
       else
       {
-	 DrawTetLevelSurf(verts, vals, hv, levels, grad);
+         DrawTetLevelSurf(target, verts, vals, hv, levels, grad);
       }
    }
 #else
@@ -3642,7 +3643,7 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
             {
                mesh->GetElementFaces(ie, faces, ofaces);
                const int fs = GetPyramidFaceSplits(quad_diag, faces, ofaces);
-               DrawRefinedPyramidLevelSurf(pointmat, vals, ident, 1, fs);
+               DrawRefinedPyramidLevelSurf(lsurf_buf, pointmat, vals, ident, 1, fs);
             }
             case Element::WEDGE:
             {
@@ -3699,7 +3700,7 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
          {
             mesh->GetElementFaces(ie, faces, ofaces);
             const int fs = GetPyramidFaceSplits(quad_diag, faces, ofaces);
-            DrawRefinedPyramidLevelSurf(pointmat, vals, RG, nre, fs, gp);
+            DrawRefinedPyramidLevelSurf(lsurf_buf, pointmat, vals, RG, nre, fs, gp);
          }
          else if (geom == Geometry::PRISM)
          {

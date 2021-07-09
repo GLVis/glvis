@@ -66,9 +66,10 @@ protected:
                          const DenseMatrix *grad = NULL);
 
    static int GetPyramidFaceSplits(const Array<bool> &quad_diag,
-				   const Array<int> &faces,
-				   const Array<int> &ofaces);
+                                   const Array<int> &faces,
+                                   const Array<int> &ofaces);
    void DrawRefinedPyramidLevelSurf(
+      gl3::GlDrawable& target,
       const DenseMatrix &verts, const Vector &vals, const int *RG, const int np,
       const int face_splits, const DenseMatrix *grad = NULL);
 
