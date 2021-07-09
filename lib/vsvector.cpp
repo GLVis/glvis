@@ -1,13 +1,13 @@
-// Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
-// the Lawrence Livermore National Laboratory. LLNL-CODE-443271. All Rights
-// reserved. See file COPYRIGHT for details.
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+// at the Lawrence Livermore National Laboratory. All Rights reserved. See files
+// LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.org.
+// information and source code availability see https://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
-// terms of the GNU Lesser General Public License (as published by the Free
-// Software Foundation) version 2.1 dated February 1999.
+// terms of the BSD-3 license. We welcome feedback and contributions, see file
+// CONTRIBUTING.md for details.
 
 #include <cstdlib>
 #include <iostream>
@@ -20,78 +20,83 @@ using namespace mfem;
 
 using namespace std;
 
-static void VectorKeyHPressed()
+std::string VisualizationSceneVector::GetHelpString() const
 {
-   cout << endl
-        << "+------------------------------------+" << endl
-        << "| Keys                               |" << endl
-        << "+------------------------------------+" << endl
-        << "| a -  Displays/Hides the axes       |" << endl
-        << "| A -  Turns antialiasing on/off     |" << endl
-        << "| b -  Displacements step back       |" << endl
-        << "| B -  Displays/Hides the boundary   |" << endl
-        << "| c -  Toggle colorbar and caption   |" << endl
-        << "| C -  Change the main plot caption  |" << endl
-        << "| d -  Displays/Hides displacements  |" << endl
-        << "| e -  Displays/Hides the elements   |" << endl
-        << "| f -  Smooth/Flat shading           |" << endl
-        << "| g -  Toggle background             |" << endl
-        << "| h -  Displays help menu            |" << endl
-        << "| i -  (De)refine elem. (NC shading) |" << endl
-        << "| I -  Switch 'i' func. (NC shading) |" << endl
-        << "| j -  Turn on/off perspective       |" << endl
-        << "| k/K  Adjust the transparency level |" << endl
-        << "| ,/<  Adjust color transparency     |" << endl
-        << "| l -  Turns on/off the light        |" << endl
-        << "| L -  Toggle logarithmic scale      |" << endl
-        << "| m -  Displays/Hides the mesh       |" << endl
-        << "| n -  Displacements step forward    |" << endl
-        << "| N -  Cycle through numberings      |" << endl
-        << "| p/P  Cycle through color palettes  |" << endl
-        << "| q -  Quits                         |" << endl
-        << "| r -  Reset the plot to 3D view     |" << endl
-        << "| R -  Reset the plot to 2D view     |" << endl
-        << "| s -  Turn on/off unit cube scaling |" << endl
-        << "| S -  Take snapshot/Record a movie  |" << endl
-        << "| t -  Cycle materials and lights    |" << endl
-        << "| \\ -  Set light source position     |" << endl
-        << "| v -  Cycle through vector fields   |" << endl
-        << "| V -  Change the arrows scaling     |" << endl
-        << "| Ctrl+p - Print to a PDF file       |" << endl
-        << "+------------------------------------+" << endl
-        << "| Function keys                      |" << endl
-        << "+------------------------------------+" << endl
-        << "| F1 - X window info and keystrokes  |" << endl
-        << "| F2 - Update colors, etc.           |" << endl
-        << "| F3/F4 - Shrink/Zoom elements       |" << endl
-        << "| F5 - Set level lines               |" << endl
-        << "| F6 - Palette options               |" << endl
-        << "| F7 - Manually set min/max value    |" << endl
-        << "| F8 - List of subdomains to show    |" << endl
-        << "| F9/F10 - Walk through subdomains   |" << endl
-        << "| F11/F12 - Shrink/Zoom subdomains   |" << endl
-        << "+------------------------------------+" << endl
-        << "| Keypad                             |" << endl
-        << "+------------------------------------+" << endl
-        << "| 1-9  Small rotation, reset with 5  |" << endl
-        << "| *,/  Scale up/down                 |" << endl
-        << "| +/-  Change z-scaling              |" << endl
-        << "| . -  Start/stop spinning           |" << endl
-        << "| 0/Enter - Spinning speed and dir.  |" << endl
-        << "+------------------------------------+" << endl
-        << "| Mouse                              |" << endl
-        << "+------------------------------------+" << endl
-        << "| left   btn    - Rotation           |" << endl
-        << "| middle btn    - Translation        |" << endl
-        << "| right  btn    - Scaling            |" << endl
-        << "| left  + Alt   - Tilt               |" << endl
-        << "| left  + Shift - Spinning           |" << endl
-        << "| right + Shift - Change light pos.  |" << endl
-        << "| left  + Ctrl  - Spherical rotation |" << endl
-        << "| middle+ Ctrl  - Object translation |" << endl
-        << "| right + Ctrl  - Object scaling     |" << endl
-        << "| left  + Ctrl + Shift - z-Spinning  |" << endl
-        << "+------------------------------------+" << endl;
+   std::stringstream os;
+   os << endl
+      << "+------------------------------------+" << endl
+      << "| Keys                               |" << endl
+      << "+------------------------------------+" << endl
+      << "| a -  Displays/Hides the axes       |" << endl
+      << "| A -  Turns antialiasing on/off     |" << endl
+      << "| b -  Displacements step back       |" << endl
+      << "| B -  Displays/Hides the boundary   |" << endl
+      << "| c -  Toggle colorbar and caption   |" << endl
+      << "| C -  Change the main plot caption  |" << endl
+      << "| d -  Displays/Hides displacements  |" << endl
+      << "| e -  Displays/Hides the elements   |" << endl
+      << "| f -  Smooth/Flat shading           |" << endl
+      << "| g -  Toggle background             |" << endl
+      << "| h -  Displays help menu            |" << endl
+      << "| i -  Toggle the cutting plane      |" << endl
+      << "| j -  Turn on/off perspective       |" << endl
+      << "| k/K  Adjust the transparency level |" << endl
+      << "| ,/<  Adjust color transparency     |" << endl
+      << "| l -  Turns on/off the light        |" << endl
+      << "| L -  Toggle logarithmic scale      |" << endl
+      << "| m -  Displays/Hides the mesh       |" << endl
+      << "| n -  Displacements step forward    |" << endl
+      << "| N -  Cycle through numberings      |" << endl
+      << "| o -  (De)refine elem. (NC shading) |" << endl
+      << "| O -  Switch 'o' func. (NC shading) |" << endl
+      << "| p/P  Cycle through color palettes  |" << endl
+      << "| q -  Quits                         |" << endl
+      << "| r -  Reset the plot to 3D view     |" << endl
+      << "| R -  Reset the plot to 2D view     |" << endl
+      << "| s -  Turn on/off unit cube scaling |" << endl
+      << "| S -  Take snapshot/Record a movie  |" << endl
+      << "| t -  Cycle materials and lights    |" << endl
+      << "| u -  Vector sampling; scalar func. |" << endl
+      << "| U -  Switch 'u' functionality      |" << endl
+      << "| v -  Cycle through vector fields   |" << endl
+      << "| V -  Change the arrows scaling     |" << endl
+      << "| \\ -  Set light source position     |" << endl
+      << "| Ctrl+p - Print to a PDF file       |" << endl
+      << "+------------------------------------+" << endl
+      << "| Function keys                      |" << endl
+      << "+------------------------------------+" << endl
+      << "| F1 - X window info and keystrokes  |" << endl
+      << "| F2 - Update colors, etc.           |" << endl
+      << "| F3/F4 - Shrink/Zoom elements       |" << endl
+      << "| F5 - Set level lines               |" << endl
+      << "| F6 - Palette options               |" << endl
+      << "| F7 - Manually set min/max value    |" << endl
+      << "| F8 - List of subdomains to show    |" << endl
+      << "| F9/F10 - Walk through subdomains   |" << endl
+      << "| F11/F12 - Shrink/Zoom subdomains   |" << endl
+      << "+------------------------------------+" << endl
+      << "| Keypad                             |" << endl
+      << "+------------------------------------+" << endl
+      << "| 1-9  Small rotation, reset with 5  |" << endl
+      << "| *,/  Scale up/down                 |" << endl
+      << "| +/-  Change z-scaling              |" << endl
+      << "| . -  Start/stop spinning           |" << endl
+      << "| 0/Enter - Spinning speed and dir.  |" << endl
+      << "+------------------------------------+" << endl
+      << "| Mouse                              |" << endl
+      << "+------------------------------------+" << endl
+      << "| left   btn    - Rotation           |" << endl
+      << "| middle btn    - Translation        |" << endl
+      << "| right  btn    - Scaling            |" << endl
+      << "| left  + Alt   - Tilt               |" << endl
+      << "| left  + Shift - Spinning           |" << endl
+      << "| right + Shift - Change light pos.  |" << endl
+      << "| left  + Ctrl  - Spherical rotation |" << endl
+      << "| middle+ Ctrl  - Object translation |" << endl
+      << "| right + Ctrl  - Object scaling     |" << endl
+      << "| left  + Ctrl + Shift - z-Spinning  |" << endl
+      << "+------------------------------------+" << endl;
+   return os.str();
 }
 
 VisualizationSceneVector  * vsvector;
@@ -484,9 +489,6 @@ void VisualizationSceneVector::Init()
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
    }
 
-   vectorlist = glGenLists(1);
-   displinelist = glGenLists(1);
-
    VisualizationSceneSolution::Init();
 
    PrepareVectorField();
@@ -499,17 +501,14 @@ void VisualizationSceneVector::Init()
    {
       // init = 1;
 
-      auxKeyFunc (AUX_h, VectorKeyHPressed);
-      auxKeyFunc (AUX_H, VectorKeyHPressed);
-
-      auxKeyFunc (AUX_d, KeyDPressed);
-      auxKeyFunc (AUX_D, KeyDPressed);
-      auxKeyFuncReplace(AUX_n, KeyNPressed);
-      auxKeyFuncReplace(AUX_b, KeyBPressed);
-      auxKeyFunc (AUX_v, KeyvPressed);
-      auxKeyFunc (AUX_V, KeyVPressed);
-      auxKeyFunc (AUX_u, KeyuPressed);
-      auxKeyFunc (AUX_U, KeyUPressed);
+      wnd->setOnKeyDown('d', KeyDPressed);
+      wnd->setOnKeyDown('D', KeyDPressed);
+      wnd->setOnKeyDown('n', KeyNPressed);
+      wnd->setOnKeyDown('b', KeyBPressed);
+      wnd->setOnKeyDown('v', KeyvPressed);
+      wnd->setOnKeyDown('V', KeyVPressed);
+      wnd->setOnKeyDown('u', KeyuPressed);
+      wnd->setOnKeyDown('U', KeyUPressed);
    }
 
    // Vec2Scalar is VecLength
@@ -518,9 +517,6 @@ void VisualizationSceneVector::Init()
 
 VisualizationSceneVector::~VisualizationSceneVector()
 {
-   glDeleteLists (displinelist, 1);
-   glDeleteLists (vectorlist, 1);
-
    delete sol;
 
    if (VecGridF)
@@ -661,23 +657,26 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
    double zc = 0.5*(z[0]+z[1]);
 
    // prepare the displaced mesh
-   glNewList(displinelist, GL_COMPILE);
-
+   displine_buf.clear();
+   gl3::GlBuilder build = displine_buf.createBuilder();
    if (shading != 2)
    {
       for (i = 0; i < ne; i++)
       {
-         glBegin(GL_LINE_LOOP);
+         build.glBegin(GL_LINE_LOOP);
          mesh->GetPointMatrix (i, pointmat);
          mesh->GetElementVertices (i, vertices);
 
          for (j = 0; j < pointmat.Size(); j++)
-            glVertex3d (pointmat.Elem(0, j)+
-                        (*solx)(vertices[j])*(ianim)/ianimmax,
-                        pointmat.Elem(1, j)+
-                        (*soly)(vertices[j])*(ianim)/ianimmax,
-                        zc);
-         glEnd();
+         {
+            build.glVertex3d (
+               pointmat.Elem(0, j)+
+               (*solx)(vertices[j])*(ianim)/ianimmax,
+               pointmat.Elem(1, j)+
+               (*soly)(vertices[j])*(ianim)/ianimmax,
+               zc);
+         }
+         build.glEnd();
       }
    }
    else if (drawdisp < 2)
@@ -693,17 +692,18 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
          VecGridF->GetVectorValues(i, RefG->RefPts, vvals, pm);
 
          Array<int> &RE = RefG->RefEdges;
-
-         glBegin (GL_LINES);
+         build.glBegin (GL_LINES);
          for (int k = 0; k+1 < RE.Size(); k++)
          {
-            glVertex3d (pm(0, RE[k]) + sc * vvals(0, RE[k]),
-                        pm(1, RE[k]) + sc * vvals(1, RE[k]), zc);
+            build.glVertex3d (
+               pm(0, RE[k]) + sc * vvals(0, RE[k]),
+               pm(1, RE[k]) + sc * vvals(1, RE[k]), zc);
             k++;
-            glVertex3d (pm(0, RE[k]) + sc * vvals(0, RE[k]),
-                        pm(1, RE[k]) + sc * vvals(1, RE[k]), zc);
+            build.glVertex3d (
+               pm(0, RE[k]) + sc * vvals(0, RE[k]),
+               pm(1, RE[k]) + sc * vvals(1, RE[k]), zc);
          }
-         glEnd();
+         build.glEnd();
       }
    }
    else
@@ -827,16 +827,16 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
          {
             vals(j) = vvals(0, j);
          }
-         DrawLevelCurves(RG, pm, vals, sides, levels_x, 1);
+         DrawLevelCurves(build, RG, pm, vals, sides, levels_x, 1);
          for (int j = 0; j < vvals.Width(); j++)
          {
             vals(j) = vvals(1, j);
          }
-         DrawLevelCurves(RG, pm, vals, sides, levels_y, 1);
+         DrawLevelCurves(build, RG, pm, vals, sides, levels_y, 1);
       }
    }
 
-   glEndList();
+   updated_bufs.emplace_back(&displine_buf);
 }
 
 double new_maxlen;
@@ -846,11 +846,13 @@ void VisualizationSceneVector::DrawVector(double px, double py, double vx,
 {
    double zc = 0.5*(z[0]+z[1]);
 
+   gl3::GlBuilder builder = vector_buf.createBuilder();
+
    if (drawvector == 1)
    {
       arrow_type = 0;
       arrow_scaling_type = 0;
-      Arrow(px, py, zc, vx, vy, 0.0, 1.0, 1./4./3.);
+      Arrow(builder, px, py, zc, vx, vy, 0.0, 1.0, 1./4./3.);
    }
    else if (drawvector > 0)
    {
@@ -860,16 +862,16 @@ void VisualizationSceneVector::DrawVector(double px, double py, double vx,
       arrow_type = 1;
       arrow_scaling_type = 1;
 
-      MySetColor(cval, minv, maxv);
+      MySetColor(builder, cval, minv, maxv);
 
       if (drawvector == 2)
       {
-         Arrow(px, py, zc, vx, vy, 0.0, h, 0.125);
+         Arrow(builder, px, py, zc, vx, vy, 0.0, h, 0.125);
       }
       else
       {
          double len = VecLength(vx, vy);
-         Arrow(px, py, zc, vx, vy, 0.0,
+         Arrow(builder, px, py, zc, vx, vy, 0.0,
                h*max(0.01, len/maxlen), 0.125);
          if (len > new_maxlen)
          {
@@ -886,13 +888,14 @@ void VisualizationSceneVector::PrepareVectorField()
    {
       rerun = 0;
 
-      glNewList(vectorlist, GL_COMPILE);
+      // glNewList(vectorlist, GL_COMPILE);
+      vector_buf.clear();
 
       if (drawvector > 0)
       {
          int i;
 
-         MySetColorLogscale = logscale;
+         palette.SetUseLogscale(logscale);
          if (drawvector == 3)
          {
             new_maxlen = 0.0;
@@ -947,164 +950,83 @@ void VisualizationSceneVector::PrepareVectorField()
          }
       }
 
-      glEndList();
+      // glEndList();
 
    }
    while (rerun);
+   updated_bufs.emplace_back(&vector_buf);
 }
 
-void VisualizationSceneVector::Draw()
+gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
 {
-   glEnable(GL_DEPTH_TEST);
-
-   Set_Background();
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-   // model transformation
-   ModelView();
-
-   // draw colored faces
-   glPolygonOffset (1, 1);
-   glEnable (GL_POLYGON_OFFSET_FILL);
-   glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
-
-   glDisable(GL_CLIP_PLANE0);
-   // draw colorbar
-   glDisable(GL_LIGHTING);
    if (colorbar)
    {
-      if (drawmesh == 2)
-      {
-         DrawColorBar(minv,maxv,&level);
-      }
-      else
-      {
-         DrawColorBar(minv,maxv);
-      }
+      // update color bar before we get the base class scene
+      PrepareColorBar(minv, maxv, (drawmesh == 2) ? &level : nullptr );
    }
-
-   if (draw_cp)
-   {
-      glClipPlane(GL_CLIP_PLANE0, CuttingPlane->Equation());
-      glEnable(GL_CLIP_PLANE0);
-   }
-
-   Set_Material();
-   if (light)
-   {
-      glEnable(GL_LIGHTING);
-   }
-
-   if (GetUseTexture())
-   {
-      glEnable (GL_TEXTURE_1D);
-      glColor4d(1, 1, 1, 1);
-   }
-
-   // draw vector field
+   gl3::SceneInfo scene = VisualizationSceneScalarData::GetSceneObjs();
+   gl3::RenderParams params = GetMeshDrawParams();
+   params.use_clip_plane = draw_cp;
+   double* cp_eqn = CuttingPlane->Equation();
+   params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};
+   params.contains_translucent = false;
    if (drawvector > 1)
    {
-      glCallList(vectorlist);
+      scene.queue.emplace_back(params, &vector_buf);
    }
-
-   if (MatAlpha < 1.0)
-   {
-      Set_Transparency();
-   }
-
-   // draw elements
+   params.contains_translucent = matAlpha < 1.0;
    if (drawelems)
    {
-      glCallList(displlist);
+      scene.queue.emplace_back(params, &disp_buf);
    }
-
-   if (MatAlpha < 1.0)
-   {
-      Remove_Transparency();
-   }
-
-   if (GetUseTexture())
-   {
-      glDisable (GL_TEXTURE_1D);
-   }
-
-   if (light)
-   {
-      glDisable(GL_LIGHTING);
-   }
-   Set_Black_Material();
-
-   // ruler may have mixture of polygons and lines
+   params.contains_translucent = false;
+   params.mesh_material = BLK_MAT;
+   params.static_color = GetLineColor();
    if (draw_cp)
    {
-      glDisable(GL_CLIP_PLANE0);
-      DrawRuler(logscale);
-      glCallList(cp_list);
-      glEnable(GL_CLIP_PLANE0);
+      params.use_clip_plane = false;
+      scene.queue.emplace_back(params, &cp_buf);
+      params.use_clip_plane = true;
    }
-   else
-   {
-      DrawRuler(logscale);
-   }
-
+   // disable lighting for objects below
+   params.num_pt_lights = 0;
    if (drawbdr)
    {
-      glCallList(bdrlist);
+      scene.queue.emplace_back(params, &bdr_buf);
    }
 
    // draw lines
    if (drawmesh == 1)
    {
-      glCallList(linelist);
+      scene.queue.emplace_back(params, &line_buf);
    }
    else if (drawmesh == 2)
    {
-      glCallList(lcurvelist);
+      scene.queue.emplace_back(params, &lcurve_buf);
    }
 
    // draw numberings
-   if (drawnums)
+   if (drawnums == 1)
    {
-      if (1 == drawnums)
-      {
-         glCallList(e_nums_list);
-      }
-      else if (2 == drawnums)
-      {
-         glCallList(v_nums_list);
-      }
+      scene.queue.emplace_back(params, &e_nums_buf);
+   }
+   else if (drawnums == 2)
+   {
+      scene.queue.emplace_back(params, &v_nums_buf);
    }
 
    if (drawvector == 1)
    {
-      glCallList(vectorlist);
+      scene.queue.emplace_back(params, &vector_buf);
    }
 
    if (drawdisp > 0)
    {
       if (drawmesh == 1)
       {
-         glColor3d(1., 0., 0.);
+         params.static_color = {1.f, 0.f, 0.f, 1.f};
       }
-      glCallList(displinelist);
-      if (drawmesh == 1)
-      {
-         Set_Black_Material();
-      }
+      scene.queue.emplace_back(params, &displine_buf);
    }
-
-   if (draw_cp)
-   {
-      glDisable(GL_CLIP_PLANE0);
-   }
-
-   // draw axes
-   if (drawaxes)
-   {
-      glCallList(axeslist);
-      DrawCoordinateCross();
-   }
-
-   glFlush();
-   auxSwapBuffers();
+   return scene;
 }

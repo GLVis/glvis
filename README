@@ -34,9 +34,10 @@ a partial list of the available functionality. Some of these keys can also be
 provided as input, using the '-k' command-line option and the 'keys' script
 command.
 
-This project is released under the LGPL v2.1 license. See LICENSE file for full
-details.
+GLVis is distributed under the terms of the BSD-3 license. All new contributions
+must be made under this license. See LICENSE and NOTICE for details.
 
+SPDX-License-Identifier: BSD-3-Clause
 LLNL Release Number: LLNL-CODE-443271
 DOI: 10.11578/dc.20171025.1249
 
@@ -88,15 +89,14 @@ e - Toggle the "elements" state (see below for vector functions)
 S - Take an image snapshot or record a movie (in spinning mode).
     By default, the screenshots are taken in png format, using libpng. When
     GLVis is compiled with libtiff support (see INSTALL) then the screenshots
-    are taken internally and saved in TIFF format (.tif extension). There is
-    also the (last resort) option to use the external command 'xwd' generating
-    files with .xwd extension. In all cases, the generated image files can be
-    easily converted to a other image formats using e.g. ImageMagick's 'convert'
-    tool or the GIMP.
+    are taken internally and saved in TIFF format (.tif extension). If both of
+    these options are disabled during the build process, GLVis will use SDL to
+    take screenshots in bmp format, which it will then convert to png if
+    ImageMagick's 'convert' tool is available.
 
 Ctrl+p - Print to a PDF file using gl2ps. Other vector formats (SVG, EPS) are
     also possible, but keep in mind that the printing takes a while and the
-    generated files are big. Requires non-texture mode, see key '!'.
+    generated files are big.
 
 q - Exit
 
@@ -109,18 +109,18 @@ f - Change the shading type (the way the elements and mesh are drawn)
                         at the vertices
                      -> multiple triangles / quads per element, also allowing
                         for the visualization of discontinuous functions and
-                        curvilinear elements (use i/I to control subdivisions)
+                        curvilinear elements (use o/O to control subdivisions)
 
-i/I - Control element subdivisions (2D)
+o/O - Control element subdivisions (2D)
       there are two subdivision factors: -> element subdivision factor s1
                                          -> boundary subdivision factor s2
-I - Cycle through the "subdivision functions", (prints a message in the
+O - Cycle through the "subdivision functions", (prints a message in the
     terminal when changed)
     The options are: -> Increase subdivision factor:      s1 += s2
                      -> Decrease subdivision factor:      s1 -= s2
                      -> Increase bdr subdivision factor:  s2++
                      -> Decrease bdr subdivision factor:  s2--
-i - perform the current "subdivision function"
+o - perform the current "subdivision function"
 
 A - Turn on/off the use of anti-aliasing/multi-sampling
 b - Display/Hide the boundary in 2D scalar mode. Use Shift+F9/F10 to cycle
@@ -141,9 +141,11 @@ arrow keys        - Manual rotation
 1,2,3,4,5,6,7,8,9 - Manual rotation along coordinate axes
 Ctrl+arrow keys   - Translate the viewpoint
 
-w - Toggle clipping (cutting) plane in 2D (see also 'i' in 3D)
-y/Y - Rotate clipping plane (theta) in 2D
-z/Z - Translate clipping plane in 2D
+Ctrl+o - Toggle an element ordering curve in 2D and 3D
+
+i - Toggle cutting (clipping) plane in 2D
+y/Y - Rotate cutting plane (theta) in 2D
+z/Z - Translate cutting plane in 2D
 
 ` - Toggle a ruler, with initial origin at the center of the bounding box. The
     origin can be later moved with '~'.
@@ -152,15 +154,13 @@ z/Z - Translate clipping plane in 2D
                      -> coordinate axes planes
 ~ - Enter new ruler origin
 
-k/K - Adjust the transparency level (works only when texture is off, see '!').
+k/K - Adjust the transparency level.
       The balance of transparency can be further adjusted with ',' and '<'.
 
 ! - Toggle the use of (1D) texture (smooth interpolation of colors)
     The options are: -> use discrete texture, the number of colors used depends
                         on the current palette
                      -> use smooth texture (interpolated from current palette)
-                     -> do not use texture; colors are set at the vertices;
-                        color interpolation may be bad
 
 F3/F4 - Shrink/Zoom each element towards its center, to better visualize the
         different element shapes
@@ -230,21 +230,21 @@ U - Toggle the functionality of 'u' (prints a message in the terminal when
 
 3D data commands
 ================
-i   - Toggle clipping (cutting) plane
+i   - Toggle cutting (clipping) plane
       The options are: -> none
                        -> cut through the elements
-                       -> show only elements behind the clipping plane
-I   - Toggle the clipping plane algorithm used when the option "cut through the
+                       -> show only elements behind the cutting plane
+I   - Toggle the cutting plane algorithm used when the option "cut through the
       elements" is selected. The two algorithms are:
          -> slower, more accurate algorithm for curved meshes (default)
          -> faster algorithm suitable for meshes with planar faces
-x/X - Rotate clipping plane (phi)
-y/Y - Rotate clipping plane (theta)
-z/Z - Translate clipping plane
-E   - Display/Hide the elements in the clipping plane
-M   - Display/Hide the mesh in the clipping plane
+x/X - Rotate cutting plane (phi)
+y/Y - Rotate cutting plane (theta)
+z/Z - Translate cutting plane
+E   - Display/Hide the elements in the cutting plane
+M   - Display/Hide the mesh in the cutting plane
 
-o/O - Refine/de-refine elements (similar to i/I in 2D)
+o/O - Refine/de-refine elements
 
 u/U - Move level surface value up/down
 v/V - Add/Delete a level surface value

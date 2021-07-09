@@ -9,20 +9,76 @@
                               http://glvis.org
 
 
-Version 3.4.1 (development)
+Version 4.0.1 (development)
 ===========================
+- Refactored glvis.cpp to fix a bug in GLVis script handling.
 
-- Added new palette: gray.
+- Enabled support for WebGL 2, when available. This enables, among other
+  features, support for controllable multisampling via framebuffers.
+
+- Various bugfixes and improvements related to the JavaScript version.
+
+- Refactoring of rendering components, including palette and shader handling.
+
+- Replace pthreads and POSIX-specific code with C++11 standard thread library.
+
+
+Version 4.0, released on Dec 11, 2020
+=====================================
+
+Starting with this version, the GLVis open source license is changed to BSD-3.
+
+Unlike previous GLVis releases, this version requires a C++11 compiler.
+
+- Major overhaul and modernization of the GLVis rendering and window management,
+  replacing X Windows with SDL for platform-native window and event handling.
+  This enables OpenGL 3+ support and HiDPI support on Mac OS X.
+
+- Two rendering backends are included: one for legacy OpenGL contexts without
+  support for shaders, and one with full support for modern OpenGL 3 features.
+  The modern OpenGL context is preferred by default; a new command-line argument
+  "-oldgl" can be used to request the legacy backend.
+
+- Preliminary support for building GLVis to JavaScript/WebAssembly using
+  Emscripten, see https://github.com/GLVis/glvis-js.
+
+- Documented project workflow and provided contribution guidelines in the new
+  top-level file, CONTRIBUTING.md.
+
+- Added several perceptually uniform colormaps "turbo", "viridis", "plasma",
+  "fusion", "iceburn", "viola", "pride" and "ocean" from
+  * Google AI: https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
+  * Matplotlib: https://bids.github.io/colormap/
+  * CMasher: https://github.com/1313e/CMasher
+
+- Added support for visualization of the element ordering curve with 'Ctrl+o'.
+
+- Keystroke changes: cutting plane in 2D is now toggled with 'i' instead of 'w',
+  and 2D element subdivision is controlled with 'o/O' instead of 'i/I'. These
+  are the same as the corresponding keystrokes in 3D.
+
+- Improved the 3D cutting plane algorithm for curved elements. The key 'I' can
+  be used to switch to the previous (faster) algorithm which is suitable for
+  meshes with planar faces.
+
+- Updated to support the display and slicing of meshes with wedge elements.
+
+- Improved the opening of parallel meshes/solutions.
+
+- Transparency and printing in textured coloring modes is now supported, and
+  no-texture coloring has been removed as a result.
+
+- FreeType is now a required dependency and text on screen is rendered using a
+  texture atlas.
+
+- Replaced the "deep sea" palette with "ocean". Added new palette: gray.
+
+- Added the ability to discretize a palette, i.e. to use just a prescribed
+  number of its colors, see the new "number of colors" input of the F6 key.
 
 - Added new script and socket command: "palette_repeat" which can be used to
   repeat and reverse/flip the palette - controls the same parameter as the first
   prompt after pressing the F6 key in the GLVis window.
-
-- Improved cutting plane algorithm for curved elements. The key 'I' can be used
-  to switch to the previous (faster) algorithm which is suitable for meshes with
-  planar faces.
-
-- Updated to support the display and slicing of meshes with wedge elements.
 
 - Added a key for setting the bounding box from the terminal (Shift+F7).
 
