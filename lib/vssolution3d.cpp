@@ -2020,6 +2020,15 @@ static void CutElement(const Geometry::Type geom, const int *vert_flags,
                        int *num_cut_edges, int *n2_cut_edges)
 {
    static const int tet_edges[12]= {0,3, 0,2, 0,1, 1,2, 1,3, 2,3};
+   static const int pyr_edges[16] =
+   {0,1, 1,2, 3,2, 0,3, 0,4, 1,4, 2,4, 3,4};
+   static const int pyr_cutting[16][3] =
+   {
+      { 3,  4,  6}, { 9, -1, 10}, { 4,  6,  1}, {11, -1, 12},
+      {13, -1, 14}, { 6,  1,  3}, {15, -1,  8}, { 1,  3,  4},
+      {-1, 10,  0}, { 7, 15, -1}, {-1, 12,  2}, { 0,  9, -1},
+      {-1, 14,  5}, { 2, 11, -1}, {-1,  8,  7}, { 5, 13, -1}
+   };
    static const int pri_edges[18] =
    {0,1, 1,2, 2,0, 3,4, 4,5, 5,3, 0,3, 1,4, 2,5};
    static const int pri_cutting[18][3] =
@@ -2057,6 +2066,66 @@ static void CutElement(const Geometry::Type geom, const int *vert_flags,
                cut_edges[n++] = j;
             }
          ev = tet_edges;
+      }
+      break;
+
+      case Geometry::PYRAMID:
+      {
+         int emark[8];
+         ev = pyr_edges;
+         for (int j = 0; j < 8; j++, ev += 2)
+         {
+            emark[j] = vert_flags[ev[1]] - vert_flags[ev[0]];
+         }
+         do
+         {
+            int j;
+            for (j = 0; j < 8; j++)
+            {
+               if (emark[j]) { break; }
+            }
+            if (j == 8)
+            {
+               break;
+            }
+            int k = 2 * j;
+            if (emark[j] > 0)
+            {
+               k++;
+            }
+            do
+            {
+               int m;
+               for (j = 0; j < 3; j++)
+               {
+                  m = pyr_cutting[k][j];
+                  if (m >= 0)
+                  {
+                     ev = pyr_edges + 2 * (m / 2);
+                     if ((m%2 == 0 && vert_flags[ev[0]] > vert_flags[ev[1]]) ||
+                         (m%2 == 1 && vert_flags[ev[1]] > vert_flags[ev[0]]))
+                     {
+                        break;
+                     }
+                  }
+               }
+               cut_edges[n2++] = k/2;
+               emark[k/2] = 0;
+               k = m;
+            }
+            while (k/2 != cut_edges[n]);
+            if (n == 0)
+            {
+               n = n2;
+            }
+            else
+            {
+               break;
+            }
+         }
+         while (1);
+         n2 -= n;
+         ev = pyr_edges;
       }
       break;
 
@@ -2364,17 +2433,25 @@ void VisualizationSceneSolution3d::CutRefinedElement(
 
    for (int i = 0; i < num_elems; i++)
    {
+      Geometry::Type egeom = geom;
       int vert_flag[8], cut_edges[8];
       const int *elem = elems + i*nv;
       const int *edge_vert;
-      int n = 0, n2;
+      int n = 0, n2, nev = 0;
       for (int j = 0; j < nv; j++)
       {
+         if (elem[j] < 0)
+         {
+            // This appears to be a tetrahedral subelement of a refined pyramid
+            egeom = Geometry::TETRAHEDRON;
+            break;
+         }
+         nev++;
          vert_flag[j] = (vert_dist(elem[j]) >= 0.0) ? n++, 1 : 0;
       }
-      if (n == 0 || n == nv) { continue; }
+      if (n == 0 || n == nev) { continue; }
 
-      CutElement(geom, vert_flag, &edge_vert, cut_edges, &n, &n2);
+      CutElement(egeom, vert_flag, &edge_vert, cut_edges, &n, &n2);
       // n  = number of intersected edges
       // n2 = number of intersected edges, second polygon
 
@@ -2994,6 +3071,157 @@ void VisualizationSceneSolution3d::DrawTetLevelSurf(
 }
 
 // static method
+int VisualizationSceneSolution3d::GetPyramidFaceSplits(
+   const Array<bool> &quad_diag, const Array<int> &faces,
+   const Array<int> &ofaces)
+{
+   int fs = 0;
+   bool diag = quad_diag[faces[0]];
+   if ((ofaces[0]/2)%2) // orientations 2,3,6,7
+   {
+      diag = !diag;
+   }
+   fs = 2*fs + diag;
+   return fs;
+}
+
+void VisualizationSceneSolution3d::DrawRefinedPyramidLevelSurf(
+   gl3::GlDrawable& target,
+   const DenseMatrix &verts, const Vector &vals, const int *RG, const int np,
+   const int face_splits, const DenseMatrix *grad)
+{
+#if 1
+   static const int pyr_tets[2][4] =
+   {
+      { 0, 1, 2, 4 }, { 0, 2, 3, 4 }
+   };
+   for (int k = 0; k < np; k++)
+   {
+      const int *hv = &RG[5*k];
+      if (hv[4] > 0)
+      {
+         for (int j = 0; j < 2; j++)
+         {
+            int m_ind[4];
+            for (int i = 0; i < 4; i++)
+            {
+               m_ind[i] = hv[pyr_tets[j][i]];
+            }
+            DrawTetLevelSurf(target, verts, vals, m_ind, levels, grad);
+         }
+      }
+      else
+      {
+         DrawTetLevelSurf(target, verts, vals, hv, levels, grad);
+      }
+   }
+#else
+   // MLS: Not sure how to adapt this to Pyramids so skip it for now
+   static const int pri_tets[8-2][3][4] =
+   {
+      // 0 = 000 (see below; prism is split into 6 tets)
+      { { 0, 1, 2, 5 }, { 0, 1, 5, 4 }, { 0, 3, 4, 5 } }, // 1 = 001
+      { { 0, 1, 2, 4 }, { 0, 2, 3, 4 }, { 2, 3, 4, 5 } }, // 2 = 010
+      { { 0, 1, 2, 4 }, { 0, 2, 5, 4 }, { 0, 3, 4, 5 } }, // 3 = 011
+      { { 0, 1, 2, 3 }, { 1, 2, 3, 5 }, { 1, 3, 4, 5 } }, // 4 = 100
+      { { 0, 1, 2, 5 }, { 0, 1, 5, 3 }, { 1, 3, 4, 5 } }, // 5 = 101
+      { { 0, 1, 2, 3 }, { 1, 2, 3, 4 }, { 2, 3, 4, 5 } }  // 6 = 110
+      // 7 = 111 (see below; prism is split into 6 tets)
+   };
+   static const int pri_tets_0[6][4] =
+   { {0,1,2,6}, {0,1,6,4}, {0,2,3,6}, {0,6,3,4}, {2,3,6,5}, {3,4,6,5} };
+   static const int pri_tets_7[6][4] =
+   { {0,1,2,6}, {0,2,5,6}, {0,1,6,3}, {0,3,6,5}, {1,3,4,6}, {3,4,6,5} };
+   const int fs2 = (~face_splits&7)/2 + 4*((~face_splits&7)%2);
+   const int n = (np == 1) ? 1 : TimesToRefine;
+
+   double vs_data[7], pm_data[3*7], gd_data[3*7];
+   Vector vs(vs_data, 7);
+   DenseMatrix pm(pm_data, 3, 7), gd(gd_data, 3, 7);
+
+   for (int k = 0, l0 = -1, l1 = -1; k < np; k++)
+   {
+      const int pk = k % (n*n);
+      if (pk == 0)
+      {
+         l0 = 0; l1 = 2*n-1;
+      }
+      else if (pk == l1)
+      {
+         const int s = l1-l0;
+         l0 = l1;
+         l1 += (s-2);
+      }
+      const int fsl = ((pk-l0)%2 == 0) ? face_splits : fs2;
+      // The algorithm for choosing 'fsl' used above assumes the refined prisms
+      // are listed in certain order -- see the prism case in
+      // mfem::GeometryRefiner::Refine.
+      const int *pv = &RG[6*k];
+      if (fsl == 0)
+      {
+         for (int j = 0; j < 6; j++)
+         {
+            const int idx = pv[j];
+            for (int d = 0; d < 3; d++)
+            {
+               pm(d,j) = verts(d,idx);
+               if (grad) { gd(d,j) = (*grad)(d,idx); }
+            }
+            vs(j) = vals(idx);
+         }
+         for (int d = 0; d < 3; d++)
+         {
+            pm(d,6) = 0.5*(pm(d,1) + pm(d,5));
+            if (grad) { gd(d,6) = 0.5*(gd(d,1) + gd(d,5)); }
+         }
+         vs(6) = 0.5*(vs(1) + vs(5));
+         const DenseMatrix *gd_ = grad ? &gd : NULL;
+         for (int k = 0; k < 6; k++)
+         {
+            DrawTetLevelSurf(pm, vs, pri_tets_0[k], levels, gd_);
+         }
+      }
+      else if (fsl == 7)
+      {
+         for (int j = 0; j < 6; j++)
+         {
+            const int idx = pv[j];
+            for (int d = 0; d < 3; d++)
+            {
+               pm(d,j) = verts(d,idx);
+               if (grad) { gd(d,j) = (*grad)(d,idx); }
+            }
+            vs(j) = vals(idx);
+         }
+         for (int d = 0; d < 3; d++)
+         {
+            pm(d,6) = 0.5*(pm(d,2) + pm(d,4));
+            if (grad) { gd(d,6) = 0.5*(gd(d,2) + gd(d,4)); }
+         }
+         vs(6) = 0.5*(vs(2) + vs(4));
+         const DenseMatrix *gd_ = grad ? &gd : NULL;
+         for (int k = 0; k < 6; k++)
+         {
+            DrawTetLevelSurf(pm, vs, pri_tets_7[k], levels, gd_);
+         }
+      }
+      else
+      {
+         int m_ind[4];
+         for (int j = 0; j < 3; j++)
+         {
+            for (int i = 0; i < 4; i++)
+            {
+               m_ind[i] = pv[pri_tets[fsl-1][j][i]];
+            }
+            DrawTetLevelSurf(verts, vals, m_ind, levels, grad);
+         }
+      }
+   }
+#endif
+}
+
+// static method
 int VisualizationSceneSolution3d::GetWedgeFaceSplits(
    const Array<bool> &quad_diag, const Array<int> &faces,
    const Array<int> &ofaces)
@@ -3419,6 +3647,12 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
             case Element::TETRAHEDRON:
                DrawTetLevelSurf(lsurf_buf, pointmat, vals, ident, levels);
                break;
+            case Element::PYRAMID:
+            {
+               mesh->GetElementFaces(ie, faces, ofaces);
+               const int fs = GetPyramidFaceSplits(quad_diag, faces, ofaces);
+               DrawRefinedPyramidLevelSurf(lsurf_buf, pointmat, vals, ident, 1, fs);
+            }
             case Element::WEDGE:
             {
                mesh->GetElementFaces(ie, faces, ofaces);
@@ -3469,6 +3703,12 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
             {
                DrawTetLevelSurf(lsurf_buf, pointmat, vals, &RG[nv*k], levels, gp);
             }
+         }
+         else if (geom == Geometry::PYRAMID)
+         {
+            mesh->GetElementFaces(ie, faces, ofaces);
+            const int fs = GetPyramidFaceSplits(quad_diag, faces, ofaces);
+            DrawRefinedPyramidLevelSurf(lsurf_buf, pointmat, vals, RG, nre, fs, gp);
          }
          else if (geom == Geometry::PRISM)
          {
