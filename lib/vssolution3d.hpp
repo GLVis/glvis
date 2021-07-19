@@ -68,26 +68,29 @@ protected:
    static int GetPyramidFaceSplits(const Array<bool> &quad_diag,
                                    const Array<int> &faces,
                                    const Array<int> &ofaces);
-   void DrawRefinedPyramidLevelSurf(
-      gl3::GlDrawable& target,
-      const DenseMatrix &verts, const Vector &vals, const int *RG, const int np,
-      const int face_splits, const DenseMatrix *grad = NULL);
+   void DrawRefinedPyramidLevelSurf(gl3::GlDrawable& target,
+                                    const DenseMatrix &verts,
+                                    const Vector &vals, const int *RG,
+                                    const int np, const int face_splits,
+                                    const DenseMatrix *grad = NULL);
 
    static int GetWedgeFaceSplits(const Array<bool> &quad_diag,
                                  const Array<int> &faces,
                                  const Array<int> &ofaces);
-   void DrawRefinedWedgeLevelSurf(
-      gl3::GlDrawable& target,
-      const DenseMatrix &verts, const Vector &vals, const int *RG, const int np,
-      const int face_splits, const DenseMatrix *grad = NULL);
+   void DrawRefinedWedgeLevelSurf(gl3::GlDrawable& target,
+                                  const DenseMatrix &verts,
+                                  const Vector &vals, const int *RG,
+                                  const int np, const int face_splits,
+                                  const DenseMatrix *grad = NULL);
 
    static int GetHexFaceSplits(const Array<bool> &quad_diag,
                                const Array<int> &faces,
                                const Array<int> &ofaces);
-   void DrawRefinedHexLevelSurf(
-      gl3::GlDrawable& target,
-      const DenseMatrix &verts, const Vector &vals, const int *RG, const int nh,
-      const int face_splits, const DenseMatrix *grad = NULL);
+   void DrawRefinedHexLevelSurf(gl3::GlDrawable& target,
+                                const DenseMatrix &verts,
+                                const Vector &vals, const int *RG,
+                                const int nh, const int face_splits,
+                                const DenseMatrix *grad = NULL);
 
    int GetAutoRefineFactor();
 
