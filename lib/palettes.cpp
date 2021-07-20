@@ -10,7 +10,7 @@
 // CONTRIBUTING.md for details.
 
 #include "palettes.hpp"
-#include "aux_vis.hpp"
+#include "gl/renderer.hpp"
 
 #include <cmath>
 #include <cstdio>
