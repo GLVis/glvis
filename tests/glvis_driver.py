@@ -33,6 +33,8 @@ test_cases = {
 screenshot_keys = "Sq"
 screenshot_file = "GLVis_s01.png"
 
+cutoff_psnr = 0
+
 def compare_images(baseline_file, output_file):
     # Try to open output image
     output_img = imread(output_file)
@@ -52,12 +54,12 @@ def compare_images(baseline_file, output_file):
     # Two completely different streams are usually around 7dB PSNR, so we split
     # the difference and set the cutoff at 12 dB PSNR.
     psnr = peak_signal_noise_ratio(baseline_img, output_img)
-    if psnr < 12:
+    if psnr < cutoff_psnr:
         print("[FAIL] Output and baseline are different.")
         print("       actual psnr = {}, cutoff = 12".format(psnr))
     else:
         print("[PASS] Images match.")
-    return psnr >= 12
+    return psnr >= cutoff_psnr
 
 # Function to test a given glvis command with a variety of key-based commands.
 # Not currently in use.
