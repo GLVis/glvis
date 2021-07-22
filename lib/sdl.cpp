@@ -467,6 +467,11 @@ void SdlWindow::mainLoop()
    while (running)
    {
       mainIter();
+      if (takeScreenshot)
+      {
+         Screenshot(screenshot_file.c_str());
+         takeScreenshot = false;
+      }
       if (wnd_state == RenderState::SwapPending)
       {
 #ifdef SDL_VIDEO_DRIVER_COCOA
@@ -485,16 +490,6 @@ void SdlWindow::mainLoop()
 #else
          SDL_GL_SwapWindow(handle.hwnd);
 #endif
-         wnd_state = RenderState::Updated;
-      }
-      if (takeScreenshot)
-      {
-         Screenshot(screenshot_file.c_str());
-         takeScreenshot = false;
-      }
-      if (wnd_state == RenderState::SwapPending)
-      {
-         SDL_GL_SwapWindow(handle->hwnd);
          wnd_state = RenderState::Updated;
       }
    }
