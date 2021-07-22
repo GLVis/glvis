@@ -16,7 +16,6 @@ using namespace std;
 
 extern const char *strings_off_on[]; // defined in vsdata.cpp
 
-GLVisCommand *glvis_command = NULL;
 
 GLVisCommand::GLVisCommand(
    VisualizationSceneScalarData **_vs, StreamState& state, bool *_keep_attr)
@@ -715,13 +714,14 @@ GLVisCommand::~GLVisCommand()
    }
 }
 
-communication_thread::communication_thread(Array<istream *> &_is)
-   : is(_is)
+communication_thread::communication_thread(StreamCollection _is,
+                                           GLVisCommand* cmd)
+   : is(std::move(_is)), glvis_command(cmd)
 {
    new_m = NULL;
    new_g = NULL;
 
-   if (is.Size() > 0)
+   if (is.size() > 0)
    {
       tid = std::thread(&communication_thread::execute, this);
    }
@@ -729,7 +729,7 @@ communication_thread::communication_thread(Array<istream *> &_is)
 
 communication_thread::~communication_thread()
 {
-   if (is.Size() > 0)
+   if (is.size() > 0)
    {
       terminate_thread = true;
       tid.join();
@@ -845,7 +845,7 @@ void communication_thread::execute()
          *is[0] >> ws >> filename;
 
          // all processors sent the screenshot command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'screenshot'
             *is[i] >> ws >> ident; // filename
@@ -863,7 +863,7 @@ void communication_thread::execute()
          *is[0] >> ws >> keys;
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'keys'
             *is[i] >> ws >> ident; // keys
@@ -881,7 +881,7 @@ void communication_thread::execute()
          *is[0] >> w >> h;
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'window_size'
             *is[i] >> t >> t;
@@ -899,7 +899,7 @@ void communication_thread::execute()
          *is[0] >> x >> y >> w >> h;
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'window_geometry'
             *is[i] >> t >> t >> t >> t;
@@ -920,7 +920,7 @@ void communication_thread::execute()
          getline(*is[0], title, c);
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'window_title'
             *is[i] >> ws >> c;
@@ -942,7 +942,7 @@ void communication_thread::execute()
          getline(*is[0], caption, c);
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'plot_caption'
             *is[i] >> ws >> c;
@@ -968,7 +968,7 @@ void communication_thread::execute()
          getline(*is[0], label_z, c);
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'axis_label'
             *is[i] >> ws >> c;
@@ -989,7 +989,7 @@ void communication_thread::execute()
       else if (ident == "pause")
       {
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'pause'
          }
@@ -1006,7 +1006,7 @@ void communication_thread::execute()
          *is[0] >> theta >> phi;
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'view'
             *is[i] >> a >> a;
@@ -1024,7 +1024,7 @@ void communication_thread::execute()
          *is[0] >> factor;
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'zoom'
             *is[i] >> a;
@@ -1042,7 +1042,7 @@ void communication_thread::execute()
          *is[0] >> tot >> bdr;
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'subdivisions'
             *is[i] >> a >> a;
@@ -1060,7 +1060,7 @@ void communication_thread::execute()
          *is[0] >> minv >> maxv;
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'valuerange'
             *is[i] >> a >> a;
@@ -1078,7 +1078,7 @@ void communication_thread::execute()
          *is[0] >> ws >> shd;
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'shading'
             *is[i] >> ws >> ident;
@@ -1096,7 +1096,7 @@ void communication_thread::execute()
          *is[0] >> x >> y;
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'viewcenter'
             *is[i] >> a >> a;
@@ -1114,7 +1114,7 @@ void communication_thread::execute()
          *is[0] >> ws >> mode;
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'autoscale'
             *is[i] >> ws >> ident;
@@ -1132,7 +1132,7 @@ void communication_thread::execute()
          *is[0] >> pal;
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'palette'
             *is[i] >> a;
@@ -1150,7 +1150,7 @@ void communication_thread::execute()
          *is[0] >> n;
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'palette_repeat'
             *is[i] >> a;
@@ -1171,7 +1171,7 @@ void communication_thread::execute()
          }
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'camera'
             for (int j = 0; j < 9; j++)
@@ -1192,7 +1192,7 @@ void communication_thread::execute()
          *is[0] >> ws >> mode;
 
          // all processors sent the command
-         for (int i = 1; i < is.Size(); i++)
+         for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'autopause'
             *is[i] >> ws >> ident;
@@ -1212,9 +1212,9 @@ void communication_thread::execute()
    cout << "Stream: end of input." << endl;
 
 comm_terminate:
-   for (int i = 0; i < is.Size(); i++)
+   for (size_t i = 0; i < is.size(); i++)
    {
-      socketstream *isock = dynamic_cast<socketstream *>(is[i]);
+      socketstream *isock = dynamic_cast<socketstream *>(is[i].get());
       if (isock)
       {
          isock->close();

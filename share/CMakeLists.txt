@@ -9,6 +9,8 @@
 # terms of the BSD-3 license. We welcome feedback and contributions, see file
 # CONTRIBUTING.md for details.
 
+if(NOT WIN32)
+
 add_custom_command(
     OUTPUT logo.rgba.bin.cpp
     COMMAND ${CMAKE_COMMAND} -E copy
@@ -20,3 +22,5 @@ add_custom_command(
 
 add_library(glvis_logo STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/logo.rgba.bin.cpp)
+
+endif(NOT WIN32)

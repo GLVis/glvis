@@ -12,66 +12,24 @@
 #ifndef GLVIS_SDL_X11_HPP
 #define GLVIS_SDL_X11_HPP
 
+#include "sdl_helper.hpp"
+
 #ifdef SDL_VIDEO_DRIVER_X11
 
-#include "sdl_helper.hpp"
-#include "gl/platform_gl.hpp"
+#include <unordered_map>
+
 #include <poll.h>
 
 #include <unistd.h>    // pipe, fcntl, write
 #include <fcntl.h>     // fcntl
 #include <cerrno>      // errno, EAGAIN
 #include <cstdio>      // perror
-#ifdef SDL_VIDEO_DRIVER_X11_XINPUT2
-#include <X11/extensions/XInput2.h>
-#endif // SDL_VIDEO_DRIVER_X11_XINPUT2
 
 class SdlX11Platform final : public SdlNativePlatform
 {
 public:
-   SdlX11Platform(Display* xdisplay, Window xwindow)
-      : disp(xdisplay), wnd(xwindow)
+   SdlX11Platform()
    {
-#ifdef SDL_VIDEO_DRIVER_X11_XINPUT2
-      // Disable XInput extension events since they are generated even outside
-      // the GLVis window.
-      Window root_win = DefaultRootWindow(disp);
-      unsigned char mask[4] = {0,0,0,0};
-      XIEventMask event_mask;
-      event_mask.deviceid = XIAllMasterDevices;
-      event_mask.mask_len = sizeof(mask);
-      event_mask.mask = mask;
-#ifdef SDL_VIDEO_DRIVER_X11_DYNAMIC_XINPUT2
-      const char Xi_lib[] = SDL_VIDEO_DRIVER_X11_DYNAMIC_XINPUT2;
-#else
-      const char Xi_lib[] = "libXi.so";
-#endif
-      typedef int (*XISelectEvents_ptr)(Display *, Window, XIEventMask *, int);
-      XISelectEvents_ptr XISelectEvents_ = NULL;
-      void *lib = SDL_LoadObject(Xi_lib);
-      if (lib != NULL)
-      {
-         XISelectEvents_ =
-            (XISelectEvents_ptr)SDL_LoadFunction(lib, "XISelectEvents");
-      }
-      if (XISelectEvents_ == NULL)
-      {
-         cerr << "Error accessing XISelectEvents!" << endl;
-         exit(EXIT_FAILURE);
-      }
-      if (XISelectEvents_(disp, root_win, &event_mask, 1) != Success)
-      {
-         cerr << "Failed to disable XInput on the default root window!" << endl;
-      }
-      if (XISelectEvents_(disp, wnd, &event_mask, 1) != Success)
-      {
-         cerr << "Failed to disable XInput on the current window!" << endl;
-      }
-#ifndef SDL_VIDEO_DRIVER_X11_DYNAMIC_XINPUT2
-      SDL_UnloadObject(lib);
-#endif
-#endif // SDL_VIDEO_DRIVER_X11_XINPUT2
-
       // Create pipe for external events
       if (pipe(event_pfd) == -1)
       {
@@ -88,37 +46,12 @@ public:
       close(event_pfd[1]);
    }
 
-   void WaitEvent()
-   {
-      constexpr int nfd = 2;
-      int nstr;
-      struct pollfd pfd[nfd];
+   void RegisterWindow(SDL_Window* window);
 
-      pfd[0].fd     = ConnectionNumber(disp);
-      pfd[0].events = POLLIN;
-      pfd[0].revents = 0;
+   void UnregisterWindow(SDL_Window* window);
 
-      pfd[1].fd     = event_pfd[0];
-      pfd[1].events = POLLIN;
-      pfd[1].revents = 0;
+   void WaitEvent();
 
-      do
-      {
-         nstr = poll(pfd, nfd, -1);
-      }
-      while (nstr == -1 && errno == EINTR);
-
-      if (nstr == -1) { perror("poll()"); }
-
-      int n = 0;
-      // Read out the pending GLVisCommand-sent events, if any
-      do
-      {
-         std::array<char, 16> buf;
-         n = read(event_pfd[0], buf.data(), buf.size());
-      }
-      while (n > 0);
-   }
    void SendEvent()
    {
       char c = 's';
@@ -130,9 +63,8 @@ public:
    }
 
 private:
-   Display* disp;
-   Window wnd;
    int event_pfd[2]; // pfd[0] -- reading, pfd[1] -- writing
+   std::unordered_map<SDL_Window*, int> display_fds;
 };
 
 #endif // SDL_VIDEO_DRIVER_X11

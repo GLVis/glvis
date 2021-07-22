@@ -16,7 +16,9 @@
 #include <memory>
 #include <functional>
 #include <map>
-#include <set>
+#include <mutex>
+#include <condition_variable>
+#include <deque>
 #include "gl/renderer.hpp"
 #include "sdl_helper.hpp"
 
@@ -32,12 +34,47 @@ typedef void (*MouseDelegate)(EventInfo*);
 typedef std::function<void(GLenum)> KeyDelegate;
 typedef void (*WindowDelegate)(int, int);
 typedef void (*Delegate)();
+typedef bool (*IdleDelegate)();
+
+class SdlMainThread;
 
 class SdlWindow
 {
 private:
-   struct Handle;
-   std::unique_ptr<Handle> handle;
+   friend class SdlMainThread;
+   struct Handle
+   {
+      SDL_Window * hwnd{nullptr};
+      SDL_GLContext gl_ctx{};
+
+      Handle() = default;
+
+      Handle(const std::string& title, int x, int y, int w, int h,
+             Uint32 wndflags);
+
+      ~Handle();
+
+      Handle(Handle&& other)
+         : hwnd(other.hwnd), gl_ctx(other.gl_ctx)
+      {
+         other.hwnd = nullptr;
+         other.gl_ctx = 0;
+      }
+
+      Handle& operator= (Handle&& other)
+      {
+         std::swap(hwnd, other.hwnd);
+         std::swap(gl_ctx, other.gl_ctx);
+         return *this;
+      }
+
+      bool isInitialized() const
+      {
+         return (hwnd != nullptr && gl_ctx != 0);
+      }
+   };
+
+   Handle handle;
    std::unique_ptr<gl3::MeshRenderer> renderer;
    static const int high_dpi_threshold = 144;
    // The display is high-dpi when:
@@ -53,13 +90,9 @@ private:
    //   scaled "screen coordinates" on all high-dpi displays.
    float pixel_scale_x = 1.0f, pixel_scale_y = 1.0f;
 
-   std::unique_ptr<SdlNativePlatform> platform;
-
-   static Uint32 glvis_event_type;
-
    bool running;
 
-   Delegate onIdle{nullptr};
+   IdleDelegate onIdle{nullptr};
    Delegate onExpose{nullptr};
    WindowDelegate onReshape{nullptr};
    std::map<int, KeyDelegate> onKeyDown;
@@ -68,7 +101,6 @@ private:
    std::map<int, MouseDelegate> onMouseMove;
    TouchDelegate onTouchPinch{nullptr};
    TouchDelegate onTouchRotate{nullptr};
-   std::set<SDL_FingerID> fingers;
 
    bool ctrlDown{false};
 
@@ -88,11 +120,12 @@ private:
 
    RenderState wnd_state{RenderState::Updated};
 
+   bool update_before_expose{false};
+
    //bool requiresExpose;
    bool takeScreenshot{false};
    std::string screenshot_file;
 
-   void probeGLContextSupport(bool legacyGlOnly);
    // internal event handlers
    void windowEvent(SDL_WindowEvent& ew);
    void motionEvent(SDL_MouseMotionEvent& em);
@@ -102,15 +135,41 @@ private:
    void keyEvent(char c);
    void multiGestureEvent(SDL_MultiGestureEvent & e);
 
+   bool is_multithreaded{true};
+
+   // Hand off events to the SdlWindow. Intended to be called by the main SDL
+   // thread in MainThread::MainLoop().
+   void queueEvents(std::vector<SDL_Event> events)
+   {
+      {
+         std::lock_guard<std::mutex> evt_guard{event_mutex};
+         waiting_events.insert(waiting_events.end(), events.begin(), events.end());
+      }
+      if (is_multithreaded)
+      {
+         events_available.notify_all();
+      }
+   }
+
    std::string saved_keys;
+
+   std::condition_variable events_available;
+   std::mutex event_mutex;
+   // The window-specific events collected by the main event thread.
+   std::deque<SDL_Event> waiting_events;
 public:
    SdlWindow();
    ~SdlWindow();
+
+   // Initializes SDL2 and starts the main loop. Should be called from the main
+   // thread only.
+   static void StartSDL(bool server_mode);
 
    /// Creates a new OpenGL window. Returns false if SDL or OpenGL initialization
    /// fails.
    bool createWindow(const char * title, int x, int y, int w, int h,
                      bool legacyGlOnly);
+
    /// Runs the window loop.
    void mainLoop();
    void mainIter();
@@ -118,7 +177,7 @@ public:
    // Called by worker threads in GLVisCommand::signal()
    void signalLoop();
 
-   void setOnIdle(Delegate func) { onIdle = func; }
+   void setOnIdle(IdleDelegate func) { onIdle = func; }
    void setOnExpose(Delegate func) { onExpose = func; }
    void setOnReshape(WindowDelegate func) { onReshape = func; }
 
@@ -183,8 +242,8 @@ public:
 
    void swapBuffer();
 
-   operator bool() { return (bool) handle ; }
-   bool isWindowInitialized() { return (bool) handle; }
+   operator bool() { return handle.isInitialized(); }
+   bool isWindowInitialized() { return handle.isInitialized(); }
    /// Returns true if the OpenGL context was successfully initialized.
    bool isGlInitialized();
 

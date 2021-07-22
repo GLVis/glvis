@@ -100,9 +100,9 @@ std::string VisualizationSceneVector3d::GetHelpString() const
    return os.str();
 }
 
-VisualizationSceneVector3d  *vsvector3d;
-extern VisualizationScene *locscene;
-extern GeometryRefiner GLVisGeometryRefiner;
+thread_local VisualizationSceneVector3d  *vsvector3d;
+extern thread_local VisualizationScene *locscene;
+extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 static void KeyDPressed()
 {

@@ -99,13 +99,13 @@ std::string VisualizationSceneVector::GetHelpString() const
    return os.str();
 }
 
-VisualizationSceneVector  * vsvector;
-extern VisualizationScene * locscene;
-extern VisualizationSceneSolution * vssol;
-extern GeometryRefiner GLVisGeometryRefiner;
+thread_local VisualizationSceneVector  * vsvector;
+extern thread_local VisualizationScene * locscene;
+extern thread_local VisualizationSceneSolution * vssol;
+extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
-static int ianim = 0;
-static int ianimmax = 10;
+thread_local int ianim = 0;
+thread_local int ianimmax = 10;
 
 void KeyDPressed()
 {
@@ -839,7 +839,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
    updated_bufs.emplace_back(&displine_buf);
 }
 
-double new_maxlen;
+thread_local double new_maxlen;
 
 void VisualizationSceneVector::DrawVector(double px, double py, double vx,
                                           double vy, double cval)

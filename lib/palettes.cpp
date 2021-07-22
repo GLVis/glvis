@@ -17,6 +17,7 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+#include <mutex>
 
 using namespace std;
 
@@ -7692,6 +7693,8 @@ PaletteState::PaletteState()
 {
 }
 
+static std::mutex init_mtx;
+
 void PaletteState::Init()
 {
    if (!first_init)
@@ -7702,7 +7705,10 @@ void PaletteState::Init()
          cerr << "Warning: GL_MAX_TEXTURE_SIZE is less than 4096." << endl;
       }
       MaxTextureSize = std::min(MaxTextureSize, 4096);
-      Init_Palettes();
+      {
+         std::lock_guard<std::mutex> lk{init_mtx};
+         Init_Palettes();
+      }
 
       GLuint paletteTexIds[Num_RGB_Palettes][2];
       GLuint alphaTexId;

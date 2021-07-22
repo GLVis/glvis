@@ -12,7 +12,11 @@
 #ifndef GLVIS_LOGO_HPP
 #define GLVIS_LOGO_HPP
 
+#ifdef GLVIS_USE_LOGO
+
 extern unsigned char logo_rgba[];
 extern unsigned int logo_rgba_len;
+
+#endif // GLVIS_USE_LOGO
 
 #endif //__LOGO_HPP__
