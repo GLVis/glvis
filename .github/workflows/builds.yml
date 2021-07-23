@@ -202,20 +202,21 @@ jobs:
         python -m pip install --upgrade pip
         pip install scikit-image
 
-    - name: setup Linux testing dependencies
-      if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
-      run: |
-        sudo apt-get install xvfb mesa-utils
+    # - name: setup Linux testing dependencies
+    #   if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
+    #   run: |
+    #     sudo apt-get install xvfb mesa-utils
 
-    - name: test GLVis (cmake/linux)
-      if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
-      run: |
-        cd glvis && cd build
-        # xvfb ("X virtual framebuffer") is used to run X applications on
-        # headless Linux systems without graphics hardware.
-        xvfb-run --auto-servernum glxinfo
-        xvfb-run -e /dev/stdout --auto-servernum ctest --verbose
-        tar czvf test_screenshots.tar.gz tests/test.*.png
+    # Disabled temporarily due to spurious SDL initializiation failures
+    # - name: test GLVis (cmake/linux)
+    #   if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
+    #   run: |
+    #     cd glvis && cd build
+    #     # xvfb ("X virtual framebuffer") is used to run X applications on
+    #     # headless Linux systems without graphics hardware.
+    #     xvfb-run --auto-servernum glxinfo
+    #     xvfb-run -e /dev/stdout --auto-servernum ctest --verbose
+    #     tar czvf test_screenshots.tar.gz tests/test.*.png
 
     - name: test GLVis (cmake/mac)
       if: matrix.build-system == 'cmake' && matrix.os == 'macos-10.15'
@@ -225,7 +226,7 @@ jobs:
         tar czvf test_screenshots.tar.gz tests/test.*.png
 
     - name: upload test screenshots
-      if: matrix.build-system == 'cmake'
+      if: matrix.build-system == 'cmake' && matrix.os == 'macos-10.15'
       uses: actions/upload-artifact@v2
       with:
         name: test-screenshots-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}
