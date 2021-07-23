@@ -79,7 +79,10 @@ SdlMainThread::SdlMainThread()
    sdl_init = true;
 }
 
-SdlMainThread::~SdlMainThread() = default;
+SdlMainThread::~SdlMainThread()
+{
+   SDL_Quit();
+}
 
 void SdlMainThread::MainLoop(bool server_mode)
 {
