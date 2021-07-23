@@ -469,7 +469,7 @@ void SdlWindow::mainLoop()
       mainIter();
       if (takeScreenshot)
       {
-         Screenshot(screenshot_file.c_str());
+         Screenshot(screenshot_file.c_str(), screenshot_convert);
          takeScreenshot = false;
       }
       if (wnd_state == RenderState::SwapPending)
