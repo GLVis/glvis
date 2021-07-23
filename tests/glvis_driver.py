@@ -58,7 +58,7 @@ def compare_images(baseline_file, output_file):
         print("[FAIL] Output and baseline are different.")
         print("       actual psnr = {}, cutoff = 12".format(psnr))
     else:
-        print("[PASS] Images match.")
+        print("[PASS] Images match (psnr = {}).".format(psnr))
     return psnr >= cutoff_psnr
 
 # Function to test a given glvis command with a variety of key-based commands.
