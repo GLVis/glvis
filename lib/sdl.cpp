@@ -103,6 +103,8 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
       return false;
    }
 
+   window_id = SDL_GetWindowID(handle.hwnd);
+
    GLenum err = glewInit();
    if (err != GLEW_OK)
    {
@@ -584,7 +586,6 @@ void SdlWindow::setWindowSize(int w, int h)
 {
    GetMainThread().SetWindowSize(handle, pixel_scale_x*w, pixel_scale_y*h);
    update_before_expose = true;
-
 }
 
 void SdlWindow::setWindowPos(int x, int y)
@@ -605,11 +606,13 @@ void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
    if (k >= 32 && k < 128)
    {
       event.type = SDL_TEXTINPUT;
+      event.text.windowID = window_id;
       event.text.text[0] = k;
    }
    else
    {
       event.type = SDL_KEYDOWN;
+      event.key.windowID = window_id;
       event.key.keysym.sym = k;
       event.key.keysym.mod = m;
    }
