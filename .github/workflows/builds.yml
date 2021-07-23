@@ -214,7 +214,7 @@ jobs:
         # xvfb ("X virtual framebuffer") is used to run X applications on
         # headless Linux systems without graphics hardware.
         xvfb-run --auto-servernum glxinfo
-        xvfb-run --auto-servernum ctest --verbose
+        xvfb-run -e /dev/stdout --auto-servernum ctest --verbose
         tar czvf test_screenshots.tar.gz tests/test.*.png
 
     - name: test GLVis (cmake/mac)
