@@ -15,6 +15,10 @@
 #include <unordered_map>
 #include <mutex>
 
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 std::unordered_map<int, NSOpenGLContext*>& GetContextMap()
 {
    static std::unordered_map<int, NSOpenGLContext*> inst;
