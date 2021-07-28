@@ -257,7 +257,8 @@ SdlMainThread::Handle SdlMainThread::GetHandle(SdlWindow* wnd,
                                                int x, int y, int w, int h, bool legacyGlOnly)
 {
    CreateWindowCmd cmd_create = { wnd, title, x, y, w, h, legacyGlOnly, false,
-                                  {} };
+                                  {}
+                                };
    future<Handle> res_handle = cmd_create.out_handle.get_future();
 
    SdlCtrlCommand main_thread_cmd;
