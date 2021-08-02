@@ -48,6 +48,7 @@ const char *window_title    = string_default;
 const char *c_plot_caption  = string_none;
 thread_local string      plot_caption;
 thread_local string      extra_caption;
+bool        secure          = socketstream::secure_default;
 
 // Global variables
 int input = 1;
@@ -967,7 +968,7 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
               "Generate your GLVis keys with:"
               " bash glvis-keygen.sh [\"Your Name\"] [\"Your Email\"]"
               << endl;
-         return 3;
+         return;
       }
    }
 #endif
@@ -1134,7 +1135,6 @@ int main (int argc, char *argv[])
    const char *script_file   = string_none;
    const char *font_name     = string_default;
    int         portnum       = 19916;
-   bool        secure        = socketstream::secure_default;
    int         multisample   = GetMultisample();
    double      line_width    = 1.0;
    double      ms_line_width = gl3::LINE_WIDTH_AA;
