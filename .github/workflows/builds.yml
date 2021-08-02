@@ -211,10 +211,12 @@ jobs:
       if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
       run: |
         cd glvis && cd build
-        XDG_RUNTIME_DIR=/tmp WLR_BACKENDS=headless WLR_LIBINPUT_NO_DEVICES=1 sway -d &
+        WLR_BACKENDS=headless WLR_LIBINPUT_NO_DEVICES=1 sway -d &
         sleep 2 # give some time for sway to start up
         ctest --verbose
         tar czvf test_screenshots.tar.gz tests/test.*.png
+      env:
+        XDG_RUNTIME_DIR: /tmp
 
     - name: test GLVis (cmake/mac)
       if: matrix.build-system == 'cmake' && matrix.os == 'macos-10.15'
