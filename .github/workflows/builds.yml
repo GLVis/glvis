@@ -212,6 +212,7 @@ jobs:
       run: |
         cd glvis && cd build
         WLR_BACKENDS=headless WLR_LIBINPUT_NO_DEVICES=1 sway > /dev/null 2>&1 &
+        sleep 2 # give some time for sway to start up
         glxinfo
         ctest --verbose
         tar czvf test_screenshots.tar.gz tests/test.*.png
