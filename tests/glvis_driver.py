@@ -103,6 +103,7 @@ def test_stream(exec_path, exec_args, save_file, baseline):
     tmp_file = "test.saved"
     with open(tmp_file, 'w') as out_f:
         out_f.write(stream_data)
+        out_f.write("\nkeys ~e")
         out_f.write("\nwindow_size 800 600")
         out_f.write("\nscreenshot {}".format(output_name))
         out_f.write("\nkeys q")
