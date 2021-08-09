@@ -187,6 +187,7 @@ jobs:
           -D CMAKE_BUILD_TYPE:STRING=${build_type} \
           -D ENABLE_TESTS:BOOL=TRUE \
           -D mfem_DIR:PATH=${GITHUB_WORKSPACE}/${MFEM_TOP_DIR}/build \
+          -D GLVIS_BASELINE_SYS=${{ matrix.os }} \
           ..
         make -j3
 

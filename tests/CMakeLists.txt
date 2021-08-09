@@ -11,6 +11,9 @@
 
 if(NOT EMSCRIPTEN)
 
+# Used for automated testing
+set(GLVIS_BASELINE_SYS)
+
 add_custom_target(
   glvis-test-driver ALL
   COMMAND ${CMAKE_COMMAND} -E copy
@@ -47,7 +50,7 @@ foreach(test_name IN LISTS stream_tests)
            COMMAND python3 ${CMAKE_CURRENT_BINARY_DIR}/glvis_driver.py
            -e ${CMAKE_CURRENT_BINARY_DIR}/../glvis
            -s ${CMAKE_CURRENT_SOURCE_DIR}/data/streams/${test_name}.saved
-           -b ${CMAKE_CURRENT_SOURCE_DIR}/data/baselines
+           -b ${CMAKE_CURRENT_SOURCE_DIR}/data/baselines/${GLVIS_BASELINE_SYS}
            -a "-lw 1 -mslw 1 -nohidpi")
 
 endforeach()
