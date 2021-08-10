@@ -5,6 +5,7 @@ lib/libglvis.js
 lib/libglvis.a
 share/logo.rgba.bin.cpp
 glvis
+GLVis.app
 
 # Output from running glvis
 GLVis.pdf

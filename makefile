@@ -297,6 +297,7 @@ clean:
 	rm -rf lib/*.o lib/*.bc lib/gl/*.o lib/gl/*.bc lib/*~ *~ glvis
 	rm -rf $(LOGO_FILE_CPP) share/*.o
 	rm -rf lib/libglvis.a lib/libglvis.js *.dSYM
+	rm -rf GLVis.app
 
 distclean: clean
 	rm -rf bin/
@@ -308,6 +309,13 @@ install: glvis
 ifeq ($(MFEM_USE_GNUTLS),YES)
 	$(INSTALL) -m 750 glvis-keygen.sh $(PREFIX)
 endif
+
+app: glvis
+	mkdir -p GLVis.app/Contents/MacOS
+	mkdir -p GLVis.app/Contents/Resources
+	cp share/Info.plist GLVis.app/Contents
+	cp glvis GLVis.app/Contents/MacOS
+	cp share/GLVis.icns GLVis.app/Contents/Resources
 
 help:
 	$(info $(value GLVIS_HELP_MSG))
