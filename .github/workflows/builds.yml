@@ -151,6 +151,9 @@ jobs:
     - name: get deps (Linux)
       if: matrix.os == 'ubuntu-20.04'
       run: |
+        # We need to add a PPA for SDL 2.0.14 - fixes some initialization
+        # errors for X11
+        sudo add-apt-repository -y ppa:savoury1/multimedia
         sudo apt-get update
         sudo apt-get install libfontconfig1-dev libfreetype6-dev libsdl2-dev libglew-dev libglm-dev libpng-dev
 
@@ -206,18 +209,14 @@ jobs:
     - name: setup Linux testing dependencies
       if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
       run: |
-        sudo apt-get install sway mesa-utils
+        sudo apt-get install xvfb
 
     - name: test GLVis (cmake/linux)
       if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
       run: |
         cd glvis && cd build
-        WLR_BACKENDS=headless WLR_LIBINPUT_NO_DEVICES=1 sway -d &
-        sleep 2 # give some time for sway to start up
-        ctest --verbose
+        xvfb-run -a ctest --verbose
         tar czvf test_screenshots.tar.gz tests/test.*.png
-      env:
-        XDG_RUNTIME_DIR: /tmp
 
     - name: test GLVis (cmake/mac)
       if: matrix.build-system == 'cmake' && matrix.os == 'macos-10.15'
