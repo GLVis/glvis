@@ -310,25 +310,21 @@ if(NOT EMSCRIPTEN)
 
 endif(NOT EMSCRIPTEN)
 
-add_custom_command(
-    OUTPUT
-        GLVis.app
-        GLVis.app/Contents/Info.plist
-        GLVis.app/Contents/MacOS/glvis
-        GLVis.app/Contents/Resources/GLVis.icns
+add_custom_target(app
     COMMAND ${CMAKE_COMMAND} -E make_directory GLVis.app/Contents/MacOS
     COMMAND ${CMAKE_COMMAND} -E make_directory GLVis.app/Contents/Resources
-    COMMAND ${CMAKE_COMMAND} -E copy glvis GLVis.app/Contents/MacOS
-    COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/share/GLVis.icns
-        GLVis.app/Contents/Resources
+    COMMAND ${CMAKE_COMMAND} -E copy glvis GLVis.app/Contents/MacOS/
     COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_CURRENT_SOURCE_DIR}/share/Info.plist GLVis.app/Contents
-    DEPENDS glvis-exe)
-
-add_custom_target(
-    app
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/share/GLVis.icns
+        GLVis.app/Contents/Resources/
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/share/Credits.rtf
+        GLVis.app/Contents/Resources/
     DEPENDS
+        glvis-exe
         GLVis.app/Contents/Info.plist
-        GLVis.app/Contents/MacOS/glvis
-        GLVis.app/Contents/Resources/GLVis.icns)
+        GLVis.app/Contents/Resources/GLVis.icns
+        GLVis.app/Contents/Resources/Credits.rtf
+    VERBATIM)

@@ -2,8 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleGetInfoString</key>
-  <string>GLVis</string>
   <key>CFBundleExecutable</key>
   <string>glvis</string>
   <key>CFBundleIdentifier</key>
@@ -12,13 +10,13 @@
   <string>GLVis</string>
   <key>CFBundleIconFile</key>
   <string>GLVis.icns</string>
+  <key>CFBundleShortVersionString</key>
+  <string>4.0.1</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>NSHighResolutionCapable</key>
-  <string>True</string>
-  <key>NSHumanReadableCopyright</key>
-  <string>https://glvis.org/</string>
+  <true/>
 </dict>
 </plist>

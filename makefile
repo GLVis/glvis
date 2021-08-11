@@ -316,6 +316,7 @@ app: glvis
 	cp share/Info.plist GLVis.app/Contents
 	cp glvis GLVis.app/Contents/MacOS
 	cp share/GLVis.icns GLVis.app/Contents/Resources
+	cp share/Credits.rtf GLVis.app/Contents/Resources
 
 help:
 	$(info $(value GLVIS_HELP_MSG))
