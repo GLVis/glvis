@@ -9,8 +9,8 @@
                               http://glvis.org
 
 
-Version 4.0.1 (development)
-===========================
+Version 4.1, released on Aug XX, 2021
+=====================================
 - Use threads in server mode for window creation and session management
   instead of fork(). This resolves some issues with running GLVis in server
   mode on macOS. This also allows for closing all open GLVis windows associated
