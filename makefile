@@ -16,6 +16,7 @@ GLVis makefile targets:
    make
    make status/info
    make install
+   make app
    make clean
    make distclean
    make style
@@ -30,6 +31,8 @@ make status
    Display information about the current configuration.
 make install PREFIX=<dir>
    Install the glvis executable in <dir>.
+make app
+   Build a Mac OS application bundle.
 make clean
    Clean the glvis executable, library and object files.
 make distclean
