@@ -16,5 +16,9 @@
   <string>6.0</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
+  <key>NSHighResolutionCapable</key>
+  <string>True</string>
+  <key>NSHumanReadableCopyright</key>
+  <string>https://glvis.org/</string>
 </dict>
 </plist>
