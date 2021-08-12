@@ -29,6 +29,9 @@ Version 4.1, released on Aug XX, 2021
 
 - Replace pthreads and POSIX-specific code with C++11 standard thread library.
 
+- Added build target ("make app") to build a native Mac OS application bundle
+  that can be double-clicked, added to the Dock, etc.
+
 
 Version 4.0, released on Dec 11, 2020
 =====================================

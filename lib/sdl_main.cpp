@@ -73,6 +73,9 @@ SdlMainThread::SdlMainThread()
                << "." << (int)sdl_ver.patch << std::endl);
 
    sdl_init = true;
+#ifdef __EMSCRIPTEN__
+   SetSingleThread();
+#endif
 }
 
 SdlMainThread::~SdlMainThread() = default;
@@ -297,41 +300,53 @@ SdlMainThread::Handle SdlMainThread::GetHandle(SdlWindow* wnd,
 
 void SdlMainThread::DeleteHandle(Handle to_delete)
 {
-   SdlCtrlCommand main_thread_cmd;
-   main_thread_cmd.type = SdlCmdType::Delete;
-   main_thread_cmd.cmd_delete = std::move(to_delete);
+   if (to_delete.isInitialized())
+   {
+      SdlCtrlCommand main_thread_cmd;
+      main_thread_cmd.type = SdlCmdType::Delete;
+      main_thread_cmd.cmd_delete = std::move(to_delete);
 
-   queueWindowEvent(std::move(main_thread_cmd));
+      queueWindowEvent(std::move(main_thread_cmd));
+   }
 }
 
 void SdlMainThread::SetWindowTitle(const Handle& handle, std::string title)
 {
-   SdlCtrlCommand main_thread_cmd;
-   main_thread_cmd.type = SdlCmdType::SetTitle;
-   main_thread_cmd.handle = &handle;
-   main_thread_cmd.cmd_title = std::move(title);
+   if (handle.isInitialized())
+   {
+      SdlCtrlCommand main_thread_cmd;
+      main_thread_cmd.type = SdlCmdType::SetTitle;
+      main_thread_cmd.handle = &handle;
+      main_thread_cmd.cmd_title = std::move(title);
 
-   queueWindowEvent(std::move(main_thread_cmd));
+      queueWindowEvent(std::move(main_thread_cmd));
+   }
 }
 
 void SdlMainThread::SetWindowSize(const Handle& handle, int w, int h)
 {
-   SdlCtrlCommand main_thread_cmd;
-   main_thread_cmd.type = SdlCmdType::SetSize;
-   main_thread_cmd.handle = &handle;
-   main_thread_cmd.cmd_set_size = {w, h};
+   if (handle.isInitialized())
+   {
+      SdlCtrlCommand main_thread_cmd;
+      main_thread_cmd.type = SdlCmdType::SetSize;
+      main_thread_cmd.handle = &handle;
+      main_thread_cmd.cmd_set_size = {w, h};
 
-   queueWindowEvent(std::move(main_thread_cmd));
+      queueWindowEvent(std::move(main_thread_cmd));
+   }
 }
 
 void SdlMainThread::SetWindowPosition(const Handle& handle, int x, int y)
 {
-   SdlCtrlCommand main_thread_cmd;
-   main_thread_cmd.type = SdlCmdType::SetPosition;
-   main_thread_cmd.handle = &handle;
-   main_thread_cmd.cmd_set_position = {x, y};
+   if (handle.isInitialized())
+   {
+      SdlCtrlCommand main_thread_cmd;
+      main_thread_cmd.type = SdlCmdType::SetPosition;
+      main_thread_cmd.handle = &handle;
+      main_thread_cmd.cmd_set_position = {x, y};
 
-   queueWindowEvent(std::move(main_thread_cmd));
+      queueWindowEvent(std::move(main_thread_cmd));
+   }
 }
 
 void SdlMainThread::queueWindowEvent(SdlCtrlCommand cmd)
