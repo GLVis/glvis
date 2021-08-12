@@ -309,3 +309,22 @@ if(NOT EMSCRIPTEN)
   endif (MFEM_USE_GNUTLS)
 
 endif(NOT EMSCRIPTEN)
+
+add_custom_target(app
+    COMMAND ${CMAKE_COMMAND} -E make_directory GLVis.app/Contents/MacOS
+    COMMAND ${CMAKE_COMMAND} -E make_directory GLVis.app/Contents/Resources
+    COMMAND ${CMAKE_COMMAND} -E copy glvis GLVis.app/Contents/MacOS/
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/share/Info.plist GLVis.app/Contents
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/share/GLVis.icns
+        GLVis.app/Contents/Resources/
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/share/Credits.rtf
+        GLVis.app/Contents/Resources/
+    DEPENDS
+        glvis-exe
+        GLVis.app/Contents/Info.plist
+        GLVis.app/Contents/Resources/GLVis.icns
+        GLVis.app/Contents/Resources/Credits.rtf
+    VERBATIM)
