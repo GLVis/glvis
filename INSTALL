@@ -35,10 +35,6 @@ Besides a C++ compiler, GLVis depends on the following external packages:
 - the libpng or libtiff library; used for taking screenshots (optional)
   http://www.libpng.org, http://www.libtiff.org
 
-- Cygwin/X (on Windows); install the packages xinit, libSDL2-devel, glm-devel,
-  libGLEW-devel, libfreetype-devel, libpng-devel, fontconfig-devel.
-  https://cygwin.com, https://x.cygwin.com
-
 - the XQuartz app (on Mac OS X, if running GLVis remotely through ssh)
   https://www.xquartz.org
 
@@ -77,7 +73,8 @@ An optional installation of the glvis executable can be performed with
 
 Building with CMake
 ===================
-GLVis may also be configured using CMake to find dependencies.
+GLVis may also be configured using CMake to find dependencies. This is the only
+supported build method for Windows.
 
 NOTE: You must have built MFEM using CMake to build GLVis using CMake.
 
@@ -139,6 +136,18 @@ Some building considerations
      brew install fontconfig freetype sdl2 glew glm libpng
 
   Package names in other distributions may vary.
+
+- On Windows, it is recommended to install dependencies via vcpkg:
+
+     vcpkg install fontconfig freetype sdl2 glew glm libpng \
+        --triplet=x64-windows
+
+  After installing, proceed with the CMake configuration process, making sure
+  to point the CMake variable CMAKE_TOOLCHAIN_FILE to the correct path, based
+  on the directory where you installed vcpkg. More directions can be found in
+  the link below:
+
+    https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake
 
 - In case packaged versions of the needed libraries are not available, download
   and build instructions are included below for GLM, GLEW, and SDL2.
