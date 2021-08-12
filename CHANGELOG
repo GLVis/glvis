@@ -11,26 +11,25 @@
 
 Version 4.1, released on Aug XX, 2021
 =====================================
-- Use threads in server mode for window creation and session management
-  instead of fork(). This resolves some issues with running GLVis in server
-  mode on macOS. This also allows for closing all open GLVis windows associated
-  with the server by using Ctrl-C in the terminal.
 
-- Preliminary support for building natively on Windows via CMake.
+- Added a build target ("make app") to build a native Mac OS application bundle
+  that can be double-clicked, added to the Dock, etc.
 
-- Refactored glvis.cpp to fix a bug in GLVis script handling.
+- Use threads in server mode for window creation and session management instead
+  of fork(). This resolves issues with the GLVis server mode on macOS. It also
+  allows for closing all open GLVis server windows by Ctrl-C in the terminal.
 
 - Enabled support for WebGL 2, when available. This enables, among other
   features, support for controllable multisampling via framebuffers.
 
-- Various bugfixes and improvements related to the JavaScript version.
+- Refactored rendering components, including palette and shader handling.
 
-- Refactoring of rendering components, including palette and shader handling.
+- Replaced pthreads and POSIX-specific code with C++11 standard thread library.
 
-- Replace pthreads and POSIX-specific code with C++11 standard thread library.
+- Preliminary support for building natively on Windows via CMake.
 
-- Added build target ("make app") to build a native Mac OS application bundle
-  that can be double-clicked, added to the Dock, etc.
+- Various bugfixes and improvements related to the JavaScript version, script
+  handling and more.
 
 
 Version 4.0, released on Dec 11, 2020
