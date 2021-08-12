@@ -20,7 +20,7 @@ This directory contains scripts and data for regression testing of GLVis:
   can then be compared against a baseline image.
 
 - Test streams and baselines used in automated testing are stored in another
-  repository, [GLVis/data](https://github.com/GLVis/data), which is then linked
+  repository, [GLVis/data](https://github.com/GLVis/data), which is linked
   into this repository as a submodule under the directory data.
 
   To fetch the test data submodule, call `git submodule update --init` in an
