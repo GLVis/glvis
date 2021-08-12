@@ -33,7 +33,7 @@ Running tests with the test driver requires an installation of Python, with the
 manager.
 
 CMake is required to run the automated tests as they are used in Github Actions.
-The tests also expect `.png` images, so GLVis should be build with PNG support.
+The tests also expect `.png` images, so GLVis should be built with PNG support.
 
 CMake-based testing
 -------------------
