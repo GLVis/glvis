@@ -125,6 +125,7 @@ private:
    //bool requiresExpose;
    bool takeScreenshot{false};
    std::string screenshot_file;
+   bool screenshot_convert;
 
    // internal event handlers
    void windowEvent(SDL_WindowEvent& ew);
@@ -234,10 +235,14 @@ public:
    std::string getSavedKeys() const { return saved_keys; }
 
    /// Queues a screenshot to be taken.
-   void screenshot(std::string filename)
+   void screenshot(std::string filename, bool convert = false)
    {
       takeScreenshot = true;
       screenshot_file = filename;
+      screenshot_convert = convert;
+      // Queue up an expose, so Screenshot() can pull image from the back
+      // buffer
+      signalExpose();
    }
 
    void swapBuffer();
