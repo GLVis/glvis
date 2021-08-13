@@ -74,6 +74,7 @@ private:
       }
    };
 
+   int window_id = -1;
    Handle handle;
    std::unique_ptr<gl3::MeshRenderer> renderer;
    static const int high_dpi_threshold = 144;

@@ -50,6 +50,8 @@ struct SdlMainThread::SdlCtrlCommand
    string                   cmd_title;
    pair<int, int>           cmd_set_size;
    pair<int, int>           cmd_set_position;
+   // Promise object for signaling completion of the command on the main thread
+   promise<void>            finished;
 };
 
 SdlMainThread::SdlMainThread()
@@ -333,7 +335,7 @@ void SdlMainThread::SetWindowSize(const Handle& handle, int w, int h)
       main_thread_cmd.handle = &handle;
       main_thread_cmd.cmd_set_size = {w, h};
 
-      queueWindowEvent(std::move(main_thread_cmd));
+      queueWindowEvent(std::move(main_thread_cmd), true);
    }
 }
 
@@ -346,14 +348,19 @@ void SdlMainThread::SetWindowPosition(const Handle& handle, int x, int y)
       main_thread_cmd.handle = &handle;
       main_thread_cmd.cmd_set_position = {x, y};
 
-      queueWindowEvent(std::move(main_thread_cmd));
+      queueWindowEvent(std::move(main_thread_cmd), true);
    }
 }
 
-void SdlMainThread::queueWindowEvent(SdlCtrlCommand cmd)
+void SdlMainThread::queueWindowEvent(SdlCtrlCommand cmd, bool sync)
 {
+   future<void> wait_complete;
    if (sdl_multithread)
    {
+      if (sync)
+      {
+         wait_complete = cmd.finished.get_future();
+      }
       // queue up our event
       {
          lock_guard<mutex> req_lock{window_cmd_mtx};
@@ -361,6 +368,8 @@ void SdlMainThread::queueWindowEvent(SdlCtrlCommand cmd)
       }
       // wake up the main thread to handle our event
       SendEvent();
+
+      if (sync) { wait_complete.get(); }
    }
    else
    {
@@ -407,6 +416,8 @@ void SdlMainThread::handleWindowCmdImpl(SdlCtrlCommand& cmd)
          cerr << "Error in main thread: unknown window control command.\n";
          break;
    }
+   // Signal completion of the command, in case worker thread is waiting.
+   cmd.finished.set_value();
 }
 
 void SdlMainThread::setWindowIcon(SDL_Window* hwnd)

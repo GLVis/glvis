@@ -102,6 +102,8 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
       return false;
    }
 
+   window_id = SDL_GetWindowID(handle.hwnd);
+
    GLenum err = glewInit();
    if (err != GLEW_OK)
    {
@@ -604,15 +606,24 @@ void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
    if (k >= 32 && k < 128)
    {
       event.type = SDL_TEXTINPUT;
+      event.text.windowID = window_id;
       event.text.text[0] = k;
    }
    else
    {
       event.type = SDL_KEYDOWN;
+      event.key.windowID = window_id;
       event.key.keysym.sym = k;
       event.key.keysym.mod = m;
    }
-   SDL_PushEvent(&event);
+   {
+      lock_guard<mutex> event_lk{event_mutex};
+      waiting_events.push_back(event);
+   }
+   if (is_multithreaded)
+   {
+      events_available.notify_all();
+   }
 }
 
 void SdlWindow::swapBuffer()
