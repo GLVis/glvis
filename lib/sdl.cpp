@@ -105,6 +105,16 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
    window_id = SDL_GetWindowID(handle.hwnd);
 
    GLenum err = glewInit();
+#ifdef GLEW_ERROR_NO_GLX_DISPLAY
+   // NOTE: Hacky workaround for Wayland initialization failure
+   // See https://github.com/nigels-com/glew/issues/172
+   if (err == GLEW_ERROR_NO_GLX_DISPLAY)
+   {
+      cerr << "GLEW: No GLX display found. If you are using Wayland this can "
+              "be ignored." << endl;
+      err = GLEW_OK;
+   }
+#endif
    if (err != GLEW_OK)
    {
       cerr << "FATAL: Failed to initialize GLEW: "

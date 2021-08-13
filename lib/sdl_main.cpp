@@ -316,6 +316,12 @@ void SdlMainThread::DeleteHandle(Handle to_delete)
 {
    if (to_delete.isInitialized())
    {
+      {
+         lock_guard<mutex> ctx_lock{gl_ctx_mtx};
+         // Unbinding the context before deletion seems to resolve some issues
+         // with thread-local storage on Wayland/EGL.
+         SDL_GL_MakeCurrent(to_delete.hwnd, nullptr);
+      }
       SdlCtrlCommand main_thread_cmd;
       main_thread_cmd.type = SdlCmdType::Delete;
       main_thread_cmd.cmd_delete = std::move(to_delete);
