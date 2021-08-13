@@ -28,6 +28,7 @@
 #endif
 
 extern int GetMultisample();
+extern bool wndUseHiDPI;
 
 struct SdlMainThread::CreateWindowCmd
 {
@@ -582,10 +583,14 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
 {
    Uint32 win_flags = SDL_WINDOW_OPENGL;
    // Hide window until we adjust its size for high-dpi displays
-   win_flags |= SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN;
+   win_flags |= SDL_WINDOW_HIDDEN;
 #ifndef __EMSCRIPTEN__
    win_flags |= SDL_WINDOW_RESIZABLE;
 #endif
+   if (wndUseHiDPI)
+   {
+      win_flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+   }
    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
    probeGLContextSupport(cmd.legacy_gl_only);
