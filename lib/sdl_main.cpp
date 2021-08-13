@@ -56,11 +56,17 @@ struct SdlMainThread::SdlCtrlCommand
 
 SdlMainThread::SdlMainThread()
 {
+   SDL_version sdl_ver;
+   SDL_GetVersion(&sdl_ver);
+   PRINT_DEBUG("Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor
+               << "." << (int)sdl_ver.patch << std::endl);
+
    if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
    {
       if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
       {
          std::cerr << "FATAL: Failed to initialize SDL: " << SDL_GetError() << endl;
+         return;
       }
       SDL_EnableScreenSaver();
       glvis_event_type = SDL_RegisterEvents(1);
@@ -70,21 +76,21 @@ SdlMainThread::SdlMainThread()
       }
    }
 
-   SDL_version sdl_ver;
-   SDL_GetVersion(&sdl_ver);
-   PRINT_DEBUG("Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor
-               << "." << (int)sdl_ver.patch << std::endl);
-
    sdl_init = true;
 #ifdef __EMSCRIPTEN__
    SetSingleThread();
 #endif
 }
 
-SdlMainThread::~SdlMainThread() = default;
+SdlMainThread::~SdlMainThread()
+{
+   SDL_Quit();
+}
 
 void SdlMainThread::MainLoop(bool server_mode)
 {
+   if (!sdl_init) { return; }
+
    this->server_mode = server_mode;
    if (server_mode)
    {
@@ -262,6 +268,11 @@ SdlMainThread::Handle SdlMainThread::GetHandle(SdlWindow* wnd,
                                                const std::string& title,
                                                int x, int y, int w, int h, bool legacyGlOnly)
 {
+   if (!sdl_init)
+   {
+      return Handle{};
+   }
+
    CreateWindowCmd cmd_create = { wnd, title, x, y, w, h, legacyGlOnly, false,
                                   {}
                                 };
@@ -613,6 +624,8 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
    {
       PRINT_DEBUG("failed." << endl);
       cerr << "FATAL: window and/or OpenGL context creation failed." << endl;
+      // If not in server mode, this was the only window we were going to open.
+      if (!server_mode) { terminating = true; }
       return;
    }
    else
