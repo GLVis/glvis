@@ -60,6 +60,7 @@ Some of the available 'make' targets are:
 make       -> Builds the glvis binary, using the MFEM compiler and options
 make opt   -> Builds an optimized version
 make debug -> Builds a debug version
+make app   -> Builds a Mac OS application bundle
 make clean -> Cleans the build
 make style -> Format the code with Artistic Style.
 make help  -> Prints a short help message
@@ -190,6 +191,9 @@ Some building considerations
      '--disable-video-x11' switch to the ./configure command.
      Note that while this avoids the hard error, and allows for real-time
      visualization, occasional hangs have been reported with this method.
+
+- On Mac OS X, GLVis can be built as a native application bundle using the 'make
+  app' target (with both the makefile and CMake build systems).
 
 Dependency building instructions
 ================================

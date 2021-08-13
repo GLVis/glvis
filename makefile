@@ -16,6 +16,7 @@ GLVis makefile targets:
    make
    make status/info
    make install
+   make app
    make clean
    make distclean
    make style
@@ -30,6 +31,8 @@ make status
    Display information about the current configuration.
 make install PREFIX=<dir>
    Install the glvis executable in <dir>.
+make app
+   Build a Mac OS application bundle.
 make clean
    Clean the glvis executable, library and object files.
 make distclean
@@ -125,8 +128,12 @@ GLVIS_MS_LINEWIDTH ?= $(if $(NOTMAC),1.4,1.0)
 DEFINES = -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
  -DGLVIS_MS_LINEWIDTH=$(GLVIS_MS_LINEWIDTH)\
  -DGLVIS_OGL3
+
 # Enable logo setting via SDL (disabled on Windows/CMake build)
-DEFINES += -DGLVIS_USE_LOGO
+GLVIS_USE_LOGO ?= YES
+ifeq ($(GLVIS_USE_LOGO),YES)
+  DEFINES += -DGLVIS_USE_LOGO
+endif
 
 GLVIS_FLAGS += $(DEFINES)
 
@@ -293,6 +300,7 @@ clean:
 	rm -rf lib/*.o lib/*.bc lib/gl/*.o lib/gl/*.bc lib/*~ *~ glvis
 	rm -rf $(LOGO_FILE_CPP) share/*.o
 	rm -rf lib/libglvis.a lib/libglvis.js *.dSYM
+	rm -rf GLVis.app
 
 distclean: clean
 	rm -rf bin/
@@ -304,6 +312,14 @@ install: glvis
 ifeq ($(MFEM_USE_GNUTLS),YES)
 	$(INSTALL) -m 750 glvis-keygen.sh $(PREFIX)
 endif
+
+app: glvis
+	mkdir -p GLVis.app/Contents/MacOS
+	mkdir -p GLVis.app/Contents/Resources
+	cp share/Info.plist GLVis.app/Contents
+	cp glvis GLVis.app/Contents/MacOS
+	cp share/GLVis.icns GLVis.app/Contents/Resources
+	cp share/Credits.rtf GLVis.app/Contents/Resources
 
 help:
 	$(info $(value GLVIS_HELP_MSG))

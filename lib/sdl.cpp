@@ -92,7 +92,6 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
 {
 #ifdef __EMSCRIPTEN__
    is_multithreaded = false;
-   GetMainThread().SetSingleThread();
 #endif
    // create a new SDL window
    handle = GetMainThread().GetHandle(this, title, x, y, w, h, legacyGlOnly);
