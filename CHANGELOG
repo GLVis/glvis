@@ -32,6 +32,11 @@ Version 4.0.1 (development)
 - Added build target ("make app") to build a native Mac OS application bundle
   that can be double-clicked, added to the Dock, etc.
 
+- Added a new regression test suite based on generated screenshots of stream
+  files. See the README in the tests directory for more details.
+
+- Fixed an issue with black screenshots on certain OpenGL implementations.
+
 
 Version 4.0, released on Dec 11, 2020
 =====================================
