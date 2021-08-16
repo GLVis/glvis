@@ -33,7 +33,7 @@ test_cases = {
 screenshot_keys = "Sq"
 screenshot_file = "GLVis_s01.png"
 
-cutoff_ssim = 0.99
+cutoff_ssim = 0.999
 
 def compare_images(baseline_file, output_file, expect_fail=False):
     # Try to open output image
@@ -49,7 +49,7 @@ def compare_images(baseline_file, output_file, expect_fail=False):
         return True
 
     # Compare images with SSIM metrics. For two exactly-equal images, SSIM=1.0.
-    # We set a cutoff of 0.99 to account for possible differences in rendering.
+    # We set a cutoff of 0.999 to account for possible differences in rendering.
     ssim = structural_similarity(baseline_img, output_img, multichannel=True)
     if ssim < cutoff_ssim:
         if expect_fail:

@@ -47,6 +47,12 @@ To run all the tests:
   option.
 - Run `ctest` or `make test` to run all the test cases.
 
+Note that a set of baselines need to be generated manually for your specific
+system, due to differences in rendering between operating systems and graphics
+hardware. After the first run of `ctest` on master, run `make rebaseline` in
+the build directory. This will copy the generated images from the test run to a
+system-specific baseline directory.
+
 Standalone testing
 ------------------
 You can also run an individual test case outside of `CTest`, with the following
@@ -62,7 +68,7 @@ python3 glvis_driver.py -e [path to glvis] \
 for example
 
 ```sh
-python3 glvis_driver.py -e ../glvis -s data/streams/shaper.saved -b data/baselines -a "-lw 1 -mslw 1 -nohidpi"
+python3 glvis_driver.py -e ../glvis -s data/streams/shaper.saved -b data/baselines/local -a "-lw 1 -mslw 1 -nohidpi"
 ```
 
 A screenshot named "test.[stream file name].png" will be generated. If no path
@@ -73,10 +79,21 @@ and compare the two images.
 Details: Screenshot-based testing
 ---------------------------------
 As implemented in the `glvis_driver.py` test,
-[peak signal-to-noise ratio (PSNR)](https://en.wikipedia.org/wiki/Peak_signal-to-noise_ratio)
+[structural similarity (SSIM)](https://en.wikipedia.org/wiki/Structural_similarity)
 is used to determine similarity between the generated test screenshot and the
 baseline screenshot.
 
-The current cutoff for an image and its baseline is that PSNR must exceed 12dB;
-this is much lower than would normally be expected, but is necessary to handle
-differences in line rasterization between different OpenGL implementations.
+The current cutoff for an image and its baseline is set to 0.999; this allows
+for minor differences in rendering output.
+
+Details: Baselines
+------------------
+Two sets of public baselines are maintained: `ubuntu-20.04` and `macos-10.15`,
+each representing their corresponding Github Actions virtual environment. These
+are selected based on the value of the `GLVIS_BASELINE_SYS` CMake variable (set
+to `local` by default).
+
+You should leave this variable unset for development purposes, even if your
+development platform shares the same operating system; baselines are usually
+generated in these virtual environments with software rendering, and may not
+match the output of your specific system/graphics hardware.
