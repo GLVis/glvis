@@ -238,11 +238,6 @@ void SdlMainThread::DispatchSDLEvents()
       {
          wnd->queueEvents(std::move(wnd_events[windowId]));
       }
-      else
-      {
-         // Wake up the worker thread anyways, to execute onIdle
-         wnd->queueEvents({});
-      }
    }
 }
 
