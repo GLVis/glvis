@@ -2,7 +2,7 @@ import argparse
 import sys
 import os
 from skimage.io import imread
-from skimage.metrics import peak_signal_noise_ratio
+from skimage.metrics import structural_similarity
 
 # Below are key commands that are passed to the -keys command-line argument for
 # glvis in order to perform testing on raw mesh/grid function data (i.e. non-
@@ -33,9 +33,9 @@ test_cases = {
 screenshot_keys = "Sq"
 screenshot_file = "GLVis_s01.png"
 
-cutoff_psnr = 0
+cutoff_ssim = 0.99
 
-def compare_images(baseline_file, output_file):
+def compare_images(baseline_file, output_file, expect_fail=False):
     # Try to open output image
     output_img = imread(output_file)
     if output_img is None:
@@ -48,18 +48,21 @@ def compare_images(baseline_file, output_file):
         print("[IGNORE] No baseline exists to compare against.")
         return True
 
-    # Compare images with PSNR.
-    # When element meshes are overlaid, line rasterization differences can
-    # cause PSNR to drop to as low as 14 dB.
-    # Two completely different streams are usually around 7dB PSNR, so we split
-    # the difference and set the cutoff at 12 dB PSNR.
-    psnr = peak_signal_noise_ratio(baseline_img, output_img)
-    if psnr < cutoff_psnr:
-        print("[FAIL] Output and baseline are different.")
-        print("       actual psnr = {}, cutoff = 12".format(psnr))
+    # Compare images with SSIM metrics. For two exactly-equal images, SSIM=1.0.
+    # We set a cutoff of 0.99 to account for possible differences in rendering.
+    ssim = structural_similarity(baseline_img, output_img, multichannel=True)
+    if ssim < cutoff_ssim:
+        if expect_fail:
+            print("[PASS] Differences were detected in the control case.")
+        else:
+            print("[FAIL] Output and baseline are different.")
     else:
-        print("[PASS] Images match (psnr = {}).".format(psnr))
-    return psnr >= cutoff_psnr
+        if expect_fail:
+            print("[FAIL] Differences were not detected in the control case.")
+        else:
+            print("[PASS] Images match.")
+    print("       actual ssim = {}, cutoff = {}".format(ssim, cutoff_ssim))
+    return ssim >= cutoff_ssim if not expect_fail else ssim < cutoff_ssim
 
 # Function to test a given glvis command with a variety of key-based commands.
 # Not currently in use.
@@ -100,12 +103,16 @@ def test_stream(exec_path, exec_args, save_file, baseline):
         stream_data = in_f.read()
 
     output_name = "test.{}.png".format(test_name)
+    output_name_fail = "test.fail.{}.png".format(test_name)
     tmp_file = "test.saved"
     with open(tmp_file, 'w') as out_f:
         out_f.write(stream_data)
-        out_f.write("\nkeys ~e")
         out_f.write("\nwindow_size 800 600")
+        #out_f.write("\nkeys ~e")
         out_f.write("\nscreenshot {}".format(output_name))
+        # Zooming in should create some difference in the images
+        out_f.write("\nkeys *")
+        out_f.write("\nscreenshot {}".format(output_name_fail))
         out_f.write("\nkeys q")
 
     # Run GLVis with modified stream file
@@ -118,7 +125,10 @@ def test_stream(exec_path, exec_args, save_file, baseline):
 
     if baseline:
         baseline_name = "{0}/test.{1}.png".format(baseline, test_name)
-        return compare_images(baseline_name, output_name)
+        test_baseline = compare_images(baseline_name, output_name)
+        test_control = compare_images(baseline_name, output_name_fail,
+                                      expect_fail=True)
+        return (test_baseline and test_control)
     else:
         print("[IGNORE] No baseline exists to compare against.")
         return True
