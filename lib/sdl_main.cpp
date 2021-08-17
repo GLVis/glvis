@@ -59,11 +59,6 @@ SdlMainThread::SdlMainThread()
          std::cerr << "FATAL: Failed to initialize SDL: " << SDL_GetError() << endl;
       }
       SDL_EnableScreenSaver();
-      glvis_event_type = SDL_RegisterEvents(1);
-      if (glvis_event_type == (Uint32)(-1))
-      {
-         cerr << "SDL_RegisterEvents(1) failed: " << SDL_GetError() << endl;
-      }
    }
 
    SDL_version sdl_ver;

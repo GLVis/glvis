@@ -31,8 +31,6 @@ public:
 
    bool SdlInitialized() const { return sdl_init; }
 
-   Uint32 GetCustomEvent() const { return glvis_event_type; }
-
    // Handles all SDL operations that are expected to be handled on the main
    // SDL thread (i.e. events and window creation)
    void MainLoop(bool server_mode);
@@ -108,7 +106,6 @@ private:
 
    void handleBackgroundWindowEvent(SDL_WindowEvent e);
 
-   Uint32 glvis_event_type {(Uint32)-1};
    bool sdl_init {false};
    bool sdl_multithread {true};
 
