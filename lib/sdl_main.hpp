@@ -59,17 +59,6 @@ public:
    // Issues a command on the main thread to set the window position.
    void SetWindowPosition(const Handle& handle, int x, int y);
 
-   // Wakes up the main thread, if sleeping.
-   void SendEvent()
-   {
-      std::unique_lock<std::mutex> platform_lk{event_mtx};
-      event_cv.wait(platform_lk, [this]() { return try_create_platform; });
-      if (platform)
-      {
-         platform->SendEvent();
-      }
-   }
-
    SdlNativePlatform* GetPlatform() const { return platform.get(); }
 
 private:
@@ -85,6 +74,17 @@ private:
       SetSize,
       SetPosition
    };
+
+   // Wakes up the main thread, if sleeping.
+   void SendEvent()
+   {
+      std::unique_lock<std::mutex> platform_lk{event_mtx};
+      event_cv.wait(platform_lk, [this]() { return try_create_platform; });
+      if (platform)
+      {
+         platform->SendEvent();
+      }
+   }
 
    void queueWindowEvent(SdlCtrlCommand cmd);
 
