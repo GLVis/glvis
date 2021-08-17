@@ -35,7 +35,6 @@ struct SdlMainThread::CreateWindowCmd
    std::string title;
    int x, y, w, h;
    bool legacy_gl_only;
-   bool window_create_executed;
    promise<Handle> out_handle;
 };
 
@@ -254,9 +253,7 @@ SdlMainThread::Handle SdlMainThread::GetHandle(SdlWindow* wnd,
                                                const std::string& title,
                                                int x, int y, int w, int h, bool legacyGlOnly)
 {
-   CreateWindowCmd cmd_create = { wnd, title, x, y, w, h, legacyGlOnly, false,
-                                  {}
-                                };
+   CreateWindowCmd cmd_create = { wnd, title, x, y, w, h, legacyGlOnly, {} };
    future<Handle> res_handle = cmd_create.out_handle.get_future();
 
    SdlCtrlCommand main_thread_cmd;
@@ -585,7 +582,6 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
    probeGLContextSupport(cmd.legacy_gl_only);
    Handle new_handle(cmd.title, cmd.x, cmd.y, cmd.w, cmd.h, win_flags);
-   cmd.window_create_executed = true;
 
    // at this point, window should be up
    if (!new_handle.isInitialized())
