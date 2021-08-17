@@ -28,6 +28,7 @@
 #endif
 
 extern int GetMultisample();
+extern bool wndUseHiDPI;
 
 struct SdlMainThread::CreateWindowCmd
 {
@@ -49,15 +50,23 @@ struct SdlMainThread::SdlCtrlCommand
    string                   cmd_title;
    pair<int, int>           cmd_set_size;
    pair<int, int>           cmd_set_position;
+   // Promise object for signaling completion of the command on the main thread
+   promise<void>            finished;
 };
 
 SdlMainThread::SdlMainThread()
 {
+   SDL_version sdl_ver;
+   SDL_GetVersion(&sdl_ver);
+   PRINT_DEBUG("Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor
+               << "." << (int)sdl_ver.patch << std::endl);
+
    if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
    {
       if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
       {
          std::cerr << "FATAL: Failed to initialize SDL: " << SDL_GetError() << endl;
+         return;
       }
       SDL_EnableScreenSaver();
       glvis_event_type = SDL_RegisterEvents(1);
@@ -67,21 +76,21 @@ SdlMainThread::SdlMainThread()
       }
    }
 
-   SDL_version sdl_ver;
-   SDL_GetVersion(&sdl_ver);
-   PRINT_DEBUG("Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor
-               << "." << (int)sdl_ver.patch << std::endl);
-
    sdl_init = true;
 #ifdef __EMSCRIPTEN__
    SetSingleThread();
 #endif
 }
 
-SdlMainThread::~SdlMainThread() = default;
+SdlMainThread::~SdlMainThread()
+{
+   SDL_Quit();
+}
 
 void SdlMainThread::MainLoop(bool server_mode)
 {
+   if (!sdl_init) { return; }
+
    this->server_mode = server_mode;
    if (server_mode)
    {
@@ -259,6 +268,11 @@ SdlMainThread::Handle SdlMainThread::GetHandle(SdlWindow* wnd,
                                                const std::string& title,
                                                int x, int y, int w, int h, bool legacyGlOnly)
 {
+   if (!sdl_init)
+   {
+      return Handle{};
+   }
+
    CreateWindowCmd cmd_create = { wnd, title, x, y, w, h, legacyGlOnly, false,
                                   {}
                                 };
@@ -302,6 +316,12 @@ void SdlMainThread::DeleteHandle(Handle to_delete)
 {
    if (to_delete.isInitialized())
    {
+      {
+         lock_guard<mutex> ctx_lock{gl_ctx_mtx};
+         // Unbinding the context before deletion seems to resolve some issues
+         // with thread-local storage on Wayland/EGL.
+         SDL_GL_MakeCurrent(to_delete.hwnd, nullptr);
+      }
       SdlCtrlCommand main_thread_cmd;
       main_thread_cmd.type = SdlCmdType::Delete;
       main_thread_cmd.cmd_delete = std::move(to_delete);
@@ -332,7 +352,7 @@ void SdlMainThread::SetWindowSize(const Handle& handle, int w, int h)
       main_thread_cmd.handle = &handle;
       main_thread_cmd.cmd_set_size = {w, h};
 
-      queueWindowEvent(std::move(main_thread_cmd));
+      queueWindowEvent(std::move(main_thread_cmd), true);
    }
 }
 
@@ -345,14 +365,19 @@ void SdlMainThread::SetWindowPosition(const Handle& handle, int x, int y)
       main_thread_cmd.handle = &handle;
       main_thread_cmd.cmd_set_position = {x, y};
 
-      queueWindowEvent(std::move(main_thread_cmd));
+      queueWindowEvent(std::move(main_thread_cmd), true);
    }
 }
 
-void SdlMainThread::queueWindowEvent(SdlCtrlCommand cmd)
+void SdlMainThread::queueWindowEvent(SdlCtrlCommand cmd, bool sync)
 {
+   future<void> wait_complete;
    if (sdl_multithread)
    {
+      if (sync)
+      {
+         wait_complete = cmd.finished.get_future();
+      }
       // queue up our event
       {
          lock_guard<mutex> req_lock{window_cmd_mtx};
@@ -360,6 +385,8 @@ void SdlMainThread::queueWindowEvent(SdlCtrlCommand cmd)
       }
       // wake up the main thread to handle our event
       SendEvent();
+
+      if (sync) { wait_complete.get(); }
    }
    else
    {
@@ -406,6 +433,8 @@ void SdlMainThread::handleWindowCmdImpl(SdlCtrlCommand& cmd)
          cerr << "Error in main thread: unknown window control command.\n";
          break;
    }
+   // Signal completion of the command, in case worker thread is waiting.
+   cmd.finished.set_value();
 }
 
 void SdlMainThread::setWindowIcon(SDL_Window* hwnd)
@@ -582,10 +611,14 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
 {
    Uint32 win_flags = SDL_WINDOW_OPENGL;
    // Hide window until we adjust its size for high-dpi displays
-   win_flags |= SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN;
+   win_flags |= SDL_WINDOW_HIDDEN;
 #ifndef __EMSCRIPTEN__
    win_flags |= SDL_WINDOW_RESIZABLE;
 #endif
+   if (wndUseHiDPI)
+   {
+      win_flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+   }
    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
    probeGLContextSupport(cmd.legacy_gl_only);
@@ -597,6 +630,8 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
    {
       PRINT_DEBUG("failed." << endl);
       cerr << "FATAL: window and/or OpenGL context creation failed." << endl;
+      // If not in server mode, this was the only window we were going to open.
+      if (!server_mode) { terminating = true; }
       return;
    }
    else

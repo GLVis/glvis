@@ -31,12 +31,16 @@ jobs:
   builds-and-tests:
     strategy:
       matrix:
+        os: [ubuntu-20.04, macos-10.15]
+        target: [debug, optim]
+        mpi: [sequential]
+        build-system: [cmake]
         include:
-          - os: ubuntu-18.04
+          - os: ubuntu-20.04
             target: optim
             mpi: sequential
             build-system: make
-          - os: ubuntu-18.04
+          - os: ubuntu-20.04
             target: debug
             mpi: parallel
             build-system: make
@@ -48,17 +52,13 @@ jobs:
             target: debug
             mpi: parallel
             build-system: make
-          - os: ubuntu-18.04
-            target: optim
-            mpi: sequential
-            build-system: cmake
     name: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}-${{ matrix.build-system }}
 
     runs-on: ${{ matrix.os }}
 
     steps:
     - name: get MPI (Linux)
-      if: matrix.os == 'ubuntu-18.04'
+      if: matrix.os == 'ubuntu-20.04'
       run: |
         sudo apt-get update
         sudo apt-get install mpich libmpich-dev
@@ -147,10 +147,13 @@ jobs:
         build-system: ${{ matrix.build-system }}
         mpi: ${{ matrix.mpi }}
 
-    # Install GlVis dependencies with package manager
+    # Install GLVis dependencies with package manager
     - name: get deps (Linux)
-      if: matrix.os == 'ubuntu-18.04'
+      if: matrix.os == 'ubuntu-20.04'
       run: |
+        # We need to add a PPA for SDL 2.0.14 - fixes some initialization
+        # errors for X11
+        sudo add-apt-repository -y ppa:savoury1/multimedia
         sudo apt-get update
         sudo apt-get install libfontconfig1-dev libfreetype6-dev libsdl2-dev libglew-dev libglm-dev libpng-dev
 
@@ -168,6 +171,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: glvis
+        submodules: recursive
 
     - name: build GLVis (make)
       if: matrix.build-system == 'make'
@@ -179,12 +183,51 @@ jobs:
     - name: build GLVis (cmake)
       if: matrix.build-system == 'cmake'
       run: |
-        build_type="Release"
+        build_type="RelWithDebInfo"
         [[ ${{ matrix.target }} == "debug" ]] && build_type="Debug";
         cd glvis && mkdir build && cd build
         cmake \
           -D CMAKE_BUILD_TYPE:STRING=${build_type} \
+          -D ENABLE_TESTS:BOOL=TRUE \
           -D mfem_DIR:PATH=${GITHUB_WORKSPACE}/${MFEM_TOP_DIR}/build \
+          -D GLVIS_BASELINE_SYS=${{ matrix.os }} \
           ..
         make -j3
 
+    - name: setup Python
+      if: matrix.build-system == 'cmake'
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - name: setup Python packages for testing
+      if: matrix.build-system == 'cmake'
+      run: |
+        python -m pip install --upgrade pip
+        pip install scikit-image
+
+    - name: setup Linux testing dependencies
+      if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
+      run: |
+        sudo apt-get install xvfb
+
+    - name: test GLVis (cmake/linux)
+      if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
+      run: |
+        cd glvis && cd build
+        xvfb-run -a ctest --verbose
+        tar czvf test_screenshots.tar.gz tests/test.*.png
+
+    - name: test GLVis (cmake/mac)
+      if: matrix.build-system == 'cmake' && matrix.os == 'macos-10.15'
+      run: |
+        cd glvis && cd build
+        ctest --verbose
+        tar czvf test_screenshots.tar.gz tests/test.*.png
+
+    - name: upload test screenshots
+      if: matrix.build-system == 'cmake'
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-screenshots-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}
+        path: glvis/build/test_screenshots.tar.gz
