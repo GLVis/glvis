@@ -626,7 +626,7 @@ void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
       event.key.keysym.sym = k;
       event.key.keysym.mod = m;
    }
-   SDL_PushEvent(&event);
+   queueEvents({ event });
 }
 
 void SdlWindow::swapBuffer()
