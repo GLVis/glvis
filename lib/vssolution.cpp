@@ -592,6 +592,7 @@ void VisualizationSceneSolution::NewMeshAndSolution(
    PrepareLevelCurves();
    PrepareBoundary();
    PrepareCP();
+   PrepareNumbering();
    PrepareOrderingCurve();
 }
 
