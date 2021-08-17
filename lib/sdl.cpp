@@ -111,7 +111,7 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
    if (err == GLEW_ERROR_NO_GLX_DISPLAY)
    {
       cerr << "GLEW: No GLX display found. If you are using Wayland this can "
-              "be ignored." << endl;
+           "be ignored." << endl;
       err = GLEW_OK;
    }
 #endif
