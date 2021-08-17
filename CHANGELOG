@@ -9,7 +9,7 @@
                               http://glvis.org
 
 
-Version 4.1, released on Aug XX, 2021
+Version 4.1, released on Aug 31, 2021
 =====================================
 
 - Added a build target ("make app") to build a native Mac OS application bundle
@@ -26,15 +26,13 @@ Version 4.1, released on Aug XX, 2021
 
 - Replaced pthreads and POSIX-specific code with C++11 standard thread library.
 
+- Added a new regression test suite based on generated screenshots of stream
+  files. See the README in the tests/ directory for more details.
+
 - Preliminary support for building natively on Windows via CMake.
 
-- Various bugfixes and improvements related to the JavaScript version, script
-  handling and more.
-
-- Added a new regression test suite based on generated screenshots of stream
-  files. See the README in the tests directory for more details.
-
-- Fixed an issue with black screenshots on certain OpenGL implementations.
+- Various bugfixes and improvements related to the JavaScript version, vertex
+  numbering, script handling and screenshots on some OpenGL implementations.
 
 
 Version 4.0, released on Dec 11, 2020
