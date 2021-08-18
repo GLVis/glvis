@@ -1605,6 +1605,7 @@ vector<string> fc_font_patterns =
    "DejaVu Sans Mono:style=Book",
    "DejaVu LGC Sans Mono:style=Book",
    "Helvetica:style=Regular",
+   "Arial:style=Regular:weight=80"
 };
 
 constexpr int default_font_size = 12;
