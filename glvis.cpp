@@ -20,6 +20,17 @@
 #include <cstring>
 #include <ctime>
 
+// SDL may redefine main() as SDL_main() ostensibly to ease portability.
+// (WinMain() instead of main() is used as the entry point in a non-console
+// Windows program.)
+//
+// We must instead define SDL_MAIN_HANDLED so that SDL doesn't do this
+// substitution, since we need a console to accept certain user input from
+// stdin.
+#ifdef _WIN32
+  #define SDL_MAIN_HANDLED
+#endif
+
 #include "mfem.hpp"
 #include "lib/palettes.hpp"
 #include "lib/visual.hpp"
@@ -1128,6 +1139,11 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
 
 int main (int argc, char *argv[])
 {
+#ifdef _WIN32
+   // Call needed to avoid SDL_Init failure when not substituting main() for
+   // SDL_main().
+   SDL_SetMainReady();
+#endif
    // variables for command line arguments
    int         np            = 0;
    bool        mac           = false;
