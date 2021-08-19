@@ -139,6 +139,8 @@ private:
 
    bool is_multithreaded{true};
 
+   bool call_idle_func{false};
+
    // Hand off events to the SdlWindow. Intended to be called by the main SDL
    // thread in MainThread::MainLoop().
    void queueEvents(std::vector<SDL_Event> events)
