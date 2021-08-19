@@ -84,7 +84,7 @@ private:
       }
    }
 
-   void queueWindowEvent(SdlCtrlCommand cmd);
+   void queueWindowEvent(SdlCtrlCommand cmd, bool sync = false);
 
    template<typename T>
    Uint32 getWindowID(const T& eventStruct)

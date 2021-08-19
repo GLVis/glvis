@@ -102,7 +102,19 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
       return false;
    }
 
+   window_id = SDL_GetWindowID(handle.hwnd);
+
    GLenum err = glewInit();
+#ifdef GLEW_ERROR_NO_GLX_DISPLAY
+   // NOTE: Hacky workaround for Wayland initialization failure
+   // See https://github.com/nigels-com/glew/issues/172
+   if (err == GLEW_ERROR_NO_GLX_DISPLAY)
+   {
+      cerr << "GLEW: No GLX display found. If you are using Wayland this can "
+              "be ignored." << endl;
+      err = GLEW_OK;
+   }
+#endif
    if (err != GLEW_OK)
    {
       cerr << "FATAL: Failed to initialize GLEW: "
@@ -476,6 +488,11 @@ void SdlWindow::mainLoop()
    while (running)
    {
       mainIter();
+      if (takeScreenshot)
+      {
+         Screenshot(screenshot_file.c_str(), screenshot_convert);
+         takeScreenshot = false;
+      }
       if (wnd_state == RenderState::SwapPending)
       {
 #ifdef SDL_VIDEO_DRIVER_COCOA
@@ -495,11 +512,6 @@ void SdlWindow::mainLoop()
          SDL_GL_SwapWindow(handle.hwnd);
 #endif
          wnd_state = RenderState::Updated;
-      }
-      if (takeScreenshot)
-      {
-         Screenshot(screenshot_file.c_str());
-         takeScreenshot = false;
       }
    }
 #endif
@@ -618,11 +630,13 @@ void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
    if (k >= 32 && k < 128)
    {
       event.type = SDL_TEXTINPUT;
+      event.text.windowID = window_id;
       event.text.text[0] = k;
    }
    else
    {
       event.type = SDL_KEYDOWN;
+      event.key.windowID = window_id;
       event.key.keysym.sym = k;
       event.key.keysym.mod = m;
    }
