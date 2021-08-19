@@ -26,6 +26,7 @@ private:
    VisualizationSceneScalarData **vs;
    StreamState&         curr_state;
    bool                 *keep_attr;
+   SdlWindow            *thread_wnd;
 
    std::mutex glvis_mutex;
    std::condition_variable glvis_cond;
