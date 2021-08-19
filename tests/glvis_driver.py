@@ -81,7 +81,7 @@ def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
 
     ret = os.system("mv {0} {1}".format(screenshot_file, output_name))
     if ret != 0:
-        print("[FAIL] Could not copy output image: exit code {}.".format(ret))
+        print("[FAIL] Could not move output image: exit code {}.".format(ret))
         return False
 
     if baseline:

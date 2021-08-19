@@ -97,3 +97,6 @@ You should leave this variable unset for development purposes, even if your
 development platform shares the same operating system; baselines are usually
 generated in these virtual environments with software rendering, and may not
 match the output of your specific system/graphics hardware.
+
+Reminder: after running `ctest` on master, developers can run `make rebaseline`
+to populate the local baseline with reference figures.
