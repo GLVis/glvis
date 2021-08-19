@@ -23,6 +23,8 @@ GLVisCommand::GLVisCommand(
 {
    vs        = _vs;
    keep_attr = _keep_attr;
+   thread_wnd = GetAppWindow(); // should be set in this thread by a call to
+                                // InitVisualization()
 
    num_waiting = 0;
    terminating = false;
@@ -57,10 +59,9 @@ int GLVisCommand::signal()
 {
    command_ready = true;
 
-   SdlWindow *sdl_window = GetAppWindow();
-   if (sdl_window)
+   if (thread_wnd)
    {
-      sdl_window->signalLoop();
+      thread_wnd->signalLoop();
    }
 
    return 0;

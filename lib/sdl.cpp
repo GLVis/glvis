@@ -431,12 +431,22 @@ void SdlWindow::mainIter()
    }
    else if (onIdle)
    {
+      {
+         unique_lock<mutex> event_lock{event_mutex};
+         call_idle_func = false;
+      }
       bool sleep = onIdle();
       if (is_multithreaded && sleep)
       {
          // Wait for next wakeup event from main event thread
          unique_lock<mutex> event_lock{event_mutex};
-         events_available.wait(event_lock);
+         events_available.wait(
+            event_lock,
+            [this]()
+            {
+               // Sleep until events from WM or glvis_command can be handled
+               return !waiting_events.empty() || call_idle_func;
+            });
       }
    }
    if (wnd_state == RenderState::ExposePending)
@@ -510,7 +520,11 @@ void SdlWindow::mainLoop()
 void SdlWindow::signalLoop()
 {
    // Note: not executed from the main thread
-   GetMainThread().SendEvent();
+   {
+      lock_guard<mutex> evt_guard{event_mutex};
+      call_idle_func = true;
+   }
+   events_available.notify_all();
 }
 
 void SdlWindow::getWindowSize(int& w, int& h)
@@ -626,14 +640,7 @@ void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
       event.key.keysym.sym = k;
       event.key.keysym.mod = m;
    }
-   {
-      lock_guard<mutex> event_lk{event_mutex};
-      waiting_events.push_back(event);
-   }
-   if (is_multithreaded)
-   {
-      events_available.notify_all();
-   }
+   queueEvents({ event });
 }
 
 void SdlWindow::swapBuffer()
