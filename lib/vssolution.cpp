@@ -1564,16 +1564,6 @@ double VisualizationSceneSolution::GetElementLengthScale(int k)
 
 void VisualizationSceneSolution::PrepareElementNumbering()
 {
-   int ne = mesh -> GetNE();
-
-   if (ne > MAX_RENDER_NUMBERING)
-   {
-      cout << "Element numbering disabled when #elements > "
-           << MAX_RENDER_NUMBERING << endl;
-      cout << "Rendering the text would be very slow." << endl;
-      return;
-   }
-
    if (2 == shading)
    {
       PrepareElementNumbering2();
@@ -1656,16 +1646,6 @@ void VisualizationSceneSolution::PrepareElementNumbering2()
 
 void VisualizationSceneSolution::PrepareVertexNumbering()
 {
-   int nv = mesh->GetNV();
-
-   if (nv > MAX_RENDER_NUMBERING)
-   {
-      cout << "Vertex numbering disabled when #vertices > "
-           << MAX_RENDER_NUMBERING << endl;
-      cout << "Rendering the text would be very slow." << endl;
-      return;
-   }
-
    if (2 == shading)
    {
       PrepareVertexNumbering2();
