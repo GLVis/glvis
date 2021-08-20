@@ -111,7 +111,7 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
    if (err == GLEW_ERROR_NO_GLX_DISPLAY)
    {
       cerr << "GLEW: No GLX display found. If you are using Wayland this can "
-              "be ignored." << endl;
+           << "be ignored." << endl;
       err = GLEW_OK;
    }
 #endif
@@ -440,13 +440,11 @@ void SdlWindow::mainIter()
       {
          // Wait for next wakeup event from main event thread
          unique_lock<mutex> event_lock{event_mutex};
-         events_available.wait(
-            event_lock,
-            [this]()
-            {
-               // Sleep until events from WM or glvis_command can be handled
-               return !waiting_events.empty() || call_idle_func;
-            });
+         events_available.wait(event_lock, [this]()
+         {
+            // Sleep until events from WM or glvis_command can be handled
+            return !waiting_events.empty() || call_idle_func;
+         });
       }
    }
    if (wnd_state == RenderState::ExposePending)
