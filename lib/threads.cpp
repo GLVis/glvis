@@ -23,8 +23,8 @@ GLVisCommand::GLVisCommand(
 {
    vs        = _vs;
    keep_attr = _keep_attr;
-   thread_wnd = GetAppWindow(); // should be set in this thread by a call to
-                                // InitVisualization()
+   // should be set in this thread by a call to InitVisualization()
+   thread_wnd = GetAppWindow();
 
    num_waiting = 0;
    terminating = false;
