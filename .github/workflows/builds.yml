@@ -32,25 +32,25 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-20.04, macos-10.15]
-        target: [debug, optim]
-        mpi: [sequential]
+        target: [dbg, opt]
+        mpi: [seq]
         build-system: [cmake]
         include:
           - os: ubuntu-20.04
-            target: optim
-            mpi: sequential
+            target: opt
+            mpi: seq
             build-system: make
           - os: ubuntu-20.04
-            target: debug
-            mpi: parallel
+            target: dbg
+            mpi: par
             build-system: make
           - os: macos-10.15
-            target: optim
-            mpi: sequential
+            target: opt
+            mpi: seq
             build-system: make
           - os: macos-10.15
-            target: debug
-            mpi: parallel
+            target: dbg
+            mpi: par
             build-system: make
     name: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}-${{ matrix.build-system }}
 
@@ -86,7 +86,7 @@ jobs:
 
     - name: build hypre
       if: steps.hypre-cache.outputs.cache-hit != 'true'
-      uses: mfem/github-actions/build-hypre@master
+      uses: mfem/github-actions/build-hypre@v2.0
       with:
         hypre-archive: ${{ env.HYPRE_ARCHIVE }}
         hypre-dir: ${{ env.HYPRE_TOP_DIR }}
@@ -102,7 +102,7 @@ jobs:
 
     - name: build metis
       if: steps.metis-cache.outputs.cache-hit != 'true'
-      uses: mfem/github-actions/build-metis@master
+      uses: mfem/github-actions/build-metis@v2.0
       with:
         metis-archive: ${{ env.METIS_ARCHIVE }}
         metis-dir: ${{ env.METIS_TOP_DIR }}
@@ -136,7 +136,7 @@ jobs:
     # superfluous.
     - name: build mfem
       if: steps.cache-mfem.outputs.cache-hit != 'true'
-      uses: mfem/github-actions/build-mfem@master
+      uses: mfem/github-actions/build-mfem@v2.0
       with:
         os: ${{ matrix.os }}
         target: ${{ matrix.target }}
@@ -177,14 +177,14 @@ jobs:
       if: matrix.build-system == 'make'
       run: |
         glvis_target="opt"
-        [[ ${{ matrix.target }} == "debug" ]] && glvis_target="debug";
+        [[ ${{ matrix.target }} == "dbg" ]] && glvis_target="debug";
         cd glvis && make ${glvis_target} -j3
 
     - name: build GLVis (cmake)
       if: matrix.build-system == 'cmake'
       run: |
         build_type="RelWithDebInfo"
-        [[ ${{ matrix.target }} == "debug" ]] && build_type="Debug";
+        [[ ${{ matrix.target }} == "dbg" ]] && build_type="Debug";
         cd glvis && mkdir build && cd build
         cmake \
           -D CMAKE_BUILD_TYPE:STRING=${build_type} \
