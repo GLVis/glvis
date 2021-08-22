@@ -13,12 +13,12 @@
 #define GLVIS_OPENGLVIS_HPP
 
 #include <cmath>
-#include "sdl.hpp"
 #include "gl/types.hpp"
 #include "material.hpp"
 #include "palettes.hpp"
 #include "mfem.hpp"
 #include "geom_utils.hpp"
+#include "sdl.hpp"
 
 // Visualization header file
 

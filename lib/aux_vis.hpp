@@ -15,9 +15,11 @@
 #include "gl/platform_gl.hpp"
 #include "gl/types.hpp"
 
+#include "openglvis.hpp"
 #include "sdl.hpp"
 #include "font.hpp"
-#include "openglvis.hpp"
+
+void SDLMainLoop(bool server_mode = false);
 
 /// Initializes the visualization and some keys.
 int InitVisualization(const char name[], int x, int y, int w, int h);
@@ -125,5 +127,7 @@ void InitFont();
 GlVisFont * GetFont();
 bool SetFont(const vector<std::string>& patterns, int height);
 void SetFont(const std::string& fn);
+
+void SetUseHiDPI(bool status);
 
 #endif

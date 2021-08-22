@@ -463,8 +463,8 @@ void VisualizationSceneScalarData::PrepareCaption()
    GetFont()->getObjectSize(caption, caption_w, caption_h);
 }
 
-VisualizationSceneScalarData * vsdata;
-extern VisualizationScene  * locscene;
+thread_local VisualizationSceneScalarData * vsdata;
+extern thread_local VisualizationScene  * locscene;
 
 void KeycPressed()
 {

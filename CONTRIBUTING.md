@@ -200,8 +200,9 @@ Before you can start, you need a GitHub account, here are a few suggestions:
   - All significant new classes, methods and functions have Doxygen-style
     documentation in source comments.
   - Consistent code styling is enforced with `make style` in the top-level
-    directory. This requires [Artistic Style](http://astyle.sourceforge.net) (we
-    specifically use version 2.05.1). See also the file `config/glvis.astylerc`.
+    directory. This requires [Artistic Style](http://astyle.sourceforge.net)
+    version 2.05.1 and MFEM's style configuration file, typically located in
+    `../mfem/config/mfem.astylerc`.
   - Use `glvis::out` and `glvis::err` instead of `std::cout` and `std::cerr` in
     internal library code. (You can use `std` in examples and miniapps.)
   - When manually resolving conflicts during a merge, make sure to mention the

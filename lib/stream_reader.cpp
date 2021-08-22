@@ -12,6 +12,8 @@
 #include "stream_reader.hpp"
 #include "visual.hpp"
 
+#include <cstdlib>
+
 using namespace std;
 using namespace mfem;
 
@@ -83,8 +85,8 @@ void StreamState::SetMeshSolution()
       grid_f->MakeOwner(cfec);
       {
          Array<int> coloring;
-         srandom(time(0));
-         double a = double(random()) / (double(RAND_MAX) + 1.);
+         srand(time(0));
+         double a = double(rand()) / (double(RAND_MAX) + 1.);
          int el0 = (int)floor(a * mesh->GetNE());
          cout << "Generating coloring starting with element " << el0+1
               << " / " << mesh->GetNE() << endl;

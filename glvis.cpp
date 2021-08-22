@@ -19,9 +19,6 @@
 #include <cstdio>
 #include <cstring>
 #include <ctime>
-#include <csignal>
-
-#include <unistd.h>
 
 #include "mfem.hpp"
 #include "lib/palettes.hpp"
@@ -40,7 +37,6 @@ const char *sol_file        = string_none;
 const char *vec_sol_file    = string_none;
 const char *gfunc_file      = string_none;
 const char *arg_keys        = string_none;
-int         np              = 0;
 int         pad_digits      = 6;
 int         gf_component    = -1;
 bool        keep_attr       = false;
@@ -50,16 +46,18 @@ int         window_w        = 400;
 int         window_h        = 350;
 const char *window_title    = string_default;
 const char *c_plot_caption  = string_none;
-string      plot_caption;
-string      extra_caption;
+thread_local string      plot_caption;
+thread_local string      extra_caption;
+bool        secure          = socketstream::secure_default;
 
 // Global variables
 int input = 1;
-StreamState stream_state;
-VisualizationSceneScalarData *vs = NULL;
-communication_thread *comm_thread = NULL;
+thread_local StreamState stream_state;
+thread_local VisualizationSceneScalarData *vs = NULL;
+extern thread_local GLVisCommand* glvis_command;
+thread_local communication_thread *comm_thread = NULL;
 
-GeometryRefiner GLVisGeometryRefiner;
+thread_local GeometryRefiner GLVisGeometryRefiner;
 
 const char *window_titles[] = { "GLVis [scalar data]",
                                 "GLVis [vector data]", "GLVis [mesh]"
@@ -70,9 +68,9 @@ int scr_level = 0;
 Vector *init_nodes = NULL;
 double scr_min_val, scr_max_val;
 
-Array<istream *> input_streams;
-
 extern char **environ;
+
+using StreamCollection = vector<unique_ptr<istream>>;
 
 void PrintSampleUsage(ostream &out);
 
@@ -83,19 +81,17 @@ void ReadSerial(StreamState& state);
 void SetGridFunction(StreamState& state);
 
 // read the mesh and the solution from multiple files
-void ReadParallel(StreamState& state);
+void ReadParallel(int np, StreamState& state);
 
 int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                                const char *sol_prefix, StreamState& state,
                                int keep_attr);
 
-int ReadInputStreams(StreamState& state);
-
-void CloseInputStreams(bool);
+int ReadInputStreams(StreamState& state, const StreamCollection& input_streams);
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
-bool GLVisInitVis(int field_type)
+bool GLVisInitVis(int field_type, StreamCollection input_streams)
 {
    if (field_type < 0 || field_type > 2)
    {
@@ -111,11 +107,11 @@ bool GLVisInitVis(int field_type)
       return false;
    }
 
-   if (input_streams.Size() > 0)
+   if (input_streams.size() > 0)
    {
       GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
       glvis_command = new GLVisCommand(&vs, stream_state, &keep_attr);
-      comm_thread = new communication_thread(input_streams);
+      comm_thread = new communication_thread(std::move(input_streams), glvis_command);
    }
 
    double mesh_range = -1.0;
@@ -249,7 +245,7 @@ void GLVisStartVis()
 {
    RunVisualization(); // deletes vs
    vs = NULL;
-   if (input_streams.Size() > 0)
+   if (glvis_command)
    {
       glvis_command->Terminate();
       delete comm_thread;
@@ -289,7 +285,6 @@ int ScriptReadSolution(istream &scr, StreamState& state)
       if (!isol)
       {
          cout << "Can not open solution file: " << sword << endl;
-         state.mesh.release();
          return 2;
       }
       state.grid_f.reset(new GridFunction(state.mesh.get(), isol));
@@ -841,11 +836,27 @@ void PlayScript(istream &scr)
    script = &scr;
    stream_state.keys.clear();
 
-   if (GLVisInitVis((stream_state.grid_f->VectorDim() == 1) ? 0 : 1))
+   std::thread worker_thread
    {
-      GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
-      GLVisStartVis();
-   }
+      [&](StreamState local_state)
+      {
+         // set the thread-local StreamState
+         stream_state = std::move(local_state);
+         if (c_plot_caption != string_none)
+         {
+            plot_caption = c_plot_caption;
+         }
+         if (GLVisInitVis((stream_state.grid_f->VectorDim() == 1) ? 0 : 1, {}))
+         {
+            GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
+            GLVisStartVis();
+         }
+      },
+      std::move(stream_state)
+   };
+
+   SDLMainLoop();
+   worker_thread.join();
 
    delete init_nodes; init_nodes = NULL;
 
@@ -855,22 +866,281 @@ void PlayScript(istream &scr)
    script = NULL;
 }
 
+struct Session
+{
+   StreamCollection input_streams;
+   StreamState state;
+   int ft = -1;
+   std::thread handler;
+
+   Session(bool fix_elem_orient,
+           bool save_coloring)
+   {
+      state.fix_elem_orient = fix_elem_orient;
+      state.save_coloring = save_coloring;
+   }
+
+   Session(int other_ft, StreamState other_state)
+      : state(std::move(other_state))
+      , ft(other_ft)
+   { }
+
+   ~Session() = default;
+
+   Session(Session&& from) = default;
+   Session& operator= (Session&& from) = default;
+
+   void StartSession()
+   {
+      auto funcThread =
+         [&](StreamState state, int ft, StreamCollection is)
+      {
+         // Set thread-local stream state
+         stream_state = std::move(state);
+         if (c_plot_caption != string_none)
+         {
+            plot_caption = c_plot_caption;
+         }
+
+         if (GLVisInitVis(ft, std::move(is)))
+         {
+            GLVisStartVis();
+         }
+      };
+      handler = std::thread {funcThread,
+                             std::move(state), ft, std::move(input_streams)};
+      handler.detach();
+   }
+
+   bool StartSavedSession(std::string stream_file)
+   {
+      unique_ptr<ifstream> ifs(new ifstream(stream_file));
+      if (!(*ifs))
+      {
+         cout << "Can not open stream file: " << stream_file << endl;
+         return false;
+      }
+      string data_type;
+      *ifs >> data_type >> ws;
+      ft = state.ReadStream(*ifs, data_type);
+      input_streams.emplace_back(std::move(ifs));
+
+      StartSession();
+      return true;
+   }
+};
+
+void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
+                 bool save_coloring)
+{
+   std::vector<Session> current_sessions;
+   string data_type;
+   int viscount = 0;
+   unsigned int nproc = 1, proc = 0;
+
+#ifdef MFEM_USE_GNUTLS
+   unique_ptr<GnuTLS_global_state> state;
+   unique_ptr<GnuTLS_session_params> params;
+   if (secure)
+   {
+      state.reset(new GnuTLS_global_state);
+      // state->set_log_level(1000);
+      string home_dir(getenv("HOME"));
+      string server_dir = home_dir + "/.config/glvis/server/";
+#ifndef MFEM_USE_GNUTLS_X509
+      string pubkey  = server_dir + "pubring.gpg";
+      string privkey = server_dir + "secring.gpg";
+      string trustedkeys = server_dir + "trusted-clients.gpg";
+#else
+      string pubkey  = server_dir + "cert.pem";
+      string privkey = server_dir + "key.pem";
+      string trustedkeys = server_dir + "trusted-clients.pem";
+#endif
+      params.reset(new GnuTLS_session_params(
+                      *state, pubkey.c_str(), privkey.c_str(),
+                      trustedkeys.c_str(), GNUTLS_SERVER));
+      if (!params->status.good())
+      {
+         cout << "  public key   = " << pubkey << '\n'
+              << "  private key  = " << privkey << '\n'
+              << "  trusted keys = " << trustedkeys << endl;
+         cout << "Error setting GLVis server parameters.\n"
+              "Generate your GLVis keys with:"
+              " bash glvis-keygen.sh [\"Your Name\"] [\"Your Email\"]"
+              << endl;
+         return;
+      }
+   }
+#endif
+
+   const int backlog = 128;
+   socketserver server(portnum, backlog);
+   if (server.good())
+   {
+      cout << "Waiting for data on port " << portnum << " ..." << endl;
+   }
+   else
+   {
+      cout << "Server already running on port " << portnum << ".\n" << endl;
+      exit(2);
+   }
+   while (1)
+   {
+
+      unique_ptr<socketstream> isock;
+#ifndef MFEM_USE_GNUTLS
+      isock.reset(new socketstream);
+#else
+      isock.reset(secure ? new socketstream(*params) : new socketstream(false));
+#endif
+      vector<unique_ptr<istream>> input_streams;
+      while (server.accept(*isock) < 0)
+      {
+#ifdef GLVIS_DEBUG
+         cout << "GLVis: server.accept(...) failed." << endl;
+#endif
+      }
+
+      *isock >> data_type >> ws;
+
+      if (mac)
+      {
+         viscount++;
+      }
+
+      int par_data = 0;
+      if (data_type == "parallel")
+      {
+         par_data = 1;
+         unsigned int np = 0;
+         do
+         {
+            *isock >> nproc >> proc;
+#ifdef GLVIS_DEBUG
+            cout << "new connection: parallel " << nproc << ' ' << proc
+                 << endl;
+#endif
+            if (np == 0)
+            {
+               if (nproc <= 0)
+               {
+                  cout << "Invalid number of processors: " << nproc << endl;
+                  mfem_error();
+               }
+               input_streams.resize(nproc);
+            }
+            else
+            {
+               if (nproc != input_streams.size())
+               {
+                  cout << "Unexpected number of processors: " << nproc
+                       << ", expected: " << input_streams.size() << endl;
+                  mfem_error();
+               }
+            }
+            if (0 > proc || proc >= nproc)
+            {
+               cout << "Invalid processor rank: " << proc
+                    << ", number of processors: " << nproc << endl;
+               mfem_error();
+            }
+            if (input_streams[proc])
+            {
+               cout << "Second connection attempt from processor rank: "
+                    << proc << endl;
+               mfem_error();
+            }
+
+            input_streams[proc] = std::move(isock);
+#ifndef MFEM_USE_GNUTLS
+            isock.reset(new socketstream);
+#else
+            isock.reset(secure ? new socketstream(*params) :
+                        new socketstream(false));
+#endif
+            np++;
+            if (np == nproc)
+            {
+               break;
+            }
+            // read next available socket stream
+            while (server.accept(*isock) < 0)
+            {
+#ifdef GLVIS_DEBUG
+               cout << "GLVis: server.accept(...) failed." << endl;
+#endif
+            }
+            *isock >> data_type >> ws; // "parallel"
+            if (data_type != "parallel")
+            {
+               cout << "Expected keyword \"parallel\", got \"" << data_type
+                    << '"' << endl;
+               mfem_error();
+            }
+         }
+         while (1);
+      }
+
+      Session new_session(fix_elem_orient, save_coloring);
+
+      char tmp_file[50];
+      if (mac)
+      {
+         sprintf(tmp_file,"glvis-saved.%04d",viscount);
+         ofstream ofs(tmp_file);
+         if (!par_data)
+         {
+            ofs << data_type << '\n';
+            ofs << isock->rdbuf();
+            isock->close();
+         }
+         else
+         {
+            ReadInputStreams(new_session.state, input_streams);
+            ofs.precision(8);
+            ofs << "solution\n";
+            new_session.state.mesh->Print(ofs);
+            new_session.state.grid_f->Save(ofs);
+         }
+         ofs.close();
+         cout << "Data saved in " << tmp_file << endl;
+
+         new_session.StartSavedSession(tmp_file);
+      }
+      else
+      {
+         if (!par_data)
+         {
+            new_session.ft = new_session.state.ReadStream(*isock, data_type);
+            input_streams.emplace_back(std::move(isock));
+         }
+         else
+         {
+            new_session.ft = ReadInputStreams(new_session.state, input_streams);
+         }
+         // Pass ownership of input streams into session object
+         new_session.input_streams = std::move(input_streams);
+         new_session.StartSession();
+      }
+      current_sessions.emplace_back(std::move(new_session));
+   }
+}
 
 int main (int argc, char *argv[])
 {
    // variables for command line arguments
-   bool        multi_session = true;   // not added as option
+   int         np            = 0;
    bool        mac           = false;
    const char *stream_file   = string_none;
    const char *script_file   = string_none;
    const char *font_name     = string_default;
    int         portnum       = 19916;
-   bool        secure        = socketstream::secure_default;
    int         multisample   = GetMultisample();
    double      line_width    = 1.0;
    double      ms_line_width = gl3::LINE_WIDTH_AA;
    int         geom_ref_type = Quadrature1D::ClosedUniform;
    bool        legacy_gl_ctx = false;
+   bool        enable_hidpi  = true;
 
    OptionsParser args(argc, argv);
 
@@ -937,6 +1207,9 @@ int main (int argc, char *argv[])
    args.AddOption(&legacy_gl_ctx, "-oldgl", "--legacy-gl",
                   "-anygl", "--any-gl",
                   "Only try to create a legacy OpenGL (< 2.1) context.");
+   args.AddOption(&enable_hidpi, "-hidpi", "--high-dpi",
+                  "-nohidpi", "--no-high-dpi",
+                  "Enable/disable support for HiDPI at runtime, if supported.");
 
    cout << endl
         << "       _/_/_/  _/      _/      _/  _/"          << endl
@@ -1010,6 +1283,7 @@ int main (int argc, char *argv[])
    {
       SetLegacyGLOnly(legacy_gl_ctx);
    }
+   SetUseHiDPI(enable_hidpi);
 
    GLVisGeometryRefiner.SetType(geom_ref_type);
 
@@ -1018,19 +1292,15 @@ int main (int argc, char *argv[])
    // check for saved stream file
    if (stream_file != string_none)
    {
-      ifstream ifs(stream_file);
-      if (!ifs)
+      Session stream_session(stream_state.fix_elem_orient,
+                             stream_state.save_coloring);
+
+      if (!stream_session.StartSavedSession(stream_file))
       {
-         cout << "Can not open stream file: " << stream_file << endl;
          return 1;
       }
-      ifs >> data_type >> ws;
-      int ft = stream_state.ReadStream(ifs, data_type);
-      input_streams.Append(&ifs);
-      if (GLVisInitVis(ft))
-      {
-         GLVisStartVis();
-      }
+
+      SDLMainLoop();
       return 0;
    }
 
@@ -1066,256 +1336,24 @@ int main (int argc, char *argv[])
    }
 #endif
 
-   int childPID, viscount = 0, nproc = 1, proc = 0;
-
    // server mode, read the mesh and the solution from a socket
    if (input == 1)
    {
-      // get rid of zombies
-      if (multi_session)
-      {
-         signal(SIGCHLD, SIG_IGN);
-      }
+      // Run server in new thread
+      std::thread serverThread{GLVisServer, portnum, mac,
+                               stream_state.fix_elem_orient,
+                               stream_state.save_coloring};
 
-#ifdef MFEM_USE_GNUTLS
-      GnuTLS_global_state *state = NULL;
-      GnuTLS_session_params *params = NULL;
-      if (secure)
-      {
-         state = new GnuTLS_global_state;
-         // state->set_log_level(1000);
-         string home_dir(getenv("HOME"));
-         string server_dir = home_dir + "/.config/glvis/server/";
-#ifndef MFEM_USE_GNUTLS_X509
-         string pubkey  = server_dir + "pubring.gpg";
-         string privkey = server_dir + "secring.gpg";
-         string trustedkeys = server_dir + "trusted-clients.gpg";
-#else
-         string pubkey  = server_dir + "cert.pem";
-         string privkey = server_dir + "key.pem";
-         string trustedkeys = server_dir + "trusted-clients.pem";
-#endif
-         params = new GnuTLS_session_params(
-            *state, pubkey.c_str(), privkey.c_str(),
-            trustedkeys.c_str(), GNUTLS_SERVER);
-         if (!params->status.good())
-         {
-            cout << "  public key   = " << pubkey << '\n'
-                 << "  private key  = " << privkey << '\n'
-                 << "  trusted keys = " << trustedkeys << endl;
-            cout << "Error setting GLVis server parameters.\n"
-                 "Generate your GLVis keys with:"
-                 " bash glvis-keygen.sh [\"Your Name\"] [\"Your Email\"]"
-                 << endl;
-            delete params; delete state;
-            return 3;
-         }
-      }
-#endif
+      // Start SDL in main thread
+      SDLMainLoop(true);
 
-      const int backlog = 128;
-      socketserver server(portnum, backlog);
-      if (server.good())
-      {
-         cout << "Waiting for data on port " << portnum << " ..." << endl;
-      }
-      else
-      {
-         cout << "Server already running on port " << portnum << ".\n" << endl;
-#ifdef MFEM_USE_GNUTLS
-         delete params; delete state;
-#endif
-         return 2;
-      }
-
-      socketstream *isock;
-#ifndef MFEM_USE_GNUTLS
-      isock = new socketstream;
-#else
-      isock = secure ? new socketstream(*params) : new socketstream(false);
-#endif
-      while (1)
-      {
-         while (server.accept(*isock) < 0)
-         {
-#ifdef GLVIS_DEBUG
-            cout << "GLVis: server.accept(...) failed." << endl;
-#endif
-         }
-
-         *isock >> data_type >> ws;
-
-         if (mac)
-         {
-            viscount++;
-         }
-
-         int par_data = 0;
-         if (data_type == "parallel")
-         {
-            par_data = 1;
-            np = 0;
-            do
-            {
-               *isock >> nproc >> proc;
-#ifdef GLVIS_DEBUG
-               cout << "new connection: parallel " << nproc << ' ' << proc
-                    << endl;
-#endif
-               if (np == 0)
-               {
-                  if (nproc <= 0)
-                  {
-                     cout << "Invalid number of processors: " << nproc << endl;
-                     mfem_error();
-                  }
-                  input_streams.SetSize(nproc);
-                  input_streams = NULL;
-               }
-               else
-               {
-                  if (nproc != input_streams.Size())
-                  {
-                     cout << "Unexpected number of processors: " << nproc
-                          << ", expected: " << input_streams.Size() << endl;
-                     mfem_error();
-                  }
-               }
-               if (0 > proc || proc >= nproc)
-               {
-                  cout << "Invalid processor rank: " << proc
-                       << ", number of processors: " << nproc << endl;
-                  mfem_error();
-               }
-               if (input_streams[proc])
-               {
-                  cout << "Second connection attempt from processor rank: "
-                       << proc << endl;
-                  mfem_error();
-               }
-
-               input_streams[proc] = isock;
-#ifndef MFEM_USE_GNUTLS
-               isock = new socketstream;
-#else
-               isock = secure ? new socketstream(*params) :
-                       new socketstream(false);
-#endif
-               np++;
-               if (np == nproc)
-               {
-                  break;
-               }
-               // read next available socket stream
-               while (server.accept(*isock) < 0)
-               {
-#ifdef GLVIS_DEBUG
-                  cout << "GLVis: server.accept(...) failed." << endl;
-#endif
-               }
-               *isock >> data_type >> ws; // "parallel"
-               if (data_type != "parallel")
-               {
-                  cout << "Expected keyword \"parallel\", got \"" << data_type
-                       << '"' << endl;
-                  mfem_error();
-               }
-            }
-            while (1);
-         }
-
-         char tmp_file[50];
-         if (multi_session)
-         {
-            if (mac)
-            {
-               sprintf(tmp_file,"glvis-saved.%04d",viscount);
-               ofstream ofs(tmp_file);
-               if (!par_data)
-               {
-                  ofs << data_type << '\n';
-                  ofs << isock->rdbuf();
-                  isock->close();
-               }
-               else
-               {
-                  ReadInputStreams(stream_state);
-                  CloseInputStreams(false);
-                  ofs.precision(8);
-                  ofs << "solution\n";
-                  stream_state.mesh->Print(ofs);
-                  stream_state.grid_f->Save(ofs);
-               }
-               ofs.close();
-               cout << "Data saved in " << tmp_file << endl;
-            }
-            childPID = fork();
-         }
-         else
-         {
-            childPID = 0;
-         }
-
-         switch (childPID)
-         {
-            case -1:
-               cout << "The process couldn't fork. Exit." << endl;
-               exit(1);
-
-            case 0:                       // This is the child process
-               server.close();
-               if (mac)
-               {
-                  // exec ourself
-                  const char *args[4] = { argv[0], "-saved", tmp_file, NULL };
-                  execve(args[0], (char* const*)args, environ);
-                  exit(0);
-               }
-               else
-               {
-                  if (multi_session)
-                  {
-                     signal(SIGINT, SIG_IGN);
-                  }
-                  int ft;
-                  if (!par_data)
-                  {
-                     ft = stream_state.ReadStream(*isock, data_type);
-                     input_streams.Append(isock);
-                  }
-                  else
-                  {
-                     delete isock;
-                     ft = ReadInputStreams(stream_state);
-                  }
-                  if (GLVisInitVis(ft))
-                  {
-                     GLVisStartVis();
-                  }
-                  CloseInputStreams(false);
-                  exit(0);
-               }
-
-            default :                     // This is the parent process
-               if (!par_data)
-               {
-                  isock->rdbuf()->socketbuf::close();
-               }
-               else
-               {
-                  CloseInputStreams(true);
-               }
-         }
-      }
-#ifdef MFEM_USE_GNUTLS
-      delete params; delete state;
-#endif
+      serverThread.detach();
    }
    else  // input != 1, non-server mode
    {
       if (input & 256)
       {
-         ReadParallel(stream_state);
+         ReadParallel(np, stream_state);
       }
       else
       {
@@ -1333,10 +1371,10 @@ int main (int argc, char *argv[])
       {
          field_type = (use_soln) ? 0 : 2;
       }
-      if (GLVisInitVis(field_type))
-      {
-         GLVisStartVis();
-      }
+      Session single_session(field_type, std::move(stream_state));
+      single_session.StartSession();
+
+      SDLMainLoop();
    }
 
    cout << "Thank you for using GLVis." << endl;
@@ -1460,7 +1498,7 @@ void SetGridFunction(StreamState& state)
 }
 
 
-void ReadParallel(StreamState& state)
+void ReadParallel(int np, StreamState& state)
 {
    int err;
 
@@ -1582,9 +1620,9 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    return err;
 }
 
-int ReadInputStreams(StreamState& state)
+int ReadInputStreams(StreamState& state, const StreamCollection& input_streams)
 {
-   int nproc = input_streams.Size();
+   int nproc = input_streams.size();
    Array<Mesh *> mesh_array(nproc);
    Array<GridFunction *> gf_array(nproc);
    string data_type;
@@ -1655,16 +1693,3 @@ int ReadInputStreams(StreamState& state)
    return field_type;
 }
 
-void CloseInputStreams(bool parent)
-{
-   for (int i = 0; i < input_streams.Size(); i++)
-   {
-      if (parent)
-      {
-         socketstream *sock = dynamic_cast<socketstream*>(input_streams[i]);
-         if (sock) { sock->rdbuf()->socketbuf::close(); }
-      }
-      delete input_streams[i];
-   }
-   input_streams.DeleteAll();
-}

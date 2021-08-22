@@ -26,6 +26,7 @@ private:
    VisualizationSceneScalarData **vs;
    StreamState&         curr_state;
    bool                 *keep_attr;
+   SdlWindow            *thread_wnd;
 
    std::mutex glvis_mutex;
    std::condition_variable glvis_cond;
@@ -136,13 +137,16 @@ public:
    ~GLVisCommand();
 };
 
-extern GLVisCommand *glvis_command;
-
 class communication_thread
 {
+public:
+   using StreamCollection = std::vector<std::unique_ptr<std::istream>>;
+
 private:
    // streams to read data from
-   Array<std::istream *> &is;
+   StreamCollection is;
+
+   GLVisCommand* glvis_command;
 
    // data that may be dynamically allocated by the thread
    std::unique_ptr<Mesh> new_m;
@@ -157,7 +161,7 @@ private:
    void execute();
 
 public:
-   communication_thread(Array<std::istream *> &_is);
+   communication_thread(StreamCollection _is, GLVisCommand* cmd);
 
    ~communication_thread();
 };

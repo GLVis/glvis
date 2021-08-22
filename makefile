@@ -16,6 +16,7 @@ GLVis makefile targets:
    make
    make status/info
    make install
+   make app
    make clean
    make distclean
    make style
@@ -30,6 +31,8 @@ make status
    Display information about the current configuration.
 make install PREFIX=<dir>
    Install the glvis executable in <dir>.
+make app
+   Build a Mac OS application bundle.
 make clean
    Clean the glvis executable, library and object files.
 make distclean
@@ -125,6 +128,13 @@ GLVIS_MS_LINEWIDTH ?= $(if $(NOTMAC),1.4,1.0)
 DEFINES = -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
  -DGLVIS_MS_LINEWIDTH=$(GLVIS_MS_LINEWIDTH)\
  -DGLVIS_OGL3
+
+# Enable logo setting via SDL (disabled on Windows/CMake build)
+GLVIS_USE_LOGO ?= YES
+ifeq ($(GLVIS_USE_LOGO),YES)
+  DEFINES += -DGLVIS_USE_LOGO
+endif
+
 GLVIS_FLAGS += $(DEFINES)
 
 # We don't want most of the stuff below because Emscripten handles that for us
@@ -215,10 +225,12 @@ ALL_SOURCE_FILES = \
  lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp \
  lib/gl/shader.cpp lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp lib/font.cpp \
  lib/gl2ps.c lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp \
- lib/stream_reader.cpp lib/threads.cpp lib/vsdata.cpp lib/vssolution.cpp \
- lib/vssolution3d.cpp lib/vsvector.cpp lib/vsvector3d.cpp
+ lib/sdl_helper.cpp lib/sdl_main.cpp lib/stream_reader.cpp lib/threads.cpp \
+ lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp \
+ lib/vsvector3d.cpp
 OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl_mac.mm)
-DESKTOP_ONLY_SOURCE_FILES = lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c
+DESKTOP_ONLY_SOURCE_FILES = \
+ lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c lib/sdl_x11.cpp
 WEB_ONLY_SOURCE_FILES = lib/aux_js.cpp
 LOGO_FILE = share/logo.rgba
 LOGO_FILE_CPP = $(LOGO_FILE).bin.cpp
@@ -231,9 +243,9 @@ HEADER_FILES = \
  lib/gl/shader.hpp lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp \
  lib/gl/types.hpp lib/aux_vis.hpp lib/font.hpp lib/geom_utils.hpp lib/gl2ps.h \
  lib/logo.hpp lib/material.hpp lib/openglvis.hpp lib/palettes.hpp lib/sdl.hpp \
- lib/sdl_helper.hpp lib/sdl_mac.hpp lib/sdl_x11.hpp lib/stream_reader.hpp \
- lib/threads.hpp lib/visual.hpp lib/vsdata.hpp lib/vssolution.hpp \
- lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp
+ lib/sdl_helper.hpp lib/sdl_mac.hpp lib/sdl_main.hpp lib/sdl_x11.hpp \
+ lib/stream_reader.hpp lib/threads.hpp lib/visual.hpp lib/vsdata.hpp \
+ lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp
 
 DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) $(DESKTOP_ONLY_SOURCE_FILES) $(LOGO_FILE_CPP)
 WEB_SOURCE_FILES     = $(COMMON_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES)
@@ -288,6 +300,7 @@ clean:
 	rm -rf lib/*.o lib/*.bc lib/gl/*.o lib/gl/*.bc lib/*~ *~ glvis
 	rm -rf $(LOGO_FILE_CPP) share/*.o
 	rm -rf lib/libglvis.a lib/libglvis.js *.dSYM
+	rm -rf GLVis.app
 
 distclean: clean
 	rm -rf bin/
@@ -299,6 +312,14 @@ install: glvis
 ifeq ($(MFEM_USE_GNUTLS),YES)
 	$(INSTALL) -m 750 glvis-keygen.sh $(PREFIX)
 endif
+
+app: glvis
+	mkdir -p GLVis.app/Contents/MacOS
+	mkdir -p GLVis.app/Contents/Resources
+	cp share/Info.plist GLVis.app/Contents
+	cp glvis GLVis.app/Contents/MacOS
+	cp share/GLVis.icns GLVis.app/Contents/Resources
+	cp share/Credits.rtf GLVis.app/Contents/Resources
 
 help:
 	$(info $(value GLVIS_HELP_MSG))

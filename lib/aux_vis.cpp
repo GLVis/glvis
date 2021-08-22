@@ -13,7 +13,7 @@
 #include <sstream>
 #include <fstream>
 #include <cmath>
-#include <ctime>
+#include <chrono>
 
 #include "mfem.hpp"
 using namespace mfem;
@@ -33,8 +33,9 @@ using namespace mfem;
 #include <fontconfig/fontconfig.h>
 #endif
 
-int visualize = 0;
-VisualizationScene * locscene;
+thread_local int visualize = 0;
+thread_local VisualizationScene * locscene;
+thread_local GLVisCommand *glvis_command = NULL;
 
 #ifdef GLVIS_MULTISAMPLE
 static int glvis_multisample = GLVIS_MULTISAMPLE;
@@ -45,8 +46,13 @@ static int glvis_multisample = -1;
 float line_w = 1.f;
 float line_w_aa = gl3::LINE_WIDTH_AA;
 
-SdlWindow * wnd = nullptr;
+thread_local SdlWindow * wnd = nullptr;
 bool wndLegacyGl = false;
+bool wndUseHiDPI = false;
+void SDLMainLoop(bool server_mode)
+{
+   SdlWindow::StartSDL(server_mode);
+}
 
 SdlWindow * GetAppWindow()
 {
@@ -61,6 +67,11 @@ VisualizationScene * GetVisualizationScene()
 void SetLegacyGLOnly(bool status)
 {
    wndLegacyGl = true;
+}
+
+void SetUseHiDPI(bool status)
+{
+   wndUseHiDPI = status;
 }
 
 void MyExpose(GLsizei w, GLsizei h);
@@ -236,7 +247,7 @@ void SendKeySequence(const char *seq)
 }
 
 
-static bool disableSendExposeEvent = false;
+thread_local bool disableSendExposeEvent = false;
 
 void CallKeySequence(const char *seq)
 {
@@ -314,14 +325,14 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
 
    if (keys)
    {
-      // SendKeySequence(keys);
-      CallKeySequence(keys);
+      SendKeySequence(keys);
    }
    wnd->getRenderer().setPalette(&locscene->palette);
 }
 
 void RunVisualization()
 {
+   visualize = 1;
 #ifndef __EMSCRIPTEN__
    wnd->mainLoop();
 #endif
@@ -398,18 +409,77 @@ void MyExpose()
 }
 
 
-Array<void (*)()> IdleFuncs;
-int LastIdleFunc;
+thread_local Array<void (*)()> IdleFuncs;
+thread_local int LastIdleFunc;
+thread_local bool use_idle = false;
+
+bool MainIdleFunc();
 
 void InitIdleFuncs()
 {
    IdleFuncs.SetSize(0);
    LastIdleFunc = 0;
-   wnd->setOnIdle(NULL);
+   if (glvis_command)
+   {
+      wnd->setOnIdle(MainIdleFunc);
+   }
 }
 
-void MainIdleFunc()
+bool CommunicationIdleFunc()
 {
+   int status = glvis_command->Execute();
+   if (status < 0)
+   {
+      cout << "GLVisCommand signalled exit" << endl;
+      wnd->signalQuit();
+   }
+   else if (status == 1)
+   {
+      // no commands right now - main loop should sleep
+      return true;
+   }
+   return false;
+}
+
+bool MainIdleFunc()
+{
+   bool sleep = true;
+#ifndef __EMSCRIPTEN__
+   if (glvis_command && visualize == 1
+       && !(IdleFuncs.Size() > 0 && use_idle))
+   {
+      // Execute the next event from the communication thread if:
+      //  - a valid GLVisCommand has been set
+      //  - the communication thread is not stopped
+      //  - The idle function flag is not set, or no idle functions have been
+      //    registered
+      sleep = CommunicationIdleFunc();
+      if (IdleFuncs.Size() > 0) { sleep = false; }
+   }
+   else if (IdleFuncs.Size() > 0)
+   {
+      LastIdleFunc = (LastIdleFunc + 1) % IdleFuncs.Size();
+      if (IdleFuncs[LastIdleFunc])
+      {
+         (*IdleFuncs[LastIdleFunc])();
+      }
+      // Continue executing idle functions
+      sleep = false;
+   }
+   use_idle = !use_idle;
+#else
+   if (IdleFuncs.Size() > 0)
+   {
+      LastIdleFunc = (LastIdleFunc + 1) % IdleFuncs.Size();
+      if (IdleFuncs[LastIdleFunc])
+      {
+         (*IdleFuncs[LastIdleFunc])();
+      }
+      // Continue executing idle functions
+      sleep = false;
+   }
+#endif
+   return sleep;
    LastIdleFunc = (LastIdleFunc + 1) % IdleFuncs.Size();
    if (IdleFuncs[LastIdleFunc])
    {
@@ -426,25 +496,24 @@ void AddIdleFunc(void (*Func)(void))
 void RemoveIdleFunc(void (*Func)(void))
 {
    IdleFuncs.DeleteFirst(Func);
-   if (IdleFuncs.Size() == 0)
+   if (IdleFuncs.Size() == 0 && glvis_command == nullptr)
    {
       wnd->setOnIdle(NULL);
    }
 }
 
 
-double xang = 0., yang = 0.;
-gl3::GlMatrix srot;
-double sph_t, sph_u;
-static GLint oldx, oldy, startx, starty;
+thread_local double xang = 0., yang = 0.;
+thread_local gl3::GlMatrix srot;
+thread_local double sph_t, sph_u;
+thread_local GLint oldx, oldy, startx, starty;
 
-int constrained_spinning = 0;
+thread_local int constrained_spinning = 0;
 
 
 void MainLoop()
 {
    static int p = 1;
-   struct timespec req;
    if (locscene->spinning)
    {
       if (!constrained_spinning)
@@ -457,9 +526,7 @@ void MainLoop()
          locscene->PreRotate(xang, 0.0, 0.0, 1.0);
          SendExposeEvent();
       }
-      req.tv_sec  = 0;
-      req.tv_nsec = 10000000;
-      nanosleep (&req, NULL);  // sleep for 0.01 seconds
+      std::this_thread::sleep_for(std::chrono::milliseconds{10}); // sleep for 0.01 seconds
    }
    if (locscene->movie)
    {
@@ -871,6 +938,8 @@ int Screenshot(const char *fname, bool convert)
 #if GLVIS_DEBUG
       cerr << "Screenshot: reading image data from front buffer..." << endl;
 #endif
+      MFEM_WARNING("Screenshot: Reading from the front buffer is unreliable. "
+                   << " Resulting screenshots may be incorrect." << endl);
       glReadBuffer(GL_FRONT);
    }
 #if defined(GLVIS_USE_LIBTIFF)
@@ -1051,6 +1120,7 @@ void KeyS()
       wnd->screenshot(fname);
       cout << "done" << endl;
    }
+   SendExposeEvent();
 }
 
 inline GL2PSvertex CreatePrintVtx(gl3::FeedbackVertex v)
@@ -1548,7 +1618,7 @@ vector<string> fc_font_patterns =
 constexpr int default_font_size = 12;
 int font_size = default_font_size;
 
-GlVisFont glvis_font;
+thread_local GlVisFont glvis_font;
 std::string priority_font;
 
 void InitFont()
