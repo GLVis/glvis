@@ -26,9 +26,10 @@ thread_local mfem::GeometryRefiner GLVisGeometryRefiner;
 
 static VisualizationSceneScalarData * vs = nullptr;
 
-struct {
-  unsigned char * buffer = nullptr;
-  size_t size = 0;
+struct
+{
+   unsigned char * buffer = nullptr;
+   size_t size = 0;
 } screen_state;
 
 StreamState stream_state;
@@ -325,8 +326,8 @@ std::string getHelpString()
 
 em::val getScreenBuffer(bool h_flip=false)
 {
-  MyExpose();
-  auto * wnd = GetAppWindow();
+   MyExpose();
+   auto * wnd = GetAppWindow();
 
    glFinish();
    if (wnd->isExposePending())
@@ -351,25 +352,28 @@ em::val getScreenBuffer(bool h_flip=false)
    const size_t buffer_size = w*h*4;
    if (buffer_size > screen_state.size)
    {
-     delete screen_state.buffer;
-     screen_state.buffer = nullptr;
-     screen_state.size = buffer_size;
-     screen_state.buffer = new unsigned char[screen_state.size];
+      delete screen_state.buffer;
+      screen_state.buffer = nullptr;
+      screen_state.size = buffer_size;
+      screen_state.buffer = new unsigned char[screen_state.size];
    }
 
    glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, screen_state.buffer);
 
-   if (h_flip) {
-     auto * orig = screen_state.buffer;
-     auto * flip = new unsigned char[buffer_size];
-     for (int j = 0; j < h; ++j) {
-       for (int i = 0; i < w*4; ++i) {
-         flip[4*w*j + i] = orig[4*w*(h-j-1) + i];
-       }
-     }
-     screen_state.buffer = flip;
-     screen_state.size = buffer_size;
-     delete orig;
+   if (h_flip)
+   {
+      auto * orig = screen_state.buffer;
+      auto * flip = new unsigned char[buffer_size];
+      for (int j = 0; j < h; ++j)
+      {
+         for (int i = 0; i < w*4; ++i)
+         {
+            flip[4*w*j + i] = orig[4*w*(h-j-1) + i];
+         }
+      }
+      screen_state.buffer = flip;
+      screen_state.size = buffer_size;
+      delete orig;
    }
 
    return em::val(em::typed_memory_view(screen_state.size, screen_state.buffer));
