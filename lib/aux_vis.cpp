@@ -1092,7 +1092,7 @@ int Screenshot(const char *fname, bool convert)
       }
       remove(filename.c_str());
    }
-#endif // __EMSCRIPTEN__
+#endif // ndef __EMSCRIPTEN__
 
    return 0;
 }
