@@ -324,31 +324,15 @@ std::string getHelpString()
    return vss->GetHelpString();
 }
 
-em::val getScreenBuffer(bool h_flip=false)
+em::val getScreenBuffer(bool flip_y=false)
 {
    MyExpose();
+   Screenshot(nullptr, false);
    auto * wnd = GetAppWindow();
-
-   glFinish();
-   if (wnd->isExposePending())
-   {
-      MFEM_WARNING("Expose pending, some events may not have been handled." << endl);
-   }
-
    int w, h;
    wnd->getGLDrawSize(w, h);
-   if (wnd->isSwapPending())
-   {
-      glReadBuffer(GL_BACK);
-   }
-   else
-   {
-      MFEM_WARNING("Screenshot: Reading from the front buffer is unreliable. "
-                   << " Resulting screenshots may be incorrect." << endl);
-      glReadBuffer(GL_FRONT);
-   }
 
-   // 4 bytes for RGBA
+   // 4 bytes for rgba
    const size_t buffer_size = w*h*4;
    if (buffer_size > screen_state.size)
    {
@@ -360,7 +344,7 @@ em::val getScreenBuffer(bool h_flip=false)
 
    glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, screen_state.buffer);
 
-   if (h_flip)
+   if (flip_y)
    {
       auto * orig = screen_state.buffer;
       auto * flip = new unsigned char[buffer_size];
