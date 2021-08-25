@@ -41,7 +41,6 @@ SdlWindowsPlatform::~SdlWindowsPlatform()
 
 void SdlWindowsPlatform::WaitEvent()
 {
-   MSG unused;
    // This call either waits for an event from Windows to be posted to the main
    // thread's message queue, or for the event object to be set by one of the
    // worker threads.
@@ -65,7 +64,7 @@ void SdlWindowsPlatform::WaitEvent()
 
 void SdlWindowsPlatform::SendEvent()
 {
-   if (!SetEvent(m_impl->signal_evt))
+   if (SetEvent(m_impl->signal_evt) == NULL)
    {
       cerr << "Error: SetEvent() failed with code " << GetLastError() << endl;
    }
