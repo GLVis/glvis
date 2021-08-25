@@ -74,6 +74,7 @@ private:
       }
    };
 
+   int window_id = -1;
    Handle handle;
    std::unique_ptr<gl3::MeshRenderer> renderer;
    static const int high_dpi_threshold = 144;
@@ -125,6 +126,7 @@ private:
    //bool requiresExpose;
    bool takeScreenshot{false};
    std::string screenshot_file;
+   bool screenshot_convert;
 
    // internal event handlers
    void windowEvent(SDL_WindowEvent& ew);
@@ -136,6 +138,8 @@ private:
    void multiGestureEvent(SDL_MultiGestureEvent & e);
 
    bool is_multithreaded{true};
+
+   bool call_idle_func{false};
 
    // Hand off events to the SdlWindow. Intended to be called by the main SDL
    // thread in MainThread::MainLoop().
@@ -234,10 +238,14 @@ public:
    std::string getSavedKeys() const { return saved_keys; }
 
    /// Queues a screenshot to be taken.
-   void screenshot(std::string filename)
+   void screenshot(std::string filename, bool convert = false)
    {
       takeScreenshot = true;
       screenshot_file = filename;
+      screenshot_convert = convert;
+      // Queue up an expose, so Screenshot() can pull image from the back
+      // buffer
+      signalExpose();
    }
 
    void swapBuffer();

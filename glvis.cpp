@@ -1156,6 +1156,7 @@ int main (int argc, char *argv[])
    double      ms_line_width = gl3::LINE_WIDTH_AA;
    int         geom_ref_type = Quadrature1D::ClosedUniform;
    bool        legacy_gl_ctx = false;
+   bool        enable_hidpi  = true;
 
    OptionsParser args(argc, argv);
 
@@ -1222,6 +1223,9 @@ int main (int argc, char *argv[])
    args.AddOption(&legacy_gl_ctx, "-oldgl", "--legacy-gl",
                   "-anygl", "--any-gl",
                   "Only try to create a legacy OpenGL (< 2.1) context.");
+   args.AddOption(&enable_hidpi, "-hidpi", "--high-dpi",
+                  "-nohidpi", "--no-high-dpi",
+                  "Enable/disable support for HiDPI at runtime, if supported.");
 
    cout << endl
         << "       _/_/_/  _/      _/      _/  _/"          << endl
@@ -1295,6 +1299,7 @@ int main (int argc, char *argv[])
    {
       SetLegacyGLOnly(legacy_gl_ctx);
    }
+   SetUseHiDPI(enable_hidpi);
 
    GLVisGeometryRefiner.SetType(geom_ref_type);
 

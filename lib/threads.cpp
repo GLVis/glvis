@@ -23,6 +23,8 @@ GLVisCommand::GLVisCommand(
 {
    vs        = _vs;
    keep_attr = _keep_attr;
+   // should be set in this thread by a call to InitVisualization()
+   thread_wnd = GetAppWindow();
 
    num_waiting = 0;
    terminating = false;
@@ -57,10 +59,9 @@ int GLVisCommand::signal()
 {
    command_ready = true;
 
-   SdlWindow *sdl_window = GetAppWindow();
-   if (sdl_window)
+   if (thread_wnd)
    {
-      sdl_window->signalLoop();
+      thread_wnd->signalLoop();
    }
 
    return 0;
@@ -435,15 +436,10 @@ int GLVisCommand::Execute()
 
       case SCREENSHOT:
       {
-         cout << "Command: screenshot: " << flush;
-         if (::Screenshot(screenshot_filename.c_str(), true))
-         {
-            cout << "Screenshot(" << screenshot_filename << ") failed." << endl;
-         }
-         else
-         {
-            cout << "-> " << screenshot_filename << endl;
-         }
+         cout << "Command: screenshot -> " << screenshot_filename << endl;
+         // Allow SdlWindow to handle the expose and screenshot action, in case
+         // any actions need to be taken before MyExpose().
+         GetAppWindow()->screenshot(screenshot_filename, true);
          break;
       }
 

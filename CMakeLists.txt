@@ -329,3 +329,8 @@ add_custom_target(app
         GLVis.app/Contents/Resources/GLVis.icns
         GLVis.app/Contents/Resources/Credits.rtf
     VERBATIM)
+
+if(ENABLE_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
+endif(ENABLE_TESTS)
