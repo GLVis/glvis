@@ -9,12 +9,15 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#include "visual.hpp"
+#include "aux_vis.hpp"
 #include "palettes.hpp"
 #include "stream_reader.hpp"
+#include "visual.hpp"
+
 #include <SDL2/SDL_hints.h>
 #include <emscripten/bind.h>
 #include <emscripten/html5.h>
+#include <emscripten/val.h>
 
 // used in extern context
 thread_local std::string plot_caption;
@@ -22,7 +25,15 @@ thread_local std::string extra_caption;
 thread_local mfem::GeometryRefiner GLVisGeometryRefiner;
 
 static VisualizationSceneScalarData * vs = nullptr;
+
+struct {
+  unsigned char * buffer = nullptr;
+  size_t size = 0;
+} screen_state;
+
 StreamState stream_state;
+
+namespace em = emscripten;
 
 namespace js
 {
@@ -311,11 +322,62 @@ std::string getHelpString()
       = dynamic_cast<VisualizationSceneScalarData*>(GetVisualizationScene());
    return vss->GetHelpString();
 }
+
+em::val getScreenBuffer(bool h_flip=false)
+{
+  MyExpose();
+  auto * wnd = GetAppWindow();
+
+   glFinish();
+   if (wnd->isExposePending())
+   {
+      MFEM_WARNING("Expose pending, some events may not have been handled." << endl);
+   }
+
+   int w, h;
+   wnd->getGLDrawSize(w, h);
+   if (wnd->isSwapPending())
+   {
+      glReadBuffer(GL_BACK);
+   }
+   else
+   {
+      MFEM_WARNING("Screenshot: Reading from the front buffer is unreliable. "
+                   << " Resulting screenshots may be incorrect." << endl);
+      glReadBuffer(GL_FRONT);
+   }
+
+   // 4 bytes for RGBA
+   const size_t buffer_size = w*h*4;
+   if (buffer_size > screen_state.size)
+   {
+     delete screen_state.buffer;
+     screen_state.buffer = nullptr;
+     screen_state.size = buffer_size;
+     screen_state.buffer = new unsigned char[screen_state.size];
+   }
+
+   glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, screen_state.buffer);
+
+   if (h_flip) {
+     auto * orig = screen_state.buffer;
+     auto * flip = new unsigned char[buffer_size];
+     for (int j = 0; j < h; ++j) {
+       for (int i = 0; i < w*4; ++i) {
+         flip[4*w*j + i] = orig[4*w*(h-j-1) + i];
+       }
+     }
+     screen_state.buffer = flip;
+     screen_state.size = buffer_size;
+     delete orig;
+   }
+
+   return em::val(em::typed_memory_view(screen_state.size, screen_state.buffer));
+}
 } // namespace js
 
 // Info on type conversion:
 // https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html#built-in-type-conversions
-namespace em = emscripten;
 EMSCRIPTEN_BINDINGS(js_funcs)
 {
    em::function("startVisualization", &js::startVisualization);
@@ -334,4 +396,5 @@ EMSCRIPTEN_BINDINGS(js_funcs)
    em::function("getHelpString", &js::getHelpString);
    em::function("processKeys", &js::processKeys);
    em::function("processKey", &js::processKey);
+   em::function("getScreenBuffer", &js::getScreenBuffer);
 }
