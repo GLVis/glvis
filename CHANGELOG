@@ -33,6 +33,10 @@ Version 4.1, released on Aug 31, 2021
 
 - Preliminary support for building natively on Windows via CMake.
 
+- Preliminary support for interactive inline GLVis plots in Python Jupyter 
+  Notebooks with https://github.com/glvis/pyglvis and C++ Jupyter Notebooks with
+  https://github.com/glvis/xeus-glvis
+
 - Various bugfixes and improvements related to the JavaScript version, vertex
   numbering, script handling and screenshots on some OpenGL implementations.
 
