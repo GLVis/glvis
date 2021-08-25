@@ -27,7 +27,9 @@ Version 4.1, released on Aug 31, 2021
 - Replaced pthreads and POSIX-specific code with C++11 standard thread library.
 
 - Added a new regression test suite based on generated screenshots of stream
-  files. See the README in the tests/ directory for more details.
+  files. See the README in the tests/ directory for more details. Note that this
+  requires a submodule for the baseline images, which are kept in the separate
+  https://github.com/glvis/data repository.
 
 - Preliminary support for building natively on Windows via CMake.
 

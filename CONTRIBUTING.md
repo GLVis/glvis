@@ -87,7 +87,8 @@ The GLVis source code has the following structure:
   ├── lib
   │   └── gl
   │       └── shaders
-  └── share
+  ├── share
+  └── tests
 ```
 
 ## GitHub Workflow
