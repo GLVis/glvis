@@ -1708,4 +1708,3 @@ int ReadInputStreams(StreamState& state, const StreamCollection& input_streams)
 
    return field_type;
 }
-
