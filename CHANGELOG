@@ -9,15 +9,19 @@
                               http://glvis.org
 
 
-Version 4.1, released on Aug 31, 2021
+Version 4.1, released on Aug 27, 2021
 =====================================
-
-- Added a build target ("make app") to build a native Mac OS application bundle
-  that can be double-clicked, added to the Dock, etc.
 
 - Use threads in server mode for window creation and session management instead
   of fork(). This resolves issues with the GLVis server mode on macOS. It also
   allows for closing all open GLVis server windows by Ctrl-C in the terminal.
+
+- Preliminary support for interactive inline GLVis plots in Python Jupyter
+  Notebooks with https://github.com/glvis/pyglvis and C++ Jupyter Notebooks with
+  https://github.com/glvis/xeus-glvis
+
+- Added a build target ("make app") to build a native Mac OS application bundle
+  that can be double-clicked, added to the Dock, etc.
 
 - Enabled support for WebGL 2, when available. This enables, among other
   features, support for controllable multisampling via framebuffers.
@@ -32,10 +36,6 @@ Version 4.1, released on Aug 31, 2021
   https://github.com/glvis/data repository.
 
 - Preliminary support for building natively on Windows via CMake.
-
-- Preliminary support for interactive inline GLVis plots in Python Jupyter 
-  Notebooks with https://github.com/glvis/pyglvis and C++ Jupyter Notebooks with
-  https://github.com/glvis/xeus-glvis
 
 - Various bugfixes and improvements related to the JavaScript version, vertex
   numbering, script handling and screenshots on some OpenGL implementations.
