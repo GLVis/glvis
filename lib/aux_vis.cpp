@@ -48,7 +48,7 @@ float line_w_aa = gl3::LINE_WIDTH_AA;
 
 thread_local SdlWindow * wnd = nullptr;
 bool wndLegacyGl = false;
-bool wndUseHiDPI = false;
+bool wndUseHiDPI = true;
 void SDLMainLoop(bool server_mode)
 {
    SdlWindow::StartSDL(server_mode);
