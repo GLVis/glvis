@@ -327,7 +327,6 @@ std::string getHelpString()
 em::val getScreenBuffer(bool flip_y=false)
 {
    MyExpose();
-   Screenshot(nullptr, false);
    auto * wnd = GetAppWindow();
    int w, h;
    wnd->getGLDrawSize(w, h);

@@ -899,30 +899,11 @@ int Screenshot(const char *fname, bool convert)
 #ifdef GLVIS_DEBUG
    cout << "done." << endl;
 #endif
-
+#ifndef __EMSCRIPTEN__
    if (wnd->isExposePending())
    {
       MFEM_WARNING("Expose pending, some events may not have been handled." << endl);
    }
-
-   if (wnd->isSwapPending())
-   {
-#if GLVIS_DEBUG
-      cerr << "Screenshot: reading image data from back buffer..." << endl;
-#endif
-      glReadBuffer(GL_BACK);
-   }
-   else
-   {
-#if GLVIS_DEBUG
-      cerr << "Screenshot: reading image data from front buffer..." << endl;
-#endif
-      MFEM_WARNING("Screenshot: Reading from the front buffer is unreliable. "
-                   << " Resulting screenshots may be incorrect." << endl);
-      glReadBuffer(GL_FRONT);
-   }
-
-#ifndef __EMSCRIPTEN__
    string filename = fname;
    string convert_name = fname;
    bool call_convert = false;
@@ -945,7 +926,22 @@ int Screenshot(const char *fname, bool convert)
 
    int w, h;
    wnd->getGLDrawSize(w, h);
-
+   if (wnd->isSwapPending())
+   {
+#if GLVIS_DEBUG
+      cerr << "Screenshot: reading image data from back buffer..." << endl;
+#endif
+      glReadBuffer(GL_BACK);
+   }
+   else
+   {
+#if GLVIS_DEBUG
+      cerr << "Screenshot: reading image data from front buffer..." << endl;
+#endif
+      MFEM_WARNING("Screenshot: Reading from the front buffer is unreliable. "
+                   << " Resulting screenshots may be incorrect." << endl);
+      glReadBuffer(GL_FRONT);
+   }
 #if defined(GLVIS_USE_LIBTIFF)
    // Save a TIFF image. This requires the libtiff library, see www.libtiff.org
    TIFF* image;
@@ -1050,7 +1046,7 @@ int Screenshot(const char *fname, bool convert)
    png_destroy_write_struct(&png_ptr, &info_ptr);
    delete [] pixels;
 
-#else // GLVIS_USE_{LIBPNG,LIBTIFF}
+#else
    // use SDL for screenshots
 
    // https://stackoverflow.com/questions/20233469/how-do-i-take-and-save-a-bmp-screenshot-in-sdl-2
@@ -1080,7 +1076,7 @@ int Screenshot(const char *fname, bool convert)
       }
    }
    delete [] pixels;
-#endif // GLVIS_USE_{LIBPNG,LIBTIFF}
+#endif
 
    if (call_convert)
    {
@@ -1092,9 +1088,11 @@ int Screenshot(const char *fname, bool convert)
       }
       remove(filename.c_str());
    }
-#endif // ndef __EMSCRIPTEN__
-
    return 0;
+#else
+   cout << "Screenshots not yet implemented for JS" << endl;
+   return 1;
+#endif
 }
 
 void KeyS()
