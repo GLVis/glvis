@@ -48,7 +48,7 @@ SdlNativePlatform::Create(SDL_Window* window)
 #endif
 #if defined(SDL_VIDEO_DRIVER_X11)
       case SDL_SYSWM_X11:
-          return std::unique_ptr<SdlNativePlatform> {new SdlX11Platform};
+         return std::unique_ptr<SdlNativePlatform> {new SdlX11Platform};
 #endif
       case SDL_SYSWM_UNKNOWN:
       default:

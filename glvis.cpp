@@ -28,7 +28,7 @@
 // substitution, since we need a console to accept certain user input from
 // stdin.
 #ifdef _WIN32
-  #define SDL_MAIN_HANDLED
+#define SDL_MAIN_HANDLED
 #endif
 
 #include "mfem.hpp"
