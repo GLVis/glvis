@@ -23,4 +23,9 @@ add_custom_command(
 add_library(glvis_logo STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/logo.rgba.bin.cpp)
 
+else()
+
+set(GLVIS_ICON_FILE_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/logo.ico)
+configure_file(resource.rc.in resource.rc)
+
 endif(NOT WIN32)

@@ -21,6 +21,7 @@
 
 #include "sdl_x11.hpp"
 #include "sdl_mac.hpp"
+#include "sdl_windows.hpp"
 
 using namespace std;
 
@@ -37,12 +38,17 @@ SdlNativePlatform::Create(SDL_Window* window)
    }
    switch (sysinfo.subsystem)
    {
+#if defined(SDL_VIDEO_DRIVER_WINDOWS)
+      case SDL_SYSWM_WINDOWS:
+         return std::unique_ptr<SdlNativePlatform> {new SdlWindowsPlatform};
+#endif
+#if defined(SDL_VIDEO_DRIVER_COCOA)
+      case SDL_SYSWM_COCOA:
+         return std::unique_ptr<SdlNativePlatform> {new SdlCocoaPlatform};
+#endif
 #if defined(SDL_VIDEO_DRIVER_X11)
       case SDL_SYSWM_X11:
          return std::unique_ptr<SdlNativePlatform> {new SdlX11Platform};
-#elif defined(SDL_VIDEO_DRIVER_COCOA)
-      case SDL_SYSWM_COCOA:
-         return std::unique_ptr<SdlNativePlatform> {new SdlCocoaPlatform};
 #endif
       case SDL_SYSWM_UNKNOWN:
       default:
