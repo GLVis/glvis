@@ -7541,9 +7541,7 @@ int PaletteState::ChoosePalette()
 }
 
 
-/* *
- * Generates a discrete texture from the given palette.
- */
+// Generates a discrete texture from the given palette.
 void PaletteState::ToTextureDiscrete(double * palette, size_t plt_size,
                                      GLuint tex)
 {
@@ -7616,9 +7614,7 @@ void PaletteState::ToTextureDiscrete(double * palette, size_t plt_size,
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 }
 
-/* *
- * Generates a smooth texture from the given palette.
- */
+// Generates a smooth texture from the given palette.
 void PaletteState::ToTextureSmooth(double * palette, size_t plt_size,
                                    GLuint tex)
 {
