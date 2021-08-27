@@ -60,6 +60,19 @@ SdlMainThread::SdlMainThread()
    PRINT_DEBUG("Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor
                << "." << (int)sdl_ver.patch << std::endl);
 
+#ifdef SDL_VIDEO_DRIVER_COCOA
+   if (SDL_VERSIONNUM(sdl_ver.major, sdl_ver.minor, sdl_ver.patch)
+       < SDL_VERSIONNUM(2, 0, 14))
+   {
+      std::cerr << "Warning: your current version of SDL ("
+                << sdl_ver.major << "." << sdl_ver.minor << "." << sdl_ver.patch
+                << ") may be unsupported in a future version of GLVis on macOS."
+                << std::endl;
+      std::cerr << "If possible, upgrade to SDL version 2.0.14 or newer."
+                << std::endl;
+   }
+#endif
+
    if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
    {
       if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
