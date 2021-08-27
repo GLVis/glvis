@@ -537,11 +537,10 @@ void SdlWindow::getWindowSize(int& w, int& h)
          std::cerr << "error: id is undefined: " << canvas_id_ << std::endl;
          return;
       }
-      // maybe emscripten_get_element_css_size if we're using the pixel_scale
-      // but it looks like it is always 1
-      // double dw, dh;
-      //auto err = emscripten_get_element_css_size(canvas_id_.c_str(), &dw, &dh);
-      auto err = emscripten_get_canvas_element_size(canvas_id_.c_str(), &w, &h);
+      double dw, dh;
+      auto err = emscripten_get_element_css_size(canvas_id_.c_str(), &dw, &dh);
+      w = int(dw);
+      h = int(dh);
       if (err != EMSCRIPTEN_RESULT_SUCCESS)
       {
          std::cerr << "error (emscripten_get_element_css_size): " << err << std::endl;
