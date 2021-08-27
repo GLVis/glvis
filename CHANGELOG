@@ -20,8 +20,10 @@ Version 4.1, released on Aug 27, 2021
   Notebooks with https://github.com/glvis/pyglvis and C++ Jupyter Notebooks with
   https://github.com/glvis/xeus-glvis
 
-- Added a build target ("make app") to build a native Mac OS application bundle
-  that can be double-clicked, added to the Dock, etc.
+- Added support native building on Windows with CMake.
+
+- Added support for native Mac application bundle with "make app". The resulting
+  app can be double-clicked, added to the Dock, etc.
 
 - Added screenshots support (key 'S') in the JavaScript/web version.
 
@@ -37,10 +39,8 @@ Version 4.1, released on Aug 27, 2021
   requires a submodule for the baseline images, which are kept in the separate
   https://github.com/glvis/data repository.
 
-- Preliminary support for building natively on Windows via CMake.
-
 - Various bugfixes and improvements related to the JavaScript version, vertex
-  numbering, script handling and screenshots on some OpenGL implementations.
+  numbering, script handling, screenshots, HiDPI support,  and more.
 
 
 Version 4.0, released on Dec 11, 2020
