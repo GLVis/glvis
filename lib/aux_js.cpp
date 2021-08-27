@@ -311,7 +311,6 @@ void setupResizeEventCallback(const std::string & id)
       std::cout << "got resize event" << std::endl;
       return true;
    });
-   // TODO: macro to wrap this
    if (err != EMSCRIPTEN_RESULT_SUCCESS)
    {
       std::cerr << "error (emscripten_set_resize_callback): " << err << std::endl;
