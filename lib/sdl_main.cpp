@@ -65,7 +65,8 @@ SdlMainThread::SdlMainThread()
        < SDL_VERSIONNUM(2, 0, 14))
    {
       std::cerr << "Warning: your current version of SDL ("
-                << sdl_ver.major << "." << sdl_ver.minor << "." << sdl_ver.patch
+                << (int)sdl_ver.major << "." << (int)sdl_ver.minor << "."
+                << (int)sdl_ver.patch
                 << ") may be unsupported in a future version of GLVis on macOS."
                 << std::endl;
       std::cerr << "If possible, upgrade to SDL version 2.0.14 or newer."
