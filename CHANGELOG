@@ -23,6 +23,8 @@ Version 4.1, released on Aug 27, 2021
 - Added a build target ("make app") to build a native Mac OS application bundle
   that can be double-clicked, added to the Dock, etc.
 
+- Added screenshots support (key 'S') in the JavaScript/web version.
+
 - Enabled support for WebGL 2, when available. This enables, among other
   features, support for controllable multisampling via framebuffers.
 
