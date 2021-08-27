@@ -414,7 +414,7 @@ void SdlMainThread::handleWindowCmdImpl(SdlCtrlCommand& cmd)
       case SdlCmdType::SetPosition:
          SDL_SetWindowPosition(cmd.handle->hwnd,
                                cmd.cmd_set_position.first,
-                               cmd.cmd_set_position.second);
+                               cmd.cmd_set_position.second + title_height_offset);
          break;
       default:
          cerr << "Error in main thread: unknown window control command.\n";
@@ -609,7 +609,9 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
    probeGLContextSupport(cmd.legacy_gl_only);
-   Handle new_handle(cmd.title, cmd.x, cmd.y, cmd.w, cmd.h, win_flags);
+   Handle new_handle(cmd.title,
+                     cmd.x, cmd.y + title_height_offset,
+                     cmd.w, cmd.h, win_flags);
 
    // at this point, window should be up
    if (!new_handle.isInitialized())
@@ -649,6 +651,16 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
    }
 
    setWindowIcon(new_handle.hwnd);
+
+   if (num_windows == -1)
+   {
+      // Get the window titlebar height after creating the first window.
+      // Window coordinates are based on the client area, so placing a window
+      // at (0, 0) will hide the title bar on Windows.
+      SDL_GetWindowBordersSize(new_handle.hwnd, &title_height_offset, nullptr,
+                               nullptr, nullptr);
+      SDL_SetWindowPosition(new_handle.hwnd, cmd.x, cmd.y + title_height_offset);
+   }
 
    // Detect if we are using a high-dpi display and resize the window unless it
    // was already resized by SDL's underlying backend.
