@@ -14,7 +14,7 @@
 #include "stream_reader.hpp"
 #include "visual.hpp"
 
-#if defined(GLVIS_USE_LIBPNG)
+#ifdef GLVIS_USE_LIBPNG
 #include <png.h>
 #endif
 
@@ -367,6 +367,7 @@ em::val getScreenBuffer(bool flip_y=false)
                                         screen_state->data()));
 }
 
+#ifdef GLVIS_USE_LIBPNG
 em::val getPNGByteArray()
 {
    constexpr const char * filename = "im.png";
@@ -405,6 +406,7 @@ em::val getPNGByteArray()
    return em::val(em::typed_memory_view(screen_state->size(),
                                         screen_state->data()));
 }
+#endif // GLVIS_USE_LIBPNG
 } // namespace js
 
 // Info on type conversion:
@@ -428,5 +430,7 @@ EMSCRIPTEN_BINDINGS(js_funcs)
    em::function("processKeys", &js::processKeys);
    em::function("processKey", &js::processKey);
    em::function("getScreenBuffer", &js::getScreenBuffer);
+#ifdef GLVIS_USE_LIBPNG
    em::function("getPNGByteArray", &js::getPNGByteArray);
+#endif
 }
