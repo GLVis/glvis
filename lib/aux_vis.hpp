@@ -100,6 +100,9 @@ void SetWindowTitle(const char *title);
 
 /// Take a screenshot using libtiff, libpng or sdl2
 int Screenshot(const char *fname, bool convert = false);
+//
+int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi,
+              bool with_alpha=false);
 
 /// Send a sequence of keystrokes to the visualization window
 void SendKeySequence(const char *seq);
