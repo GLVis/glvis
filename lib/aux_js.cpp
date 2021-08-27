@@ -9,12 +9,19 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#include "visual.hpp"
+#include "aux_vis.hpp"
 #include "palettes.hpp"
 #include "stream_reader.hpp"
+#include "visual.hpp"
+
+#ifdef GLVIS_USE_LIBPNG
+#include <png.h>
+#endif
+
 #include <SDL2/SDL_hints.h>
 #include <emscripten/bind.h>
 #include <emscripten/html5.h>
+#include <emscripten/val.h>
 
 // used in extern context
 thread_local std::string plot_caption;
@@ -22,7 +29,13 @@ thread_local std::string extra_caption;
 thread_local mfem::GeometryRefiner GLVisGeometryRefiner;
 
 static VisualizationSceneScalarData * vs = nullptr;
+
+// either bitmap data or png bytes
+std::vector<unsigned char> * screen_state = nullptr;
+
 StreamState stream_state;
+
+namespace em = emscripten;
 
 namespace js
 {
@@ -311,11 +324,93 @@ std::string getHelpString()
       = dynamic_cast<VisualizationSceneScalarData*>(GetVisualizationScene());
    return vss->GetHelpString();
 }
+
+em::val getScreenBuffer(bool flip_y=false)
+{
+   MyExpose();
+   auto * wnd = GetAppWindow();
+   int w, h;
+   wnd->getGLDrawSize(w, h);
+
+   // 4 bytes for rgba
+   const size_t buffer_size = w*h*4;
+   if (screen_state == nullptr)
+   {
+      screen_state = new std::vector<unsigned char>(buffer_size);
+   }
+   else if (buffer_size > screen_state->size())
+   {
+      screen_state->resize(buffer_size);
+   }
+
+   glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, screen_state->data());
+
+   // `canvas` starts at top left but `glReadPixels' starts at bottom left
+   if (flip_y)
+   {
+      auto * orig = screen_state;
+      auto * flip = new std::vector<unsigned char>(buffer_size);
+      // from `glReadPixels` man page: Pixels are returned in row order from
+      // the lowest to the highest row, left to right in each row.
+      for (int j = 0; j < h; ++j)
+      {
+         for (int i = 0; i < w*4; ++i)
+         {
+            (*flip)[4*w*j + i] = (*orig)[4*w*(h-j-1) + i];
+         }
+      }
+      screen_state = flip;
+      delete orig;
+   }
+
+   return em::val(em::typed_memory_view(screen_state->size(),
+                                        screen_state->data()));
+}
+
+#ifdef GLVIS_USE_LIBPNG
+em::val getPNGByteArray()
+{
+   constexpr const char * filename = "im.png";
+   auto * wnd = GetAppWindow();
+   int w, h;
+   wnd->getGLDrawSize(w, h);
+
+   MyExpose();
+   // save to in-memory file
+   int status = SaveAsPNG(filename, w, h, wnd->isHighDpi(), true);
+   if (status != 0)
+   {
+      fprintf(stderr, "unable to generate png\n");
+      return em::val::null();
+   }
+
+   // load in-memory file to byte array
+   std::ifstream ifs(filename, std::ios::binary);
+   if (!ifs)
+   {
+      fprintf(stderr, "unable to load png\n");
+      return em::val::null();
+   }
+
+   if (!screen_state)
+   {
+      screen_state = new std::vector<unsigned char>(std::istreambuf_iterator<char>
+                                                    (ifs), {});
+   }
+   else
+   {
+      screen_state->assign(std::istreambuf_iterator<char>
+                           (ifs), {});
+   }
+
+   return em::val(em::typed_memory_view(screen_state->size(),
+                                        screen_state->data()));
+}
+#endif // GLVIS_USE_LIBPNG
 } // namespace js
 
 // Info on type conversion:
 // https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html#built-in-type-conversions
-namespace em = emscripten;
 EMSCRIPTEN_BINDINGS(js_funcs)
 {
    em::function("startVisualization", &js::startVisualization);
@@ -334,4 +429,8 @@ EMSCRIPTEN_BINDINGS(js_funcs)
    em::function("getHelpString", &js::getHelpString);
    em::function("processKeys", &js::processKeys);
    em::function("processKey", &js::processKey);
+   em::function("getScreenBuffer", &js::getScreenBuffer);
+#ifdef GLVIS_USE_LIBPNG
+   em::function("getPNGByteArray", &js::getPNGByteArray);
+#endif
 }
