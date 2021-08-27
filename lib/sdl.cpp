@@ -367,7 +367,7 @@ void SdlWindow::mainIter()
       GetMainThread().DispatchSDLEvents();
    }
    bool events_pending = false;
-   bool sleep = true;
+   bool sleep = false;
    {
       lock_guard<mutex> evt_guard{event_mutex};
       events_pending = !waiting_events.empty();
@@ -437,6 +437,11 @@ void SdlWindow::mainIter()
          call_idle_func = false;
       }
       sleep = onIdle();
+   }
+   else
+   {
+      // No actions performed this iteration.
+      sleep = true;
    }
    if (wnd_state == RenderState::ExposePending)
    {
