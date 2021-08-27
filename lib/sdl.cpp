@@ -367,6 +367,7 @@ void SdlWindow::mainIter()
       GetMainThread().DispatchSDLEvents();
    }
    bool events_pending = false;
+   bool sleep = true;
    {
       lock_guard<mutex> evt_guard{event_mutex};
       events_pending = !waiting_events.empty();
@@ -435,17 +436,7 @@ void SdlWindow::mainIter()
          unique_lock<mutex> event_lock{event_mutex};
          call_idle_func = false;
       }
-      bool sleep = onIdle();
-      if (is_multithreaded && sleep)
-      {
-         // Wait for next wakeup event from main event thread
-         unique_lock<mutex> event_lock{event_mutex};
-         events_available.wait(event_lock, [this]()
-         {
-            // Sleep until events from WM or glvis_command can be handled
-            return !waiting_events.empty() || call_idle_func;
-         });
-      }
+      sleep = onIdle();
    }
    if (wnd_state == RenderState::ExposePending)
    {
@@ -471,6 +462,16 @@ void SdlWindow::mainIter()
 #endif
       onExpose();
       wnd_state = RenderState::SwapPending;
+   }
+   else if (is_multithreaded && sleep)
+   {
+      // No updates to vis, wait for next wakeup event from glvis_command or WM
+      unique_lock<mutex> event_lock{event_mutex};
+      events_available.wait(event_lock, [this]()
+      {
+         // Sleep until events from WM or glvis_command can be handled
+         return !waiting_events.empty() || call_idle_func;
+      });
    }
 }
 
