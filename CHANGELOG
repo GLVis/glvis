@@ -20,7 +20,7 @@ Version 4.1, released on Aug 27, 2021
   Notebooks with https://github.com/glvis/pyglvis and C++ Jupyter Notebooks with
   https://github.com/glvis/xeus-glvis
 
-- Added support native building on Windows with CMake.
+- Added support for native builds on Windows with CMake.
 
 - Added support for native Mac application bundle with "make app". The resulting
   app can be double-clicked, added to the Dock, etc.
