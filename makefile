@@ -93,8 +93,12 @@ GLVIS_LDFLAGS ?=
 EMCC      ?= emcc -std=c++11
 FONT_FILE ?= OpenSans.ttf
 EMCC_OPTS ?= -s USE_SDL=2 -s USE_FREETYPE=1 -s USE_LIBPNG=1
-# TODO: we don't want to have DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0
-# longterm but until the SDL layer supports non-default canvas ids we need this
+# NOTE: we don't want to have DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0
+# longterm but until the SDL layer supports non-default canvas ids we need this,
+# which will probably be a while.
+# NOTE: we don't want to have --minify 0 longterm but we need to patch
+# `_JSEvents_requestFullscreen' to be a noop for the live page and that is
+# not easy to do in a minified build.
 EMCC_LIBS ?= -s USE_SDL=2 --bind -s ALLOW_MEMORY_GROWTH=1 -s SINGLE_FILE=1 \
  --no-heap-copy -s ENVIRONMENT=web -s MODULARIZE=1 -s EXPORT_NAME=glvis \
  -s GL_ASSERTIONS=1 -s GL_DEBUG=1 -s USE_FREETYPE=1 -s MAX_WEBGL_VERSION=2 \

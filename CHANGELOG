@@ -9,33 +9,38 @@
                               http://glvis.org
 
 
-Version 4.0.1 (development)
-===========================
-- Use threads in server mode for window creation and session management
-  instead of fork(). This resolves some issues with running GLVis in server
-  mode on macOS. This also allows for closing all open GLVis windows associated
-  with the server by using Ctrl-C in the terminal.
+Version 4.1, released on Aug 31, 2021
+=====================================
 
-- Preliminary support for building natively on Windows via CMake.
+- Use threads in server mode for window creation and session management instead
+  of fork(). This resolves issues with the GLVis server mode on macOS. It also
+  allows for closing all open GLVis server windows by Ctrl-C in the terminal.
 
-- Refactored glvis.cpp to fix a bug in GLVis script handling.
+- Preliminary support for interactive inline GLVis plots in Python Jupyter
+  Notebooks with https://github.com/glvis/pyglvis and C++ Jupyter Notebooks with
+  https://github.com/glvis/xeus-glvis.
+
+- Added support for native builds on Windows with CMake.
+
+- Added support for native Mac application bundle with "make app". The resulting
+  app can be double-clicked, added to the Dock, etc.
+
+- Added screenshots support to the JavaScript/web version (key 'S').
 
 - Enabled support for WebGL 2, when available. This enables, among other
   features, support for controllable multisampling via framebuffers.
 
-- Various bugfixes and improvements related to the JavaScript version.
+- Refactored rendering components, including palette and shader handling.
 
-- Refactoring of rendering components, including palette and shader handling.
-
-- Replace pthreads and POSIX-specific code with C++11 standard thread library.
-
-- Added build target ("make app") to build a native Mac OS application bundle
-  that can be double-clicked, added to the Dock, etc.
+- Replaced pthreads and POSIX-specific code with C++11 standard thread library.
 
 - Added a new regression test suite based on generated screenshots of stream
-  files. See the README in the tests directory for more details.
+  files. See the README in the tests/ directory for more details. Note that this
+  requires a git submodule for the baseline images, which are located in the
+  separate https://github.com/glvis/data repository.
 
-- Fixed an issue with black screenshots on certain OpenGL implementations.
+- Various bugfixes and improvements related to the JavaScript version, vertex
+  numbering, script handling, screenshots, HiDPI support,  and more.
 
 
 Version 4.0, released on Dec 11, 2020

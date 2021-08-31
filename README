@@ -9,7 +9,9 @@
                               http://glvis.org
 
 GLVis is an OpenGL tool for visualization of finite element meshes and
-functions.
+functions. It is a multiplatform OpenGL application that can be built on
+Linux/Unix systems, including Mac OS X, and under Windows. It can also be used
+in a Jupyter notebook, or in a web browser, see https://glvis.org/live.
 
 For building instructions, see the file INSTALL. Copyright information and
 licensing restrictions can be found in the file COPYRIGHT.

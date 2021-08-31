@@ -193,6 +193,7 @@ void SdlWindow::windowEvent(SDL_WindowEvent& ew)
    switch (ew.event)
    {
       case SDL_WINDOWEVENT_EXPOSED:
+      case SDL_WINDOWEVENT_RESIZED:
          update_before_expose = true;
          if (onExpose)
          {
@@ -203,7 +204,6 @@ void SdlWindow::windowEvent(SDL_WindowEvent& ew)
          running = false;
          break;
       case SDL_WINDOWEVENT_MOVED:
-      case SDL_WINDOWEVENT_RESIZED:
          update_before_expose = true;
          break;
       default:

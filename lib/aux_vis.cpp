@@ -931,7 +931,7 @@ int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi, bool with_alpha)
    }
 
    png_uint_32 ppi = is_hidpi ? 144 : 72; // pixels/inch
-   png_uint_32 ppm = ppi/0.0254 + 0.5;            // pixels/meter
+   png_uint_32 ppm = ppi/0.0254 + 0.5;    // pixels/meter
    png_set_pHYs(png_ptr, info_ptr, ppm, ppm, PNG_RESOLUTION_METER);
 
    png_init_io(png_ptr, fp);
@@ -996,14 +996,14 @@ int Screenshot(const char *fname, bool convert)
    wnd->getGLDrawSize(w, h);
    if (wnd->isSwapPending())
    {
-#if GLVIS_DEBUG
+#ifdef GLVIS_DEBUG
       cerr << "Screenshot: reading image data from back buffer..." << endl;
 #endif
       glReadBuffer(GL_BACK);
    }
    else
    {
-#if GLVIS_DEBUG
+#ifdef GLVIS_DEBUG
       cerr << "Screenshot: reading image data from front buffer..." << endl;
 #endif
       MFEM_WARNING("Screenshot: Reading from the front buffer is unreliable. "
