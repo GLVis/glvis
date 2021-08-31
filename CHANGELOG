@@ -9,7 +9,7 @@
                               http://glvis.org
 
 
-Version 4.1, released on Aug 27, 2021
+Version 4.1, released on Aug 31, 2021
 =====================================
 
 - Use threads in server mode for window creation and session management instead
@@ -18,14 +18,14 @@ Version 4.1, released on Aug 27, 2021
 
 - Preliminary support for interactive inline GLVis plots in Python Jupyter
   Notebooks with https://github.com/glvis/pyglvis and C++ Jupyter Notebooks with
-  https://github.com/glvis/xeus-glvis
+  https://github.com/glvis/xeus-glvis.
 
 - Added support for native builds on Windows with CMake.
 
 - Added support for native Mac application bundle with "make app". The resulting
   app can be double-clicked, added to the Dock, etc.
 
-- Added screenshots support (key 'S') in the JavaScript/web version.
+- Added screenshots support to the JavaScript/web version (key 'S').
 
 - Enabled support for WebGL 2, when available. This enables, among other
   features, support for controllable multisampling via framebuffers.
@@ -36,8 +36,8 @@ Version 4.1, released on Aug 27, 2021
 
 - Added a new regression test suite based on generated screenshots of stream
   files. See the README in the tests/ directory for more details. Note that this
-  requires a submodule for the baseline images, which are kept in the separate
-  https://github.com/glvis/data repository.
+  requires a git submodule for the baseline images, which are located in the
+  separate https://github.com/glvis/data repository.
 
 - Various bugfixes and improvements related to the JavaScript version, vertex
   numbering, script handling, screenshots, HiDPI support,  and more.
