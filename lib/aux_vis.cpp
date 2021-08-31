@@ -996,14 +996,14 @@ int Screenshot(const char *fname, bool convert)
    wnd->getGLDrawSize(w, h);
    if (wnd->isSwapPending())
    {
-#if GLVIS_DEBUG
+#ifdef GLVIS_DEBUG
       cerr << "Screenshot: reading image data from back buffer..." << endl;
 #endif
       glReadBuffer(GL_BACK);
    }
    else
    {
-#if GLVIS_DEBUG
+#ifdef GLVIS_DEBUG
       cerr << "Screenshot: reading image data from front buffer..." << endl;
 #endif
       MFEM_WARNING("Screenshot: Reading from the front buffer is unreliable. "
