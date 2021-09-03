@@ -144,4 +144,5 @@ inline int ProjectVector(double v[], const double n[])
    LinearCombination(InnerProd(n, n), v, -InnerProd(v, n), n, v);
    return Normalize(v);
 }
+
 #endif // GLVIS_GEOM_UTILS_HPP

@@ -466,4 +466,3 @@ glm::mat4 VisualizationScene::GetModelViewMtx()
    modelView.translate(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
    return modelView.mtx;
 }
-

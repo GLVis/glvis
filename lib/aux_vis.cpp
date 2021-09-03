@@ -48,7 +48,7 @@ float line_w_aa = gl3::LINE_WIDTH_AA;
 
 thread_local SdlWindow * wnd = nullptr;
 bool wndLegacyGl = false;
-bool wndUseHiDPI = false;
+bool wndUseHiDPI = true;
 void SDLMainLoop(bool server_mode)
 {
    SdlWindow::StartSDL(server_mode);
@@ -890,6 +890,74 @@ int InvertSurfaceVertical(SDL_Surface *surface)
    return 0;
 }
 
+#ifdef GLVIS_USE_LIBPNG
+int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi, bool with_alpha)
+{
+   png_byte *pixels = new png_byte[(with_alpha ? 4 : 3)*w];
+   if (!pixels)
+   {
+      return 1;
+   }
+
+   png_structp png_ptr =
+      png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+   if (!png_ptr)
+   {
+      delete [] pixels;
+      return 1;
+   }
+   png_infop info_ptr = png_create_info_struct(png_ptr);
+   if (!info_ptr)
+   {
+      png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+      delete [] pixels;
+      return 1;
+   }
+
+   FILE *fp = fopen(fname, "wb");
+   if (!fp)
+   {
+      png_destroy_write_struct(&png_ptr, &info_ptr);
+      delete [] pixels;
+      return 2;
+   }
+
+   if (setjmp(png_jmpbuf(png_ptr)))
+   {
+      fclose(fp);
+      png_destroy_write_struct(&png_ptr, &info_ptr);
+      delete [] pixels;
+      return 3;
+   }
+
+   png_uint_32 ppi = is_hidpi ? 144 : 72; // pixels/inch
+   png_uint_32 ppm = ppi/0.0254 + 0.5;    // pixels/meter
+   png_set_pHYs(png_ptr, info_ptr, ppm, ppm, PNG_RESOLUTION_METER);
+
+   png_init_io(png_ptr, fp);
+   png_set_IHDR(png_ptr, info_ptr, w, h, 8,
+                with_alpha ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB,
+                PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
+                PNG_FILTER_TYPE_DEFAULT);
+
+
+   png_write_info(png_ptr, info_ptr);
+   for (int i = 0; i < h; i++)
+   {
+      glReadPixels(0, h-1-i, w, 1, with_alpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE,
+                   pixels);
+      png_write_row(png_ptr, pixels);
+   }
+   png_write_end(png_ptr, info_ptr);
+
+   fclose(fp);
+   png_destroy_write_struct(&png_ptr, &info_ptr);
+   delete [] pixels;
+
+   return 0;
+}
+#endif // GLVIS_USE_LIBPNG
+
 int Screenshot(const char *fname, bool convert)
 {
 #ifdef GLVIS_DEBUG
@@ -928,14 +996,14 @@ int Screenshot(const char *fname, bool convert)
    wnd->getGLDrawSize(w, h);
    if (wnd->isSwapPending())
    {
-#if GLVIS_DEBUG
+#ifdef GLVIS_DEBUG
       cerr << "Screenshot: reading image data from back buffer..." << endl;
 #endif
       glReadBuffer(GL_BACK);
    }
    else
    {
-#if GLVIS_DEBUG
+#ifdef GLVIS_DEBUG
       cerr << "Screenshot: reading image data from front buffer..." << endl;
 #endif
       MFEM_WARNING("Screenshot: Reading from the front buffer is unreliable. "
@@ -987,64 +1055,8 @@ int Screenshot(const char *fname, bool convert)
 
 #elif defined(GLVIS_USE_LIBPNG)
    // Save as png image. Requires libpng.
-
-   png_byte *pixels = new png_byte[3*w];
-   if (!pixels)
-   {
-      return 1;
-   }
-
-   png_structp png_ptr =
-      png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-   if (!png_ptr)
-   {
-      delete [] pixels;
-      return 1;
-   }
-   png_infop info_ptr = png_create_info_struct(png_ptr);
-   if (!info_ptr)
-   {
-      png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
-      delete [] pixels;
-      return 1;
-   }
-
-   FILE *fp = fopen(filename.c_str(), "wb");
-   if (!fp)
-   {
-      png_destroy_write_struct(&png_ptr, &info_ptr);
-      delete [] pixels;
-      return 2;
-   }
-
-   if (setjmp(png_jmpbuf(png_ptr)))
-   {
-      fclose(fp);
-      png_destroy_write_struct(&png_ptr, &info_ptr);
-      delete [] pixels;
-      return 3;
-   }
-
-   png_uint_32 ppi = wnd->isHighDpi() ? 144 : 72; // pixels/inch
-   png_uint_32 ppm = ppi/0.0254 + 0.5;            // pixels/meter
-   png_set_pHYs(png_ptr, info_ptr, ppm, ppm, PNG_RESOLUTION_METER);
-
-   png_init_io(png_ptr, fp);
-   png_set_IHDR(png_ptr, info_ptr, w, h, 8, PNG_COLOR_TYPE_RGB,
-                PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
-                PNG_FILTER_TYPE_DEFAULT);
-
-   png_write_info(png_ptr, info_ptr);
-   for (int i = 0; i < h; i++)
-   {
-      glReadPixels(0, h-1-i, w, 1, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-      png_write_row(png_ptr, pixels);
-   }
-   png_write_end(png_ptr, info_ptr);
-
-   fclose(fp);
-   png_destroy_write_struct(&png_ptr, &info_ptr);
-   delete [] pixels;
+   int status = SaveAsPNG(filename.c_str(), w, h, wnd->isHighDpi());
+   if (status != 0) { return status; }
 
 #else
    // use SDL for screenshots
@@ -1613,6 +1625,7 @@ vector<string> fc_font_patterns =
    "DejaVu Sans Mono:style=Book",
    "DejaVu LGC Sans Mono:style=Book",
    "Helvetica:style=Regular",
+   "Arial:style=Regular:weight=80"
 };
 
 constexpr int default_font_size = 12;

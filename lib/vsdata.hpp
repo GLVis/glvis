@@ -165,7 +165,7 @@ public:
 
    // Perform autoscaling depending on the value of 'autoscale':
    // 0 - do nothing
-   // 1 - call call FindNewBoxAndValueRange
+   // 1 - call FindNewBoxAndValueRange
    // 2 - call FindNewValueRange
    // 3 - call FindMeshBox
    void DoAutoscale(bool prepare);

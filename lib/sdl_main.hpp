@@ -139,6 +139,8 @@ private:
    condition_variable event_cv;
    bool try_create_platform{false};
    unique_ptr<SdlNativePlatform> platform;
+
+   int title_height_offset {0};
 };
 
 #endif

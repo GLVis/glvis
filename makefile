@@ -92,13 +92,17 @@ GLVIS_LDFLAGS ?=
 # emcc is used when building the wasm/js version
 EMCC      ?= emcc -std=c++11
 FONT_FILE ?= OpenSans.ttf
-EMCC_OPTS ?= -s USE_SDL=2 -s USE_FREETYPE=1
-# TODO: we don't want to have DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0
-# longterm but until the SDL layer supports non-default canvas ids we need this
+EMCC_OPTS ?= -s USE_SDL=2 -s USE_FREETYPE=1 -s USE_LIBPNG=1
+# NOTE: we don't want to have DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0
+# longterm but until the SDL layer supports non-default canvas ids we need this,
+# which will probably be a while.
+# NOTE: we don't want to have --minify 0 longterm but we need to patch
+# `_JSEvents_requestFullscreen' to be a noop for the live page and that is
+# not easy to do in a minified build.
 EMCC_LIBS ?= -s USE_SDL=2 --bind -s ALLOW_MEMORY_GROWTH=1 -s SINGLE_FILE=1 \
  --no-heap-copy -s ENVIRONMENT=web -s MODULARIZE=1 -s EXPORT_NAME=glvis \
  -s GL_ASSERTIONS=1 -s GL_DEBUG=1 -s USE_FREETYPE=1 -s MAX_WEBGL_VERSION=2 \
- -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0
+ -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0 --minify 0
 
 # Flags used when $(GLVIS_DEBUG) is not the same as $(MFEM_DEBUG)
 CXX11FLAG ?= -std=c++11
@@ -266,7 +270,7 @@ BYTECODE_FILES       = $(WEB_SOURCE_FILES:.cpp=.bc)
 	$(CCC) -o $@ -c $<
 
 %.bc: %.cpp
-	$(EMCC) $(EMCC_OPTS) -c $< -o $@
+	$(EMCC) $(EMCC_OPTS) $(GLVIS_FLAGS) -c $< -o $@
 
 glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(CCC) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
