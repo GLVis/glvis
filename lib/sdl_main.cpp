@@ -60,6 +60,20 @@ SdlMainThread::SdlMainThread()
    PRINT_DEBUG("Using SDL " << (int)sdl_ver.major << "." << (int)sdl_ver.minor
                << "." << (int)sdl_ver.patch << std::endl);
 
+#ifdef SDL_VIDEO_DRIVER_COCOA
+   if (SDL_VERSIONNUM(sdl_ver.major, sdl_ver.minor, sdl_ver.patch)
+       < SDL_VERSIONNUM(2, 0, 14))
+   {
+      std::cerr << "Warning: your current version of SDL ("
+                << (int)sdl_ver.major << "." << (int)sdl_ver.minor << "."
+                << (int)sdl_ver.patch
+                << ") may be unsupported in a future version of GLVis on macOS."
+                << std::endl;
+      std::cerr << "If possible, upgrade to SDL version 2.0.14 or newer."
+                << std::endl;
+   }
+#endif
+
    if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
    {
       if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
@@ -414,7 +428,7 @@ void SdlMainThread::handleWindowCmdImpl(SdlCtrlCommand& cmd)
       case SdlCmdType::SetPosition:
          SDL_SetWindowPosition(cmd.handle->hwnd,
                                cmd.cmd_set_position.first,
-                               cmd.cmd_set_position.second);
+                               cmd.cmd_set_position.second + title_height_offset);
          break;
       default:
          cerr << "Error in main thread: unknown window control command.\n";
@@ -609,7 +623,9 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1);
    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
    probeGLContextSupport(cmd.legacy_gl_only);
-   Handle new_handle(cmd.title, cmd.x, cmd.y, cmd.w, cmd.h, win_flags);
+   Handle new_handle(cmd.title,
+                     cmd.x, cmd.y + title_height_offset,
+                     cmd.w, cmd.h, win_flags);
 
    // at this point, window should be up
    if (!new_handle.isInitialized())
@@ -649,6 +665,16 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
    }
 
    setWindowIcon(new_handle.hwnd);
+
+   if (num_windows == -1)
+   {
+      // Get the window titlebar height after creating the first window.
+      // Window coordinates are based on the client area, so placing a window
+      // at (0, 0) will hide the title bar on Windows.
+      SDL_GetWindowBordersSize(new_handle.hwnd, &title_height_offset, nullptr,
+                               nullptr, nullptr);
+      SDL_SetWindowPosition(new_handle.hwnd, cmd.x, cmd.y + title_height_offset);
+   }
 
    // Detect if we are using a high-dpi display and resize the window unless it
    // was already resized by SDL's underlying backend.

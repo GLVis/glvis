@@ -52,5 +52,4 @@ struct StreamState
 std::unique_ptr<mfem::GridFunction>
 ProjectVectorFEGridFunction(std::unique_ptr<mfem::GridFunction> gf);
 
-
 #endif // GLVIS_STREAM_READER_HPP

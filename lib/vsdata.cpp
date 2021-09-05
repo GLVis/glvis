@@ -33,9 +33,8 @@ void VisualizationSceneScalarData::FixValueRange()
    if (float(am) < 100*numeric_limits<float>::min()) { am = 1e-3; }
    if ((maxv-minv) < 1e-5*am)
    {
-      // Shading quality may be bad since OpenGL uses single precision.
-      // We should probably pre-scale the solution before feeding it
-      // to OpenGL
+      // Shading quality may be bad since OpenGL uses single precision. We
+      // should probably pre-scale the solution before feeding it to OpenGL
       int old_prec = cout.precision(12);
       cout << "[minv,maxv] = " << "[" << minv << "," << maxv
            << "] (maxv-minv = " << maxv-minv << ")\n --> ";
@@ -755,7 +754,7 @@ void KeyAPressed()
 void KeyCommaPressed()
 {
    locscene->matAlphaCenter -= 0.25;
-   //vsdata -> EventUpdateColors();
+   // vsdata -> EventUpdateColors();
    locscene->GenerateAlphaTexture();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
@@ -766,7 +765,7 @@ void KeyCommaPressed()
 void KeyLessPressed()
 {
    locscene->matAlphaCenter += 0.25;
-   //vsdata -> EventUpdateColors();
+   // vsdata -> EventUpdateColors();
    locscene->GenerateAlphaTexture();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
@@ -1250,7 +1249,7 @@ void VisualizationSceneScalarData::PrepareAxes()
    gl3::GlBuilder bld = axes_buf.createBuilder();
    if (drawaxes == 3)
    {
-      //glLineStipple(1, 255);
+      // glLineStipple(1, 255);
       bld.glBegin(GL_LINES);
       bld.glColor3f(1., 0., 0.);
       bld.glVertex3d(x[0], y[0], z[0]);
@@ -1261,8 +1260,8 @@ void VisualizationSceneScalarData::PrepareAxes()
       bld.glVertex3d(x[0], y[0], z[0]);
       bld.glEnd();
       bld.glColor4fv(blk.data());
-      //bld.setUseColor(false);
-      //bld.glEnable(GL_LINE_STIPPLE);
+      // bld.setUseColor(false);
+      // bld.glEnable(GL_LINE_STIPPLE);
       bld.glBegin(GL_LINE_STRIP);
       bld.glColor3f(0.75, 0.75, 0.75);
       bld.glVertex3d(x[1], y[0], z[0]);
@@ -1272,7 +1271,7 @@ void VisualizationSceneScalarData::PrepareAxes()
    }
    else
    {
-      //bld.setUseColor(false);
+      // bld.setUseColor(false);
       bld.glBegin(GL_LINE_LOOP);
       bld.glVertex3d(x[0], y[0], z[0]);
       bld.glVertex3d(x[1], y[0], z[0]);
@@ -1289,15 +1288,15 @@ void VisualizationSceneScalarData::PrepareAxes()
 
    if (drawaxes == 3)
    {
-      //bld.setUseColor(true);
-      //bld.glDisable(GL_LINE_STIPPLE);
+      // bld.setUseColor(true);
+      // bld.glDisable(GL_LINE_STIPPLE);
       bld.glBegin(GL_LINES);
       bld.glVertex3d(x[0], y[0], z[1]);
       bld.glColor3f(0., 0., 1.);
       bld.glVertex3d(x[0], y[0], z[0]);
       bld.glEnd();
-      //bld.setUseColor(false);
-      //bld.glEnable(GL_LINE_STIPPLE);
+      // bld.setUseColor(false);
+      // bld.glEnable(GL_LINE_STIPPLE);
       bld.glColor3f(0.75, 0.75, 0.75);
       bld.glBegin(GL_LINES);
    }
@@ -1316,7 +1315,7 @@ void VisualizationSceneScalarData::PrepareAxes()
    bld.glEnd();
    if (drawaxes == 3)
    {
-      //bld.glDisable(GL_LINE_STIPPLE);
+      // bld.glDisable(GL_LINE_STIPPLE);
    }
 
    // Write the coordinates of the lower left and upper right corner.

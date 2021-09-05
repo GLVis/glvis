@@ -290,9 +290,10 @@ if(NOT EMSCRIPTEN)
   target_link_libraries(glvis-exe PRIVATE glvis)
 
   if (WIN32)
-    set_target_properties(glvis-exe PROPERTIES WIN32_EXECUTABLE TRUE)
-    target_sources(glvis-exe PRIVATE "share/windows.manifest")
-    target_link_libraries(glvis-exe PRIVATE SDL2::SDL2main)
+    target_sources(glvis-exe
+      PRIVATE
+        "share/windows.manifest"
+        "${CMAKE_CURRENT_BINARY_DIR}/share/resource.rc")
   else()
     target_link_libraries(glvis-exe PRIVATE glvis_logo)
   endif (WIN32)

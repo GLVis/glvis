@@ -87,7 +87,8 @@ The GLVis source code has the following structure:
   ├── lib
   │   └── gl
   │       └── shaders
-  └── share
+  ├── share
+  └── tests
 ```
 
 ## GitHub Workflow
@@ -203,8 +204,6 @@ Before you can start, you need a GitHub account, here are a few suggestions:
     directory. This requires [Artistic Style](http://astyle.sourceforge.net)
     version 2.05.1 and MFEM's style configuration file, typically located in
     `../mfem/config/mfem.astylerc`.
-  - Use `glvis::out` and `glvis::err` instead of `std::cout` and `std::cerr` in
-    internal library code. (You can use `std` in examples and miniapps.)
   - When manually resolving conflicts during a merge, make sure to mention the
     conflicted files in the commit message.
 
@@ -263,7 +262,6 @@ Before a PR can be merged, it should satisfy the following:
     - [ ] Add new patterns (just for the new files above) and re-run the above test.
 - [ ] New capability:
    - [ ] All significant new classes, methods and functions have Doxygen-style documentation in source comments.
-   - [ ] Consider adding new sample runs in existing examples to highlight the new capability.
    - [ ] Consider saving cool simulation pictures with the new capability in the Confluence gallery (LLNL only) or submitting them, via pull request, to the gallery section of the `glvis/web` repo.
    - [ ] If this is a major new feature, consider mentioning it in the short summary inside `README` *(rare)*.
    - [ ] List major new classes in `doc/CodeDocumentation.dox` *(rare)*.

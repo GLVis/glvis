@@ -412,4 +412,3 @@ bool StreamState::SetNewMeshAndSolution(StreamState new_state,
       return false;
    }
 }
-
