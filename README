@@ -149,6 +149,11 @@ i - Toggle cutting (clipping) plane in 2D
 y/Y - Rotate cutting plane (theta) in 2D
 z/Z - Translate cutting plane in 2D
 
+n/N - Cycle through numberings.
+      The options are: -> none
+                       -> show element numbering
+                       -> show vertex numbering
+
 ` - Toggle a ruler, with initial origin at the center of the bounding box. The
     origin can be later moved with '~'.
     The options are: -> none
