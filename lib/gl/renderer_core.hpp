@@ -27,6 +27,9 @@ public:
       ATTR_NORMAL,
       ATTR_COLOR,
       ATTR_TEXCOORD0,
+      ATTR_LINE_ORIENT,
+      ATTR_LINE_PREV,
+      ATTR_LINE_NEXT,
       NUM_ATTRS
    };
 
@@ -59,6 +62,9 @@ private:
       array_layout layout;
    };
 
+   struct LineVertex;
+   struct LineColorVertex;
+
    std::vector<VBOData> vbos;
 
    bool compileShaders();
@@ -66,6 +72,8 @@ private:
 
    template<typename T>
    void drawDeviceBufferImpl(GLenum shape, int count, bool indexed);
+
+   void drawExtendedLineImpl(array_layout type, int count);
 
    void processTriangleXfbBuffer(CaptureBuffer& cbuf,
                                  const vector<ShaderXfbVertex>& verts);

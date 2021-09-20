@@ -45,6 +45,9 @@ const std::vector<std::string> CoreGLDevice::unif_list =
    "useClipPlane",
    "clipPlane",
    "containsText",
+   "expandLines",
+   "lineWidth",
+   "aspectRatio",
    "modelViewMatrix",
    "projectionMatrix",
    "textProjMatrix",
@@ -64,6 +67,84 @@ const std::vector<std::string> CoreGLDevice::unif_list =
    "lights[2].specular",
    "colorTex",
    "alphaTex"
+};
+
+struct alignas(16) CoreGLDevice::LineVertex
+{
+   std::array<float, 3> vtx;
+   int orientation;
+   std::array<float, 3> prev;
+   std::array<float, 3> next;
+
+   static constexpr int layout = LAYOUT_EXT_LINE_VTX;
+
+   static void Setup()
+   {
+      constexpr LineVertex base{};
+      const size_t vtx_offset = (size_t)(&base.vtx) - (size_t)(&base);
+      const size_t orient_offset = (size_t)(&base.orientation) - (size_t)(&base);
+      const size_t prev_offset = (size_t)(&base.prev) - (size_t)(&base);
+      const size_t next_offset = (size_t)(&base.next) - (size_t)(&base);
+
+      glEnableVertexAttribArray(ATTR_VERTEX);
+      glEnableVertexAttribArray(ATTR_LINE_ORIENT);
+      glEnableVertexAttribArray(ATTR_LINE_PREV);
+      glEnableVertexAttribArray(ATTR_LINE_NEXT);
+
+      glVertexAttribPointer(ATTR_VERTEX, 3, GL_FLOAT, false, sizeof(LineVertex), (void*)vtx_offset);
+      glVertexAttribPointer(ATTR_LINE_ORIENT, 1, GL_INT, false, sizeof(LineVertex), (void*)orient_offset);
+      glVertexAttribPointer(ATTR_LINE_PREV, 3, GL_FLOAT, false, sizeof(LineVertex), (void*)prev_offset);
+      glVertexAttribPointer(ATTR_LINE_NEXT, 3, GL_FLOAT, false, sizeof(LineVertex), (void*)next_offset);
+   }
+
+   static void Finish()
+   {
+      glDisableVertexAttribArray(ATTR_VERTEX);
+      glDisableVertexAttribArray(ATTR_LINE_ORIENT);
+      glDisableVertexAttribArray(ATTR_LINE_PREV);
+      glDisableVertexAttribArray(ATTR_LINE_NEXT);
+   }
+};
+
+struct alignas(16) CoreGLDevice::LineColorVertex
+{
+   std::array<float, 3> vtx;
+   std::array<uint8_t, 4> color;
+   int orientation;
+   std::array<float, 3> prev;
+   std::array<float, 3> next;
+
+   static constexpr int layout = LAYOUT_EXT_LINE_VTX_COLOR;
+
+   static void Setup()
+   {
+      constexpr LineColorVertex base{};
+      const size_t vtx_offset = (size_t)(&base.vtx) - (size_t)(&base);
+      const size_t color_offset = (size_t)(&base.color) - (size_t)(&base);
+      const size_t orient_offset = (size_t)(&base.orientation) - (size_t)(&base);
+      const size_t prev_offset = (size_t)(&base.prev) - (size_t)(&base);
+      const size_t next_offset = (size_t)(&base.next) - (size_t)(&base);
+      glEnableVertexAttribArray(ATTR_VERTEX);
+      glEnableVertexAttribArray(ATTR_COLOR);
+      glEnableVertexAttribArray(ATTR_LINE_ORIENT);
+      glEnableVertexAttribArray(ATTR_LINE_PREV);
+      glEnableVertexAttribArray(ATTR_LINE_NEXT);
+
+      glVertexAttribPointer(ATTR_VERTEX, 3, GL_FLOAT, false, sizeof(LineColorVertex), (void*)vtx_offset);
+      glVertexAttribPointer(ATTR_COLOR, 4, GL_UNSIGNED_INT, true, sizeof(LineColorVertex), (void*)color_offset);
+      glVertexAttribPointer(ATTR_LINE_ORIENT, 1, GL_INT, false, sizeof(LineColorVertex), (void*)orient_offset);
+      glVertexAttribPointer(ATTR_LINE_PREV, 3, GL_FLOAT, false, sizeof(LineColorVertex), (void*)prev_offset);
+      glVertexAttribPointer(ATTR_LINE_NEXT, 3, GL_FLOAT, false, sizeof(LineColorVertex), (void*)next_offset);
+   }
+
+   static void Finish()
+   {
+      glDisableVertexAttribArray(ATTR_VERTEX);
+      glDisableVertexAttribArray(ATTR_COLOR);
+      glDisableVertexAttribArray(ATTR_LINE_ORIENT);
+      glDisableVertexAttribArray(ATTR_LINE_PREV);
+      glDisableVertexAttribArray(ATTR_LINE_NEXT);
+   }
 };
 
 template<typename TVtx>
@@ -96,7 +177,10 @@ bool CoreGLDevice::compileShaders()
       { CoreGLDevice::ATTR_TEXT_VERTEX, "textVertex"},
       { CoreGLDevice::ATTR_NORMAL, "normal"},
       { CoreGLDevice::ATTR_COLOR, "color"},
-      { CoreGLDevice::ATTR_TEXCOORD0, "texCoord0"}
+      { CoreGLDevice::ATTR_TEXCOORD0, "texCoord0"},
+      { CoreGLDevice::ATTR_LINE_ORIENT, "line_orientation"},
+      { CoreGLDevice::ATTR_LINE_PREV, "line_prev_vtx"},
+      { CoreGLDevice::ATTR_LINE_NEXT, "line_next_vtx"}
    };
 
    if (!default_prgm.create(DEFAULT_VS, DEFAULT_FS, attribMap, 1))
@@ -246,22 +330,116 @@ void CoreGLDevice::setClipPlaneEqn(const std::array<double, 4> &eqn)
 
 void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
 {
-   if (buf.getHandle() == 0)
+   if (buf.getShape() == GL_LINES &&
+       (layout == Vertex::layout || layout == VertexColor::layout))
    {
+      if (buf.getHandle() == 0)
+      {
+         if (buf.count() == 0) { return; }
+         GLuint handle[2];
+         glGenBuffers(2, &handle[0]);
+         buf.setHandle(vbos.size());
+         vbos.emplace_back(VBOData{handle[0], handle[1], GL_TRIANGLES, 0, layout});
+      }
+      glBindBuffer(GL_ARRAY_BUFFER, vbos[buf.getHandle()].vert_buf);
+      glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
       if (buf.count() == 0) { return; }
-      GLuint handle;
-      glGenBuffers(1, &handle);
-      buf.setHandle(vbos.size());
-      vbos.emplace_back(VBOData{handle, 0, buf.getShape(), buf.count(), layout});
+      // Create extended vertex data for generating shader-expanded lines
+      if (layout == Vertex::layout)
+      {
+         std::vector<LineVertex> ext_data(buf.count() * 2);
+         auto pts = static_cast<VertexBuffer<Vertex>&>(buf).begin();
+         for (size_t i = 0; i < buf.count(); i++)
+         {
+            const Vertex& pt = *(pts + i);
+            ext_data[2*i].vtx = pt.coord;
+            ext_data[2*i].orientation = 1;
+            ext_data[2*i+1].vtx = pt.coord;
+            ext_data[2*i+1].orientation = -1;
+            if (i >= 1)
+            {
+               ext_data[2*(i-1)].next = pt.coord;
+               ext_data[2*(i-1) + 1].next = pt.coord;
+            }
+            if (i + 1 < buf.count())
+            {
+               ext_data[2*(i+1)].prev = pt.coord;
+               ext_data[2*(i+1)+1].prev = pt.coord;
+            }
+         }
+         ext_data[0].prev = ext_data[0].vtx;
+         ext_data[1].prev = ext_data[1].vtx;
+         int last_vtx = 2*(buf.count() - 1);
+         ext_data[last_vtx].next = ext_data[last_vtx].vtx;
+         ext_data[last_vtx+1].next = ext_data[last_vtx+1].vtx;
+         glBufferData(GL_ARRAY_BUFFER, ext_data.size() * sizeof(LineVertex),
+                 ext_data.data(), GL_STATIC_DRAW);
+      }
+      else if (layout == VertexColor::layout)
+      {
+         std::vector<LineColorVertex> ext_data(buf.count() * 2);
+         auto pts = static_cast<VertexBuffer<VertexColor>&>(buf).begin();
+         for (size_t i = 0; i < buf.count(); i++)
+         {
+            const VertexColor& pt = *(pts + i);
+            ext_data[2*i].vtx = pt.coord;
+            ext_data[2*i].color = pt.color;
+            ext_data[2*i].orientation = 1;
+            ext_data[2*i+1].vtx = pt.coord;
+            ext_data[2*i+1].color = pt.color;
+            ext_data[2*i+1].orientation = -1;
+            if (i >= 1)
+            {
+               ext_data[2*(i-1)].next = pt.coord;
+               ext_data[2*(i-1) + 1].next = pt.coord;
+            }
+            if (i + 1 < buf.count())
+            {
+               ext_data[2*(i+1)].prev = pt.coord;
+               ext_data[2*(i+1)+1].prev = pt.coord;
+            }
+         }
+         ext_data[0].prev = ext_data[0].vtx;
+         ext_data[1].prev = ext_data[1].vtx;
+         int last_vtx = 2*(buf.count() - 1);
+         ext_data[last_vtx].next = ext_data[last_vtx].vtx;
+         ext_data[last_vtx+1].next = ext_data[last_vtx+1].vtx;
+         glBufferData(GL_ARRAY_BUFFER, ext_data.size() * sizeof(LineColorVertex),
+                 ext_data.data(), GL_STATIC_DRAW);
+      }
+      // Create indices to generate triangles for our lines
+      std::vector<int> index_data(buf.count() * 6);
+      for (size_t it = 0; it < buf.count() * 2; it++)
+      {
+         index_data[3*it] = it;
+         index_data[3*it+1] = it+1;
+         index_data[3*it+2] = it+2;
+      } // iterate over triangles
+
+      // Upload index data to GPU
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos[buf.getHandle()].elem_buf);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_data.size() * sizeof(int),
+                   index_data.data(), GL_STATIC_DRAW);
+
+      vbos[buf.getHandle()].count = index_data.size();
    }
    else
    {
-      vbos[buf.getHandle()].count = buf.count();
+      if (buf.getHandle() == 0)
+      {
+         if (buf.count() == 0) { return; }
+         GLuint handle;
+         glGenBuffers(1, &handle);
+         buf.setHandle(vbos.size());
+         vbos.emplace_back(VBOData{handle, 0, buf.getShape(), buf.count(), layout});
+         vbos[buf.getHandle()].count = buf.count();
+      }
+      glBindBuffer(GL_ARRAY_BUFFER, vbos[buf.getHandle()].vert_buf);
+      glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
+      glBufferData(GL_ARRAY_BUFFER, buf.count() * buf.getStride(),
+                   buf.getData(), GL_STATIC_DRAW);
    }
-   glBindBuffer(GL_ARRAY_BUFFER, vbos[buf.getHandle()].vert_buf);
-   glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
-   glBufferData(GL_ARRAY_BUFFER, buf.count() * buf.getStride(),
-                buf.getData(), GL_STATIC_DRAW);
 }
 
 void CoreGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
@@ -360,6 +538,34 @@ void CoreGLDevice::drawDeviceBufferImpl(GLenum shape, int count, bool indexed)
    clearVtxAttrLayout<T>();
 }
 
+void CoreGLDevice::drawExtendedLineImpl(array_layout type, int count)
+{
+   // Set up uniforms
+   glUniform1i(uniforms["expandLines"], true);
+   glUniform1f(uniforms["lineWidth"], 1.0);
+   glUniform1f(uniforms["aspectRatio"], (float)vp_width / vp_height);
+   // Set up attributes
+   glVertexAttrib3f(CoreGLDevice::ATTR_NORMAL, 0.f, 0.f, 1.f);
+   if (type == LineVertex::layout)
+   {
+      LineVertex::Setup();
+   }
+   else if (type == LineColorVertex::layout)
+   {
+      LineColorVertex::Setup();
+   }
+   glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, (void*)0);
+   if (type == LineVertex::layout)
+   {
+      LineVertex::Finish();
+   }
+   else if (type == LineColorVertex::layout)
+   {
+      LineColorVertex::Finish();
+   }
+   glUniform1i(uniforms["expandLines"], false);
+}
+
 void CoreGLDevice::drawDeviceBuffer(int hnd)
 {
    if (hnd == 0) { return; }
@@ -372,7 +578,8 @@ void CoreGLDevice::drawDeviceBuffer(int hnd)
       indexed = true;
    }
    if (vbos[hnd].layout == Vertex::layout
-       || vbos[hnd].layout == VertexNorm::layout)
+       || vbos[hnd].layout == VertexNorm::layout
+       || vbos[hnd].layout == LineVertex::layout)
    {
       glVertexAttrib4fv(ATTR_COLOR, static_color.data());
    }
@@ -397,6 +604,10 @@ void CoreGLDevice::drawDeviceBuffer(int hnd)
          break;
       case VertexNormTex::layout:
          drawDeviceBufferImpl<VertexNormTex>(shape, count, indexed);
+         break;
+      case LineVertex::layout:
+      case LineColorVertex::layout:
+         drawExtendedLineImpl(vbos[hnd].layout, count);
          break;
       default:
          cerr << "WARNING: Unhandled vertex layout " << vbos[hnd].layout << endl;
