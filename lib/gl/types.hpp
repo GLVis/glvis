@@ -57,8 +57,7 @@ public:
    {
       if (this != &other)
       {
-         hnd = other.hnd;
-         other.hnd = 0;
+         std::swap(hnd, other.hnd);
       }
       return *this;
    }

@@ -99,6 +99,7 @@ void main()
          width = lineWidth / dot(miter, perp);
       }
       vec2 line_normal = vec2(-dir.y, dir.x);
+      line_normal.x /= aspectRatio;
       vec4 offset = vec4(line_normal * line_orientation * width / 2.0, 0.0, 0.0);
       gl_Position += offset;
    }

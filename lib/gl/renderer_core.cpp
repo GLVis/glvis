@@ -76,7 +76,7 @@ struct alignas(16) CoreGLDevice::LineVertex
    std::array<float, 3> prev;
    std::array<float, 3> next;
 
-   static constexpr int layout = LAYOUT_EXT_LINE_VTX;
+   static constexpr array_layout layout = LAYOUT_EXT_LINE_VTX;
 
    static void Setup()
    {
@@ -114,7 +114,7 @@ struct alignas(16) CoreGLDevice::LineColorVertex
    std::array<float, 3> prev;
    std::array<float, 3> next;
 
-   static constexpr int layout = LAYOUT_EXT_LINE_VTX_COLOR;
+   static constexpr array_layout layout = LAYOUT_EXT_LINE_VTX_COLOR;
 
    static void Setup()
    {
@@ -335,11 +335,14 @@ void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
    {
       if (buf.getHandle() == 0)
       {
+         array_layout ext_layout;
+         if (layout == Vertex::layout) { ext_layout = LineVertex::layout; }
+         else if (layout == VertexColor::layout) { ext_layout = LineColorVertex::layout; }
          if (buf.count() == 0) { return; }
          GLuint handle[2];
          glGenBuffers(2, &handle[0]);
          buf.setHandle(vbos.size());
-         vbos.emplace_back(VBOData{handle[0], handle[1], GL_TRIANGLES, 0, layout});
+         vbos.emplace_back(VBOData{handle[0], handle[1], GL_TRIANGLES, 0, ext_layout});
       }
       glBindBuffer(GL_ARRAY_BUFFER, vbos[buf.getHandle()].vert_buf);
       glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
@@ -356,22 +359,23 @@ void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
             ext_data[2*i].orientation = 1;
             ext_data[2*i+1].vtx = pt.coord;
             ext_data[2*i+1].orientation = -1;
-            if (i >= 1)
+            if (i % 2 == 0)
             {
+               // first node in the segment
+               ext_data[2*(i+1)].prev = pt.coord;
+               ext_data[2*(i+1) + 1].prev = pt.coord;
+               ext_data[2*i].prev = pt.coord;
+               ext_data[2*i+1].prev = pt.coord;
+            }
+            else
+            {
+               // last node in the segment
                ext_data[2*(i-1)].next = pt.coord;
                ext_data[2*(i-1) + 1].next = pt.coord;
-            }
-            if (i + 1 < buf.count())
-            {
-               ext_data[2*(i+1)].prev = pt.coord;
-               ext_data[2*(i+1)+1].prev = pt.coord;
+               ext_data[2*i].next = pt.coord;
+               ext_data[2*i+1].next = pt.coord;
             }
          }
-         ext_data[0].prev = ext_data[0].vtx;
-         ext_data[1].prev = ext_data[1].vtx;
-         int last_vtx = 2*(buf.count() - 1);
-         ext_data[last_vtx].next = ext_data[last_vtx].vtx;
-         ext_data[last_vtx+1].next = ext_data[last_vtx+1].vtx;
          glBufferData(GL_ARRAY_BUFFER, ext_data.size() * sizeof(LineVertex),
                  ext_data.data(), GL_STATIC_DRAW);
       }
@@ -388,32 +392,37 @@ void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
             ext_data[2*i+1].vtx = pt.coord;
             ext_data[2*i+1].color = pt.color;
             ext_data[2*i+1].orientation = -1;
-            if (i >= 1)
+            if (i % 2 == 0)
             {
+               // first node in the segment
+               ext_data[2*(i+1)].prev = pt.coord;
+               ext_data[2*(i+1) + 1].prev = pt.coord;
+               ext_data[2*i].prev = pt.coord;
+               ext_data[2*i+1].prev = pt.coord;
+            }
+            else
+            {
+               // last node in the segment
                ext_data[2*(i-1)].next = pt.coord;
                ext_data[2*(i-1) + 1].next = pt.coord;
-            }
-            if (i + 1 < buf.count())
-            {
-               ext_data[2*(i+1)].prev = pt.coord;
-               ext_data[2*(i+1)+1].prev = pt.coord;
+               ext_data[2*i].next = pt.coord;
+               ext_data[2*i+1].next = pt.coord;
             }
          }
-         ext_data[0].prev = ext_data[0].vtx;
-         ext_data[1].prev = ext_data[1].vtx;
-         int last_vtx = 2*(buf.count() - 1);
-         ext_data[last_vtx].next = ext_data[last_vtx].vtx;
-         ext_data[last_vtx+1].next = ext_data[last_vtx+1].vtx;
          glBufferData(GL_ARRAY_BUFFER, ext_data.size() * sizeof(LineColorVertex),
                  ext_data.data(), GL_STATIC_DRAW);
       }
       // Create indices to generate triangles for our lines
-      std::vector<int> index_data(buf.count() * 6);
-      for (size_t it = 0; it < buf.count() * 2; it++)
+      std::vector<int> index_data(buf.count() * 3);
+      for (size_t it = 0; it < buf.count() / 2; it++)
       {
-         index_data[3*it] = it;
-         index_data[3*it+1] = it+1;
-         index_data[3*it+2] = it+2;
+         index_data[6*it] = 4*it;
+         index_data[6*it+1] = 4*it+1;
+         index_data[6*it+2] = 4*it+2;
+
+         index_data[6*it+3] = 4*it+1;
+         index_data[6*it+4] = 4*it+2;
+         index_data[6*it+5] = 4*it+3;
       } // iterate over triangles
 
       // Upload index data to GPU
@@ -540,9 +549,11 @@ void CoreGLDevice::drawDeviceBufferImpl(GLenum shape, int count, bool indexed)
 
 void CoreGLDevice::drawExtendedLineImpl(array_layout type, int count)
 {
+   // Set polygon offset to pull lines towards camera
+   glPolygonOffset(0, 0);
    // Set up uniforms
    glUniform1i(uniforms["expandLines"], true);
-   glUniform1f(uniforms["lineWidth"], 1.0);
+   glUniform1f(uniforms["lineWidth"], 8.0 / vp_height);
    glUniform1f(uniforms["aspectRatio"], (float)vp_width / vp_height);
    // Set up attributes
    glVertexAttrib3f(CoreGLDevice::ATTR_NORMAL, 0.f, 0.f, 1.f);
@@ -564,6 +575,7 @@ void CoreGLDevice::drawExtendedLineImpl(array_layout type, int count)
       LineColorVertex::Finish();
    }
    glUniform1i(uniforms["expandLines"], false);
+   glPolygonOffset(0, 0);
 }
 
 void CoreGLDevice::drawDeviceBuffer(int hnd)
