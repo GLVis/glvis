@@ -202,7 +202,7 @@ Before you can start, you need a GitHub account, here are a few suggestions:
     documentation in source comments.
   - Consistent code styling is enforced with `make style` in the top-level
     directory. This requires [Artistic Style](http://astyle.sourceforge.net)
-    version 2.05.1 and MFEM's style configuration file, typically located in
+    version 3.1 and MFEM's style configuration file, typically located in
     `../mfem/config/mfem.astylerc`.
   - When manually resolving conflicts during a merge, make sure to mention the
     conflicted files in the commit message.
