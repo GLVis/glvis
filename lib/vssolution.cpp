@@ -1122,6 +1122,8 @@ void VisualizationSceneSolution::PrepareFlat()
    Array<int> vertices;
    double pts[4][3], col[4];
 
+   gl3::GlBuilder poly = disp_buf.createBuilder();
+
    for (i = 0; i < ne; i++)
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
@@ -1139,9 +1141,20 @@ void VisualizationSceneSolution::PrepareFlat()
       {
          DrawTriangle(disp_buf, pts, col, minv, maxv);
       }
-      else
+      else if (j == 4)
       {
          DrawQuad(disp_buf, pts, col, minv, maxv);
+      }
+      else if(j == 2)
+      {
+         poly.glBegin(GL_LINES);
+         for(int k=0;k<j;k++)
+         {
+            MySetColor(poly, col[k], minv, maxv);
+            double* v = mesh->GetVertex(vertices[k]);
+            poly.glVertex3d(v[0], v[1], 0.0);
+         }
+         poly.glEnd();
       }
    }
    updated_bufs.emplace_back(&disp_buf);
@@ -1156,8 +1169,12 @@ const int split_quads = 1;
 
 void VisualizationSceneSolution::PrepareFlat2()
 {
+   int dim = mesh->Dimension();
+   Array<int> vertices;
+
    int i, j, k;
    disp_buf.clear();
+   gl3::GlBuilder poly = disp_buf.createBuilder();
    int ne = mesh -> GetNE();
    DenseMatrix pointmat, pts3d, normals;
    Vector values;
@@ -1167,6 +1184,27 @@ void VisualizationSceneSolution::PrepareFlat2()
    for (i = 0; i < ne; i++)
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
+
+      if (dim == 1)
+      {
+         mesh->GetElementVertices (i, vertices);
+
+         poly.glBegin(GL_QUADS);
+
+         auto v1 = mesh->GetVertex(vertices[0]);
+         MySetColor(poly, (*sol)(vertices[0]), minv, maxv);
+         poly.glVertex3d(v1[0], v1[1], 0.0);
+         poly.glVertex3d(v1[0], v1[1], LogVal((*sol)(vertices[0])));
+
+         auto v2 = mesh->GetVertex(vertices[1]);
+         MySetColor(poly, (*sol)(vertices[1]), minv, maxv);
+         poly.glVertex3d(v2[0], v2[1], LogVal((*sol)(vertices[1])));
+         poly.glVertex3d(v2[0], v2[1], 0.0);
+
+         poly.glEnd();
+
+         continue;
+      }
 
       RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
                                          TimesToRefine, EdgeRefineFactor);
@@ -1258,6 +1296,8 @@ void VisualizationSceneSolution::PrepareFlat2()
 
 void VisualizationSceneSolution::Prepare()
 {
+   const int dim = mesh->Dimension();
+
    palette.SetUseLogscale(0);
 
    switch (shading)
@@ -1269,7 +1309,7 @@ void VisualizationSceneSolution::Prepare()
          PrepareFlat2();
          return;
       default:
-         if (v_normals)
+         if (v_normals && dim > 1)
          {
             PrepareWithNormals();
             return;
@@ -1301,8 +1341,30 @@ void VisualizationSceneSolution::Prepare()
       nz = 0.;
 
       for (i = 0; i < ne; i++)
+      {
          if (mesh -> GetAttribute(i) == mesh -> attributes[d])
          {
+            if (dim == 1)
+            {
+               mesh->GetElementVertices (i, vertices);
+
+               poly.glBegin(GL_LINE_LOOP);
+
+               auto v1 = mesh->GetVertex(vertices[0]);
+               MySetColor(poly, (*sol)(vertices[0]), minv, maxv);
+               poly.glVertex3d(v1[0], v1[1], 0.0);
+               poly.glVertex3d(v1[0], v1[1], LogVal((*sol)(vertices[0])));
+
+               auto v2 = mesh->GetVertex(vertices[1]);
+               MySetColor(poly, (*sol)(vertices[1]), minv, maxv);
+               poly.glVertex3d(v2[0], v2[1], LogVal((*sol)(vertices[1])));
+               poly.glVertex3d(v2[0], v2[1], 0.0);
+
+               poly.glEnd();
+
+               continue;
+            }
+
             mesh->GetPointMatrix (i, pointmat);
             mesh->GetElementVertices (i, vertices);
 
@@ -1330,8 +1392,9 @@ void VisualizationSceneSolution::Prepare()
                   nz(vertices[j]) += nor[2];
                }
          }
+      }
 
-      for (i = 0; i < ne; i++)
+      for (i = 0; i < ne && (dim > 1); i++)
       {
          if (mesh -> GetAttribute(i) == mesh -> attributes[d])
          {
