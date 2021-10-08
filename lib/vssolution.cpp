@@ -1464,6 +1464,12 @@ void VisualizationSceneSolution::DrawLevelCurves(
    gl3::GlBuilder& builder, Array<int> &RG, DenseMatrix &pointmat, Vector &values,
    int sides, Array<double> &lvl, int flat)
 {
+   const int dim = mesh->Dimension();
+   if (dim == 1) // Unimplemented.
+   {
+      return;
+   }
+
    double point[4][4];
    // double zc = 0.5*(z[0]+z[1]);
    double zc = z[1];
@@ -1983,6 +1989,12 @@ void VisualizationSceneSolution::UpdateValueRange(bool prepare)
 
 void VisualizationSceneSolution::PrepareBoundary()
 {
+   const int dim = mesh->Dimension();
+   if (dim == 1) // Unimplemented.
+   {
+      return;
+   }
+
    int i, j, ne = mesh->GetNBE();
    Array<int> vertices;
    DenseMatrix pointmat;
