@@ -1383,6 +1383,23 @@ void VisualizationSceneSolution3d::PrepareFlat()
    Array<int> vertices;
    double p[4][3], c[4];
 
+   gl3::GlBuilder poly = disp_buf.createBuilder();
+
+   // 1D elements must be rendered a bit thicker
+   double ThicknessFactor = 10.0;
+   double MS_Thickness = 7.0;
+   double LineWidth;
+   if (GetMultisample() > 0)
+   {
+      LineWidth = GetLineWidthMS();
+      SetLineWidthMS(MS_Thickness);
+   }
+   else
+   {
+      LineWidth = GetLineWidth();
+      SetLineWidth(ThicknessFactor*LineWidth);
+   }
+
    for (i = 0; i < ne; i++)
    {
       if (dim == 3)
@@ -1431,21 +1448,49 @@ void VisualizationSceneSolution3d::PrepareFlat()
       {
          DrawTriangle(disp_buf, p, c, minv, maxv);
       }
-      else
+      else if (j == 4)
       {
          DrawQuad(disp_buf, p, c, minv, maxv);
       }
+      else if(j == 2)
+      {
+         poly.glBegin(GL_LINES);
+         for(int k=0;k<j;k++)
+         {
+            MySetColor(poly, c[k], minv, maxv);
+            poly.glVertex3dv(mesh->GetVertex(vertices[k]));
+         }
+         poly.glEnd();
+      }
    }
+
+   if (GetMultisample() > 0)
+   {
+      SetLineWidthMS(LineWidth);
+   }
+   else
+   {
+      SetLineWidth(LineWidth);
+   }
+
    updated_bufs.emplace_back(&disp_buf);
 }
 
 void VisualizationSceneSolution3d::PrepareFlat2()
 {
+   const int dim = mesh->Dimension();
+
+   if(dim == 1)
+   {
+      std::cout << "Not supported for 1D meshes. Falling back to PrepareFlat()." << std::endl;
+      PrepareFlat();
+      return;
+   }
+
    int i, k, fn, fo, di, have_normals;
    double bbox_diam, vmin, vmax;
    disp_buf.clear();
 
-   int dim = mesh->Dimension();
    int nbe = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
    DenseMatrix pointmat, normals;
    Vector values, normal;
@@ -1607,6 +1652,21 @@ void VisualizationSceneSolution3d::Prepare()
    disp_buf.clear();
    gl3::GlBuilder poly = disp_buf.createBuilder();
 
+   // 1D elements must be rendered a bit thicker
+   double ThicknessFactor = 10.0;
+   double MS_Thickness = 7.0;
+   double LineWidth;
+   if (GetMultisample() > 0)
+   {
+      LineWidth = GetLineWidthMS();
+      SetLineWidthMS(MS_Thickness);
+   }
+   else
+   {
+      LineWidth = GetLineWidth();
+      SetLineWidth(ThicknessFactor*LineWidth);
+   }
+
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
    int nv = mesh -> GetNV();
@@ -1734,9 +1794,26 @@ void VisualizationSceneSolution3d::Prepare()
             case Element::QUADRILATERAL:
                elemType = GL_QUADS;
                break;
+            case Element::SEGMENT:
+               elemType = GL_LINES;
+               break;
             default:
                MFEM_ABORT("Invalid boundary element type");
                break;
+         }
+
+         if(elemType == GL_LINES)
+         {
+            poly.glBegin(GL_LINES);
+
+            MySetColor(poly, (*sol)(vertices[0]), minv, maxv);
+            poly.glVertex3dv(mesh->GetVertex(vertices[0]));
+
+            MySetColor(poly, (*sol)(vertices[1]), minv, maxv);
+            poly.glVertex3dv(mesh->GetVertex(vertices[1]));
+
+            poly.glEnd();
+            continue;
          }
          poly.glBegin(elemType);
          if (dim == 3)
@@ -1757,6 +1834,16 @@ void VisualizationSceneSolution3d::Prepare()
          poly.glEnd();
       }
    }
+
+   if (GetMultisample() > 0)
+   {
+      SetLineWidthMS(LineWidth);
+   }
+   else
+   {
+      SetLineWidth(LineWidth);
+   }
+
    updated_bufs.emplace_back(&disp_buf);
 }
 
