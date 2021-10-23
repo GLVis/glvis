@@ -1679,6 +1679,7 @@ void VisualizationSceneSolution3d::Prepare()
    Vector nz(nv);
 
    Table ba_to_be; // boundary_attribute--to--boundary_element
+   if (dim > 1) // Boundaries are just points in 1D
    {
       Table be_to_ba;
       be_to_ba.MakeI(ne);
@@ -1708,7 +1709,7 @@ void VisualizationSceneSolution3d::Prepare()
 
    const Array<int> &attributes =
       ((dim == 3) ? mesh->bdr_attributes : mesh->attributes);
-   for (int d = 0; d < attributes.Size(); d++)
+   for (int d = 0; d < attributes.Size() && dim > 1; d++)
    {
       const int attr = attributes[d]-1;
 
