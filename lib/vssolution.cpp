@@ -544,7 +544,16 @@ void VisualizationSceneSolution::ToggleDrawElems()
 
    drawelems = (drawelems + 6) % 7;
 
-   cout << "Surface elements mode : " << modes[drawelems] << endl;
+   const int dim = mesh->Dimension();
+   if (dim == 1)
+   {
+      cout << "Element mode : " << modes[drawelems] << endl;
+   }
+   else
+   {
+      cout << "Surface elements mode : " << modes[drawelems] << endl;
+   }
+
    if (drawelems < 2)
    {
       extra_caption.clear();
@@ -600,8 +609,9 @@ void VisualizationSceneSolution::NewMeshAndSolution(
 void VisualizationSceneSolution::GetRefinedDetJ(
    int i, const IntegrationRule &ir, Vector &vals, DenseMatrix &tr)
 {
-   int geom = mesh->GetElementBaseGeometry(i);
+   const int geom = mesh->GetElementBaseGeometry(i);
    ElementTransformation *T = mesh->GetElementTransformation(i);
+   const int dim = T->GetDimension();
    double Jd[4];
    DenseMatrix J(Jd, 2, 2);
 
@@ -618,15 +628,38 @@ void VisualizationSceneSolution::GetRefinedDetJ(
       }
       else if (drawelems >= 4)
       {
-         vals(j) = J.Det();
-         // if (vals(j) >= 0.0)
-         //    vals(j) = sqrt(vals(j));
-         // else
-         //    vals(j) = -sqrt(-vals(j));
+         if (dim == 2)
+         {
+            vals(j) = J.Det();
+         }
+         else if (dim == 1)
+         {
+            // Compute det(J J^T)
+            auto Jdl = J.Data();
+            vals(j) = sqrt(Jdl[1]*Jdl[1] + Jdl[2]*Jdl[2]); // Orientation information lost.
+         }
+         else
+         {
+            std::cout << "unsupported dim " << dim << " in GetRefinedDetJ." << std::endl;
+         }
       }
       else
       {
-         vals(j) = J.CalcSingularvalue(0)/J.CalcSingularvalue(1);
+         if (dim == 2)
+         {
+            vals(j) = J.CalcSingularvalue(0)/J.CalcSingularvalue(1);
+         }
+         else if (dim == 1)
+         {
+            // Compute det(J J^T)
+            auto Jdl = J.Data();
+            vals(j) = sqrt(Jdl[1]*Jdl[1] + Jdl[2]*Jdl[2]); // Orientation information lost.
+         }
+         else
+         {
+            std::cout << "unsupported dim " << dim << " in GetRefinedDetJ." << std::endl;
+         }
+
          if (drawelems == 2)
          {
             vals(j) = vals(j) + 1.0/vals(j);
