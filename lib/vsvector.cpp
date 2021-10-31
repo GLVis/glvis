@@ -30,7 +30,7 @@ std::string VisualizationSceneVector::GetHelpString() const
       << "| a -  Displays/Hides the axes       |" << endl
       << "| A -  Turns antialiasing on/off     |" << endl
       << "| b -  Displacements step back       |" << endl
-      << "| B -  Displays/Hides the boundary   |" << endl
+      << "| B -  Toggle 2D boundary            |" << endl
       << "| c -  Toggle colorbar and caption   |" << endl
       << "| C -  Change the main plot caption  |" << endl
       << "| d -  Displays/Hides displacements  |" << endl
@@ -990,9 +990,15 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
    }
    // disable lighting for objects below
    params.num_pt_lights = 0;
-   if (drawbdr)
+
+   // draw boundary in 2D
+   if (drawbdr == 1)
    {
-      scene.queue.emplace_back(params, &bdr_buf);
+      scene.queue.emplace_back(params, &bdr_buf1);
+   }
+   else if (drawbdr == 2)
+   {
+      scene.queue.emplace_back(params, &bdr_buf2);
    }
 
    // draw lines
@@ -1028,5 +1034,6 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
       }
       scene.queue.emplace_back(params, &displine_buf);
    }
+
    return scene;
 }

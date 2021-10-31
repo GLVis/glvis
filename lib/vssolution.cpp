@@ -56,7 +56,7 @@ std::string VisualizationSceneSolution::GetHelpString() const
       << "+------------------------------------+" << endl
       << "| a -  Displays/Hides the axes       |" << endl
       << "| A -  Turns antialiasing on/off     |" << endl
-      << "| b/B  Displays/Hides the boundary   |" << endl
+      << "| b/B  Toggle 2D boundary            |" << endl
       << "| c -  Toggle colorbar and caption   |" << endl
       << "| C -  Change the main plot caption  |" << endl
       << "| e -  Displays/Hides the elements   |" << endl
@@ -217,6 +217,32 @@ static void KeyF10Pressed(GLenum state)
       SwitchAttribute(-1, vssol->bdr_attr_to_show, vssol->bdr_el_attr_to_show,
                       true);
    }
+}
+
+void VisualizationSceneSolution::ToggleDrawBdr()
+{
+   drawbdr = (drawbdr+1)%3;
+
+   // Switch the colorbar range to correspond to the boundary attributes when
+   // showing them in color (drawbdr == 2) and restore it back when not.
+   if (drawbdr == 2)
+   {
+      old_minv = minv;
+      old_maxv = maxv;
+      minv = 1;
+      maxv = mesh->bdr_attributes.Max();
+   }
+   else if (drawbdr == 1)
+   {
+      return;
+   }
+   else if (drawbdr == 0)
+   {
+      minv = old_minv;
+      maxv = old_maxv;
+   }
+
+   UpdateValueRange(true);
 }
 
 static void KeyBPressed()
@@ -1920,6 +1946,13 @@ void VisualizationSceneSolution::UpdateValueRange(bool prepare)
 
 void VisualizationSceneSolution::PrepareBoundary()
 {
+   PrepareBoundary(bdr_buf1, 1);
+   PrepareBoundary(bdr_buf2, 2);
+}
+
+void VisualizationSceneSolution::PrepareBoundary(gl3::GlDrawable &bdr_buf,
+                                                 int drawbdr)
+{
    int i, j, ne = mesh->GetNBE();
    Array<int> vertices;
    DenseMatrix pointmat;
@@ -1961,6 +1994,11 @@ void VisualizationSceneSolution::PrepareBoundary()
          T->Loc1.Transform(ir, eir);
          GetRefinedValues(T->Elem1No, eir, vals, pointmat);
          bl.glBegin(GL_LINE_STRIP);
+         if (drawbdr == 2)
+         {
+            MySetColor(bl, mesh->GetBdrAttribute(i),
+                       1, mesh->bdr_attributes.Max());
+         }
          for (j = 0; j < vals.Size(); j++)
          {
             bl.glVertex3d(pointmat(0, j), pointmat(1, j), vals(j));
@@ -2159,10 +2197,17 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    }
    // disable lighting for objects below
    params.num_pt_lights = 0;
-   if (drawbdr)
+
+   // draw boundary in 2D
+   if (drawbdr == 1)
    {
-      scene.queue.emplace_back(params, &bdr_buf);
+      scene.queue.emplace_back(params, &bdr_buf1);
    }
+   else if (drawbdr == 2)
+   {
+      scene.queue.emplace_back(params, &bdr_buf2);
+   }
+
    // draw lines
    if (drawmesh == 1)
    {
@@ -2172,6 +2217,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &lcurve_buf);
    }
+
    // draw numberings
    if (drawnums == 1)
    {
@@ -2181,6 +2227,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &v_nums_buf);
    }
+
    // draw orderings -- "black" modes
    if (draworder == 3)
    {
@@ -2190,5 +2237,6 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &order_buf);
    }
+
    return scene;
 }

@@ -125,8 +125,11 @@ O - Cycle through the "subdivision functions", (prints a message in the
 o - perform the current "subdivision function"
 
 A - Turn on/off the use of anti-aliasing/multi-sampling
-b - Display/Hide the boundary in 2D scalar mode. Use Shift+F9/F10 to cycle
-    through the boundary attributes.
+b - Toggle the boundary in 2D scalar mode.
+    The options are: -> no boundary
+                     -> black boundary
+		     -> boundary colored with the boundary attribute
+    Use Shift+F9/F10 to cycle through the boundary attributes.
 L - Turn on/off logarithmic scale
 \ - Set light source position (see Right+Shift)
 * - Zoom in
@@ -212,7 +215,7 @@ d - Toggle the "displaced mesh" state: (see also keys 'n'/'b')
                         polar lines
 n - increase the displacement amount in 10% steps, wraps around from 100% to 0%
 b - decrease the displacement amount in 10% steps, wraps around from 0% to 100%
-B - Display/Hide the boundary in 2D vector mode
+B - Toggle the boundary in 2D vector mode
 
 e - Toggle the "elements" state (vector data version)
     The options are: -> show surface elements corresponding to the current
