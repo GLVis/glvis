@@ -128,7 +128,7 @@ A - Turn on/off the use of anti-aliasing/multi-sampling
 b - Toggle the boundary in 2D scalar mode.
     The options are: -> no boundary
                      -> black boundary
-		     -> boundary colored with the boundary attribute
+                     -> boundary colored with the boundary attribute
     Use Shift+F9/F10 to cycle through the boundary attributes.
 L - Turn on/off logarithmic scale
 \ - Set light source position (see Right+Shift)
