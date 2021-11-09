@@ -38,14 +38,11 @@ protected:
 
    gl3::GlDrawable lcurve_buf;
    gl3::GlDrawable line_buf;
-   gl3::GlDrawable bdr_buf1;
-   gl3::GlDrawable bdr_buf2;
+   gl3::GlDrawable bdr_buf;
    gl3::GlDrawable cp_buf;
 
    gl3::GlDrawable order_buf;
    gl3::GlDrawable order_noarrow_buf;
-
-   double old_minv, old_maxv;
 
    void Init();
 
@@ -121,7 +118,6 @@ public:
    void PrepareLevelCurves2();
 
    void PrepareBoundary();
-   void PrepareBoundary(gl3::GlDrawable &bdr_buf, int);
 
    void PrepareOrderingCurve();
    void PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows, bool color);

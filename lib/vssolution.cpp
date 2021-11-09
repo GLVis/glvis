@@ -227,22 +227,20 @@ void VisualizationSceneSolution::ToggleDrawBdr()
    // showing them in color (drawbdr == 2) and restore it back when not.
    if (drawbdr == 2)
    {
-      old_minv = minv;
-      old_maxv = maxv;
       minv = 1;
-      maxv = mesh->bdr_attributes.Max();
+      maxv = mesh->bdr_attributes.Size() ? mesh->bdr_attributes.Max() : 1;
+      FixValueRange();
+      UpdateValueRange(true);
+      PrepareBoundary();
    }
    else if (drawbdr == 1)
    {
-      return;
+      PrepareBoundary();
    }
    else if (drawbdr == 0)
    {
-      minv = old_minv;
-      maxv = old_maxv;
+      FindNewValueRange(true);
    }
-
-   UpdateValueRange(true);
 }
 
 static void KeyBPressed()
@@ -1946,13 +1944,6 @@ void VisualizationSceneSolution::UpdateValueRange(bool prepare)
 
 void VisualizationSceneSolution::PrepareBoundary()
 {
-   PrepareBoundary(bdr_buf1, 1);
-   PrepareBoundary(bdr_buf2, 2);
-}
-
-void VisualizationSceneSolution::PrepareBoundary(gl3::GlDrawable &bdr_buf,
-                                                 int drawbdr)
-{
    int i, j, ne = mesh->GetNBE();
    Array<int> vertices;
    DenseMatrix pointmat;
@@ -1996,12 +1987,19 @@ void VisualizationSceneSolution::PrepareBoundary(gl3::GlDrawable &bdr_buf,
          bl.glBegin(GL_LINE_STRIP);
          if (drawbdr == 2)
          {
-            MySetColor(bl, mesh->GetBdrAttribute(i),
-                       1, mesh->bdr_attributes.Max());
+            const double val = mesh->GetBdrAttribute(i);
+            MySetColor(bl, val, minv, maxv);
+            for (j = 0; j < vals.Size(); j++)
+            {
+               bl.glVertex3d(pointmat(0, j), pointmat(1, j), val);
+            }
          }
-         for (j = 0; j < vals.Size(); j++)
+         else
          {
-            bl.glVertex3d(pointmat(0, j), pointmat(1, j), vals(j));
+            for (j = 0; j < vals.Size(); j++)
+            {
+               bl.glVertex3d(pointmat(0, j), pointmat(1, j), vals(j));
+            }
          }
          bl.glEnd();
 
@@ -2199,13 +2197,9 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    params.num_pt_lights = 0;
 
    // draw boundary in 2D
-   if (drawbdr == 1)
+   if (drawbdr)
    {
-      scene.queue.emplace_back(params, &bdr_buf1);
-   }
-   else if (drawbdr == 2)
-   {
-      scene.queue.emplace_back(params, &bdr_buf2);
+      scene.queue.emplace_back(params, &bdr_buf);
    }
 
    // draw lines

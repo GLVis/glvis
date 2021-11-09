@@ -992,13 +992,9 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
    params.num_pt_lights = 0;
 
    // draw boundary in 2D
-   if (drawbdr == 1)
+   if (drawbdr)
    {
-      scene.queue.emplace_back(params, &bdr_buf1);
-   }
-   else if (drawbdr == 2)
-   {
-      scene.queue.emplace_back(params, &bdr_buf2);
+      scene.queue.emplace_back(params, &bdr_buf);
    }
 
    // draw lines
