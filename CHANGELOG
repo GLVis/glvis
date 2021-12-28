@@ -9,6 +9,15 @@
                               http://glvis.org
 
 
+Version 4.1.1 (development)
+===========================
+
+- Added a third mode to keys 'b'/'B' in 2D to display the mesh boundary colored
+  by boundary element attribute.
+
+- Save and restore the value range for the solution when using keys 'e' and 'b'.
+
+
 Version 4.1, released on Aug 31, 2021
 =====================================
 
