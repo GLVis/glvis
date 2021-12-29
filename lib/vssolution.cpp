@@ -56,7 +56,7 @@ std::string VisualizationSceneSolution::GetHelpString() const
       << "+------------------------------------+" << endl
       << "| a -  Displays/Hides the axes       |" << endl
       << "| A -  Turns antialiasing on/off     |" << endl
-      << "| b/B  Displays/Hides the boundary   |" << endl
+      << "| b/B  Toggle 2D boundary            |" << endl
       << "| c -  Toggle colorbar and caption   |" << endl
       << "| C -  Change the main plot caption  |" << endl
       << "| e -  Displays/Hides the elements   |" << endl
@@ -219,6 +219,50 @@ static void KeyF10Pressed(GLenum state)
    }
 }
 
+void VisualizationSceneSolution::ToggleDrawBdr()
+{
+   drawbdr = (drawbdr+1)%3;
+
+   // Switch the colorbar range to correspond to the boundary attributes when
+   // showing them in color (drawbdr == 2) and restore it back when not.
+   if (drawbdr == 2)
+   {
+      if (drawelems == 1 || drawelems == 0)
+      {
+         minv_sol = minv;
+         maxv_sol = maxv;
+         have_sol_range = true;
+      }
+      drawelems = 0;
+      minv = 1;
+      maxv = mesh->bdr_attributes.Size() ? mesh->bdr_attributes.Max() : 1;
+      FixValueRange();
+      UpdateValueRange(true);
+      PrepareBoundary();
+   }
+   else if (drawbdr == 1)
+   {
+      PrepareBoundary();
+   }
+   else if (drawbdr == 0)
+   {
+      drawelems = 1;
+      if (have_sol_range)
+      {
+         minv = minv_sol;
+         maxv = maxv_sol;
+         z[0] = minv;
+         z[1] = maxv;
+         SetNewScalingFromBox(); // UpdateBoundingBox minus PrepareAxes
+         UpdateValueRange(true);
+      }
+      else
+      {
+         FindNewValueRange(true);
+      }
+   }
+}
+
 static void KeyBPressed()
 {
    vssol -> ToggleDrawBdr();
@@ -237,8 +281,6 @@ static void KeyNPressed()
    SendExposeEvent();
 }
 
-int refine_func = 0;
-
 static void KeyoPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
@@ -249,74 +291,14 @@ static void KeyoPressed(GLenum state)
    }
    else
    {
-      int update = 1;
-      switch (refine_func)
-      {
-         case 0:
-            vssol -> TimesToRefine += vssol -> EdgeRefineFactor;
-            break;
-         case 1:
-            if (vssol -> TimesToRefine > vssol -> EdgeRefineFactor)
-            {
-               vssol -> TimesToRefine -= vssol -> EdgeRefineFactor;
-            }
-            else
-            {
-               update = 0;
-            }
-            break;
-         case 2:
-            vssol -> TimesToRefine /= vssol -> EdgeRefineFactor;
-            vssol -> EdgeRefineFactor ++;
-            vssol -> TimesToRefine *= vssol -> EdgeRefineFactor;
-            break;
-         case 3:
-            if (vssol -> EdgeRefineFactor > 1)
-            {
-               vssol -> TimesToRefine /= vssol -> EdgeRefineFactor;
-               vssol -> EdgeRefineFactor --;
-               vssol -> TimesToRefine *= vssol -> EdgeRefineFactor;
-            }
-            else
-            {
-               update = 0;
-            }
-            break;
-      }
-      if (update && vssol -> shading == 2)
-      {
-         vssol -> DoAutoscale(false);
-         vssol -> PrepareLines();
-         vssol -> PrepareBoundary();
-         vssol -> Prepare();
-         vssol -> PrepareLevelCurves();
-         vssol -> PrepareCP();
-         SendExposeEvent();
-      }
-      cout << "Subdivision factors = " << vssol -> TimesToRefine
-           << ", " << vssol -> EdgeRefineFactor << endl;
+      vssol->ToggleRefinements();
    }
 }
 
 static void KeyOPressed(GLenum state)
 {
-   refine_func = (refine_func+1)%4;
-   cout << "Key 'o' will: ";
-   switch (refine_func)
-   {
-      case 0:
-         cout << "Increase subdivision factor" << endl;
-         break;
-      case 1:
-         cout << "Decrease subdivision factor" << endl;
-         break;
-      case 2:
-         cout << "Increase bdr subdivision factor" << endl;
-         break;
-      case 3:
-         cout << "Decrease bdr subdivision factor" << endl;
-         break;
-   }
+   (void)state;
+   vssol->ToggleRefinementFunction();
 }
 
 static void KeyEPressed()
@@ -458,6 +440,9 @@ void VisualizationSceneSolution::Init()
    draworder = 0;
    drawnums  = 0;
 
+   refine_func = 0;
+   have_sol_range = false;
+
    shrink = 1.0;
    shrinkmat = 1.0;
    bdrc.SetSize(2,0);
@@ -542,6 +527,8 @@ void VisualizationSceneSolution::ToggleDrawElems()
       "attribute"
    };
 
+   if (drawbdr == 2) { return; }
+
    drawelems = (drawelems + 6) % 7;
 
    cout << "Surface elements mode : " << modes[drawelems] << endl;
@@ -554,9 +541,27 @@ void VisualizationSceneSolution::ToggleDrawElems()
       extra_caption = modes[drawelems];
    }
 
-   if (drawelems != 0 && shading == 2)
+   if (drawelems == 0)
    {
-      DoAutoscaleValue(false);
+      minv_sol = minv;
+      maxv_sol = maxv;
+      have_sol_range = true;
+   }
+   else if (shading == 2)
+   {
+      if (drawelems == 1 && have_sol_range)
+      {
+         minv = minv_sol;
+         maxv = maxv_sol;
+         z[0] = minv;
+         z[1] = maxv;
+         SetNewScalingFromBox(); // UpdateBoundingBox minus PrepareAxes
+         UpdateValueRange(false);
+      }
+      else
+      {
+         DoAutoscaleValue(false);
+      }
       PrepareLines();
       PrepareBoundary();
       Prepare();
@@ -585,6 +590,7 @@ void VisualizationSceneSolution::NewMeshAndSolution(
    sol = new_sol;
    rsol = new_u;
 
+   have_sol_range = false;
    DoAutoscale(false);
 
    Prepare();
@@ -746,6 +752,7 @@ void VisualizationSceneSolution::SetShading(int s, bool print)
       if (s == 2 || shading == 2)
       {
          shading = s;
+         have_sol_range = false;
          DoAutoscale(false);
          PrepareLines();
          PrepareBoundary();
@@ -789,6 +796,78 @@ void VisualizationSceneSolution::ToggleShading()
    }
 }
 
+void VisualizationSceneSolution::ToggleRefinements()
+{
+   int update = 1;
+   switch (refine_func)
+   {
+      case 0:
+         TimesToRefine += EdgeRefineFactor;
+         break;
+      case 1:
+         if (TimesToRefine > EdgeRefineFactor)
+         {
+            TimesToRefine -= EdgeRefineFactor;
+         }
+         else
+         {
+            update = 0;
+         }
+         break;
+      case 2:
+         TimesToRefine /= EdgeRefineFactor;
+         EdgeRefineFactor++;
+         TimesToRefine *= EdgeRefineFactor;
+         break;
+      case 3:
+         if (EdgeRefineFactor > 1)
+         {
+            TimesToRefine /= EdgeRefineFactor;
+            EdgeRefineFactor--;
+            TimesToRefine *= EdgeRefineFactor;
+         }
+         else
+         {
+            update = 0;
+         }
+         break;
+   }
+   if (update && shading == 2)
+   {
+      have_sol_range = false;
+      DoAutoscale(false);
+      PrepareLines();
+      PrepareBoundary();
+      Prepare();
+      PrepareLevelCurves();
+      PrepareCP();
+      SendExposeEvent();
+   }
+   cout << "Subdivision factors = " << TimesToRefine << ", " << EdgeRefineFactor
+        << endl;
+}
+
+void VisualizationSceneSolution::ToggleRefinementFunction()
+{
+   refine_func = (refine_func+1)%4;
+   cout << "Key 'o' will: ";
+   switch (refine_func)
+   {
+      case 0:
+         cout << "Increase subdivision factor" << endl;
+         break;
+      case 1:
+         cout << "Decrease subdivision factor" << endl;
+         break;
+      case 2:
+         cout << "Increase bdr subdivision factor" << endl;
+         break;
+      case 3:
+         cout << "Decrease bdr subdivision factor" << endl;
+         break;
+   }
+}
+
 void VisualizationSceneSolution::SetRefineFactors(int tot, int bdr)
 {
    if ((tot == TimesToRefine && bdr == EdgeRefineFactor) || tot < 1 || bdr < 1)
@@ -806,6 +885,7 @@ void VisualizationSceneSolution::SetRefineFactors(int tot, int bdr)
 
    if (shading == 2)
    {
+      have_sol_range = false;
       DoAutoscale(false);
       PrepareLines();
       PrepareBoundary();
@@ -1961,9 +2041,21 @@ void VisualizationSceneSolution::PrepareBoundary()
          T->Loc1.Transform(ir, eir);
          GetRefinedValues(T->Elem1No, eir, vals, pointmat);
          bl.glBegin(GL_LINE_STRIP);
-         for (j = 0; j < vals.Size(); j++)
+         if (drawbdr == 2)
          {
-            bl.glVertex3d(pointmat(0, j), pointmat(1, j), vals(j));
+            const double val = mesh->GetBdrAttribute(i);
+            MySetColor(bl, val, minv, maxv);
+            for (j = 0; j < vals.Size(); j++)
+            {
+               bl.glVertex3d(pointmat(0, j), pointmat(1, j), val);
+            }
+         }
+         else
+         {
+            for (j = 0; j < vals.Size(); j++)
+            {
+               bl.glVertex3d(pointmat(0, j), pointmat(1, j), vals(j));
+            }
          }
          bl.glEnd();
 
@@ -2159,10 +2251,13 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    }
    // disable lighting for objects below
    params.num_pt_lights = 0;
+
+   // draw boundary in 2D
    if (drawbdr)
    {
       scene.queue.emplace_back(params, &bdr_buf);
    }
+
    // draw lines
    if (drawmesh == 1)
    {
@@ -2172,6 +2267,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &lcurve_buf);
    }
+
    // draw numberings
    if (drawnums == 1)
    {
@@ -2181,6 +2277,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &v_nums_buf);
    }
+
    // draw orderings -- "black" modes
    if (draworder == 3)
    {
@@ -2190,5 +2287,6 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &order_buf);
    }
+
    return scene;
 }

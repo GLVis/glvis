@@ -17,6 +17,7 @@ using namespace mfem;
 
 #include "sdl.hpp"
 #include "gl/types.hpp"
+#include "vsdata.hpp"
 
 #include <map>
 
@@ -30,6 +31,13 @@ protected:
 
    int drawmesh, drawelems, drawnums, draworder;
    int drawbdr, draw_cp;
+
+   int refine_func = 0;
+
+   double minv_sol, maxv_sol;
+   bool have_sol_range = false; // true when minv_sol and maxv_sol are set
+
+   int TimesToRefine, EdgeRefineFactor;
 
    gl3::GlDrawable disp_buf;
 
@@ -70,12 +78,8 @@ protected:
    // Used for drawing markers for element and vertex numbering
    double GetElementLengthScale(int k);
 
-   // Rendering large numbers of text objects for element or vertex numbering is
-   // slow.  Turn it off above some entity count.
-   static const int MAX_RENDER_NUMBERING = 1000;
-
 public:
-   int shading, TimesToRefine, EdgeRefineFactor;
+   int shading;
 
    int attr_to_show, bdr_attr_to_show;
    Array<int> el_attr_to_show, bdr_el_attr_to_show;
@@ -134,8 +138,7 @@ public:
 
    virtual gl3::SceneInfo GetSceneObjs();
 
-   void ToggleDrawBdr()
-   { drawbdr = !drawbdr; }
+   void ToggleDrawBdr();
 
    virtual void ToggleDrawElems();
 
@@ -152,6 +155,9 @@ public:
    void ToggleShading();
 
    void ToggleDrawCP() { draw_cp = !draw_cp; PrepareCP(); }
+
+   void ToggleRefinements();
+   void ToggleRefinementFunction();
 
    virtual void SetRefineFactors(int, int);
    virtual void AutoRefine();
