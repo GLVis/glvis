@@ -19,6 +19,8 @@
 #include "sdl.hpp"
 #include "font.hpp"
 
+#include <functional>
+
 void SDLMainLoop(bool server_mode = false);
 
 /// Initializes the visualization and some keys.
@@ -102,7 +104,8 @@ void SetWindowTitle(const char *title);
 int Screenshot(const char *fname, bool convert = false);
 #ifdef GLVIS_USE_LIBPNG
 int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi,
-              bool with_alpha=false);
+              bool with_alpha = false,
+              std::function<void(int,void*)> get_row = nullptr);
 #endif
 
 /// Send a sequence of keystrokes to the visualization window

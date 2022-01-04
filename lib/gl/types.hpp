@@ -35,6 +35,8 @@
 
 using namespace std;
 
+class VisualizationScene;
+
 namespace gl3
 {
 
@@ -599,6 +601,7 @@ private:
 
    friend class GlBuilder;
    friend class MeshRenderer;
+   friend class ::VisualizationScene; // needed for glTF export
 
    template<typename Vert>
    VertexBuffer<Vert> * getBuffer(GLenum shape)

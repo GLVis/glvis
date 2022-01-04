@@ -891,7 +891,8 @@ int InvertSurfaceVertical(SDL_Surface *surface)
 }
 
 #ifdef GLVIS_USE_LIBPNG
-int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi, bool with_alpha)
+int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi, bool with_alpha,
+              std::function<void(int,void*)> get_row)
 {
    png_byte *pixels = new png_byte[(with_alpha ? 4 : 3)*w];
    if (!pixels)
@@ -944,8 +945,15 @@ int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi, bool with_alpha)
    png_write_info(png_ptr, info_ptr);
    for (int i = 0; i < h; i++)
    {
-      glReadPixels(0, h-1-i, w, 1, with_alpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE,
-                   pixels);
+      if (!get_row)
+      {
+         glReadPixels(0, h-1-i, w, 1, with_alpha ? GL_RGBA : GL_RGB,
+                      GL_UNSIGNED_BYTE, pixels);
+      }
+      else
+      {
+         get_row(i, pixels);
+      }
       png_write_row(png_ptr, pixels);
    }
    png_write_end(png_ptr, info_ptr);

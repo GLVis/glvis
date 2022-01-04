@@ -318,6 +318,7 @@ void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
    builder.glBegin(GL_TRIANGLE_FAN);
    for (i=0; i<=n+1; i++)
    {
+      Normalize(normal[i]);
       builder.glNormal3dv(normal[i]);
       builder.glVertex3dv(cone[i]);
    }
@@ -696,12 +697,17 @@ void KeyTPressed()
    cout << "New material/light : " << ml << endl;
 }
 
-void KeyGPressed()
+void KeygPressed()
 {
    vsdata->ToggleBackground();
    vsdata->PrepareAxes();
    vsdata->EventUpdateBackground();
    SendExposeEvent();
+}
+
+void KeyGPressed()
+{
+   vsdata->glTF_Export();
 }
 
 void KeyF1Pressed()
@@ -1044,6 +1050,79 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
    return scene;
 }
 
+void VisualizationSceneScalarData::glTF_ExportBox(
+   glTF_Builder &bld,
+   glTF_Builder::buffer_id buffer,
+   glTF_Builder::material_id black_mat)
+{
+   auto white_mat = glTF_Builder::material_id{glTF_Builder::INVALID_ID};
+
+   auto box_node = AddModelNode(bld, "Box");
+   auto box_mesh = bld.addMesh("Box Mesh");
+   bld.addNodeMesh(box_node, box_mesh);
+
+   int nlines = AddLines(
+                   bld,
+                   box_mesh,
+                   buffer,
+                   (drawaxes != 3) ? black_mat : white_mat,
+                   axes_buf);
+   if (nlines == 0)
+   {
+      cout << "glTF export: no box found to export!" << endl;
+   }
+}
+
+void VisualizationSceneScalarData::glTF_ExportElements(
+   glTF_Builder &bld,
+   glTF_Builder::buffer_id buffer,
+   glTF_Builder::material_id palette_mat,
+   const gl3::GlDrawable &gl_drawable)
+{
+   auto elements_node = AddModelNode(bld, "Elements");
+   auto elements_mesh = bld.addMesh("Elements Mesh");
+   bld.addNodeMesh(elements_node, elements_mesh);
+
+   int ntria = AddTriangles(
+                  bld,
+                  elements_mesh,
+                  buffer,
+                  palette_mat,
+                  gl_drawable);
+   if (ntria == 0)
+   {
+      cout << "glTF export: no elements found to export!" << endl;
+   }
+}
+
+void VisualizationSceneScalarData::glTF_ExportMesh(
+   glTF_Builder &bld,
+   glTF_Builder::buffer_id buffer,
+   glTF_Builder::material_id black_mat,
+   const gl3::GlDrawable &gl_drawable)
+{
+   auto lines_node = AddModelNode(bld, "Lines");
+   auto lines_mesh = bld.addMesh("Lines Mesh");
+   bld.addNodeMesh(lines_node, lines_mesh);
+
+   int nlines = AddLines(
+                   bld,
+                   lines_mesh,
+                   buffer,
+                   black_mat,
+                   gl_drawable);
+   if (nlines == 0)
+   {
+      cout << "glTF export: no mesh/level lines found to export!" << endl;
+   }
+}
+
+void VisualizationSceneScalarData::glTF_Export()
+{
+   cout << "glTF export is not yet implemented for this visualization mode."
+        << endl;
+}
+
 void VisualizationSceneScalarData::ToggleTexture()
 {
    int isSmooth = palette.GetSmoothSetting();
@@ -1129,7 +1208,7 @@ void VisualizationSceneScalarData::Init()
       wnd->setOnKeyDown('t', KeyTPressed);
       wnd->setOnKeyDown('T', KeyTPressed);
 
-      wnd->setOnKeyDown('g', KeyGPressed);
+      wnd->setOnKeyDown('g', KeygPressed);
       wnd->setOnKeyDown('G', KeyGPressed);
 
       wnd->setOnKeyDown('c', KeycPressed);
@@ -1243,7 +1322,7 @@ void VisualizationSceneScalarData::SetAxisLabels(const char * a_x,
 
 void VisualizationSceneScalarData::PrepareAxes()
 {
-   std::array<float, 4> blk = GetLineColor();
+   // std::array<float, 4> blk = GetLineColor();
    axes_buf.clear();
 
    gl3::GlBuilder bld = axes_buf.createBuilder();
@@ -1253,13 +1332,13 @@ void VisualizationSceneScalarData::PrepareAxes()
       bld.glBegin(GL_LINES);
       bld.glColor3f(1., 0., 0.);
       bld.glVertex3d(x[0], y[0], z[0]);
-      bld.glColor4fv(blk.data());
+      bld.glColor3f(0.75, 0.75, 0.75); // bld.glColor4fv(blk.data());
       bld.glVertex3d(x[1], y[0], z[0]);
       bld.glVertex3d(x[0], y[1], z[0]);
       bld.glColor3f(0., 1., 0.);
       bld.glVertex3d(x[0], y[0], z[0]);
       bld.glEnd();
-      bld.glColor4fv(blk.data());
+      // bld.glColor4fv(blk.data());
       // bld.setUseColor(false);
       // bld.glEnable(GL_LINE_STIPPLE);
       bld.glBegin(GL_LINE_STRIP);

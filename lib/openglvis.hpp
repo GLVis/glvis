@@ -19,6 +19,7 @@
 #include "mfem.hpp"
 #include "geom_utils.hpp"
 #include "sdl.hpp"
+#include "gltf.hpp"
 
 // Visualization header file
 
@@ -129,6 +130,28 @@ protected:
                   mfem::Vector &vals, mfem::DenseMatrix &normals,
                   const int n, const mfem::Array<int> &ind, const double minv,
                   const double maxv, const int normals_opt = 0);
+
+   glTF_Builder::material_id AddPaletteMaterial(glTF_Builder &bld);
+   glTF_Builder::material_id AddBlackMaterial(glTF_Builder &bld);
+   glTF_Builder::material_id AddPaletteLinesMaterial(
+      glTF_Builder &bld, glTF_Builder::material_id palette_mat);
+
+   glTF_Builder::node_id AddModelNode(glTF_Builder &bld,
+                                      const std::string &nodeName);
+
+   // returns number of triangles
+   int AddTriangles(glTF_Builder &bld,
+                    glTF_Builder::mesh_id mesh,
+                    glTF_Builder::buffer_id buffer,
+                    glTF_Builder::material_id material,
+                    const gl3::GlDrawable &gl_drawable);
+
+   // returns number of lines
+   int AddLines(glTF_Builder &bld,
+                glTF_Builder::mesh_id mesh,
+                glTF_Builder::buffer_id buffer,
+                glTF_Builder::material_id material,
+                const gl3::GlDrawable &gl_drawable);
 
 public:
    VisualizationScene();

@@ -20,6 +20,7 @@
 using namespace mfem;
 #include "visual.hpp"
 #include "palettes.hpp"
+#include "gltf.hpp"
 
 using namespace std;
 
@@ -707,12 +708,16 @@ int VisualizationSceneSolution::GetRefinedValuesAndNormals(
    if (logscale)
    {
       if (have_normals)
+      {
          for (int j = 0; j < normals.Width(); j++)
+         {
             if (vals(j) >= minv && vals(j) <= maxv)
             {
                normals(0, j) *= log_a/vals(j);
                normals(1, j) *= log_a/vals(j);
             }
+         }
+      }
       for (int j = 0; j < vals.Size(); j++)
       {
          vals(j) = _LogVal(vals(j));
@@ -2289,4 +2294,47 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    }
 
    return scene;
+}
+
+void VisualizationSceneSolution::glTF_ExportBoundary(
+   glTF_Builder &bld,
+   glTF_Builder::buffer_id buffer,
+   glTF_Builder::material_id black_mat)
+{
+   auto bdr_node = AddModelNode(bld, "Boundary");
+   auto bdr_mesh = bld.addMesh("Boundary Mesh");
+   bld.addNodeMesh(bdr_node, bdr_mesh);
+
+   int nlines = AddLines(
+                   bld,
+                   bdr_mesh,
+                   buffer,
+                   black_mat,
+                   bdr_buf);
+   if (nlines == 0)
+   {
+      cout << "glTF export: no boundary found to export!" << endl;
+   }
+}
+
+void VisualizationSceneSolution::glTF_Export()
+{
+   string name = "GLVis_scene_000";
+
+   glTF_Builder bld(name);
+
+   auto palette_mat = AddPaletteMaterial(bld);
+   auto black_mat = AddBlackMaterial(bld);
+   auto buf = bld.addBuffer("buffer");
+   if (drawelems) { glTF_ExportElements(bld, buf, palette_mat, disp_buf); }
+   if (drawmesh)
+   {
+      glTF_ExportMesh(bld, buf, black_mat,
+                      (drawmesh == 1) ? line_buf : lcurve_buf);
+   }
+   if (drawbdr) { glTF_ExportBoundary(bld, buf, black_mat); }
+   if (drawaxes) { glTF_ExportBox(bld, buf, black_mat); }
+   bld.writeFile();
+
+   cout << "Exported glTF -> " << name << ".gltf" << endl;
 }

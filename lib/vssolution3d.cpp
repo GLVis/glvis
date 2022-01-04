@@ -2934,6 +2934,7 @@ void VisualizationSceneSolution3d::DrawTetLevelSurf(
             draw.glBegin(GL_TRIANGLES);
             for (int k = 0; k < 3; k++)
             {
+               Normalize(norm[k]);
                draw.glNormal3dv(norm[k]);
                draw.glVertex3dv(vert[k]);
             }
@@ -2983,6 +2984,7 @@ void VisualizationSceneSolution3d::DrawTetLevelSurf(
             draw.glBegin(GL_QUADS);
             for (int k = 0; k < 4; k++)
             {
+               Normalize(norm[k]);
                draw.glNormal3dv(norm[k]);
                draw.glVertex3dv(vert[k]);
             }
@@ -3558,4 +3560,73 @@ gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
       scene.queue.emplace_back(params, &order_buf);
    }
    return scene;
+}
+
+void VisualizationSceneSolution3d::glTF_Export()
+{
+   string name = "GLVis_scene_000";
+
+   glTF_Builder bld(name);
+
+   auto palette_mat = AddPaletteMaterial(bld);
+   auto black_mat = AddBlackMaterial(bld);
+   auto buf = bld.addBuffer("buffer");
+   if (drawelems) { glTF_ExportElements(bld, buf, palette_mat, disp_buf); }
+   if (drawmesh) { glTF_ExportMesh(bld, buf, black_mat, line_buf); }
+   if (cplane && cp_drawelems)
+   {
+      auto cp_elems_node = AddModelNode(bld, "CP Elements");
+      auto cp_elems_mesh = bld.addMesh("CP Elements Mesh");
+      bld.addNodeMesh(cp_elems_node, cp_elems_mesh);
+
+      int ntria = AddTriangles(
+                     bld,
+                     cp_elems_mesh,
+                     buf,
+                     palette_mat,
+                     cplane_buf);
+      if (ntria == 0)
+      {
+         cout << "glTF export: no cp elements found to export!" << endl;
+      }
+   }
+   if (cp_drawmesh)
+   {
+      auto cp_lines_node = AddModelNode(bld, "CP Lines");
+      auto cp_lines_mesh = bld.addMesh("CP Lines Mesh");
+      bld.addNodeMesh(cp_lines_node, cp_lines_mesh);
+
+      int nlines = AddLines(
+                      bld,
+                      cp_lines_mesh,
+                      buf,
+                      black_mat,
+                      cplines_buf);
+      if (nlines == 0)
+      {
+         cout << "glTF export: no cp mesh/level lines found to export!" << endl;
+      }
+   }
+   if (drawlsurf)
+   {
+      auto lsurf_node = AddModelNode(bld, "Level Surface");
+      auto lsurf_mesh = bld.addMesh("Level Surface Mesh");
+      bld.addNodeMesh(lsurf_node, lsurf_mesh);
+
+      int ntria = AddTriangles(
+                     bld,
+                     lsurf_mesh,
+                     buf,
+                     palette_mat,
+                     lsurf_buf);
+      if (ntria == 0)
+      {
+         cout << "glTF export: no level surface elements found to export!"
+              << endl;
+      }
+   }
+   if (drawaxes) { glTF_ExportBox(bld, buf, black_mat); }
+   bld.writeFile();
+
+   cout << "Exported glTF -> " << name << ".gltf" << endl;
 }
