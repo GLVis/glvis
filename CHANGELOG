@@ -12,6 +12,9 @@
 Version 4.1.1 (development)
 ===========================
 
+- Added 3D scene export to glTF format (https://www.khronos.org/gltf) which is
+  bound to the key 'G'.
+
 - Added a third mode to keys 'b'/'B' in 2D to display the mesh boundary colored
   by boundary element attribute.
 
