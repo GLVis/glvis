@@ -248,10 +248,7 @@ public:
       SCALAR = 0, VEC2, VEC3, VEC4, MAT2, MAT3, MAT4
    };
    // string constants corresponding to the tensor_type constants
-   static constexpr const char *tensorTypes[] =
-   {
-      "SCALAR", "VEC2", "VEC3", "VEC4", "MAT2", "MAT3", "MAT4"
-   };
+   static const char *tensorTypes[];
 
    // sampler option: magnification filter
    enum struct mag_filter { NEAREST = 9728, LINEAR = 9729 };

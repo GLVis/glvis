@@ -13,6 +13,11 @@
 #include "aux_vis.hpp" // SaveAsPNG
 
 
+const char *glTF_Builder::tensorTypes[] =
+{
+   "SCALAR", "VEC2", "VEC3", "VEC4", "MAT2", "MAT3", "MAT4"
+};
+
 glTF_Builder::buffer_id
 glTF_Builder::addBuffer(const std::string &bufferName)
 {

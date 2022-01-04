@@ -707,7 +707,7 @@ int VisualizationScene::AddLines(glTF_Builder &bld,
               << buf->count() << '\n';
       }
    }
-   int num_ibuf = 0, ibuf_layout = -1;
+   int num_ibuf = 0 /* , ibuf_layout = -1 */;
    for (int layout = 0; layout < gl3::NUM_LAYOUTS; ++layout)
    {
       const gl3::IIndexedBuffer *ibuf =
@@ -715,7 +715,7 @@ int VisualizationScene::AddLines(glTF_Builder &bld,
       if (ibuf && ibuf->getIndices().size() != 0)
       {
          num_ibuf++;
-         ibuf_layout = layout;
+         /* ibuf_layout = layout; */
          cout << "indexed lines: layout = " << layout << ", # vertices = "
               << ibuf->count() << ", # indices = " << ibuf->getIndices().size()
               << '\n';
