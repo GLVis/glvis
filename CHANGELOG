@@ -13,7 +13,8 @@ Version 4.1.1 (development)
 ===========================
 
 - Added 3D scene export to glTF format (https://www.khronos.org/gltf) which is
-  bound to the key 'G'.
+  bound to the key 'G'. This can be used to import GLVis scenes for rendering in
+  Blender, as well as for augmented reality, see https://modelviewer.dev/editor.
 
 - Added a third mode to keys 'b'/'B' in 2D to display the mesh boundary colored
   by boundary element attribute.
