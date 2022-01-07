@@ -138,6 +138,11 @@ public:
 
    virtual gl3::SceneInfo GetSceneObjs();
 
+   void glTF_ExportBoundary(glTF_Builder &bld,
+                            glTF_Builder::buffer_id buffer,
+                            glTF_Builder::material_id black_mat);
+   virtual void glTF_Export();
+
    void ToggleDrawBdr();
 
    virtual void ToggleDrawElems();

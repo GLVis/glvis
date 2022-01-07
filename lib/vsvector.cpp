@@ -1033,3 +1033,49 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
 
    return scene;
 }
+
+void VisualizationSceneVector::glTF_Export()
+{
+   string name = "GLVis_scene_000";
+
+   glTF_Builder bld(name);
+
+   auto palette_mat = AddPaletteMaterial(bld);
+   auto pal_lines_mat = AddPaletteLinesMaterial(bld, palette_mat);
+   auto black_mat = AddBlackMaterial(bld);
+   auto buf = bld.addBuffer("buffer");
+   if (drawvector)
+   {
+      auto vec_node = AddModelNode(bld, "Vectors");
+      auto vec_mesh = bld.addMesh("Vectors Mesh");
+      bld.addNodeMesh(vec_node, vec_mesh);
+
+      int ntria = AddTriangles(
+                     bld,
+                     vec_mesh,
+                     buf,
+                     (drawvector == 1) ? black_mat : palette_mat,
+                     vector_buf);
+      int nlines = AddLines(
+                      bld,
+                      vec_mesh,
+                      buf,
+                      (drawvector == 1) ? black_mat : pal_lines_mat,
+                      vector_buf);
+      if (ntria == 0 || nlines == 0)
+      {
+         cout << "glTF export: no vectors found to export!" << endl;
+      }
+   }
+   if (drawelems) { glTF_ExportElements(bld, buf, palette_mat, disp_buf); }
+   if (drawmesh)
+   {
+      glTF_ExportMesh(bld, buf, black_mat,
+                      (drawmesh == 1) ? line_buf : lcurve_buf);
+   }
+   if (drawbdr) { glTF_ExportBoundary(bld, buf, black_mat); }
+   if (drawaxes) { glTF_ExportBox(bld, buf, black_mat); }
+   bld.writeFile();
+
+   cout << "Exported glTF -> " << name << ".gltf" << endl;
+}

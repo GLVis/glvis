@@ -14,6 +14,7 @@
 
 #include "mfem.hpp"
 #include "gl/types.hpp"
+#include "vssolution.hpp"
 using namespace mfem;
 
 class VisualizationSceneVector : public VisualizationSceneSolution
@@ -74,6 +75,8 @@ public:
    }
 
    virtual gl3::SceneInfo GetSceneObjs();
+
+   virtual void glTF_Export();
 
    virtual void EventUpdateColors() { Prepare(); PrepareVectorField(); }
 

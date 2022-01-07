@@ -14,6 +14,7 @@
 
 #include "mfem.hpp"
 #include "gl/types.hpp"
+#include "vsdata.hpp"
 #include <map>
 using namespace mfem;
 
@@ -134,6 +135,8 @@ public:
    virtual void PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows,
                                       bool color);
    virtual gl3::SceneInfo GetSceneObjs();
+
+   virtual void glTF_Export();
 
    void ToggleDrawElems()
    { drawelems = !drawelems; Prepare(); }

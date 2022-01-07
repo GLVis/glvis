@@ -227,11 +227,11 @@ Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 # generated with 'echo lib/gl/*.c* lib/*.c*', does not include lib/*.m (Obj-C)
 ALL_SOURCE_FILES = \
  lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp \
- lib/gl/shader.cpp lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp lib/font.cpp \
- lib/gl2ps.c lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp \
- lib/sdl_helper.cpp lib/sdl_main.cpp lib/stream_reader.cpp lib/threads.cpp \
- lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp \
- lib/vsvector3d.cpp
+ lib/gl/shader.cpp lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp \
+ lib/font.cpp lib/gl2ps.c lib/gltf.cpp lib/material.cpp lib/openglvis.cpp \
+ lib/palettes.cpp lib/sdl.cpp lib/sdl_helper.cpp lib/sdl_main.cpp \
+ lib/stream_reader.cpp lib/threads.cpp lib/vsdata.cpp lib/vssolution.cpp \
+ lib/vssolution3d.cpp lib/vsvector.cpp lib/vsvector3d.cpp
 OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl_mac.mm)
 DESKTOP_ONLY_SOURCE_FILES = \
  lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c lib/sdl_x11.cpp
