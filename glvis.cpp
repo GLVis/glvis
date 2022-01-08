@@ -1049,7 +1049,7 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
                   mfem_error();
                }
             }
-            if (0 > proc || proc >= nproc)
+            if (proc >= nproc)
             {
                cout << "Invalid processor rank: " << proc
                     << ", number of processors: " << nproc << endl;
