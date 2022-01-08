@@ -12,6 +12,8 @@
 #include "gltf.hpp"
 #include "aux_vis.hpp" // SaveAsPNG
 
+using namespace std;
+
 
 const char *glTF_Builder::tensorTypes[] =
 {
@@ -19,7 +21,7 @@ const char *glTF_Builder::tensorTypes[] =
 };
 
 glTF_Builder::buffer_id
-glTF_Builder::addBuffer(const std::string &bufferName)
+glTF_Builder::addBuffer(const string &bufferName)
 {
    buffers.resize(buffers.size() + 1);
    auto &buf = buffers.back();
@@ -27,7 +29,7 @@ glTF_Builder::addBuffer(const std::string &bufferName)
    buf.uri.valid = true;
    buf.byteLength.value = 0;
    buf.byteLength.valid = true;
-   buf.file.open(buf.uri.value, std::ios::out | std::ios::binary);
+   buf.file.reset(new ofstream(buf.uri.value, ios::out | ios::binary));
 
    return {(unsigned)buffers.size() - 1};
 }
@@ -67,9 +69,9 @@ glTF_Builder::addBufferView(buffer_id buffer,
    buf_view.target.valid = true;
 
    // append padding to file
-   for (unsigned i = buf_offset; i != new_offset; ++i) { buf.file.put('\0'); }
+   for (unsigned i = buf_offset; i != new_offset; ++i) { buf.file->put('\0'); }
    // write data to file
-   buf.file.write(reinterpret_cast<const char *>(data), byteLength);
+   buf.file->write(reinterpret_cast<const char *>(data), byteLength);
 
    buf.byteLength.value = new_offset + byteLength;
 
@@ -87,7 +89,7 @@ void glTF_Builder::appendToBufferView(buffer_view_id bufferView,
 
    buf_view.byteLength.value += byteLength;
 
-   buf.file.write(reinterpret_cast<const char *>(data), byteLength);
+   buf.file->write(reinterpret_cast<const char *>(data), byteLength);
    buf.byteLength.value += byteLength;
 }
 
@@ -185,7 +187,7 @@ glTF_Builder::addAccessorVec3f(buffer_view_id bufferView,
 }
 
 glTF_Builder::image_id
-glTF_Builder::addImage(const std::string &imageName,
+glTF_Builder::addImage(const string &imageName,
                        int width,
                        int height,
                        const color4f *pixels)
@@ -271,7 +273,7 @@ glTF_Builder::addTexture(sampler_id sampler, image_id source)
 }
 
 glTF_Builder::material_id
-glTF_Builder::addMaterial(const std::string &materialName,
+glTF_Builder::addMaterial(const string &materialName,
                           const pbr_matallic_roughness &pbrMetallicRoughness,
                           bool doubleSided)
 {
@@ -317,7 +319,7 @@ glTF_Builder::addMaterial(const std::string &materialName,
 }
 
 glTF_Builder::mesh_id
-glTF_Builder::addMesh(const std::string &meshName)
+glTF_Builder::addMesh(const string &meshName)
 {
    meshes.resize(meshes.size() + 1);
    auto &mesh = meshes.back();
@@ -417,7 +419,7 @@ void glTF_Builder::addMeshLines(mesh_id mesh,
 }
 
 glTF_Builder::node_id
-glTF_Builder::addNode(const std::string &nodeName)
+glTF_Builder::addNode(const string &nodeName)
 {
    nodes.resize(nodes.size() + 1);
    auto &node = nodes.back();
