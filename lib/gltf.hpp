@@ -18,6 +18,7 @@
 #include <tuple>
 #include <fstream>
 #include <limits>
+#include <memory>
 
 
 class glTF_Builder
@@ -50,7 +51,7 @@ protected:
       node_string uri = { false, "uri", "" };
       node_unsigned byteLength = { false, "byteLength", 0 };
 
-      std::ofstream file;
+      std::unique_ptr<std::ofstream> file;
    };
    struct struct_buffer_view
    {
@@ -96,7 +97,7 @@ protected:
    struct struct_pbrMetallicRoughness
    {
       node_color4f baseColorFactor =
-      { false, "baseColorFactor", {0.f, 0.f, 0.f, 0.f} };
+      { false, "baseColorFactor", {{0.f, 0.f, 0.f, 0.f}} };
       node_type<struct_texture_info> baseColorTexture =
       { false, "baseColorTexture", {} };
       node_float metallicFactor = { false, "metallicFactor", 0.f };
@@ -132,8 +133,8 @@ protected:
    struct struct_node
    {
       node_unsigned mesh = { false, "mesh", 0 };
-      node_vec3f scale = { false, "scale", {0.f, 0.f, 0.f} };
-      node_vec3f translation = { false, "translation", {0.f, 0.f, 0.f} };
+      node_vec3f scale = { false, "scale", {{0.f, 0.f, 0.f}} };
+      node_vec3f translation = { false, "translation", {{0.f, 0.f, 0.f}} };
       node_string name = { false, "name", "" };
    };
 
