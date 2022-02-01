@@ -348,7 +348,7 @@ ProjectVectorFEGridFunction(std::unique_ptr<GridFunction> gf)
            << " discontinuous vector grid function..." << endl;
       int dim = gf->FESpace()->GetMesh()->Dimension();
       FiniteElementCollection *d_fec =
-         (p == 1) ?
+         (p == 1 && dim == 3) ?
          (FiniteElementCollection*)new LinearDiscont3DFECollection :
          (FiniteElementCollection*)new L2_FECollection(p, dim, 1);
       FiniteElementSpace *d_fespace =
