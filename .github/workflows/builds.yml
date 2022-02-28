@@ -227,6 +227,7 @@ jobs:
     - name: create screenshot tarball
       if: always() && matrix.build-system == 'cmake'
       run: |
+        cd glvis && cd build
         tar czvf test_screenshots.tar.gz tests/test.*.png
 
     - name: upload test screenshots
