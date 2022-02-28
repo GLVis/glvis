@@ -223,6 +223,10 @@ jobs:
       run: |
         cd glvis && cd build
         ctest --verbose
+
+    - name: create screenshot tarball
+      if: always() && matrix.build-system == 'cmake'
+      run: |
         tar czvf test_screenshots.tar.gz tests/test.*.png
 
     - name: upload test screenshots
