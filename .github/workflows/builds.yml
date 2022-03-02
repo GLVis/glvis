@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+# Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 # at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 # LICENSE and NOTICE for details. LLNL-CODE-443271.
 #
@@ -223,10 +223,15 @@ jobs:
       run: |
         cd glvis && cd build
         ctest --verbose
+
+    - name: create screenshot tarball
+      if: always() && matrix.build-system == 'cmake'
+      run: |
+        cd glvis && cd build
         tar czvf test_screenshots.tar.gz tests/test.*.png
 
     - name: upload test screenshots
-      if: matrix.build-system == 'cmake'
+      if: always() && matrix.build-system == 'cmake'
       uses: actions/upload-artifact@v2
       with:
         name: test-screenshots-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}
