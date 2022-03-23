@@ -280,7 +280,7 @@ glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
 
 $(LOGO_FILE_CPP): $(LOGO_FILE)
 ifndef XXD_FOUND
-	$(error Required tool not found: xxd. Stop. $(XXD_FOUND))
+	$(error Required tool not found: xxd)
 endif
 	cd $(dir $(LOGO_FILE)) && xxd -i $(notdir $(LOGO_FILE)) > \
 		$(notdir $(LOGO_FILE_CPP))
