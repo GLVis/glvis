@@ -94,6 +94,13 @@ else()
   list(APPEND _glvis_compile_defs "_USE_MATH_DEFINES")
 endif()
 
+if(NOT WIN32)
+  find_program(XXD_FOUND xxd)
+  if(NOT XXD_FOUND)
+    message(FATAL_ERROR "Required tool not found: xxd.")
+  endif()
+endif()
+
 if (CMAKE_BUILD_TYPE MATCHES "Debug|debug|DEBUG")
   list(APPEND _glvis_compile_defs "GLVIS_DEBUG")
   list(APPEND _glvis_compile_opts "-Wall")

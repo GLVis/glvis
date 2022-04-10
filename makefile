@@ -85,6 +85,9 @@ CXXFLAGS = $(MFEM_CXXFLAGS)
 CC     ?= gcc
 CFLAGS ?= -O3
 
+# GLVis uses xxd to convert the logo  to a compilable file
+XXD_FOUND := $(shell command -v xxd 2> /dev/null)
+
 # Optional compile/link flags
 GLVIS_OPTS ?=
 GLVIS_LDFLAGS ?=
@@ -276,6 +279,9 @@ glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(CCC) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
 
 $(LOGO_FILE_CPP): $(LOGO_FILE)
+ifndef XXD_FOUND
+	$(error Required tool not found: xxd)
+endif
 	cd $(dir $(LOGO_FILE)) && xxd -i $(notdir $(LOGO_FILE)) > \
 		$(notdir $(LOGO_FILE_CPP))
 
