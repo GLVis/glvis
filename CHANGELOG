@@ -9,8 +9,8 @@
                               http://glvis.org
 
 
-Version 4.1.1 (development)
-===========================
+Version 4.2 released on April 21, 2022
+======================================
 
 - Added 3D scene export to glTF format (https://www.khronos.org/gltf) which is
   bound to the key 'G'. This can be used to import GLVis scenes for rendering in
@@ -20,6 +20,10 @@ Version 4.1.1 (development)
   by boundary element attribute.
 
 - In 2D, save and restore solution's value range when using keys 'e' and 'b'.
+
+- Support for visualization of pyramid-shaped elements.
+
+- Various other bugfixes and improvements.
 
 
 Version 4.1, released on Aug 31, 2021
