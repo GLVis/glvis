@@ -288,10 +288,6 @@ Before a PR can be merged, it should satisfy the following:
 
 ### Release Checklist
 
-- [ ] Update the GLVis version in the following files:
-    - [ ] `CHANGELOG`
-    - [ ] `makefile`
-    - [ ] `CMakeLists.txt`
 - [ ] Check that version requirements for each of GLVis's dependencies are documented in `INSTALL` and up-to-date
 - [ ] Update the `CHANGELOG` to organize all release contributions
 - [ ] Review the whole source code once over

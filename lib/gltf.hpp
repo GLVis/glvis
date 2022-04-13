@@ -253,7 +253,7 @@ public:
 
    // sampler option: magnification filter
    enum struct mag_filter { NEAREST = 9728, LINEAR = 9729 };
-   // sampler optioin: minification filter
+   // sampler option: minification filter
    enum struct min_filter
    {
       NEAREST = 9728, LINEAR = 9729, NEAREST_MIPMAP_NEAREST = 9984,
