@@ -1815,6 +1815,50 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
    updated_bufs.emplace_back(&v_nums_buf);
 }
 
+void VisualizationSceneSolution::PrepareFaceNumbering()
+{
+   f_nums_buf.clear();
+
+   if (mesh->Dimension() != 2)
+   {
+      return;
+   }
+
+   DenseMatrix p;
+   Array<int> vertices;
+   Array<int> faces;
+   Array<int> faces_ori;
+
+   const int ne = mesh->GetNE();
+   for (int k = 0; k < ne; k++)
+   {
+      mesh->GetElementEdges(k, faces, faces_ori);
+
+      double ds = GetElementLengthScale(k);
+      double xs = 0.05 * ds;
+
+      for (int i = 0; i < faces.Size(); i++)
+      {
+         mesh->GetEdgeVertices(faces[i], vertices);
+
+         p.SetSize(mesh->Dimension(), vertices.Size());
+         p.SetCol(0, mesh->GetVertex(vertices[0]));
+         p.SetCol(1, mesh->GetVertex(vertices[1]));
+
+         ShrinkPoints(p, k, 0, 0);
+
+         const double m[2] = {0.5 * (p(0,0) + p(0,1)), 0.5 * (p(1,0) + p(1,1))};
+         // TODO: figure out something better...
+         double u = LogVal(0.5 * ((*sol)(vertices[0]) + (*sol)(vertices[1])));
+
+         double xx[3] = {m[0], m[1], u};
+         DrawNumberedMarker(f_nums_buf, xx, xs, faces[i]);
+      }
+   }
+
+   updated_bufs.emplace_back(&f_nums_buf);
+}
+
 void VisualizationSceneSolution::PrepareOrderingCurve()
 {
    bool color = draworder < 3;
@@ -1908,6 +1952,7 @@ void VisualizationSceneSolution::PrepareNumbering()
 {
    PrepareElementNumbering();
    PrepareVertexNumbering();
+   PrepareFaceNumbering();
 }
 
 void VisualizationSceneSolution::PrepareLines2()
@@ -2281,6 +2326,10 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    else if (drawnums == 2)
    {
       scene.queue.emplace_back(params, &v_nums_buf);
+   }
+   else if (drawnums == 3)
+   {
+      scene.queue.emplace_back(params, &f_nums_buf);
    }
 
    // draw orderings -- "black" modes
