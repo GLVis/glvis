@@ -195,14 +195,17 @@ jobs:
       run: |
         build_type="RelWithDebInfo"
         [[ ${{ matrix.target }} == "dbg" ]] && build_type="Debug";
+        [[ ${{ matrix.os }} == "windows-2022" ]] \
+          && toolchain_file="${VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
         cd glvis && mkdir build && cd build
         cmake \
+          -D CMAKE_TOOLCHAIN_FILE:STRING=${toolchain_file} \
           -D CMAKE_BUILD_TYPE:STRING=${build_type} \
           -D ENABLE_TESTS:BOOL=TRUE \
           -D mfem_DIR:PATH=${GITHUB_WORKSPACE}/${MFEM_TOP_DIR}/build \
           -D GLVIS_BASELINE_SYS=${{ matrix.os }} \
           ..
-        make -j3
+        cmake --build . --parallel 3
 
     - name: setup Python
       if: matrix.build-system == 'cmake'
