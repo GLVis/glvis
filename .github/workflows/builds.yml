@@ -75,11 +75,6 @@ jobs:
         brew install openmpi
         export MAKE_CXX_FLAG="MPICXX=mpic++"
 
-    - name: get MPI (Windows)
-      if: matrix.os == 'windows-2022'
-      run: |
-        vcpkg install msmpi --triplet=x64-windows
-
     # Get Hypre through cache, or build it.
     # Install will only run on cache miss.
     - name: cache hypre
