@@ -31,7 +31,7 @@ jobs:
   builds-and-tests:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-10.15]
+        os: [ubuntu-20.04, macos-10.15, windows-2022]
         target: [dbg, opt]
         mpi: [seq]
         build-system: [cmake]
@@ -74,6 +74,11 @@ jobs:
         export HOMEBREW_NO_INSTALL_CLEANUP=1
         brew install openmpi
         export MAKE_CXX_FLAG="MPICXX=mpic++"
+
+    - name: get MPI (Windows)
+      if: matrix.os == 'windows-2022'
+      run: |
+        vcpkg install openmpi --triplet=x64-windows
 
     # Get Hypre through cache, or build it.
     # Install will only run on cache miss.
@@ -166,6 +171,11 @@ jobs:
       run: |
         export HOMEBREW_NO_INSTALL_CLEANUP=1
         brew install fontconfig freetype sdl2 glew glm libpng
+
+    - name: get deps (Windows)
+      if: matrix.os == 'windows-2022'
+      run: |
+        vcpkg install fontconfig freetype sdl2 glew glm libpng --triplet=x64-windows
 
     - name: checkout GLVis
       uses: actions/checkout@v2
