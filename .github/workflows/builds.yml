@@ -78,7 +78,7 @@ jobs:
     - name: get MPI (Windows)
       if: matrix.os == 'windows-2022'
       run: |
-        vcpkg install openmpi --triplet=x64-windows
+        vcpkg install msmpi --triplet=x64-windows
 
     # Get Hypre through cache, or build it.
     # Install will only run on cache miss.
