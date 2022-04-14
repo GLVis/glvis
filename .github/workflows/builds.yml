@@ -175,13 +175,13 @@ jobs:
       id: cache-deps
       uses: actions/cache@v3
       with:
-        path: ${{ env.GITHUB_WORKSPACE }}/vcpkg_cache
+        path: vcpkg_cache
         key: ${{ runner.os }}-vcpkg-v1
 
     - name: prepare binary cache location
       if: steps.cache-deps.outputs.cache-hit != true
       run: |
-        mkdir ${GITHUB_WORKSPACE}/vcpkg_cache
+        mkdir vcpkg_cache
 
     - name: checkout GLVis
       uses: actions/checkout@v2
@@ -199,7 +199,7 @@ jobs:
     - name: build GLVis (cmake)
       if: matrix.build-system == 'cmake'
       env:
-        VCPKG_DEFAULT_BINARY_CACHE: ${{ env.GITHUB_WORKSPACE }}/vcpkg_cache
+        VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg_cache
       run: |
         build_type="RelWithDebInfo"
         [[ ${{ matrix.target }} == "dbg" ]] && build_type="Debug";
