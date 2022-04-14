@@ -26,7 +26,6 @@ env:
   METIS_TOP_DIR: metis-4.0.3
   MFEM_TOP_DIR: mfem
   MFEM_BRANCH: master
-  VCPKG_DEFAULT_BINARY_CACHE: ${{ env.GITHUB_WORKSPACE }}/vcpkg_cache
 
 jobs:
   builds-and-tests:
@@ -176,13 +175,13 @@ jobs:
       id: cache-deps
       uses: actions/cache@v3
       with:
-        path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+        path: ${{ env.GITHUB_WORKSPACE }}/vcpkg_cache
         key: ${{ runner.os }}-vcpkg-v1
 
     - name: prepare binary cache location
       if: steps.cache-deps.outputs.cache-hit != true
       run: |
-        mkdir ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+        mkdir ${GITHUB_WORKSPACE}/vcpkg_cache
 
     - name: checkout GLVis
       uses: actions/checkout@v2
@@ -199,6 +198,8 @@ jobs:
 
     - name: build GLVis (cmake)
       if: matrix.build-system == 'cmake'
+      env:
+        VCPKG_DEFAULT_BINARY_CACHE: ${{ env.GITHUB_WORKSPACE }}/vcpkg_cache
       run: |
         build_type="RelWithDebInfo"
         [[ ${{ matrix.target }} == "dbg" ]] && build_type="Debug";
