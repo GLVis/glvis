@@ -246,13 +246,13 @@ jobs:
         ctest --verbose
 
     - name: create screenshot tarball
-      if: always() && matrix.build-system == 'cmake'
+      if: always() && matrix.build-system == 'cmake' && matrix.os != 'windows-2022'
       run: |
         cd glvis && cd build
         tar czvf test_screenshots.tar.gz tests/test.*.png
 
     - name: upload test screenshots
-      if: always() && matrix.build-system == 'cmake'
+      if: always() && matrix.build-system == 'cmake' && matrix.os != 'windows-2022'
       uses: actions/upload-artifact@v2
       with:
         name: test-screenshots-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}
