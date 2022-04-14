@@ -179,9 +179,8 @@ jobs:
         key: ${{ runner.os }}-vcpkg-v1
 
     - name: prepare binary cache location
-      if: steps.cache-deps.outputs.cache-hit != true
       run: |
-        mkdir vcpkg_cache
+        mkdir -p vcpkg_cache
 
     - name: checkout GLVis
       uses: actions/checkout@v2
