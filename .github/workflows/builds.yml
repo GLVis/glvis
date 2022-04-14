@@ -26,7 +26,7 @@ env:
   METIS_TOP_DIR: metis-4.0.3
   MFEM_TOP_DIR: mfem
   MFEM_BRANCH: master
-  VCPKG_DEFAULT_BINARY_CACHE: ${GITHUB_WORKSPACE}/vcpkg_cache
+  VCPKG_DEFAULT_BINARY_CACHE: ${{ env.GITHUB_WORKSPACE }}/vcpkg_cache
 
 jobs:
   builds-and-tests:
