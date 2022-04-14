@@ -26,6 +26,7 @@ env:
   METIS_TOP_DIR: metis-4.0.3
   MFEM_TOP_DIR: mfem
   MFEM_BRANCH: master
+  VCPKG_DEFAULT_BINARY_CACHE: ${GITHUB_WORKSPACE}/vcpkg_cache
 
 jobs:
   builds-and-tests:
@@ -171,10 +172,17 @@ jobs:
         export HOMEBREW_NO_INSTALL_CLEANUP=1
         brew install fontconfig freetype sdl2 glew glm libpng
 
-    - name: get deps (Windows)
-      if: matrix.os == 'windows-2022'
+    - name: cache deps (Windows)
+      id: cache-deps
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+        key: ${{ runner.os }}-vcpkg-v1
+
+    - name: prepare binary cache location
+      if: steps.cache-deps.outputs.cache-hit != true
       run: |
-        vcpkg install fontconfig freetype sdl2 glew glm libpng --triplet=x64-windows
+        mkdir ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
 
     - name: checkout GLVis
       uses: actions/checkout@v2
