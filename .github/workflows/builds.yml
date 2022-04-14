@@ -58,18 +58,18 @@ jobs:
 
     steps:
     - name: get MPI (Linux)
-      if: matrix.os == 'ubuntu-20.04'
+      if: matrix.os == 'ubuntu-20.04' && matrix.mpi == 'par'
       run: |
         sudo apt-get update
         sudo apt-get install mpich libmpich-dev
         export MAKE_CXX_FLAG="MPICXX=mpic++"
 
     - name: Set up Homebrew
-      if: matrix.os == 'macos-10.15'
+      if: matrix.os == 'macos-10.15' && matrix.mpi == 'par'
       uses: Homebrew/actions/setup-homebrew@master
 
     - name: get MPI (MacOS)
-      if: matrix.os == 'macos-10.15'
+      if: matrix.os == 'macos-10.15' && matrix.mpi == 'par'
       run: |
         export HOMEBREW_NO_INSTALL_CLEANUP=1
         brew install openmpi
@@ -78,6 +78,7 @@ jobs:
     # Get Hypre through cache, or build it.
     # Install will only run on cache miss.
     - name: cache hypre
+      if: matrix.mpi == 'par'
       id: hypre-cache
       uses: actions/cache@v2
       with:
@@ -85,7 +86,7 @@ jobs:
         key: ${{ runner.os }}-build-${{ env.HYPRE_TOP_DIR }}-v2
 
     - name: build hypre
-      if: steps.hypre-cache.outputs.cache-hit != 'true'
+      if: steps.hypre-cache.outputs.cache-hit != 'true' && matrix.mpi == 'par'
       uses: mfem/github-actions/build-hypre@v2.0
       with:
         archive: ${{ env.HYPRE_ARCHIVE }}
@@ -94,6 +95,7 @@ jobs:
     # Get Metis through cache, or build it.
     # Install will only run on cache miss.
     - name: cache metis
+      if: matrix.mpi == 'par'
       id: metis-cache
       uses: actions/cache@v2
       with:
@@ -101,7 +103,7 @@ jobs:
         key: ${{ runner.os }}-build-${{ env.METIS_TOP_DIR }}-v2
 
     - name: build metis
-      if: steps.metis-cache.outputs.cache-hit != 'true'
+      if: steps.metis-cache.outputs.cache-hit != 'true' && matrix.mpi == 'par'
       uses: mfem/github-actions/build-metis@v2.0
       with:
         archive: ${{ env.METIS_ARCHIVE }}
@@ -110,6 +112,7 @@ jobs:
     # make generic links to libraries for MFEM install
     # Those links are already created by build-mfem action, but not when the cache is used...
     - name: configure links
+      if: matrix.mpi == 'par'
       run: |
         echo "Hypre symlink:"
         ln -s $HYPRE_TOP_DIR hypre;
