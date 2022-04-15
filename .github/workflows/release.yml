@@ -19,11 +19,7 @@ on:
       - v*
     branches:
       - master
-  #TODO: remove below before merge
-  pull_request:
-    branches:
-      - windows-ci-dev
-
+      - windows-ci-dev #TODO: remove before merge
 
 env:
   HYPRE_ARCHIVE: v2.19.0.tar.gz
