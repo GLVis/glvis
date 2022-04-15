@@ -1,0 +1,215 @@
+# Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+# at the Lawrence Livermore National Laboratory. All Rights reserved. See files
+# LICENSE and NOTICE for details. LLNL-CODE-443271.
+#
+# This file is part of the GLVis visualization tool and library. For more
+# information and source code availability see https://glvis.org.
+#
+# GLVis is free software; you can redistribute it and/or modify it under the
+# terms of the BSD-3 license. We welcome feedback and contributions, see file
+# CONTRIBUTING.md for details.
+
+# GLVis - an OpenGL visualization server based on the MFEM library
+
+name: builds
+
+on:
+  push:
+    tags:
+      - v*
+    branches:
+      - master
+  #TODO: remove below before merge
+  pull_request:
+    branches:
+      - windows-ci-dev
+
+
+env:
+  HYPRE_ARCHIVE: v2.19.0.tar.gz
+  HYPRE_TOP_DIR: hypre-2.19.0
+  METIS_ARCHIVE: metis-4.0.3.tar.gz
+  METIS_TOP_DIR: metis-4.0.3
+  MFEM_TOP_DIR: mfem
+  MFEM_BRANCH: master
+
+jobs:
+  builds-and-tests:
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, macos-10.15, windows-2022]
+        target: [opt]
+        mpi: [seq]
+        build-system: [cmake]
+    name: ${{ matrix.os }}-${{ matrix.build-system }}-${{ matrix.target }}-${{ matrix.mpi }}
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: get MPI (Linux)
+      if: matrix.os == 'ubuntu-20.04' && matrix.mpi == 'par'
+      run: |
+        sudo apt-get update
+        sudo apt-get install mpich libmpich-dev
+        export MAKE_CXX_FLAG="MPICXX=mpic++"
+
+    - name: Set up Homebrew
+      if: matrix.os == 'macos-10.15' && matrix.mpi == 'par'
+      uses: Homebrew/actions/setup-homebrew@master
+
+    - name: get MPI (MacOS)
+      if: matrix.os == 'macos-10.15' && matrix.mpi == 'par'
+      run: |
+        export HOMEBREW_NO_INSTALL_CLEANUP=1
+        brew install openmpi
+        export MAKE_CXX_FLAG="MPICXX=mpic++"
+
+    # Get Hypre through cache, or build it.
+    # Install will only run on cache miss.
+    - name: cache hypre
+      if: matrix.mpi == 'par'
+      id: hypre-cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ env.HYPRE_TOP_DIR }}
+        key: ${{ runner.os }}-build-${{ env.HYPRE_TOP_DIR }}-v2
+
+    - name: build hypre
+      if: steps.hypre-cache.outputs.cache-hit != 'true' && matrix.mpi == 'par'
+      uses: mfem/github-actions/build-hypre@v2.0
+      with:
+        archive: ${{ env.HYPRE_ARCHIVE }}
+        dir: ${{ env.HYPRE_TOP_DIR }}
+
+    # Get Metis through cache, or build it.
+    # Install will only run on cache miss.
+    - name: cache metis
+      if: matrix.mpi == 'par'
+      id: metis-cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ env.METIS_TOP_DIR }}
+        key: ${{ runner.os }}-build-${{ env.METIS_TOP_DIR }}-v2
+
+    - name: build metis
+      if: steps.metis-cache.outputs.cache-hit != 'true' && matrix.mpi == 'par'
+      uses: mfem/github-actions/build-metis@v2.0
+      with:
+        archive: ${{ env.METIS_ARCHIVE }}
+        dir: ${{ env.METIS_TOP_DIR }}
+
+    # make generic links to libraries for MFEM install
+    # Those links are already created by build-mfem action, but not when the cache is used...
+    - name: configure links
+      if: matrix.mpi == 'par'
+      run: |
+        echo "Hypre symlink:"
+        ln -s $HYPRE_TOP_DIR hypre;
+        echo "Metis symlink:"
+        ln -s $METIS_TOP_DIR metis-4.0;
+
+    - name: MFEM ${{ env.MFEM_BRANCH }} commit
+      run: |
+        echo "MFEM_COMMIT=$(git ls-remote --heads https://github.com/mfem/mfem.git ${MFEM_BRANCH} | awk '{print $1;}')" >> $GITHUB_ENV
+
+    # Get MFEM through cache, or build it.
+    # Install will only run on cache miss.
+    - name: cache mfem
+      id: cache-mfem
+      uses: actions/cache@v2
+      with:
+        path: ${{ env.MFEM_TOP_DIR }}
+        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-${{ matrix.build-system}}-v1
+
+    # We are using the defaults of the MFEM action here, which is to use master
+    # branch. There is an implicit assumption here that mfem master hasn't
+    # changed since the 'MFEM master commit' step.
+    # Also, if we apply to MFEM build the same target as GLVis. This may be
+    # superfluous.
+    - name: build mfem
+      if: steps.cache-mfem.outputs.cache-hit != 'true'
+      # TODO: change this when merged upstream
+      uses: kanye-quest/mfem-gh-actions/build-mfem@master
+      with:
+        os: ${{ matrix.os }}
+        target: ${{ matrix.target }}
+        hypre-dir: ${{ env.HYPRE_TOP_DIR }}
+        metis-dir: ${{ env.METIS_TOP_DIR }}
+        mfem-dir: ${{ env.MFEM_TOP_DIR }}
+        mfem-branch: ${{ env.MFEM_BRANCH }}
+        build-system: ${{ matrix.build-system }}
+        mpi: ${{ matrix.mpi }}
+
+    # Install GLVis dependencies with package manager
+    - name: get deps (Linux)
+      if: matrix.os == 'ubuntu-20.04'
+      run: |
+        # We need to add a PPA for SDL 2.0.14 - fixes some initialization
+        # errors for X11
+        sudo add-apt-repository -y ppa:savoury1/multimedia
+        sudo apt-get update
+        sudo apt-get install libfontconfig1-dev libfreetype6-dev libsdl2-dev libglew-dev libglm-dev libpng-dev
+
+    - name: Set up Homebrew
+      if: matrix.os == 'macos-10.15'
+      uses: Homebrew/actions/setup-homebrew@master
+
+    - name: get deps (MacOS)
+      if: matrix.os == 'macos-10.15'
+      run: |
+        export HOMEBREW_NO_INSTALL_CLEANUP=1
+        brew install fontconfig freetype sdl2 glew glm libpng
+
+    - name: cache deps (Windows)
+      id: cache-deps
+      uses: actions/cache@v3
+      with:
+        path: vcpkg_cache
+        key: ${{ runner.os }}-vcpkg-v1
+
+    - name: prepare binary cache location
+      run: |
+        mkdir -p vcpkg_cache
+
+    - name: checkout GLVis
+      uses: actions/checkout@v2
+      with:
+        path: glvis
+        submodules: recursive
+
+    - name: build GLVis (cmake)
+      if: matrix.build-system == 'cmake'
+      env:
+        VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg_cache
+      run: |
+        build_type="Release"
+        [[ ${{ matrix.os }} == "windows-2022" ]] \
+          && toolchain_file="${VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
+        cd glvis && mkdir build && cd build
+        cmake \
+          -D CMAKE_TOOLCHAIN_FILE:STRING=${toolchain_file} \
+          -D CMAKE_BUILD_TYPE:STRING=${build_type} \
+          -D ENABLE_TESTS:BOOL=TRUE \
+          -D mfem_DIR:PATH=${GITHUB_WORKSPACE}/${MFEM_TOP_DIR}/build \
+          -D GLVIS_BASELINE_SYS=${{ matrix.os }} \
+          ..
+        cmake --build . --parallel 3
+      shell: bash
+
+    - name: package binary (Windows)
+      if: matrix.os == 'windows-2022'
+      env:
+        GLVIS_EXPORT_NAME: glvis-${{ github.ref_name }}-windows-amd64
+      run: |
+        cd glvis/build
+        cp -r Release ${GLVIS_EXPORT_NAME}
+        7z a -tzip ${GLVIS_EXPORT_NAME}.zip ${GLVIS_EXPORT_NAME}
+
+    - name: package binary (Mac)
+      if: matrix.os == 'macos-10.15'
+      env:
+        GLVIS_EXPORT_NAME: glvis-${{ github.ref_name }}-macos-amd64
+      run: |
+        cd glvis/build
+        make app
+        zip ${GLVIS_EXPORT_NAME} GLVis.app
