@@ -11,7 +11,7 @@
 
 # GLVis - an OpenGL visualization server based on the MFEM library
 
-name: builds
+name: release
 
 on:
   push:
