@@ -28,7 +28,6 @@ env:
   METIS_TOP_DIR: metis-4.0.3
   MFEM_TOP_DIR: mfem
   MFEM_BRANCH: master
-  GLVIS_EXPORT_NAME: glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
 
 jobs:
   release-builds:
@@ -196,6 +195,8 @@ jobs:
 
     - name: package binary (Windows)
       if: matrix.os == 'windows-2022'
+      env:
+        GLVIS_EXPORT_NAME: glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
       run: |
         cd glvis/build
         cp -r Release ${GLVIS_EXPORT_NAME}
@@ -203,14 +204,15 @@ jobs:
 
     - name: package binary (Mac)
       if: matrix.os == 'macos-10.15'
+      env:
+        GLVIS_EXPORT_NAME: glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
       run: |
         cd glvis/build
         make app
         zip ${GLVIS_EXPORT_NAME}.zip GLVis.app
 
     - name: upload binary
-      if: matrix.os == 'windows-2022'
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ env.GLVIS_EXPORT_NAME }}
-        path: glvis/build/${{ env.GLVIS_EXPORT_NAME }}.zip
+        name: glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
+        path: glvis/build/glvis-${{ github.ref_name }}-${{ runner.os }}-amd64.zip
