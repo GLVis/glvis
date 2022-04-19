@@ -209,7 +209,7 @@ jobs:
       run: |
         cd glvis/build
         make app
-        zip ${GLVIS_EXPORT_NAME}.zip GLVis.app
+        zip -r ${GLVIS_EXPORT_NAME}.zip GLVis.app
 
     - name: upload binary
       uses: actions/upload-artifact@v2
