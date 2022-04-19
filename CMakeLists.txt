@@ -332,9 +332,9 @@ add_custom_target(app
         GLVis.app/Contents/Resources/
     DEPENDS
         glvis-exe
-        GLVis.app/Contents/Info.plist
-        GLVis.app/Contents/Resources/GLVis.icns
-        GLVis.app/Contents/Resources/Credits.rtf
+        ${CMAKE_CURRENT_SOURCE_DIR}/share/Info.plist
+        ${CMAKE_CURRENT_SOURCE_DIR}/share/GLVis.icns
+        ${CMAKE_CURRENT_SOURCE_DIR}/share/Credits.rtf
     VERBATIM)
 
 if(ENABLE_TESTS)
