@@ -201,7 +201,7 @@ jobs:
       env:
         VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg_cache
       run: |
-        build_type="RelWithDebInfo"
+        build_type="Release"
         [[ ${{ matrix.target }} == "dbg" ]] && build_type="Debug";
         [[ ${{ matrix.os }} == "windows-2022" ]] \
           && toolchain_file="${VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
