@@ -213,7 +213,7 @@ jobs:
           -D mfem_DIR:PATH=${GITHUB_WORKSPACE}/${MFEM_TOP_DIR}/build \
           -D GLVIS_BASELINE_SYS=${{ matrix.os }} \
           ..
-        cmake --build . --parallel 3
+        cmake --build . --parallel 3 --config "${build_type}"
       shell: bash
 
     - name: setup Python
