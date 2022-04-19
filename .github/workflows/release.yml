@@ -199,7 +199,7 @@ jobs:
         GLVIS_EXPORT_NAME: glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
       run: |
         cd glvis/build
-        cp -r Release ${GLVIS_EXPORT_NAME}
+        Copy-Item -Path Release -Destination ${GLVIS_EXPORT_NAME} -Recurse
         7z a -tzip ${GLVIS_EXPORT_NAME}.zip ${GLVIS_EXPORT_NAME}
 
     - name: package binary (Mac)
