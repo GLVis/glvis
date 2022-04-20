@@ -199,8 +199,8 @@ jobs:
         GLVIS_EXPORT_NAME: glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
       run: |
         cd glvis/build
-        Copy-Item -Path "Release/*" -Destination ${GLVIS_EXPORT_NAME} -Recurse
-        Compress-Archive -Path "${GLVIS_EXPORT_NAME}" -DestinationPath "${GLVIS_EXPORT_NAME}.zip"
+        Copy-Item -Path "Release/*" -Destination "${Env:GLVIS_EXPORT_NAME}" -Recurse
+        Compress-Archive -Path "${Env:GLVIS_EXPORT_NAME}" -DestinationPath "${Env:GLVIS_EXPORT_NAME}.zip"
 
     - name: package binary (Mac)
       if: matrix.os == 'macos-10.15'
