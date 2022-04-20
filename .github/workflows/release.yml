@@ -27,7 +27,7 @@ env:
   METIS_ARCHIVE: metis-4.0.3.tar.gz
   METIS_TOP_DIR: metis-4.0.3
   MFEM_TOP_DIR: mfem
-  MFEM_BRANCH: master
+  MFEM_BRANCH: windows-ci-dev #TODO: change back to master after merge on mfem repo
 
 jobs:
   release-builds:
