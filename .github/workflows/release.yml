@@ -200,7 +200,7 @@ jobs:
       run: |
         cd glvis/build
         Copy-Item -Path "Release/*" -Destination ${GLVIS_EXPORT_NAME} -Recurse
-        7z a -tzip ${GLVIS_EXPORT_NAME}.zip ${GLVIS_EXPORT_NAME}
+        7z a -tzip ${GLVIS_EXPORT_NAME}.zip ${GLVIS_EXPORT_NAME}/
 
     - name: package binary (Mac)
       if: matrix.os == 'macos-10.15'
