@@ -1815,31 +1815,26 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
    updated_bufs.emplace_back(&v_nums_buf);
 }
 
-void VisualizationSceneSolution::PrepareFaceNumbering()
+void VisualizationSceneSolution::PrepareEdgeNumbering()
 {
    f_nums_buf.clear();
 
-   if (mesh->Dimension() != 2)
-   {
-      return;
-   }
-
    DenseMatrix p;
    Array<int> vertices;
-   Array<int> faces;
-   Array<int> faces_ori;
+   Array<int> edges;
+   Array<int> edges_ori;
 
    const int ne = mesh->GetNE();
    for (int k = 0; k < ne; k++)
    {
-      mesh->GetElementEdges(k, faces, faces_ori);
+      mesh->GetElementEdges(k, edges, edges_ori);
 
       double ds = GetElementLengthScale(k);
       double xs = 0.05 * ds;
 
-      for (int i = 0; i < faces.Size(); i++)
+      for (int i = 0; i < edges.Size(); i++)
       {
-         mesh->GetEdgeVertices(faces[i], vertices);
+         mesh->GetEdgeVertices(edges[i], vertices);
 
          p.SetSize(mesh->Dimension(), vertices.Size());
          p.SetCol(0, mesh->GetVertex(vertices[0]));
@@ -1852,7 +1847,7 @@ void VisualizationSceneSolution::PrepareFaceNumbering()
          double u = LogVal(0.5 * ((*sol)(vertices[0]) + (*sol)(vertices[1])));
 
          double xx[3] = {m[0], m[1], u};
-         DrawNumberedMarker(f_nums_buf, xx, xs, faces[i]);
+         DrawNumberedMarker(f_nums_buf, xx, xs, edges[i]);
       }
    }
 
@@ -1951,8 +1946,8 @@ void VisualizationSceneSolution::PrepareOrderingCurve1(gl3::GlDrawable& buf,
 void VisualizationSceneSolution::PrepareNumbering()
 {
    PrepareElementNumbering();
+   PrepareEdgeNumbering();
    PrepareVertexNumbering();
-   PrepareFaceNumbering();
 }
 
 void VisualizationSceneSolution::PrepareLines2()
@@ -2325,11 +2320,11 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    }
    else if (drawnums == 2)
    {
-      scene.queue.emplace_back(params, &v_nums_buf);
+      scene.queue.emplace_back(params, &f_nums_buf);
    }
    else if (drawnums == 3)
    {
-      scene.queue.emplace_back(params, &f_nums_buf);
+      scene.queue.emplace_back(params, &v_nums_buf);
    }
 
    // draw orderings -- "black" modes
