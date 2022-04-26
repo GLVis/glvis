@@ -21,6 +21,8 @@ Version 4.1.1 (development)
 
 - In 2D, save and restore solution's value range when using keys 'e' and 'b'.
 
+- An edge numbering option is now available in 2D.
+
 
 Version 4.1, released on Aug 31, 2021
 =====================================
