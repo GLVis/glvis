@@ -83,11 +83,13 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.HYPRE_TOP_DIR }}
-        key: ${{ runner.os }}-build-${{ env.HYPRE_TOP_DIR }}-v2
+        # TODO: update to new tag
+        key: ${{ runner.os }}-build-${{ env.HYPRE_TOP_DIR }}-branch
 
     - name: build hypre
       if: steps.hypre-cache.outputs.cache-hit != 'true' && matrix.mpi == 'par'
-      uses: mfem/github-actions/build-hypre@v2.0
+      # TODO: change this when merged upstream
+      uses: kanye-quest/mfem-gh-actions/build-hypre@master
       with:
         archive: ${{ env.HYPRE_ARCHIVE }}
         dir: ${{ env.HYPRE_TOP_DIR }}
@@ -100,11 +102,13 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.METIS_TOP_DIR }}
-        key: ${{ runner.os }}-build-${{ env.METIS_TOP_DIR }}-v2
+        # TODO: update to new tag
+        key: ${{ runner.os }}-build-${{ env.METIS_TOP_DIR }}-branch
 
     - name: build metis
       if: steps.metis-cache.outputs.cache-hit != 'true' && matrix.mpi == 'par'
-      uses: mfem/github-actions/build-metis@v2.0
+      # TODO: change this when merged upstream
+      uses: kanye-quest/mfem-gh-actions/build-metis@master
       with:
         archive: ${{ env.METIS_ARCHIVE }}
         dir: ${{ env.METIS_TOP_DIR }}
