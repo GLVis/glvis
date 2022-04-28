@@ -200,7 +200,6 @@ jobs:
       run: |
         cd glvis/build
         Copy-Item -Path "Release" -Destination "${Env:GLVIS_EXPORT_NAME}" -Recurse
-        Compress-Archive -Path "${Env:GLVIS_EXPORT_NAME}" -DestinationPath "${Env:GLVIS_EXPORT_NAME}.zip"
 
     - name: package binary (Mac)
       if: matrix.os == 'macos-10.15'
@@ -209,10 +208,11 @@ jobs:
       run: |
         cd glvis/build
         make app
-        zip -r ${GLVIS_EXPORT_NAME}.zip GLVis.app
+        mkdir ${GLVIS_EXPORT_NAME}
+        cp GLVis.app ${GLVIS_EXPORT_NAME}/GLVis.app
 
     - name: upload binary
       uses: actions/upload-artifact@v2
       with:
         name: glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
-        path: glvis/build/glvis-${{ github.ref_name }}-${{ runner.os }}-amd64.zip
+        path: glvis/build/glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
