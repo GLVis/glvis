@@ -570,62 +570,6 @@ void VisualizationSceneVector3d::PrepareFlat()
    updated_bufs.emplace_back(&disp_buf);
 }
 
-static void CutHoleInPatch(DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
-                    const int sides, const Array<int> &old_ind, Array<int> &ind,
-                    double lambda)
-{
-   if (sides != 4) { ind = old_ind; return; }
-
-   cout << "lambda = " << lambda << endl;
-
-   if (lambda < 0.1) { ind = old_ind; return; }
-
-   int n = sqrt(pts.Width())-1; // n x n LOR elements
-
-   int l = (1-lambda)*n/2 + lambda*1;
-
-   if (l == 0) { l = 1; }
-
-   if (n-2*l <= 0) { ind = old_ind; return; }
-
-   cout << "n = " << n << "l = " << l << endl;
-
-   ind.SetSize(sides * (n*n - (n-2*l)*(n-2*l)));
-
-   int k = 0;
-   for (int m = 0; m < l; m++)
-   {
-      for (int i = 0; i < n; i++)
-      {
-         for (int j = 0; j < sides; j++)
-         {
-            ind[k++] = old_ind[sides*(n*m+i)+j];
-         }
-         for (int j = 0; j < sides; j++)
-         {
-            ind[k++] = old_ind[sides*(n*(n-m-1)+i)+j];
-         }
-      }
-   }
-
-   for (int i = l; i < n-l; i++)
-   {
-      for (int m = 0; m < l; m++)
-      {
-         for (int j = 0; j < sides; j++)
-         {
-            ind[k++] = old_ind[sides*(n*i+m)+j];
-         }
-         for (int j = 0; j < sides; j++)
-         {
-            ind[k++] = old_ind[sides*(n*i+n-1-m)+j];
-         }
-      }
-   }
-
-   return;
-}
-
 void VisualizationSceneVector3d::PrepareFlat2()
 {
    int i, k, fn, fo, di = 0, have_normals;
@@ -710,7 +654,8 @@ void VisualizationSceneVector3d::PrepareFlat2()
          }
 
          IntegrationRule &RefPts = (cut_lambda > 0) ?
-             ((sides == 3) ? cut_TriPts : cut_QuadPts) : RefG->RefPts;
+                                   ((sides == 3) ? cut_TriPts : cut_QuadPts) :
+                                   RefG->RefPts;
          GridF->GetFaceValues(fn, di, RefPts, values, pointmat);
          if (ianim > 0)
          {
@@ -737,7 +682,8 @@ void VisualizationSceneVector3d::PrepareFlat2()
             cut_updated = true;
          }
          IntegrationRule &RefPts = (cut_lambda > 0) ?
-            ((sides == 3) ? cut_TriPts : cut_QuadPts) : RefG->RefPts;
+                                   ((sides == 3) ? cut_TriPts : cut_QuadPts) :
+                                   RefG->RefPts;
          GridF->GetValues(i, RefPts, values, pointmat);
          if (ianim > 0)
          {
@@ -748,7 +694,8 @@ void VisualizationSceneVector3d::PrepareFlat2()
          else
          {
             const IntegrationRule &ir = (cut_lambda > 0) ?
-               ((sides == 3) ? cut_TriPts : cut_QuadPts) : RefG->RefPts;
+                                        ((sides == 3) ? cut_TriPts : cut_QuadPts) :
+                                        RefG->RefPts;
             normals.SetSize(3, values.Size());
             mesh->GetElementTransformation(i, &T);
             for (int j = 0; j < values.Size(); j++)
@@ -798,7 +745,8 @@ void VisualizationSceneVector3d::PrepareFlat2()
       }
 
       Array<int> &RefGeoms = (cut_lambda > 0) ?
-         ((sides == 3) ? cut_TriGeoms : cut_QuadGeoms) : RefG->RefGeoms;
+                             ((sides == 3) ? cut_TriGeoms : cut_QuadGeoms) :
+                             RefG->RefGeoms;
       int psides = (cut_lambda > 0) ? 4 : sides;
       DrawPatch(disp_buf, pointmat, values, normals, psides, RefGeoms,
                 minv, maxv, have_normals);

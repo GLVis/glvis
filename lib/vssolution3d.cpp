@@ -488,7 +488,7 @@ static void KeyF4Pressed(GLenum state)
       {
          vssol3d->cut_lambda -= 0.05;
          vssol3d->cut_updated = false;
-     }
+      }
       vssol3d->Prepare();
       SendExposeEvent();
    }
@@ -1674,7 +1674,8 @@ void VisualizationSceneSolution3d::PrepareFlat2()
          }
 
          IntegrationRule &RefPts = (cut_lambda > 0) ?
-             ((sides == 3) ? cut_TriPts : cut_QuadPts) : RefG->RefPts;
+                                   ((sides == 3) ? cut_TriPts : cut_QuadPts) :
+                                   RefG->RefPts;
          GridF -> GetFaceValues (fn, di, RefPts, values, pointmat);
          GetFaceNormals(fn, di, RefPts,normals);
          have_normals = 1;
@@ -1691,7 +1692,8 @@ void VisualizationSceneSolution3d::PrepareFlat2()
             cut_updated = true;
          }
          const IntegrationRule &ir = (cut_lambda > 0) ?
-            ((sides == 3) ? cut_TriPts : cut_QuadPts) : RefG->RefPts;
+                                     ((sides == 3) ? cut_TriPts : cut_QuadPts) :
+                                     RefG->RefPts;
          GridF->GetValues(i, ir, values, pointmat);
          normals.SetSize(3, values.Size());
          mesh->GetElementTransformation(i, &T);
@@ -1746,7 +1748,8 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       // have_normals = have_normals ? 1 : 0;
 
       Array<int> &RefGeoms = (cut_lambda > 0) ?
-         ((sides == 3) ? cut_TriGeoms : cut_QuadGeoms) : RefG->RefGeoms;
+                             ((sides == 3) ? cut_TriGeoms : cut_QuadGeoms) :
+                             RefG->RefGeoms;
       int psides = (cut_lambda > 0) ? 4 : sides;
       DrawPatch(disp_buf, pointmat, values, normals, psides, RefGeoms,
                 minv, maxv, have_normals);
