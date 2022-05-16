@@ -24,6 +24,15 @@ using namespace std;
 thread_local VisualizationSceneSolution3d *vssol3d;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
+// Reference geometries with a cut in the middle, based on subdivision of
+// GLVisGeometryRefiner in 3-4 quads. Updated when cut_lambda is updated, see
+// keys Ctrl+F3/F4. We need these variables because the GLVisGeometryRefiner
+// cashes its RefinedGeometry objects.
+thread_local IntegrationRule cut_QuadPts;
+thread_local Array<int> cut_QuadGeoms;
+thread_local IntegrationRule cut_TriPts;
+thread_local Array<int> cut_TriGeoms;
+
 // Definitions of some more keys
 
 std::string VisualizationSceneSolution3d::GetHelpString() const
@@ -41,6 +50,7 @@ std::string VisualizationSceneSolution3d::GetHelpString() const
       << "| E -  Toggle the elements in the CP |" << endl
       << "| f -  Smooth/Flat/discont. shading  |" << endl
       << "| g -  Toggle background             |" << endl
+      << "| G -  Export to glTF format         |" << endl
       << "| h -  Displays help menu            |" << endl
       << "| i -  Toggle cutting plane          |" << endl
       << "| I -  Toggle cutting plane algorithm|" << endl
@@ -74,6 +84,7 @@ std::string VisualizationSceneSolution3d::GetHelpString() const
       << "| F1 - X window info and keystrokes  |" << endl
       << "| F2 - Update colors, etc.           |" << endl
       << "| F3/F4 - Shrink/Zoom bdr elements   |" << endl
+      << "| Ctrl+F3/F4 - Cut face bdr elements |" << endl
       << "| F5 - Set level lines               |" << endl
       << "| F6 - Palette options               |" << endl
       << "| F7 - Manually set min/max value    |" << endl
@@ -433,49 +444,76 @@ void ToggleMagicKey()
    magic_key_pressed = 1-magic_key_pressed;
 }
 
-static void KeyF3Pressed()
+static void KeyF3Pressed(GLenum state)
 {
-   if (vssol3d->GetShading() == 2)
+   if (state & KMOD_CTRL)
    {
-      if (vssol3d->GetMesh()->Dimension() == 3 && vssol3d->bdrc.Width() == 0)
+      if (vssol3d->cut_lambda <= 0.95)
       {
-         vssol3d->ComputeBdrAttrCenter();
-      }
-      if (vssol3d->GetMesh()->Dimension() == 2 && vssol3d->matc.Width() == 0)
-      {
-         vssol3d->ComputeElemAttrCenter();
-      }
-      vssol3d->shrink *= 0.9;
-      if (magic_key_pressed)
-      {
-         vssol3d -> Scale(1.11111111111111111111111);
+         vssol3d->cut_lambda += 0.05;
+         vssol3d->cut_updated = false;
       }
       vssol3d->Prepare();
-      vssol3d->PrepareLines();
       SendExposeEvent();
+   }
+   else
+   {
+      if (vssol3d->GetShading() == 2)
+      {
+         if (vssol3d->GetMesh()->Dimension() == 3 && vssol3d->bdrc.Width() == 0)
+         {
+            vssol3d->ComputeBdrAttrCenter();
+         }
+         if (vssol3d->GetMesh()->Dimension() == 2 && vssol3d->matc.Width() == 0)
+         {
+            vssol3d->ComputeElemAttrCenter();
+         }
+         vssol3d->shrink *= 0.9;
+         if (magic_key_pressed)
+         {
+            vssol3d -> Scale(1.11111111111111111111111);
+         }
+         SendExposeEvent();
+         vssol3d->Prepare();
+         vssol3d->PrepareLines();
+         SendExposeEvent();
+      }
    }
 }
 
-static void KeyF4Pressed()
+static void KeyF4Pressed(GLenum state)
 {
-   if (vssol3d->GetShading() == 2)
+   if (state & KMOD_CTRL)
    {
-      if (vssol3d->GetMesh()->Dimension() == 3 && vssol3d->bdrc.Width() == 0)
+      if (vssol3d->cut_lambda >= 0.05)
       {
-         vssol3d->ComputeBdrAttrCenter();
-      }
-      if (vssol3d->GetMesh()->Dimension() == 2 && vssol3d->matc.Width() == 0)
-      {
-         vssol3d->ComputeElemAttrCenter();
-      }
-      vssol3d->shrink *= 1.11111111111111111111111;
-      if (magic_key_pressed)
-      {
-         vssol3d -> Scale(0.9);
+         vssol3d->cut_lambda -= 0.05;
+         vssol3d->cut_updated = false;
       }
       vssol3d->Prepare();
-      vssol3d->PrepareLines();
       SendExposeEvent();
+   }
+   else
+   {
+      if (vssol3d->GetShading() == 2)
+      {
+         if (vssol3d->GetMesh()->Dimension() == 3 && vssol3d->bdrc.Width() == 0)
+         {
+            vssol3d->ComputeBdrAttrCenter();
+         }
+         if (vssol3d->GetMesh()->Dimension() == 2 && vssol3d->matc.Width() == 0)
+         {
+            vssol3d->ComputeElemAttrCenter();
+         }
+         vssol3d->shrink *= 1.11111111111111111111111;
+         if (magic_key_pressed)
+         {
+            vssol3d -> Scale(0.9);
+         }
+         vssol3d->Prepare();
+         vssol3d->PrepareLines();
+         SendExposeEvent();
+      }
    }
 }
 
@@ -1429,14 +1467,129 @@ void VisualizationSceneSolution3d::PrepareFlat()
       }
       if (j == 3)
       {
-         DrawTriangle(disp_buf, p, c, minv, maxv);
+         DrawCutTriangle(disp_buf, p, c, minv, maxv);
       }
       else
       {
-         DrawQuad(disp_buf, p, c, minv, maxv);
+         DrawCutQuad(disp_buf, p, c, minv, maxv);
       }
    }
    updated_bufs.emplace_back(&disp_buf);
+}
+
+
+// Cut the reference square by subdividing it into 4 trapezoids with a central
+// square removed: (fl,fl)-(fr,fl)-(fr,fr)-(fl,fr). The input RefG corresponds
+// to the reference square. The value of lambda controls the cut: 0 = no cut, 1
+// = full cut. See keys Ctrl+F3/F4.
+static void CutReferenceSquare(RefinedGeometry *RefG, double lambda,
+                               IntegrationRule &RefPts, Array<int> &RefGeoms)
+{
+   // lambda * vertex + (1-lambda) * center
+   double fl = (1-lambda)/2; // left corner of the cut frame
+   double fr = (1+lambda)/2; // right corner of the cut frame
+
+   int np = RefG->RefPts.Size();
+   RefPts.SetSize(4*np);
+   for (int i = 0; i < np; i++)
+   {
+      double X = RefG->RefPts[i].x;
+      double Y = RefG->RefPts[i].y;
+
+      // First order unit square basis functions
+      double phi3 = (1-X)*Y,     phi2 = X*Y;     // (0,1)-(1,1)
+      double phi0 = (1-X)*(1-Y), phi1 = X*(1-Y); // (0,0)-(1,0)
+
+      // bottom trapezoid: (0,0)-(1,1)-(fr,fl)-(fl,fl)
+      RefPts[i].x      = phi1 + fr * phi2 + fl * phi3;
+      RefPts[i].y      =        fl * phi2 + fl * phi3;
+
+      // right trapezoid: (fr,fl)-(1,0)-(1,1)-(fr,fr)
+      RefPts[i+np].x   = fr * phi0 + phi1 + phi2 + fr * phi3;
+      RefPts[i+np].y   = fl * phi0 +        phi2 + fr * phi3;
+
+      // top trapezoid: (fl,fr)-(fr,fr)-(1,1)-(0,1)
+      RefPts[i+2*np].x = fl * phi0 + fr * phi1 + phi2;
+      RefPts[i+2*np].y = fr * phi0 + fr * phi1 + phi2 + phi3;
+
+      // left trapezoid: (0,0)-(fl,fl)-(fl,fr)-(0,1)
+      RefPts[i+3*np].x = fl * phi1 + fl * phi2;
+      RefPts[i+3*np].y = fl * phi1 + fr * phi2 + phi3;
+
+      RefPts[i].z      = RefG->RefPts[i].z;
+      RefPts[i+np].z   = RefG->RefPts[i].z;
+      RefPts[i+2*np].z = RefG->RefPts[i].z;
+      RefPts[i+3*np].z = RefG->RefPts[i].z;
+   }
+
+   int ne = RefG->RefGeoms.Size();
+   RefGeoms.SetSize(4*ne);
+   for (int i = 0; i < ne; i++)
+   {
+      RefGeoms[i]      = RefG->RefGeoms[i];
+      RefGeoms[i+ne]   = RefG->RefGeoms[i] + np;
+      RefGeoms[i+2*ne] = RefG->RefGeoms[i] + 2*np;
+      RefGeoms[i+3*ne] = RefG->RefGeoms[i] + 3*np;
+   }
+}
+
+// Cut the reference triangle by subdividing it into 3 trapezoids with a central
+// triangle removed: (fl,fl)-(fr,fl)-(fl,fr). Note that the input RefG
+// corresponds to a reference square, not reference triangle. The value of
+// lambda controls the cut: 0 = no cut, 1 = full cut. See keys Ctrl+F3/F4.
+static void CutReferenceTriangle(RefinedGeometry *RefG, double lambda,
+                                 IntegrationRule &RefPts, Array<int> &RefGeoms)
+{
+   // lambda * vertex + (1-lambda) * center
+   double fl = (1-lambda)/3;   // left corner of the cut frame
+   double fr = (1+2*lambda)/3; // right corner of the cut frame
+
+   int np = RefG->RefPts.Size();
+   RefPts.SetSize(3*np);
+   for (int i = 0; i < np; i++)
+   {
+      double X = RefG->RefPts[i].x;
+      double Y = RefG->RefPts[i].y;
+
+      // First order unit square basis functions
+      double phi3 = (1-X)*Y,     phi2 = X*Y;     // (0,1)-(1,1)
+      double phi0 = (1-X)*(1-Y), phi1 = X*(1-Y); // (0,0)-(1,0)
+
+      // bottom trapezoid: (0,0)-(1,0)-(fr,fl)-(fl,fl)
+      RefPts[i].x      = phi1 + fr * phi2 + fl * phi3;
+      RefPts[i].y      =        fl * phi2 + fl * phi3;
+
+      // diagonal trapezoid: (fr,fl)-(1,0)-(0,1)-(fl,fr)
+      RefPts[i+np].x   = fr * phi0 + phi1        + fl * phi3;
+      RefPts[i+np].y   = fl * phi0        + phi2 + fr * phi3;
+
+      // left trapezoid: (0,0)-(fl,fl)-(fl,fr)-(0,1)
+      RefPts[i+2*np].x = fl * phi1 + fl * phi2;
+      RefPts[i+2*np].y = fl * phi1 + fr * phi2 + phi3;
+
+      RefPts[i].z      = RefG->RefPts[i].z;
+      RefPts[i+np].z   = RefG->RefPts[i].z;
+      RefPts[i+2*np].z = RefG->RefPts[i].z;
+   }
+
+   int ne = RefG->RefGeoms.Size();
+   RefGeoms.SetSize(3*ne);
+   for (int i = 0; i < ne; i++)
+   {
+      RefGeoms[i]      = RefG->RefGeoms[i];
+      RefGeoms[i+ne]   = RefG->RefGeoms[i] + np;
+      RefGeoms[i+2*ne] = RefG->RefGeoms[i] + 2*np;
+   }
+}
+
+// Call CutReferenceTriangle and CutReferenceSquare to update the global
+// variables cut_TriPts, cut_TriGeoms, cut_QuadPts, cut_QuadGeoms.
+void CutReferenceElements(int TimesToRefine, double lambda)
+{
+   RefinedGeometry *RefG =
+      GLVisGeometryRefiner.Refine(Geometry::SQUARE, TimesToRefine);
+   CutReferenceTriangle(RefG, lambda, cut_TriPts, cut_TriGeoms);
+   CutReferenceSquare(RefG, lambda, cut_QuadPts, cut_QuadGeoms);
 }
 
 void VisualizationSceneSolution3d::PrepareFlat2()
@@ -1463,6 +1616,19 @@ void VisualizationSceneSolution3d::PrepareFlat2()
    vmax = -vmin;
    for (i = 0; i < nbe; i++)
    {
+      int sides;
+      switch ((dim == 3) ? mesh->GetBdrElementType(i) : mesh->GetElementType(i))
+      {
+         case Element::TRIANGLE:
+            sides = 3;
+            break;
+
+         case Element::QUADRILATERAL:
+         default:
+            sides = 4;
+            break;
+      }
+
       if (dim == 3)
       {
          if (!bdr_attr_to_show[mesh->GetBdrAttribute(i)-1]) { continue; }
@@ -1485,22 +1651,34 @@ void VisualizationSceneSolution3d::PrepareFlat2()
          if (!bdr_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
          mesh->GetElementVertices(i, vertices);
       }
+
       if (cplane == 2 && CheckPositions(vertices)) { continue; }
+
       if (dim == 3)
       {
          mesh -> GetBdrElementFace (i, &fn, &fo);
          RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceBaseGeometry (fn),
                                             TimesToRefine);
-         // di = GridF -> GetFaceValues (fn, 2, RefG->RefPts, values, pointmat);
+         if (!cut_updated)
+         {
+            // Update the cut version of the reference geometries
+            CutReferenceElements(TimesToRefine, cut_lambda);
+            cut_updated = true;
+         }
 
+         // di = GridF -> GetFaceValues (fn, 2, RefG->RefPts, values, pointmat);
          // this assumes the interior boundary faces are properly oriented ...
          di = fo % 2;
          if (di == 1 && !mesh->FaceIsInterior(fn))
          {
             di = 0;
          }
-         GridF -> GetFaceValues (fn, di, RefG->RefPts, values, pointmat);
-         GetFaceNormals(fn, di, RefG->RefPts, normals);
+
+         IntegrationRule &RefPts = (cut_lambda > 0) ?
+                                   ((sides == 3) ? cut_TriPts : cut_QuadPts) :
+                                   RefG->RefPts;
+         GridF -> GetFaceValues (fn, di, RefPts, values, pointmat);
+         GetFaceNormals(fn, di, RefPts,normals);
          have_normals = 1;
          ShrinkPoints(pointmat, i, fn, di);
       }
@@ -1508,7 +1686,15 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       {
          RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
                                             TimesToRefine);
-         const IntegrationRule &ir = RefG->RefPts;
+         if (!cut_updated)
+         {
+            // Update the cut version of the reference geometries
+            CutReferenceElements(TimesToRefine, cut_lambda);
+            cut_updated = true;
+         }
+         const IntegrationRule &ir = (cut_lambda > 0) ?
+                                     ((sides == 3) ? cut_TriPts : cut_QuadPts) :
+                                     RefG->RefPts;
          GridF->GetValues(i, ir, values, pointmat);
          normals.SetSize(3, values.Size());
          mesh->GetElementTransformation(i, &T);
@@ -1527,19 +1713,6 @@ void VisualizationSceneSolution3d::PrepareFlat2()
 
       vmin = fmin(vmin, values.Min());
       vmax = fmax(vmax, values.Max());
-
-      int sides;
-      switch ((dim == 3) ? mesh->GetBdrElementType(i) : mesh->GetElementType(i))
-      {
-         case Element::TRIANGLE:
-            sides = 3;
-            break;
-
-         case Element::QUADRILATERAL:
-         default:
-            sides = 4;
-            break;
-      }
 
       // compute an average normal direction for the current face
       if (sc != 0.0)
@@ -1574,7 +1747,12 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       // Comment the above lines and use the below version in order to remove
       // the 3D dark artifacts (indicating wrong boundary element orientation)
       // have_normals = have_normals ? 1 : 0;
-      DrawPatch(disp_buf, pointmat, values, normals, sides, RefG->RefGeoms,
+
+      Array<int> &RefGeoms = (cut_lambda > 0) ?
+                             ((sides == 3) ? cut_TriGeoms : cut_QuadGeoms) :
+                             RefG->RefGeoms;
+      int psides = (cut_lambda > 0) ? 4 : sides;
+      DrawPatch(disp_buf, pointmat, values, normals, psides, RefGeoms,
                 minv, maxv, have_normals);
    }
    updated_bufs.emplace_back(&disp_buf);
@@ -2695,11 +2873,11 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
 
             if (nodes.Size() == 3)
             {
-               DrawTriangle(cplane_buf, p, c, minv, maxv);
+               DrawCutTriangle(cplane_buf, p, c, minv, maxv);
             }
             else
             {
-               DrawQuad(cplane_buf, p, c, minv, maxv);
+               DrawCutQuad(cplane_buf, p, c, minv, maxv);
             }
          }
          else // shading == 2

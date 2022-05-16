@@ -9,19 +9,24 @@
                              https://glvis.org
 
 
-Version 4.2 released on April 21, 2022
+Version 4.2 released on May 21, 2022
 ======================================
 
 - Added 3D scene export to glTF format (https://www.khronos.org/gltf) which is
   bound to the key 'G'. This can be used to import GLVis scenes for rendering in
   Blender, as well as for augmented reality, see https://modelviewer.dev/editor.
 
+- Added the option to cut a portion of the interiors of 3D faces to expose more
+  of the mesh. Useful as an alternative to transparency. See keys Ctrl+F3/F4.
+
 - Added a third mode to keys 'b'/'B' in 2D to display the mesh boundary colored
   by boundary element attribute.
 
-- In 2D, save and restore solution's value range when using keys 'e' and 'b'.
+- In 2D, the solution's value range is saved/restored when using keys 'e', 'b'.
 
 - Support for visualization of pyramid-shaped elements.
+
+- An edge numbering option is now available in 2D.
 
 - Various other bugfixes and improvements.
 

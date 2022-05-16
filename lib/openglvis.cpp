@@ -126,6 +126,9 @@ VisualizationScene::VisualizationScene()
    ViewCenterX = 0.0;
    ViewCenterY = 0.0;
 
+   cut_lambda = 0.0;
+   cut_updated = false;
+
    background = BG_WHITE;
    GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
    _use_cust_l0_pos = false;
@@ -136,6 +139,113 @@ VisualizationScene::VisualizationScene()
 }
 
 VisualizationScene::~VisualizationScene() {}
+
+
+void VisualizationScene
+:: DrawCutTriangle(gl3::GlDrawable& buff,
+                   const double (&p)[4][3], const double (&cv)[4],
+                   const double minv, const double maxv)
+{
+   // element center
+   double c[3];
+   c[0] = c[1] = c[2] = 0.0;
+   for (int j = 0; j < 3; j++)
+   {
+      c[0] += p[j][0]; c[1] += p[j][1]; c[2] += p[j][2];
+   }
+   c[0] /= 3.0; c[1] /= 3.0; c[2] /= 3.0;
+
+   double l = cut_lambda;
+   double q[3][3];
+
+   for (int j = 0; j < 3; j++)
+   {
+      q[j][0] = l*p[j][0] + (1-l)*c[0];
+      q[j][1] = l*p[j][1] + (1-l)*c[1];
+      q[j][2] = l*p[j][2] + (1-l)*c[2];
+   }
+
+   double d[4][3];
+
+   double cvv[4];
+
+   // bottom, diagonal and left trapezoids
+
+   for (int k = 0; k < 3; k++)
+   {
+      d[0][k] = p[0][k]; d[1][k] = p[1][k]; d[2][k] = q[1][k]; d[3][k] = q[0][k];
+   }
+   DrawQuad(buff, d, cvv, minv, maxv);
+
+   for (int k = 0; k < 3; k++)
+   {
+      d[0][k] = p[1][k]; d[1][k] = p[2][k]; d[2][k] = q[2][k]; d[3][k] = q[1][k];
+   }
+   DrawQuad(buff, d, cvv, minv, maxv);
+
+   for (int k = 0; k < 3; k++)
+   {
+      d[0][k] = p[2][k]; d[1][k] = p[0][k]; d[2][k] = q[0][k]; d[3][k] = q[2][k];
+   }
+   DrawQuad(buff, d, cvv, minv, maxv);
+}
+
+
+void VisualizationScene
+:: DrawCutQuad(gl3::GlDrawable& buff,
+               const double (&p)[4][3], const double (&cv)[4],
+               const double minv, const double maxv)
+{
+   // element center
+   double c[3];
+   c[0] = c[1] = c[2] = 0.0;
+   for (int j = 0; j < 4; j++)
+   {
+      c[0] += p[j][0]; c[1] += p[j][1]; c[2] += p[j][2];
+   }
+   c[0] /= 4.0; c[1] /= 4.0; c[2] /= 4.0;
+
+   double l = cut_lambda;
+   double q[4][3];
+
+   for (int j = 0; j < 4; j++)
+   {
+      q[j][0] = l*p[j][0] + (1-l)*c[0];
+      q[j][1] = l*p[j][1] + (1-l)*c[1];
+      q[j][2] = l*p[j][2] + (1-l)*c[2];
+   }
+
+   double d[4][3];
+
+   double cvv[4];
+
+   // bottom, right, top and left trapezoids
+
+   for (int k = 0; k < 3; k++)
+   {
+      d[0][k] = p[0][k]; d[1][k] = p[1][k]; d[2][k] = q[1][k]; d[3][k] = q[0][k];
+   }
+   DrawQuad(buff, d, cvv, minv, maxv);
+
+   for (int k = 0; k < 3; k++)
+   {
+      d[0][k] = p[1][k]; d[1][k] = p[2][k]; d[2][k] = q[2][k]; d[3][k] = q[1][k];
+   }
+   DrawQuad(buff, d, cvv, minv, maxv);
+
+   for (int k = 0; k < 3; k++)
+   {
+      d[0][k] = p[2][k]; d[1][k] = p[3][k]; d[2][k] = q[3][k]; d[3][k] = q[2][k];
+   }
+   DrawQuad(buff, d, cvv, minv, maxv);
+
+   for (int k = 0; k < 3; k++)
+   {
+      d[0][k] = p[3][k]; d[1][k] = p[0][k]; d[2][k] = q[0][k]; d[3][k] = q[3][k];
+   }
+   DrawQuad(buff, d, cvv, minv, maxv);
+}
+
 
 void VisualizationScene
 ::DrawTriangle(gl3::GlDrawable& buff,

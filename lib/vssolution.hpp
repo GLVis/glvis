@@ -43,6 +43,7 @@ protected:
 
    gl3::GlDrawable e_nums_buf;
    gl3::GlDrawable v_nums_buf;
+   gl3::GlDrawable f_nums_buf;
 
    gl3::GlDrawable lcurve_buf;
    gl3::GlDrawable line_buf;
@@ -133,6 +134,7 @@ public:
    void PrepareVertexNumbering();
    void PrepareVertexNumbering1();
    void PrepareVertexNumbering2();
+   void PrepareEdgeNumbering();
 
    void PrepareCP();
 
@@ -153,8 +155,8 @@ public:
    //           3 - no arrows (black), 4 - with arrows (black)
    void ToggleDrawOrdering() { draworder = (draworder+1)%5; }
 
-   // 0 - none, 1 - elements, 2 - vertices
-   void ToggleDrawNumberings() { drawnums = (drawnums+1)%3; }
+   // 0 - none, 1 - elements, 2 - edges, 3 - vertices
+   void ToggleDrawNumberings() { drawnums = (drawnums+1)%4; }
 
    virtual void SetShading(int, bool);
    void ToggleShading();
