@@ -9,8 +9,8 @@
                              https://glvis.org
 
 
-Version 4.2 released on May 21, 2022
-======================================
+Version 4.2 released on May 20, 2022
+====================================
 
 - Added 3D scene export to glTF format (https://www.khronos.org/gltf) which is
   bound to the key 'G'. This can be used to import GLVis scenes for rendering in

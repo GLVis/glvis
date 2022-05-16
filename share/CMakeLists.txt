@@ -14,8 +14,8 @@ if(NOT WIN32)
 add_custom_command(
     OUTPUT logo.rgba.bin.cpp
     COMMAND ${CMAKE_COMMAND} -E copy
-	    ${CMAKE_CURRENT_SOURCE_DIR}/logo.rgba
-	    ${CMAKE_CURRENT_BINARY_DIR}/logo.rgba
+            ${CMAKE_CURRENT_SOURCE_DIR}/logo.rgba
+            ${CMAKE_CURRENT_BINARY_DIR}/logo.rgba
     COMMAND xxd -i logo.rgba > logo.rgba.bin.cpp
     DEPENDS logo.rgba
     COMMENT "Generating logo.rgba.bin.o")

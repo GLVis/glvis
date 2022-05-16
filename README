@@ -6,7 +6,7 @@
                 _/    _/  _/        _/  _/    _/      _/_/
                  _/_/_/  _/_/_/_/    _/      _/  _/_/_/
 
-                              http://glvis.org
+                             https://glvis.org
 
 GLVis is an OpenGL tool for visualization of finite element meshes and
 functions. It is a multiplatform OpenGL application that can be built on
@@ -69,6 +69,8 @@ p/P Cycle forward/backwards through color palettes (lots of options, use F6 for
 t - Cycle materials and lights (5 states)
 l - Turns on/off the light
 g - Toggle background color (white -> black)
+
+G - 3D scene export to glTF format, see https://www.khronos.org/gltf
 
 a - Toggle the bounding box axes
     The options are: -> none
@@ -174,6 +176,7 @@ k/K - Adjust the transparency level.
 
 F3/F4 - Shrink/Zoom each element towards its center, to better visualize the
         different element shapes
+Ctrl+F3/F4 - Cut the interiors of 3D faces to expose more of the mesh
 F5 - Change the range and number of the level lines
 F6 - Palette menu (negative repeat number flips the palette)
 F7 - Change the minimum and maximum values
