@@ -12,6 +12,9 @@
 Version 4.1.1 (development)
 ===========================
 
+- Added the option to cut a portion of the interiors of 3D faces to expose more
+  of the mesh. Useful as an alternative to transparency. See keys Ctrl+F3/F4.
+
 - Added 3D scene export to glTF format (https://www.khronos.org/gltf) which is
   bound to the key 'G'. This can be used to import GLVis scenes for rendering in
   Blender, as well as for augmented reality, see https://modelviewer.dev/editor.

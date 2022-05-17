@@ -88,7 +88,6 @@ protected:
    int light_mat_idx;
    bool use_light;
 
-
    gl3::RenderParams GetMeshDrawParams();
    glm::mat4 GetModelViewMtx();
 
@@ -125,6 +124,20 @@ protected:
    void DrawQuad(gl3::GlDrawable& buff,
                  const double (&pts)[4][3], const double (&cv)[4],
                  const double minv, const double maxv);
+
+   /// Draw a 3D triangle in physical space with a central triangle removed. The
+   /// cut is controlled by value of cut_lambda. See keys Ctrl+F3/F4. Similar to
+   /// CutReferenceTriangle in lib/vssolution3d.cpp.
+   void DrawCutTriangle(gl3::GlDrawable& buff,
+                        const double (&pts)[4][3], const double (&cv)[4],
+                        const double minv, const double maxv);
+
+   /// Draw a 3D quad in physical space with a central square removed. The cut
+   /// is controlled by the value of cut_lambda. See keys Ctrl+F3/F4. Similar to
+   /// CutReferenceSquare in lib/vssolution3d.cpp.
+   void DrawCutQuad(gl3::GlDrawable& buff,
+                    const double (&pts)[4][3], const double (&cv)[4],
+                    const double minv, const double maxv);
 
    void DrawPatch(gl3::GlDrawable& buff, const mfem::DenseMatrix &pts,
                   mfem::Vector &vals, mfem::DenseMatrix &normals,
@@ -166,6 +179,11 @@ public:
 
    /// Bounding box.
    double x[2], y[2], z[2];
+
+   /// Amount of face cutting with keys Ctrl-F3/F4 (0: no cut, 1: cut to edges)
+   double cut_lambda;
+   /// Have the reference geometries been updated for the cut?
+   bool cut_updated;
 
    glm::mat4 rotmat;
    glm::mat4 translmat;
