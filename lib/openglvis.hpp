@@ -125,14 +125,16 @@ protected:
                  const double (&pts)[4][3], const double (&cv)[4],
                  const double minv, const double maxv);
 
-   /// Draw a 3D triangle with a central triangle removed. The cut is controlled
-   /// by the value of cut_lambda. See keys Ctrl+F3/F4.
+   /// Draw a 3D triangle in physical space with a central triangle removed. The
+   /// cut is controlled by value of cut_lambda. See keys Ctrl+F3/F4. Similar to
+   /// CutReferenceTriangle in lib/vssolution3d.cpp.
    void DrawCutTriangle(gl3::GlDrawable& buff,
                         const double (&pts)[4][3], const double (&cv)[4],
                         const double minv, const double maxv);
 
-   /// Draw a 3D quad with a central square removed. The cut is controlled by
-   /// the value of cut_lambda. See keys Ctrl+F3/F4.
+   /// Draw a 3D quad in physical space with a central square removed. The cut
+   /// is controlled by the value of cut_lambda. See keys Ctrl+F3/F4. Similar to
+   /// CutReferenceSquare in lib/vssolution3d.cpp.
    void DrawCutQuad(gl3::GlDrawable& buff,
                     const double (&pts)[4][3], const double (&cv)[4],
                     const double minv, const double maxv);

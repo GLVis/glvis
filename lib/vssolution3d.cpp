@@ -453,6 +453,10 @@ static void KeyF3Pressed(GLenum state)
          vssol3d->cut_lambda += 0.05;
          vssol3d->cut_updated = false;
       }
+      if (fabs(vssol3d->cut_lambda-1.0) < 1e-12) // snap to 1
+      {
+         vssol3d->cut_lambda = 1.0;
+      }
       vssol3d->Prepare();
       SendExposeEvent();
    }
@@ -489,6 +493,10 @@ static void KeyF4Pressed(GLenum state)
       {
          vssol3d->cut_lambda -= 0.05;
          vssol3d->cut_updated = false;
+      }
+      if (fabs(vssol3d->cut_lambda-0.0) < 1e-12) // snap to 0
+      {
+         vssol3d->cut_lambda = 0.0;
       }
       vssol3d->Prepare();
       SendExposeEvent();
@@ -1467,11 +1475,25 @@ void VisualizationSceneSolution3d::PrepareFlat()
       }
       if (j == 3)
       {
-         DrawCutTriangle(disp_buf, p, c, minv, maxv);
+         if (cut_lambda > 0)
+         {
+            DrawCutTriangle(disp_buf, p, c, minv, maxv);
+         }
+         else
+         {
+            DrawTriangle(disp_buf, p, c, minv, maxv);
+         }
       }
       else
       {
-         DrawCutQuad(disp_buf, p, c, minv, maxv);
+         if (cut_lambda > 0)
+         {
+            DrawCutQuad(disp_buf, p, c, minv, maxv);
+         }
+         else
+         {
+            DrawQuad(disp_buf, p, c, minv, maxv);
+         }
       }
    }
    updated_bufs.emplace_back(&disp_buf);
@@ -1486,8 +1508,8 @@ static void CutReferenceSquare(RefinedGeometry *RefG, double lambda,
                                IntegrationRule &RefPts, Array<int> &RefGeoms)
 {
    // lambda * vertex + (1-lambda) * center
-   double fl = (1-lambda)/2; // left corner of the cut frame
-   double fr = (1+lambda)/2; // right corner of the cut frame
+   double fl = (1.0-lambda)/2.0; // left corner of the cut frame
+   double fr = (1.0+lambda)/2.0; // right corner of the cut frame
 
    int np = RefG->RefPts.Size();
    RefPts.SetSize(4*np);
@@ -1497,8 +1519,8 @@ static void CutReferenceSquare(RefinedGeometry *RefG, double lambda,
       double Y = RefG->RefPts[i].y;
 
       // First order unit square basis functions
-      double phi3 = (1-X)*Y,     phi2 = X*Y;     // (0,1)-(1,1)
-      double phi0 = (1-X)*(1-Y), phi1 = X*(1-Y); // (0,0)-(1,0)
+      double phi3 = (1.0-X)*Y,       phi2 = X*Y;       // (0,1)-(1,1)
+      double phi0 = (1.0-X)*(1.0-Y), phi1 = X*(1.0-Y); // (0,0)-(1,0)
 
       // bottom trapezoid: (0,0)-(1,1)-(fr,fl)-(fl,fl)
       RefPts[i].x      = phi1 + fr * phi2 + fl * phi3;
@@ -1541,8 +1563,8 @@ static void CutReferenceTriangle(RefinedGeometry *RefG, double lambda,
                                  IntegrationRule &RefPts, Array<int> &RefGeoms)
 {
    // lambda * vertex + (1-lambda) * center
-   double fl = (1-lambda)/3;   // left corner of the cut frame
-   double fr = (1+2*lambda)/3; // right corner of the cut frame
+   double fl = (1.0-lambda)/3.0;     // left corner of the cut frame
+   double fr = (1.0+2.0*lambda)/3.0; // right corner of the cut frame
 
    int np = RefG->RefPts.Size();
    RefPts.SetSize(3*np);
@@ -1552,8 +1574,8 @@ static void CutReferenceTriangle(RefinedGeometry *RefG, double lambda,
       double Y = RefG->RefPts[i].y;
 
       // First order unit square basis functions
-      double phi3 = (1-X)*Y,     phi2 = X*Y;     // (0,1)-(1,1)
-      double phi0 = (1-X)*(1-Y), phi1 = X*(1-Y); // (0,0)-(1,0)
+      double phi3 = (1.0-X)*Y,       phi2 = X*Y;       // (0,1)-(1,1)
+      double phi0 = (1.0-X)*(1.0-Y), phi1 = X*(1.0-Y); // (0,0)-(1,0)
 
       // bottom trapezoid: (0,0)-(1,0)-(fr,fl)-(fl,fl)
       RefPts[i].x      = phi1 + fr * phi2 + fl * phi3;
@@ -2873,11 +2895,11 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
 
             if (nodes.Size() == 3)
             {
-               DrawCutTriangle(cplane_buf, p, c, minv, maxv);
+               DrawTriangle(cplane_buf, p, c, minv, maxv);
             }
             else
             {
-               DrawCutQuad(cplane_buf, p, c, minv, maxv);
+               DrawQuad(cplane_buf, p, c, minv, maxv);
             }
          }
          else // shading == 2

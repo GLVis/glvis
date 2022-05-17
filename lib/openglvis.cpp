@@ -158,31 +158,32 @@ void VisualizationScene
    double l = cut_lambda;
    double q[3][3];
 
+   // corners of the cut frame
    for (int j = 0; j < 3; j++)
    {
-      q[j][0] = l*p[j][0] + (1-l)*c[0];
-      q[j][1] = l*p[j][1] + (1-l)*c[1];
-      q[j][2] = l*p[j][2] + (1-l)*c[2];
+      q[j][0] = l*p[j][0] + (1.0-l)*c[0];
+      q[j][1] = l*p[j][1] + (1.0-l)*c[1];
+      q[j][2] = l*p[j][2] + (1.0-l)*c[2];
    }
 
    double d[4][3];
-
    double cvv[4];
 
-   // bottom, diagonal and left trapezoids
-
+   // bottom trapezoid
    for (int k = 0; k < 3; k++)
    {
       d[0][k] = p[0][k]; d[1][k] = p[1][k]; d[2][k] = q[1][k]; d[3][k] = q[0][k];
    }
    DrawQuad(buff, d, cvv, minv, maxv);
 
+   // diagonal trapezoid
    for (int k = 0; k < 3; k++)
    {
       d[0][k] = p[1][k]; d[1][k] = p[2][k]; d[2][k] = q[2][k]; d[3][k] = q[1][k];
    }
    DrawQuad(buff, d, cvv, minv, maxv);
 
+   // left trapezoid
    for (int k = 0; k < 3; k++)
    {
       d[0][k] = p[2][k]; d[1][k] = p[0][k]; d[2][k] = q[0][k]; d[3][k] = q[2][k];
@@ -208,37 +209,39 @@ void VisualizationScene
    double l = cut_lambda;
    double q[4][3];
 
+   // corners of the cut frame
    for (int j = 0; j < 4; j++)
    {
-      q[j][0] = l*p[j][0] + (1-l)*c[0];
-      q[j][1] = l*p[j][1] + (1-l)*c[1];
-      q[j][2] = l*p[j][2] + (1-l)*c[2];
+      q[j][0] = l*p[j][0] + (1.0-l)*c[0];
+      q[j][1] = l*p[j][1] + (1.0-l)*c[1];
+      q[j][2] = l*p[j][2] + (1.0-l)*c[2];
    }
 
    double d[4][3];
-
    double cvv[4];
 
-   // bottom, right, top and left trapezoids
-
+   // bottom trapezoid
    for (int k = 0; k < 3; k++)
    {
       d[0][k] = p[0][k]; d[1][k] = p[1][k]; d[2][k] = q[1][k]; d[3][k] = q[0][k];
    }
    DrawQuad(buff, d, cvv, minv, maxv);
 
+   // right trapezoid
    for (int k = 0; k < 3; k++)
    {
       d[0][k] = p[1][k]; d[1][k] = p[2][k]; d[2][k] = q[2][k]; d[3][k] = q[1][k];
    }
    DrawQuad(buff, d, cvv, minv, maxv);
 
+   // top trapezoid
    for (int k = 0; k < 3; k++)
    {
       d[0][k] = p[2][k]; d[1][k] = p[3][k]; d[2][k] = q[3][k]; d[3][k] = q[2][k];
    }
    DrawQuad(buff, d, cvv, minv, maxv);
 
+   // left trapezoid
    for (int k = 0; k < 3; k++)
    {
       d[0][k] = p[3][k]; d[1][k] = p[0][k]; d[2][k] = q[0][k]; d[3][k] = q[3][k];
