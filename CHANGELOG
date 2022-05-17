@@ -28,6 +28,8 @@ Version 4.2 released on May 20, 2022
 
 - An edge numbering option is now available in 2D.
 
+- The command-line option -mac was renamed to -save.
+
 - Various other bugfixes and improvements.
 
 
