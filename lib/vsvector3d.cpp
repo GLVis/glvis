@@ -560,11 +560,25 @@ void VisualizationSceneVector3d::PrepareFlat()
       }
       if (j == 3)
       {
-         DrawTriangle(disp_buf, p, c, minv, maxv);
+         if (cut_lambda > 0)
+         {
+            DrawCutTriangle(disp_buf, p, c, minv, maxv);
+         }
+         else
+         {
+            DrawTriangle(disp_buf, p, c, minv, maxv);
+         }
       }
       else
       {
-         DrawQuad(disp_buf, p, c, minv, maxv);
+         if (cut_lambda > 0)
+         {
+            DrawCutQuad(disp_buf, p, c, minv, maxv);
+         }
+         else
+         {
+            DrawQuad(disp_buf, p, c, minv, maxv);
+         }
       }
    }
    updated_bufs.emplace_back(&disp_buf);
