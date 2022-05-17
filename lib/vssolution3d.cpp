@@ -2894,11 +2894,11 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
 
             if (nodes.Size() == 3)
             {
-               DrawCutTriangle(cplane_buf, p, c, minv, maxv);
+               DrawTriangle(cplane_buf, p, c, minv, maxv);
             }
             else
             {
-               DrawCutQuad(cplane_buf, p, c, minv, maxv);
+               DrawQuad(cplane_buf, p, c, minv, maxv);
             }
          }
          else // shading == 2
