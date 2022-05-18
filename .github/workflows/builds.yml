@@ -83,16 +83,15 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.HYPRE_TOP_DIR }}
-        # TODO: update to new tag
-        key: ${{ runner.os }}-build-${{ env.HYPRE_TOP_DIR }}-branch
+        key: ${{ runner.os }}-build-${{ env.HYPRE_TOP_DIR }}-v2.2
 
     - name: build hypre
       if: steps.hypre-cache.outputs.cache-hit != 'true' && matrix.mpi == 'par'
-      # TODO: change this when merged upstream
-      uses: kanye-quest/mfem-gh-actions/build-hypre@master
+      uses: mfem/github-actions/build-hypre@v2.2
       with:
         archive: ${{ env.HYPRE_ARCHIVE }}
         dir: ${{ env.HYPRE_TOP_DIR }}
+        build-system: make
 
     # Get Metis through cache, or build it.
     # Install will only run on cache miss.
@@ -102,13 +101,11 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.METIS_TOP_DIR }}
-        # TODO: update to new tag
-        key: ${{ runner.os }}-build-${{ env.METIS_TOP_DIR }}-branch
+        key: ${{ runner.os }}-build-${{ env.METIS_TOP_DIR }}-v2.2
 
     - name: build metis
       if: steps.metis-cache.outputs.cache-hit != 'true' && matrix.mpi == 'par'
-      # TODO: change this when merged upstream
-      uses: kanye-quest/mfem-gh-actions/build-metis@master
+      uses: mfem/github-actions/build-metis@v2.2
       with:
         archive: ${{ env.METIS_ARCHIVE }}
         dir: ${{ env.METIS_TOP_DIR }}
@@ -134,7 +131,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.MFEM_TOP_DIR }}
-        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-${{ matrix.build-system}}-v1
+        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-${{ matrix.build-system}}-v2.2
 
     # We are using the defaults of the MFEM action here, which is to use master
     # branch. There is an implicit assumption here that mfem master hasn't
@@ -143,8 +140,7 @@ jobs:
     # superfluous.
     - name: build mfem
       if: steps.cache-mfem.outputs.cache-hit != 'true'
-      # TODO: change this when merged upstream
-      uses: kanye-quest/mfem-gh-actions/build-mfem@master
+      uses: mfem/github-actions/build-mfem@v2.2
       with:
         os: ${{ matrix.os }}
         target: ${{ matrix.target }}
