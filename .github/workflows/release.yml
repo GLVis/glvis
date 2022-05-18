@@ -19,7 +19,6 @@ on:
       - v*
     branches:
       - master
-      - windows-ci-dev #TODO: remove before merge
 
 env:
   HYPRE_ARCHIVE: v2.19.0.tar.gz
