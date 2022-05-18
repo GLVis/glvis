@@ -651,7 +651,7 @@ int VisualizationSceneVector::GetRefinedValuesAndNormals(
 
 void VisualizationSceneVector::PrepareDisplacedMesh()
 {
-   int i, j, ne = mesh -> GetNE();
+   int ne = mesh -> GetNE();
    DenseMatrix pointmat;
    Array<int> vertices;
    double zc = 0.5*(z[0]+z[1]);
@@ -661,13 +661,13 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
    gl3::GlBuilder build = displine_buf.createBuilder();
    if (shading != 2)
    {
-      for (i = 0; i < ne; i++)
+      for (int i = 0; i < ne; i++)
       {
          build.glBegin(GL_LINE_LOOP);
          mesh->GetPointMatrix (i, pointmat);
          mesh->GetElementVertices (i, vertices);
 
-         for (j = 0; j < pointmat.Size(); j++)
+         for (int j = 0; j < pointmat.Size(); j++)
          {
             build.glVertex3d (
                pointmat.Elem(0, j)+
@@ -684,7 +684,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
       double sc = double(ianim)/ianimmax;
       DenseMatrix vvals, pm;
 
-      for (i = 0; i < ne; i++)
+      for (int i = 0; i < ne; i++)
       {
          RefinedGeometry *RefG =
             GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
@@ -717,7 +717,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
       x_min = y_min = numeric_limits<double>::infinity();
       x_max = y_max = -x_min;
 
-      for (i = 0; i < ne; i++)
+      for (int i = 0; i < ne; i++)
       {
          RefinedGeometry *RefG =
             GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
@@ -770,7 +770,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
          }
          levels_x.SetSize(nx+1);
          levels_y.SetSize(ny+1);
-         for (i = 0; i <= nx; i++)
+         for (int i = 0; i <= nx; i++)
          {
             double a = double(i) / nx;
             levels_x[i] = (1. - a) * x_min + a * x_max;
@@ -778,7 +778,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
          double offs = 1e-3 / nx;
          levels_x[0]  = (1. - offs) * x_min + offs * x_max;
          levels_x[nx] = offs * x_min + (1. - offs) * x_max;
-         for (i = 0; i <= ny; i++)
+         for (int i = 0; i <= ny; i++)
          {
             double a = double(i) / ny;
             levels_y[i] = (1. - a) * y_min + a * y_max;
@@ -788,7 +788,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
          levels_y[ny] = offs * y_min + (1. - offs) * y_max;
       }
 
-      for (i = 0; i < ne; i++)
+      for (int i = 0; i < ne; i++)
       {
          RefinedGeometry *RefG =
             GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),

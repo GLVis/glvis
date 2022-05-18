@@ -1441,7 +1441,7 @@ void VisualizationSceneSolution3d::PrepareFlat()
 
 void VisualizationSceneSolution3d::PrepareFlat2()
 {
-   int i, k, fn, fo, di, have_normals;
+   int fn, fo, di, have_normals;
    double bbox_diam, vmin, vmax;
    disp_buf.clear();
 
@@ -1461,7 +1461,7 @@ void VisualizationSceneSolution3d::PrepareFlat2()
 
    vmin = numeric_limits<double>::infinity();
    vmax = -vmin;
-   for (i = 0; i < nbe; i++)
+   for (int i = 0; i < nbe; i++)
    {
       if (dim == 3)
       {
@@ -1544,23 +1544,23 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       // compute an average normal direction for the current face
       if (sc != 0.0)
       {
-         for (int i = 0; i < 3; i++)
+         for (int j = 0; j < 3; j++)
          {
-            norm[i] = 0.0;
+            norm[j] = 0.0;
          }
          Normalize(normals);
-         for (k = 0; k < normals.Width(); k++)
+         for (int k = 0; k < normals.Width(); k++)
             for (int j = 0; j < 3; j++)
             {
                norm[j] += normals(j, k);
             }
          Normalize(norm);
-         for (int i = 0; i < pointmat.Width(); i++)
+         for (int k = 0; k < pointmat.Width(); k++)
          {
-            double val = sc * (values(i) - minv) / (maxv - minv);
+            double val = sc * (values(k) - minv) / (maxv - minv);
             for (int j = 0; j < 3; j++)
             {
-               pointmat(j, i) += val * norm[j];
+               pointmat(j, k) += val * norm[j];
             }
          }
          have_normals = 0;
@@ -1585,7 +1585,7 @@ void VisualizationSceneSolution3d::PrepareFlat2()
 
 void VisualizationSceneSolution3d::Prepare()
 {
-   int i,j;
+   int j;
 
    if (!drawelems)
    {
@@ -1657,7 +1657,7 @@ void VisualizationSceneSolution3d::Prepare()
       const int nelem = ba_to_be.RowSize(attr);
       const int *elem = ba_to_be.GetRow(attr);
 
-      for (i = 0; i < nelem; i++)
+      for (int i = 0; i < nelem; i++)
       {
          if (dim == 3)
          {
@@ -1672,7 +1672,7 @@ void VisualizationSceneSolution3d::Prepare()
             nx(vertices[j]) = ny(vertices[j]) = nz(vertices[j]) = 0.;
          }
       }
-      for (i = 0; i < nelem; i++)
+      for (int i = 0; i < nelem; i++)
       {
          if (dim == 3)
          {
@@ -1700,7 +1700,7 @@ void VisualizationSceneSolution3d::Prepare()
             }
       }
 
-      for (i = 0; i < nelem; i++)
+      for (int i = 0; i < nelem; i++)
       {
          if (dim == 3)
          {
@@ -1851,7 +1851,7 @@ void VisualizationSceneSolution3d::PrepareLines()
 
 void VisualizationSceneSolution3d::PrepareLines2()
 {
-   int i, j, k, fn, fo, di = 0;
+   int fn, fo, di = 0;
    double bbox_diam;
 
    line_buf.clear();
@@ -1869,7 +1869,7 @@ void VisualizationSceneSolution3d::PrepareLines2()
                       (z[1]-z[0])*(z[1]-z[0]) );
    double sc = FaceShiftScale * bbox_diam;
 
-   for (i = 0; i < nbe; i++)
+   for (int i = 0; i < nbe; i++)
    {
       if (dim == 3)
       {
@@ -1939,11 +1939,11 @@ void VisualizationSceneSolution3d::PrepareLines2()
             }
          }
          double norm[3];
-         for (int i = 0; i < 3; i++)
+         for (int j = 0; j < 3; j++)
          {
-            norm[i] = 0.0;
+            norm[j] = 0.0;
          }
-         for (k = 0; k < normals.Width(); k++)
+         for (int k = 0; k < normals.Width(); k++)
          {
             for (int j = 0; j < 3; j++)
             {
@@ -1955,16 +1955,16 @@ void VisualizationSceneSolution3d::PrepareLines2()
          {
             len = 1.0 / len;
          }
-         for (int i = 0; i < 3; i++)
+         for (int j = 0; j < 3; j++)
          {
-            norm[i] *= len;
+            norm[j] *= len;
          }
-         for (int i = 0; i < pointmat.Width(); i++)
+         for (int k = 0; k < pointmat.Width(); k++)
          {
-            double val = sc * (values(i) - minv) / (maxv - minv);
+            double val = sc * (values(k) - minv) / (maxv - minv);
             for (int j = 0; j < 3; j++)
             {
-               pointmat(j, i) += val * norm[j];
+               pointmat(j, k) += val * norm[j];
             }
          }
       }
@@ -1974,7 +1974,7 @@ void VisualizationSceneSolution3d::PrepareLines2()
          Array<int> &REdges = RefG->RefEdges;
 
          line.glBegin(GL_LINES);
-         for (k = 0; k < REdges.Size(); k++)
+         for (int k = 0; k < REdges.Size(); k++)
          {
             line.glVertex3dv(&pointmat(0, REdges[k]));
          }
@@ -1996,11 +1996,11 @@ void VisualizationSceneSolution3d::PrepareLines2()
                sides = 4;
                break;
          }
-         for (k = 0; k < RefG->RefGeoms.Size()/sides; k++)
+         for (int k = 0; k < RefG->RefGeoms.Size()/sides; k++)
          {
             int *RG = &(RefG->RefGeoms[k*sides]);
 
-            for (j = 0; j < sides; j++)
+            for (int j = 0; j < sides; j++)
             {
                for (int ii = 0; ii < 3; ii++)
                {
@@ -2258,7 +2258,7 @@ static void CutElement(const Geometry::Type geom, const int *vert_flags,
 
 void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
 {
-   int i, j, k, m, n, n2;
+   int m, n, n2;
    int flag[8], cut_edges[6];
    const int *ev;
    double t, point[6][4], norm[3];
@@ -2266,11 +2266,11 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
    DenseMatrix pointmat;
 
    Array<int> nodes;
-   for (i = 0; i < mesh -> GetNE(); i++)
+   for (int i = 0; i < mesh -> GetNE(); i++)
    {
       n = n2 = 0; // n will be the number of intersection points
       mesh -> GetElementVertices(i, nodes);
-      for (j = 0; j < nodes.Size(); j++)
+      for (int j = 0; j < nodes.Size(); j++)
       {
          if (node_pos[nodes[j]] >= 0.0)
          {
@@ -2296,7 +2296,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
             const IntegrationRule *ir;
             ir = Geometries.GetVertices (mesh -> GetElementBaseGeometry(i));
             pointmat.SetSize (3, ir -> GetNPoints());
-            for (j = 0; j < ir -> GetNPoints(); j++)
+            for (int j = 0; j < ir -> GetNPoints(); j++)
             {
                const IntegrationPoint &ip = ir -> IntPoint (j);
                pointmat(0,j) = ip.x;
@@ -2304,12 +2304,12 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
                pointmat(2,j) = ip.z;
             }
          }
-         for (j = 0; j < n; j++)
+         for (int j = 0; j < n; j++)
          {
             const int *en = ev + 2*cut_edges[j];
             t = node_pos[ nodes[en[1]] ];
             t = t / ( t - node_pos[ nodes[en[0]] ] );
-            for (k = 0; k < 3; k++)
+            for (int k = 0; k < 3; k++)
             {
                point[j][k] = t*pointmat(k,en[0]) + (1-t)*pointmat(k,en[1]);
             }
@@ -2328,35 +2328,36 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
                else
                {
                   m = n;
+                  int no_norm;
                   while (1)
                   {
                      if (m > 3)
                      {
-                        j = Compute3DUnitNormal(point[0], point[1], point[2],
-                                                point[3], norm);
-                        if (j && m > 4)
+                        no_norm = Compute3DUnitNormal(point[0], point[1], point[2],
+                                                      point[3], norm);
+                        if (no_norm && m > 4)
                         {
                            for (int j = 3; j < m; j++)
-                              for (int i = 0; i < 4; i++)
+                              for (int k = 0; k < 4; k++)
                               {
-                                 point[j-2][i] = point[j][i];
+                                 point[j-2][k] = point[j][k];
                               }
                            m -= 2;
                            continue;
                         }
                      }
                      else
-                        j = Compute3DUnitNormal(point[0], point[1], point[2],
-                                                norm);
+                        no_norm = Compute3DUnitNormal(point[0], point[1], point[2],
+                                                      norm);
                      break;
                   }
 
                   gl3::GlBuilder draw = cplane_buf.createBuilder();
-                  if (!j)
+                  if (!no_norm)
                   {
                      draw.glBegin(GL_POLYGON);
                      draw.glNormal3dv(norm);
-                     for (j = 0; j < m; j++)
+                     for (int j = 0; j < m; j++)
                      {
                         MySetColor(draw, point[j][3], minv, maxv);
                         draw.glVertex3dv(point[j]);
@@ -2379,7 +2380,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
                   // glBegin (GL_POLYGON);
                   gl3::GlBuilder line = cplines_buf.createBuilder();
                   line.glBegin(GL_LINE_LOOP);
-                  for (j = 0; j < n; j++)
+                  for (int j = 0; j < n; j++)
                   {
                      line.glVertex3dv(point[j]);
                   }
@@ -2404,7 +2405,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
             break;
          }
 
-         for (j = 0; j < n2; j++)
+         for (int j = 0; j < n2; j++)
          {
             cut_edges[j] = cut_edges[j+n];
          }
@@ -2488,20 +2489,20 @@ void VisualizationSceneSolution3d::CutRefinedElement(
          if (func == 0) // draw surface
          {
             double norm[3];
-            int err, m = n;
+            int no_norm, m = n;
             while (1)
             {
                if (m > 3)
                {
-                  err = Compute3DUnitNormal(pts[0], pts[1], pts[2], pts[3],
-                                            norm);
-                  if (err && m > 4)
+                  no_norm = Compute3DUnitNormal(pts[0], pts[1], pts[2], pts[3],
+                                                norm);
+                  if (no_norm && m > 4)
                   {
                      for (int j = 3; j < m; j++)
                      {
-                        for (int i = 0; i < 4; i++)
+                        for (int k = 0; k < 4; k++)
                         {
-                           pts[j-2][i] = pts[j][i];
+                           pts[j-2][k] = pts[j][k];
                         }
                      }
                      m -= 2;
@@ -2510,11 +2511,11 @@ void VisualizationSceneSolution3d::CutRefinedElement(
                }
                else
                {
-                  err = Compute3DUnitNormal(pts[0], pts[1], pts[2], norm);
+                  no_norm = Compute3DUnitNormal(pts[0], pts[1], pts[2], norm);
                }
                break;
             }
-            if (!err)
+            if (!no_norm)
             {
                bld.glBegin(GL_POLYGON);
                bld.glNormal3dv(norm);
@@ -3324,9 +3325,9 @@ void VisualizationSceneSolution3d::DrawRefinedWedgeLevelSurf(
          }
          vs(6) = 0.5*(vs(1) + vs(5));
          const DenseMatrix *gd_ = grad ? &gd : NULL;
-         for (int k = 0; k < 6; k++)
+         for (int j = 0; j < 6; j++)
          {
-            DrawTetLevelSurf(target, pm, vs, pri_tets_0[k], levels, gd_);
+            DrawTetLevelSurf(target, pm, vs, pri_tets_0[j], levels, gd_);
          }
       }
       else if (fsl == 7)
@@ -3348,9 +3349,9 @@ void VisualizationSceneSolution3d::DrawRefinedWedgeLevelSurf(
          }
          vs(6) = 0.5*(vs(2) + vs(4));
          const DenseMatrix *gd_ = grad ? &gd : NULL;
-         for (int k = 0; k < 6; k++)
+         for (int j = 0; j < 6; j++)
          {
-            DrawTetLevelSurf(target, pm, vs, pri_tets_7[k], levels, gd_);
+            DrawTetLevelSurf(target, pm, vs, pri_tets_7[j], levels, gd_);
          }
       }
       else

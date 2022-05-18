@@ -561,7 +561,7 @@ void VisualizationSceneVector3d::PrepareFlat()
 
 void VisualizationSceneVector3d::PrepareFlat2()
 {
-   int i, k, fn, fo, di = 0, have_normals;
+   int fn, fo, di = 0, have_normals;
    double bbox_diam, vmin, vmax;
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -583,7 +583,7 @@ void VisualizationSceneVector3d::PrepareFlat2()
 
    vmin = numeric_limits<double>::infinity();
    vmax = -vmin;
-   for (i = 0; i < ne; i++)
+   for (int i = 0; i < ne; i++)
    {
       if (dim == 3)
       {
@@ -684,23 +684,23 @@ void VisualizationSceneVector3d::PrepareFlat2()
 
       if (sc != 0.0 && have_normals)
       {
-         for (int i = 0; i < 3; i++)
+         for (int j = 0; j < 3; j++)
          {
-            norm[i] = 0.0;
+            norm[j] = 0.0;
          }
          Normalize(normals);
-         for (k = 0; k < normals.Width(); k++)
+         for (int k = 0; k < normals.Width(); k++)
             for (int j = 0; j < 3; j++)
             {
                norm[j] += normals(j, k);
             }
          Normalize(norm);
-         for (int i = 0; i < pointmat.Width(); i++)
+         for (int k = 0; k < pointmat.Width(); k++)
          {
-            double val = sc * (values(i) - minv) / (maxv - minv);
+            double val = sc * (values(k) - minv) / (maxv - minv);
             for (int j = 0; j < 3; j++)
             {
-               pointmat(j, i) += val * norm[j];
+               pointmat(j, k) += val * norm[j];
             }
          }
          have_normals = 0;
