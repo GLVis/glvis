@@ -654,7 +654,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
    int ne = mesh -> GetNE();
    DenseMatrix pointmat;
    Array<int> vertices;
-   double zc = 0.5*(z[0]+z[1]);
+   double zc = 0.5*(bb.z[0]+bb.z[1]);
 
    // prepare the displaced mesh
    displine_buf.clear();
@@ -844,7 +844,7 @@ thread_local double new_maxlen;
 void VisualizationSceneVector::DrawVector(double px, double py, double vx,
                                           double vy, double cval)
 {
-   double zc = 0.5*(z[0]+z[1]);
+   double zc = 0.5*(bb.z[0]+bb.z[1]);
 
    gl3::GlBuilder builder = vector_buf.createBuilder();
 
@@ -856,7 +856,7 @@ void VisualizationSceneVector::DrawVector(double px, double py, double vx,
    }
    else if (drawvector > 0)
    {
-      double area = (x[1]-x[0])*(y[1]-y[0]);
+      double area = (bb.x[1]-bb.x[0])*(bb.y[1]-bb.y[0]);
       double h = sqrt(area/mesh->GetNV()) * ArrowScale;
 
       arrow_type = 1;

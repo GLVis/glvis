@@ -429,9 +429,9 @@ VisualizationScene::AddModelNode(glTF_Builder &bld, const string &nodeName)
    bld.addNodeScale(
       new_node, { (float)xscale, (float)zscale, (float)yscale });
    bld.addNodeTranslation(
-      new_node, { float(-xscale*(x[0]+x[1])/2),
-                  float(-zscale*z[0]),
-                  float(yscale*(y[0]+y[1])/2)
+      new_node, { float(-xscale*(bb.x[0]+bb.x[1])/2),
+                  float(-zscale*bb.z[0]),
+                  float(yscale*(bb.y[0]+bb.y[1])/2)
                 });
    return new_node;
 }
@@ -1030,6 +1030,7 @@ glm::mat4 VisualizationScene::GetModelViewMtx()
    modelView.mult(translmat);
    modelView.mult(rotmat);
    modelView.scale(xscale, yscale, zscale);
-   modelView.translate(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
+   modelView.translate(-(bb.x[0]+bb.x[1])/2, -(bb.y[0]+bb.y[1])/2,
+                       -(bb.z[0]+bb.z[1])/2);
    return modelView.mtx;
 }

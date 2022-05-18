@@ -696,7 +696,7 @@ void VisualizationSceneSolution3d::Init()
    palette.SetIndex(12); // use the 'vivid' palette in 3D
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
-   CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*x[0]+(0.5+eps)*x[1]);
+   CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*bb.x[0]+(0.5+eps)*bb.x[1]);
 
    nlevels = 1;
 
@@ -919,19 +919,19 @@ void VisualizationSceneSolution3d::FindNewBox(bool prepare)
 
    double *coord = mesh->GetVertex(0);
 
-   x[0] = x[1] = coord[0];
-   y[0] = y[1] = coord[1];
-   z[0] = z[1] = coord[2];
+   bb.x[0] = bb.x[1] = coord[0];
+   bb.y[0] = bb.y[1] = coord[1];
+   bb.z[0] = bb.z[1] = coord[2];
 
    for (int i = 1; i < nv; i++)
    {
       coord = mesh->GetVertex(i);
-      if (coord[0] < x[0]) { x[0] = coord[0]; }
-      if (coord[1] < y[0]) { y[0] = coord[1]; }
-      if (coord[2] < z[0]) { z[0] = coord[2]; }
-      if (coord[0] > x[1]) { x[1] = coord[0]; }
-      if (coord[1] > y[1]) { y[1] = coord[1]; }
-      if (coord[2] > z[1]) { z[1] = coord[2]; }
+      if (coord[0] < bb.x[0]) { bb.x[0] = coord[0]; }
+      if (coord[1] < bb.y[0]) { bb.y[0] = coord[1]; }
+      if (coord[2] < bb.z[0]) { bb.z[0] = coord[2]; }
+      if (coord[0] > bb.x[1]) { bb.x[1] = coord[0]; }
+      if (coord[1] > bb.y[1]) { bb.y[1] = coord[1]; }
+      if (coord[2] > bb.z[1]) { bb.z[1] = coord[2]; }
    }
 
    if (shading == 2)
@@ -966,12 +966,12 @@ void VisualizationSceneSolution3d::FindNewBox(bool prepare)
          }
          for (int j = 0; j < pointmat.Width(); j++)
          {
-            if (pointmat(0,j) < x[0]) { x[0] = pointmat(0,j); }
-            if (pointmat(1,j) < y[0]) { y[0] = pointmat(1,j); }
-            if (pointmat(2,j) < z[0]) { z[0] = pointmat(2,j); }
-            if (pointmat(0,j) > x[1]) { x[1] = pointmat(0,j); }
-            if (pointmat(1,j) > y[1]) { y[1] = pointmat(1,j); }
-            if (pointmat(2,j) > z[1]) { z[1] = pointmat(2,j); }
+            if (pointmat(0,j) < bb.x[0]) { bb.x[0] = pointmat(0,j); }
+            if (pointmat(1,j) < bb.y[0]) { bb.y[0] = pointmat(1,j); }
+            if (pointmat(2,j) < bb.z[0]) { bb.z[0] = pointmat(2,j); }
+            if (pointmat(0,j) > bb.x[1]) { bb.x[1] = pointmat(0,j); }
+            if (pointmat(1,j) > bb.y[1]) { bb.y[1] = pointmat(1,j); }
+            if (pointmat(2,j) > bb.z[1]) { bb.z[1] = pointmat(2,j); }
          }
       }
    }
@@ -1262,9 +1262,9 @@ void VisualizationSceneSolution3d::LiftRefinedSurf(
       }
    }
 
-   double bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
-                             (y[1]-y[0])*(y[1]-y[0]) +
-                             (z[1]-z[0])*(z[1]-z[0]) );
+   double bbox_diam = sqrt ( (bb.x[1]-bb.x[0])*(bb.x[1]-bb.x[0]) +
+                             (bb.y[1]-bb.y[0])*(bb.y[1]-bb.y[0]) +
+                             (bb.z[1]-bb.z[0])*(bb.z[1]-bb.z[0]) );
    double sc = FaceShiftScale * bbox_diam;
 
    for (i = 0; i < pointmat.Width(); i++)
@@ -1454,9 +1454,9 @@ void VisualizationSceneSolution3d::PrepareFlat2()
    double norm[3];
    IsoparametricTransformation T;
 
-   bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
-                      (y[1]-y[0])*(y[1]-y[0]) +
-                      (z[1]-z[0])*(z[1]-z[0]) );
+   bbox_diam = sqrt ( (bb.x[1]-bb.x[0])*(bb.x[1]-bb.x[0]) +
+                      (bb.y[1]-bb.y[0])*(bb.y[1]-bb.y[0]) +
+                      (bb.z[1]-bb.z[0])*(bb.z[1]-bb.z[0]) );
    double sc = FaceShiftScale * bbox_diam;
 
    vmin = numeric_limits<double>::infinity();
@@ -1864,9 +1864,9 @@ void VisualizationSceneSolution3d::PrepareLines2()
    Array<int> vertices;
    IsoparametricTransformation T;
 
-   bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
-                      (y[1]-y[0])*(y[1]-y[0]) +
-                      (z[1]-z[0])*(z[1]-z[0]) );
+   bbox_diam = sqrt ( (bb.x[1]-bb.x[0])*(bb.x[1]-bb.x[0]) +
+                      (bb.y[1]-bb.y[0])*(bb.y[1]-bb.y[0]) +
+                      (bb.z[1]-bb.z[0])*(bb.z[1]-bb.z[0]) );
    double sc = FaceShiftScale * bbox_diam;
 
    for (int i = 0; i < nbe; i++)
@@ -2423,9 +2423,9 @@ void VisualizationSceneSolution3d::CutRefinedElement(
    double sc = 0.0;
    if (FaceShiftScale != 0.0)
    {
-      double bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
-                                (y[1]-y[0])*(y[1]-y[0]) +
-                                (z[1]-z[0])*(z[1]-z[0]) );
+      double bbox_diam = sqrt ( (bb.x[1]-bb.x[0])*(bb.x[1]-bb.x[0]) +
+                                (bb.y[1]-bb.y[0])*(bb.y[1]-bb.y[0]) +
+                                (bb.z[1]-bb.z[0])*(bb.z[1]-bb.z[0]) );
       sc = FaceShiftScale * bbox_diam;
    }
    const int nv = Geometry::NumVerts[geom];
@@ -2550,9 +2550,9 @@ void VisualizationSceneSolution3d::CutRefinedFace(
    double sc = 0.0;
    if (FaceShiftScale != 0.0)
    {
-      double bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
-                                (y[1]-y[0])*(y[1]-y[0]) +
-                                (z[1]-z[0])*(z[1]-z[0]) );
+      double bbox_diam = sqrt ( (bb.x[1]-bb.x[0])*(bb.x[1]-bb.x[0]) +
+                                (bb.y[1]-bb.y[0])*(bb.y[1]-bb.y[0]) +
+                                (bb.z[1]-bb.z[0])*(bb.z[1]-bb.z[0]) );
       sc = FaceShiftScale * bbox_diam;
    }
    const int nv = Geometry::NumVerts[geom];

@@ -165,7 +165,10 @@ public:
    PaletteState palette;
 
    /// Bounding box.
-   double x[2], y[2], z[2];
+   struct
+   {
+      double x[2], y[2], z[2];
+   } bb;
 
    glm::mat4 rotmat;
    glm::mat4 translmat;

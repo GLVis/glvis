@@ -574,9 +574,9 @@ void VisualizationSceneVector3d::PrepareFlat2()
    double norm[3];
    IsoparametricTransformation T;
 
-   bbox_diam = sqrt( (x[1]-x[0])*(x[1]-x[0]) +
-                     (y[1]-y[0])*(y[1]-y[0]) +
-                     (z[1]-z[0])*(z[1]-z[0]) );
+   bbox_diam = sqrt( (bb.x[1]-bb.x[0])*(bb.x[1]-bb.x[0]) +
+                     (bb.y[1]-bb.y[0])*(bb.y[1]-bb.y[0]) +
+                     (bb.z[1]-bb.z[0])*(bb.z[1]-bb.z[0]) );
    double sc = FaceShiftScale * bbox_diam;
 
    disp_buf.clear();
@@ -941,9 +941,9 @@ void VisualizationSceneVector3d::PrepareLines2()
    RefinedGeometry * RefG;
    Array<int> vertices;
 
-   bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
-                      (y[1]-y[0])*(y[1]-y[0]) +
-                      (z[1]-z[0])*(z[1]-z[0]) );
+   bbox_diam = sqrt ( (bb.x[1]-bb.x[0])*(bb.x[1]-bb.x[0]) +
+                      (bb.y[1]-bb.y[0])*(bb.y[1]-bb.y[0]) +
+                      (bb.z[1]-bb.z[0])*(bb.z[1]-bb.z[0]) );
    double sc = FaceShiftScale * bbox_diam;
 
    for (i = 0; i < ne; i++)
@@ -1207,7 +1207,7 @@ void VisualizationSceneVector3d::DrawVector(gl3::GlBuilder& builder,
                                             double sz, double s)
 {
    static int nv = mesh -> GetNV();
-   static double volume = (x[1]-x[0])*(y[1]-y[0])*(z[1]-z[0]);
+   static double volume = (bb.x[1]-bb.x[0])*(bb.y[1]-bb.y[0])*(bb.z[1]-bb.z[0]);
    static double h      = pow(volume/nv, 0.333);
    static double hh     = pow(volume, 0.333) / 10;
 
