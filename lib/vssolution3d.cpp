@@ -15,9 +15,9 @@
 #include <limits>
 
 #include "mfem.hpp"
-using namespace mfem;
 #include "visual.hpp"
 #include "palettes.hpp"
+using namespace mfem;
 using namespace std;
 
 

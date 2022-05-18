@@ -15,9 +15,9 @@
 #include <limits>
 
 #include "mfem.hpp"
-using namespace mfem;
 #include "visual.hpp"
 
+using namespace mfem;
 using namespace std;
 
 std::string VisualizationSceneVector3d::GetHelpString() const

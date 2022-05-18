@@ -15,9 +15,9 @@
 #include <cmath>
 
 #include "mfem.hpp"
-using namespace mfem;
 #include "visual.hpp"
 
+using namespace mfem;
 using namespace std;
 
 std::string VisualizationSceneVector::GetHelpString() const

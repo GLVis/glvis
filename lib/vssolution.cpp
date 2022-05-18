@@ -17,11 +17,11 @@
 #include <vector>
 
 #include "mfem.hpp"
-using namespace mfem;
 #include "visual.hpp"
 #include "palettes.hpp"
 #include "gltf.hpp"
 
+using namespace mfem;
 using namespace std;
 
 
