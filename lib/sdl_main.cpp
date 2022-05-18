@@ -95,11 +95,11 @@ SdlMainThread::~SdlMainThread()
    SDL_Quit();
 }
 
-void SdlMainThread::MainLoop(bool server_mode)
+void SdlMainThread::MainLoop(bool server)
 {
    if (!sdl_init) { return; }
 
-   this->server_mode = server_mode;
+   this->server_mode = server;
    if (server_mode)
    {
       // Create a hidden window for dock icon and suppressing SDL_QUIT on last
@@ -152,12 +152,12 @@ void SdlMainThread::MainLoop(bool server_mode)
          while (num_windows > 0)
          {
             // Process pending destroy window commands
-            vector<SdlCtrlCommand> pending_cmds;
+            vector<SdlCtrlCommand> pending_destroys;
             {
                lock_guard<mutex> cmd_lock{window_cmd_mtx};
-               pending_cmds = std::move(window_cmds);
+               pending_destroys = std::move(window_cmds);
             }
-            for (SdlCtrlCommand& cmd : pending_cmds)
+            for (SdlCtrlCommand& cmd : pending_destroys)
             {
                if (cmd.type == SdlCmdType::Delete)
                {
@@ -190,7 +190,7 @@ void SdlMainThread::DispatchSDLEvents()
    SDL_Event e;
    while (SDL_PollEvent(&e))
    {
-      unsigned int windowId = UINT_MAX;
+      unsigned int destWindow = UINT_MAX;
       bool sendToAll = false;
       switch (e.type)
       {
@@ -198,8 +198,8 @@ void SdlMainThread::DispatchSDLEvents()
             terminating = true;
             break;
          case SDL_WINDOWEVENT:
-            windowId = getWindowID(e.window);
-            if (server_mode && (windowId == SDL_GetWindowID(bg_wnd.get())))
+            destWindow = getWindowID(e.window);
+            if (server_mode && (destWindow == SDL_GetWindowID(bg_wnd.get())))
             {
                handleBackgroundWindowEvent(e.window);
             }
@@ -220,17 +220,17 @@ void SdlMainThread::DispatchSDLEvents()
             break;
          case SDL_KEYDOWN:
          case SDL_KEYUP:
-            windowId = getWindowID(e.key);
+            destWindow = getWindowID(e.key);
             break;
          case SDL_TEXTINPUT:
-            windowId = getWindowID(e.text);
+            destWindow = getWindowID(e.text);
             break;
          case SDL_MOUSEMOTION:
-            if (!disable_mouse) { windowId = getWindowID(e.motion); }
+            if (!disable_mouse) { destWindow = getWindowID(e.motion); }
             break;
          case SDL_MOUSEBUTTONDOWN:
          case SDL_MOUSEBUTTONUP:
-            windowId = getWindowID(e.button);
+            destWindow = getWindowID(e.button);
             break;
       }
       if (sendToAll == true)
@@ -241,9 +241,9 @@ void SdlMainThread::DispatchSDLEvents()
             wnd_events[windowId].emplace_back(e);
          }
       }
-      else if (windowId != UINT_MAX)
+      else if (destWindow != UINT_MAX)
       {
-         wnd_events[windowId].emplace_back(e);
+         wnd_events[destWindow].emplace_back(e);
       }
    }
    // Send events to window worker threads
