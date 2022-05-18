@@ -2909,7 +2909,7 @@ thread_local int quad_counter;
 void VisualizationSceneSolution3d::DrawTetLevelSurf(
    gl3::GlDrawable& target,
    const DenseMatrix &verts, const Vector &vals, const int *ind,
-   const Array<double> &levels, const DenseMatrix *grad)
+   const Array<double> &surf_levels, const DenseMatrix *grad)
 {
    double t, lvl, normal[3], vert[4][3], norm[4][3];
    int i, j, l, pos[4];
@@ -2917,9 +2917,9 @@ void VisualizationSceneSolution3d::DrawTetLevelSurf(
 
    gl3::GlBuilder draw = target.createBuilder();
 
-   for (l = 0; l < levels.Size(); l++)
+   for (l = 0; l < surf_levels.Size(); l++)
    {
-      lvl = levels[l];
+      lvl = surf_levels[l];
 
       for (i = 0; i < 4; i++)
       {

@@ -332,8 +332,8 @@ void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
 
 void VisualizationSceneScalarData::PrepareColorBar (double minval,
                                                     double maxval,
-                                                    Array<double> *level,
-                                                    Array<double> *levels)
+                                                    Array<double> *mesh_level,
+                                                    Array<double> *lsurf_levels)
 {
 
    int i;
@@ -384,19 +384,19 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
       color_bar.addLine<gl3::Vertex>({maxx, miny, posz}, {maxx, maxy, posz});
    }
 
-   if (levels)
+   if (lsurf_levels)
    {
-      for (i = 0; i < levels->Size(); i++)
+      for (i = 0; i < lsurf_levels->Size(); i++)
       {
-         float Y = miny + (maxy - miny) * LogUVal((*levels)[i]);
+         float Y = miny + (maxy - miny) * LogUVal((*lsurf_levels)[i]);
          color_bar.addLine<gl3::Vertex>({minx, Y, posz}, {maxx, Y, posz});
       }
    }
-   if (level)
+   if (mesh_level)
    {
-      for (i = 0; i < level->Size(); i++)
+      for (i = 0; i < mesh_level->Size(); i++)
       {
-         float Y = miny + (maxy - miny) * LogUVal((*level)[i]);
+         float Y = miny + (maxy - miny) * LogUVal((*mesh_level)[i]);
          color_bar.addLine<gl3::Vertex>({minx, Y, posz}, {maxx, Y, posz});
       }
    }
@@ -404,7 +404,7 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
    const double text_x = maxx + 0.4*(maxx-minx);
    double val;
    double Y;
-   if (!level)
+   if (!mesh_level)
    {
       for (i = 0; i <= 4; i++)
       {
@@ -419,9 +419,9 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
    }
    else
    {
-      for (i = 0; i < level->Size(); i++)
+      for (i = 0; i < mesh_level->Size(); i++)
       {
-         val = (*level)[i];
+         val = (*mesh_level)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
 
          ostringstream buf;
@@ -430,11 +430,11 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
       }
    }
 
-   if (levels)
+   if (lsurf_levels)
    {
-      for (i = 0; i < levels->Size(); i++)
+      for (i = 0; i < lsurf_levels->Size(); i++)
       {
-         val = (*levels)[i];
+         val = (*lsurf_levels)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
 
          ostringstream buf;
@@ -1438,20 +1438,20 @@ void VisualizationSceneScalarData::PrepareAxes()
 }
 
 void VisualizationSceneScalarData::DrawPolygonLevelLines(
-   gl3::GlBuilder& builder, double * point, int n, Array<double> &level,
+   gl3::GlBuilder& builder, double * point, int n, Array<double> &mesh_level,
    bool log_vals)
 {
    int l, k, k1;
    double curve, t;
    double p[3];
 
-   for (l = 0; l < level.Size(); l++)
+   for (l = 0; l < mesh_level.Size(); l++)
    {
       // Using GL_LINE_STRIP (explicitly closed for more than 2 points)
       // should produce the same result, however visually the level lines
       // have discontinuities. Using GL_LINE_LOOP does not have that problem.
       builder.glBegin(GL_LINE_LOOP);
-      curve = LogVal(level[l], log_vals);
+      curve = LogVal(mesh_level[l], log_vals);
       for (k = 0; k < n; k++)
       {
          k1 = (k+1)%n;
