@@ -190,7 +190,7 @@ jobs:
           -D ENABLE_TESTS:BOOL=TRUE \
           -D mfem_DIR:PATH=${GITHUB_WORKSPACE}/${MFEM_TOP_DIR}/build \
           -D GLVIS_BASELINE_SYS=${{ matrix.os }} \
-          -D CMAKE_INSTALL_PREFIX=install-${{ matrix.os }} \
+          -D CMAKE_INSTALL_PREFIX=../install-${{ matrix.os }} \
           ..
         cmake --build . --parallel 3 --config "${build_type}"
       shell: bash
@@ -213,7 +213,7 @@ jobs:
         # Creates the actual relocatable bundle (copying system libraries)
         sudo make install
         # Fix permissions from running `make install` as root
-        cd install-${{ matrix.os }}
+        cd ../install-${{ matrix.os }}
         sudo chown -R ${USER} GLVis.app
         # Go back to build directory
         cd ../build
