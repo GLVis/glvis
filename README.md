@@ -19,7 +19,7 @@ Jupyter notebook, or in a web browser, see https://glvis.org/live.
   are documented below.
 
 - GLVis is distributed under the terms of the BSD-3 license. All new contributions
-  must be made under this license. See [LICENSE](LICENSE) and [NOTICE](NOTIC) for details.
+  must be made under this license. See [LICENSE](LICENSE) and [NOTICE](NOTICE) for details.
 
 When started without any options, glvis starts a server which waits for a socket
 connections (on port `19916` by default) and visualizes any received data. This
