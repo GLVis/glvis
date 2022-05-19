@@ -77,7 +77,7 @@ Mouse functions
 
 - <kbd>Left</kbd> + <kbd>Alt</kbd> – Tilt
 - <kbd>Left</kbd> + <kbd>Ctrl</kbd> – Spherical rotation
-- <kbd>Left</kbd> + <kbd>Ctrl</kbd> + <kbd>Shift</kbd> – $z$-spinning
+- <kbd>Left</kbd> + <kbd>Ctrl</kbd> + <kbd>Shift</kbd> – `z`-spinning
 - <kbd>Right</kbd> + <kbd>Ctrl</kbd> – Object scaling (see also <kbd>[</kbd> and <kbd>]</kbd>)
 - <kbd>Right</kbd> + <kbd>Shift</kbd>  – Change light source position (see <kbd>\\</kbd>)
 - <kbd>Middle</kbd> + <kbd>Ctrl</kbd> – Object translation (moves the camera left/right/up/down)
@@ -92,7 +92,7 @@ Key commands
 
 - <kbd>h</kbd> – Print a short help message in the terminal
 - <kbd>r</kbd> – Reset the plot to 3D view
-- <kbd>R</kbd> – Cycle through the six 2D projections (camera looking above/below in $x$/$y$/$z$ directions)
+- <kbd>R</kbd> – Cycle through the six 2D projections (camera looking above/below in `x`/`y`/`z` directions)
 - <kbd>j</kbd> – Turn on/off perspective
 - <kbd>s</kbd> – Turn on/off unit cube scaling
 - <kbd>A</kbd> – Turn on/off the use of anti-aliasing/multi-sampling
@@ -109,7 +109,7 @@ Key commands
   - none
   - bounding box with coordinates of the corners
   - bounding box without coordinates
-  - red, green, blue colored main $x$, $y$, $z$ axes + dashed axes
+  - red, green, blue colored main `x`, `y`, `z` axes + dashed axes
 - <kbd>m</kbd> – Toggle the *mesh* state. The options are:
   - no mesh or level lines
   - draw the element edges (i.e. the mesh)
@@ -118,10 +118,10 @@ Key commands
   - show surface elements (corresponding to the function)
   - show no surface elements
   - (2D only) show element attributes
-  - (2D only) show element $det(J)$
-  - (2D only) show element $1/det(J)$
-  - (2D only) show element $\kappa$
-  - (2D only) show element $\kappa + 1/\kappa$
+  - (2D only) show element `det(J)`
+  - (2D only) show element `1/det(J)`
+  - (2D only) show element `\kappa`
+  - (2D only) show element `\kappa + 1/\kappa`
 - <kbd>S</kbd> – Take an image snapshot or record a movie (in spinning mode). By
   default, the screenshots are taken in `png` format, using libpng. When GLVis
   is compiled with `libtiff` support (see [INSTALL](INSTALL)) then the
@@ -144,10 +144,10 @@ Key commands
     functions and curvilinear elements (use <kbd>o</kbd> / <kbd>O</kbd> to control subdivisions)
 - <kbd>\\</kbd> – Set light source position (see <kbd>Right</kbd> + <kbd>Shift</kbd>)
 - <kbd>*</kbd> / <kbd>/</kbd> – Zoom in/out
-- <kbd>+</kbd> / <kbd>-</kbd> – Stretch/compree in $z$-direction
+- <kbd>+</kbd> / <kbd>-</kbd> – Stretch/compree in `z`-direction
 - <kbd>[</kbd> / <kbd>]</kbd> – Shrink/enlarge the bounding box (relative to the colorbar)
 - <kbd>(</kbd> / <kbd>)</kbd> – Shrink/enlarge the visualization window
-- <kbd>.</kbd> – Start/stop $z$-spinning (speed/direction can be controlled with <kbd>0</kbd> / <kbd>Enter</kbd>)
+- <kbd>.</kbd> – Start/stop `z`-spinning (speed/direction can be controlled with <kbd>0</kbd> / <kbd>Enter</kbd>)
 - <kbd>←</kbd>, <kbd>→</kbd>, <kbd>↑</kbd>, <kbd>↓</kbd> – Manual rotation
 - <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>, <kbd>5</kbd>, <kbd>6</kbd>, <kbd>7</kbd>, <kbd>8</kbd>, <kbd>9</kbd> – Manual rotation along coordinate axes
 - <kbd>Ctrl</kbd> + <kbd>←</kbd>, <kbd>→</kbd>, <kbd>↑</kbd>, <kbd>↓</kbd> – Translate the viewpoint
@@ -175,7 +175,7 @@ Key commands
 ## 2D scalar data
 
 - <kbd>i</kbd> – Toggle cutting (clipping) plane in 2D
-- <kbd>y</kbd> / <kbd>Y</kbd> – Rotate cutting plane ($\theta$) in 2D
+- <kbd>y</kbd> / <kbd>Y</kbd> – Rotate cutting plane (`\theta`) in 2D
 - <kbd>z</kbd> / <kbd>Z</kbd> – Translate cutting plane in 2D
 - <kbd>o</kbd> / <kbd>O</kbd> – Control element subdivisions in 2D
   - there are two subdivision factors in this case: element (`s1`) and boundary (`s2`).
@@ -204,8 +204,8 @@ Key commands
 - <kbd>I</kbd> – Toggle the cutting plane algorithm used when the option *cut through the elements* is selected. The two algorithms are:
   - slower, more accurate algorithm for curved meshes (default)
   - faster algorithm suitable for meshes with planar faces
-- <kbd>x</kbd> / <kbd>X</kbd> – Rotate cutting plane ($\phi$) in 3D
-- <kbd>y</kbd> / <kbd>Y</kbd> – Rotate cutting plane ($\theta$) in 3D
+- <kbd>x</kbd> / <kbd>X</kbd> – Rotate cutting plane (`\phi`) in 3D
+- <kbd>y</kbd> / <kbd>Y</kbd> – Rotate cutting plane (`\theta`) in 3D
 - <kbd>z</kbd> / <kbd>Z</kbd> – Translate cutting plane in 3D
 - <kbd>E</kbd> – Display/Hide the elements in the cutting plane
 - <kbd>M</kbd> – Display/Hide the mesh in the cutting plane
@@ -239,20 +239,20 @@ Key commands
 - <kbd>e</kbd> – Toggle the *elements* state (vector data version). The options are:
   - show surface elements corresponding to the current *vector-to-scalar function*
   - do not show surface elements
-  - assuming a displacement field show $det(J)/det(J_d)$
-  - assuming a displacement field show $det(J_d)/det(J)$
+  - assuming a displacement field show `det(J)/det(J_d)`
+  - assuming a displacement field show `det(J_d)/det(J)`
 - <kbd>u</kbd> / <kbd>U</kbd> – Change the *vector-to-scalar function* and the vector subdivision factor
 - <kbd>U</kbd> – Toggle the functionality of <kbd>u</kbd> (prints a message in the terminal when changed). The options are:
   - Increase the vector subdivision factor
   - Decrease the vector subdivision factor
   - Cycle through *vector-to-scalar functions* choices:
-     - magnitude: $\sqrt{v_x^2+v_y^2}$
-     - direction from $-\pi$ to $\pi$: $atan2(v_y,v_x)$
-     - $x$-component: $v_x$
-     - $y$-component: $v_y$
-     - divergence: $div(v)$
-     - curl: $curl(v)$ [skipped for H(div) elements]
-     - anisotropy in $grad(v)$  [skipped for H(div) elements]
+     - magnitude: `\sqrt{v_x^2+v_y^2}`
+     - direction from `-\pi` to `\pi`: `atan2(v_y,v_x)`
+     - `x`-component: `v_x`
+     - `y`-component: `v_y`
+     - divergence: `div(v)`
+     - curl: `curl(v)` [skipped for H(div) elements]
+     - anisotropy in `grad(v)`  [skipped for H(div) elements]
 
 ## 3D vector data
 
@@ -275,7 +275,7 @@ Key commands
 - <kbd>n</kbd> – Increase the displacement amount in 10% steps, wraps around from 100% to 0%
 - <kbd>b</kbd> – Decrease the displacement amount in 10% steps, wraps around from 0% to 100%
 - <kbd>F</kbd> – Change the *vector-to-scalar function*. The options are:
-  - magnitude: $\sqrt{v_x^2+v_y^2+v_z^2}$
-  - $x$-component: `v_x`
-  - $y$-component: `v_y`
-  - $z$-component: `v_z`
+  - magnitude: `\sqrt{v_x^2+v_y^2+v_z^2}`
+  - `x`-component: `v_x`
+  - `y`-component: `v_y`
+  - `z`-component: `v_z`
