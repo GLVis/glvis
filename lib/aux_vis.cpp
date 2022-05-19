@@ -16,7 +16,6 @@
 #include <chrono>
 
 #include "mfem.hpp"
-using namespace mfem;
 #include "sdl.hpp"
 #include "palettes.hpp"
 #include "visual.hpp"
@@ -32,6 +31,8 @@ using namespace mfem;
 #ifndef __EMSCRIPTEN__
 #include <fontconfig/fontconfig.h>
 #endif
+
+using namespace mfem;
 
 thread_local int visualize = 0;
 thread_local VisualizationScene * locscene;

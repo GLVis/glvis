@@ -178,7 +178,10 @@ public:
    PaletteState palette;
 
    /// Bounding box.
-   double x[2], y[2], z[2];
+   struct
+   {
+      double x[2], y[2], z[2];
+   } bb;
 
    /// Amount of face cutting with keys Ctrl-F3/F4 (0: no cut, 1: cut to edges)
    double cut_lambda;

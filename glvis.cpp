@@ -308,7 +308,7 @@ int ScriptReadSolution(istream &scr, StreamState& state)
 
 int ScriptReadParSolution(istream &scr, StreamState& state)
 {
-   int np, keep_attr, err;
+   int np, scr_keep_attr, err_read;
    string mesh_prefix, sol_prefix;
 
    cout << "Script: psolution: " << flush;
@@ -318,8 +318,8 @@ int ScriptReadParSolution(istream &scr, StreamState& state)
    // read the mesh prefix
    scr >> ws >> mesh_prefix; // mesh prefix (can't contain spaces)
    cout << "mesh prefix: " << mesh_prefix << "; " << flush;
-   scr >> ws >> keep_attr;
-   if (keep_attr)
+   scr >> ws >> scr_keep_attr;
+   if (scr_keep_attr)
    {
       cout << "(real attributes); " << flush;
    }
@@ -331,13 +331,13 @@ int ScriptReadParSolution(istream &scr, StreamState& state)
    scr >> ws >> sol_prefix;
    cout << "solution prefix: " << sol_prefix << endl;
 
-   err = ReadParMeshAndGridFunction(np, mesh_prefix.c_str(),
-                                    sol_prefix.c_str(), state, keep_attr);
-   if (!err)
+   err_read = ReadParMeshAndGridFunction(np, mesh_prefix.c_str(),
+                                         sol_prefix.c_str(), state, scr_keep_attr);
+   if (!err_read)
    {
       state.Extrude1DMeshAndSolution();
    }
-   return err;
+   return err_read;
 }
 
 int ScriptReadDisplMesh(istream &scr, StreamState& state)
@@ -904,16 +904,16 @@ struct Session
    void StartSession()
    {
       auto funcThread =
-         [&](StreamState state, int ft, StreamCollection is)
+         [](StreamState thread_state, int ftype, StreamCollection is)
       {
          // Set thread-local stream state
-         stream_state = std::move(state);
+         stream_state = std::move(thread_state);
          if (c_plot_caption != string_none)
          {
             plot_caption = c_plot_caption;
          }
 
-         if (GLVisInitVis(ft, std::move(is)))
+         if (GLVisInitVis(ftype, std::move(is)))
          {
             GLVisStartVis();
          }
@@ -1399,18 +1399,18 @@ int main (int argc, char *argv[])
 }
 
 
-void PrintSampleUsage(ostream &out)
+void PrintSampleUsage(ostream &os)
 {
-   out <<
-       "Start a GLVis server:\n"
-       "   glvis\n"
-       "Visualize a mesh:\n"
-       "   glvis -m <mesh_file>\n"
-       "Visualize mesh and solution (grid function):\n"
-       "   glvis -m <mesh_file> -g <grid_function_file> [-gc <component>]\n"
-       "Visualize parallel mesh and solution (grid function):\n"
-       "   glvis -np <#proc> -m <mesh_prefix> [-g <grid_function_prefix>]\n\n"
-       "All Options:\n";
+   os <<
+      "Start a GLVis server:\n"
+      "   glvis\n"
+      "Visualize a mesh:\n"
+      "   glvis -m <mesh_file>\n"
+      "Visualize mesh and solution (grid function):\n"
+      "   glvis -m <mesh_file> -g <grid_function_file> [-gc <component>]\n"
+      "Visualize parallel mesh and solution (grid function):\n"
+      "   glvis -np <#proc> -m <mesh_prefix> [-g <grid_function_prefix>]\n\n"
+      "All Options:\n";
 }
 
 
@@ -1516,28 +1516,28 @@ void SetGridFunction(StreamState& state)
 
 void ReadParallel(int np, StreamState& state)
 {
-   int err;
+   int read_err;
 
    if (state.is_gf)
    {
-      err = ReadParMeshAndGridFunction(np, mesh_file, sol_file,
-                                       state, keep_attr);
-      if (!err)
+      read_err = ReadParMeshAndGridFunction(np, mesh_file, sol_file,
+                                            state, keep_attr);
+      if (!read_err)
       {
          SetGridFunction(state);
       }
    }
    else
    {
-      err = ReadParMeshAndGridFunction(np, mesh_file, NULL,
-                                       state, keep_attr);
-      if (!err)
+      read_err = ReadParMeshAndGridFunction(np, mesh_file, NULL,
+                                            state, keep_attr);
+      if (!read_err)
       {
          state.SetMeshSolution();
       }
    }
 
-   if (err)
+   if (read_err)
    {
       exit(1);
    }
@@ -1547,7 +1547,7 @@ void ReadParallel(int np, StreamState& state)
 
 int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                                const char *sol_prefix,
-                               StreamState& state, int keep_attr)
+                               StreamState& state, int keep_attribs)
 {
    state.mesh = NULL;
 
@@ -1564,7 +1564,7 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    mesh_array = NULL;
    gf_array = NULL;
 
-   int err = 0;
+   int read_err = 0;
    for (int p = 0; p < np; p++)
    {
       ostringstream fname;
@@ -1573,13 +1573,13 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
       if (!meshfile)
       {
          cerr << "Could not open mesh file: " << fname.str() << '!' << endl;
-         err = 1;
+         read_err = 1;
          break;
       }
 
       mesh_array[p] = new Mesh(meshfile, 1, 0, state.fix_elem_orient);
 
-      if (!keep_attr)
+      if (!keep_attribs)
       {
          // set element and boundary attributes to be the processor number + 1
          for (int i = 0; i < mesh_array[p]->GetNE(); i++)
@@ -1597,14 +1597,14 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
       {
          if (!same_file)
          {
-            ostringstream fname;
-            fname << sol_prefix << '.' << setfill('0') << setw(pad_digits) << p;
-            ifgzstream solfile(fname.str().c_str());
+            ostringstream sol_fname;
+            sol_fname << sol_prefix << '.' << setfill('0') << setw(pad_digits) << p;
+            ifgzstream solfile(sol_fname.str().c_str());
             if (!solfile)
             {
                cerr << "Could not open solution file "
-                    << fname.str() << '!' << endl;
-               err = 2;
+                    << sol_fname.str() << '!' << endl;
+               read_err = 2;
                break;
             }
 
@@ -1617,7 +1617,7 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
       }
    }
 
-   if (!err)
+   if (!read_err)
    {
       // create the combined mesh and gf
       state.mesh.reset(new Mesh(mesh_array, np));
@@ -1633,7 +1633,7 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
       delete mesh_array[np-1-p];
    }
 
-   return err;
+   return read_err;
 }
 
 int ReadInputStreams(StreamState& state, const StreamCollection& input_streams)

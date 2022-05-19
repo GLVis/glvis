@@ -17,11 +17,11 @@
 #include <vector>
 
 #include "mfem.hpp"
-using namespace mfem;
 #include "visual.hpp"
 #include "palettes.hpp"
 #include "gltf.hpp"
 
+using namespace mfem;
 using namespace std;
 
 
@@ -252,8 +252,8 @@ void VisualizationSceneSolution::ToggleDrawBdr()
       {
          minv = minv_sol;
          maxv = maxv_sol;
-         z[0] = minv;
-         z[1] = maxv;
+         bb.z[0] = minv;
+         bb.z[1] = maxv;
          SetNewScalingFromBox(); // UpdateBoundingBox minus PrepareAxes
          UpdateValueRange(true);
       }
@@ -465,7 +465,7 @@ void VisualizationSceneSolution::Init()
    palette.SetIndex(2); // use the 'jet-like' palette in 2D
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
-   CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*x[0]+(0.5+eps)*x[1]);
+   CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*bb.x[0]+(0.5+eps)*bb.x[1]);
    draw_cp = 0;
 
    // static int init = 0;
@@ -554,8 +554,8 @@ void VisualizationSceneSolution::ToggleDrawElems()
       {
          minv = minv_sol;
          maxv = maxv_sol;
-         z[0] = minv;
-         z[1] = maxv;
+         bb.z[0] = minv;
+         bb.z[1] = maxv;
          SetNewScalingFromBox(); // UpdateBoundingBox minus PrepareAxes
          UpdateValueRange(false);
       }
@@ -955,9 +955,9 @@ void VisualizationSceneSolution::SetNewScalingFromBox()
    }
    else
    {
-      xscale = x[1]-x[0];
-      yscale = y[1]-y[0];
-      zscale = z[1]-z[0];
+      xscale = bb.x[1]-bb.x[0];
+      yscale = bb.y[1]-bb.y[0];
+      zscale = bb.z[1]-bb.z[0];
       xscale = (xscale < yscale) ? yscale : xscale;
       xscale = (xscale > 0.0) ? ( 1.0 / xscale ) : 1.0;
       yscale = xscale;
@@ -1036,15 +1036,15 @@ void VisualizationSceneSolution::FindNewBox(double rx[], double ry[],
 
 void VisualizationSceneSolution::FindNewBox(bool prepare)
 {
-   FindNewBox(x, y, z);
+   FindNewBox(bb.x, bb.y, bb.z);
 
-   minv = z[0];
-   maxv = z[1];
+   minv = bb.z[0];
+   maxv = bb.z[1];
 
    FixValueRange();
 
-   z[0] = minv;
-   z[1] = maxv;
+   bb.z[0] = minv;
+   bb.z[1] = maxv;
 
    SetNewScalingFromBox(); // UpdateBoundingBox minus PrepareAxes
    UpdateValueRange(prepare);
@@ -1067,7 +1067,7 @@ void VisualizationSceneSolution::FindMeshBox(bool prepare)
 {
    double rv[2];
 
-   FindNewBox(x, y, rv);
+   FindNewBox(bb.x, bb.y, rv);
 
    UpdateBoundingBox(); // SetNewScalingFromBox plus PrepareAxes
 }
@@ -1488,7 +1488,7 @@ void VisualizationSceneSolution::DrawLevelCurves(
 {
    double point[4][4];
    // double zc = 0.5*(z[0]+z[1]);
-   double zc = z[1];
+   double zc = bb.z[1];
 
    for (int k = 0; k < RG.Size()/sides; k++)
    {
@@ -2026,9 +2026,9 @@ void VisualizationSceneSolution::UpdateValueRange(bool prepare)
    SetLogA();
    SetLevelLines(minv, maxv, nl);
    // preserve the current box z-size
-   zscale *= (z[1]-z[0])/(maxv-minv);
-   z[0] = minv;
-   z[1] = maxv;
+   zscale *= (bb.z[1]-bb.z[0])/(maxv-minv);
+   bb.z[0] = minv;
+   bb.z[1] = maxv;
    PrepareAxes();
    if (prepare)
    {
