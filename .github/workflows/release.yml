@@ -33,7 +33,7 @@ jobs:
   release-builds:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-10.15, windows-2022]
+        os: [macos-10.15, windows-2022]
         target: [opt]
         mpi: [seq]
         build-system: [cmake]
