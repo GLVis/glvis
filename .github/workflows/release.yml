@@ -19,6 +19,7 @@ on:
       - v*
     branches:
       - master
+      - windows-ci-dev #TODO: remove before merge
   workflow_dispatch:
 
 env:
@@ -209,7 +210,7 @@ jobs:
         cd glvis/build
         make app
         mkdir ${GLVIS_EXPORT_NAME}
-        cp -r GLVis.app ${GLVIS_EXPORT_NAME}/GLVis.app
+        cp -a GLVis.app ${GLVIS_EXPORT_NAME}/GLVis.app
 
     - name: upload binary
       uses: actions/upload-artifact@v2
