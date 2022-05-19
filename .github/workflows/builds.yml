@@ -18,6 +18,7 @@ on:
     branches:
       - master
   pull_request:
+  workflow_dispatch:
 
 env:
   HYPRE_ARCHIVE: v2.19.0.tar.gz
