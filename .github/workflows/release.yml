@@ -221,7 +221,7 @@ jobs:
         mkdir dmg_tmp
         cp -a ../install-${{ matrix.os }}/GLVis.app dmg_tmp/GLVis.app
         # Create DMG since actions/upload-artifact will clobber Unix permissions
-        hdiutil create -volname "GLVis macOS x86_64" -dirname dmg_tmp -ov -format UDZO GLVis.dmg
+        hdiutil create -volname "GLVis macOS x86_64" -srcfolder dmg_tmp -ov -format UDZO GLVis.dmg
         mkdir ${GLVIS_EXPORT_NAME}
         cp GLVis.dmg ${GLVIS_EXPORT_NAME}
 
