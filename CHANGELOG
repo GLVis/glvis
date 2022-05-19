@@ -22,6 +22,8 @@ Version 4.1.1 (development)
 - Added a third mode to keys 'b'/'B' in 2D to display the mesh boundary colored
   by boundary element attribute.
 
+- Mac and Windows binaries are now automatically built with GitHub actions CI.
+
 - In 2D, save and restore solution's value range when using keys 'e' and 'b'.
 
 - An edge numbering option is now available in 2D.

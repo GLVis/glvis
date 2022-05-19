@@ -15,9 +15,9 @@
 #include <limits>
 
 #include "mfem.hpp"
-using namespace mfem;
 #include "visual.hpp"
 
+using namespace mfem;
 using namespace std;
 
 // Reference geometry with a cut in the middle, which subdivides GeometryRefiner
@@ -586,7 +586,7 @@ void VisualizationSceneVector3d::PrepareFlat()
 
 void VisualizationSceneVector3d::PrepareFlat2()
 {
-   int i, k, fn, fo, di = 0, have_normals;
+   int fn, fo, di = 0, have_normals;
    double bbox_diam, vmin, vmax;
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -599,16 +599,16 @@ void VisualizationSceneVector3d::PrepareFlat2()
    double norm[3];
    IsoparametricTransformation T;
 
-   bbox_diam = sqrt( (x[1]-x[0])*(x[1]-x[0]) +
-                     (y[1]-y[0])*(y[1]-y[0]) +
-                     (z[1]-z[0])*(z[1]-z[0]) );
+   bbox_diam = sqrt( (bb.x[1]-bb.x[0])*(bb.x[1]-bb.x[0]) +
+                     (bb.y[1]-bb.y[0])*(bb.y[1]-bb.y[0]) +
+                     (bb.z[1]-bb.z[0])*(bb.z[1]-bb.z[0]) );
    double sc = FaceShiftScale * bbox_diam;
 
    disp_buf.clear();
 
    vmin = numeric_limits<double>::infinity();
    vmax = -vmin;
-   for (i = 0; i < ne; i++)
+   for (int i = 0; i < ne; i++)
    {
       int sides;
       switch ((dim == 3) ? mesh->GetBdrElementType(i) : mesh->GetElementType(i))
@@ -730,23 +730,23 @@ void VisualizationSceneVector3d::PrepareFlat2()
 
       if (sc != 0.0 && have_normals)
       {
-         for (int i = 0; i < 3; i++)
+         for (int j = 0; j < 3; j++)
          {
-            norm[i] = 0.0;
+            norm[j] = 0.0;
          }
          Normalize(normals);
-         for (k = 0; k < normals.Width(); k++)
+         for (int k = 0; k < normals.Width(); k++)
             for (int j = 0; j < 3; j++)
             {
                norm[j] += normals(j, k);
             }
          Normalize(norm);
-         for (int i = 0; i < pointmat.Width(); i++)
+         for (int k = 0; k < pointmat.Width(); k++)
          {
-            double val = sc * (values(i) - minv) / (maxv - minv);
+            double val = sc * (values(k) - minv) / (maxv - minv);
             for (int j = 0; j < 3; j++)
             {
-               pointmat(j, i) += val * norm[j];
+               pointmat(j, k) += val * norm[j];
             }
          }
          have_normals = 0;
@@ -992,9 +992,9 @@ void VisualizationSceneVector3d::PrepareLines2()
    RefinedGeometry * RefG;
    Array<int> vertices;
 
-   bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
-                      (y[1]-y[0])*(y[1]-y[0]) +
-                      (z[1]-z[0])*(z[1]-z[0]) );
+   bbox_diam = sqrt ( (bb.x[1]-bb.x[0])*(bb.x[1]-bb.x[0]) +
+                      (bb.y[1]-bb.y[0])*(bb.y[1]-bb.y[0]) +
+                      (bb.z[1]-bb.z[0])*(bb.z[1]-bb.z[0]) );
    double sc = FaceShiftScale * bbox_diam;
 
    for (i = 0; i < ne; i++)
@@ -1258,7 +1258,7 @@ void VisualizationSceneVector3d::DrawVector(gl3::GlBuilder& builder,
                                             double sz, double s)
 {
    static int nv = mesh -> GetNV();
-   static double volume = (x[1]-x[0])*(y[1]-y[0])*(z[1]-z[0]);
+   static double volume = (bb.x[1]-bb.x[0])*(bb.y[1]-bb.y[0])*(bb.z[1]-bb.z[0]);
    static double h      = pow(volume/nv, 0.333);
    static double hh     = pow(volume, 0.333) / 10;
 

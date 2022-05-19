@@ -215,7 +215,7 @@ protected:
    std::vector<struct_node> nodes;
 
 public:
-   enum { INVALID_ID = std::numeric_limits<unsigned>::max() };
+   static constexpr unsigned INVALID_ID = std::numeric_limits<unsigned>::max();
    typedef struct { unsigned id; } buffer_id;
    typedef struct { unsigned id; } buffer_view_id;
    typedef struct { unsigned id; } accessor_id;
