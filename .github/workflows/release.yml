@@ -190,6 +190,7 @@ jobs:
           -D ENABLE_TESTS:BOOL=TRUE \
           -D mfem_DIR:PATH=${GITHUB_WORKSPACE}/${MFEM_TOP_DIR}/build \
           -D GLVIS_BASELINE_SYS=${{ matrix.os }} \
+          -D CMAKE_INSTALL_PREFIX=install-${{ matrix.os }} \
           ..
         cmake --build . --parallel 3 --config "${build_type}"
       shell: bash
@@ -209,8 +210,20 @@ jobs:
       run: |
         cd glvis/build
         make app
+        # Creates the actual relocatable bundle (copying system libraries)
+        sudo make install
+        # Fix permissions from running `make install` as root
+        cd install-${{ matrix.os }}
+        sudo chown -R ${USER} GLVis.app
+        # Go back to build directory
+        cd ../build
+        # Copy executable to a temporary directory
+        mkdir dmg_tmp
+        cp -a ../install-${{ matrix.os }}/GLVis.app dmg_tmp/GLVis.app
+        # Create DMG since actions/upload-artifact will clobber Unix permissions
+        hdiutil create -volname "GLVis macOS x86_64" -dirname dmg_tmp -ov -format UDZO GLVis.dmg
         mkdir ${GLVIS_EXPORT_NAME}
-        cp -a GLVis.app ${GLVIS_EXPORT_NAME}/GLVis.app
+        cp GLVis.dmg ${GLVIS_EXPORT_NAME}
 
     - name: upload binary
       uses: actions/upload-artifact@v2
