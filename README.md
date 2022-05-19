@@ -13,7 +13,13 @@ meshes and functions. It is a multiplatform application that can be built on
 Linux/Unix systems, including macOS, and under Windows. It can also be used in a
 Jupyter notebook, or in a web browser, see https://glvis.org/live.
 
-For building instructions, see [INSTALL](INSTALL).
+- For building instructions, see [INSTALL](INSTALL).
+
+- The GLVis [key commands](#key-commands) and [mouse functions](#mouse-functions)
+  are documented below.
+
+- GLVis is distributed under the terms of the BSD-3 license. All new contributions
+  must be made under this license. See [LICENSE](LICENSE) and [NOTICE](NOTIC) for details.
 
 When started without any options, glvis starts a server which waits for a socket
 connections (on port `19916` by default) and visualizes any received data. This
