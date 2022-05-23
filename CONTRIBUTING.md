@@ -287,7 +287,11 @@ Before a PR can be merged, it should satisfy the following:
   - Local copies of `next` can then be updated with `git fetch origin next && git checkout -B next origin/next`.
 
 ### Release Checklist
-
+- [ ] Update the GLVis version in the following files:
+    - [ ] `CHANGELOG`
+    - [ ] `vcpkg.json`
+    - [ ] `share/Info.plist`
+    - [ ] `share/Info.cmake.plist.in`
 - [ ] Check that version requirements for each of GLVis's dependencies are documented in `INSTALL` and up-to-date
 - [ ] Update the `CHANGELOG` to organize all release contributions
 - [ ] Review the whole source code once over

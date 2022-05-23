@@ -9,7 +9,7 @@
                              https://glvis.org
 
 
-Version 4.2 released on May 20, 2022
+Version 4.2 released on May 23, 2022
 ====================================
 
 - Added 3D scene export to glTF format (https://www.khronos.org/gltf) which is
@@ -24,11 +24,11 @@ Version 4.2 released on May 20, 2022
 
 - Support for visualization of pyramid-shaped elements.
 
-- Mac and Windows binaries are now automatically built with GitHub actions CI.
+- An edge numbering option is now available in 2D.
 
 - In 2D, save and restore solution's value range when using keys 'e' and 'b'.
 
-- An edge numbering option is now available in 2D.
+- Mac and Windows binaries are now automatically built with GitHub actions CI.
 
 - The command-line option -mac was renamed to -save.
 
