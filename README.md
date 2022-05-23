@@ -8,6 +8,13 @@
 
                              https://glvis.org
 
+<a href="https://github.com/GLVis/glvis/releases/latest"><img alt="Release" src="https://img.shields.io/badge/release-v4.2-success.svg"></a>
+<a href="https://github.com/GLVis/glvis/actions/workflows/builds.yml"><img alt="Build" src="https://github.com/GLVis/glvis/actions/workflows/builds.yml/badge.svg"></a>
+<a href="https://github.com/glvis/glvis/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-BSD-success.svg"></a>
+<a href="https://glvis.github.io/doxygen/html/index.html"><img alt="Doxygen" src="https://img.shields.io/badge/code-documented-success.svg"></a>
+<a href="https://glvis.github.io/releases/glvis-macOS.dmg"><img alt="License" src="https://img.shields.io/badge/Download-Mac-success.svg"></a>
+<a href="https://glvis.github.io/releases/glvis-Windows.zip""><img alt="License" src="https://img.shields.io/badge/Download-Windows-success.svg"></a>
+
 [GLVis](https://glvis.org) is an OpenGL tool for visualization of finite element
 meshes and functions. It is a multiplatform application that can be built on
 Linux/Unix systems, including macOS, and under Windows. It can also be used in a
