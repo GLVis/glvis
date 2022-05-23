@@ -6,7 +6,7 @@
                 _/    _/  _/        _/  _/    _/      _/_/
                  _/_/_/  _/_/_/_/    _/      _/  _/_/_/
 
-                              http://glvis.org
+                             https://glvis.org
 
 
 Automated testing for GLVis

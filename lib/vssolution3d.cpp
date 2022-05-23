@@ -50,6 +50,7 @@ std::string VisualizationSceneSolution3d::GetHelpString() const
       << "| E -  Toggle the elements in the CP |" << endl
       << "| f -  Smooth/Flat/discont. shading  |" << endl
       << "| g -  Toggle background             |" << endl
+      << "| G -  Export to glTF format         |" << endl
       << "| h -  Displays help menu            |" << endl
       << "| i -  Toggle cutting plane          |" << endl
       << "| I -  Toggle cutting plane algorithm|" << endl

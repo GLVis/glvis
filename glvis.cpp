@@ -941,7 +941,7 @@ struct Session
    }
 };
 
-void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
+void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
                  bool save_coloring)
 {
    std::vector<Session> current_sessions;
@@ -1014,7 +1014,7 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
 
       *isock >> data_type >> ws;
 
-      if (mac)
+      if (save_stream)
       {
          viscount++;
       }
@@ -1095,7 +1095,7 @@ void GLVisServer(int portnum, bool mac, bool fix_elem_orient,
       Session new_session(fix_elem_orient, save_coloring);
 
       char tmp_file[50];
-      if (mac)
+      if (save_stream)
       {
          sprintf(tmp_file,"glvis-saved.%04d",viscount);
          ofstream ofs(tmp_file);
@@ -1146,7 +1146,7 @@ int main (int argc, char *argv[])
 #endif
    // variables for command line arguments
    int         np            = 0;
-   bool        mac           = false;
+   bool        save_stream   = false;
    const char *stream_file   = string_none;
    const char *script_file   = string_none;
    const char *font_name     = string_default;
@@ -1197,8 +1197,8 @@ int main (int argc, char *argv[])
    args.AddOption(&secure, "-sec", "--secure-sockets",
                   "-no-sec", "--standard-sockets",
                   "Enable or disable GnuTLS secure sockets.");
-   args.AddOption(&mac, "-mac", "--save-stream",
-                  "-no-mac", "--dont-save-stream",
+   args.AddOption(&save_stream, "-save", "--save-stream",
+                  "-no-save", "--dont-save-stream",
                   "In server mode, save incoming data to a file before"
                   " visualization.");
    args.AddOption(&stream_file, "-saved", "--saved-stream",
@@ -1356,7 +1356,7 @@ int main (int argc, char *argv[])
    if (input == 1)
    {
       // Run server in new thread
-      std::thread serverThread{GLVisServer, portnum, mac,
+      std::thread serverThread{GLVisServer, portnum, save_stream,
                                stream_state.fix_elem_orient,
                                stream_state.save_coloring};
 

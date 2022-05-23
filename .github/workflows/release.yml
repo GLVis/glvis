@@ -19,7 +19,6 @@ on:
       - v*
     branches:
       - master
-      - windows-ci-dev #TODO: remove before merge
   workflow_dispatch:
 
 env:
