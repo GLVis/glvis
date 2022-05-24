@@ -1497,10 +1497,10 @@ void VisualizationSceneSolution3d::PrepareFlat()
             DrawQuad(disp_buf, p, c, minv, maxv);
          }
       }
-      else if(j == 2)
+      else if (j == 2)
       {
          poly.glBegin(GL_LINES);
-         for(int k=0;k<j;k++)
+         for (int k=0; k<j; k++)
          {
             MySetColor(poly, c[k], minv, maxv);
             poly.glVertex3dv(mesh->GetVertex(vertices[k]));
@@ -1631,7 +1631,7 @@ void VisualizationSceneSolution3d::PrepareFlat2()
 {
    const int dim = mesh->Dimension();
 
-   int i, k, fn, fo, di, have_normals = 0;
+   int fn, fo, di, have_normals = 0;
    double bbox_diam, vmin, vmax;
    disp_buf.clear();
 
@@ -1741,7 +1741,7 @@ void VisualizationSceneSolution3d::PrepareFlat2()
          ShrinkPoints(pointmat, i, 0, 0);
 
          // Compute normals. Skip in 1D.
-         if(dim > 1)
+         if (dim > 1)
          {
             normals.SetSize(3, values.Size());
             for (int j = 0; j < values.Size(); j++)
@@ -1797,7 +1797,7 @@ void VisualizationSceneSolution3d::PrepareFlat2()
                              ((sides == 3) ? cut_TriGeoms : cut_QuadGeoms) :
                              RefG->RefGeoms;
       int psides = (cut_lambda > 0) ? 4 : sides;
-      if(dim == 1) psides = 2; // Hack to trigger line rendering.
+      if (dim == 1) { psides = 2; } // Hack to trigger line rendering.
       DrawPatch(disp_buf, pointmat, values, normals, psides, RefGeoms,
                 minv, maxv, have_normals);
    }
@@ -1987,7 +1987,7 @@ void VisualizationSceneSolution3d::Prepare()
          for (j = 0; j < pointmat.Size(); j++)
          {
             MySetColor(poly, (*sol)(vertices[j]), minv, maxv);
-            if(dim > 1) poly.glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
+            if (dim > 1) { poly.glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j])); }
             poly.glVertex3dv(&pointmat(0, j));
          }
          poly.glEnd();

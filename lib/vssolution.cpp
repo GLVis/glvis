@@ -725,7 +725,7 @@ int VisualizationSceneSolution::GetRefinedValuesAndNormals(
    if (drawelems < 2)
    {
       // In 1D we do not have well-defined normals.
-      if(dim > 1)
+      if (dim > 1)
       {
          rsol->GetGradients(i, ir, tr);
          normals.SetSize(3, tr.Width());
@@ -1268,10 +1268,10 @@ void VisualizationSceneSolution::PrepareFlat()
       {
          DrawQuad(disp_buf, pts, col, minv, maxv);
       }
-      else if(pointmat.Width() == 2)
+      else if (pointmat.Width() == 2)
       {
          poly.glBegin(GL_LINES);
-         for(int k = 0; k < pointmat.Width(); k++)
+         for (int k = 0; k < pointmat.Width(); k++)
          {
             MySetColor(poly, col[k], minv, maxv);
             double* v = mesh->GetVertex(vertices[k]);
@@ -1292,7 +1292,6 @@ const int split_quads = 1;
 
 void VisualizationSceneSolution::PrepareFlat2()
 {
-   const int dim = mesh->Dimension();
    Array<int> vertices;
 
    int i, j, k;
@@ -1890,7 +1889,7 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
 void VisualizationSceneSolution::PrepareEdgeNumbering()
 {
    // 1D meshes do not have edges.
-   if(mesh->Dimension() == 1) return;
+   if (mesh->Dimension() == 1) { return; }
 
    f_nums_buf.clear();
 
