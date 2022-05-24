@@ -1431,21 +1431,6 @@ void VisualizationSceneSolution3d::PrepareFlat()
 
    gl3::GlBuilder poly = disp_buf.createBuilder();
 
-   // 1D elements must be rendered a bit thicker
-   double ThicknessFactor = 10.0;
-   double MS_Thickness = 7.0;
-   double LineWidth;
-   if (GetMultisample() > 0)
-   {
-      LineWidth = GetLineWidthMS();
-      SetLineWidthMS(MS_Thickness);
-   }
-   else
-   {
-      LineWidth = GetLineWidth();
-      SetLineWidth(ThicknessFactor*LineWidth);
-   }
-
    for (i = 0; i < ne; i++)
    {
       if (dim == 3)
@@ -1522,15 +1507,6 @@ void VisualizationSceneSolution3d::PrepareFlat()
          }
          poly.glEnd();
       }
-   }
-
-   if (GetMultisample() > 0)
-   {
-      SetLineWidthMS(LineWidth);
-   }
-   else
-   {
-      SetLineWidth(LineWidth);
    }
 
    updated_bufs.emplace_back(&disp_buf);
@@ -1852,21 +1828,6 @@ void VisualizationSceneSolution3d::Prepare()
    disp_buf.clear();
    gl3::GlBuilder poly = disp_buf.createBuilder();
 
-   // 1D elements must be rendered a bit thicker
-   double ThicknessFactor = 10.0;
-   double MS_Thickness = 7.0;
-   double LineWidth;
-   if (GetMultisample() > 0)
-   {
-      LineWidth = GetLineWidthMS();
-      SetLineWidthMS(MS_Thickness);
-   }
-   else
-   {
-      LineWidth = GetLineWidth();
-      SetLineWidth(ThicknessFactor*LineWidth);
-   }
-
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
    int nv = mesh -> GetNV();
@@ -2034,15 +1995,6 @@ void VisualizationSceneSolution3d::Prepare()
          }
          poly.glEnd();
       }
-   }
-
-   if (GetMultisample() > 0)
-   {
-      SetLineWidthMS(LineWidth);
-   }
-   else
-   {
-      SetLineWidth(LineWidth);
    }
 
    updated_bufs.emplace_back(&disp_buf);

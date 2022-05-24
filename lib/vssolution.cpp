@@ -1503,7 +1503,7 @@ void VisualizationSceneSolution::Prepare()
             mesh->GetPointMatrix (i, pointmat);
             mesh->GetElementVertices (i, vertices);
 
-            for (j = 0; j < pointmat.Size(); j++)
+            for (int j = 0; j < pointmat.Size(); j++)
             {
                double z = LogVal((*sol)(vertices[j]));
                MySetColor(poly, z, minv, maxv);
