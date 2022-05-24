@@ -13,7 +13,7 @@
 <a href="https://github.com/glvis/glvis/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-BSD-success.svg"></a>
 <a href="https://glvis.github.io/doxygen/html/index.html"><img alt="Doxygen" src="https://img.shields.io/badge/code-documented-success.svg"></a>
 <a href="https://glvis.github.io/releases/glvis-macOS.dmg"><img alt="License" src="https://img.shields.io/badge/Download-Mac-success.svg"></a>
-<a href="https://glvis.github.io/releases/glvis-Windows.zip""><img alt="License" src="https://img.shields.io/badge/Download-Windows-success.svg"></a>
+<a href="https://glvis.github.io/releases/glvis-Windows.zip"><img alt="License" src="https://img.shields.io/badge/Download-Windows-success.svg"></a>
 
 [GLVis](https://glvis.org) is an OpenGL tool for visualization of finite element
 meshes and functions. It is a multiplatform application that can be built on
@@ -27,6 +27,10 @@ Jupyter notebook, or in a web browser, see https://glvis.org/live.
 
 - GLVis is distributed under the terms of the BSD-3 license. All new contributions
   must be made under this license. See [LICENSE](LICENSE) and [NOTICE](NOTICE) for details.
+
+We welcome contributions and feedback from the community. Please see the file
+[CONTRIBUTING.md](CONTRIBUTING.md) for additional details about our development
+process.
 
 When started without any options, glvis starts a server which waits for a socket
 connections (on port `19916` by default) and visualizes any received data. This
