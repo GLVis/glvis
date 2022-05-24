@@ -720,17 +720,23 @@ int VisualizationSceneSolution::GetRefinedValuesAndNormals(
 {
    int have_normals = 0;
 
+   const int dim = mesh->Dimension();
+
    if (drawelems < 2)
    {
-      rsol->GetGradients(i, ir, tr);
-      normals.SetSize(3, tr.Width());
-      for (int j = 0; j < tr.Width(); j++)
+      // In 1D we do not have well-defined normals.
+      if(dim > 1)
       {
-         normals(0, j) = -tr(0, j);
-         normals(1, j) = -tr(1, j);
-         normals(2, j) = 1.;
+         rsol->GetGradients(i, ir, tr);
+         normals.SetSize(3, tr.Width());
+         for (int j = 0; j < tr.Width(); j++)
+         {
+            normals(0, j) = -tr(0, j);
+            normals(1, j) = -tr(1, j);
+            normals(2, j) = 1.;
+         }
+         have_normals = 1;
       }
-      have_normals = 1;
       rsol->GetValues(i, ir, vals, tr);
    }
    else
@@ -1233,40 +1239,39 @@ void VisualizationSceneSolution::PrepareWithNormals()
 
 void VisualizationSceneSolution::PrepareFlat()
 {
-   int i, j;
    disp_buf.clear();
-   int ne = mesh -> GetNE();
+   const int ne = mesh -> GetNE();
    DenseMatrix pointmat;
    Array<int> vertices;
    double pts[4][3], col[4];
 
    gl3::GlBuilder poly = disp_buf.createBuilder();
 
-   for (i = 0; i < ne; i++)
+   for (int i = 0; i < ne; i++)
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
 
       mesh->GetPointMatrix (i, pointmat);
       mesh->GetElementVertices (i, vertices);
 
-      for (j = 0; j < pointmat.Width(); j++)
+      for (int j = 0; j < pointmat.Width(); j++)
       {
          pts[j][0] = pointmat(0, j);
          pts[j][1] = pointmat(1, j);
          pts[j][2] = col[j] = LogVal((*sol)(vertices[j]));
       }
-      if (j == 3)
+      if (pointmat.Width() == 3)
       {
          DrawTriangle(disp_buf, pts, col, minv, maxv);
       }
-      else if (j == 4)
+      else if (pointmat.Width() == 4)
       {
          DrawQuad(disp_buf, pts, col, minv, maxv);
       }
-      else if(j == 2)
+      else if(pointmat.Width() == 2)
       {
          poly.glBegin(GL_LINES);
-         for(int k=0;k<j;k++)
+         for(int k = 0; k < pointmat.Width(); k++)
          {
             MySetColor(poly, col[k], minv, maxv);
             double* v = mesh->GetVertex(vertices[k]);
@@ -1287,12 +1292,11 @@ const int split_quads = 1;
 
 void VisualizationSceneSolution::PrepareFlat2()
 {
-   int dim = mesh->Dimension();
+   const int dim = mesh->Dimension();
    Array<int> vertices;
 
    int i, j, k;
    disp_buf.clear();
-   gl3::GlBuilder poly = disp_buf.createBuilder();
    int ne = mesh -> GetNE();
    DenseMatrix pointmat, pts3d, normals;
    Vector values;
@@ -1302,27 +1306,6 @@ void VisualizationSceneSolution::PrepareFlat2()
    for (i = 0; i < ne; i++)
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
-
-      if (dim == 1)
-      {
-         mesh->GetElementVertices (i, vertices);
-
-         poly.glBegin(GL_QUADS);
-
-         auto v1 = mesh->GetVertex(vertices[0]);
-         MySetColor(poly, (*sol)(vertices[0]), minv, maxv);
-         poly.glVertex3d(v1[0], v1[1], 0.0);
-         poly.glVertex3d(v1[0], v1[1], LogVal((*sol)(vertices[0])));
-
-         auto v2 = mesh->GetVertex(vertices[1]);
-         MySetColor(poly, (*sol)(vertices[1]), minv, maxv);
-         poly.glVertex3d(v2[0], v2[1], LogVal((*sol)(vertices[1])));
-         poly.glVertex3d(v2[0], v2[1], 0.0);
-
-         poly.glEnd();
-
-         continue;
-      }
 
       RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
                                          TimesToRefine, EdgeRefineFactor);
@@ -1435,8 +1418,6 @@ void VisualizationSceneSolution::Prepare()
          break;
    }
 
-   int i, j;
-
    disp_buf.clear();
    gl3::GlBuilder poly = disp_buf.createBuilder();
    int ne = mesh -> GetNE();
@@ -1449,70 +1430,56 @@ void VisualizationSceneSolution::Prepare()
    Vector ny(nv);
    Vector nz(nv);
 
+   // For triangles and quads: Compute the normal.
+   // For segments: Fill render buffer.
    for (int d = 0; d < mesh -> attributes.Size(); d++)
    {
-
       if (!el_attr_to_show[mesh -> attributes[d]-1]) { continue; }
 
       nx = 0.;
       ny = 0.;
       nz = 0.;
 
-      for (i = 0; i < ne; i++)
+      // Compute normals
+      for (int i = 0; i < ne && (dim > 1); i++)
       {
          if (mesh -> GetAttribute(i) == mesh -> attributes[d])
          {
-            if (dim == 1)
-            {
-               mesh->GetElementVertices (i, vertices);
-
-               poly.glBegin(GL_LINE_LOOP);
-
-               auto v1 = mesh->GetVertex(vertices[0]);
-               MySetColor(poly, (*sol)(vertices[0]), minv, maxv);
-               poly.glVertex3d(v1[0], v1[1], 0.0);
-               poly.glVertex3d(v1[0], v1[1], LogVal((*sol)(vertices[0])));
-
-               auto v2 = mesh->GetVertex(vertices[1]);
-               MySetColor(poly, (*sol)(vertices[1]), minv, maxv);
-               poly.glVertex3d(v2[0], v2[1], LogVal((*sol)(vertices[1])));
-               poly.glVertex3d(v2[0], v2[1], 0.0);
-
-               poly.glEnd();
-
-               continue;
-            }
-
             mesh->GetPointMatrix (i, pointmat);
             mesh->GetElementVertices (i, vertices);
 
-            for (j = 0; j < pointmat.Size(); j++)
+            for (int j = 0; j < pointmat.Size(); j++)
             {
                p[j][0] = pointmat(0, j);
                p[j][1] = pointmat(1, j);
                p[j][2] = LogVal((*sol)(vertices[j]));
             }
 
+            int normal_state;
             if (pointmat.Width() == 3)
             {
-               j = Compute3DUnitNormal(p[0], p[1], p[2], nor);
+               normal_state = Compute3DUnitNormal(p[0], p[1], p[2], nor);
             }
             else
             {
-               j = Compute3DUnitNormal(p[0], p[1], p[2], p[3], nor);
+               normal_state = Compute3DUnitNormal(p[0], p[1], p[2], p[3], nor);
             }
 
-            if (j == 0)
-               for (j = 0; j < pointmat.Size(); j++)
+            if (normal_state == 0) // Non-degenerate normal
+            {
+               for (int j = 0; j < pointmat.Size(); j++)
                {
                   nx(vertices[j]) += nor[0];
                   ny(vertices[j]) += nor[1];
                   nz(vertices[j]) += nor[2];
                }
+            }
          }
       }
 
-      for (i = 0; i < ne && (dim > 1); i++)
+      // Fill buffers for triangles and quads. We skip this portion for
+      // segments, because the buffers are already filled.
+      for (int i = 0; i < ne; i++)
       {
          if (mesh -> GetAttribute(i) == mesh -> attributes[d])
          {
@@ -1524,6 +1491,9 @@ void VisualizationSceneSolution::Prepare()
                   break;
                case Element::QUADRILATERAL:
                   shape = GL_QUADS;
+                  break;
+               case Element::SEGMENT:
+                  shape = GL_LINES;
                   break;
                default:
                   MFEM_ABORT("Invalid 2D element type");
@@ -1919,6 +1889,9 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
 
 void VisualizationSceneSolution::PrepareEdgeNumbering()
 {
+   // 1D meshes do not have edges.
+   if(mesh->Dimension() == 1) return;
+
    f_nums_buf.clear();
 
    DenseMatrix p;

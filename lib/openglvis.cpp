@@ -312,6 +312,8 @@ void VisualizationScene
             const double maxv, const int normals_opt)
 {
    gl3::GlBuilder poly = drawable.createBuilder();
+   // If we draw lines, then we want to optionally fill the space between the line and the mesh plane.
+   // gl3::GlBuilder poly_infill = drawable.createBuilder();
    double na[3];
 
    if (normals_opt == 1 || normals_opt == -2)
@@ -378,46 +380,88 @@ void VisualizationScene
    }
    else
    {
-      if (n == 3)
+      if (n == 2)
+      {
+         poly.glBegin(GL_LINES);
+      }
+      else if (n == 3)
       {
          poly.glBegin(GL_TRIANGLES);
       }
-      else
+      else if(n == 4)
       {
          poly.glBegin(GL_QUADS);
       }
+      else // We should never hit this case
+      {
+         mfem_error("VisualizationScene::DrawPatch() : unknown input geometry.");
+      }
       for (int i = 0; i < ind.Size(); i += n)
       {
-         int j;
-         if (n == 3)
-            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
-                                    &pts(0, ind[i+2]), na);
-         else
-            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
-                                    &pts(0, ind[i+2]), &pts(0, ind[i+3]), na);
-         if (j == 0)
+         if (n == 2) // Lines
          {
-            if (normals_opt == 0)
+            const auto pt0 = pts(0, ind[i+0]);
+            const auto pt1 = pts(1, ind[i+1]);
+            const auto pt2 = pts(0, ind[i+0]);
+            const auto pt3 = pts(1, ind[i+1]);
+
+            // Draw solution line
+            MySetColor(poly, vals(ind[i+0]), minv, maxv);
+            poly.glVertex3d(pts(0, ind[i+0]), pts(1, ind[i+0]), pts(2, ind[i+0]));
+            MySetColor(poly, vals(ind[i+1]), minv, maxv);
+            poly.glVertex3d(pts(0, ind[i+1]), pts(1, ind[i+1]), pts(2, ind[i+1]));
+
+            // Fill space between mesh and solution line
+            // MySetColor(poly_infill, vals(ind[i+0]), minv, maxv);
+            // poly_infill.glVertex3d(pts(0, ind[i+0]), pts(1, ind[i+0]), 0.0);
+            // MySetColor(poly_infill, vals(ind[i+0]), minv, maxv);
+            // poly_infill.glVertex3d(pts(0, ind[i+0]), pts(1, ind[i+0]), pts(2, ind[i+0]));
+            // MySetColor(poly_infill, vals(ind[i+1]), minv, maxv);
+            // poly_infill.glVertex3d(pts(0, ind[i+1]), pts(1, ind[i+1]), pts(2, ind[i+1]));
+            // MySetColor(poly_infill, vals(ind[i+1]), minv, maxv);
+            // poly_infill.glVertex3d(pts(0, ind[i+1]), pts(1, ind[i+1]), 0.0);
+         }
+         else // Quads and triangles
+         {
+            int j;
+            if (n == 3)
             {
-               poly.glNormal3dv(na);
-               for ( ; j < n; j++)
-               {
-                  MySetColor(poly, vals(ind[i+j]), minv, maxv);
-                  poly.glVertex3dv(&pts(0, ind[i+j]));
-               }
+               j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                       &pts(0, ind[i+2]), na);
             }
             else
             {
-               poly.glNormal3d(-na[0], -na[1], -na[2]);
-               for (j = n-1; j >= 0; j--)
+               j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                       &pts(0, ind[i+2]), &pts(0, ind[i+3]), na);
+            }
+            if (j == 0)
+            {
+               if (normals_opt == 0)
                {
-                  MySetColor(poly, vals(ind[i+j]), minv, maxv);
-                  poly.glVertex3dv(&pts(0, ind[i+j]));
+                  poly.glNormal3dv(na);
+                  for ( ; j < n; j++)
+                  {
+                     MySetColor(poly, vals(ind[i+j]), minv, maxv);
+                     poly.glVertex3dv(&pts(0, ind[i+j]));
+                  }
+               }
+               else
+               {
+                  poly.glNormal3d(-na[0], -na[1], -na[2]);
+                  for (j = n-1; j >= 0; j--)
+                  {
+                     MySetColor(poly, vals(ind[i+j]), minv, maxv);
+                     poly.glVertex3dv(&pts(0, ind[i+j]));
+                  }
                }
             }
          }
       }
       poly.glEnd();
+      // if (n == 2)
+      // {
+      //    poly_fill.glEnd();
+      // }
    }
 }
 
