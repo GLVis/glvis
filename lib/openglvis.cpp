@@ -312,8 +312,6 @@ void VisualizationScene
             const double maxv, const int normals_opt)
 {
    gl3::GlBuilder poly = drawable.createBuilder();
-   // If we draw lines, then we want to optionally fill the space between the line and the mesh plane.
-   // gl3::GlBuilder poly_infill = drawable.createBuilder();
    double na[3];
 
    if (normals_opt == 1 || normals_opt == -2)
@@ -410,16 +408,6 @@ void VisualizationScene
             poly.glVertex3d(pts(0, ind[i+0]), pts(1, ind[i+0]), pts(2, ind[i+0]));
             MySetColor(poly, vals(ind[i+1]), minv, maxv);
             poly.glVertex3d(pts(0, ind[i+1]), pts(1, ind[i+1]), pts(2, ind[i+1]));
-
-            // Fill space between mesh and solution line
-            // MySetColor(poly_infill, vals(ind[i+0]), minv, maxv);
-            // poly_infill.glVertex3d(pts(0, ind[i+0]), pts(1, ind[i+0]), 0.0);
-            // MySetColor(poly_infill, vals(ind[i+0]), minv, maxv);
-            // poly_infill.glVertex3d(pts(0, ind[i+0]), pts(1, ind[i+0]), pts(2, ind[i+0]));
-            // MySetColor(poly_infill, vals(ind[i+1]), minv, maxv);
-            // poly_infill.glVertex3d(pts(0, ind[i+1]), pts(1, ind[i+1]), pts(2, ind[i+1]));
-            // MySetColor(poly_infill, vals(ind[i+1]), minv, maxv);
-            // poly_infill.glVertex3d(pts(0, ind[i+1]), pts(1, ind[i+1]), 0.0);
          }
          else // Quads and triangles
          {
@@ -458,10 +446,6 @@ void VisualizationScene
          }
       }
       poly.glEnd();
-      // if (n == 2)
-      // {
-      //    poly_fill.glEnd();
-      // }
    }
 }
 

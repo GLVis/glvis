@@ -1631,14 +1631,7 @@ void VisualizationSceneSolution3d::PrepareFlat2()
 {
    const int dim = mesh->Dimension();
 
-   if(dim == 1)
-   {
-      std::cout << "Not supported for 1D meshes. Falling back to PrepareFlat()." << std::endl;
-      PrepareFlat();
-      return;
-   }
-
-   int i, k, fn, fo, di, have_normals;
+   int i, k, fn, fo, di, have_normals = 0;
    double bbox_diam, vmin, vmax;
    disp_buf.clear();
 
@@ -1664,6 +1657,10 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       {
          case Element::TRIANGLE:
             sides = 3;
+            break;
+         // TODO: can we improve this? It is quite a hack because sides
+         case Element::SEGMENT:
+            sides = 0;
             break;
 
          case Element::QUADRILATERAL:
@@ -1735,30 +1732,35 @@ void VisualizationSceneSolution3d::PrepareFlat2()
             CutReferenceElements(TimesToRefine, cut_lambda);
             cut_updated = true;
          }
-         const IntegrationRule &ir = (cut_lambda > 0) ?
+         const IntegrationRule &ir = (cut_lambda > 0 && dim > 1) ?
                                      ((sides == 3) ? cut_TriPts : cut_QuadPts) :
                                      RefG->RefPts;
          GridF->GetValues(i, ir, values, pointmat);
-         normals.SetSize(3, values.Size());
          mesh->GetElementTransformation(i, &T);
-         for (int j = 0; j < values.Size(); j++)
-         {
-            T.SetIntPoint(&ir.IntPoint(j));
-            const DenseMatrix &J = T.Jacobian();
-            normals.GetColumnReference(j, normal);
-            CalcOrtho(J, normal);
-            normal /= normal.Norml2();
-         }
-         have_normals = 1;
          di = 0;
          ShrinkPoints(pointmat, i, 0, 0);
+
+         // Compute normals. Skip in 1D.
+         if(dim > 1)
+         {
+            normals.SetSize(3, values.Size());
+            for (int j = 0; j < values.Size(); j++)
+            {
+               T.SetIntPoint(&ir.IntPoint(j));
+               const DenseMatrix &J = T.Jacobian();
+               normals.GetColumnReference(j, normal);
+               CalcOrtho(J, normal);
+               normal /= normal.Norml2();
+            }
+            have_normals = 1;
+         }
       }
 
       vmin = fmin(vmin, values.Min());
       vmax = fmax(vmax, values.Max());
 
       // compute an average normal direction for the current face
-      if (sc != 0.0)
+      if (sc != 0.0 && dim > 1)
       {
          for (int j = 0; j < 3; j++)
          {
@@ -1782,7 +1784,7 @@ void VisualizationSceneSolution3d::PrepareFlat2()
          have_normals = 0;
       }
 
-      have_normals = have_normals ? 2 : 0;
+      have_normals = have_normals && (dim > 1) ? 2 : 0;
       if (di)
       {
          have_normals = -1 - have_normals;
@@ -1795,6 +1797,7 @@ void VisualizationSceneSolution3d::PrepareFlat2()
                              ((sides == 3) ? cut_TriGeoms : cut_QuadGeoms) :
                              RefG->RefGeoms;
       int psides = (cut_lambda > 0) ? 4 : sides;
+      if(dim == 1) psides = 2; // Hack to trigger line rendering.
       DrawPatch(disp_buf, pointmat, values, normals, psides, RefGeoms,
                 minv, maxv, have_normals);
    }
