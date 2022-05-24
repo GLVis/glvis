@@ -1245,8 +1245,6 @@ void VisualizationSceneSolution::PrepareFlat()
    Array<int> vertices;
    double pts[4][3], col[4];
 
-   gl3::GlBuilder poly = disp_buf.createBuilder();
-
    for (int i = 0; i < ne; i++)
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
