@@ -1843,7 +1843,6 @@ void VisualizationSceneSolution3d::Prepare()
    Vector nz(nv);
 
    Table ba_to_be; // boundary_attribute--to--boundary_element
-   if (dim > 1) // Boundaries are just points in 1D
    {
       Table be_to_ba;
       be_to_ba.MakeI(ne);
@@ -1873,7 +1872,7 @@ void VisualizationSceneSolution3d::Prepare()
 
    const Array<int> &attributes =
       ((dim == 3) ? mesh->bdr_attributes : mesh->attributes);
-   for (int d = 0; d < attributes.Size() && dim > 1; d++)
+   for (int d = 0; d < attributes.Size(); d++)
    {
       const int attr = attributes[d]-1;
 
@@ -1892,12 +1891,14 @@ void VisualizationSceneSolution3d::Prepare()
          {
             mesh->GetElementVertices(elem[i], vertices);
          }
-         for (j = 0; j < vertices.Size(); j++)
+         for (j = 0; j < vertices.Size() && (dim > 1); j++)
          {
             nx(vertices[j]) = ny(vertices[j]) = nz(vertices[j]) = 0.;
          }
       }
-      for (int i = 0; i < nelem; i++)
+
+      // Compute normals. Skip in 1D.
+      for (int i = 0; i < nelem && (dim > 1); i++)
       {
          if (dim == 3)
          {
@@ -1911,18 +1912,24 @@ void VisualizationSceneSolution3d::Prepare()
          }
 
          if (pointmat.Width() == 3)
+         {
             j = Compute3DUnitNormal(&pointmat(0,0), &pointmat(0,1),
                                     &pointmat(0,2), nor);
+         }
          else
+         {
             j = Compute3DUnitNormal(&pointmat(0,0), &pointmat(0,1),
                                     &pointmat(0,2), &pointmat(0,3), nor);
+         }
          if (j == 0)
+         {
             for (j = 0; j < pointmat.Size(); j++)
             {
                nx(vertices[j]) += nor[0];
                ny(vertices[j]) += nor[1];
                nz(vertices[j]) += nor[2];
             }
+         }
       }
 
       for (int i = 0; i < nelem; i++)
@@ -1967,19 +1974,6 @@ void VisualizationSceneSolution3d::Prepare()
                break;
          }
 
-         if(elemType == GL_LINES)
-         {
-            poly.glBegin(GL_LINES);
-
-            MySetColor(poly, (*sol)(vertices[0]), minv, maxv);
-            poly.glVertex3dv(mesh->GetVertex(vertices[0]));
-
-            MySetColor(poly, (*sol)(vertices[1]), minv, maxv);
-            poly.glVertex3dv(mesh->GetVertex(vertices[1]));
-
-            poly.glEnd();
-            continue;
-         }
          poly.glBegin(elemType);
          if (dim == 3)
          {
@@ -1993,7 +1987,7 @@ void VisualizationSceneSolution3d::Prepare()
          for (j = 0; j < pointmat.Size(); j++)
          {
             MySetColor(poly, (*sol)(vertices[j]), minv, maxv);
-            poly.glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
+            if(dim > 1) poly.glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
             poly.glVertex3dv(&pointmat(0, j));
          }
          poly.glEnd();
