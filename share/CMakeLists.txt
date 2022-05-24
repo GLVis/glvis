@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+# Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 # at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 # LICENSE and NOTICE for details. LLNL-CODE-443271.
 #
@@ -14,8 +14,8 @@ if(NOT WIN32)
 add_custom_command(
     OUTPUT logo.rgba.bin.cpp
     COMMAND ${CMAKE_COMMAND} -E copy
-	    ${CMAKE_CURRENT_SOURCE_DIR}/logo.rgba
-	    ${CMAKE_CURRENT_BINARY_DIR}/logo.rgba
+            ${CMAKE_CURRENT_SOURCE_DIR}/logo.rgba
+            ${CMAKE_CURRENT_BINARY_DIR}/logo.rgba
     COMMAND xxd -i logo.rgba > logo.rgba.bin.cpp
     DEPENDS logo.rgba
     COMMENT "Generating logo.rgba.bin.o")

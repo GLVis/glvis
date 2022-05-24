@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -200,7 +200,7 @@ class MeshRenderer
    int msaa_samples;
    GLuint color_tex, alpha_tex, font_tex;
    float line_w, line_w_aa;
-   PaletteState* pal;
+   PaletteState* palette;
 
    bool feat_use_fbo_antialias;
    void init();
@@ -221,11 +221,11 @@ public:
    }
 
    template<typename TDevice>
-   void setDevice(TDevice&& device)
+   void setDevice(TDevice&& dev)
    {
-      device.reset(new TDevice(device));
+      device.reset(new TDevice(dev));
    }
-   void setPalette(PaletteState* pal) { this->pal = pal; }
+   void setPalette(PaletteState* pal) { this->palette = pal; }
 
    // Sets the texture handle of the color palette.
    void setColorTexture(GLuint tex_h) { color_tex = tex_h; }

@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -14,6 +14,7 @@
 
 #include "mfem.hpp"
 #include "gl/types.hpp"
+#include "vsdata.hpp"
 #include <map>
 using namespace mfem;
 
@@ -65,21 +66,32 @@ protected:
                          const int *ind, const Array<double> &levels,
                          const DenseMatrix *grad = NULL);
 
+   static int GetPyramidFaceSplits(const Array<bool> &quad_diag,
+                                   const Array<int> &faces,
+                                   const Array<int> &ofaces);
+   void DrawRefinedPyramidLevelSurf(gl3::GlDrawable& target,
+                                    const DenseMatrix &verts,
+                                    const Vector &vals, const int *RG,
+                                    const int np, const int face_splits,
+                                    const DenseMatrix *grad = NULL);
+
    static int GetWedgeFaceSplits(const Array<bool> &quad_diag,
                                  const Array<int> &faces,
                                  const Array<int> &ofaces);
-   void DrawRefinedWedgeLevelSurf(
-      gl3::GlDrawable& target,
-      const DenseMatrix &verts, const Vector &vals, const int *RG, const int np,
-      const int face_splits, const DenseMatrix *grad = NULL);
+   void DrawRefinedWedgeLevelSurf(gl3::GlDrawable& target,
+                                  const DenseMatrix &verts,
+                                  const Vector &vals, const int *RG,
+                                  const int np, const int face_splits,
+                                  const DenseMatrix *grad = NULL);
 
    static int GetHexFaceSplits(const Array<bool> &quad_diag,
                                const Array<int> &faces,
                                const Array<int> &ofaces);
-   void DrawRefinedHexLevelSurf(
-      gl3::GlDrawable& target,
-      const DenseMatrix &verts, const Vector &vals, const int *RG, const int nh,
-      const int face_splits, const DenseMatrix *grad = NULL);
+   void DrawRefinedHexLevelSurf(gl3::GlDrawable& target,
+                                const DenseMatrix &verts,
+                                const Vector &vals, const int *RG,
+                                const int nh, const int face_splits,
+                                const DenseMatrix *grad = NULL);
 
    int GetAutoRefineFactor();
 
@@ -123,6 +135,8 @@ public:
    virtual void PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows,
                                       bool color);
    virtual gl3::SceneInfo GetSceneObjs();
+
+   virtual void glTF_Export();
 
    void ToggleDrawElems()
    { drawelems = !drawelems; Prepare(); }

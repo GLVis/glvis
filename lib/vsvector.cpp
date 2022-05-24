@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -15,9 +15,9 @@
 #include <cmath>
 
 #include "mfem.hpp"
-using namespace mfem;
 #include "visual.hpp"
 
+using namespace mfem;
 using namespace std;
 
 std::string VisualizationSceneVector::GetHelpString() const
@@ -30,7 +30,7 @@ std::string VisualizationSceneVector::GetHelpString() const
       << "| a -  Displays/Hides the axes       |" << endl
       << "| A -  Turns antialiasing on/off     |" << endl
       << "| b -  Displacements step back       |" << endl
-      << "| B -  Displays/Hides the boundary   |" << endl
+      << "| B -  Toggle 2D boundary            |" << endl
       << "| c -  Toggle colorbar and caption   |" << endl
       << "| C -  Change the main plot caption  |" << endl
       << "| d -  Displays/Hides displacements  |" << endl
@@ -651,23 +651,23 @@ int VisualizationSceneVector::GetRefinedValuesAndNormals(
 
 void VisualizationSceneVector::PrepareDisplacedMesh()
 {
-   int i, j, ne = mesh -> GetNE();
+   int ne = mesh -> GetNE();
    DenseMatrix pointmat;
    Array<int> vertices;
-   double zc = 0.5*(z[0]+z[1]);
+   double zc = 0.5*(bb.z[0]+bb.z[1]);
 
    // prepare the displaced mesh
    displine_buf.clear();
    gl3::GlBuilder build = displine_buf.createBuilder();
    if (shading != 2)
    {
-      for (i = 0; i < ne; i++)
+      for (int i = 0; i < ne; i++)
       {
          build.glBegin(GL_LINE_LOOP);
          mesh->GetPointMatrix (i, pointmat);
          mesh->GetElementVertices (i, vertices);
 
-         for (j = 0; j < pointmat.Size(); j++)
+         for (int j = 0; j < pointmat.Size(); j++)
          {
             build.glVertex3d (
                pointmat.Elem(0, j)+
@@ -684,7 +684,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
       double sc = double(ianim)/ianimmax;
       DenseMatrix vvals, pm;
 
-      for (i = 0; i < ne; i++)
+      for (int i = 0; i < ne; i++)
       {
          RefinedGeometry *RefG =
             GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
@@ -717,7 +717,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
       x_min = y_min = numeric_limits<double>::infinity();
       x_max = y_max = -x_min;
 
-      for (i = 0; i < ne; i++)
+      for (int i = 0; i < ne; i++)
       {
          RefinedGeometry *RefG =
             GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
@@ -770,7 +770,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
          }
          levels_x.SetSize(nx+1);
          levels_y.SetSize(ny+1);
-         for (i = 0; i <= nx; i++)
+         for (int i = 0; i <= nx; i++)
          {
             double a = double(i) / nx;
             levels_x[i] = (1. - a) * x_min + a * x_max;
@@ -778,7 +778,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
          double offs = 1e-3 / nx;
          levels_x[0]  = (1. - offs) * x_min + offs * x_max;
          levels_x[nx] = offs * x_min + (1. - offs) * x_max;
-         for (i = 0; i <= ny; i++)
+         for (int i = 0; i <= ny; i++)
          {
             double a = double(i) / ny;
             levels_y[i] = (1. - a) * y_min + a * y_max;
@@ -788,7 +788,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
          levels_y[ny] = offs * y_min + (1. - offs) * y_max;
       }
 
-      for (i = 0; i < ne; i++)
+      for (int i = 0; i < ne; i++)
       {
          RefinedGeometry *RefG =
             GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
@@ -844,7 +844,7 @@ thread_local double new_maxlen;
 void VisualizationSceneVector::DrawVector(double px, double py, double vx,
                                           double vy, double cval)
 {
-   double zc = 0.5*(z[0]+z[1]);
+   double zc = 0.5*(bb.z[0]+bb.z[1]);
 
    gl3::GlBuilder builder = vector_buf.createBuilder();
 
@@ -856,7 +856,7 @@ void VisualizationSceneVector::DrawVector(double px, double py, double vx,
    }
    else if (drawvector > 0)
    {
-      double area = (x[1]-x[0])*(y[1]-y[0]);
+      double area = (bb.x[1]-bb.x[0])*(bb.y[1]-bb.y[0]);
       double h = sqrt(area/mesh->GetNV()) * ArrowScale;
 
       arrow_type = 1;
@@ -990,6 +990,8 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
    }
    // disable lighting for objects below
    params.num_pt_lights = 0;
+
+   // draw boundary in 2D
    if (drawbdr)
    {
       scene.queue.emplace_back(params, &bdr_buf);
@@ -1028,5 +1030,52 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
       }
       scene.queue.emplace_back(params, &displine_buf);
    }
+
    return scene;
+}
+
+void VisualizationSceneVector::glTF_Export()
+{
+   string name = "GLVis_scene_000";
+
+   glTF_Builder bld(name);
+
+   auto palette_mat = AddPaletteMaterial(bld);
+   auto pal_lines_mat = AddPaletteLinesMaterial(bld, palette_mat);
+   auto black_mat = AddBlackMaterial(bld);
+   auto buf = bld.addBuffer("buffer");
+   if (drawvector)
+   {
+      auto vec_node = AddModelNode(bld, "Vectors");
+      auto vec_mesh = bld.addMesh("Vectors Mesh");
+      bld.addNodeMesh(vec_node, vec_mesh);
+
+      int ntria = AddTriangles(
+                     bld,
+                     vec_mesh,
+                     buf,
+                     (drawvector == 1) ? black_mat : palette_mat,
+                     vector_buf);
+      int nlines = AddLines(
+                      bld,
+                      vec_mesh,
+                      buf,
+                      (drawvector == 1) ? black_mat : pal_lines_mat,
+                      vector_buf);
+      if (ntria == 0 || nlines == 0)
+      {
+         cout << "glTF export: no vectors found to export!" << endl;
+      }
+   }
+   if (drawelems) { glTF_ExportElements(bld, buf, palette_mat, disp_buf); }
+   if (drawmesh)
+   {
+      glTF_ExportMesh(bld, buf, black_mat,
+                      (drawmesh == 1) ? line_buf : lcurve_buf);
+   }
+   if (drawbdr) { glTF_ExportBoundary(bld, buf, black_mat); }
+   if (drawaxes) { glTF_ExportBox(bld, buf, black_mat); }
+   bld.writeFile();
+
+   cout << "Exported glTF -> " << name << ".gltf" << endl;
 }

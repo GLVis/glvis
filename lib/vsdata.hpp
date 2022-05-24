@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -197,6 +197,19 @@ public:
    Mesh *GetMesh() { return mesh; }
 
    virtual gl3::SceneInfo GetSceneObjs();
+
+   void glTF_ExportBox(glTF_Builder &bld,
+                       glTF_Builder::buffer_id buffer,
+                       glTF_Builder::material_id black_mat);
+   void glTF_ExportElements(glTF_Builder &bld,
+                            glTF_Builder::buffer_id buffer,
+                            glTF_Builder::material_id palette_mat,
+                            const gl3::GlDrawable &gl_drawable);
+   void glTF_ExportMesh(glTF_Builder &bld,
+                        glTF_Builder::buffer_id buffer,
+                        glTF_Builder::material_id black_mat,
+                        const gl3::GlDrawable &gl_drawable);
+   virtual void glTF_Export();
 
    double &GetMinV() { return minv; }
    double &GetMaxV() { return maxv; }

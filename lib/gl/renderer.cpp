@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -351,13 +351,13 @@ CaptureBuffer MeshRenderer::capture(const RenderQueue& queue)
       device->attachTexture(GLDevice::SAMPLER_ALPHA, alpha_tex);
       for (auto buf : tex_bufs)
       {
-         device->captureXfbBuffer(*pal, cbuf, buf);
+         device->captureXfbBuffer(*palette, cbuf, buf);
       }
       device->detachTexture(GLDevice::SAMPLER_COLOR);
       device->detachTexture(GLDevice::SAMPLER_ALPHA);
       for (auto buf : no_tex_bufs)
       {
-         device->captureXfbBuffer(*pal, cbuf, buf);
+         device->captureXfbBuffer(*palette, cbuf, buf);
       }
       if (!params.contains_translucent)
       {

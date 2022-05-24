@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -117,9 +117,9 @@ void VisualizationSceneScalarData::Arrow3(gl3::GlBuilder& builder,
                                           double length,
                                           double cone_scale)
 {
-   double xc = 0.5*(x[0]+x[1]);
-   double yc = 0.5*(y[0]+y[1]);
-   double zc = 0.5*(z[0]+z[1]);
+   double xc = 0.5*(bb.x[0]+bb.x[1]);
+   double yc = 0.5*(bb.y[0]+bb.y[1]);
+   double zc = 0.5*(bb.z[0]+bb.z[1]);
    glm::mat4 xfrm(1.0);
    xfrm = glm::translate(xfrm, glm::vec3(xc, yc, zc));
    xfrm = glm::scale(xfrm, glm::vec3(1.0/xscale, 1.0/yscale, 1.0/zscale));
@@ -318,6 +318,7 @@ void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
    builder.glBegin(GL_TRIANGLE_FAN);
    for (i=0; i<=n+1; i++)
    {
+      Normalize(normal[i]);
       builder.glNormal3dv(normal[i]);
       builder.glVertex3dv(cone[i]);
    }
@@ -331,8 +332,8 @@ void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
 
 void VisualizationSceneScalarData::PrepareColorBar (double minval,
                                                     double maxval,
-                                                    Array<double> *level,
-                                                    Array<double> *levels)
+                                                    Array<double> *mesh_level,
+                                                    Array<double> *lsurf_levels)
 {
 
    int i;
@@ -383,19 +384,19 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
       color_bar.addLine<gl3::Vertex>({maxx, miny, posz}, {maxx, maxy, posz});
    }
 
-   if (levels)
+   if (lsurf_levels)
    {
-      for (i = 0; i < levels->Size(); i++)
+      for (i = 0; i < lsurf_levels->Size(); i++)
       {
-         float Y = miny + (maxy - miny) * LogUVal((*levels)[i]);
+         float Y = miny + (maxy - miny) * LogUVal((*lsurf_levels)[i]);
          color_bar.addLine<gl3::Vertex>({minx, Y, posz}, {maxx, Y, posz});
       }
    }
-   if (level)
+   if (mesh_level)
    {
-      for (i = 0; i < level->Size(); i++)
+      for (i = 0; i < mesh_level->Size(); i++)
       {
-         float Y = miny + (maxy - miny) * LogUVal((*level)[i]);
+         float Y = miny + (maxy - miny) * LogUVal((*mesh_level)[i]);
          color_bar.addLine<gl3::Vertex>({minx, Y, posz}, {maxx, Y, posz});
       }
    }
@@ -403,7 +404,7 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
    const double text_x = maxx + 0.4*(maxx-minx);
    double val;
    double Y;
-   if (!level)
+   if (!mesh_level)
    {
       for (i = 0; i <= 4; i++)
       {
@@ -418,9 +419,9 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
    }
    else
    {
-      for (i = 0; i < level->Size(); i++)
+      for (i = 0; i < mesh_level->Size(); i++)
       {
-         val = (*level)[i];
+         val = (*mesh_level)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
 
          ostringstream buf;
@@ -429,11 +430,11 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
       }
    }
 
-   if (levels)
+   if (lsurf_levels)
    {
-      for (i = 0; i < levels->Size(); i++)
+      for (i = 0; i < lsurf_levels->Size(); i++)
       {
-         val = (*levels)[i];
+         val = (*lsurf_levels)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
 
          ostringstream buf;
@@ -628,28 +629,28 @@ void KeyF7Pressed(GLenum state)
    if (state & KMOD_SHIFT)
    {
       cout << "Current bounding box:\n"
-           << "   min: (" << vsdata->x[0] << ',' << vsdata->y[0] << ','
-           << vsdata->z[0] << ")\n"
-           << "   max: (" << vsdata->x[1] << ',' << vsdata->y[1] << ','
-           << vsdata->z[1] << ")\n"
+           << "   min: (" << vsdata->bb.x[0] << ',' << vsdata->bb.y[0] << ','
+           << vsdata->bb.z[0] << ")\n"
+           << "   max: (" << vsdata->bb.x[1] << ',' << vsdata->bb.y[1] << ','
+           << vsdata->bb.z[1] << ")\n"
            << "Enter new bounding box:\n"
            << "x_min = " << flush;
-      cin >> vsdata->x[0];
+      cin >> vsdata->bb.x[0];
       cout << "y_min = " << flush;
-      cin >> vsdata->y[0];
+      cin >> vsdata->bb.y[0];
       cout << "z_min = " << flush;
-      cin >> vsdata->z[0];
+      cin >> vsdata->bb.z[0];
       cout << "x_max = " << flush;
-      cin >> vsdata->x[1];
+      cin >> vsdata->bb.x[1];
       cout << "y_max = " << flush;
-      cin >> vsdata->y[1];
+      cin >> vsdata->bb.y[1];
       cout << "z_max = " << flush;
-      cin >> vsdata->z[1];
+      cin >> vsdata->bb.z[1];
       cout << "New bounding box:\n"
-           << "   min: (" << vsdata->x[0] << ',' << vsdata->y[0] << ','
-           << vsdata->z[0] << ")\n"
-           << "   max: (" << vsdata->x[1] << ',' << vsdata->y[1] << ','
-           << vsdata->z[1] << ")\n" << flush;
+           << "   min: (" << vsdata->bb.x[0] << ',' << vsdata->bb.y[0] << ','
+           << vsdata->bb.z[0] << ")\n"
+           << "   max: (" << vsdata->bb.x[1] << ',' << vsdata->bb.y[1] << ','
+           << vsdata->bb.z[1] << ")\n" << flush;
       vsdata->UpdateBoundingBox();
       SendExposeEvent();
    }
@@ -696,12 +697,17 @@ void KeyTPressed()
    cout << "New material/light : " << ml << endl;
 }
 
-void KeyGPressed()
+void KeygPressed()
 {
    vsdata->ToggleBackground();
    vsdata->PrepareAxes();
    vsdata->EventUpdateBackground();
    SendExposeEvent();
+}
+
+void KeyGPressed()
+{
+   vsdata->glTF_Export();
 }
 
 void KeyF1Pressed()
@@ -837,29 +843,29 @@ void VisualizationSceneScalarData::RulerPosition()
    cout << "x = " << flush; cin >> ruler_x;
    cout << "y = " << flush; cin >> ruler_y;
    cout << "z = " << flush; cin >> ruler_z;
-   if (ruler_x < x[0])
+   if (ruler_x < bb.x[0])
    {
-      ruler_x = x[0];
+      ruler_x = bb.x[0];
    }
-   else if (ruler_x > x[1])
+   else if (ruler_x > bb.x[1])
    {
-      ruler_x = x[1];
+      ruler_x = bb.x[1];
    }
-   if (ruler_y < y[0])
+   if (ruler_y < bb.y[0])
    {
-      ruler_y = y[0];
+      ruler_y = bb.y[0];
    }
-   else if (ruler_y > y[1])
+   else if (ruler_y > bb.y[1])
    {
-      ruler_y = y[1];
+      ruler_y = bb.y[1];
    }
-   if (ruler_z < z[0])
+   if (ruler_z < bb.z[0])
    {
-      ruler_z = z[0];
+      ruler_z = bb.z[0];
    }
-   else if (ruler_z > z[1])
+   else if (ruler_z > bb.z[1])
    {
-      ruler_z = z[1];
+      ruler_z = bb.z[1];
    }
    cout << "New ruler position: (" << ruler_x << ','
         << ruler_y << ',' << ruler_z << ")" << endl;
@@ -869,9 +875,9 @@ void VisualizationSceneScalarData::RulerPosition()
 void VisualizationSceneScalarData::PrepareRuler(bool log_z)
 {
    float pos_z = LogVal(ruler_z, log_z);
-   float x_f[2] = {(float) x[0], (float) x[1]};
-   float y_f[2] = {(float) y[0], (float) y[1]};
-   float z_f[2] = {(float) z[0], (float) z[1]};
+   float x_f[2] = {(float) bb.x[0], (float) bb.x[1]};
+   float y_f[2] = {(float) bb.y[0], (float) bb.y[1]};
+   float z_f[2] = {(float) bb.z[0], (float) bb.z[1]};
    float ruler_x_f = (float) ruler_x,
          ruler_y_f = (float) ruler_y;
    ruler_buf.clear();
@@ -1044,6 +1050,79 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
    return scene;
 }
 
+void VisualizationSceneScalarData::glTF_ExportBox(
+   glTF_Builder &bld,
+   glTF_Builder::buffer_id buffer,
+   glTF_Builder::material_id black_mat)
+{
+   auto white_mat = glTF_Builder::material_id{glTF_Builder::INVALID_ID};
+
+   auto box_node = AddModelNode(bld, "Box");
+   auto box_mesh = bld.addMesh("Box Mesh");
+   bld.addNodeMesh(box_node, box_mesh);
+
+   int nlines = AddLines(
+                   bld,
+                   box_mesh,
+                   buffer,
+                   (drawaxes != 3) ? black_mat : white_mat,
+                   axes_buf);
+   if (nlines == 0)
+   {
+      cout << "glTF export: no box found to export!" << endl;
+   }
+}
+
+void VisualizationSceneScalarData::glTF_ExportElements(
+   glTF_Builder &bld,
+   glTF_Builder::buffer_id buffer,
+   glTF_Builder::material_id palette_mat,
+   const gl3::GlDrawable &gl_drawable)
+{
+   auto elements_node = AddModelNode(bld, "Elements");
+   auto elements_mesh = bld.addMesh("Elements Mesh");
+   bld.addNodeMesh(elements_node, elements_mesh);
+
+   int ntria = AddTriangles(
+                  bld,
+                  elements_mesh,
+                  buffer,
+                  palette_mat,
+                  gl_drawable);
+   if (ntria == 0)
+   {
+      cout << "glTF export: no elements found to export!" << endl;
+   }
+}
+
+void VisualizationSceneScalarData::glTF_ExportMesh(
+   glTF_Builder &bld,
+   glTF_Builder::buffer_id buffer,
+   glTF_Builder::material_id black_mat,
+   const gl3::GlDrawable &gl_drawable)
+{
+   auto lines_node = AddModelNode(bld, "Lines");
+   auto lines_mesh = bld.addMesh("Lines Mesh");
+   bld.addNodeMesh(lines_node, lines_mesh);
+
+   int nlines = AddLines(
+                   bld,
+                   lines_mesh,
+                   buffer,
+                   black_mat,
+                   gl_drawable);
+   if (nlines == 0)
+   {
+      cout << "glTF export: no mesh/level lines found to export!" << endl;
+   }
+}
+
+void VisualizationSceneScalarData::glTF_Export()
+{
+   cout << "glTF export is not yet implemented for this visualization mode."
+        << endl;
+}
+
 void VisualizationSceneScalarData::ToggleTexture()
 {
    int isSmooth = palette.GetSmoothSetting();
@@ -1129,7 +1208,7 @@ void VisualizationSceneScalarData::Init()
       wnd->setOnKeyDown('t', KeyTPressed);
       wnd->setOnKeyDown('T', KeyTPressed);
 
-      wnd->setOnKeyDown('g', KeyGPressed);
+      wnd->setOnKeyDown('g', KeygPressed);
       wnd->setOnKeyDown('G', KeyGPressed);
 
       wnd->setOnKeyDown('c', KeycPressed);
@@ -1173,9 +1252,9 @@ void VisualizationSceneScalarData::Init()
 
    FindNewBox(false);
    ruler_on = 0;
-   ruler_x = 0.5 * (x[0] + x[1]);
-   ruler_y = 0.5 * (y[0] + y[1]);
-   ruler_z = 0.5 * (z[0] + z[1]);
+   ruler_x = 0.5 * (bb.x[0] + bb.x[1]);
+   ruler_y = 0.5 * (bb.y[0] + bb.y[1]);
+   ruler_z = 0.5 * (bb.z[0] + bb.z[1]);
 
    PrepareRuler();
 
@@ -1197,16 +1276,16 @@ void VisualizationSceneScalarData::SetNewScalingFromBox()
    {
       // Scale all sides of the box to 1.
       xscale = yscale = zscale = 1.;
-      if ((x[1]-x[0])>eps) { xscale /= (x[1]-x[0]); }
-      if ((y[1]-y[0])>eps) { yscale /= (y[1]-y[0]); }
-      if ((z[1]-z[0])>eps) { zscale /= (z[1]-z[0]); }
+      if ((bb.x[1]-bb.x[0])>eps) { xscale /= (bb.x[1]-bb.x[0]); }
+      if ((bb.y[1]-bb.y[0])>eps) { yscale /= (bb.y[1]-bb.y[0]); }
+      if ((bb.z[1]-bb.z[0])>eps) { zscale /= (bb.z[1]-bb.z[0]); }
    }
    else
    {
       // Find the largest side of the box in xscale
-      xscale = x[1]-x[0];
-      yscale = y[1]-y[0];
-      zscale = z[1]-z[0];
+      xscale = bb.x[1]-bb.x[0];
+      yscale = bb.y[1]-bb.y[0];
+      zscale = bb.z[1]-bb.z[0];
       if (xscale < yscale) { xscale = yscale; }
       if (xscale < zscale) { xscale = zscale; }
       // Set proportional scaling so that the largest side of the box is 1.
@@ -1243,7 +1322,7 @@ void VisualizationSceneScalarData::SetAxisLabels(const char * a_x,
 
 void VisualizationSceneScalarData::PrepareAxes()
 {
-   std::array<float, 4> blk = GetLineColor();
+   // std::array<float, 4> blk = GetLineColor();
    axes_buf.clear();
 
    gl3::GlBuilder bld = axes_buf.createBuilder();
@@ -1252,38 +1331,38 @@ void VisualizationSceneScalarData::PrepareAxes()
       // glLineStipple(1, 255);
       bld.glBegin(GL_LINES);
       bld.glColor3f(1., 0., 0.);
-      bld.glVertex3d(x[0], y[0], z[0]);
-      bld.glColor4fv(blk.data());
-      bld.glVertex3d(x[1], y[0], z[0]);
-      bld.glVertex3d(x[0], y[1], z[0]);
+      bld.glVertex3d(bb.x[0], bb.y[0], bb.z[0]);
+      bld.glColor3f(0.75, 0.75, 0.75); // bld.glColor4fv(blk.data());
+      bld.glVertex3d(bb.x[1], bb.y[0], bb.z[0]);
+      bld.glVertex3d(bb.x[0], bb.y[1], bb.z[0]);
       bld.glColor3f(0., 1., 0.);
-      bld.glVertex3d(x[0], y[0], z[0]);
+      bld.glVertex3d(bb.x[0], bb.y[0], bb.z[0]);
       bld.glEnd();
-      bld.glColor4fv(blk.data());
+      // bld.glColor4fv(blk.data());
       // bld.setUseColor(false);
       // bld.glEnable(GL_LINE_STIPPLE);
       bld.glBegin(GL_LINE_STRIP);
       bld.glColor3f(0.75, 0.75, 0.75);
-      bld.glVertex3d(x[1], y[0], z[0]);
-      bld.glVertex3d(x[1], y[1], z[0]);
-      bld.glVertex3d(x[0], y[1], z[0]);
+      bld.glVertex3d(bb.x[1], bb.y[0], bb.z[0]);
+      bld.glVertex3d(bb.x[1], bb.y[1], bb.z[0]);
+      bld.glVertex3d(bb.x[0], bb.y[1], bb.z[0]);
       bld.glEnd();
    }
    else
    {
       // bld.setUseColor(false);
       bld.glBegin(GL_LINE_LOOP);
-      bld.glVertex3d(x[0], y[0], z[0]);
-      bld.glVertex3d(x[1], y[0], z[0]);
-      bld.glVertex3d(x[1], y[1], z[0]);
-      bld.glVertex3d(x[0], y[1], z[0]);
+      bld.glVertex3d(bb.x[0], bb.y[0], bb.z[0]);
+      bld.glVertex3d(bb.x[1], bb.y[0], bb.z[0]);
+      bld.glVertex3d(bb.x[1], bb.y[1], bb.z[0]);
+      bld.glVertex3d(bb.x[0], bb.y[1], bb.z[0]);
       bld.glEnd();
    }
    bld.glBegin(GL_LINE_LOOP);
-   bld.glVertex3d(x[0], y[0], z[1]);
-   bld.glVertex3d(x[1], y[0], z[1]);
-   bld.glVertex3d(x[1], y[1], z[1]);
-   bld.glVertex3d(x[0], y[1], z[1]);
+   bld.glVertex3d(bb.x[0], bb.y[0], bb.z[1]);
+   bld.glVertex3d(bb.x[1], bb.y[0], bb.z[1]);
+   bld.glVertex3d(bb.x[1], bb.y[1], bb.z[1]);
+   bld.glVertex3d(bb.x[0], bb.y[1], bb.z[1]);
    bld.glEnd();
 
    if (drawaxes == 3)
@@ -1291,9 +1370,9 @@ void VisualizationSceneScalarData::PrepareAxes()
       // bld.setUseColor(true);
       // bld.glDisable(GL_LINE_STIPPLE);
       bld.glBegin(GL_LINES);
-      bld.glVertex3d(x[0], y[0], z[1]);
+      bld.glVertex3d(bb.x[0], bb.y[0], bb.z[1]);
       bld.glColor3f(0., 0., 1.);
-      bld.glVertex3d(x[0], y[0], z[0]);
+      bld.glVertex3d(bb.x[0], bb.y[0], bb.z[0]);
       bld.glEnd();
       // bld.setUseColor(false);
       // bld.glEnable(GL_LINE_STIPPLE);
@@ -1303,15 +1382,15 @@ void VisualizationSceneScalarData::PrepareAxes()
    else
    {
       bld.glBegin(GL_LINES);
-      bld.glVertex3d(x[0], y[0], z[0]);
-      bld.glVertex3d(x[0], y[0], z[1]);
+      bld.glVertex3d(bb.x[0], bb.y[0], bb.z[0]);
+      bld.glVertex3d(bb.x[0], bb.y[0], bb.z[1]);
    }
-   bld.glVertex3d(x[1], y[0], z[0]);
-   bld.glVertex3d(x[1], y[0], z[1]);
-   bld.glVertex3d(x[1], y[1], z[0]);
-   bld.glVertex3d(x[1], y[1], z[1]);
-   bld.glVertex3d(x[0], y[1], z[0]);
-   bld.glVertex3d(x[0], y[1], z[1]);
+   bld.glVertex3d(bb.x[1], bb.y[0], bb.z[0]);
+   bld.glVertex3d(bb.x[1], bb.y[0], bb.z[1]);
+   bld.glVertex3d(bb.x[1], bb.y[1], bb.z[0]);
+   bld.glVertex3d(bb.x[1], bb.y[1], bb.z[1]);
+   bld.glVertex3d(bb.x[0], bb.y[1], bb.z[0]);
+   bld.glVertex3d(bb.x[0], bb.y[1], bb.z[1]);
    bld.glEnd();
    if (drawaxes == 3)
    {
@@ -1330,13 +1409,13 @@ void VisualizationSceneScalarData::PrepareAxes()
       int oy = -3*desc/2;
       ostringstream buf;
       buf << setprecision(4)
-          << "(" << x[0] << "," << y[0] << ","  << z[0] << ")" ;
-      axes_buf.addText(x[0], y[0], z[0], ox, oy, buf.str());
+          << "(" << bb.x[0] << "," << bb.y[0] << ","  << bb.z[0] << ")" ;
+      axes_buf.addText(bb.x[0], bb.y[0], bb.z[0], ox, oy, buf.str());
 
       ostringstream buf1;
       buf1 << setprecision(4)
-           << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
-      axes_buf.addText(x[1], y[1], z[1], ox, oy, buf1.str());
+           << "(" << bb.x[1] << "," << bb.y[1] << "," << bb.z[1] << ")" ;
+      axes_buf.addText(bb.x[1], bb.y[1], bb.z[1], ox, oy, buf1.str());
    }
    updated_bufs.emplace_back(&axes_buf);
 
@@ -1359,20 +1438,20 @@ void VisualizationSceneScalarData::PrepareAxes()
 }
 
 void VisualizationSceneScalarData::DrawPolygonLevelLines(
-   gl3::GlBuilder& builder, double * point, int n, Array<double> &level,
+   gl3::GlBuilder& builder, double * point, int n, Array<double> &mesh_level,
    bool log_vals)
 {
    int l, k, k1;
    double curve, t;
    double p[3];
 
-   for (l = 0; l < level.Size(); l++)
+   for (l = 0; l < mesh_level.Size(); l++)
    {
       // Using GL_LINE_STRIP (explicitly closed for more than 2 points)
       // should produce the same result, however visually the level lines
       // have discontinuities. Using GL_LINE_LOOP does not have that problem.
       builder.glBegin(GL_LINE_LOOP);
-      curve = LogVal(level[l], log_vals);
+      curve = LogVal(mesh_level[l], log_vals);
       for (k = 0; k < n; k++)
       {
          k1 = (k+1)%n;
@@ -1598,9 +1677,9 @@ Plane::Plane(double A,double B,double C,double D)
 
    CartesianToSpherical();
 
-   double x[2] = {vsdata -> x[0], vsdata -> x[1]};
-   double y[2] = {vsdata -> y[0], vsdata -> y[1]};
-   double z[2] = {vsdata -> z[0], vsdata -> z[1]};
+   double x[2] = {vsdata -> bb.x[0], vsdata -> bb.x[1]};
+   double y[2] = {vsdata -> bb.y[0], vsdata -> bb.y[1]};
+   double z[2] = {vsdata -> bb.z[0], vsdata -> bb.z[1]};
    bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
                       (y[1]-y[0])*(y[1]-y[0]) +
                       (z[1]-z[0])*(z[1]-z[0]) );

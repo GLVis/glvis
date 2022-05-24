@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -17,6 +17,7 @@ using namespace mfem;
 
 #include "sdl.hpp"
 #include "gl/types.hpp"
+#include "vsdata.hpp"
 
 #include <map>
 
@@ -31,10 +32,18 @@ protected:
    int drawmesh, drawelems, drawnums, draworder;
    int drawbdr, draw_cp;
 
+   int refine_func = 0;
+
+   double minv_sol, maxv_sol;
+   bool have_sol_range = false; // true when minv_sol and maxv_sol are set
+
+   int TimesToRefine, EdgeRefineFactor;
+
    gl3::GlDrawable disp_buf;
 
    gl3::GlDrawable e_nums_buf;
    gl3::GlDrawable v_nums_buf;
+   gl3::GlDrawable f_nums_buf;
 
    gl3::GlDrawable lcurve_buf;
    gl3::GlDrawable line_buf;
@@ -70,12 +79,8 @@ protected:
    // Used for drawing markers for element and vertex numbering
    double GetElementLengthScale(int k);
 
-   // Rendering large numbers of text objects for element or vertex numbering is
-   // slow.  Turn it off above some entity count.
-   static const int MAX_RENDER_NUMBERING = 1000;
-
 public:
-   int shading, TimesToRefine, EdgeRefineFactor;
+   int shading;
 
    int attr_to_show, bdr_attr_to_show;
    Array<int> el_attr_to_show, bdr_el_attr_to_show;
@@ -129,13 +134,18 @@ public:
    void PrepareVertexNumbering();
    void PrepareVertexNumbering1();
    void PrepareVertexNumbering2();
+   void PrepareEdgeNumbering();
 
    void PrepareCP();
 
    virtual gl3::SceneInfo GetSceneObjs();
 
-   void ToggleDrawBdr()
-   { drawbdr = !drawbdr; }
+   void glTF_ExportBoundary(glTF_Builder &bld,
+                            glTF_Builder::buffer_id buffer,
+                            glTF_Builder::material_id black_mat);
+   virtual void glTF_Export();
+
+   void ToggleDrawBdr();
 
    virtual void ToggleDrawElems();
 
@@ -145,13 +155,16 @@ public:
    //           3 - no arrows (black), 4 - with arrows (black)
    void ToggleDrawOrdering() { draworder = (draworder+1)%5; }
 
-   // 0 - none, 1 - elements, 2 - vertices
-   void ToggleDrawNumberings() { drawnums = (drawnums+1)%3; }
+   // 0 - none, 1 - elements, 2 - edges, 3 - vertices
+   void ToggleDrawNumberings() { drawnums = (drawnums+1)%4; }
 
    virtual void SetShading(int, bool);
    void ToggleShading();
 
    void ToggleDrawCP() { draw_cp = !draw_cp; PrepareCP(); }
+
+   void ToggleRefinements();
+   void ToggleRefinementFunction();
 
    virtual void SetRefineFactors(int, int);
    virtual void AutoRefine();

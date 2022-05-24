@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -19,6 +19,7 @@
 #include "mfem.hpp"
 #include "geom_utils.hpp"
 #include "sdl.hpp"
+#include "gltf.hpp"
 
 // Visualization header file
 
@@ -87,7 +88,6 @@ protected:
    int light_mat_idx;
    bool use_light;
 
-
    gl3::RenderParams GetMeshDrawParams();
    glm::mat4 GetModelViewMtx();
 
@@ -125,10 +125,46 @@ protected:
                  const double (&pts)[4][3], const double (&cv)[4],
                  const double minv, const double maxv);
 
+   /// Draw a 3D triangle in physical space with a central triangle removed. The
+   /// cut is controlled by value of cut_lambda. See keys Ctrl+F3/F4. Similar to
+   /// CutReferenceTriangle in lib/vssolution3d.cpp.
+   void DrawCutTriangle(gl3::GlDrawable& buff,
+                        const double (&pts)[4][3], const double (&cv)[4],
+                        const double minv, const double maxv);
+
+   /// Draw a 3D quad in physical space with a central square removed. The cut
+   /// is controlled by the value of cut_lambda. See keys Ctrl+F3/F4. Similar to
+   /// CutReferenceSquare in lib/vssolution3d.cpp.
+   void DrawCutQuad(gl3::GlDrawable& buff,
+                    const double (&pts)[4][3], const double (&cv)[4],
+                    const double minv, const double maxv);
+
    void DrawPatch(gl3::GlDrawable& buff, const mfem::DenseMatrix &pts,
                   mfem::Vector &vals, mfem::DenseMatrix &normals,
                   const int n, const mfem::Array<int> &ind, const double minv,
                   const double maxv, const int normals_opt = 0);
+
+   glTF_Builder::material_id AddPaletteMaterial(glTF_Builder &bld);
+   glTF_Builder::material_id AddBlackMaterial(glTF_Builder &bld);
+   glTF_Builder::material_id AddPaletteLinesMaterial(
+      glTF_Builder &bld, glTF_Builder::material_id palette_mat);
+
+   glTF_Builder::node_id AddModelNode(glTF_Builder &bld,
+                                      const std::string &nodeName);
+
+   // returns number of triangles
+   int AddTriangles(glTF_Builder &bld,
+                    glTF_Builder::mesh_id mesh,
+                    glTF_Builder::buffer_id buffer,
+                    glTF_Builder::material_id material,
+                    const gl3::GlDrawable &gl_drawable);
+
+   // returns number of lines
+   int AddLines(glTF_Builder &bld,
+                glTF_Builder::mesh_id mesh,
+                glTF_Builder::buffer_id buffer,
+                glTF_Builder::material_id material,
+                const gl3::GlDrawable &gl_drawable);
 
 public:
    VisualizationScene();
@@ -142,7 +178,15 @@ public:
    PaletteState palette;
 
    /// Bounding box.
-   double x[2], y[2], z[2];
+   struct
+   {
+      double x[2], y[2], z[2];
+   } bb;
+
+   /// Amount of face cutting with keys Ctrl-F3/F4 (0: no cut, 1: cut to edges)
+   double cut_lambda;
+   /// Have the reference geometries been updated for the cut?
+   bool cut_updated;
 
    glm::mat4 rotmat;
    glm::mat4 translmat;

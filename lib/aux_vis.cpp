@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -16,7 +16,6 @@
 #include <chrono>
 
 #include "mfem.hpp"
-using namespace mfem;
 #include "sdl.hpp"
 #include "palettes.hpp"
 #include "visual.hpp"
@@ -32,6 +31,8 @@ using namespace mfem;
 #ifndef __EMSCRIPTEN__
 #include <fontconfig/fontconfig.h>
 #endif
+
+using namespace mfem;
 
 thread_local int visualize = 0;
 thread_local VisualizationScene * locscene;
@@ -891,7 +892,8 @@ int InvertSurfaceVertical(SDL_Surface *surface)
 }
 
 #ifdef GLVIS_USE_LIBPNG
-int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi, bool with_alpha)
+int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi, bool with_alpha,
+              std::function<void(int,void*)> get_row)
 {
    png_byte *pixels = new png_byte[(with_alpha ? 4 : 3)*w];
    if (!pixels)
@@ -944,8 +946,15 @@ int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi, bool with_alpha)
    png_write_info(png_ptr, info_ptr);
    for (int i = 0; i < h; i++)
    {
-      glReadPixels(0, h-1-i, w, 1, with_alpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE,
-                   pixels);
+      if (!get_row)
+      {
+         glReadPixels(0, h-1-i, w, 1, with_alpha ? GL_RGBA : GL_RGB,
+                      GL_UNSIGNED_BYTE, pixels);
+      }
+      else
+      {
+         get_row(i, pixels);
+      }
       png_write_row(png_ptr, pixels);
    }
    png_write_end(png_ptr, info_ptr);

@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+# Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 # at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 # LICENSE and NOTICE for details. LLNL-CODE-443271.
 #
@@ -92,6 +92,13 @@ if (NOT WIN32)
   list(APPEND _glvis_compile_defs "GLVIS_USE_LOGO")
 else()
   list(APPEND _glvis_compile_defs "_USE_MATH_DEFINES")
+endif()
+
+if(NOT WIN32)
+  find_program(XXD_FOUND xxd)
+  if(NOT XXD_FOUND)
+    message(FATAL_ERROR "Required tool not found: xxd.")
+  endif()
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug|debug|DEBUG")
@@ -309,26 +316,29 @@ if(NOT EMSCRIPTEN)
         GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
   endif (MFEM_USE_GNUTLS)
 
-endif(NOT EMSCRIPTEN)
+  set(GLVIS_APP_ICON ${CMAKE_CURRENT_SOURCE_DIR}/share/GLVis.icns)
+  set(GLVIS_APP_CREDITS ${CMAKE_CURRENT_SOURCE_DIR}/share/Credits.rtf)
+  set_source_files_properties(
+    ${GLVIS_APP_ICON} ${GLVIS_APP_CREDITS}
+    PROPERTIES
+      MACOSX_PACKAGE_LOCATION "Resources")
 
-add_custom_target(app
-    COMMAND ${CMAKE_COMMAND} -E make_directory GLVis.app/Contents/MacOS
-    COMMAND ${CMAKE_COMMAND} -E make_directory GLVis.app/Contents/Resources
-    COMMAND ${CMAKE_COMMAND} -E copy glvis GLVis.app/Contents/MacOS/
-    COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/share/Info.plist GLVis.app/Contents
-    COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/share/GLVis.icns
-        GLVis.app/Contents/Resources/
-    COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/share/Credits.rtf
-        GLVis.app/Contents/Resources/
-    DEPENDS
-        glvis-exe
-        GLVis.app/Contents/Info.plist
-        GLVis.app/Contents/Resources/GLVis.icns
-        GLVis.app/Contents/Resources/Credits.rtf
-    VERBATIM)
+  add_executable(app MACOSX_BUNDLE glvis.cpp ${GLVIS_APP_ICON} ${GLVIS_APP_CREDITS})
+  set_target_properties(app
+    PROPERTIES
+      EXCLUDE_FROM_ALL TRUE
+      OUTPUT_NAME GLVis
+      MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/share/Info.cmake.plist.in)
+  target_link_libraries(app PRIVATE glvis glvis_logo)
+  install(TARGETS app
+    RUNTIME DESTINATION .
+    BUNDLE DESTINATION .)
+  install(CODE [[
+    include (BundleUtilities)
+    fixup_bundle("${CMAKE_INSTALL_PREFIX}/GLVis.app" "" "")
+  ]] COMPONENT RUNTIME)
+
+endif(NOT EMSCRIPTEN)
 
 if(ENABLE_TESTS)
   enable_testing()

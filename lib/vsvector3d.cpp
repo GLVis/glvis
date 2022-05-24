@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -15,10 +15,20 @@
 #include <limits>
 
 #include "mfem.hpp"
-using namespace mfem;
 #include "visual.hpp"
 
+using namespace mfem;
 using namespace std;
+
+// Reference geometry with a cut in the middle, which subdivides GeometryRefiner
+// when cut_lambda is updated, see keys Ctrl+F3/F4. These variables are defined
+// in lib/vssolution3d.cpp.
+extern thread_local IntegrationRule cut_QuadPts;
+extern thread_local Array<int> cut_QuadGeoms;
+extern thread_local IntegrationRule cut_TriPts;
+extern thread_local Array<int> cut_TriGeoms;
+extern void CutReferenceElements(int TimesToRefine, double lambda);
+
 
 std::string VisualizationSceneVector3d::GetHelpString() const
 {
@@ -70,6 +80,7 @@ std::string VisualizationSceneVector3d::GetHelpString() const
       << "| F1 - X window info and keystrokes  |" << endl
       << "| F2 - Update colors, etc.           |" << endl
       << "| F3/F4 - Shrink/Zoom bdr elements   |" << endl
+      << "| Ctrl+F3/F4 - Cut face bdr elements |" << endl
       << "| F6 - Palette options               |" << endl
       << "| F7 - Manually set min/max value    |" << endl
       << "| F8 - List of subdomains to show    |" << endl
@@ -549,11 +560,25 @@ void VisualizationSceneVector3d::PrepareFlat()
       }
       if (j == 3)
       {
-         DrawTriangle(disp_buf, p, c, minv, maxv);
+         if (cut_lambda > 0)
+         {
+            DrawCutTriangle(disp_buf, p, c, minv, maxv);
+         }
+         else
+         {
+            DrawTriangle(disp_buf, p, c, minv, maxv);
+         }
       }
       else
       {
-         DrawQuad(disp_buf, p, c, minv, maxv);
+         if (cut_lambda > 0)
+         {
+            DrawCutQuad(disp_buf, p, c, minv, maxv);
+         }
+         else
+         {
+            DrawQuad(disp_buf, p, c, minv, maxv);
+         }
       }
    }
    updated_bufs.emplace_back(&disp_buf);
@@ -561,7 +586,7 @@ void VisualizationSceneVector3d::PrepareFlat()
 
 void VisualizationSceneVector3d::PrepareFlat2()
 {
-   int i, k, fn, fo, di = 0, have_normals;
+   int fn, fo, di = 0, have_normals;
    double bbox_diam, vmin, vmax;
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -574,17 +599,30 @@ void VisualizationSceneVector3d::PrepareFlat2()
    double norm[3];
    IsoparametricTransformation T;
 
-   bbox_diam = sqrt( (x[1]-x[0])*(x[1]-x[0]) +
-                     (y[1]-y[0])*(y[1]-y[0]) +
-                     (z[1]-z[0])*(z[1]-z[0]) );
+   bbox_diam = sqrt( (bb.x[1]-bb.x[0])*(bb.x[1]-bb.x[0]) +
+                     (bb.y[1]-bb.y[0])*(bb.y[1]-bb.y[0]) +
+                     (bb.z[1]-bb.z[0])*(bb.z[1]-bb.z[0]) );
    double sc = FaceShiftScale * bbox_diam;
 
    disp_buf.clear();
 
    vmin = numeric_limits<double>::infinity();
    vmax = -vmin;
-   for (i = 0; i < ne; i++)
+   for (int i = 0; i < ne; i++)
    {
+      int sides;
+      switch ((dim == 3) ? mesh->GetBdrElementType(i) : mesh->GetElementType(i))
+      {
+         case Element::TRIANGLE:
+            sides = 3;
+            break;
+
+         case Element::QUADRILATERAL:
+         default:
+            sides = 4;
+            break;
+      }
+
       if (dim == 3)
       {
          if (!bdr_attr_to_show[mesh->GetBdrAttribute(i)-1]) { continue; }
@@ -605,7 +643,6 @@ void VisualizationSceneVector3d::PrepareFlat2()
       else
       {
          if (!bdr_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
-
          mesh->GetElementVertices(i, vertices);
       }
 
@@ -616,23 +653,34 @@ void VisualizationSceneVector3d::PrepareFlat2()
          mesh -> GetBdrElementFace (i, &fn, &fo);
          RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceBaseGeometry (fn),
                                             TimesToRefine);
+         if (!cut_updated)
+         {
+            // Update the cut version of the reference geometries
+            CutReferenceElements(TimesToRefine, cut_lambda);
+            cut_updated = true;
+         }
+
          // di = GridF->GetFaceValues(fn, 2, RefG->RefPts, values, pointmat);
          di = fo % 2;
          if (di == 1 && !mesh->FaceIsInterior(fn))
          {
             di = 0;
          }
-         GridF->GetFaceValues(fn, di, RefG->RefPts, values, pointmat);
+
+         IntegrationRule &RefPts = (cut_lambda > 0) ?
+                                   ((sides == 3) ? cut_TriPts : cut_QuadPts) :
+                                   RefG->RefPts;
+         GridF->GetFaceValues(fn, di, RefPts, values, pointmat);
          if (ianim > 0)
          {
-            VecGridF->GetFaceVectorValues(fn, di, RefG->RefPts, vec_vals,
+            VecGridF->GetFaceVectorValues(fn, di, RefPts, vec_vals,
                                           pointmat);
             pointmat.Add(double(ianim)/ianimmax, vec_vals);
             have_normals = 0;
          }
          else
          {
-            GetFaceNormals(fn, di, RefG->RefPts, normals);
+            GetFaceNormals(fn, di, RefPts, normals);
             have_normals = 1;
          }
          ShrinkPoints(pointmat, i, fn, di);
@@ -641,16 +689,27 @@ void VisualizationSceneVector3d::PrepareFlat2()
       {
          RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
                                             TimesToRefine);
-         GridF->GetValues(i, RefG->RefPts, values, pointmat);
+         if (!cut_updated)
+         {
+            // Update the cut version of the reference geometries
+            CutReferenceElements(TimesToRefine, cut_lambda);
+            cut_updated = true;
+         }
+         IntegrationRule &RefPts = (cut_lambda > 0) ?
+                                   ((sides == 3) ? cut_TriPts : cut_QuadPts) :
+                                   RefG->RefPts;
+         GridF->GetValues(i, RefPts, values, pointmat);
          if (ianim > 0)
          {
-            VecGridF->GetVectorValues(i, RefG->RefPts, vec_vals, pointmat);
+            VecGridF->GetVectorValues(i, RefPts, vec_vals, pointmat);
             pointmat.Add(double(ianim)/ianimmax, vec_vals);
             have_normals = 0;
          }
          else
          {
-            const IntegrationRule &ir = RefG->RefPts;
+            const IntegrationRule &ir = (cut_lambda > 0) ?
+                                        ((sides == 3) ? cut_TriPts : cut_QuadPts) :
+                                        RefG->RefPts;
             normals.SetSize(3, values.Size());
             mesh->GetElementTransformation(i, &T);
             for (int j = 0; j < values.Size(); j++)
@@ -669,38 +728,25 @@ void VisualizationSceneVector3d::PrepareFlat2()
       vmin = fmin(vmin, values.Min());
       vmax = fmax(vmax, values.Max());
 
-      int sides;
-      switch ((dim == 3) ? mesh->GetBdrElementType(i) : mesh->GetElementType(i))
-      {
-         case Element::TRIANGLE:
-            sides = 3;
-            break;
-
-         case Element::QUADRILATERAL:
-         default:
-            sides = 4;
-            break;
-      }
-
       if (sc != 0.0 && have_normals)
       {
-         for (int i = 0; i < 3; i++)
+         for (int j = 0; j < 3; j++)
          {
-            norm[i] = 0.0;
+            norm[j] = 0.0;
          }
          Normalize(normals);
-         for (k = 0; k < normals.Width(); k++)
+         for (int k = 0; k < normals.Width(); k++)
             for (int j = 0; j < 3; j++)
             {
                norm[j] += normals(j, k);
             }
          Normalize(norm);
-         for (int i = 0; i < pointmat.Width(); i++)
+         for (int k = 0; k < pointmat.Width(); k++)
          {
-            double val = sc * (values(i) - minv) / (maxv - minv);
+            double val = sc * (values(k) - minv) / (maxv - minv);
             for (int j = 0; j < 3; j++)
             {
-               pointmat(j, i) += val * norm[j];
+               pointmat(j, k) += val * norm[j];
             }
          }
          have_normals = 0;
@@ -711,7 +757,12 @@ void VisualizationSceneVector3d::PrepareFlat2()
       {
          have_normals = -1 - have_normals;
       }
-      DrawPatch(disp_buf, pointmat, values, normals, sides, RefG->RefGeoms,
+
+      Array<int> &RefGeoms = (cut_lambda > 0) ?
+                             ((sides == 3) ? cut_TriGeoms : cut_QuadGeoms) :
+                             RefG->RefGeoms;
+      int psides = (cut_lambda > 0) ? 4 : sides;
+      DrawPatch(disp_buf, pointmat, values, normals, psides, RefGeoms,
                 minv, maxv, have_normals);
    }
    updated_bufs.emplace_back(&disp_buf);
@@ -941,9 +992,9 @@ void VisualizationSceneVector3d::PrepareLines2()
    RefinedGeometry * RefG;
    Array<int> vertices;
 
-   bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
-                      (y[1]-y[0])*(y[1]-y[0]) +
-                      (z[1]-z[0])*(z[1]-z[0]) );
+   bbox_diam = sqrt ( (bb.x[1]-bb.x[0])*(bb.x[1]-bb.x[0]) +
+                      (bb.y[1]-bb.y[0])*(bb.y[1]-bb.y[0]) +
+                      (bb.z[1]-bb.z[0])*(bb.z[1]-bb.z[0]) );
    double sc = FaceShiftScale * bbox_diam;
 
    for (i = 0; i < ne; i++)
@@ -1207,7 +1258,7 @@ void VisualizationSceneVector3d::DrawVector(gl3::GlBuilder& builder,
                                             double sz, double s)
 {
    static int nv = mesh -> GetNV();
-   static double volume = (x[1]-x[0])*(y[1]-y[0])*(z[1]-z[0]);
+   static double volume = (bb.x[1]-bb.x[0])*(bb.y[1]-bb.y[0])*(bb.z[1]-bb.z[0]);
    static double h      = pow(volume/nv, 0.333);
    static double hh     = pow(volume, 0.333) / 10;
 

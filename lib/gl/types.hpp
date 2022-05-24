@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -34,6 +34,8 @@
 #include "platform_gl.hpp"
 
 using namespace std;
+
+class VisualizationScene;
 
 namespace gl3
 {
@@ -599,6 +601,7 @@ private:
 
    friend class GlBuilder;
    friend class MeshRenderer;
+   friend class ::VisualizationScene; // needed for glTF export
 
    template<typename Vert>
    VertexBuffer<Vert> * getBuffer(GLenum shape)

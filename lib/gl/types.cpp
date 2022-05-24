@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -96,7 +96,7 @@ void GlDrawable::addCone(float x, float y, float z,
 void GlBuilder::saveVertex(const GlBuilder::FFState& v)
 {
    GLenum dst_buf = is_line ? GL_LINES : GL_TRIANGLES;
-   if (!use_norm)
+   if (is_line || !use_norm)
    {
       if (use_color)
       {

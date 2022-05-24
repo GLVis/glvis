@@ -3,8 +3,12 @@
 </p>
 
 <p align="center">
-<a href="https://github.com/glvis/glvis/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-BSD-brightgreen.svg"></a>
-<a href="https://glvis.github.io/doxygen/html/index.html"><img alt="Doxygen" src="https://img.shields.io/badge/code-documented-brightgreen.svg"></a>
+<a href="https://github.com/GLVis/glvis/releases/latest"><img alt="Release" src="https://img.shields.io/badge/release-v4.2-success.svg"></a>
+<a href="https://github.com/GLVis/glvis/actions/workflows/builds.yml"><img alt="Build" src="https://github.com/GLVis/glvis/actions/workflows/builds.yml/badge.svg"></a>
+<a href="https://github.com/glvis/glvis/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-BSD-success.svg"></a>
+<a href="https://glvis.github.io/doxygen/html/index.html"><img alt="Doxygen" src="https://img.shields.io/badge/code-documented-success.svg"></a>
+<a href="https://glvis.github.io/releases/glvis-macOS.dmg"><img alt="License" src="https://img.shields.io/badge/Download-Mac-success.svg"></a>
+<a href="https://glvis.github.io/releases/glvis-Windows.zip"><img alt="License" src="https://img.shields.io/badge/Download-Windows-success.svg"></a>
 </p>
 
 
@@ -287,11 +291,12 @@ Before a PR can be merged, it should satisfy the following:
   - Local copies of `next` can then be updated with `git fetch origin next && git checkout -B next origin/next`.
 
 ### Release Checklist
-
 - [ ] Update the GLVis version in the following files:
     - [ ] `CHANGELOG`
-    - [ ] `makefile`
-    - [ ] `CMakeLists.txt`
+    - [ ] `README.md`
+    - [ ] `vcpkg.json`
+    - [ ] `share/Info.plist`
+    - [ ] `share/Info.cmake.plist.in`
 - [ ] Check that version requirements for each of GLVis's dependencies are documented in `INSTALL` and up-to-date
 - [ ] Update the `CHANGELOG` to organize all release contributions
 - [ ] Review the whole source code once over

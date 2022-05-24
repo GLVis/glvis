@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+# Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 # at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 # LICENSE and NOTICE for details. LLNL-CODE-443271.
 #
@@ -84,6 +84,9 @@ CXXFLAGS = $(MFEM_CXXFLAGS)
 # MFEM config does not define C compiler
 CC     ?= gcc
 CFLAGS ?= -O3
+
+# GLVis uses xxd to convert the logo  to a compilable file
+XXD_FOUND := $(shell command -v xxd 2> /dev/null)
 
 # Optional compile/link flags
 GLVIS_OPTS ?=
@@ -227,11 +230,11 @@ Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 # generated with 'echo lib/gl/*.c* lib/*.c*', does not include lib/*.m (Obj-C)
 ALL_SOURCE_FILES = \
  lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp \
- lib/gl/shader.cpp lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp lib/font.cpp \
- lib/gl2ps.c lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/sdl.cpp \
- lib/sdl_helper.cpp lib/sdl_main.cpp lib/stream_reader.cpp lib/threads.cpp \
- lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp \
- lib/vsvector3d.cpp
+ lib/gl/shader.cpp lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp \
+ lib/font.cpp lib/gl2ps.c lib/gltf.cpp lib/material.cpp lib/openglvis.cpp \
+ lib/palettes.cpp lib/sdl.cpp lib/sdl_helper.cpp lib/sdl_main.cpp \
+ lib/stream_reader.cpp lib/threads.cpp lib/vsdata.cpp lib/vssolution.cpp \
+ lib/vssolution3d.cpp lib/vsvector.cpp lib/vsvector3d.cpp
 OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl_mac.mm)
 DESKTOP_ONLY_SOURCE_FILES = \
  lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c lib/sdl_x11.cpp
@@ -276,6 +279,9 @@ glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(CCC) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
 
 $(LOGO_FILE_CPP): $(LOGO_FILE)
+ifndef XXD_FOUND
+	$(error Required tool not found: xxd)
+endif
 	cd $(dir $(LOGO_FILE)) && xxd -i $(notdir $(LOGO_FILE)) > \
 		$(notdir $(LOGO_FILE_CPP))
 

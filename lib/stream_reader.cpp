@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -347,7 +347,10 @@ ProjectVectorFEGridFunction(std::unique_ptr<GridFunction> gf)
       cout << "Switching to order " << p
            << " discontinuous vector grid function..." << endl;
       int dim = gf->FESpace()->GetMesh()->Dimension();
-      FiniteElementCollection *d_fec = new L2_FECollection(p, dim, 1);
+      FiniteElementCollection *d_fec =
+         (p == 1 && dim == 3) ?
+         (FiniteElementCollection*)new LinearDiscont3DFECollection :
+         (FiniteElementCollection*)new L2_FECollection(p, dim, 1);
       FiniteElementSpace *d_fespace =
          new FiniteElementSpace(gf->FESpace()->GetMesh(), d_fec, 3);
       GridFunction *d_gf = new GridFunction(d_fespace);

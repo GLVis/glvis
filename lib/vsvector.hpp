@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -14,6 +14,7 @@
 
 #include "mfem.hpp"
 #include "gl/types.hpp"
+#include "vssolution.hpp"
 using namespace mfem;
 
 class VisualizationSceneVector : public VisualizationSceneSolution
@@ -74,6 +75,8 @@ public:
    }
 
    virtual gl3::SceneInfo GetSceneObjs();
+
+   virtual void glTF_Export();
 
    virtual void EventUpdateColors() { Prepare(); PrepareVectorField(); }
 

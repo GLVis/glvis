@@ -11,13 +11,14 @@
 
 # GLVis - an OpenGL visualization server based on the MFEM library
 
-name: builds
+name: release
 
 on:
   push:
+    tags:
+      - v*
     branches:
       - master
-  pull_request:
   workflow_dispatch:
 
 env:
@@ -29,30 +30,13 @@ env:
   MFEM_BRANCH: master
 
 jobs:
-  builds-and-tests:
+  release-builds:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-10.15, windows-2022]
-        target: [dbg, opt]
+        os: [macos-10.15, windows-2022]
+        target: [opt]
         mpi: [seq]
         build-system: [cmake]
-        include:
-          - os: ubuntu-20.04
-            target: opt
-            mpi: seq
-            build-system: make
-          - os: ubuntu-20.04
-            target: dbg
-            mpi: par
-            build-system: make
-          - os: macos-10.15
-            target: opt
-            mpi: seq
-            build-system: make
-          - os: macos-10.15
-            target: dbg
-            mpi: par
-            build-system: make
     name: ${{ matrix.os }}-${{ matrix.build-system }}-${{ matrix.target }}-${{ matrix.mpi }}
 
     runs-on: ${{ matrix.os }}
@@ -190,20 +174,12 @@ jobs:
         path: glvis
         submodules: recursive
 
-    - name: build GLVis (make)
-      if: matrix.build-system == 'make'
-      run: |
-        glvis_target="opt"
-        [[ ${{ matrix.target }} == "dbg" ]] && glvis_target="debug";
-        cd glvis && make ${glvis_target} -j3
-
     - name: build GLVis (cmake)
       if: matrix.build-system == 'cmake'
       env:
         VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg_cache
       run: |
         build_type="Release"
-        [[ ${{ matrix.target }} == "dbg" ]] && build_type="Debug";
         [[ ${{ matrix.os }} == "windows-2022" ]] \
           && toolchain_file="${VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
         cd glvis && mkdir build && cd build
@@ -213,49 +189,43 @@ jobs:
           -D ENABLE_TESTS:BOOL=TRUE \
           -D mfem_DIR:PATH=${GITHUB_WORKSPACE}/${MFEM_TOP_DIR}/build \
           -D GLVIS_BASELINE_SYS=${{ matrix.os }} \
+          -D CMAKE_INSTALL_PREFIX=../install-${{ matrix.os }} \
           ..
         cmake --build . --parallel 3 --config "${build_type}"
       shell: bash
 
-    - name: setup Python
-      if: matrix.build-system == 'cmake'
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.9
-
-    - name: setup Python packages for testing
-      if: matrix.build-system == 'cmake'
+    - name: package binary (Windows)
+      if: matrix.os == 'windows-2022'
+      env:
+        GLVIS_EXPORT_NAME: glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
       run: |
-        python -m pip install --upgrade pip
-        pip install scikit-image
+        cd glvis/build
+        Copy-Item -Path "Release" -Destination "${Env:GLVIS_EXPORT_NAME}" -Recurse
 
-    - name: setup Linux testing dependencies
-      if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
+    - name: package binary (Mac)
+      if: matrix.os == 'macos-10.15'
+      env:
+        GLVIS_EXPORT_NAME: glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
       run: |
-        sudo apt-get install xvfb
+        cd glvis/build
+        make app
+        # Creates the actual relocatable bundle (copying system libraries)
+        sudo make install
+        # Fix permissions from running `make install` as root
+        cd ../install-${{ matrix.os }}
+        sudo chown -R ${USER} GLVis.app
+        # Go back to build directory
+        cd ../build
+        # Copy executable to a temporary directory
+        mkdir dmg_tmp
+        cp -a ../install-${{ matrix.os }}/GLVis.app dmg_tmp/GLVis.app
+        # Create DMG since actions/upload-artifact will clobber Unix permissions
+        hdiutil create -volname "GLVis macOS x86_64" -srcfolder dmg_tmp -ov -format UDZO GLVis.dmg
+        mkdir ${GLVIS_EXPORT_NAME}
+        cp GLVis.dmg ${GLVIS_EXPORT_NAME}
 
-    - name: test GLVis (cmake/linux)
-      if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
-      run: |
-        cd glvis && cd build
-        xvfb-run -a ctest --verbose
-        tar czvf test_screenshots.tar.gz tests/test.*.png
-
-    - name: test GLVis (cmake/mac)
-      if: matrix.build-system == 'cmake' && matrix.os == 'macos-10.15'
-      run: |
-        cd glvis && cd build
-        ctest --verbose
-
-    - name: create screenshot tarball
-      if: always() && matrix.build-system == 'cmake' && matrix.os != 'windows-2022'
-      run: |
-        cd glvis && cd build
-        tar czvf test_screenshots.tar.gz tests/test.*.png
-
-    - name: upload test screenshots
-      if: always() && matrix.build-system == 'cmake' && matrix.os != 'windows-2022'
+    - name: upload binary
       uses: actions/upload-artifact@v2
       with:
-        name: test-screenshots-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}
-        path: glvis/build/test_screenshots.tar.gz
+        name: glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
+        path: glvis/build/glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
