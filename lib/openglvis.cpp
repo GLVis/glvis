@@ -320,8 +320,8 @@ void VisualizationScene
       fpts[i]   = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
    }
    buff.addLine<gl3::VertexTex>(
-      {fpts[0], texcoord[0]},
-      {fpts[1], texcoord[1]}
+   {fpts[0], texcoord[0]},
+   {fpts[1], texcoord[1]}
    );
 }
 
@@ -419,7 +419,7 @@ void VisualizationScene
          if (n == 2) // Lines
          {
             // Draw solution line
-            for(int j=0; j<2; j++)
+            for (int j=0; j<2; j++)
             {
                MySetColor(poly, vals(ind[i+j]), minv, maxv);
                poly.glVertex3d(pts(0, ind[i+j]), pts(1, ind[i+j]), pts(2, ind[i+j]));

@@ -723,8 +723,8 @@ void VisualizationSceneVector3d::PrepareFlat2()
             if (dim > 1)
             {
                const IntegrationRule &ir = (cut_lambda > 0 && dim > 1) ?
-                                          ((sides == 3) ? cut_TriPts : cut_QuadPts) :
-                                          RefG->RefPts;
+                                           ((sides == 3) ? cut_TriPts : cut_QuadPts) :
+                                           RefG->RefPts;
                normals.SetSize(3, values.Size());
                mesh->GetElementTransformation(i, &T);
                for (int j = 0; j < values.Size(); j++)
