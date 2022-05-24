@@ -125,6 +125,10 @@ protected:
                  const double (&pts)[4][3], const double (&cv)[4],
                  const double minv, const double maxv);
 
+   void DrawLine(gl3::GlDrawable& buff,
+                 const double (&pts)[4][3], const double (&cv)[4],
+                 const double minv, const double maxv);
+
    /// Draw a 3D triangle in physical space with a central triangle removed. The
    /// cut is controlled by value of cut_lambda. See keys Ctrl+F3/F4. Similar to
    /// CutReferenceTriangle in lib/vssolution3d.cpp.
