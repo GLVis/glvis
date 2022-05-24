@@ -1429,8 +1429,6 @@ void VisualizationSceneSolution3d::PrepareFlat()
    Array<int> vertices;
    double p[4][3], c[4];
 
-   gl3::GlBuilder poly = disp_buf.createBuilder();
-
    for (i = 0; i < ne; i++)
    {
       if (dim == 3)
@@ -1499,13 +1497,11 @@ void VisualizationSceneSolution3d::PrepareFlat()
       }
       else if (j == 2)
       {
-         poly.glBegin(GL_LINES);
-         for (int k=0; k<j; k++)
-         {
-            MySetColor(poly, c[k], minv, maxv);
-            poly.glVertex3dv(mesh->GetVertex(vertices[k]));
-         }
-         poly.glEnd();
+         DrawLine(disp_buf, p, c, minv, maxv);
+      }
+      else
+      {
+         mfem_error("VisualizationSceneSolution3d::PrepareFlat() :Unknown geometry.");
       }
    }
 
@@ -1760,7 +1756,7 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       vmax = fmax(vmax, values.Max());
 
       // compute an average normal direction for the current face
-      if (sc != 0.0 && dim > 1)
+      if (sc != 0.0 && have_normals)
       {
          for (int j = 0; j < 3; j++)
          {

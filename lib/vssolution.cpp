@@ -1270,14 +1270,7 @@ void VisualizationSceneSolution::PrepareFlat()
       }
       else if (pointmat.Width() == 2)
       {
-         poly.glBegin(GL_LINES);
-         for (int k = 0; k < pointmat.Width(); k++)
-         {
-            MySetColor(poly, col[k], minv, maxv);
-            double* v = mesh->GetVertex(vertices[k]);
-            poly.glVertex3d(v[0], v[1], 0.0);
-         }
-         poly.glEnd();
+         DrawLine(disp_buf, pts, col, minv, maxv);
       }
    }
    updated_bufs.emplace_back(&disp_buf);

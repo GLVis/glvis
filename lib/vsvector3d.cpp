@@ -586,7 +586,7 @@ void VisualizationSceneVector3d::PrepareFlat()
       }
       else
       {
-         mfem_error("VisualizationSceneSolution3d::PrepareFlat() :Unknown geometry.");
+         mfem_error("VisualizationSceneVector3d::PrepareFlat() :Unknown geometry.");
       }
    }
    updated_bufs.emplace_back(&disp_buf);
