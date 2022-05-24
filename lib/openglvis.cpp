@@ -386,7 +386,7 @@ void VisualizationScene
       {
          poly.glBegin(GL_TRIANGLES);
       }
-      else if(n == 4)
+      else if (n == 4)
       {
          poly.glBegin(GL_QUADS);
       }
@@ -398,16 +398,12 @@ void VisualizationScene
       {
          if (n == 2) // Lines
          {
-            const auto pt0 = pts(0, ind[i+0]);
-            const auto pt1 = pts(1, ind[i+1]);
-            const auto pt2 = pts(0, ind[i+0]);
-            const auto pt3 = pts(1, ind[i+1]);
-
             // Draw solution line
-            MySetColor(poly, vals(ind[i+0]), minv, maxv);
-            poly.glVertex3d(pts(0, ind[i+0]), pts(1, ind[i+0]), pts(2, ind[i+0]));
-            MySetColor(poly, vals(ind[i+1]), minv, maxv);
-            poly.glVertex3d(pts(0, ind[i+1]), pts(1, ind[i+1]), pts(2, ind[i+1]));
+            for(int j=0; j<2; j++)
+            {
+               MySetColor(poly, vals(ind[i+j]), minv, maxv);
+               poly.glVertex3d(pts(0, ind[i+j]), pts(1, ind[i+j]), pts(2, ind[i+j]));
+            }
          }
          else // Quads and triangles
          {
