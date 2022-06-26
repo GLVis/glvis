@@ -60,6 +60,8 @@ void main()
       vec4 textOffset = textProjMatrix * vec4(textVertex, 0.0, 0.0);
       gl_Position += vec4((textOffset.xy * pos.w), -0.005, 0.0);
    }
+   // Below code adapted from:
+   // https://github.com/mattdesl/webgl-lines
    if (expandLines)
    {
       // Compute screen-space coordinates for current and previous segments

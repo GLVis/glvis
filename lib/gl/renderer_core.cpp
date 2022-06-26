@@ -575,6 +575,7 @@ void CoreGLDevice::drawExtendedLineImpl(array_layout type, int count)
       LineColorVertex::Finish();
    }
    glUniform1i(uniforms["expandLines"], false);
+   // Reset polygon offset to default value
    glPolygonOffset(1, 1);
 }
 
