@@ -553,7 +553,7 @@ void CoreGLDevice::drawExtendedLineImpl(array_layout type, int count)
    glPolygonOffset(0, 0);
    // Set up uniforms
    glUniform1i(uniforms["expandLines"], true);
-   glUniform1f(uniforms["lineWidth"], 8.0 / vp_height);
+   glUniform1f(uniforms["lineWidth"], 2 * line_w / vp_width);
    glUniform1f(uniforms["aspectRatio"], (float)vp_width / vp_height);
    // Set up attributes
    glVertexAttrib3f(CoreGLDevice::ATTR_NORMAL, 0.f, 0.f, 1.f);
@@ -575,7 +575,7 @@ void CoreGLDevice::drawExtendedLineImpl(array_layout type, int count)
       LineColorVertex::Finish();
    }
    glUniform1i(uniforms["expandLines"], false);
-   glPolygonOffset(0, 0);
+   glPolygonOffset(1, 1);
 }
 
 void CoreGLDevice::drawDeviceBuffer(int hnd)
