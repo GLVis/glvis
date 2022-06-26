@@ -442,6 +442,9 @@ void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
          glGenBuffers(1, &handle);
          buf.setHandle(vbos.size());
          vbos.emplace_back(VBOData{handle, 0, buf.getShape(), buf.count(), layout});
+      }
+      else
+      {
          vbos[buf.getHandle()].count = buf.count();
       }
       glBindBuffer(GL_ARRAY_BUFFER, vbos[buf.getHandle()].vert_buf);
