@@ -57,8 +57,7 @@ public:
    {
       if (this != &other)
       {
-         hnd = other.hnd;
-         other.hnd = 0;
+         std::swap(hnd, other.hnd);
       }
       return *this;
    }
@@ -175,6 +174,8 @@ enum array_layout
    LAYOUT_VTX_TEXTURE0,
    LAYOUT_VTX_NORMAL_COLOR,
    LAYOUT_VTX_NORMAL_TEXTURE0,
+   LAYOUT_EXT_LINE_VTX,
+   LAYOUT_EXT_LINE_VTX_COLOR,
    NUM_LAYOUTS
 };
 

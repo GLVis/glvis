@@ -104,6 +104,8 @@ protected:
 
    std::array<float, 4> static_color;
 
+   float line_w;
+
 protected:
    TextureHandle passthrough_texture;
 
@@ -139,7 +141,7 @@ public:
    void disableBlend() { glDisable(GL_BLEND); }
    void enableDepthWrite() { glDepthMask(GL_TRUE); }
    void disableDepthWrite() { glDepthMask(GL_FALSE); }
-   void setLineWidth(float w) { glLineWidth(w); }
+   void setLineWidth(float w) { line_w = w; glLineWidth(w); }
 
    virtual void init();
    virtual DeviceType getType() = 0;
