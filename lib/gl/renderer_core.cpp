@@ -72,7 +72,7 @@ const std::vector<std::string> CoreGLDevice::unif_list =
 struct alignas(16) CoreGLDevice::LineVertex
 {
    std::array<float, 3> vtx;
-   int orientation;
+   float orientation;
    std::array<float, 3> prev;
    std::array<float, 3> next;
 
@@ -92,7 +92,7 @@ struct alignas(16) CoreGLDevice::LineVertex
       glEnableVertexAttribArray(ATTR_LINE_NEXT);
 
       glVertexAttribPointer(ATTR_VERTEX, 3, GL_FLOAT, false, sizeof(LineVertex), (void*)vtx_offset);
-      glVertexAttribPointer(ATTR_LINE_ORIENT, 1, GL_INT, false, sizeof(LineVertex), (void*)orient_offset);
+      glVertexAttribPointer(ATTR_LINE_ORIENT, 1, GL_FLOAT, false, sizeof(LineVertex), (void*)orient_offset);
       glVertexAttribPointer(ATTR_LINE_PREV, 3, GL_FLOAT, false, sizeof(LineVertex), (void*)prev_offset);
       glVertexAttribPointer(ATTR_LINE_NEXT, 3, GL_FLOAT, false, sizeof(LineVertex), (void*)next_offset);
    }
@@ -110,7 +110,7 @@ struct alignas(16) CoreGLDevice::LineColorVertex
 {
    std::array<float, 3> vtx;
    std::array<uint8_t, 4> color;
-   int orientation;
+   float orientation;
    std::array<float, 3> prev;
    std::array<float, 3> next;
 
@@ -132,7 +132,7 @@ struct alignas(16) CoreGLDevice::LineColorVertex
 
       glVertexAttribPointer(ATTR_VERTEX, 3, GL_FLOAT, false, sizeof(LineColorVertex), (void*)vtx_offset);
       glVertexAttribPointer(ATTR_COLOR, 4, GL_UNSIGNED_INT, true, sizeof(LineColorVertex), (void*)color_offset);
-      glVertexAttribPointer(ATTR_LINE_ORIENT, 1, GL_INT, false, sizeof(LineColorVertex), (void*)orient_offset);
+      glVertexAttribPointer(ATTR_LINE_ORIENT, 1, GL_FLOAT, false, sizeof(LineColorVertex), (void*)orient_offset);
       glVertexAttribPointer(ATTR_LINE_PREV, 3, GL_FLOAT, false, sizeof(LineColorVertex), (void*)prev_offset);
       glVertexAttribPointer(ATTR_LINE_NEXT, 3, GL_FLOAT, false, sizeof(LineColorVertex), (void*)next_offset);
    }
