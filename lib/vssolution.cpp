@@ -1647,7 +1647,7 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
 
 void VisualizationSceneSolution::PrepareLines()
 {
-   if (shading == 2)
+   if (shading == 2 && mesh->Dimension() > 1) // PrepareLines3 does not make sense for 1d meshes.
    {
       // PrepareLines2();
       PrepareLines3();
@@ -1668,10 +1668,16 @@ void VisualizationSceneSolution::PrepareLines()
       lb.glBegin(GL_LINE_LOOP);
       mesh->GetPointMatrix (i, pointmat);
       mesh->GetElementVertices (i, vertices);
-
       for (j = 0; j < pointmat.Size(); j++)
-         lb.glVertex3d(pointmat(0, j), pointmat(1, j),
-                       LogVal((*sol)(vertices[j])));
+      {
+         // 1D meshes get rendered flat
+         double z = GetMinV();
+         if(mesh->Dimension() > 1) // In 1D we just put the mesh below the solution
+         {
+            z = LogVal((*sol)(vertices[j]));
+         }
+         lb.glVertex3d(pointmat(0, j), pointmat(1, j), z);
+      }
       lb.glEnd();
    }
 
@@ -2059,7 +2065,6 @@ void VisualizationSceneSolution::PrepareLines3()
 
    line_buf.clear();
    gl3::GlBuilder lb = line_buf.createBuilder();
-
    for (i = 0; i < ne; i++)
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
