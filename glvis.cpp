@@ -93,7 +93,7 @@ void SetGridFunction(StreamState& state);
 void ReadParallel(int np, StreamState& state);
 
 int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
-                               const char *sol_prefix, StreamState& state)
+                               const char *sol_prefix, StreamState& state);
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
