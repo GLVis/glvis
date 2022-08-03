@@ -13,9 +13,13 @@
 #define GLVIS_STREAM_READER_HPP
 
 #include <string>
+#include <vector>
+#include <iostream>
 #include <memory>
 #include "mfem.hpp"
 #include "openglvis.hpp"
+
+using StreamCollection = std::vector<std::unique_ptr<std::istream>>;
 
 struct StreamState
 {
@@ -26,6 +30,7 @@ struct StreamState
    int is_gf{0};
    bool fix_elem_orient{false};
    bool save_coloring{false};
+   bool keep_attr{false};
 
    /// Helper function for visualizing 1D data
    void Extrude1DMeshAndSolution();
@@ -34,6 +39,8 @@ struct StreamState
    void SetMeshSolution();
 
    int ReadStream(std::istream &is, const std::string &data_type);
+
+   int ReadStreams(const StreamCollection& input_streams);
 
    /// Sets a new mesh and solution from another StreamState object, and
    /// updates the given VisualizationScene pointer with the new data.

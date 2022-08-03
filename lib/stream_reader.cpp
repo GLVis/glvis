@@ -335,6 +335,80 @@ int StreamState::ReadStream(istream &is, const string &data_type)
    return field_type;
 }
 
+int StreamState::ReadStreams(const StreamCollection& input_streams)
+{
+   int nproc = input_streams.size();
+   Array<Mesh *> mesh_array(nproc);
+   Array<GridFunction *> gf_array(nproc);
+
+   std::string data_type;
+
+   int gf_count = 0;
+   int field_type = 0;
+
+   for (int p = 0; p < nproc; p++)
+   {
+#ifdef GLVIS_DEBUG
+      cout << "connection[" << p << "]: reading initial data ... " << flush;
+#endif
+      istream &isock = *input_streams[p];
+      // assuming the "parallel nproc p" part of the stream has been read
+      isock >> ws >> data_type >> ws; // "*_data" / "mesh" / "solution"
+#ifdef GLVIS_DEBUG
+      cout << " type " << data_type << " ... " << flush;
+#endif
+      mesh_array[p] = new Mesh(isock, 1, 0, fix_elem_orient);
+      if (!keep_attr)
+      {
+         // set element and boundary attributes to proc+1
+         for (int i = 0; i < mesh_array[p]->GetNE(); i++)
+         {
+            mesh_array[p]->GetElement(i)->SetAttribute(p+1);
+         }
+         for (int i = 0; i < mesh_array[p]->GetNBE(); i++)
+         {
+            mesh_array[p]->GetBdrElement(i)->SetAttribute(p+1);
+         }
+      }
+      gf_array[p] = NULL;
+      if (data_type != "mesh")
+      {
+         gf_array[p] = new GridFunction(mesh_array[p], isock);
+         gf_count++;
+      }
+#ifdef GLVIS_DEBUG
+      cout << "done." << endl;
+#endif
+   }
+
+   if (gf_count > 0 && gf_count != nproc)
+   {
+      mfem_error("Input streams contain a mixture of data types!");
+   }
+
+   mesh.reset(new Mesh(mesh_array, nproc));
+   if (gf_count == 0)
+   {
+      SetMeshSolution();
+      field_type = 2;
+   }
+   else
+   {
+      grid_f.reset(new GridFunction(mesh.get(), gf_array, nproc));
+      field_type = (grid_f->VectorDim() == 1) ? 0 : 1;
+   }
+
+   for (int p = 0; p < nproc; p++)
+   {
+      delete mesh_array[nproc-1-p];
+      delete gf_array[nproc-1-p];
+   }
+
+   Extrude1DMeshAndSolution();
+
+   return field_type;
+}
+
 // Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec
 // or Raviart-Thomas space) with a discontinuous piece-wise polynomial Cartesian
 // product vector grid function of the same order.
