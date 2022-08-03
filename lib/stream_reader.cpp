@@ -337,7 +337,7 @@ int StreamState::ReadStream(istream &is, const string &data_type)
 
 int StreamState::ReadStreams(const StreamCollection& input_streams)
 {
-   int nproc = input_streams.size();
+   const int nproc = input_streams.size();
    Array<Mesh *> mesh_array(nproc);
    Array<GridFunction *> gf_array(nproc);
 

@@ -35,6 +35,8 @@ std::vector<unsigned char> * screen_state = nullptr;
 
 StreamState stream_state;
 
+int last_stream_nproc = 1;
+
 namespace em = emscripten;
 
 namespace js
@@ -263,6 +265,8 @@ int processParallelStreams(StreamState & state, const StringArray & streams,
       istreams[i].release();
    }
 
+   last_stream_nproc = streams.size();
+
    return field_type;
 }
 
@@ -331,6 +335,12 @@ int updateStream(std::string stream)
 
 int updateParallelStreams(const StringArray & streams)
 {
+   if (streams.size() != last_stream_nproc)
+   {
+      std::cout << "current stream-list size does not match the previous: " <<
+                streams.size() << " != " << last_stream_nproc << std::endl;
+      return 1;
+   }
    StreamState new_state;
    processParallelStreams(new_state, streams);
 
