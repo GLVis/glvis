@@ -547,8 +547,14 @@ public:
    void addVertices(size_t nverts, const T* verts,
                     size_t ninds, const int* ids)
    {
+      int index_offset = vertex_data.size();
       vertex_data.insert(vertex_data.end(), verts, verts+nverts);
+      int old_end = vertex_indices.size();
       vertex_indices.insert(vertex_indices.end(), ids, ids+ninds);
+      for (size_t i = old_end; i < vertex_indices.size(); i++)
+      {
+         vertex_indices[i] += index_offset;
+      }
    }
 };
 
