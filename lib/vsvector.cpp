@@ -846,13 +846,11 @@ void VisualizationSceneVector::DrawVector(double px, double py, double vx,
 {
    double zc = 0.5*(bb.z[0]+bb.z[1]);
 
-   gl3::GlBuilder builder = vector_buf.createBuilder();
-
    if (drawvector == 1)
    {
       arrow_type = 0;
       arrow_scaling_type = 0;
-      Arrow(builder, px, py, zc, vx, vy, 0.0, 1.0, 1./4./3.);
+      Arrow(vector_buf, px, py, zc, vx, vy, 0.0, 1.0, 1./4./3.);
    }
    else if (drawvector > 0)
    {
@@ -862,17 +860,15 @@ void VisualizationSceneVector::DrawVector(double px, double py, double vx,
       arrow_type = 1;
       arrow_scaling_type = 1;
 
-      MySetColor(builder, cval, minv, maxv);
-
       if (drawvector == 2)
       {
-         Arrow(builder, px, py, zc, vx, vy, 0.0, h, 0.125);
+         Arrow(vector_buf, px, py, zc, vx, vy, 0.0, h, 0.125, cval);
       }
       else
       {
          double len = VecLength(vx, vy);
-         Arrow(builder, px, py, zc, vx, vy, 0.0,
-               h*max(0.01, len/maxlen), 0.125);
+         Arrow(vector_buf, px, py, zc, vx, vy, 0.0,
+               h*max(0.01, len/maxlen), 0.125, cval);
          if (len > new_maxlen)
          {
             new_maxlen = len;

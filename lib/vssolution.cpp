@@ -1869,7 +1869,6 @@ void VisualizationSceneSolution::PrepareOrderingCurve1(gl3::GlDrawable& buf,
                                                        bool arrows,
                                                        bool color)
 {
-   gl3::GlBuilder builder = buf.createBuilder();
    DenseMatrix pointmat;
    Array<int> vertices;
 
@@ -1920,25 +1919,25 @@ void VisualizationSceneSolution::PrepareOrderingCurve1(gl3::GlDrawable& buf,
       double du = us1-us;
       double ds = sqrt(dx*dx+dy*dy+du*du);
 
+      double cval = HUGE_VAL;
       if (color)
       {
-         double cval = minv+double(k)/ne*(maxv-minv);
-         MySetColor(builder, cval, minv, maxv);
+         cval = minv+double(k)/ne*(maxv-minv);
       }
 
       if (arrows)
       {
-         Arrow3(builder,
+         Arrow3(buf,
                 xs,ys,us,
                 dx,dy,du,
-                ds,0.05);
+                ds,0.05,cval);
       }
       else
       {
-         Arrow3(builder,
+         Arrow3(buf,
                 xs,ys,us,
                 dx,dy,du,
-                ds,0.0);
+                ds,0.0,cval);
       }
    }
 }

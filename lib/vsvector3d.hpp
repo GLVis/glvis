@@ -53,7 +53,7 @@ public:
    void PrepareFlat2();
    void PrepareLines2();
 
-   void DrawVector (gl3::GlBuilder& builder,
+   void DrawVector (gl3::GlDrawable& buf,
                     int type, double v0, double v1, double v2,
                     double sx, double sy, double sz, double s);
    virtual void PrepareVectorField();

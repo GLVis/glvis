@@ -144,8 +144,6 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve1(gl3::GlDrawable& buf,
                                                          bool arrows,
                                                          bool color)
 {
-   gl3::GlBuilder builder = buf.createBuilder();
-
    // make the lines of the ordering curve thicker
    double ThicknessFactor = 2.0;
    double MS_Thickness = 2.0;
@@ -211,25 +209,25 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve1(gl3::GlDrawable& buf,
       double dz = zs1-zs;
       double ds = sqrt(dx*dx+dy*dy+dz*dz);
 
+      double cval = HUGE_VAL;
       if (color)
       {
-         double cval = minv+double(k)/ne*(maxv-minv);
-         MySetColor(builder, cval, minv, maxv);
+         cval = minv+double(k)/ne*(maxv-minv);
       }
 
       if (arrows)
       {
-         Arrow3(builder,
+         Arrow3(buf,
                 xs,ys,zs,
                 dx,dy,dz,
-                ds,0.05);
+                ds,0.05,cval);
       }
       else
       {
-         Arrow3(builder,
+         Arrow3(buf,
                 xs,ys,zs,
                 dx,dy,dz,
-                ds,0.0);
+                ds,0.0,cval);
       }
    }
 
