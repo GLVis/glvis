@@ -215,7 +215,10 @@ void VisualizationSceneScalarData::Arrow3(gl3::GlDrawable& buf,
    xfrm = glm::translate(xfrm, glm::vec3(0, 0, 1));
    xfrm = glm::scale(xfrm, glm::vec3(cone_scale));
 
-   Cone(buf, xfrm, cval);
+   if (cone_scale > 0.0)
+   {
+      Cone(buf, xfrm, cval);
+   }
 }
 
 void VisualizationSceneScalarData::Arrow2(gl3::GlDrawable& buf,
