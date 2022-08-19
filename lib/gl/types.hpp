@@ -543,6 +543,13 @@ public:
          vertex_indices[i] += index_offset;
       }
    }
+
+   void addVertices(size_t nverts, const T* verts,
+                    size_t ninds, const int* ids)
+   {
+      vertex_data.insert(vertex_data.end(), verts, verts+nverts);
+      vertex_indices.insert(vertex_indices.end(), ids, ids+ninds);
+   }
 };
 
 class TextBuffer : public IVertexBuffer
@@ -705,6 +712,15 @@ public:
                            const std::vector<int>& inds)
    {
       getIndexedBuffer<Vert>(GL_TRIANGLES)->addVertices(verts, inds);
+   }
+
+   template<typename Vert>
+   void addTriangleIndexed(size_t nverts,
+                           const Vert* verts,
+                           size_t ninds,
+                           const int* inds)
+   {
+      getIndexedBuffer<Vert>(GL_TRIANGLES)->addVertices(nverts, verts, ninds, inds);
    }
 
    template<typename Vert>
