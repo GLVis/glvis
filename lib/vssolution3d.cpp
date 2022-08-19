@@ -4000,6 +4000,7 @@ gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &order_buf);
    }
+   ProcessUpdatedBufs(scene);
    return scene;
 }
 

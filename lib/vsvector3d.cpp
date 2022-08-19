@@ -1629,5 +1629,6 @@ gl3::SceneInfo VisualizationSceneVector3d::GetSceneObjs()
       params.use_clip_plane = false;
       scene.queue.emplace_back(params, &cplines_buf);
    }
+   ProcessUpdatedBufs(scene);
    return scene;
 }

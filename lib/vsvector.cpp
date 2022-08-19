@@ -1030,6 +1030,7 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
       }
       scene.queue.emplace_back(params, &displine_buf);
    }
+   ProcessUpdatedBufs(scene);
 
    return scene;
 }

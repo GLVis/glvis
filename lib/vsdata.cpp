@@ -12,6 +12,8 @@
 #include <cstdlib>
 #include <cmath>
 
+#include <unordered_set>
+
 #include <iomanip>
 #include <sstream>
 #include <limits>
@@ -986,8 +988,6 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
    int w, h;
    wnd->getWindowSize(w, h);
    gl3::SceneInfo scene {};
-   scene.needs_buffering = std::move(updated_bufs);
-   updated_bufs.clear();
 
    gl3::RenderParams params {};
    params.model_view.identity();
@@ -1048,6 +1048,29 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
       scene.queue.emplace_back(params, &ruler_buf);
    }
    return scene;
+}
+
+void VisualizationSceneScalarData::ProcessUpdatedBufs(gl3::SceneInfo& scene)
+{
+    std::unordered_set<gl3::GlDrawable*> bufs_in_scene;
+    for (const auto& qelem : scene.queue)
+    {
+        bufs_in_scene.insert(qelem.second);
+    }
+
+    auto it = updated_bufs.begin();
+    while (it != updated_bufs.end())
+    {
+        if (bufs_in_scene.find(*it) != bufs_in_scene.end())
+        {
+            scene.needs_buffering.emplace_back(*it);
+            it = updated_bufs.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
 }
 
 void VisualizationSceneScalarData::glTF_ExportBox(

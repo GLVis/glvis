@@ -198,6 +198,8 @@ public:
 
    virtual gl3::SceneInfo GetSceneObjs();
 
+   void ProcessUpdatedBufs(gl3::SceneInfo& scene);
+
    void glTF_ExportBox(glTF_Builder &bld,
                        glTF_Builder::buffer_id buffer,
                        glTF_Builder::material_id black_mat);
