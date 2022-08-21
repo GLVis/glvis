@@ -130,10 +130,10 @@ void VisualizationSceneScalarData::Cone(gl3::GlDrawable& buf,
       gl3::VertexNormTex verts[n+2];
       verts[0].coord = ToVec3(glm::value_ptr(start1vtx));
       verts[0].norm = ToVec3(glm::value_ptr(start1norm));
-      verts[0].texCoord = { colortex, 1.f };
+      verts[0].texCoord = colortex;
       verts[1].coord = ToVec3(glm::value_ptr(start2vtx));
       verts[1].norm = ToVec3(glm::value_ptr(start2norm));
-      verts[1].texCoord = { colortex, 1.f };
+      verts[1].texCoord = colortex;
       for (int i = 2; i <= n+1; i++)
       {
          glm::vec3 baseVtx = glm::vec3(xfrm * glm::vec4(cos(point), sin(point), -4, 1));
@@ -141,7 +141,7 @@ void VisualizationSceneScalarData::Cone(gl3::GlDrawable& buf,
                                                              nz));
          verts[i].coord = ToVec3(glm::value_ptr(baseVtx));
          verts[i].norm = ToVec3(glm::value_ptr(baseNorm));
-         verts[i].texCoord = { colortex, 1.f };
+         verts[i].texCoord = colortex;
          point += step;
       }
       buf.addTriangleIndexed(n+2, verts, n*3, indices);
@@ -208,8 +208,8 @@ void VisualizationSceneScalarData::Arrow3(gl3::GlDrawable& buf,
    {
       double colortex = palette.GetColorCoord(cval, minv, maxv);
       buf.addLine<gl3::VertexTex>(
-         gl3::VertexTex{ToVec3(glm::value_ptr(pt1)), {(float)colortex, 1.0}},
-         gl3::VertexTex{ToVec3(glm::value_ptr(pt2)), {(float)colortex, 1.0}});
+         gl3::VertexTex{ToVec3(glm::value_ptr(pt1)), (float)colortex},
+         gl3::VertexTex{ToVec3(glm::value_ptr(pt2)), (float)colortex});
    }
 
    xfrm = glm::translate(xfrm, glm::vec3(0, 0, 1));
@@ -254,8 +254,8 @@ void VisualizationSceneScalarData::Arrow2(gl3::GlDrawable& buf,
    {
       double colortex = palette.GetColorCoord(cval, minv, maxv);
       buf.addLine<gl3::VertexTex>(
-         gl3::VertexTex{ToVec3(glm::value_ptr(pt1)), {(float)colortex, 1.0}},
-         gl3::VertexTex{ToVec3(glm::value_ptr(pt2)), {(float)colortex, 1.0}});
+         gl3::VertexTex{ToVec3(glm::value_ptr(pt1)), (float)colortex},
+         gl3::VertexTex{ToVec3(glm::value_ptr(pt2)), (float)colortex});
    }
 
    xfrm = glm::translate(xfrm, glm::vec3(0, 0, 1));
@@ -407,12 +407,12 @@ void VisualizationSceneScalarData::Arrow(gl3::GlDrawable& buf,
       {
          verts[i].coord = ToVec3(cone[i]);
          verts[i].norm = ToVec3(normal[i]);
-         verts[i].texCoord = {colortex, 1.f};
+         verts[i].texCoord = colortex;
       }
       buf.addTriangleIndexed(n+2, verts, n*3, indices);
       buf.addLine<gl3::VertexTex>(
-         gl3::VertexTex{ToVec3(cone[n+2]), {colortex, 1.f}},
-         gl3::VertexTex{ToVec3(cone[n+3]), {colortex, 1.f}});
+         gl3::VertexTex{ToVec3(cone[n+2]), colortex},
+         gl3::VertexTex{ToVec3(cone[n+3]), colortex});
    }
 }
 
@@ -446,10 +446,10 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
    }
    color_bar.clear();
    color_bar.addQuad<gl3::VertexTex>(
-   {{minx, miny, posz},{0.f, 0.f}},
-   {{maxx, miny, posz},{0.f, 0.f}},
-   {{maxx, maxy, posz},{1.f, 0.f}},
-   {{minx, maxy, posz},{1.f, 0.f}}
+   {{minx, miny, posz}, 0.f},
+   {{maxx, miny, posz}, 0.f},
+   {{maxx, maxy, posz}, 1.f},
+   {{minx, maxy, posz}, 1.f}
    );
 
    static const int border = 2;

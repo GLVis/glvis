@@ -7734,11 +7734,11 @@ void PaletteState::Init()
          rgba_internal = GL_RGBA32F;
       }
       // set alpha texture to 1.0
-      std::vector<float> alphaTexData(MaxTextureSize * 2);
+      std::vector<float> alphaTexData(MaxTextureSize);
       std::fill(alphaTexData.begin(), alphaTexData.end(), 1.0f);
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D, alpha_tex);
-      glTexImage2D(GL_TEXTURE_2D, 0, alpha_internal, MaxTextureSize, 2, 0,
+      glTexImage2D(GL_TEXTURE_2D, 0, alpha_internal, MaxTextureSize, 1, 0,
                    alpha_channel, GL_FLOAT, alphaTexData.data());
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -7850,7 +7850,7 @@ void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
    }
    glActiveTexture(GL_TEXTURE1);
    glBindTexture(GL_TEXTURE_2D, alpha_tex);
-   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 1, MaxTextureSize, 1, alpha_channel,
+   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, MaxTextureSize, 1, alpha_channel,
                    GL_FLOAT, alphaTexData.data());
    glActiveTexture(GL_TEXTURE0);
 }

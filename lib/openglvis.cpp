@@ -261,14 +261,13 @@ void VisualizationScene
       return;
    }
 
-   std::array<float, 2> texcoord[3];
+   float texcoord[3];
    std::array<float, 3> fpts[3];
    std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
 
    for (int i = 0; i < 3; i++)
    {
-      float pal_coord = palette.GetColorCoord(cv[i], minv, maxv);
-      texcoord[i] = { pal_coord, 1.0 };
+      texcoord[i] = palette.GetColorCoord(cv[i], minv, maxv);
       fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
    }
    buff.addTriangle<gl3::VertexNormTex>(
@@ -288,14 +287,13 @@ void VisualizationScene
       return;
    }
 
-   std::array<float, 2> texcoord[4];
+   float texcoord[4];
    std::array<float, 3> fpts[4];
    std::array<float, 3> fnorm = {(float) nor[0], (float) nor[1], (float) nor[2]};
 
    for (int i = 0; i < 4; i++)
    {
-      float pal_coord = palette.GetColorCoord(cv[i], minv, maxv);
-      texcoord[i] = { pal_coord, 1.0 };
+      texcoord[i] = palette.GetColorCoord(cv[i], minv, maxv);
       fpts[i] = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
    }
    buff.addQuad<gl3::VertexNormTex>(
@@ -350,7 +348,7 @@ void VisualizationScene
          {
             {(float) pts(0, i), (float) pts(1, i), (float) pts(2, i)},
             {(float) normals(0, i), (float) normals(1, i), (float) normals(2, i)},
-            {(float) palette.GetColorCoord(vals(i), minv, maxv), 1.0 }
+            (float) palette.GetColorCoord(vals(i), minv, maxv)
          });
       }
       if (normals_opt > 0)

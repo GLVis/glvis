@@ -222,7 +222,7 @@ struct alignas(16) VertexColor
 struct alignas(16) VertexTex
 {
    std::array<float, 3> coord;
-   std::array<float, 2> texCoord;
+   float texCoord;
 
    static const int layout = LAYOUT_VTX_TEXTURE0;
 };
@@ -248,7 +248,7 @@ struct alignas(16) VertexNormTex
 {
    std::array<float, 3> coord;
    std::array<float, 3> norm;
-   std::array<float, 2> texCoord;
+   float texCoord;
 
    static const int layout = LAYOUT_VTX_NORMAL_TEXTURE0;
 };
@@ -275,7 +275,7 @@ class GlBuilder
       std::array<float, 3> coords;
       std::array<float, 3> norm;
       std::array<uint8_t, 4> color;
-      std::array<float, 2> texcoord;
+      float texcoord;
    };
 
    FFState saved[3];
@@ -426,14 +426,14 @@ public:
 
    void glColor4fv(float * cv) { glColor4f(cv[0], cv[1], cv[2], cv[3]); }
 
-   void glTexCoord2f(float coord_u, float coord_v)
+   void glTexCoord1f(float coord_u)
    {
       if (count == 0)
       {
          use_tex = true;
          use_color = false;
       }
-      curr.texcoord = { coord_u, coord_v };
+      curr.texcoord = coord_u;
    }
 };
 
