@@ -32,16 +32,16 @@ jobs:
   builds-and-tests:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-latest, windows-2022]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         target: [dbg, opt]
         mpi: [seq]
         build-system: [cmake]
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-latest
             target: opt
             mpi: seq
             build-system: make
-          - os: ubuntu-20.04
+          - os: ubuntu-latest
             target: dbg
             mpi: par
             build-system: make
@@ -59,7 +59,7 @@ jobs:
 
     steps:
     - name: get MPI (Linux)
-      if: matrix.os == 'ubuntu-20.04' && matrix.mpi == 'par'
+      if: matrix.os == 'ubuntu-latest' && matrix.mpi == 'par'
       run: |
         sudo apt-get update
         sudo apt-get install mpich libmpich-dev
@@ -154,7 +154,7 @@ jobs:
 
     # Install GLVis dependencies with package manager
     - name: get deps (Linux)
-      if: matrix.os == 'ubuntu-20.04'
+      if: matrix.os == 'ubuntu-latest'
       run: |
         # We need to add a PPA for SDL 2.0.14 - fixes some initialization
         # errors for X11
@@ -204,7 +204,7 @@ jobs:
       run: |
         build_type="Release"
         [[ ${{ matrix.target }} == "dbg" ]] && build_type="Debug";
-        [[ ${{ matrix.os }} == "windows-2022" ]] \
+        [[ ${{ matrix.os }} == "windows-latest" ]] \
           && toolchain_file="${VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
         cd glvis && mkdir build && cd build
         cmake \
@@ -230,12 +230,12 @@ jobs:
         pip install scikit-image
 
     - name: setup Linux testing dependencies
-      if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
+      if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get install xvfb
 
     - name: test GLVis (cmake/linux)
-      if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-20.04'
+      if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-latest'
       run: |
         cd glvis && cd build
         xvfb-run -a ctest --verbose
@@ -248,13 +248,13 @@ jobs:
         ctest --verbose
 
     - name: create screenshot tarball
-      if: always() && matrix.build-system == 'cmake' && matrix.os != 'windows-2022'
+      if: always() && matrix.build-system == 'cmake' && matrix.os != 'windows-latest'
       run: |
         cd glvis && cd build
         tar czvf test_screenshots.tar.gz tests/test.*.png
 
     - name: upload test screenshots
-      if: always() && matrix.build-system == 'cmake' && matrix.os != 'windows-2022'
+      if: always() && matrix.build-system == 'cmake' && matrix.os != 'windows-latest'
       uses: actions/upload-artifact@v2
       with:
         name: test-screenshots-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}

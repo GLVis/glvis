@@ -33,7 +33,7 @@ jobs:
   release-builds:
     strategy:
       matrix:
-        os: [macos-latest, windows-2022]
+        os: [macos-latest, windows-latest]
         target: [opt]
         mpi: [seq]
         build-system: [cmake]
@@ -43,7 +43,7 @@ jobs:
 
     steps:
     - name: get MPI (Linux)
-      if: matrix.os == 'ubuntu-20.04' && matrix.mpi == 'par'
+      if: matrix.os == 'ubuntu-latest' && matrix.mpi == 'par'
       run: |
         sudo apt-get update
         sudo apt-get install mpich libmpich-dev
@@ -138,7 +138,7 @@ jobs:
 
     # Install GLVis dependencies with package manager
     - name: get deps (Linux)
-      if: matrix.os == 'ubuntu-20.04'
+      if: matrix.os == 'ubuntu-latest'
       run: |
         # We need to add a PPA for SDL 2.0.14 - fixes some initialization
         # errors for X11
@@ -180,7 +180,7 @@ jobs:
         VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg_cache
       run: |
         build_type="Release"
-        [[ ${{ matrix.os }} == "windows-2022" ]] \
+        [[ ${{ matrix.os }} == "windows-latest" ]] \
           && toolchain_file="${VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
         cd glvis && mkdir build && cd build
         cmake \
@@ -195,7 +195,7 @@ jobs:
       shell: bash
 
     - name: package binary (Windows)
-      if: matrix.os == 'windows-2022'
+      if: matrix.os == 'windows-latest'
       env:
         GLVIS_EXPORT_NAME: glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
       run: |
