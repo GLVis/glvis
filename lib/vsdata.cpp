@@ -89,7 +89,6 @@ void VisualizationSceneScalarData::Cone(gl3::GlDrawable& buf,
    const double step = 2*M_PI/n;
    const double nz = (1.0/4.0);
    double point = step;
-   int i;
 
    glm::mat3 normXfrm = glm::inverseTranspose(glm::mat3(xfrm));
 
