@@ -279,7 +279,6 @@ void VisualizationSceneScalarData::Arrow(gl3::GlDrawable& buf,
    constexpr int n = 8;
    const double step = 2*M_PI/n, nz = (1.0/4.0);
    double point = step, cone[n+4][3], normal[n+2][3];
-   int i, j, k;
 
    cone[0][0] = 0;          cone[0][1] = 0; cone[0][2] = 1;
    cone[1][0] = cone_scale; cone[1][1] = 0; cone[1][2] = -4*cone_scale + 1;
@@ -290,7 +289,7 @@ void VisualizationSceneScalarData::Arrow(gl3::GlDrawable& buf,
    normal[1][1] = 0.0/cone_scale;
    normal[1][2] = nz/cone_scale;
 
-   for (i=2; i<n+1; i++)
+   for (int i=2; i<n+1; i++)
    {
       normal[i][0] = cos(point)/cone_scale;
       normal[i][1] = sin(point)/cone_scale;
@@ -322,7 +321,7 @@ void VisualizationSceneScalarData::Arrow(gl3::GlDrawable& buf,
    // vx *= rlen*xscale;    vy *= rlen*yscale;    vz *= rlen*zscale;
 
    if (arrow_type == 1)
-      for (i=0; i<n+4; i++)
+      for (int i=0; i<n+4; i++)
       {
          cone[i][2] -= 0.5;
       }
@@ -334,17 +333,17 @@ void VisualizationSceneScalarData::Arrow(gl3::GlDrawable& buf,
    double v[3] = { M[0][2]/xscale, M[1][2]/yscale, M[2][2]/zscale };
    length /= sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
 
-   for (i=0; i<n+4; i++)
+   for (int i=0; i<n+4; i++)
    {
-      for (j=0; j<3; j++)
+      for (int j=0; j<3; j++)
       {
          coord[j] = cone[i][j] * length;
       }
 
-      for (k=0; k<3; k++)
+      for (int k=0; k<3; k++)
       {
          cone[i][k] = 0.;
-         for (j=0; j<3; j++)
+         for (int j=0; j<3; j++)
          {
             cone[i][k] += M[k][j] * coord[j];
          }
@@ -357,17 +356,17 @@ void VisualizationSceneScalarData::Arrow(gl3::GlDrawable& buf,
       cone[i][2] = cone[i][2]/zscale + pz;
    }
 
-   for (i=0; i<=n+1; i++)
+   for (int i=0; i<=n+1; i++)
    {
-      for (j=0; j<3; j++)
+      for (int j=0; j<3; j++)
       {
          coord[j] = normal[i][j];
       }
 
-      for (k=0; k<3; k++)
+      for (int k=0; k<3; k++)
       {
          normal[i][k] = 0.;
-         for (j=0; j<3; j++)
+         for (int j=0; j<3; j++)
          {
             normal[i][k] += M[k][j] * coord[j];
          }
