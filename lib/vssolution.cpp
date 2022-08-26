@@ -1942,11 +1942,30 @@ void VisualizationSceneSolution::PrepareOrderingCurve1(gl3::GlDrawable& buf,
    }
 }
 
-void VisualizationSceneSolution::PrepareNumbering()
+void VisualizationSceneSolution::PrepareNumbering(bool invalidate)
 {
-   PrepareElementNumbering();
-   PrepareEdgeNumbering();
-   PrepareVertexNumbering();
+   if (invalidate)
+   {
+      // invalidate all numberings
+      e_nums_buf_ready = false;
+      v_nums_buf_ready = false;
+      f_nums_buf_ready = false;
+   }
+   if (drawnums == 1 && !e_nums_buf_ready)
+   {
+      PrepareElementNumbering();
+      e_nums_buf_ready = true;
+   }
+   if (drawnums == 2 && !f_nums_buf_ready)
+   {
+      PrepareEdgeNumbering();
+      f_nums_buf_ready = true;
+   }
+   if (drawnums == 3 && !v_nums_buf_ready)
+   {
+      PrepareVertexNumbering();
+      v_nums_buf_ready = true;
+   }
 }
 
 void VisualizationSceneSolution::PrepareLines2()
