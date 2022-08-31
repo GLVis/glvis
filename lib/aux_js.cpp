@@ -35,6 +35,8 @@ std::vector<unsigned char> * screen_state = nullptr;
 
 StreamState stream_state;
 
+int last_stream_nproc = 1;
+
 namespace em = emscripten;
 
 namespace js
@@ -42,45 +44,44 @@ namespace js
 
 using namespace mfem;
 
-bool startVisualization(const std::string input, const std::string data_type,
-                        int w, int h)
+//
+// display a new stream
+// field_type: 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
+//
+int display(const int field_type, std::stringstream & commands, const int w,
+            const int h)
 {
-   std::stringstream ss(input);
-
-   // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
-   const int field_type = stream_state.ReadStream(ss, data_type);
-
    // reset antialiasing
    GetAppWindow()->getRenderer().setAntialiasing(0);
 
-   std::string line;
+   std::string word;
    double minv = 0.0, maxv = 0.0;
-   while (ss >> line)
+   while (commands >> word)
    {
-      if (line == "keys")
+      if (word == "keys")
       {
          std::cout << "parsing 'keys'" << std::endl;
-         ss >> stream_state.keys;
+         commands >> stream_state.keys;
       }
-      else if (line == "valuerange")
+      else if (word == "valuerange")
       {
          std::cout << "parsing 'valuerange'" << std::endl;
-         ss >> minv >> maxv;
+         commands >> minv >> maxv;
       }
       else
       {
-         std::cout << "unknown line '" << line << "'" << std::endl;
+         std::cout << "unknown command '" << word << "'" << std::endl;
       }
    }
 
    if (field_type < 0 || field_type > 2)
    {
-      return false;
+      return 1;
    }
 
    if (InitVisualization("glvis", 0, 0, w, h))
    {
-      return false;
+      return 1;
    }
 
    delete vs;
@@ -222,23 +223,76 @@ bool startVisualization(const std::string input, const std::string data_type,
    }
 
    SendExposeEvent();
-   return true;
+   return 0;
 }
 
-
-int updateVisualization(std::string data_type, std::string stream)
+//
+// StreamState::ReadStream requires a list of unique_ptr to istream and since
+// we cannot directly pass a list of string we need to repack the strings into
+// a new list.
+//
+// each string in streams must start with `parallel <nproc> <rank>'
+//
+using StringArray = std::vector<std::string>;
+int processParallelStreams(StreamState & state, const StringArray & streams,
+                           std::stringstream * commands = nullptr)
 {
-   std::stringstream ss(stream);
-
-   if (data_type != "solution")
+   //std::cerr << "got " << streams.size() << " streams" << std::endl;
+   // HACK: match unique_ptr<istream> interface for ReadStreams:
+   std::vector<std::stringstream> sstreams(streams.size());
+   StreamCollection istreams(streams.size());
+   for (int i = 0; i < streams.size(); ++i)
    {
-      std::cerr << "unsupported data type '" << data_type << "' for stream update" <<
-                std::endl;
-      return 1;
+      sstreams[i] = std::stringstream(streams[i]);
+      // pull off the first list
+      std::string word;
+      int nproc, rank;
+      sstreams[i] >> word >> nproc >> rank;
+      //std::cerr << "packing " << rank+1 << "/" << nproc << std::endl;
+      istreams[i] = std::unique_ptr<std::istream>(&sstreams[i]);
    }
 
-   StreamState new_state;
-   new_state.ReadStream(ss, data_type);
+   const int field_type = state.ReadStreams(istreams);
+
+   if (commands)
+   {
+      commands->seekg(istreams[0]->tellg());
+   }
+
+   // HACK: don't let unique_ptr free the data
+   for (int i = 0; i < streams.size(); ++i)
+   {
+      istreams[i].release();
+   }
+
+   last_stream_nproc = streams.size();
+
+   return field_type;
+}
+
+int displayParallelStreams(const StringArray & streams, const int w,
+                           const int h)
+{
+   std::stringstream commands(streams[0]);
+   const int field_type = processParallelStreams(stream_state, streams, &commands);
+   return display(field_type, commands, w, h);
+}
+
+int displayStream(const std::string & stream, const int w, const int h)
+{
+   std::stringstream ss(stream);
+   std::string data_type;
+   ss >> data_type;
+   const int field_type = stream_state.ReadStream(ss, data_type);
+
+   return display(field_type, ss, w, h);
+}
+
+//
+// update the existing stream
+//
+int update(StreamState & new_state)
+{
    double mesh_range = -1.0;
 
    if (stream_state.SetNewMeshAndSolution(std::move(new_state), vs))
@@ -253,11 +307,49 @@ int updateVisualization(std::string data_type, std::string stream)
    }
    else
    {
-      cout << "Stream: field type does not match!" << endl;
+      std::cerr << "update: field type does not match!" << std::endl;
       return 1;
    }
 }
 
+
+int updateStream(std::string stream)
+{
+   std::stringstream ss(stream);
+   std::string data_type;
+   ss >> data_type;
+
+   if (data_type != "solution")
+   {
+      std::cerr << "unsupported data type '" << data_type << "' for stream update" <<
+                std::endl;
+      return 1;
+   }
+
+   StreamState new_state;
+   new_state.ReadStream(ss, data_type);
+
+   return update(new_state);
+}
+
+
+int updateParallelStreams(const StringArray & streams)
+{
+   if (streams.size() != last_stream_nproc)
+   {
+      std::cout << "current stream-list size does not match the previous: " <<
+                streams.size() << " != " << last_stream_nproc << std::endl;
+      return 1;
+   }
+   StreamState new_state;
+   processParallelStreams(new_state, streams);
+
+   return update(new_state);
+}
+
+//
+// other methods
+//
 void iterVisualization()
 {
    GetAppWindow()->mainIter();
@@ -412,8 +504,10 @@ em::val getPNGByteArray()
 // https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html#built-in-type-conversions
 EMSCRIPTEN_BINDINGS(js_funcs)
 {
-   em::function("startVisualization", &js::startVisualization);
-   em::function("updateVisualization", &js::updateVisualization);
+   em::function("displayStream", &js::displayStream);
+   em::function("displayParallelStreams", &js::displayParallelStreams);
+   em::function("updateStream", &js::updateStream);
+   em::function("updateParallelStreams", &js::updateParallelStreams);
    em::function("iterVisualization", &js::iterVisualization);
    em::function("sendExposeEvent", &SendExposeEvent);
    em::function("disableKeyHanding", &js::disableKeyHandling);
@@ -432,4 +526,5 @@ EMSCRIPTEN_BINDINGS(js_funcs)
 #ifdef GLVIS_USE_LIBPNG
    em::function("getPNGByteArray", &js::getPNGByteArray);
 #endif
+   em::register_vector<std::string>("StringArray");
 }
