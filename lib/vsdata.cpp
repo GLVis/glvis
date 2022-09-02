@@ -12,6 +12,8 @@
 #include <cstdlib>
 #include <cmath>
 
+#include <unordered_set>
+
 #include <iomanip>
 #include <sstream>
 #include <limits>
@@ -73,14 +75,20 @@ void VisualizationSceneScalarData::DoAutoscaleValue(bool prepare)
    }
 }
 
-void VisualizationSceneScalarData::Cone(gl3::GlBuilder& builder,
-                                        glm::mat4 xfrm)
+template<typename T>
+static std::array<float, 3> ToVec3(const T* vec)
+{
+   return { (float) vec[0], (float) vec[1], (float) vec[2] };
+}
+
+void VisualizationSceneScalarData::Cone(gl3::GlDrawable& buf,
+                                        glm::mat4 xfrm,
+                                        double cval)
 {
    const int n = 8;
    const double step = 2*M_PI/n;
    const double nz = (1.0/4.0);
    double point = step;
-   int i;
 
    glm::mat3 normXfrm = glm::inverseTranspose(glm::mat3(xfrm));
 
@@ -89,33 +97,64 @@ void VisualizationSceneScalarData::Cone(gl3::GlBuilder& builder,
    glm::vec3 start2vtx = glm::vec3(xfrm * glm::vec4(1, 0, -4, 1));
    glm::vec3 start2norm = glm::vec3(normXfrm * glm::vec3(1, 0, nz));
 
-   builder.glBegin(GL_TRIANGLE_FAN);
-   builder.glNormal3d(start1norm[0], start1norm[1], start1norm[2]);
-   builder.glVertex3d(start1vtx[0], start1vtx[1], start1vtx[2]);
-   builder.glNormal3d(start2norm[0], start2norm[1], start2norm[2]);
-   builder.glVertex3d(start2vtx[0], start2vtx[1], start2vtx[2]);
-
-   for (i = 1; i < n; i++)
+   int indices[n*3];
+   for (int i = 0; i < n; i++)
    {
-      glm::vec3 baseVtx = glm::vec3(xfrm * glm::vec4(cos(point), sin(point), -4, 1));
-      glm::vec3 baseNorm = glm::vec3(normXfrm * glm::vec3(cos(point), sin(point),
-                                                          nz));
-      builder.glNormal3d(baseNorm[0], baseNorm[1], baseNorm[2]);
-      builder.glVertex3d(baseVtx[0], baseVtx[1], baseVtx[2]);
-      point += step;
+      indices[3*i] = 0;
+      indices[3*i+1] = i+1;
+      indices[3*i+2] = i+2;
    }
-   builder.glNormal3d(start2norm[0], start2norm[1], start2norm[2]);
-   builder.glVertex3d(start2vtx[0], start2vtx[1], start2vtx[2]);
-   builder.glEnd();
+   if (cval == HUGE_VAL)
+   {
+      gl3::VertexNorm verts[n+2];
+
+      verts[0].coord = ToVec3(glm::value_ptr(start1vtx));
+      verts[0].norm = ToVec3(glm::value_ptr(start1norm));
+      verts[1].coord = ToVec3(glm::value_ptr(start2vtx));
+      verts[1].norm = ToVec3(glm::value_ptr(start2norm));
+      for (int i = 2; i <= n+1; i++)
+      {
+         glm::vec3 baseVtx = glm::vec3(xfrm * glm::vec4(cos(point), sin(point), -4, 1));
+         glm::vec3 baseNorm = glm::vec3(normXfrm * glm::vec3(cos(point), sin(point),
+                                                             nz));
+         verts[i].coord = ToVec3(glm::value_ptr(baseVtx));
+         verts[i].norm = ToVec3(glm::value_ptr(baseNorm));
+         point += step;
+      }
+      buf.addTriangleIndexed(n+2, verts, n*3, indices);
+   }
+   else
+   {
+      float colortex = palette.GetColorCoord(cval, minv, maxv);
+      gl3::VertexNormTex verts[n+2];
+      verts[0].coord = ToVec3(glm::value_ptr(start1vtx));
+      verts[0].norm = ToVec3(glm::value_ptr(start1norm));
+      verts[0].texCoord = colortex;
+      verts[1].coord = ToVec3(glm::value_ptr(start2vtx));
+      verts[1].norm = ToVec3(glm::value_ptr(start2norm));
+      verts[1].texCoord = colortex;
+      for (int i = 2; i <= n+1; i++)
+      {
+         glm::vec3 baseVtx = glm::vec3(xfrm * glm::vec4(cos(point), sin(point), -4, 1));
+         glm::vec3 baseNorm = glm::vec3(normXfrm * glm::vec3(cos(point), sin(point),
+                                                             nz));
+         verts[i].coord = ToVec3(glm::value_ptr(baseVtx));
+         verts[i].norm = ToVec3(glm::value_ptr(baseNorm));
+         verts[i].texCoord = colortex;
+         point += step;
+      }
+      buf.addTriangleIndexed(n+2, verts, n*3, indices);
+   }
 }
 
 // Draw an arrow starting at point (px, py, pz) with orientation (vx, vy, vz)
 // and length "length".
-void VisualizationSceneScalarData::Arrow3(gl3::GlBuilder& builder,
+void VisualizationSceneScalarData::Arrow3(gl3::GlDrawable& buf,
                                           double px, double py, double pz,
                                           double vx, double vy, double vz,
                                           double length,
-                                          double cone_scale)
+                                          double cone_scale,
+                                          double cval)
 {
    double xc = 0.5*(bb.x[0]+bb.x[1]);
    double yc = 0.5*(bb.y[0]+bb.y[1]);
@@ -158,22 +197,35 @@ void VisualizationSceneScalarData::Arrow3(gl3::GlBuilder& builder,
    glm::vec4 pt1 = xfrm * glm::vec4(0, 0, 0, 1);
    glm::vec4 pt2 = xfrm * glm::vec4(0, 0, 1, 1);
 
-   builder.glBegin(GL_LINES);
-   builder.glVertex3d(pt1[0], pt1[1], pt1[2]);
-   builder.glVertex3d(pt2[0], pt2[1], pt2[2]);
-   builder.glEnd();
+   if (cval == HUGE_VAL)
+   {
+      buf.addLine<gl3::Vertex>(
+         gl3::Vertex{ToVec3(glm::value_ptr(pt1))},
+         gl3::Vertex{ToVec3(glm::value_ptr(pt2))});
+   }
+   else
+   {
+      double colortex = palette.GetColorCoord(cval, minv, maxv);
+      buf.addLine<gl3::VertexTex>(
+         gl3::VertexTex{ToVec3(glm::value_ptr(pt1)), (float)colortex},
+         gl3::VertexTex{ToVec3(glm::value_ptr(pt2)), (float)colortex});
+   }
 
    xfrm = glm::translate(xfrm, glm::vec3(0, 0, 1));
    xfrm = glm::scale(xfrm, glm::vec3(cone_scale));
 
-   Cone(builder, xfrm);
+   if (cone_scale > 0.0)
+   {
+      Cone(buf, xfrm, cval);
+   }
 }
 
-void VisualizationSceneScalarData::Arrow2(gl3::GlBuilder& builder,
+void VisualizationSceneScalarData::Arrow2(gl3::GlDrawable& buf,
                                           double px, double py, double pz,
                                           double vx, double vy, double vz,
                                           double length,
-                                          double cone_scale)
+                                          double cone_scale,
+                                          double cval)
 {
    glm::mat4 xfrm(1.0);
    xfrm = glm::translate(xfrm, glm::vec3(px, py, pz));
@@ -191,22 +243,32 @@ void VisualizationSceneScalarData::Arrow2(gl3::GlBuilder& builder,
    glm::vec4 pt1 = xfrm * glm::vec4(0, 0, 0, 1);
    glm::vec4 pt2 = xfrm * glm::vec4(0, 0, 1, 1);
 
-   builder.glBegin(GL_LINES);
-   builder.glVertex3d(pt1[0], pt1[1], pt1[2]);
-   builder.glVertex3d(pt2[0], pt2[1], pt2[2]);
-   builder.glEnd();
+   if (cval == HUGE_VAL)
+   {
+      buf.addLine<gl3::Vertex>(
+         gl3::Vertex{ToVec3(glm::value_ptr(pt1))},
+         gl3::Vertex{ToVec3(glm::value_ptr(pt2))});
+   }
+   else
+   {
+      double colortex = palette.GetColorCoord(cval, minv, maxv);
+      buf.addLine<gl3::VertexTex>(
+         gl3::VertexTex{ToVec3(glm::value_ptr(pt1)), (float)colortex},
+         gl3::VertexTex{ToVec3(glm::value_ptr(pt2)), (float)colortex});
+   }
 
    xfrm = glm::translate(xfrm, glm::vec3(0, 0, 1));
    xfrm = glm::scale(xfrm, glm::vec3(cone_scale));
 
-   Cone(builder, xfrm);
+   Cone(buf, xfrm, cval);
 }
 
-void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
+void VisualizationSceneScalarData::Arrow(gl3::GlDrawable& buf,
                                          double px, double py, double pz,
                                          double vx, double vy, double vz,
                                          double length,
-                                         double cone_scale)
+                                         double cone_scale,
+                                         double cval)
 {
    double rhos = sqrt (vx*vx+vy*vy+vz*vz);
    if (rhos == 0.0)
@@ -214,10 +276,9 @@ void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
       return;
    }
    double phi = acos(vz/rhos), theta = atan2(vy, vx);
-   const int n = 8;
+   constexpr int n = 8;
    const double step = 2*M_PI/n, nz = (1.0/4.0);
    double point = step, cone[n+4][3], normal[n+2][3];
-   int i, j, k;
 
    cone[0][0] = 0;          cone[0][1] = 0; cone[0][2] = 1;
    cone[1][0] = cone_scale; cone[1][1] = 0; cone[1][2] = -4*cone_scale + 1;
@@ -228,7 +289,7 @@ void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
    normal[1][1] = 0.0/cone_scale;
    normal[1][2] = nz/cone_scale;
 
-   for (i=2; i<n+1; i++)
+   for (int i=2; i<n+1; i++)
    {
       normal[i][0] = cos(point)/cone_scale;
       normal[i][1] = sin(point)/cone_scale;
@@ -260,7 +321,7 @@ void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
    // vx *= rlen*xscale;    vy *= rlen*yscale;    vz *= rlen*zscale;
 
    if (arrow_type == 1)
-      for (i=0; i<n+4; i++)
+      for (int i=0; i<n+4; i++)
       {
          cone[i][2] -= 0.5;
       }
@@ -272,17 +333,17 @@ void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
    double v[3] = { M[0][2]/xscale, M[1][2]/yscale, M[2][2]/zscale };
    length /= sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
 
-   for (i=0; i<n+4; i++)
+   for (int i=0; i<n+4; i++)
    {
-      for (j=0; j<3; j++)
+      for (int j=0; j<3; j++)
       {
          coord[j] = cone[i][j] * length;
       }
 
-      for (k=0; k<3; k++)
+      for (int k=0; k<3; k++)
       {
          cone[i][k] = 0.;
-         for (j=0; j<3; j++)
+         for (int j=0; j<3; j++)
          {
             cone[i][k] += M[k][j] * coord[j];
          }
@@ -295,17 +356,17 @@ void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
       cone[i][2] = cone[i][2]/zscale + pz;
    }
 
-   for (i=0; i<=n+1; i++)
+   for (int i=0; i<=n+1; i++)
    {
-      for (j=0; j<3; j++)
+      for (int j=0; j<3; j++)
       {
          coord[j] = normal[i][j];
       }
 
-      for (k=0; k<3; k++)
+      for (int k=0; k<3; k++)
       {
          normal[i][k] = 0.;
-         for (j=0; j<3; j++)
+         for (int j=0; j<3; j++)
          {
             normal[i][k] += M[k][j] * coord[j];
          }
@@ -315,19 +376,42 @@ void VisualizationSceneScalarData::Arrow(gl3::GlBuilder& builder,
       normal[i][2] *= zscale;
    }
 
-   builder.glBegin(GL_TRIANGLE_FAN);
-   for (i=0; i<=n+1; i++)
+   int indices[n*3];
+   for (int i = 0; i < n; i++)
    {
-      Normalize(normal[i]);
-      builder.glNormal3dv(normal[i]);
-      builder.glVertex3dv(cone[i]);
+      indices[3*i] = 0;
+      indices[3*i+1] = i+1;
+      indices[3*i+2] = i+2;
    }
-   builder.glEnd();
+   if (cval == HUGE_VAL)
+   {
+      gl3::VertexNorm verts[n+2];
+      for (int i = 0; i <= n+1; i++)
+      {
+         verts[i].coord = ToVec3(cone[i]);
+         verts[i].norm = ToVec3(normal[i]);
+      }
+      buf.addTriangleIndexed(n+2, verts, n*3, indices);
+      buf.addLine<gl3::Vertex>(
+         gl3::Vertex{ToVec3(cone[n+2])},
+         gl3::Vertex{ToVec3(cone[n+3])});
 
-   builder.glBegin(GL_LINES);
-   builder.glVertex3dv(cone[n+2]);
-   builder.glVertex3dv(cone[n+3]);
-   builder.glEnd();
+   }
+   else
+   {
+      float colortex = palette.GetColorCoord(cval, minv, maxv);
+      gl3::VertexNormTex verts[n+2];
+      for (int i = 0; i <= n+1; i++)
+      {
+         verts[i].coord = ToVec3(cone[i]);
+         verts[i].norm = ToVec3(normal[i]);
+         verts[i].texCoord = colortex;
+      }
+      buf.addTriangleIndexed(n+2, verts, n*3, indices);
+      buf.addLine<gl3::VertexTex>(
+         gl3::VertexTex{ToVec3(cone[n+2]), colortex},
+         gl3::VertexTex{ToVec3(cone[n+3]), colortex});
+   }
 }
 
 void VisualizationSceneScalarData::PrepareColorBar (double minval,
@@ -360,10 +444,10 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
    }
    color_bar.clear();
    color_bar.addQuad<gl3::VertexTex>(
-   {{minx, miny, posz},{0.f, 0.f}},
-   {{maxx, miny, posz},{0.f, 0.f}},
-   {{maxx, maxy, posz},{1.f, 0.f}},
-   {{minx, maxy, posz},{1.f, 0.f}}
+   {{minx, miny, posz}, 0.f},
+   {{maxx, miny, posz}, 0.f},
+   {{maxx, maxy, posz}, 1.f},
+   {{minx, maxy, posz}, 1.f}
    );
 
    static const int border = 2;
@@ -986,8 +1070,6 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
    int w, h;
    wnd->getWindowSize(w, h);
    gl3::SceneInfo scene {};
-   scene.needs_buffering = std::move(updated_bufs);
-   updated_bufs.clear();
 
    gl3::RenderParams params {};
    params.model_view.identity();
@@ -1048,6 +1130,29 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
       scene.queue.emplace_back(params, &ruler_buf);
    }
    return scene;
+}
+
+void VisualizationSceneScalarData::ProcessUpdatedBufs(gl3::SceneInfo& scene)
+{
+   std::unordered_set<gl3::GlDrawable*> bufs_in_scene;
+   for (const auto& qelem : scene.queue)
+   {
+      bufs_in_scene.insert(qelem.second);
+   }
+
+   auto it = updated_bufs.begin();
+   while (it != updated_bufs.end())
+   {
+      if (bufs_in_scene.find(*it) != bufs_in_scene.end())
+      {
+         scene.needs_buffering.emplace_back(*it);
+         it = updated_bufs.erase(it);
+      }
+      else
+      {
+         ++it;
+      }
+   }
 }
 
 void VisualizationSceneScalarData::glTF_ExportBox(

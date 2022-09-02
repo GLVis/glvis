@@ -1252,7 +1252,7 @@ int ArrowDrawOrNot (double v, int nl, Array<double> & level)
    return 0;
 }
 
-void VisualizationSceneVector3d::DrawVector(gl3::GlBuilder& builder,
+void VisualizationSceneVector3d::DrawVector(gl3::GlDrawable& buf,
                                             int type, double v0, double v1,
                                             double v2, double sx, double sy,
                                             double sz, double s)
@@ -1269,7 +1269,7 @@ void VisualizationSceneVector3d::DrawVector(gl3::GlBuilder& builder,
          arrow_type = 0;
          arrow_scaling_type = 0;
          // glColor3f(0, 0, 0); // color is set in Draw()
-         Arrow(builder,v0,v1,v2,sx,sy,sz,s);
+         Arrow(buf,v0,v1,v2,sx,sy,sz,s);
       }
       break;
 
@@ -1277,8 +1277,7 @@ void VisualizationSceneVector3d::DrawVector(gl3::GlBuilder& builder,
       {
          arrow_type = 1;
          arrow_scaling_type = 1;
-         MySetColor(builder, s, minv, maxv);
-         Arrow(builder,v0,v1,v2,sx,sy,sz,h,0.125);
+         Arrow(buf,v0,v1,v2,sx,sy,sz,h,0.125,s);
       }
       break;
 
@@ -1286,9 +1285,7 @@ void VisualizationSceneVector3d::DrawVector(gl3::GlBuilder& builder,
       {
          arrow_type = 1;
          arrow_scaling_type = 1;
-         // MySetColor(s,maxv,minv);
-         MySetColor(builder, s, minv, maxv);
-         Arrow(builder,v0,v1,v2,sx,sy,sz,h*s/maxv,0.125);
+         Arrow(buf,v0,v1,v2,sx,sy,sz,h*s/maxv,0.125,s);
       }
       break;
 
@@ -1297,8 +1294,8 @@ void VisualizationSceneVector3d::DrawVector(gl3::GlBuilder& builder,
       {
          arrow_type = 1;
          arrow_scaling_type = 1;
-         builder.glColor3f(0.3, 0.3, 0.3);
-         Arrow(builder,v0,v1,v2,sx,sy,sz,hh*s/maxv,0.125);
+         // glColor3f(0.3, 0.3, 0.3); // color is set in Draw
+         Arrow(buf,v0,v1,v2,sx,sy,sz,hh*s/maxv,0.125);
       }
       break;
    }
@@ -1310,7 +1307,6 @@ void VisualizationSceneVector3d::PrepareVectorField()
    double *vertex;
 
    vector_buf.clear();
-   gl3::GlBuilder builder = vector_buf.createBuilder();
 
    switch (drawvector)
    {
@@ -1322,7 +1318,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
             if (drawmesh != 2 || ArrowDrawOrNot((*sol)(i), nl, level))
             {
                vertex = mesh->GetVertex(i);
-               DrawVector(builder, drawvector, vertex[0], vertex[1], vertex[2],
+               DrawVector(vector_buf, drawvector, vertex[0], vertex[1], vertex[2],
                           (*solx)(i), (*soly)(i), (*solz)(i), (*sol)(i));
             }
          break;
@@ -1335,7 +1331,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
             if (drawmesh != 2 || ArrowDrawOrNot((*sol)(i), nl, level))
             {
                vertex = mesh->GetVertex(i);
-               DrawVector(builder, drawvector, vertex[0], vertex[1], vertex[2],
+               DrawVector(vector_buf, drawvector, vertex[0], vertex[1], vertex[2],
                           (*solx)(i), (*soly)(i), (*solz)(i), (*sol)(i));
             }
       }
@@ -1350,7 +1346,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
             if (drawmesh != 2 || ArrowDrawOrNot((*sol)(i), nl, level))
             {
                vertex = mesh->GetVertex(i);
-               DrawVector(builder, drawvector, vertex[0], vertex[1], vertex[2],
+               DrawVector(vector_buf, drawvector, vertex[0], vertex[1], vertex[2],
                           (*solx)(i), (*soly)(i), (*solz)(i), (*sol)(i));
             }
       }
@@ -1369,7 +1365,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
             for (j = 0; j < l[i].Size(); j++)
             {
                vertex = mesh->GetVertex( l[i][j] );
-               DrawVector(builder, drawvector, vertex[0], vertex[1], vertex[2],
+               DrawVector(vector_buf, drawvector, vertex[0], vertex[1], vertex[2],
                           (*solx)(l[i][j]), (*soly)(l[i][j]), (*solz)(l[i][j]),
                           (*sol)(l[i][j]));
             }
@@ -1402,7 +1398,7 @@ void VisualizationSceneVector3d::PrepareVectorField()
                i = vertices[j];
                if (vert_marker[i]) { continue; }
                vertex = mesh->GetVertex(i);
-               DrawVector(builder, drawvector, vertex[0], vertex[1], vertex[2],
+               DrawVector(vector_buf, drawvector, vertex[0], vertex[1], vertex[2],
                           (*solx)(i), (*soly)(i), (*solz)(i), (*sol)(i));
                vert_marker[i] = true;
             }
@@ -1529,7 +1525,7 @@ void VisualizationSceneVector3d::PrepareCuttingPlane()
             builder.glEnd();
             if (drawvector)
                for (j=0; j<n; j++)
-                  DrawVector(builder, drawvector, point[n][0], point[n][1], point[n][2],
+                  DrawVector(cplane_buf, drawvector, point[n][0], point[n][1], point[n][2],
                              val[n][0],val[n][1], val[n][2], point[n][3]);
          }
          else
@@ -1547,7 +1543,7 @@ void VisualizationSceneVector3d::PrepareCuttingPlane()
             builder.glEnd();
             if (drawvector)
                for (j=n-1; j>=0; j--)
-                  DrawVector(builder, drawvector, point[n][0], point[n][1], point[n][2],
+                  DrawVector(cplane_buf, drawvector, point[n][0], point[n][1], point[n][2],
                              val[n][0],val[n][1], val[n][2], point[n][3]);
          }
       }
@@ -1597,16 +1593,16 @@ gl3::SceneInfo VisualizationSceneVector3d::GetSceneObjs()
    params.contains_translucent = false;
    params.num_pt_lights = 0;
 
-   if (drawvector > 3)
-   {
-      scene.queue.emplace_back(params, &vector_buf);
-   }
-
    params.mesh_material = VisualizationScene::BLK_MAT;
-   params.static_color = GetLineColor();
 
    if (drawvector == 1)
    {
+      params.static_color = GetLineColor();
+      scene.queue.emplace_back(params, &vector_buf);
+   }
+   else if (drawvector > 3)
+   {
+      params.static_color = {0.3,0.3,0.3,1.0};
       scene.queue.emplace_back(params, &vector_buf);
    }
 
@@ -1629,5 +1625,6 @@ gl3::SceneInfo VisualizationSceneVector3d::GetSceneObjs()
       params.use_clip_plane = false;
       scene.queue.emplace_back(params, &cplines_buf);
    }
+   ProcessUpdatedBufs(scene);
    return scene;
 }

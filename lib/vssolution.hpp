@@ -41,6 +41,9 @@ protected:
 
    gl3::GlDrawable disp_buf;
 
+   bool e_nums_buf_ready = false;
+   bool v_nums_buf_ready = false;
+   bool f_nums_buf_ready = false;
    gl3::GlDrawable e_nums_buf;
    gl3::GlDrawable v_nums_buf;
    gl3::GlDrawable f_nums_buf;
@@ -127,7 +130,7 @@ public:
    void PrepareOrderingCurve();
    void PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows, bool color);
 
-   void PrepareNumbering();
+   void PrepareNumbering(bool invalidate = true);
    void PrepareElementNumbering();
    void PrepareElementNumbering1();
    void PrepareElementNumbering2();
@@ -156,7 +159,11 @@ public:
    void ToggleDrawOrdering() { draworder = (draworder+1)%5; }
 
    // 0 - none, 1 - elements, 2 - edges, 3 - vertices
-   void ToggleDrawNumberings() { drawnums = (drawnums+1)%4; }
+   void ToggleDrawNumberings()
+   {
+      drawnums = (drawnums+1)%4;
+      PrepareNumbering(false);
+   }
 
    virtual void SetShading(int, bool);
    void ToggleShading();

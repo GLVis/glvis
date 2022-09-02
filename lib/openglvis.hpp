@@ -113,7 +113,7 @@ protected:
       if (val < 0.0) { val = 0.0; }
       if (val > 1.0) { val = 1.0; }
 
-      builder.glTexCoord2f(val, 1.0);
+      builder.glTexCoord1f(val);
    }
 
    // We only need 3 points, but the array is 4x3

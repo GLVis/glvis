@@ -124,7 +124,7 @@ protected:
 
    void FixValueRange();
 
-   void Cone(gl3::GlBuilder& builder, glm::mat4 transform);
+   void Cone(gl3::GlDrawable& buf, glm::mat4 transform, double cval);
 
 public:
    Plane *CuttingPlane;
@@ -198,6 +198,8 @@ public:
 
    virtual gl3::SceneInfo GetSceneObjs();
 
+   void ProcessUpdatedBufs(gl3::SceneInfo& scene);
+
    void glTF_ExportBox(glTF_Builder &bld,
                        glTF_Builder::buffer_id buffer,
                        glTF_Builder::material_id black_mat);
@@ -216,20 +218,23 @@ public:
 
    void SetLevelLines(double min, double max, int n, int adj = 1);
 
-   void Arrow(gl3::GlBuilder& builder,
+   void Arrow(gl3::GlDrawable& buffer,
               double px, double py, double pz,
               double vx, double vy, double vz, double length,
-              double cone_scale = 0.075);
-   void Arrow2(gl3::GlBuilder& builder,
+              double cone_scale = 0.075,
+              double cval = HUGE_VAL);
+   void Arrow2(gl3::GlDrawable& buffer,
                double px, double py, double pz,
                double vx, double vy, double vz,
                double length,
-               double cone_scale = 0.075);
-   void Arrow3(gl3::GlBuilder& builder,
+               double cone_scale = 0.075,
+               double cval = HUGE_VAL);
+   void Arrow3(gl3::GlDrawable& buffer,
                double px, double py, double pz,
                double vx, double vy, double vz,
                double length,
-               double cone_scale = 0.075);
+               double cone_scale = 0.075,
+               double cval = HUGE_VAL);
 
    void DrawPolygonLevelLines(gl3::GlBuilder& builder, double *point, int n,
                               Array<double> &level, bool log_vals);
