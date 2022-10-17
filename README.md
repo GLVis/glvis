@@ -195,7 +195,7 @@ Key commands
     - Decrease element subdivision factor: `s1 -= s2`
     - Increase boundary subdivision factor: `s2++`
     - Decrease boundary subdivision factor: `s2--`
-  - <kbd>o</kbd> – performs the curently selected function
+  - <kbd>o</kbd> – performs the currently selected function
 - <kbd>b</kbd> – Toggle the boundary in 2D scalar mode. The options are:
   - no boundary
   - black boundary
