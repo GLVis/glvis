@@ -31,7 +31,7 @@ extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 #ifdef GLVIS_ISFINITE
 /* This test for INFs or NaNs is the same as the one used in hypre's PCG and
-   should work on all IEEE-compliant compilers. For detail see "Lecture Notes on
+   should work on all IEEE-compliant compilers. For details see "Lecture Notes on
    the Status of IEEE 754" by W. Kahan, http://tinyurl.com/cfz5d88 */
 int isfinite(double x)
 {
