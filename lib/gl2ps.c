@@ -4615,7 +4615,7 @@ static int gl2psPrintPDFShaderMask(int obj, int childobj)
   return offs;
 }
 
-/* Writes a Extended graphics state for a shaded triangle mask if
+/* Writes an Extended graphics state for a shaded triangle mask if
    simplealpha is true the childobj argument is ignored and a /ca
    statement will be written instead */
 

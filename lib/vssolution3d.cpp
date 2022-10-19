@@ -27,7 +27,7 @@ extern thread_local GeometryRefiner GLVisGeometryRefiner;
 // Reference geometries with a cut in the middle, based on subdivision of
 // GLVisGeometryRefiner in 3-4 quads. Updated when cut_lambda is updated, see
 // keys Ctrl+F3/F4. We need these variables because the GLVisGeometryRefiner
-// cashes its RefinedGeometry objects.
+// caches its RefinedGeometry objects.
 thread_local IntegrationRule cut_QuadPts;
 thread_local Array<int> cut_QuadGeoms;
 thread_local IntegrationRule cut_TriPts;
