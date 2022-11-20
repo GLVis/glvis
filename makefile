@@ -49,8 +49,12 @@ GLVIS_CONFIG_MK ?=
 -include $(GLVIS_CONFIG_MK)
 
 # Default installation location
-PREFIX ?= ./bin
+PREFIX ?= /usr/local
 INSTALL ?= /usr/bin/install
+
+# Internal shortcuts
+override static = $(if $(MFEM_STATIC:YES=),,YES)
+override shared = $(if $(MFEM_SHARED:YES=),,YES)
 
 # Archiver: AR and ARFLAGS are defined by default, RANLIB is not.
 # The default value of AR is 'ar' and we do not want to change that.
@@ -267,7 +271,11 @@ BYTECODE_FILES       = $(WEB_SOURCE_FILES:.cpp=.bc)
 	$(CCC) -o $@ -c $<
 
 %.o: %.c %.h
+ifeq ($(MFEM_SHARED),YES)
+	$(Ccc) -o $@ -c $< -fPIC
+else
 	$(Ccc) -o $@ -c $<
+endif
 
 %.o: %.mm
 	$(CCC) -o $@ -c $<
@@ -275,8 +283,11 @@ BYTECODE_FILES       = $(WEB_SOURCE_FILES:.cpp=.bc)
 %.bc: %.cpp
 	$(EMCC) $(EMCC_OPTS) $(GLVIS_FLAGS) -c $< -o $@
 
-glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
-	$(CCC) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
+glvis:	glvis.cpp libglvis $(CONFIG_MK) $(MFEM_LIB_FILE)
+	mkdir -p ./bin
+	$(CCC) -o ./bin/glvis glvis.cpp -Llib -lglvis $(LIBS)
+
+libglvis: $(if $(static),lib/libglvis.a) $(if $(shared),lib/libglvis.so)
 
 $(LOGO_FILE_CPP): $(LOGO_FILE)
 ifndef XXD_FOUND
@@ -302,14 +313,17 @@ $(OBJECT_FILES): $(HEADER_FILES) $(CONFIG_MK)
 lib/libglvis.a: $(OBJECT_FILES)
 	$(AR) $(ARFLAGS) $@ $^; $(RANLIB) $@
 
+lib/libglvis.so: $(OBJECT_FILES)
+	$(CCC) -shared -o $@ $^ $(GLVIS_FLAGS) $(LIBS)
+
 js: lib/libglvis.js
 lib/libglvis.js: $(BYTECODE_FILES) $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(EMCC) $(EMCC_OPTS) -o $@ $(BYTECODE_FILES) $(EMCC_LIBS) --embed-file $(FONT_FILE)
 
 clean:
-	rm -rf lib/*.o lib/*.bc lib/gl/*.o lib/gl/*.bc lib/*~ *~ glvis
+	rm -rf lib/*.o lib/*.bc lib/gl/*.o lib/gl/*.bc lib/*~ *~ ./bin/glvis
 	rm -rf $(LOGO_FILE_CPP) share/*.o
-	rm -rf lib/libglvis.a lib/libglvis.js *.dSYM
+	rm -rf lib/libglvis.{a,so} lib/libglvis.js *.dSYM
 	rm -rf GLVis.app
 
 distclean: clean
@@ -317,10 +331,14 @@ distclean: clean
 	rm -f GLVis_coloring.gf
 
 install: glvis
-	mkdir -p $(PREFIX)
-	$(INSTALL) -m 750 glvis $(PREFIX)
+	mkdir -p $(PREFIX)/bin
+	$(INSTALL) -m 750 bin/glvis $(PREFIX)/bin
+ifeq ($(MFEM_SHARED),YES)
+	mkdir -p $(PREFIX)/lib
+	$(INSTALL) -m 750 lib/libglvis.so $(PREFIX)/lib
+endif
 ifeq ($(MFEM_USE_GNUTLS),YES)
-	$(INSTALL) -m 750 glvis-keygen.sh $(PREFIX)
+	$(INSTALL) -m 750 glvis-keygen.sh $(PREFIX)/bin
 endif
 
 app: glvis
@@ -340,6 +358,7 @@ status info:
 	$(info GLVIS_FLAGS = $(GLVIS_FLAGS))
 	$(info GLVIS_LIBS  = $(value GLVIS_LIBS))
 	$(info GLVIS_LIBS  = $(GLVIS_LIBS))
+	$(info GLVIS_SHARED  = $(MFEM_SHARED))
 	$(info PREFIX      = $(PREFIX))
 	@true
 
