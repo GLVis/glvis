@@ -26,7 +26,7 @@ env:
   METIS_ARCHIVE: metis-4.0.3.tar.gz
   METIS_TOP_DIR: metis-4.0.3
   MFEM_TOP_DIR: mfem
-  MFEM_BRANCH: master
+  MFEM_BRANCH: l2-integral-support
 
 jobs:
   builds-and-tests:

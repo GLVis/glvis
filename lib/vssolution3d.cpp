@@ -1025,10 +1025,8 @@ void VisualizationSceneSolution3d::FindNewBox(bool prepare)
 
 void VisualizationSceneSolution3d::FindNewValueRange(bool prepare)
 {
-   int dim = mesh->Dimension();
-   const FiniteElement *fe = (dim == 3) ?
-                             GridF->FESpace()->GetFE(0) : GridF->FESpace()->GetBE(0);
-   int map_type = (fe) ? fe->GetMapType() : FiniteElement::VALUE;
+   int map_type = (GridF) ? GridF->FESpace()->FEColl()->GetMapType() :
+                  FiniteElement::VALUE;
 
    if (shading < 2 || map_type != (int)FiniteElement::VALUE)
    {
