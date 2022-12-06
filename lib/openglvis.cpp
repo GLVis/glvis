@@ -729,7 +729,7 @@ int VisualizationScene::AddTriangles(glTF_Builder &bld,
       }
       default:
       {
-         cout << "glTF export: coorditate switch for layout " << buf_layout
+         cout << "glTF export: coordinate switch for layout " << buf_layout
               << " is not implemented here:" << MFEM_LOCATION;
          bld.appendToBufferView(surf_vertices_buf_view,
                                 surf_vertices_data,
@@ -929,7 +929,7 @@ int VisualizationScene::AddLines(glTF_Builder &bld,
       }
       default:
       {
-         cout << "glTF export: coorditate switch for layout " << buf_layout
+         cout << "glTF export: coordinate switch for layout " << buf_layout
               << " is not implemented here:" << MFEM_LOCATION;
          bld.appendToBufferView(lines_vertices_buf_view,
                                 lines_vertices_data,

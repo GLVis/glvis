@@ -451,7 +451,7 @@ void SdlWindow::mainIter()
          // On SDL, when the OpenGL context is on a separate thread from the
          // main thread, the call to [NSOpenGLContext update] after a resize or
          // move event is only scheduled for after the next swap event. Any
-         // rendering/OpenGL commands occuring before this update will be
+         // rendering/OpenGL commands occurring before this update will be
          // corrupted.
          //
          // To avoid this issue, we just call [NSOpenGLContext update]
