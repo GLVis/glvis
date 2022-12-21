@@ -1025,7 +1025,11 @@ void VisualizationSceneSolution3d::FindNewBox(bool prepare)
 
 void VisualizationSceneSolution3d::FindNewValueRange(bool prepare)
 {
-   if (shading < 2)
+   int map_type = (GridF) ?
+                  GridF->FESpace()->FEColl()->GetMapType(mesh->Dimension()) :
+                  FiniteElement::VALUE;
+
+   if (shading < 2 || map_type != (int)FiniteElement::VALUE)
    {
       minv = sol->Min();
       maxv = sol->Max();
