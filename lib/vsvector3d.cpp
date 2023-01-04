@@ -651,7 +651,7 @@ void VisualizationSceneVector3d::PrepareFlat2()
       if (dim == 3)
       {
          mesh -> GetBdrElementFace (i, &fn, &fo);
-         RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceBaseGeometry (fn),
+         RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceGeometry (fn),
                                             TimesToRefine);
          if (!cut_updated)
          {
@@ -1027,7 +1027,7 @@ void VisualizationSceneVector3d::PrepareLines2()
       if (dim == 3)
       {
          mesh -> GetBdrElementFace (i, &fn, &fo);
-         RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceBaseGeometry (fn),
+         RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceGeometry (fn),
                                             TimesToRefine);
          // di = GridF->GetFaceValues(fn, 2, RefG->RefPts, values, pointmat);
          di = fo % 2;
