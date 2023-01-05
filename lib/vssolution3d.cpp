@@ -994,7 +994,7 @@ void VisualizationSceneSolution3d::FindNewBox(bool prepare)
          if (dim == 3)
          {
             mesh->GetBdrElementFace(i, &fn, &fo);
-            RefG = GLVisGeometryRefiner.Refine(mesh->GetFaceBaseGeometry(fn),
+            RefG = GLVisGeometryRefiner.Refine(mesh->GetFaceGeometry(fn),
                                                TimesToRefine);
             Tr = mesh->GetFaceElementTransformations(fn, 5);
             eir.SetSize(RefG->RefPts.GetNPoints());
@@ -1681,7 +1681,7 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       if (dim == 3)
       {
          mesh -> GetBdrElementFace (i, &fn, &fo);
-         RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceBaseGeometry (fn),
+         RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceGeometry (fn),
                                             TimesToRefine);
          if (!cut_updated)
          {
@@ -2102,7 +2102,7 @@ void VisualizationSceneSolution3d::PrepareLines2()
       if (dim == 3)
       {
          mesh -> GetBdrElementFace (i, &fn, &fo);
-         RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceBaseGeometry (fn),
+         RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceGeometry (fn),
                                             TimesToRefine);
          // di = GridF -> GetFaceValues (fn, 2, RefG->RefPts, values, pointmat);
          di = fo % 2;
@@ -2907,14 +2907,14 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
          }
          else // shading == 2
          {
-            RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceBaseGeometry (i),
+            RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceGeometry (i),
                                                TimesToRefine);
             // partition[e1] is 0 if e1 is behind the cutting plane
             // and 1 otherwise
             int dir = partition[e1];
             GridF -> GetFaceValues (i, dir, RefG->RefPts, values, pointmat);
             GetFaceNormals(i, dir, RefG->RefPts, normals);
-            switch (mesh -> GetFaceBaseGeometry (i))
+            switch (mesh -> GetFaceGeometry (i))
             {
                case Geometry::TRIANGLE:  n = 3; break;
                case Geometry::SQUARE:    n = 4; break;
@@ -2962,7 +2962,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines()
             }
             for (int i = 0; i < num_faces; i++)
             {
-               const Geometry::Type geom = mesh->GetFaceBaseGeometry(i);
+               const Geometry::Type geom = mesh->GetFaceGeometry(i);
                RefinedGeometry *RefG =
                   GLVisGeometryRefiner.Refine(geom, TimesToRefine);
                if (FaceShiftScale == 0.0)
@@ -3076,13 +3076,13 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines2()
          }
          else // shading == 2
          {
-            RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceBaseGeometry (i),
+            RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceGeometry (i),
                                                TimesToRefine);
             // partition[e1] is 0 if e1 is behind the cutting plane
             // and 1 otherwise
             int di = partition[e1];
             GridF -> GetFaceValues (i, di, RefG->RefPts, values, pointmat);
-            switch (mesh -> GetFaceBaseGeometry (i))
+            switch (mesh -> GetFaceGeometry (i))
             {
                case Geometry::TRIANGLE:  n = 3; break;
                case Geometry::SQUARE:    n = 4; break;

@@ -1089,10 +1089,11 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
 
       Session new_session(fix_elem_orient, save_coloring);
 
-      char tmp_file[50];
+      constexpr int tmp_filename_size = 50;
+      char tmp_file[tmp_filename_size];
       if (save_stream)
       {
-         sprintf(tmp_file,"glvis-saved.%04d",viscount);
+         snprintf(tmp_file, tmp_filename_size, "glvis-saved.%04d", viscount);
          ofstream ofs(tmp_file);
          if (!par_data)
          {

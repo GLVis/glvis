@@ -925,7 +925,7 @@ void VisualizationSceneVector::PrepareVectorField()
             {
                const IntegrationRule *ir =
                   GLVisGeometryRefiner.RefineInterior(
-                     mesh->GetFaceBaseGeometry(i), RefineFactor);
+                     mesh->GetFaceGeometry(i), RefineFactor);
                if (ir == NULL)
                {
                   continue;
