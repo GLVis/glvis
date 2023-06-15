@@ -61,7 +61,7 @@ def compare_images(baseline_file, output_file, expect_fail=False):
 
     # Compare images with SSIM metrics. For two exactly-equal images, SSIM=1.0.
     # We set a cutoff of 0.999 to account for possible differences in rendering.
-    ssim = structural_similarity(baseline_img, output_img, multichannel=True)
+    ssim = structural_similarity(baseline_img, output_img, channel_axis=2)
     if ssim < cutoff_ssim:
         if expect_fail:
             print("[PASS] Differences were detected in the control case.")
