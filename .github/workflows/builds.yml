@@ -134,7 +134,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.MFEM_TOP_DIR }}
-        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-${{ matrix.build-system}}-v2.2
+        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-${{ matrix.build-system}}-v2.4
 
     # We are using the defaults of the MFEM action here, which is to use master
     # branch. There is an implicit assumption here that mfem master hasn't
@@ -143,7 +143,7 @@ jobs:
     # superfluous.
     - name: build mfem
       if: steps.cache-mfem.outputs.cache-hit != 'true'
-      uses: mfem/github-actions/build-mfem@v2.2
+      uses: mfem/github-actions/build-mfem@v2.4
       with:
         os: ${{ matrix.os }}
         target: ${{ matrix.target }}
@@ -153,6 +153,7 @@ jobs:
         mfem-branch: ${{ env.MFEM_BRANCH }}
         build-system: ${{ matrix.build-system }}
         mpi: ${{ matrix.mpi }}
+        library-only: true
 
     # Install GLVis dependencies with package manager
     - name: get deps (Linux)
