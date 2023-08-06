@@ -1647,7 +1647,8 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
 
 void VisualizationSceneSolution::PrepareLines()
 {
-   if (shading == 2 && mesh->Dimension() > 1) // PrepareLines3 does not make sense for 1d meshes.
+   if (shading == 2 &&
+       mesh->Dimension() > 1) // PrepareLines3 does not make sense for 1d meshes.
    {
       // PrepareLines2();
       PrepareLines3();
@@ -1672,7 +1673,7 @@ void VisualizationSceneSolution::PrepareLines()
       {
          // 1D meshes get rendered flat
          double z = GetMinV();
-         if(mesh->Dimension() > 1) // In 1D we just put the mesh below the solution
+         if (mesh->Dimension() > 1) // In 1D we just put the mesh below the solution
          {
             z = LogVal((*sol)(vertices[j]));
          }
