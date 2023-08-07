@@ -309,12 +309,11 @@ void VisualizationScene
            const double (&pts)[4][3], const double (&cv)[4],
            const double minv, const double maxv)
 {
-   std::array<float, 2> texcoord[4];
+   float texcoord[2];
    std::array<float, 3> fpts[2];
    for (int i = 0; i < 2; i++)
    {
-      float pal_coord = palette.GetColorCoord(cv[i], minv, maxv);
-      texcoord[i] = { pal_coord, 1.0 };
+      texcoord[i] = palette.GetColorCoord(cv[i], minv, maxv);
       fpts[i]   = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
    }
    buff.addLine<gl3::VertexTex>(
