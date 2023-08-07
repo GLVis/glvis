@@ -31,7 +31,7 @@ extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 #ifdef GLVIS_ISFINITE
 /* This test for INFs or NaNs is the same as the one used in hypre's PCG and
-   should work on all IEEE-compliant compilers. Fro detail see "Lecture Notes on
+   should work on all IEEE-compliant compilers. For details see "Lecture Notes on
    the Status of IEEE 754" by W. Kahan, http://tinyurl.com/cfz5d88 */
 int isfinite(double x)
 {
@@ -1941,7 +1941,6 @@ void VisualizationSceneSolution::PrepareOrderingCurve1(gl3::GlDrawable& buf,
                                                        bool arrows,
                                                        bool color)
 {
-   gl3::GlBuilder builder = buf.createBuilder();
    DenseMatrix pointmat;
    Array<int> vertices;
 
@@ -1992,34 +1991,53 @@ void VisualizationSceneSolution::PrepareOrderingCurve1(gl3::GlDrawable& buf,
       double du = us1-us;
       double ds = sqrt(dx*dx+dy*dy+du*du);
 
+      double cval = HUGE_VAL;
       if (color)
       {
-         double cval = minv+double(k)/ne*(maxv-minv);
-         MySetColor(builder, cval, minv, maxv);
+         cval = minv+double(k)/ne*(maxv-minv);
       }
 
       if (arrows)
       {
-         Arrow3(builder,
+         Arrow3(buf,
                 xs,ys,us,
                 dx,dy,du,
-                ds,0.05);
+                ds,0.05,cval);
       }
       else
       {
-         Arrow3(builder,
+         Arrow3(buf,
                 xs,ys,us,
                 dx,dy,du,
-                ds,0.0);
+                ds,0.0,cval);
       }
    }
 }
 
-void VisualizationSceneSolution::PrepareNumbering()
+void VisualizationSceneSolution::PrepareNumbering(bool invalidate)
 {
-   PrepareElementNumbering();
-   PrepareEdgeNumbering();
-   PrepareVertexNumbering();
+   if (invalidate)
+   {
+      // invalidate all numberings
+      e_nums_buf_ready = false;
+      v_nums_buf_ready = false;
+      f_nums_buf_ready = false;
+   }
+   if (drawnums == 1 && !e_nums_buf_ready)
+   {
+      PrepareElementNumbering();
+      e_nums_buf_ready = true;
+   }
+   if (drawnums == 2 && !f_nums_buf_ready)
+   {
+      PrepareEdgeNumbering();
+      f_nums_buf_ready = true;
+   }
+   if (drawnums == 3 && !v_nums_buf_ready)
+   {
+      PrepareVertexNumbering();
+      v_nums_buf_ready = true;
+   }
 }
 
 void VisualizationSceneSolution::PrepareLines2()
@@ -2413,6 +2431,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &order_buf);
    }
+   ProcessUpdatedBufs(scene);
 
    return scene;
 }

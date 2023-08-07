@@ -50,7 +50,6 @@ const char *gfunc_file      = string_none;
 const char *arg_keys        = string_none;
 int         pad_digits      = 6;
 int         gf_component    = -1;
-bool        keep_attr       = false;
 int         window_x        = 0; // not a command line option
 int         window_y        = 0; // not a command line option
 int         window_w        = 400;
@@ -81,7 +80,6 @@ double scr_min_val, scr_max_val;
 
 extern char **environ;
 
-using StreamCollection = vector<unique_ptr<istream>>;
 
 void PrintSampleUsage(ostream &out);
 
@@ -95,10 +93,7 @@ void SetGridFunction(StreamState& state);
 void ReadParallel(int np, StreamState& state);
 
 int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
-                               const char *sol_prefix, StreamState& state,
-                               int keep_attr);
-
-int ReadInputStreams(StreamState& state, const StreamCollection& input_streams);
+                               const char *sol_prefix, StreamState& state);
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
@@ -121,7 +116,7 @@ bool GLVisInitVis(int field_type, StreamCollection input_streams)
    if (input_streams.size() > 0)
    {
       GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
-      glvis_command = new GLVisCommand(&vs, stream_state, &keep_attr);
+      glvis_command = new GLVisCommand(&vs, stream_state, &stream_state.keep_attr);
       comm_thread = new communication_thread(std::move(input_streams), glvis_command);
    }
 
@@ -332,7 +327,7 @@ int ScriptReadParSolution(istream &scr, StreamState& state)
    cout << "solution prefix: " << sol_prefix << endl;
 
    err_read = ReadParMeshAndGridFunction(np, mesh_prefix.c_str(),
-                                         sol_prefix.c_str(), state, scr_keep_attr);
+                                         sol_prefix.c_str(), state);
    if (!err_read)
    {
       state.Extrude1DMeshAndSolution();
@@ -1094,10 +1089,11 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
 
       Session new_session(fix_elem_orient, save_coloring);
 
-      char tmp_file[50];
+      constexpr int tmp_filename_size = 50;
+      char tmp_file[tmp_filename_size];
       if (save_stream)
       {
-         sprintf(tmp_file,"glvis-saved.%04d",viscount);
+         snprintf(tmp_file, tmp_filename_size, "glvis-saved.%04d", viscount);
          ofstream ofs(tmp_file);
          if (!par_data)
          {
@@ -1107,7 +1103,7 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          }
          else
          {
-            ReadInputStreams(new_session.state, input_streams);
+            new_session.state.ReadStreams(input_streams);
             ofs.precision(8);
             ofs << "solution\n";
             new_session.state.mesh->Print(ofs);
@@ -1127,7 +1123,7 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          }
          else
          {
-            new_session.ft = ReadInputStreams(new_session.state, input_streams);
+            new_session.ft = new_session.state.ReadStreams(input_streams);
          }
          // Pass ownership of input streams into session object
          new_session.input_streams = std::move(input_streams);
@@ -1182,7 +1178,7 @@ int main (int argc, char *argv[])
    args.AddOption(&stream_state.fix_elem_orient, "-fo", "--fix-orientations",
                   "-no-fo", "--dont-fix-orientations",
                   "Attempt to fix the orientations of inverted elements.");
-   args.AddOption(&keep_attr, "-a", "--real-attributes",
+   args.AddOption(&stream_state.keep_attr, "-a", "--real-attributes",
                   "-ap", "--processor-attributes",
                   "When opening a parallel mesh, use the real mesh attributes"
                   " or replace them with the processor rank.");
@@ -1521,7 +1517,7 @@ void ReadParallel(int np, StreamState& state)
    if (state.is_gf)
    {
       read_err = ReadParMeshAndGridFunction(np, mesh_file, sol_file,
-                                            state, keep_attr);
+                                            state);
       if (!read_err)
       {
          SetGridFunction(state);
@@ -1530,7 +1526,7 @@ void ReadParallel(int np, StreamState& state)
    else
    {
       read_err = ReadParMeshAndGridFunction(np, mesh_file, NULL,
-                                            state, keep_attr);
+                                            state);
       if (!read_err)
       {
          state.SetMeshSolution();
@@ -1547,7 +1543,7 @@ void ReadParallel(int np, StreamState& state)
 
 int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                                const char *sol_prefix,
-                               StreamState& state, int keep_attribs)
+                               StreamState& state)
 {
    state.mesh = NULL;
 
@@ -1579,7 +1575,7 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
 
       mesh_array[p] = new Mesh(meshfile, 1, 0, state.fix_elem_orient);
 
-      if (!keep_attribs)
+      if (!state.keep_attr)
       {
          // set element and boundary attributes to be the processor number + 1
          for (int i = 0; i < mesh_array[p]->GetNE(); i++)
@@ -1634,77 +1630,4 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    }
 
    return read_err;
-}
-
-int ReadInputStreams(StreamState& state, const StreamCollection& input_streams)
-{
-   int nproc = input_streams.size();
-   Array<Mesh *> mesh_array(nproc);
-   Array<GridFunction *> gf_array(nproc);
-   string data_type;
-
-   int gf_count = 0;
-   int field_type = 0;
-
-   for (int p = 0; p < nproc; p++)
-   {
-#ifdef GLVIS_DEBUG
-      cout << "connection[" << p << "]: reading initial data ... " << flush;
-#endif
-      istream &isock = *input_streams[p];
-      // assuming the "parallel nproc p" part of the stream has been read
-      isock >> ws >> data_type >> ws; // "*_data" / "mesh" / "solution"
-#ifdef GLVIS_DEBUG
-      cout << " type " << data_type << " ... " << flush;
-#endif
-      mesh_array[p] = new Mesh(isock, 1, 0, state.fix_elem_orient);
-      if (!keep_attr)
-      {
-         // set element and boundary attributes to proc+1
-         for (int i = 0; i < mesh_array[p]->GetNE(); i++)
-         {
-            mesh_array[p]->GetElement(i)->SetAttribute(p+1);
-         }
-         for (int i = 0; i < mesh_array[p]->GetNBE(); i++)
-         {
-            mesh_array[p]->GetBdrElement(i)->SetAttribute(p+1);
-         }
-      }
-      gf_array[p] = NULL;
-      if (data_type != "mesh")
-      {
-         gf_array[p] = new GridFunction(mesh_array[p], isock);
-         gf_count++;
-      }
-#ifdef GLVIS_DEBUG
-      cout << "done." << endl;
-#endif
-   }
-
-   if (gf_count > 0 && gf_count != nproc)
-   {
-      mfem_error("Input streams contain a mixture of data types!");
-   }
-
-   state.mesh.reset(new Mesh(mesh_array, nproc));
-   if (gf_count == 0)
-   {
-      state.SetMeshSolution();
-      field_type = 2;
-   }
-   else
-   {
-      state.grid_f.reset(new GridFunction(state.mesh.get(), gf_array, nproc));
-      field_type = (state.grid_f->VectorDim() == 1) ? 0 : 1;
-   }
-
-   for (int p = 0; p < nproc; p++)
-   {
-      delete mesh_array[nproc-1-p];
-      delete gf_array[nproc-1-p];
-   }
-
-   state.Extrude1DMeshAndSolution();
-
-   return field_type;
 }

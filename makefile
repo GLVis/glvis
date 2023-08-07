@@ -156,32 +156,49 @@ define find_dir
 $(patsubst %/$(1),%,$(firstword $(wildcard $(foreach d,$(2),$(d)/$(1)))))
 endef
 
+# Macro to find the proper library sub-directory, 'lib64' or 'lib', given a
+# tentative prefix and a library name. Returns empty path if prefix is empty,
+# '/usr', or the library is not found.
+# $(1) - the prefix to search, e.g. $(SDL_DIR)
+# $(2) - library name without 'lib' prefix, e.g. 'SDL2'
+define dir2lib
+$(if $(filter-out /usr,$(1)),$(patsubst %/,%,$(dir $(firstword $(wildcard\
+ $(1)/lib64/lib$(2).* $(1)/lib/lib$(2).*)))))
+endef
+
 BREW_PREFIX := $(if $(NOTMAC),,$(shell brew --prefix 2> /dev/null))
 
-FREETYPE_SEARCH_PATHS = /usr /opt/X11 $(BREW_PREFIX)
+FREETYPE_SEARCH_PATHS = $(BREW_PREFIX) /usr /opt/X11
 FREETYPE_SEARCH_FILE = include/freetype2/ft2build.h
 FREETYPE_DIR = $(call find_dir,$(FREETYPE_SEARCH_FILE),$(FREETYPE_SEARCH_PATHS))
+FREETYPE_LIB_DIR = $(call dir2lib,$(FREETYPE_DIR),freetype)
 FREETYPE_LIBS = -lfreetype -lfontconfig
 
-GLEW_SEARCH_PATHS = /usr /usr/local $(BREW_PREFIX) $(abspath ../glew)
+# If GLEW is in /usr, there's no need to add search paths
+GLEW_SEARCH_PATHS = /usr/local $(BREW_PREFIX) $(abspath ../glew)
 GLEW_SEARCH_FILE = include/GL/glew.h
 GLEW_DIR ?= $(call find_dir,$(GLEW_SEARCH_FILE),$(GLEW_SEARCH_PATHS))
-GLEW_LIB_DIR = $(call find_dir,libGLEW.a,$(GLEW_DIR)/lib64 $(GLEW_DIR)/lib)
+GLEW_LIB_DIR = $(call dir2lib,$(GLEW_DIR),GLEW)
 GLEW_LIBS = -lGLEW
 
-SDL_SEARCH_PATHS := /usr /usr/local $(BREW_PREFIX) $(abspath ../SDL2)
+# If SDL is in /usr, there's no need to add search paths
+SDL_SEARCH_PATHS := /usr/local $(BREW_PREFIX) $(abspath ../SDL2)
 SDL_SEARCH_FILE = include/SDL2/SDL.h
 SDL_DIR ?= $(call find_dir,$(SDL_SEARCH_FILE),$(SDL_SEARCH_PATHS))
+SDL_LIB_DIR = $(call dir2lib,$(SDL_DIR),SDL2)
 SDL_LIBS = -lSDL2
 
-GLM_SEARCH_PATHS = /usr/include /usr/local/include \
+# If GLM is in /usr/include, there's no need to add search paths
+GLM_SEARCH_PATHS = /usr/local/include \
  $(if $(BREW_PREFIX),$(BREW_PREFIX)/include) $(abspath ../glm)
 GLM_SEARCH_FILE = glm/glm.hpp
 GLM_DIR ?= $(call find_dir,$(GLM_SEARCH_FILE),$(GLM_SEARCH_PATHS))
 
-OPENGL_SEARCH_PATHS = /usr /usr/local /opt/local
+# If OpenGL is in /usr, there's no need to add search paths
+OPENGL_SEARCH_PATHS = /usr/local /opt/local
 OPENGL_SEARCH_FILE = include/GL/gl.h
 OPENGL_DIR ?= $(call find_dir,$(OPENGL_SEARCH_FILE),$(OPENGL_SEARCH_PATHS))
+OPENGL_LIB_DIR = $(if $(NOTMAC),$(call dir2lib,$(OPENGL_DIR),GL))
 OPENGL_LIBS = $(if $(NOTMAC),-lGL,-framework OpenGL -framework Cocoa)
 
 
@@ -192,9 +209,10 @@ GL_OPTS ?= $(if $(FREETYPE_DIR),-I$(FREETYPE_DIR)/include/freetype2) \
  $(if $(OPENGL_DIR),-I$(OPENGL_DIR)/include)
 
 rpath=-Wl,-rpath,
-GL_LIBS ?= $(if $(FREETYPE_DIR),-L$(FREETYPE_DIR)/lib) \
- $(if $(SDL_DIR),-L$(SDL_DIR)/lib $(rpath)$(SDL_DIR)/lib) \
- $(if $(NOTMAC),$(if $(OPENGL_DIR),-L$(OPENGL_DIR)/lib $(rpath)$(OPENGL_DIR)/lib)) \
+GL_LIBS ?= $(if $(FREETYPE_LIB_DIR),-L$(FREETYPE_LIB_DIR)) \
+ $(if $(SDL_LIB_DIR),-L$(SDL_LIB_DIR) $(rpath)$(SDL_LIB_DIR)) \
+ $(if $(NOTMAC),$(if $(OPENGL_LIB_DIR),-L$(OPENGL_LIB_DIR) \
+   $(rpath)$(OPENGL_LIB_DIR))) \
  $(if $(GLEW_LIB_DIR),-L$(GLEW_LIB_DIR) $(rpath)$(GLEW_LIB_DIR)) \
  $(FREETYPE_LIBS) $(SDL_LIBS) $(GLEW_LIBS) $(OPENGL_LIBS)
 

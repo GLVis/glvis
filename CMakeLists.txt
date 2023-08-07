@@ -316,27 +316,31 @@ if(NOT EMSCRIPTEN)
         GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
   endif (MFEM_USE_GNUTLS)
 
-  set(GLVIS_APP_ICON ${CMAKE_CURRENT_SOURCE_DIR}/share/GLVis.icns)
-  set(GLVIS_APP_CREDITS ${CMAKE_CURRENT_SOURCE_DIR}/share/Credits.rtf)
-  set_source_files_properties(
-    ${GLVIS_APP_ICON} ${GLVIS_APP_CREDITS}
-    PROPERTIES
-      MACOSX_PACKAGE_LOCATION "Resources")
+  if (APPLE)
+    set(GLVIS_APP_ICON ${CMAKE_CURRENT_SOURCE_DIR}/share/GLVis.icns)
+    set(GLVIS_APP_CREDITS ${CMAKE_CURRENT_SOURCE_DIR}/share/Credits.rtf)
+    set_source_files_properties(
+      ${GLVIS_APP_ICON} ${GLVIS_APP_CREDITS}
+      PROPERTIES
+        MACOSX_PACKAGE_LOCATION "Resources")
 
-  add_executable(app MACOSX_BUNDLE glvis.cpp ${GLVIS_APP_ICON} ${GLVIS_APP_CREDITS})
-  set_target_properties(app
-    PROPERTIES
-      EXCLUDE_FROM_ALL TRUE
-      OUTPUT_NAME GLVis
-      MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/share/Info.cmake.plist.in)
-  target_link_libraries(app PRIVATE glvis glvis_logo)
-  install(TARGETS app
-    RUNTIME DESTINATION .
-    BUNDLE DESTINATION .)
-  install(CODE [[
-    include (BundleUtilities)
-    fixup_bundle("${CMAKE_INSTALL_PREFIX}/GLVis.app" "" "")
-  ]] COMPONENT RUNTIME)
+    add_executable(app MACOSX_BUNDLE glvis.cpp
+      ${GLVIS_APP_ICON} ${GLVIS_APP_CREDITS})
+    set_target_properties(app
+      PROPERTIES
+        EXCLUDE_FROM_ALL TRUE
+        OUTPUT_NAME GLVis
+        MACOSX_BUNDLE_INFO_PLIST
+          ${CMAKE_CURRENT_SOURCE_DIR}/share/Info.cmake.plist.in)
+    target_link_libraries(app PRIVATE glvis glvis_logo)
+    install(TARGETS app
+      RUNTIME DESTINATION .
+      BUNDLE DESTINATION .)
+    install(CODE [[
+      include (BundleUtilities)
+      fixup_bundle("${CMAKE_INSTALL_PREFIX}/GLVis.app" "" "")
+    ]] COMPONENT RUNTIME)
+  endif(APPLE)
 
 endif(NOT EMSCRIPTEN)
 
