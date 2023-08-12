@@ -1148,8 +1148,8 @@ int main (int argc, char *argv[])
    const char *font_name     = string_default;
    int         portnum       = 19916;
    int         multisample   = GetMultisample();
-   double      line_width    = 1.0;
-   double      ms_line_width = gl3::LINE_WIDTH_AA;
+   double      line_width    = GetLineWidth();
+   double      ms_line_width = GetLineWidthMS();
    int         geom_ref_type = Quadrature1D::ClosedUniform;
    bool        legacy_gl_ctx = false;
    bool        enable_hidpi  = true;

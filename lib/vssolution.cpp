@@ -532,7 +532,16 @@ void VisualizationSceneSolution::ToggleDrawElems()
 
    drawelems = (drawelems + 6) % 7;
 
-   cout << "Surface elements mode : " << modes[drawelems] << endl;
+   const int dim = mesh->Dimension();
+   if (dim == 1)
+   {
+      cout << "Element mode : " << modes[drawelems] << endl;
+   }
+   else
+   {
+      cout << "Surface elements mode : " << modes[drawelems] << endl;
+   }
+
    if (drawelems < 2)
    {
       extra_caption.clear();
@@ -607,8 +616,9 @@ void VisualizationSceneSolution::NewMeshAndSolution(
 void VisualizationSceneSolution::GetRefinedDetJ(
    int i, const IntegrationRule &ir, Vector &vals, DenseMatrix &tr)
 {
-   int geom = mesh->GetElementBaseGeometry(i);
+   const int geom = mesh->GetElementBaseGeometry(i);
    ElementTransformation *T = mesh->GetElementTransformation(i);
+   const int dim = T->GetDimension();
    double Jd[4];
    DenseMatrix J(Jd, 2, 2);
 
@@ -625,15 +635,38 @@ void VisualizationSceneSolution::GetRefinedDetJ(
       }
       else if (drawelems >= 4)
       {
-         vals(j) = J.Det();
-         // if (vals(j) >= 0.0)
-         //    vals(j) = sqrt(vals(j));
-         // else
-         //    vals(j) = -sqrt(-vals(j));
+         if (dim == 2)
+         {
+            vals(j) = J.Det();
+         }
+         else if (dim == 1)
+         {
+            // Compute det(J J^T)
+            auto Jdl = J.Data();
+            vals(j) = sqrt(Jdl[1]*Jdl[1] + Jdl[2]*Jdl[2]); // Orientation information lost.
+         }
+         else
+         {
+            std::cout << "unsupported dim " << dim << " in GetRefinedDetJ." << std::endl;
+         }
       }
       else
       {
-         vals(j) = J.CalcSingularvalue(0)/J.CalcSingularvalue(1);
+         if (dim == 2)
+         {
+            vals(j) = J.CalcSingularvalue(0)/J.CalcSingularvalue(1);
+         }
+         else if (dim == 1)
+         {
+            // Compute det(J J^T)
+            auto Jdl = J.Data();
+            vals(j) = sqrt(Jdl[1]*Jdl[1] + Jdl[2]*Jdl[2]); // Orientation information lost.
+         }
+         else
+         {
+            std::cout << "unsupported dim " << dim << " in GetRefinedDetJ." << std::endl;
+         }
+
          if (drawelems == 2)
          {
             vals(j) = vals(j) + 1.0/vals(j);
@@ -687,17 +720,23 @@ int VisualizationSceneSolution::GetRefinedValuesAndNormals(
 {
    int have_normals = 0;
 
+   const int dim = mesh->Dimension();
+
    if (drawelems < 2)
    {
-      rsol->GetGradients(i, ir, tr);
-      normals.SetSize(3, tr.Width());
-      for (int j = 0; j < tr.Width(); j++)
+      // In 1D we do not have well-defined normals.
+      if (dim > 1)
       {
-         normals(0, j) = -tr(0, j);
-         normals(1, j) = -tr(1, j);
-         normals(2, j) = 1.;
+         rsol->GetGradients(i, ir, tr);
+         normals.SetSize(3, tr.Width());
+         for (int j = 0; j < tr.Width(); j++)
+         {
+            normals(0, j) = -tr(0, j);
+            normals(1, j) = -tr(1, j);
+            normals(2, j) = 1.;
+         }
+         have_normals = 1;
       }
-      have_normals = 1;
       rsol->GetValues(i, ir, vals, tr);
    }
    else
@@ -1200,33 +1239,36 @@ void VisualizationSceneSolution::PrepareWithNormals()
 
 void VisualizationSceneSolution::PrepareFlat()
 {
-   int i, j;
    disp_buf.clear();
-   int ne = mesh -> GetNE();
+   const int ne = mesh -> GetNE();
    DenseMatrix pointmat;
    Array<int> vertices;
    double pts[4][3], col[4];
 
-   for (i = 0; i < ne; i++)
+   for (int i = 0; i < ne; i++)
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
 
       mesh->GetPointMatrix (i, pointmat);
       mesh->GetElementVertices (i, vertices);
 
-      for (j = 0; j < pointmat.Width(); j++)
+      for (int j = 0; j < pointmat.Width(); j++)
       {
          pts[j][0] = pointmat(0, j);
          pts[j][1] = pointmat(1, j);
          pts[j][2] = col[j] = LogVal((*sol)(vertices[j]));
       }
-      if (j == 3)
+      if (pointmat.Width() == 3)
       {
          DrawTriangle(disp_buf, pts, col, minv, maxv);
       }
-      else
+      else if (pointmat.Width() == 4)
       {
          DrawQuad(disp_buf, pts, col, minv, maxv);
+      }
+      else if (pointmat.Width() == 2)
+      {
+         DrawLine(disp_buf, pts, col, minv, maxv);
       }
    }
    updated_bufs.emplace_back(&disp_buf);
@@ -1241,6 +1283,8 @@ const int split_quads = 1;
 
 void VisualizationSceneSolution::PrepareFlat2()
 {
+   Array<int> vertices;
+
    int i, j, k;
    disp_buf.clear();
    int ne = mesh -> GetNE();
@@ -1343,6 +1387,8 @@ void VisualizationSceneSolution::PrepareFlat2()
 
 void VisualizationSceneSolution::Prepare()
 {
+   const int dim = mesh->Dimension();
+
    palette.SetUseLogscale(0);
 
    switch (shading)
@@ -1354,15 +1400,13 @@ void VisualizationSceneSolution::Prepare()
          PrepareFlat2();
          return;
       default:
-         if (v_normals)
+         if (v_normals && dim > 1)
          {
             PrepareWithNormals();
             return;
          }
          break;
    }
-
-   int i, j;
 
    disp_buf.clear();
    gl3::GlBuilder poly = disp_buf.createBuilder();
@@ -1376,47 +1420,56 @@ void VisualizationSceneSolution::Prepare()
    Vector ny(nv);
    Vector nz(nv);
 
+   // For triangles and quads: Compute the normal.
+   // For segments: Fill render buffer.
    for (int d = 0; d < mesh -> attributes.Size(); d++)
    {
-
       if (!el_attr_to_show[mesh -> attributes[d]-1]) { continue; }
 
       nx = 0.;
       ny = 0.;
       nz = 0.;
 
-      for (i = 0; i < ne; i++)
+      // Compute normals
+      for (int i = 0; i < ne && (dim > 1); i++)
+      {
          if (mesh -> GetAttribute(i) == mesh -> attributes[d])
          {
             mesh->GetPointMatrix (i, pointmat);
             mesh->GetElementVertices (i, vertices);
 
-            for (j = 0; j < pointmat.Size(); j++)
+            for (int j = 0; j < pointmat.Size(); j++)
             {
                p[j][0] = pointmat(0, j);
                p[j][1] = pointmat(1, j);
                p[j][2] = LogVal((*sol)(vertices[j]));
             }
 
+            int normal_state;
             if (pointmat.Width() == 3)
             {
-               j = Compute3DUnitNormal(p[0], p[1], p[2], nor);
+               normal_state = Compute3DUnitNormal(p[0], p[1], p[2], nor);
             }
             else
             {
-               j = Compute3DUnitNormal(p[0], p[1], p[2], p[3], nor);
+               normal_state = Compute3DUnitNormal(p[0], p[1], p[2], p[3], nor);
             }
 
-            if (j == 0)
-               for (j = 0; j < pointmat.Size(); j++)
+            if (normal_state == 0) // Non-degenerate normal
+            {
+               for (int j = 0; j < pointmat.Size(); j++)
                {
                   nx(vertices[j]) += nor[0];
                   ny(vertices[j]) += nor[1];
                   nz(vertices[j]) += nor[2];
                }
+            }
          }
+      }
 
-      for (i = 0; i < ne; i++)
+      // Fill buffers for triangles and quads. We skip this portion for
+      // segments, because the buffers are already filled.
+      for (int i = 0; i < ne; i++)
       {
          if (mesh -> GetAttribute(i) == mesh -> attributes[d])
          {
@@ -1429,6 +1482,9 @@ void VisualizationSceneSolution::Prepare()
                case Element::QUADRILATERAL:
                   shape = GL_QUADS;
                   break;
+               case Element::SEGMENT:
+                  shape = GL_LINES;
+                  break;
                default:
                   MFEM_ABORT("Invalid 2D element type");
                   break;
@@ -1437,7 +1493,7 @@ void VisualizationSceneSolution::Prepare()
             mesh->GetPointMatrix (i, pointmat);
             mesh->GetElementVertices (i, vertices);
 
-            for (j = 0; j < pointmat.Size(); j++)
+            for (int j = 0; j < pointmat.Size(); j++)
             {
                double z = LogVal((*sol)(vertices[j]));
                MySetColor(poly, z, minv, maxv);
@@ -1486,6 +1542,12 @@ void VisualizationSceneSolution::DrawLevelCurves(
    gl3::GlBuilder& builder, Array<int> &RG, DenseMatrix &pointmat, Vector &values,
    int sides, Array<double> &lvl, int flat)
 {
+   const int dim = mesh->Dimension();
+   if (dim == 1) // Unimplemented.
+   {
+      return;
+   }
+
    double point[4][4];
    // double zc = 0.5*(z[0]+z[1]);
    double zc = bb.z[1];
@@ -1585,7 +1647,8 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
 
 void VisualizationSceneSolution::PrepareLines()
 {
-   if (shading == 2)
+   if (shading == 2 &&
+       mesh->Dimension() > 1) // PrepareLines3 does not make sense for 1d meshes.
    {
       // PrepareLines2();
       PrepareLines3();
@@ -1606,10 +1669,16 @@ void VisualizationSceneSolution::PrepareLines()
       lb.glBegin(GL_LINE_LOOP);
       mesh->GetPointMatrix (i, pointmat);
       mesh->GetElementVertices (i, vertices);
-
       for (j = 0; j < pointmat.Size(); j++)
-         lb.glVertex3d(pointmat(0, j), pointmat(1, j),
-                       LogVal((*sol)(vertices[j])));
+      {
+         // 1D meshes get rendered flat
+         double z = GetMinV();
+         if (mesh->Dimension() > 1) // In 1D we just put the mesh below the solution
+         {
+            z = LogVal((*sol)(vertices[j]));
+         }
+         lb.glVertex3d(pointmat(0, j), pointmat(1, j), z);
+      }
       lb.glEnd();
    }
 
@@ -1817,6 +1886,9 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
 
 void VisualizationSceneSolution::PrepareEdgeNumbering()
 {
+   // 1D meshes do not have edges.
+   if (mesh->Dimension() == 1) { return; }
+
    f_nums_buf.clear();
 
    DenseMatrix p;
@@ -2012,7 +2084,6 @@ void VisualizationSceneSolution::PrepareLines3()
 
    line_buf.clear();
    gl3::GlBuilder lb = line_buf.createBuilder();
-
    for (i = 0; i < ne; i++)
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
@@ -2063,6 +2134,12 @@ void VisualizationSceneSolution::UpdateValueRange(bool prepare)
 
 void VisualizationSceneSolution::PrepareBoundary()
 {
+   const int dim = mesh->Dimension();
+   if (dim == 1) // Unimplemented.
+   {
+      return;
+   }
+
    int i, j, ne = mesh->GetNBE();
    Array<int> vertices;
    DenseMatrix pointmat;

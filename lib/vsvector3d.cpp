@@ -569,7 +569,7 @@ void VisualizationSceneVector3d::PrepareFlat()
             DrawTriangle(disp_buf, p, c, minv, maxv);
          }
       }
-      else
+      else if (j == 4)
       {
          if (cut_lambda > 0)
          {
@@ -580,13 +580,21 @@ void VisualizationSceneVector3d::PrepareFlat()
             DrawQuad(disp_buf, p, c, minv, maxv);
          }
       }
+      else if (j == 2)
+      {
+         DrawLine(disp_buf, p, c, minv, maxv);
+      }
+      else
+      {
+         mfem_error("VisualizationSceneVector3d::PrepareFlat() :Unknown geometry.");
+      }
    }
    updated_bufs.emplace_back(&disp_buf);
 }
 
 void VisualizationSceneVector3d::PrepareFlat2()
 {
-   int fn, fo, di = 0, have_normals;
+   int fn, fo, di = 0, have_normals = 0;
    double bbox_diam, vmin, vmax;
    int dim = mesh->Dimension();
    int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -615,6 +623,10 @@ void VisualizationSceneVector3d::PrepareFlat2()
       {
          case Element::TRIANGLE:
             sides = 3;
+            break;
+         // TODO: can we improve this? It is quite a hack because sides
+         case Element::SEGMENT:
+            sides = 0;
             break;
 
          case Element::QUADRILATERAL:
@@ -685,7 +697,7 @@ void VisualizationSceneVector3d::PrepareFlat2()
          }
          ShrinkPoints(pointmat, i, fn, di);
       }
-      else // dim == 2
+      else // dim < 3
       {
          RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
                                             TimesToRefine);
@@ -695,7 +707,7 @@ void VisualizationSceneVector3d::PrepareFlat2()
             CutReferenceElements(TimesToRefine, cut_lambda);
             cut_updated = true;
          }
-         IntegrationRule &RefPts = (cut_lambda > 0) ?
+         IntegrationRule &RefPts = (cut_lambda > 0  && dim > 1) ?
                                    ((sides == 3) ? cut_TriPts : cut_QuadPts) :
                                    RefG->RefPts;
          GridF->GetValues(i, RefPts, values, pointmat);
@@ -707,20 +719,24 @@ void VisualizationSceneVector3d::PrepareFlat2()
          }
          else
          {
-            const IntegrationRule &ir = (cut_lambda > 0) ?
-                                        ((sides == 3) ? cut_TriPts : cut_QuadPts) :
-                                        RefG->RefPts;
-            normals.SetSize(3, values.Size());
-            mesh->GetElementTransformation(i, &T);
-            for (int j = 0; j < values.Size(); j++)
+            // Compute normals. Skip in 1D.
+            if (dim > 1)
             {
-               T.SetIntPoint(&ir.IntPoint(j));
-               normals.GetColumnReference(j, normal);
-               CalcOrtho(T.Jacobian(), normal);
-               normal /= normal.Norml2();
+               const IntegrationRule &ir = (cut_lambda > 0 && dim > 1) ?
+                                           ((sides == 3) ? cut_TriPts : cut_QuadPts) :
+                                           RefG->RefPts;
+               normals.SetSize(3, values.Size());
+               mesh->GetElementTransformation(i, &T);
+               for (int j = 0; j < values.Size(); j++)
+               {
+                  T.SetIntPoint(&ir.IntPoint(j));
+                  normals.GetColumnReference(j, normal);
+                  CalcOrtho(T.Jacobian(), normal);
+                  normal /= normal.Norml2();
+               }
+               have_normals = 1;
+               di = 0;
             }
-            have_normals = 1;
-            di = 0;
          }
          ShrinkPoints(pointmat, i, 0, 0);
       }
@@ -752,16 +768,17 @@ void VisualizationSceneVector3d::PrepareFlat2()
          have_normals = 0;
       }
 
-      have_normals = have_normals ? 2 : 0;
+      have_normals = have_normals && (dim > 1) ? 2 : 0;
       if (di)
       {
          have_normals = -1 - have_normals;
       }
 
-      Array<int> &RefGeoms = (cut_lambda > 0) ?
+      Array<int> &RefGeoms = (cut_lambda > 0 && dim > 1) ?
                              ((sides == 3) ? cut_TriGeoms : cut_QuadGeoms) :
                              RefG->RefGeoms;
       int psides = (cut_lambda > 0) ? 4 : sides;
+      if (dim == 1) { psides = 2; } // Hack to trigger line rendering.
       DrawPatch(disp_buf, pointmat, values, normals, psides, RefGeoms,
                 minv, maxv, have_normals);
    }
@@ -835,18 +852,24 @@ void VisualizationSceneVector3d::Prepare()
          }
 
          if (pointmat.Width() == 3)
+         {
             j = Compute3DUnitNormal(&pointmat(0,0), &pointmat(0,1),
                                     &pointmat(0,2), nor);
+         }
          else
+         {
             j = Compute3DUnitNormal(&pointmat(0,0), &pointmat(0,1),
                                     &pointmat(0,2), &pointmat(0,3), nor);
+         }
          if (j == 0)
+         {
             for (j = 0; j < pointmat.Size(); j++)
             {
                nx(vertices[j]) += nor[0];
                ny(vertices[j]) += nor[1];
                nz(vertices[j]) += nor[2];
             }
+         }
       }
 
       for (i = 0; i < ne; i++)
@@ -862,9 +885,14 @@ void VisualizationSceneVector3d::Prepare()
             case Element::TRIANGLE:
                draw.glBegin (GL_TRIANGLES);
                break;
-
             case Element::QUADRILATERAL:
                draw.glBegin (GL_QUADS);
+               break;
+            case Element::SEGMENT:
+               draw.glBegin(GL_LINES);
+               break;
+            default:
+               MFEM_ABORT("Invalid boundary element type");
                break;
          }
          if (dim == 3)

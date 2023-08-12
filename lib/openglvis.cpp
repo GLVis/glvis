@@ -303,6 +303,25 @@ void VisualizationScene
    {fpts[3], fnorm, texcoord[3]});
 }
 
+
+void VisualizationScene
+::DrawLine(gl3::GlDrawable& buff,
+           const double (&pts)[4][3], const double (&cv)[4],
+           const double minv, const double maxv)
+{
+   float texcoord[2];
+   std::array<float, 3> fpts[2];
+   for (int i = 0; i < 2; i++)
+   {
+      texcoord[i] = palette.GetColorCoord(cv[i], minv, maxv);
+      fpts[i]   = {(float) pts[i][0], (float) pts[i][1], (float) pts[i][2]};
+   }
+   buff.addLine<gl3::VertexTex>(
+   {fpts[0], texcoord[0]},
+   {fpts[1], texcoord[1]}
+   );
+}
+
 void VisualizationScene
 ::DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals,
             DenseMatrix &normals,
@@ -376,41 +395,65 @@ void VisualizationScene
    }
    else
    {
-      if (n == 3)
+      if (n == 2)
+      {
+         poly.glBegin(GL_LINES);
+      }
+      else if (n == 3)
       {
          poly.glBegin(GL_TRIANGLES);
       }
-      else
+      else if (n == 4)
       {
          poly.glBegin(GL_QUADS);
       }
+      else // We should never hit this case
+      {
+         mfem_error("VisualizationScene::DrawPatch() : unknown input geometry.");
+      }
       for (int i = 0; i < ind.Size(); i += n)
       {
-         int j;
-         if (n == 3)
-            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
-                                    &pts(0, ind[i+2]), na);
-         else
-            j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
-                                    &pts(0, ind[i+2]), &pts(0, ind[i+3]), na);
-         if (j == 0)
+         if (n == 2) // Lines
          {
-            if (normals_opt == 0)
+            // Draw solution line
+            for (int j=0; j<2; j++)
             {
-               poly.glNormal3dv(na);
-               for ( ; j < n; j++)
-               {
-                  MySetColor(poly, vals(ind[i+j]), minv, maxv);
-                  poly.glVertex3dv(&pts(0, ind[i+j]));
-               }
+               MySetColor(poly, vals(ind[i+j]), minv, maxv);
+               poly.glVertex3d(pts(0, ind[i+j]), pts(1, ind[i+j]), pts(2, ind[i+j]));
+            }
+         }
+         else // Quads and triangles
+         {
+            int j;
+            if (n == 3)
+            {
+               j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                       &pts(0, ind[i+2]), na);
             }
             else
             {
-               poly.glNormal3d(-na[0], -na[1], -na[2]);
-               for (j = n-1; j >= 0; j--)
+               j = Compute3DUnitNormal(&pts(0, ind[i]), &pts(0, ind[i+1]),
+                                       &pts(0, ind[i+2]), &pts(0, ind[i+3]), na);
+            }
+            if (j == 0)
+            {
+               if (normals_opt == 0)
                {
-                  MySetColor(poly, vals(ind[i+j]), minv, maxv);
-                  poly.glVertex3dv(&pts(0, ind[i+j]));
+                  poly.glNormal3dv(na);
+                  for ( ; j < n; j++)
+                  {
+                     MySetColor(poly, vals(ind[i+j]), minv, maxv);
+                     poly.glVertex3dv(&pts(0, ind[i+j]));
+                  }
+               }
+               else
+               {
+                  poly.glNormal3d(-na[0], -na[1], -na[2]);
+                  for (j = n-1; j >= 0; j--)
+                  {
+                     MySetColor(poly, vals(ind[i+j]), minv, maxv);
+                     poly.glVertex3dv(&pts(0, ind[i+j]));
+                  }
                }
             }
          }

@@ -1486,7 +1486,7 @@ void VisualizationSceneSolution3d::PrepareFlat()
             DrawTriangle(disp_buf, p, c, minv, maxv);
          }
       }
-      else
+      else if (j == 4)
       {
          if (cut_lambda > 0)
          {
@@ -1497,7 +1497,16 @@ void VisualizationSceneSolution3d::PrepareFlat()
             DrawQuad(disp_buf, p, c, minv, maxv);
          }
       }
+      else if (j == 2)
+      {
+         DrawLine(disp_buf, p, c, minv, maxv);
+      }
+      else
+      {
+         mfem_error("VisualizationSceneSolution3d::PrepareFlat() :Unknown geometry.");
+      }
    }
+
    updated_bufs.emplace_back(&disp_buf);
 }
 
@@ -1618,11 +1627,12 @@ void CutReferenceElements(int TimesToRefine, double lambda)
 
 void VisualizationSceneSolution3d::PrepareFlat2()
 {
-   int fn, fo, di, have_normals;
+   const int dim = mesh->Dimension();
+
+   int fn, fo, di, have_normals = 0;
    double bbox_diam, vmin, vmax;
    disp_buf.clear();
 
-   int dim = mesh->Dimension();
    int nbe = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
    DenseMatrix pointmat, normals;
    Vector values, normal;
@@ -1645,6 +1655,10 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       {
          case Element::TRIANGLE:
             sides = 3;
+            break;
+         // TODO: can we improve this? It is quite a hack because sides
+         case Element::SEGMENT:
+            sides = 0;
             break;
 
          case Element::QUADRILATERAL:
@@ -1716,30 +1730,35 @@ void VisualizationSceneSolution3d::PrepareFlat2()
             CutReferenceElements(TimesToRefine, cut_lambda);
             cut_updated = true;
          }
-         const IntegrationRule &ir = (cut_lambda > 0) ?
+         const IntegrationRule &ir = (cut_lambda > 0 && dim > 1) ?
                                      ((sides == 3) ? cut_TriPts : cut_QuadPts) :
                                      RefG->RefPts;
          GridF->GetValues(i, ir, values, pointmat);
-         normals.SetSize(3, values.Size());
          mesh->GetElementTransformation(i, &T);
-         for (int j = 0; j < values.Size(); j++)
-         {
-            T.SetIntPoint(&ir.IntPoint(j));
-            const DenseMatrix &J = T.Jacobian();
-            normals.GetColumnReference(j, normal);
-            CalcOrtho(J, normal);
-            normal /= normal.Norml2();
-         }
-         have_normals = 1;
          di = 0;
          ShrinkPoints(pointmat, i, 0, 0);
+
+         // Compute normals. Skip in 1D.
+         if (dim > 1)
+         {
+            normals.SetSize(3, values.Size());
+            for (int j = 0; j < values.Size(); j++)
+            {
+               T.SetIntPoint(&ir.IntPoint(j));
+               const DenseMatrix &J = T.Jacobian();
+               normals.GetColumnReference(j, normal);
+               CalcOrtho(J, normal);
+               normal /= normal.Norml2();
+            }
+            have_normals = 1;
+         }
       }
 
       vmin = fmin(vmin, values.Min());
       vmax = fmax(vmax, values.Max());
 
       // compute an average normal direction for the current face
-      if (sc != 0.0)
+      if (sc != 0.0 && have_normals)
       {
          for (int j = 0; j < 3; j++)
          {
@@ -1763,7 +1782,7 @@ void VisualizationSceneSolution3d::PrepareFlat2()
          have_normals = 0;
       }
 
-      have_normals = have_normals ? 2 : 0;
+      have_normals = have_normals && (dim > 1) ? 2 : 0;
       if (di)
       {
          have_normals = -1 - have_normals;
@@ -1776,6 +1795,7 @@ void VisualizationSceneSolution3d::PrepareFlat2()
                              ((sides == 3) ? cut_TriGeoms : cut_QuadGeoms) :
                              RefG->RefGeoms;
       int psides = (cut_lambda > 0) ? 4 : sides;
+      if (dim == 1) { psides = 2; } // Hack to trigger line rendering.
       DrawPatch(disp_buf, pointmat, values, normals, psides, RefGeoms,
                 minv, maxv, have_normals);
    }
@@ -1869,12 +1889,14 @@ void VisualizationSceneSolution3d::Prepare()
          {
             mesh->GetElementVertices(elem[i], vertices);
          }
-         for (j = 0; j < vertices.Size(); j++)
+         for (j = 0; j < vertices.Size() && (dim > 1); j++)
          {
             nx(vertices[j]) = ny(vertices[j]) = nz(vertices[j]) = 0.;
          }
       }
-      for (int i = 0; i < nelem; i++)
+
+      // Compute normals. Skip in 1D.
+      for (int i = 0; i < nelem && (dim > 1); i++)
       {
          if (dim == 3)
          {
@@ -1888,18 +1910,24 @@ void VisualizationSceneSolution3d::Prepare()
          }
 
          if (pointmat.Width() == 3)
+         {
             j = Compute3DUnitNormal(&pointmat(0,0), &pointmat(0,1),
                                     &pointmat(0,2), nor);
+         }
          else
+         {
             j = Compute3DUnitNormal(&pointmat(0,0), &pointmat(0,1),
                                     &pointmat(0,2), &pointmat(0,3), nor);
+         }
          if (j == 0)
+         {
             for (j = 0; j < pointmat.Size(); j++)
             {
                nx(vertices[j]) += nor[0];
                ny(vertices[j]) += nor[1];
                nz(vertices[j]) += nor[2];
             }
+         }
       }
 
       for (int i = 0; i < nelem; i++)
@@ -1936,10 +1964,14 @@ void VisualizationSceneSolution3d::Prepare()
             case Element::QUADRILATERAL:
                elemType = GL_QUADS;
                break;
+            case Element::SEGMENT:
+               elemType = GL_LINES;
+               break;
             default:
                MFEM_ABORT("Invalid boundary element type");
                break;
          }
+
          poly.glBegin(elemType);
          if (dim == 3)
          {
@@ -1953,12 +1985,13 @@ void VisualizationSceneSolution3d::Prepare()
          for (j = 0; j < pointmat.Size(); j++)
          {
             MySetColor(poly, (*sol)(vertices[j]), minv, maxv);
-            poly.glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
+            if (dim > 1) { poly.glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j])); }
             poly.glVertex3dv(&pointmat(0, j));
          }
          poly.glEnd();
       }
    }
+
    updated_bufs.emplace_back(&disp_buf);
 }
 
