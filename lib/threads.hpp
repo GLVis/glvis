@@ -56,7 +56,8 @@ private:
       WINDOW_GEOMETRY = 17,
       PLOT_CAPTION = 18,
       AXIS_LABELS = 19,
-      PALETTE_REPEAT = 20
+      PALETTE_REPEAT = 20,
+      LEVELLINES = 21
    };
 
    std::atomic<bool> command_ready{false};
@@ -83,6 +84,8 @@ private:
    double        view_center_x, view_center_y;
    std::string   autoscale_mode;
    int           palette, palette_repeat;
+   double        lvl_min, lvl_max;
+   int           lvl_num;
    double        camera[9];
    std::string   autopause_mode;
 
@@ -122,6 +125,7 @@ public:
    int Autoscale(const char *mode);
    int Palette(int pal);
    int PaletteRepeat(int n);
+   int Levellines(double minv, double maxv, int number);
    int Camera(const double cam[]);
    int Autopause(const char *mode);
 
