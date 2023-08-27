@@ -284,6 +284,23 @@ int GLVisCommand::ValueRange(double minv, double maxv)
    return 0;
 }
 
+int GLVisCommand::Levellines(double minv, double maxv, int number)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = LEVELLINES;
+   lvl_min = minv;
+   lvl_max = maxv;
+   lvl_num = number;
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
+
 int GLVisCommand::SetShading(const char *shd)
 {
    if (lock() < 0)
@@ -532,6 +549,16 @@ int GLVisCommand::Execute()
          cout << "Command: valuerange: " << flush;
          (*vs)->SetValueRange(val_min, val_max);
          cout << val_min << ' ' << val_max << endl;
+         MyExpose();
+         break;
+      }
+
+      case LEVELLINES:
+      {
+         cout << "Command: levellines: " << flush;
+         (*vs)->SetLevelLines(lvl_min, lvl_max, lvl_num);
+         (*vs)->UpdateLevelLines();
+         cout << lvl_min << ' ' << lvl_max << ' ' << lvl_num << endl;
          MyExpose();
          break;
       }
@@ -1061,6 +1088,25 @@ void communication_thread::execute()
          }
 
          if (glvis_command->ValueRange(minv, maxv))
+         {
+            goto comm_terminate;
+         }
+      }
+      else if (ident == "levellines")
+      {
+         double minv, maxv, a;
+         int num, b;
+
+         *is[0] >> minv >> maxv >> num;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'levellines'
+            *is[i] >> a >> a >> b;
+         }
+
+         if (glvis_command->Levellines(minv, maxv, num))
          {
             goto comm_terminate;
          }

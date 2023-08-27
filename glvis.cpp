@@ -634,6 +634,17 @@ void ExecuteScriptCommand()
          }
          cout << endl;
       }
+      else if (word == "levellines")
+      {
+         double min, max;
+         int num;
+         scr >> min >> max >> num;
+         cout << "Script: levellines: " << flush;
+         vs->SetLevelLines(min, max, num);
+         vs->UpdateLevelLines();
+         cout << min << ' ' << max << ' ' << num << endl;
+         MyExpose();
+      }
       else if (word == "window")
       {
          scr >> window_x >> window_y >> window_w >> window_h;
