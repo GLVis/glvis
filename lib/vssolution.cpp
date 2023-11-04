@@ -2176,7 +2176,7 @@ void VisualizationSceneSolution::PrepareBoundary()
       for (i = 0; i < ne; i++)
       {
          if (!bdr_el_attr_to_show[mesh->GetBdrAttribute(i)-1]) { continue; }
-         en = mesh->GetBdrElementEdgeIndex(i);
+         en = mesh->GetBdrElementFaceIndex(i);
          T = mesh->GetFaceElementTransformations(en, 4);
          T->Loc1.Transform(ir, eir);
          GetRefinedValues(T->Elem1No, eir, vals, pointmat);
