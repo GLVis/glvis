@@ -2410,14 +2410,20 @@ void VisualizationSceneSolution3d::CutRefinedElement(
       int vert_flag[8], cut_edges[8];
       const int *elem = elems + i*nv;
       const int *edge_vert;
+      // Check for the presence of a tetrahederal element within a refined
+      // pyramid and adjust the number of vertices and geometry type
+      // accordingly. Such tets will have -1 as the fifth vertex index.
+      const bool sub_pyr_tet = (geom == Geometry::PYRAMID && elem[nv-1] < 0);
+      const int nv_vf = nv - (sub_pyr_tet ? 1 : 0);
+      const Geometry::Type geom_vf = sub_pyr_tet ? Geometry::TETRAHEDRON : geom;
       int n = 0, n2;
-      for (int j = 0; j < nv; j++)
+      for (int j = 0; j < nv_vf; j++)
       {
          vert_flag[j] = (vert_dist(elem[j]) >= 0.0) ? n++, 1 : 0;
       }
-      if (n == 0 || n == nv) { continue; }
+      if (n == 0 || n == nv_vf) { continue; }
 
-      CutElement(geom, vert_flag, &edge_vert, cut_edges, &n, &n2);
+      CutElement(geom_vf, vert_flag, &edge_vert, cut_edges, &n, &n2);
       // n  = number of intersected edges
       // n2 = number of intersected edges, second polygon
 
