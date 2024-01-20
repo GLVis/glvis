@@ -6,39 +6,44 @@
                 _/    _/  _/        _/  _/    _/      _/_/
                  _/_/_/  _/_/_/_/    _/      _/  _/_/_/
 
-                              http://glvis.org
+                             https://glvis.org
 
-GLVis is an X11 application and can be built on Linux/Unix systems including
-Mac OS X using the X11/XQuarz app and under Windows using Cygwin/X.
+GLVis is a multiplatform OpenGL application and can be built on Linux/Unix
+systems, including Mac OS X, and under Windows.
 
 Besides a C++ compiler, GLVis depends on the following external packages:
 
 - the MFEM library (use the latest release) plus any libraries that MFEM was
   built to depend on
-  http://mfem.org
+  https://mfem.org
 
-- the X11, GL and GLU libraries
-  http://www.x.org, http://www.opengl.org, http://www.mesa3d.org
+- the OpenGL library
+  https://www.opengl.org
 
-- the XQuarz app (on Mac OS X)
-  http://www.xquartz.org/
+- the GLEW library; used for setting up OpenGL functions and extensions
+  http://glew.sourceforge.net
+
+- the GLM library; used for computing OpenGL-related mathematics
+  https://glm.g-truc.net
+
+- the SDL2 library; used for platform-native window and event management
+  https://www.libsdl.org
+
+- the FreeType 2 and Fontconfig libraries; used for font rendering
+  https://www.freetype.org, https://www.fontconfig.org
 
 - the libpng or libtiff library; used for taking screenshots (optional)
   http://www.libpng.org, http://www.libtiff.org
 
-- the FreeType 2 and Fontconfig libraries; used for font rendering (optional)
-  http://www.freetype.org, http://www.fontconfig.org
-
-- Cygwin/X (on Windows); install the packages xinit, libpng-devel,
-  fontconfig-devel, libGLU-devel.
-  https://cygwin.com, https://x.cygwin.com
+- the XQuartz app (on Mac OS X, if running GLVis remotely through ssh)
+  https://www.xquartz.org
 
 There are two build systems, one based on GNU make and one based on CMake, as
 described below. Choose the one that matches the build system you used to
 build MFEM.
 
 In addition to the native build systems, a GLVis package is also available
-in the Spack package manager, https://github.com/LLNL/spack.
+in the Spack package manager, https://github.com/spack/spack.
 
 
 Building with GNU make
@@ -51,6 +56,7 @@ Some of the available 'make' targets are:
 make       -> Builds the glvis binary, using the MFEM compiler and options
 make opt   -> Builds an optimized version
 make debug -> Builds a debug version
+make app   -> Builds a Mac OS application bundle
 make clean -> Cleans the build
 make style -> Format the code with Artistic Style.
 make help  -> Prints a short help message
@@ -67,7 +73,8 @@ An optional installation of the glvis executable can be performed with
 
 Building with CMake
 ===================
-GLVis may also be configured using CMake to find dependencies.
+GLVis may also be configured using CMake to find dependencies. This is the only
+supported build method for native Windows builds with Visual Studio.
 
 NOTE: You must have built MFEM using CMake to build GLVis using CMake.
 
@@ -80,7 +87,6 @@ cmake \
     \
     -D GLVIS_USE_LIBTIFF=OFF \
     -D GLVIS_USE_LIBPNG=ON \
-    -D GLVIS_USE_FREETYPE=ON \
     \
     -D MFEM_DIR=/path/to/directory/with/MFEMConfig.cmake \
     \
@@ -105,8 +111,6 @@ Some important variables for CMake are:
 
 - GLVIS_USE_LIBTIFF: Use libtiff for creating screenshots. Default is "OFF".
 
-- GLVIS_USE_FREETYPE: Use freetype for font rendering. Default is "ON".
-
 - GLVIS_MULTISAMPLE and GLVIS_MS_LINEWIDTH: See building considerations below
      for more information on these variables.
 
@@ -115,9 +119,60 @@ Some building considerations
 ============================
 
 - On most Linux distributions, the required dependencies (except MFEM) can be
-  installed via a package manager. Usually it is sufficient to install the
-  packages: libGLU-dev, libpng-dev, and fontconfig-dev with their dependencies
-  (actual packages names may vary).
+  installed via a package manager.
+
+  On Ubuntu/Debian, the required dependencies can be installed by running:
+
+     apt-get install libfontconfig1-dev libfreetype-dev libsdl2-dev \
+        libglew-dev libglm-dev libpng-dev
+
+  On Fedora/RHEL, the required dependencies can be installed by running:
+
+     dnf install fontconfig-devel freetype-devel SDL2-devel glew-devel \
+        glm-devel libpng-devel
+
+  On Mac OS X, the required dependencies can be installed with Homebrew:
+
+     brew install fontconfig freetype sdl2 glew glm libpng
+
+  Package names in other distributions may vary.
+
+- On Windows, GLVis can be built in two ways:
+
+  1) Via a Linux-compatible environment, such as Cygwin or Windows Subsystem for
+     Linux (WSL).
+
+     Install the required dependencies, following the directions above for your
+     WSL environment's Linux distribution, then continue with the build method
+     of your choice.
+
+     For WSL, you may also need to install an X server to run GLVis, such as
+     VcXsrv (https://sourceforge.net/projects/vcxsrv/).
+
+  2) As a native Windows executable. This enables support for platform-native
+     visualization windows, as well as the modern OpenGL backend.
+
+     Visual Studio or another Windows-compatible compiler is required.
+
+     It is recommended to install dependencies via vcpkg:
+
+        vcpkg install fontconfig freetype sdl2 glew glm libpng \
+           --triplet=x64-windows
+
+     After installing, proceed with the CMake configuration process, making sure
+     to point the CMake variable CMAKE_TOOLCHAIN_FILE to the correct path, based
+     on the directory where you installed vcpkg. More directions can be found in
+     the link below:
+
+        https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake
+
+     You may then open the generated Visual Studio project files to build GLVis,
+     or call the following command from the GLVis project root directory:
+
+        cmake --build [build directory] --parallel
+
+- In case packaged versions of the needed libraries are not available, download
+  and build instructions are included below for GLM, GLEW, and SDL2.
 
 - To adjust the anti-aliasing settings for your hardware:
 
@@ -133,17 +188,10 @@ Some building considerations
   3) The above options and some other built-in defaults can be overwritten with
      command line options, see glvis -h for short help.
 
-- If your X11 server does not support GLX 1.3, you can build GLVis to only use
-  GLX 1.0 calls, by specifying the GLVIS_GLX10 define. Note that the X11.app
-  in OS X may complain about GLX 1.3 support, but in practice works fine with
-  GLVis. To define this in CMake, pass "-D GLVIS_USE_GLX10=ON" to cmake.
-
-- GLVis can be built without libpng/libtiff/FreeType 2/Fontconfig by setting
-  the makefile variables USE_LIBPNG/USE_LIBTIFF/USE_FREETYPE to NO or by
-  passing GLVIS_USE_LIBPNG/GLVIS_USE_LIBTIFF/GLVIS_USE_FREETYPE=OFF to cmake.
-
-- On Mac OS X, it is better to start manually the XQuarz app, before starting
-  GLVis, in order to avoid the wait for establishing the first X11 connection.
+- GLVis can be built without libpng/libtiff by setting the makefile variables
+  GLVIS_USE_LIBPNG/GLVIS_USE_LIBTIFF to NO or setting the same variables to OFF
+  during cmake configuration. In this case, GLVis uses SDL to take screenshots
+  in .bmp format, which are then converted to .png using `convert`.
 
 - Support for secure sockets using the GnuTLS library through MFEM can be
   enabled by configuring and compiling MFEM with the option MFEM_USE_GNUTLS=YES,
@@ -152,3 +200,58 @@ Some building considerations
   similar to ssh keys. The script 'glvis-keygen.sh' can be used to do that:
 
      bash glvis-keygen.sh ["Your Name"] ["Your Email"]
+
+- On Mac OS X, GLVis can be built as a native application bundle using the 'make
+  app' target (with both the makefile and CMake build systems).
+
+Dependency building instructions
+================================
+Note that using the build locations given below will let the GLVis build systems
+(GNU make and CMake) find these libraries automatically.
+
+-----
+ GLM
+-----
+From the directory containing the 'glvis' directory run the command:
+
+git clone https://github.com/g-truc/glm.git
+
+or the sequence of commands:
+
+wget "https://github.com/g-truc/glm/archive/0.9.9.8.tar.gz"
+mv 0.9.9.8.tar.gz glm-0.9.9.8.tar.gz
+tar zxf glm-0.9.9.8.tar.gz
+ln -s glm-0.9.9.8 glm
+
+GLM is a header-only library, no building is necessary.
+
+------
+ GLEW
+------
+From the directory containing the 'glvis' directory run the commands:
+
+wget "https://github.com/nigels-com/glew/releases/download/glew-2.1.0/glew-2.1.0.tgz"
+tar zxf glew-2.1.0.tgz
+ln -s glew-2.1.0 glew
+
+To build the library run the commands (see also glew/README.md):
+
+cd glew
+make -j 4
+cd ..
+
+------
+ SDL2
+------
+From the directory containing the 'glvis' directory run the commands:
+
+wget "https://www.libsdl.org/release/SDL2-2.0.12.tar.gz"
+tar zxf SDL2-2.0.12.tar.gz
+
+To build the library run the commands (see also SDL2-2.0.12/INSTALL.txt):
+
+cd SDL2-2.0.12
+./configure --prefix=`dirname $PWD`/SDL2
+make -j 4
+make install
+cd ..

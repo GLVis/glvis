@@ -6,23 +6,133 @@
                 _/    _/  _/        _/  _/    _/      _/_/
                  _/_/_/  _/_/_/_/    _/      _/  _/_/_/
 
-                              http://glvis.org
+                             https://glvis.org
 
 
-Version 3.4.1 (development)
+Version 4.2.1 (development)
 ===========================
 
-- Added new palette: gray.
+- Significantly improved memory usage.
+
+- Add support to visualize solutions on 1D elements embedded in 2D and 3D.
+
+
+Version 4.2 released on May 23, 2022
+====================================
+
+- Added 3D scene export to glTF format (https://www.khronos.org/gltf) which is
+  bound to the key 'G'. This can be used to import GLVis scenes for rendering in
+  Blender, as well as for augmented reality, see https://modelviewer.dev/editor.
+
+- Added the option to cut a portion of the interiors of 3D faces to expose more
+  of the mesh. Useful as an alternative to transparency. See keys Ctrl+F3/F4.
+
+- Added a third mode to keys 'b'/'B' in 2D to display the mesh boundary colored
+  by boundary element attribute.
+
+- Support for visualization of pyramid-shaped elements.
+
+- An edge numbering option is now available in 2D.
+
+- In 2D, save and restore solution's value range when using keys 'e' and 'b'.
+
+- Mac and Windows binaries are now automatically built with GitHub actions CI.
+
+- The command-line option -mac was renamed to -save.
+
+- Various other bugfixes and improvements.
+
+
+Version 4.1, released on Aug 31, 2021
+=====================================
+
+- Use threads in server mode for window creation and session management instead
+  of fork(). This resolves issues with the GLVis server mode on macOS. It also
+  allows for closing all open GLVis server windows by Ctrl-C in the terminal.
+
+- Preliminary support for interactive inline GLVis plots in Python Jupyter
+  Notebooks with https://github.com/glvis/pyglvis and C++ Jupyter Notebooks with
+  https://github.com/glvis/xeus-glvis.
+
+- Added support for native builds on Windows with CMake.
+
+- Added support for native Mac application bundle with "make app". The resulting
+  app can be double-clicked, added to the Dock, etc.
+
+- Added screenshots support to the JavaScript/web version (key 'S').
+
+- Enabled support for WebGL 2, when available. This enables, among other
+  features, support for controllable multisampling via framebuffers.
+
+- Refactored rendering components, including palette and shader handling.
+
+- Replaced pthreads and POSIX-specific code with C++11 standard thread library.
+
+- Added a new regression test suite based on generated screenshots of stream
+  files. See the README in the tests/ directory for more details. Note that this
+  requires a git submodule for the baseline images, which are located in the
+  separate https://github.com/glvis/data repository.
+
+- Various bugfixes and improvements related to the JavaScript version, vertex
+  numbering, script handling, screenshots, HiDPI support,  and more.
+
+
+Version 4.0, released on Dec 11, 2020
+=====================================
+
+Starting with this version, the GLVis open source license is changed to BSD-3.
+
+Unlike previous GLVis releases, this version requires a C++11 compiler.
+
+- Major overhaul and modernization of the GLVis rendering and window management,
+  replacing X Windows with SDL for platform-native window and event handling.
+  This enables OpenGL 3+ support and HiDPI support on Mac OS X.
+
+- Two rendering backends are included: one for legacy OpenGL contexts without
+  support for shaders, and one with full support for modern OpenGL 3 features.
+  The modern OpenGL context is preferred by default; a new command-line argument
+  "-oldgl" can be used to request the legacy backend.
+
+- Preliminary support for building GLVis to JavaScript/WebAssembly using
+  Emscripten, see https://github.com/GLVis/glvis-js.
+
+- Documented project workflow and provided contribution guidelines in the new
+  top-level file, CONTRIBUTING.md.
+
+- Added several perceptually uniform colormaps "turbo", "viridis", "plasma",
+  "fusion", "iceburn", "viola", "pride" and "ocean" from
+  * Google AI: https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
+  * Matplotlib: https://bids.github.io/colormap/
+  * CMasher: https://github.com/1313e/CMasher
+
+- Added support for visualization of the element ordering curve with 'Ctrl+o'.
+
+- Keystroke changes: cutting plane in 2D is now toggled with 'i' instead of 'w',
+  and 2D element subdivision is controlled with 'o/O' instead of 'i/I'. These
+  are the same as the corresponding keystrokes in 3D.
+
+- Improved the 3D cutting plane algorithm for curved elements. The key 'I' can
+  be used to switch to the previous (faster) algorithm which is suitable for
+  meshes with planar faces.
+
+- Updated to support the display and slicing of meshes with wedge elements.
+
+- Improved the opening of parallel meshes/solutions.
+
+- Transparency and printing in textured coloring modes is now supported, and
+  no-texture coloring has been removed as a result.
+
+- FreeType is now a required dependency and text on screen is rendered using a
+  texture atlas.
+
+- Replaced the "deep sea" palette with "ocean". Added new palette: gray.
+
+- Added the ability to discretize a palette, i.e. to use just a prescribed
+  number of its colors, see the new "number of colors" input of the F6 key.
 
 - Added new script and socket command: "palette_repeat" which can be used to
   repeat and reverse/flip the palette - controls the same parameter as the first
   prompt after pressing the F6 key in the GLVis window.
-
-- Improved cutting plane algorithm for curved elements. The key 'I' can be used
-  to switch to the previous (faster) algorithm which is suitable for meshes with
-  planar faces.
-
-- Updated to support the display and slicing of meshes with wedge elements.
 
 - Added a key for setting the bounding box from the terminal (Shift+F7).
 

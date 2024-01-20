@@ -1,18 +1,19 @@
-// Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
-// the Lawrence Livermore National Laboratory. LLNL-CODE-443271. All Rights
-// reserved. See file COPYRIGHT for details.
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// at the Lawrence Livermore National Laboratory. All Rights reserved. See files
+// LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.org.
+// information and source code availability see https://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
-// terms of the GNU Lesser General Public License (as published by the Free
-// Software Foundation) version 2.1 dated February 1999.
+// terms of the BSD-3 license. We welcome feedback and contributions, see file
+// CONTRIBUTING.md for details.
 
-#ifndef GLVIS_VSVECTOR_3D
-#define GLVIS_VSVECTOR_3D
+#ifndef GLVIS_VSVECTOR_3D_HPP
+#define GLVIS_VSVECTOR_3D_HPP
 
 #include "mfem.hpp"
+#include "gl/types.hpp"
 using namespace mfem;
 
 class VisualizationSceneVector3d : public VisualizationSceneSolution3d
@@ -20,7 +21,9 @@ class VisualizationSceneVector3d : public VisualizationSceneSolution3d
 protected:
 
    Vector *solx, *soly, *solz;
-   int vectorlist, displinelist, drawvector, scal_func;
+   int drawvector, scal_func;
+   gl3::GlDrawable vector_buf;
+   gl3::GlDrawable displine_buf;
 
    GridFunction *VecGridF;
    FiniteElementSpace *sfes;
@@ -40,6 +43,8 @@ public:
 
    virtual ~VisualizationSceneVector3d();
 
+   virtual std::string GetHelpString() const;
+
    void NPressed();
    virtual void PrepareFlat();
    virtual void Prepare();
@@ -48,7 +53,8 @@ public:
    void PrepareFlat2();
    void PrepareLines2();
 
-   void DrawVector (int type, double v0, double v1, double v2,
+   void DrawVector (gl3::GlDrawable& buf,
+                    int type, double v0, double v1, double v2,
                     double sx, double sy, double sz, double s);
    virtual void PrepareVectorField();
    void PrepareDisplacedMesh();
@@ -61,7 +67,7 @@ public:
 
    void ToggleDisplacements() {drawdisp = (drawdisp+1)%2;};
 
-   virtual void Draw();
+   virtual gl3::SceneInfo GetSceneObjs();
 
    virtual void EventUpdateColors()
    { Prepare(); PrepareVectorField(); PrepareCuttingPlane(); };

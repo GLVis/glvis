@@ -1,0 +1,28 @@
+# Build artifacts
+*.o
+*.bc
+lib/libglvis.js
+lib/libglvis.a
+share/logo.rgba.bin.cpp
+glvis
+GLVis.app
+
+# Output from running glvis
+GLVis.pdf
+GLVis_s*.png
+GLVis_m*.png
+glvis-saved.*
+
+# CMake-specific exclusions
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+
+# OS-specific: Mac
+*.dSYM
+.DS_Store

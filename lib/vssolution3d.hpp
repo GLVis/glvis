@@ -1,32 +1,42 @@
-// Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
-// the Lawrence Livermore National Laboratory. LLNL-CODE-443271. All Rights
-// reserved. See file COPYRIGHT for details.
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// at the Lawrence Livermore National Laboratory. All Rights reserved. See files
+// LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.org.
+// information and source code availability see https://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
-// terms of the GNU Lesser General Public License (as published by the Free
-// Software Foundation) version 2.1 dated February 1999.
+// terms of the BSD-3 license. We welcome feedback and contributions, see file
+// CONTRIBUTING.md for details.
 
-#ifndef GLVIS_VSSOLUTION_3D
-#define GLVIS_VSSOLUTION_3D
+#ifndef GLVIS_VSSOLUTION_3D_HPP
+#define GLVIS_VSSOLUTION_3D_HPP
 
 #include "mfem.hpp"
+#include "gl/types.hpp"
+#include "vsdata.hpp"
+#include <map>
 using namespace mfem;
 
 class VisualizationSceneSolution3d : public VisualizationSceneScalarData
 {
 protected:
 
-   int drawmesh, drawelems, shading;
-   int displlist, linelist;
-   int cplane, cplanelist, cplanelineslist, lsurflist;
+   int drawmesh, drawelems, shading, draworder;
+   int cplane;
    int cp_drawmesh, cp_drawelems, drawlsurf;
    // Algorithm used to draw the cutting plane when shading is 2 and cplane is 1
    // 0 - slower, more accurate algorithm for curved meshes (default)
    // 1 - faster algorithm suitable for meshes with planar faces
    int cp_algo;
+
+   gl3::GlDrawable disp_buf;
+   gl3::GlDrawable line_buf;
+   gl3::GlDrawable cplane_buf;
+   gl3::GlDrawable cplines_buf;
+   gl3::GlDrawable lsurf_buf;
+   gl3::GlDrawable other_buf;
+   gl3::GlDrawable order_buf, order_noarrow_buf;
 
    double *node_pos;
 
@@ -51,30 +61,37 @@ protected:
                               int part = -1);
    void LiftRefinedSurf (int n, DenseMatrix &pointmat,
                          Vector &values, int *RG);
-   void DrawTetLevelSurf(const DenseMatrix &verts, const Vector &vals,
+   void DrawTetLevelSurf(gl3::GlDrawable& target, const DenseMatrix &verts,
+                         const Vector &vals,
                          const int *ind, const Array<double> &levels,
                          const DenseMatrix *grad = NULL);
 
    static int GetPyramidFaceSplits(const Array<bool> &quad_diag,
-				   const Array<int> &faces,
-				   const Array<int> &ofaces);
-   void DrawRefinedPyramidLevelSurf(
-      const DenseMatrix &verts, const Vector &vals, const int *RG, const int np,
-      const int face_splits, const DenseMatrix *grad = NULL);
+                                   const Array<int> &faces,
+                                   const Array<int> &ofaces);
+   void DrawRefinedPyramidLevelSurf(gl3::GlDrawable& target,
+                                    const DenseMatrix &verts,
+                                    const Vector &vals, const int *RG,
+                                    const int np, const int face_splits,
+                                    const DenseMatrix *grad = NULL);
 
    static int GetWedgeFaceSplits(const Array<bool> &quad_diag,
                                  const Array<int> &faces,
                                  const Array<int> &ofaces);
-   void DrawRefinedWedgeLevelSurf(
-      const DenseMatrix &verts, const Vector &vals, const int *RG, const int np,
-      const int face_splits, const DenseMatrix *grad = NULL);
+   void DrawRefinedWedgeLevelSurf(gl3::GlDrawable& target,
+                                  const DenseMatrix &verts,
+                                  const Vector &vals, const int *RG,
+                                  const int np, const int face_splits,
+                                  const DenseMatrix *grad = NULL);
 
    static int GetHexFaceSplits(const Array<bool> &quad_diag,
                                const Array<int> &faces,
                                const Array<int> &ofaces);
-   void DrawRefinedHexLevelSurf(
-      const DenseMatrix &verts, const Vector &vals, const int *RG, const int nh,
-      const int face_splits, const DenseMatrix *grad = NULL);
+   void DrawRefinedHexLevelSurf(gl3::GlDrawable& target,
+                                const DenseMatrix &verts,
+                                const Vector &vals, const int *RG,
+                                const int nh, const int face_splits,
+                                const DenseMatrix *grad = NULL);
 
    int GetAutoRefineFactor();
 
@@ -104,18 +121,31 @@ public:
 
    virtual ~VisualizationSceneSolution3d();
 
+   virtual std::string GetHelpString() const;
+
    virtual void FindNewBox(bool prepare);
    virtual void FindNewValueRange(bool prepare);
 
+   virtual void PrepareRuler()
+   { VisualizationSceneScalarData::PrepareRuler(false); }
    virtual void PrepareFlat();
    virtual void PrepareLines();
    virtual void Prepare();
-   virtual void Draw();
+   virtual void PrepareOrderingCurve();
+   virtual void PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows,
+                                      bool color);
+   virtual gl3::SceneInfo GetSceneObjs();
+
+   virtual void glTF_Export();
 
    void ToggleDrawElems()
    { drawelems = !drawelems; Prepare(); }
 
    void ToggleDrawMesh();
+
+   // 0 - none, 1 - no arrows (color), 2 - with arrows (color),
+   //           3 - no arrows (black), 4 - with arrows (black)
+   void ToggleDrawOrdering() { draworder = (draworder+1)%5; }
 
    void ToggleShading();
    int GetShading() { return shading; };
@@ -128,10 +158,12 @@ public:
 
    void CuttingPlaneFunc (int type);
    // func: 0 - draw surface, 1 - draw level lines
-   void CutRefinedElement(const DenseMatrix &verts, const Vector &vert_dist,
+   void CutRefinedElement(gl3::GlDrawable& target,
+                          const DenseMatrix &verts, const Vector &vert_dist,
                           const Vector &vals, const Geometry::Type geom,
                           const int *elems, int num_elems, int func);
-   void CutRefinedFace(const DenseMatrix &verts, const Vector &vert_dist,
+   void CutRefinedFace(gl3::GlDrawable& target,
+                       const DenseMatrix &verts, const Vector &vert_dist,
                        const Vector &vals, const Geometry::Type geom,
                        const int *faces, int num_faces);
    void CPPrepare();
@@ -153,14 +185,16 @@ public:
    virtual void UpdateLevelLines()
    { PrepareLines(); PrepareCuttingPlaneLines(); }
    virtual void UpdateValueRange(bool prepare);
+
+   virtual void SetDrawMesh(int i)
+   {
+      if (drawmesh != i % 3)
+      {
+         drawmesh = i % 3;
+         PrepareLines();
+      }
+   }
+   virtual int GetDrawMesh() { return drawmesh; }
 };
-
-int Normalize(DenseMatrix &normals);
-
-int Compute3DUnitNormal(const double p1[], const double p2[],
-                        const double p3[], double nor[]);
-
-int Compute3DUnitNormal (const double p1[], const double p2[],
-                         const double p3[], const double p4[], double nor[]);
 
 #endif

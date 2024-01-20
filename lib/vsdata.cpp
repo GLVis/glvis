@@ -1,17 +1,18 @@
-// Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
-// the Lawrence Livermore National Laboratory. LLNL-CODE-443271. All Rights
-// reserved. See file COPYRIGHT for details.
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// at the Lawrence Livermore National Laboratory. All Rights reserved. See files
+// LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.org.
+// information and source code availability see https://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
-// terms of the GNU Lesser General Public License (as published by the Free
-// Software Foundation) version 2.1 dated February 1999.
+// terms of the BSD-3 license. We welcome feedback and contributions, see file
+// CONTRIBUTING.md for details.
 
 #include <cstdlib>
 #include <cmath>
-#include <X11/keysym.h>
+
+#include <unordered_set>
 
 #include <iomanip>
 #include <sstream>
@@ -34,9 +35,8 @@ void VisualizationSceneScalarData::FixValueRange()
    if (float(am) < 100*numeric_limits<float>::min()) { am = 1e-3; }
    if ((maxv-minv) < 1e-5*am)
    {
-      // Shading quality may be bad since OpenGL uses single precision.
-      // We should probably pre-scale the solution before feeding it
-      // to OpenGL
+      // Shading quality may be bad since OpenGL uses single precision. We
+      // should probably pre-scale the solution before feeding it to OpenGL
       int old_prec = cout.precision(12);
       cout << "[minv,maxv] = " << "[" << minv << "," << maxv
            << "] (maxv-minv = " << maxv-minv << ")\n --> ";
@@ -75,20 +75,93 @@ void VisualizationSceneScalarData::DoAutoscaleValue(bool prepare)
    }
 }
 
+template<typename T>
+static std::array<float, 3> ToVec3(const T* vec)
+{
+   return { (float) vec[0], (float) vec[1], (float) vec[2] };
+}
+
+void VisualizationSceneScalarData::Cone(gl3::GlDrawable& buf,
+                                        glm::mat4 xfrm,
+                                        double cval)
+{
+   const int n = 8;
+   const double step = 2*M_PI/n;
+   const double nz = (1.0/4.0);
+   double point = step;
+
+   glm::mat3 normXfrm = glm::inverseTranspose(glm::mat3(xfrm));
+
+   glm::vec3 start1vtx = glm::vec3(xfrm * glm::vec4(0, 0, 0, 1));
+   glm::vec3 start1norm = glm::vec3(normXfrm * glm::vec3(0, 0, 1));
+   glm::vec3 start2vtx = glm::vec3(xfrm * glm::vec4(1, 0, -4, 1));
+   glm::vec3 start2norm = glm::vec3(normXfrm * glm::vec3(1, 0, nz));
+
+   int indices[n*3];
+   for (int i = 0; i < n; i++)
+   {
+      indices[3*i] = 0;
+      indices[3*i+1] = i+1;
+      indices[3*i+2] = i+2;
+   }
+   if (cval == HUGE_VAL)
+   {
+      gl3::VertexNorm verts[n+2];
+
+      verts[0].coord = ToVec3(glm::value_ptr(start1vtx));
+      verts[0].norm = ToVec3(glm::value_ptr(start1norm));
+      verts[1].coord = ToVec3(glm::value_ptr(start2vtx));
+      verts[1].norm = ToVec3(glm::value_ptr(start2norm));
+      for (int i = 2; i <= n+1; i++)
+      {
+         glm::vec3 baseVtx = glm::vec3(xfrm * glm::vec4(cos(point), sin(point), -4, 1));
+         glm::vec3 baseNorm = glm::vec3(normXfrm * glm::vec3(cos(point), sin(point),
+                                                             nz));
+         verts[i].coord = ToVec3(glm::value_ptr(baseVtx));
+         verts[i].norm = ToVec3(glm::value_ptr(baseNorm));
+         point += step;
+      }
+      buf.addTriangleIndexed(n+2, verts, n*3, indices);
+   }
+   else
+   {
+      float colortex = palette.GetColorCoord(cval, minv, maxv);
+      gl3::VertexNormTex verts[n+2];
+      verts[0].coord = ToVec3(glm::value_ptr(start1vtx));
+      verts[0].norm = ToVec3(glm::value_ptr(start1norm));
+      verts[0].texCoord = colortex;
+      verts[1].coord = ToVec3(glm::value_ptr(start2vtx));
+      verts[1].norm = ToVec3(glm::value_ptr(start2norm));
+      verts[1].texCoord = colortex;
+      for (int i = 2; i <= n+1; i++)
+      {
+         glm::vec3 baseVtx = glm::vec3(xfrm * glm::vec4(cos(point), sin(point), -4, 1));
+         glm::vec3 baseNorm = glm::vec3(normXfrm * glm::vec3(cos(point), sin(point),
+                                                             nz));
+         verts[i].coord = ToVec3(glm::value_ptr(baseVtx));
+         verts[i].norm = ToVec3(glm::value_ptr(baseNorm));
+         verts[i].texCoord = colortex;
+         point += step;
+      }
+      buf.addTriangleIndexed(n+2, verts, n*3, indices);
+   }
+}
+
 // Draw an arrow starting at point (px, py, pz) with orientation (vx, vy, vz)
 // and length "length".
-void VisualizationSceneScalarData::Arrow3(double px, double py, double pz,
+void VisualizationSceneScalarData::Arrow3(gl3::GlDrawable& buf,
+                                          double px, double py, double pz,
                                           double vx, double vy, double vz,
                                           double length,
-                                          double cone_scale)
+                                          double cone_scale,
+                                          double cval)
 {
-   glPushMatrix();
-
-   double xc = 0.5*(x[0]+x[1]);
-   double yc = 0.5*(y[0]+y[1]);
-   double zc = 0.5*(z[0]+z[1]);
-   glTranslated(xc, yc, zc);
-   glScaled(1.0/xscale, 1.0/yscale, 1.0/zscale);
+   double xc = 0.5*(bb.x[0]+bb.x[1]);
+   double yc = 0.5*(bb.y[0]+bb.y[1]);
+   double zc = 0.5*(bb.z[0]+bb.z[1]);
+   glm::mat4 xfrm(1.0);
+   xfrm = glm::translate(xfrm, glm::vec3(xc, yc, zc));
+   xfrm = glm::scale(xfrm, glm::vec3(1.0/xscale, 1.0/yscale, 1.0/zscale));
 
    double rlen = length/sqrt(vx*vx+vy*vy+vz*vz);
    px = (px-xc)*xscale;
@@ -103,71 +176,99 @@ void VisualizationSceneScalarData::Arrow3(double px, double py, double pz,
       length = sqrt(vx*vx+vy*vy+vz*vz);
    }
 
-   glTranslated(px, py, pz);
+   xfrm = glm::translate(xfrm, glm::vec3(px, py, pz));
 
    double rhos = sqrt (vx*vx+vy*vy+vz*vz);
-   double phi   = acos(vz/rhos);
-   double theta;
+   float phi   = acos(vz/rhos);
+   float theta;
    theta = atan2 (vy, vx);
 
-   glRotatef(theta*180/M_PI, 0.0f, 0.0f, 1.0f);
-   glRotatef(phi*180/M_PI, 0.0f, 1.0f, 0.0f);
+   xfrm = glm::rotate(xfrm, theta, glm::vec3(0, 0, 1));
+   xfrm = glm::rotate(xfrm, phi, glm::vec3(0, 1, 0));
 
-   glScaled (length, length, length);
+   xfrm = glm::scale(xfrm, glm::vec3(length));
+
 
    if (arrow_type == 1)
    {
-      glTranslated (0, 0, -0.5);
+      xfrm = glm::translate(xfrm, glm::vec3(0, 0, -0.5));
    }
 
-   glBegin(GL_LINES);
-   glVertex3d(0, 0, 0);
-   glVertex3d(0, 0, 1);
-   glEnd();
+   glm::vec4 pt1 = xfrm * glm::vec4(0, 0, 0, 1);
+   glm::vec4 pt2 = xfrm * glm::vec4(0, 0, 1, 1);
 
-   glTranslated (0, 0, 1);
-   glScaled (cone_scale, cone_scale, cone_scale);
+   if (cval == HUGE_VAL)
+   {
+      buf.addLine<gl3::Vertex>(
+         gl3::Vertex{ToVec3(glm::value_ptr(pt1))},
+         gl3::Vertex{ToVec3(glm::value_ptr(pt2))});
+   }
+   else
+   {
+      double colortex = palette.GetColorCoord(cval, minv, maxv);
+      buf.addLine<gl3::VertexTex>(
+         gl3::VertexTex{ToVec3(glm::value_ptr(pt1)), (float)colortex},
+         gl3::VertexTex{ToVec3(glm::value_ptr(pt2)), (float)colortex});
+   }
 
-   Cone();
+   xfrm = glm::translate(xfrm, glm::vec3(0, 0, 1));
+   xfrm = glm::scale(xfrm, glm::vec3(cone_scale));
 
-   glPopMatrix();
+   if (cone_scale > 0.0)
+   {
+      Cone(buf, xfrm, cval);
+   }
 }
 
-void VisualizationSceneScalarData::Arrow2(double px, double py, double pz,
+void VisualizationSceneScalarData::Arrow2(gl3::GlDrawable& buf,
+                                          double px, double py, double pz,
                                           double vx, double vy, double vz,
                                           double length,
-                                          double cone_scale)
+                                          double cone_scale,
+                                          double cval)
 {
-   glPushMatrix();
-   glTranslated(px, py, pz);
+   glm::mat4 xfrm(1.0);
+   xfrm = glm::translate(xfrm, glm::vec3(px, py, pz));
 
    double rhos = sqrt (vx*vx+vy*vy+vz*vz);
-   double phi   = acos(vz/rhos);
-   double theta;
+   float phi   = acos(vz/rhos);
+   float theta;
    theta = atan2 (vy, vx);
 
-   glRotatef(theta*180/M_PI, 0.0f, 0.0f, 1.0f);
-   glRotatef(phi*180/M_PI, 0.0f, 1.0f, 0.0f);
+   xfrm = glm::rotate(xfrm, theta, glm::vec3(0, 0, 1));
+   xfrm = glm::rotate(xfrm, phi, glm::vec3(0, 1, 0));
 
-   glScaled (length, length, length);
+   xfrm = glm::scale(xfrm, glm::vec3(length));
 
-   glBegin(GL_LINES);
-   glVertex3d(0, 0, 0);
-   glVertex3d(0, 0, 1);
-   glEnd();
+   glm::vec4 pt1 = xfrm * glm::vec4(0, 0, 0, 1);
+   glm::vec4 pt2 = xfrm * glm::vec4(0, 0, 1, 1);
 
-   glTranslated (0, 0, 1);
-   glScaled (cone_scale, cone_scale, cone_scale);
+   if (cval == HUGE_VAL)
+   {
+      buf.addLine<gl3::Vertex>(
+         gl3::Vertex{ToVec3(glm::value_ptr(pt1))},
+         gl3::Vertex{ToVec3(glm::value_ptr(pt2))});
+   }
+   else
+   {
+      double colortex = palette.GetColorCoord(cval, minv, maxv);
+      buf.addLine<gl3::VertexTex>(
+         gl3::VertexTex{ToVec3(glm::value_ptr(pt1)), (float)colortex},
+         gl3::VertexTex{ToVec3(glm::value_ptr(pt2)), (float)colortex});
+   }
 
-   Cone();
+   xfrm = glm::translate(xfrm, glm::vec3(0, 0, 1));
+   xfrm = glm::scale(xfrm, glm::vec3(cone_scale));
 
-   glPopMatrix();
+   Cone(buf, xfrm, cval);
 }
 
-void VisualizationSceneScalarData::Arrow(double px, double py, double pz,
+void VisualizationSceneScalarData::Arrow(gl3::GlDrawable& buf,
+                                         double px, double py, double pz,
                                          double vx, double vy, double vz,
                                          double length,
-                                         double cone_scale)
+                                         double cone_scale,
+                                         double cval)
 {
    double rhos = sqrt (vx*vx+vy*vy+vz*vz);
    if (rhos == 0.0)
@@ -175,10 +276,9 @@ void VisualizationSceneScalarData::Arrow(double px, double py, double pz,
       return;
    }
    double phi = acos(vz/rhos), theta = atan2(vy, vx);
-   const int n = 8;
+   constexpr int n = 8;
    const double step = 2*M_PI/n, nz = (1.0/4.0);
    double point = step, cone[n+4][3], normal[n+2][3];
-   int i, j, k;
 
    cone[0][0] = 0;          cone[0][1] = 0; cone[0][2] = 1;
    cone[1][0] = cone_scale; cone[1][1] = 0; cone[1][2] = -4*cone_scale + 1;
@@ -189,7 +289,7 @@ void VisualizationSceneScalarData::Arrow(double px, double py, double pz,
    normal[1][1] = 0.0/cone_scale;
    normal[1][2] = nz/cone_scale;
 
-   for (i=2; i<n+1; i++)
+   for (int i=2; i<n+1; i++)
    {
       normal[i][0] = cos(point)/cone_scale;
       normal[i][1] = sin(point)/cone_scale;
@@ -221,7 +321,7 @@ void VisualizationSceneScalarData::Arrow(double px, double py, double pz,
    // vx *= rlen*xscale;    vy *= rlen*yscale;    vz *= rlen*zscale;
 
    if (arrow_type == 1)
-      for (i=0; i<n+4; i++)
+      for (int i=0; i<n+4; i++)
       {
          cone[i][2] -= 0.5;
       }
@@ -233,17 +333,17 @@ void VisualizationSceneScalarData::Arrow(double px, double py, double pz,
    double v[3] = { M[0][2]/xscale, M[1][2]/yscale, M[2][2]/zscale };
    length /= sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
 
-   for (i=0; i<n+4; i++)
+   for (int i=0; i<n+4; i++)
    {
-      for (j=0; j<3; j++)
+      for (int j=0; j<3; j++)
       {
          coord[j] = cone[i][j] * length;
       }
 
-      for (k=0; k<3; k++)
+      for (int k=0; k<3; k++)
       {
          cone[i][k] = 0.;
-         for (j=0; j<3; j++)
+         for (int j=0; j<3; j++)
          {
             cone[i][k] += M[k][j] * coord[j];
          }
@@ -256,17 +356,17 @@ void VisualizationSceneScalarData::Arrow(double px, double py, double pz,
       cone[i][2] = cone[i][2]/zscale + pz;
    }
 
-   for (i=0; i<=n+1; i++)
+   for (int i=0; i<=n+1; i++)
    {
-      for (j=0; j<3; j++)
+      for (int j=0; j<3; j++)
       {
          coord[j] = normal[i][j];
       }
 
-      for (k=0; k<3; k++)
+      for (int k=0; k<3; k++)
       {
          normal[i][k] = 0.;
-         for (j=0; j<3; j++)
+         for (int j=0; j<3; j++)
          {
             normal[i][k] += M[k][j] * coord[j];
          }
@@ -276,35 +376,57 @@ void VisualizationSceneScalarData::Arrow(double px, double py, double pz,
       normal[i][2] *= zscale;
    }
 
-   glBegin(GL_TRIANGLE_FAN);
-   for (i=0; i<=n+1; i++)
+   int indices[n*3];
+   for (int i = 0; i < n; i++)
    {
-      glNormal3dv(normal[i]);
-      glVertex3dv(cone[i]);
+      indices[3*i] = 0;
+      indices[3*i+1] = i+1;
+      indices[3*i+2] = i+2;
    }
-   glEnd();
+   if (cval == HUGE_VAL)
+   {
+      gl3::VertexNorm verts[n+2];
+      for (int i = 0; i <= n+1; i++)
+      {
+         verts[i].coord = ToVec3(cone[i]);
+         verts[i].norm = ToVec3(normal[i]);
+      }
+      buf.addTriangleIndexed(n+2, verts, n*3, indices);
+      buf.addLine<gl3::Vertex>(
+         gl3::Vertex{ToVec3(cone[n+2])},
+         gl3::Vertex{ToVec3(cone[n+3])});
 
-   glBegin(GL_LINES);
-   glVertex3dv(cone[n+2]);
-   glVertex3dv(cone[n+3]);
-   glEnd();
+   }
+   else
+   {
+      float colortex = palette.GetColorCoord(cval, minv, maxv);
+      gl3::VertexNormTex verts[n+2];
+      for (int i = 0; i <= n+1; i++)
+      {
+         verts[i].coord = ToVec3(cone[i]);
+         verts[i].norm = ToVec3(normal[i]);
+         verts[i].texCoord = colortex;
+      }
+      buf.addTriangleIndexed(n+2, verts, n*3, indices);
+      buf.addLine<gl3::VertexTex>(
+         gl3::VertexTex{ToVec3(cone[n+2]), colortex},
+         gl3::VertexTex{ToVec3(cone[n+3]), colortex});
+   }
 }
 
-void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
-                                                 Array<double> *level,
-                                                 Array<double> *levels)
+void VisualizationSceneScalarData::PrepareColorBar (double minval,
+                                                    double maxval,
+                                                    Array<double> *mesh_level,
+                                                    Array<double> *lsurf_levels)
 {
-   glMatrixMode(GL_MODELVIEW);
-   glPushMatrix();
-   glLoadIdentity();
 
    int i;
 
-   double miny;
-   double maxy;
-   double minx;
-   double maxx;
-   double posz = -4.0;
+   float miny;
+   float maxy;
+   float minx;
+   float maxx;
+   float posz = -4.0;
 
    if (OrthogonalProjection)
    {
@@ -320,224 +442,98 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
       minx =  1.2;
       maxx =  1.3;
    }
-
-   double Y;
-
-   glNormal3d (0, 0, 1);
-
-   if (GetUseTexture())
-   {
-      glEnable (GL_TEXTURE_1D);
-      glColor4d(1, 1, 1, 1);
-      glBegin(GL_QUADS);
-      glTexCoord1d(0.);
-      glVertex3d(minx, miny, posz);
-      glVertex3d(maxx, miny, posz);
-      glTexCoord1d(1.);
-      glVertex3d(maxx, maxy, posz);
-      glVertex3d(minx, maxy, posz);
-      glEnd();
-      glDisable (GL_TEXTURE_1D);
-   }
-   else
-   {
-      float mat_alpha = MatAlpha;
-      MatAlpha = 1.0f;
-      const int nquads = 256;
-      glBegin(GL_QUAD_STRIP);
-      for (int i = 0; i <= nquads; i++)
-      {
-         const double a = double(i) / nquads;
-         Y = (1.0 - a) * miny + a * maxy;
-         MySetColor(a);
-         glVertex3d (minx,Y,posz);
-         glVertex3d (maxx,Y,posz);
-      }
-      glEnd();
-      MatAlpha = mat_alpha;
-   }
-
-   Set_Black_Material();
+   color_bar.clear();
+   color_bar.addQuad<gl3::VertexTex>(
+   {{minx, miny, posz}, 0.f},
+   {{maxx, miny, posz}, 0.f},
+   {{maxx, maxy, posz}, 1.f},
+   {{minx, maxy, posz}, 1.f}
+   );
 
    static const int border = 2;
 
    if (border == 1)
    {
-      glBegin(GL_LINE_LOOP);
-      glVertex3d(minx, miny, posz);
-      glVertex3d(maxx, miny, posz);
-      glVertex3d(maxx, maxy, posz);
-      glVertex3d(minx, maxy, posz);
-      glEnd();
+      color_bar.addLines<gl3::Vertex>(
+      {
+         {minx, miny, posz}, {maxx, miny, posz},
+         {maxx, miny, posz}, {maxx, maxy, posz},
+         {maxx, maxy, posz}, {minx, maxy, posz},
+         {minx, maxy, posz}, {minx, miny, posz}
+      });
    }
    else if (border == 2)
    {
-      glBegin(GL_LINES);
-      glVertex3d(minx, miny, posz);
-      glVertex3d(minx, maxy, posz);
-      glVertex3d(maxx, miny, posz);
-      glVertex3d(maxx, maxy, posz);
-      glEnd();
+      color_bar.addLine<gl3::Vertex>({minx, miny, posz}, {minx, maxy, posz});
+      color_bar.addLine<gl3::Vertex>({maxx, miny, posz}, {maxx, maxy, posz});
    }
 
-   glBegin(GL_LINES);
-   if (levels)
+   if (lsurf_levels)
    {
-      for (i = 0; i < levels->Size(); i++)
+      for (i = 0; i < lsurf_levels->Size(); i++)
       {
-         Y = miny + (maxy - miny) * LogUVal((*levels)[i]);
-         glVertex3d (minx,Y,posz);
-         glVertex3d (maxx,Y,posz);
+         float Y = miny + (maxy - miny) * LogUVal((*lsurf_levels)[i]);
+         color_bar.addLine<gl3::Vertex>({minx, Y, posz}, {maxx, Y, posz});
       }
    }
-   if (level)
+   if (mesh_level)
    {
-      for (i = 0; i < level->Size(); i++)
+      for (i = 0; i < mesh_level->Size(); i++)
       {
-         Y = miny + (maxy - miny) * LogUVal((*level)[i]);
-         glVertex3d (minx,Y,posz);
-         glVertex3d (maxx,Y,posz);
+         float Y = miny + (maxy - miny) * LogUVal((*mesh_level)[i]);
+         color_bar.addLine<gl3::Vertex>({minx, Y, posz}, {maxx, Y, posz});
       }
    }
-   glEnd();
 
-   // GLfloat textcol[3] = {0,0,0};
-   // glColor3fv (textcol);
-
-#ifndef GLVIS_USE_FREETYPE
-   glPushAttrib (GL_LIST_BIT);
-   glListBase (fontbase);
-#endif
-
+   const double text_x = maxx + 0.4*(maxx-minx);
    double val;
-   ostringstream * buf;
-
-   if (colorbar == 1) { DrawCaption(); }
-
-   if (!level)
+   double Y;
+   if (!mesh_level)
    {
       for (i = 0; i <= 4; i++)
       {
          Y = miny + i * (maxy-miny) / 4;
-         glRasterPos3d (maxx+0.02,Y,posz);
 
          val = ULogVal(i / 4.0);
 
-         buf = new ostringstream;
-         (*buf) << setprecision(4) << val;
-#ifndef GLVIS_USE_FREETYPE
-         glCallLists(buf->str().size(), GL_UNSIGNED_BYTE, buf->str().c_str());
-#else
-         DrawBitmapText(buf->str().c_str());
-#endif
-         delete buf;
+         ostringstream buf;
+         buf << setprecision(4) << val;
+         color_bar.addText(text_x,Y,posz, buf.str());
       }
    }
    else
    {
-      for (i = 0; i < level->Size(); i++)
+      for (i = 0; i < mesh_level->Size(); i++)
       {
-         val = (*level)[i];
+         val = (*mesh_level)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
-         glRasterPos3d (maxx+0.02,Y,posz);
 
-         buf = new ostringstream;
-         (*buf) << setprecision(4) << val;
-#ifndef GLVIS_USE_FREETYPE
-         glCallLists(buf->str().size(), GL_UNSIGNED_BYTE, buf->str().c_str());
-#else
-         DrawBitmapText(buf->str().c_str());
-#endif
-         delete buf;
+         ostringstream buf;
+         buf << setprecision(4) << val;
+         color_bar.addText(text_x,Y,posz, buf.str());
       }
    }
 
-   if (levels)
+   if (lsurf_levels)
    {
-      for (i = 0; i < levels->Size(); i++)
+      for (i = 0; i < lsurf_levels->Size(); i++)
       {
-         val = (*levels)[i];
+         val = (*lsurf_levels)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
-         glRasterPos3d (maxx+0.02,Y,posz);
 
-         buf = new ostringstream;
-         (*buf) << setprecision(4) << val;
-#ifndef GLVIS_USE_FREETYPE
-         glCallLists(buf->str().size(), GL_UNSIGNED_BYTE, buf->str().c_str());
-#else
-         DrawBitmapText(buf->str().c_str());
-#endif
-         delete buf;
+         ostringstream buf;
+         buf << setprecision(4) << val;
+         color_bar.addText(text_x,Y,posz, buf.str());
       }
    }
-
-#ifndef GLVIS_USE_FREETYPE
-   glPopAttrib();
-#endif
-
-   if (print)
-   {
-      if (!level)
-      {
-         for (i = 0; i <= 4; i++)
-         {
-            Y = miny + i * (maxy-miny) / 4;
-            glRasterPos3d (maxx+0.02,Y,posz);
-
-            val = ULogVal(i / 4.0);
-
-            buf = new ostringstream;
-            (*buf) << setprecision(4) << val;
-            gl2psText(buf->str().c_str(),"Times",8);
-            delete buf;
-         }
-      }
-      else
-      {
-         for (i = 0; i < level->Size(); i++)
-         {
-            val = (*level)[i];
-            Y = miny + (maxy - miny) * LogUVal(val);
-            glRasterPos3d (maxx+0.02,Y,posz);
-            glRasterPos3d (maxx+0.02,Y,posz);
-
-            buf = new ostringstream;
-            (*buf) << setprecision(4) << val;
-            gl2psText(buf->str().c_str(),"Times",8);
-            delete buf;
-         }
-      }
-
-      if (levels)
-      {
-         for (i = 0; i < levels->Size(); i++)
-         {
-            val = (*levels)[i];
-            Y = miny + (maxy - miny) * LogUVal(val);
-            glRasterPos3d (maxx+0.02,Y,posz);
-
-            buf = new ostringstream;
-            (*buf) << setprecision(4) << val;
-            gl2psText(buf->str().c_str(),"Times",8);
-            delete buf;
-         }
-      }
-   }
-
-   // glMultMatrixd (rotmat);
-   // glScaled(xscale, yscale, zscale);
-   // glTranslated(-(x[0]+x[1])/2, -(y[0]+y[1])/2, -(z[0]+z[1])/2);
-   glPopMatrix();
+   updated_bufs.emplace_back(&color_bar);
 }
 
 // Draw a centered caption at the top (visible with the colorbar)
-void VisualizationSceneScalarData::DrawCaption()
+void VisualizationSceneScalarData::PrepareCaption()
 {
-   if (plot_caption.empty())
-   {
-      colorbar = 2; // no caption -> switch to "colorbar without caption" mode
-      return;
-   }
+   bool empty = plot_caption.empty();
+   colorbar = (colorbar ? empty+1 : !empty);
 
    string caption(plot_caption);
    if (!extra_caption.empty())
@@ -545,145 +541,14 @@ void VisualizationSceneScalarData::DrawCaption()
       caption += " (" + extra_caption + ")";
    }
 
-#ifdef GLVIS_USE_FREETYPE
-   int width = 0, height = 0;
-   RenderBitmapText(caption.c_str(), width, height);
-#endif
-
-   glMatrixMode(GL_PROJECTION);
-   glPushMatrix();
-   glLoadIdentity();
-
-   glMatrixMode(GL_MODELVIEW);
-   glPushMatrix();
-   glLoadIdentity();
-
-   GLint viewport[4];
-   glGetIntegerv(GL_VIEWPORT, viewport);
-
-#ifndef GLVIS_USE_FREETYPE
-   int len = caption.length();
-   double width_in_chars = 44*viewport[2]/400.0;
-   if (len > width_in_chars)
-   {
-      glTranslatef(-1.0, 0.8, 0.0);
-   }
-   else
-   {
-      glTranslatef(-len/width_in_chars, 0.8, 0.0);
-   }
-#else
-   glTranslatef(-(double)width/viewport[2],
-                1.0-5*(double)height/viewport[3], 0.0);
-#endif
-
-   cam.GLMultRotMatrix();
-   glMultMatrixd(rotmat);
-
-   glRasterPos3f(0.0f, 0.0f, 0.0f);
-   if (print) { gl2psText(caption.c_str(),"Times",8); }
-#ifndef GLVIS_USE_FREETYPE
-   glCallLists(len, GL_UNSIGNED_BYTE, caption.c_str());
-#else
-   DrawBitmapText();
-#endif
-
-   glMatrixMode(GL_PROJECTION);
-   glPopMatrix();
-   glMatrixMode(GL_MODELVIEW);
-   glPopMatrix();
+   caption_buf.clear();
+   caption_buf.addText(0, 0, 0, caption);
+   updated_bufs.emplace_back(&caption_buf);
+   GetFont()->getObjectSize(caption, caption_w, caption_h);
 }
 
-void VisualizationSceneScalarData::DrawCoordinateCross()
-{
-   if (drawaxes == 3)
-   {
-      return;
-   }
-
-   glMatrixMode (GL_PROJECTION);
-   glPushMatrix();
-   glLoadIdentity();
-
-   glMatrixMode (GL_MODELVIEW);
-   glPushMatrix();
-   glLoadIdentity();
-
-   GLint viewport[4];
-   glGetIntegerv (GL_VIEWPORT, viewport);
-
-   glTranslatef (-1, -1, 0.0);
-   glScaled (40.0 / viewport[2], 40.0 / viewport[3], 1);
-   glTranslatef (2.0, 2.0, 0.0);
-   cam.GLMultRotMatrix();
-   glMultMatrixd (rotmat);
-
-   // glEnable (GL_COLOR_MATERIAL);
-
-   // glLineWidth (1.0f);
-
-   float lenx, leny, lenz;
-
-   lenx = leny = lenz = 1;
-
-   Arrow2(0,0,0,1,0,0, 0.9);
-   Arrow2(0,0,0,0,1,0, 0.9);
-   Arrow2(0,0,0,0,0,1, 0.9);
-
-#ifndef GLVIS_USE_FREETYPE
-   glPushAttrib (GL_LIST_BIT);
-   glListBase (fontbase);
-#endif
-
-   glRasterPos3d (lenx, 0.0f, 0.0f);
-   if (print) { gl2psText(a_label_x.c_str(),"Times",8); }
-#ifndef GLVIS_USE_FREETYPE
-   glCallLists(a_label_x.length(), GL_UNSIGNED_BYTE, a_label_x.c_str());
-#else
-   DrawBitmapText(a_label_x.c_str());
-#endif
-
-   glRasterPos3d (0.0f, leny, 0.0f);
-   if (print) { gl2psText(a_label_y.c_str(),"Times",8); }
-#ifndef GLVIS_USE_FREETYPE
-   glCallLists(a_label_y.length(), GL_UNSIGNED_BYTE, a_label_y.c_str());
-#else
-   DrawBitmapText(a_label_y.c_str());
-#endif
-
-   glRasterPos3d (0.0f, 0.0f, lenz);
-   if (print) { gl2psText(a_label_z.c_str(),"Times",8); }
-#ifndef GLVIS_USE_FREETYPE
-   glCallLists(a_label_z.length(), GL_UNSIGNED_BYTE, a_label_z.c_str());
-#else
-   DrawBitmapText(a_label_z.c_str());
-#endif
-
-#ifndef GLVIS_USE_FREETYPE
-   glPopAttrib();
-#endif
-
-   glMatrixMode (GL_PROJECTION);
-   glPopMatrix();
-   glMatrixMode (GL_MODELVIEW);
-   glPopMatrix();
-
-   if (print)
-   {
-      ostringstream buf4;
-      buf4 << setprecision(4) << "(" << x[0] << "," << y[0] << ","  << z[0] << ")" ;
-      glRasterPos3d (x[0], y[0], z[0]);
-      if (print) { gl2psText(buf4.str().c_str(),"Times",8); }
-
-      ostringstream buf5;
-      buf5 << setprecision(4) << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
-      glRasterPos3d (x[1], y[1], z[1]);
-      if (print) { gl2psText(buf5.str().c_str(),"Times",8); }
-   }
-}
-
-VisualizationSceneScalarData * vsdata;
-extern VisualizationScene  * locscene;
+thread_local VisualizationSceneScalarData * vsdata;
+extern thread_local VisualizationScene  * locscene;
 
 void KeycPressed()
 {
@@ -695,7 +560,7 @@ void KeyCPressed()
 {
    cout << "Enter new caption: " << flush;
    std::getline(cin, plot_caption);
-   vsdata->UpdateCaption(); // turn on or off the caption
+   vsdata->PrepareCaption(); // turn on or off the caption
    SendExposeEvent();
 }
 
@@ -713,7 +578,7 @@ void KeyaPressed()
 
 void Key_Mod_a_Pressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       static const char *autoscale_modes[] = { "off", "on", "value", "mesh" };
       int autoscale = vsdata->GetAutoscale();
@@ -730,17 +595,14 @@ void Key_Mod_a_Pressed(GLenum state)
    }
 }
 
+void KeyHPressed()
+{
+   cout << vsdata->GetHelpString() << flush;
+}
+
 void KeylPressed()
 {
    vsdata -> ToggleLight();
-   if (! vsdata -> light)
-   {
-      glDisable(GL_LIGHTING);
-   }
-   else
-   {
-      glEnable(GL_LIGHTING);
-   }
    SendExposeEvent();
 }
 
@@ -767,73 +629,28 @@ void KeyrPressed()
 
 void KeyRPressed()
 {
-   locscene -> spinning = 0;
+   locscene->spinning = 0;
    RemoveIdleFunc(MainLoop);
-   glMatrixMode (GL_MODELVIEW);
-   glLoadIdentity();
-   glGetDoublev (GL_MODELVIEW_MATRIX,   locscene -> translmat);
-   Set_Light();
-
-   switch (vsdata -> key_r_state)
-   {
-      case 0:
-         break;
-
-      case 1:
-         glRotatef(-90.0, 1.0f, 0.0f, 0.0f);
-         break;
-
-      case 2:
-         glRotatef(-90.0, 1.0f, 0.0f, 0.0f);
-         glRotatef(-90.0, 0.0f, 0.0f, 1.0f);
-         break;
-
-      case 3:
-         glRotatef(-90.0, 1.0f, 0.0f, 0.0f);
-         glRotatef(-180.0, 0.0f, 0.0f, 1.0f);
-         break;
-
-      case 4:
-         glRotatef(-90.0, 1.0f, 0.0f, 0.0f);
-         glRotatef(-270.0, 0.0f, 0.0f, 1.0f);
-         break;
-
-      case 5:
-         glRotatef(180.0, 1.0f, 0.0f, 0.0f);
-         break;
-   }
-
-   // if (locscene -> view != 2) // make 'R' work the same in 2D and 3D
-   vsdata -> key_r_state = (vsdata -> key_r_state+1)%6;
-
-   glGetDoublev (GL_MODELVIEW_MATRIX,   locscene -> rotmat);
+   vsdata->Toggle2DView();
    SendExposeEvent();
 }
 
 void KeypPressed(GLenum state)
 {
-   if (state & ControlMask)
+   if (state & KMOD_CTRL)
    {
       KeyCtrlP();
    }
    else
    {
-      Next_RGB_Palette();
-      if (!GetUseTexture())
-      {
-         vsdata->EventUpdateColors();
-      }
+      locscene->palette.NextIndex();
       SendExposeEvent();
    }
 }
 
 void KeyPPressed()
 {
-   Prev_RGB_Palette();
-   if (!GetUseTexture())
-   {
-      vsdata->EventUpdateColors();
-   }
+   locscene->palette.PrevIndex();
    SendExposeEvent();
 }
 
@@ -857,53 +674,67 @@ static void KeyF5Pressed()
 
 void KeyF6Pressed()
 {
+   int RepeatPaletteTimes = vsdata->palette.GetRepeatTimes();
    cout << "Palette is repeated " << RepeatPaletteTimes << " times.\n"
         << "(Negative value means the palette is flipped.)\n"
-        << "Enter new value : " << flush;
+        << "Enter new value: " << flush;
    cin >> RepeatPaletteTimes;
    if (RepeatPaletteTimes == 0)
    {
       RepeatPaletteTimes = 1;
    }
    cout << "Palette will be repeated " << RepeatPaletteTimes
-        << " times now." << endl;
+        << " times now.\n\n";
+   vsdata->palette.SetRepeatTimes(RepeatPaletteTimes);
 
-   Select_New_RGB_Palette();
+   int pal = vsdata->palette.ChoosePalette();
 
-   if (!GetUseTexture())
-   {
-      vsdata->EventUpdateColors();
-   }
+   int colors_used = vsdata->palette.GetNumColors(pal);
+   int palette_size = vsdata->palette.GetSize(pal);
+   cout << "\nPalette is using " << colors_used << " colors.\n"
+        << "Enter new value (0 = use original " << palette_size
+        << " colors): " << flush;
+   cin >> colors_used;
+   if (colors_used == 1) { colors_used = 0; }
+   vsdata->palette.SetNumColors(colors_used);
+
+   vsdata->palette.Init();
+   vsdata->palette.SetIndex(pal);
+
+   colors_used = vsdata->palette.GetNumColors();
+   cout << "Palette will be using " << colors_used << " colors now.\n";
+
+   vsdata->EventUpdateColors();
    SendExposeEvent();
 }
 
 void KeyF7Pressed(GLenum state)
 {
-   if (state & ShiftMask)
+   if (state & KMOD_SHIFT)
    {
       cout << "Current bounding box:\n"
-           << "   min: (" << vsdata->x[0] << ',' << vsdata->y[0] << ','
-           << vsdata->z[0] << ")\n"
-           << "   max: (" << vsdata->x[1] << ',' << vsdata->y[1] << ','
-           << vsdata->z[1] << ")\n"
+           << "   min: (" << vsdata->bb.x[0] << ',' << vsdata->bb.y[0] << ','
+           << vsdata->bb.z[0] << ")\n"
+           << "   max: (" << vsdata->bb.x[1] << ',' << vsdata->bb.y[1] << ','
+           << vsdata->bb.z[1] << ")\n"
            << "Enter new bounding box:\n"
            << "x_min = " << flush;
-      cin >> vsdata->x[0];
+      cin >> vsdata->bb.x[0];
       cout << "y_min = " << flush;
-      cin >> vsdata->y[0];
+      cin >> vsdata->bb.y[0];
       cout << "z_min = " << flush;
-      cin >> vsdata->z[0];
+      cin >> vsdata->bb.z[0];
       cout << "x_max = " << flush;
-      cin >> vsdata->x[1];
+      cin >> vsdata->bb.x[1];
       cout << "y_max = " << flush;
-      cin >> vsdata->y[1];
+      cin >> vsdata->bb.y[1];
       cout << "z_max = " << flush;
-      cin >> vsdata->z[1];
+      cin >> vsdata->bb.z[1];
       cout << "New bounding box:\n"
-           << "   min: (" << vsdata->x[0] << ',' << vsdata->y[0] << ','
-           << vsdata->z[0] << ")\n"
-           << "   max: (" << vsdata->x[1] << ',' << vsdata->y[1] << ','
-           << vsdata->z[1] << ")\n" << flush;
+           << "   min: (" << vsdata->bb.x[0] << ',' << vsdata->bb.y[0] << ','
+           << vsdata->bb.z[0] << ")\n"
+           << "   max: (" << vsdata->bb.x[1] << ',' << vsdata->bb.y[1] << ','
+           << vsdata->bb.z[1] << ")\n" << flush;
       vsdata->UpdateBoundingBox();
       SendExposeEvent();
    }
@@ -936,10 +767,7 @@ void KeyBackslashPressed()
    cout << "w = " << flush;
    cin >> w;
 
-   glLoadIdentity();
-   GLfloat light[] = { x, y, z, w };
-   // load modelview matrix before calling glLightfv?
-   glLightfv(GL_LIGHT0, GL_POSITION, light);
+   vsdata->SetLight0CustomPos({x, y, z, w});
    SendExposeEvent();
 }
 
@@ -947,16 +775,23 @@ void KeyTPressed()
 {
    int ml;
 
-   ml = Next_Material_And_Light();
+   ml = (vsdata->GetLightMatIdx() + 1) % 5;
+   vsdata->SetLightMatIdx(ml);
    SendExposeEvent();
    cout << "New material/light : " << ml << endl;
 }
 
+void KeygPressed()
+{
+   vsdata->ToggleBackground();
+   vsdata->PrepareAxes();
+   vsdata->EventUpdateBackground();
+   SendExposeEvent();
+}
+
 void KeyGPressed()
 {
-   Toggle_Background();
-   vsdata->PrepareAxes();
-   SendExposeEvent();
+   vsdata->glTF_Export();
 }
 
 void KeyF1Pressed()
@@ -974,39 +809,33 @@ void KeyF2Pressed()
 
 void KeykPressed()
 {
-   MatAlpha -= 0.05;
-   if (MatAlpha < 0.0)
+   locscene->matAlpha -= 0.05;
+   if (locscene->matAlpha < 0.0)
    {
-      MatAlpha = 0.0;
+      locscene->matAlpha = 0.0;
    }
-   vsdata -> EventUpdateColors();
+   locscene->GenerateAlphaTexture();
    SendExposeEvent();
 }
 
 void KeyKPressed()
 {
-   MatAlpha += 0.05;
-   if (MatAlpha > 1.0)
+   locscene->matAlpha += 0.05;
+   if (locscene->matAlpha > 1.0)
    {
-      MatAlpha = 1.0;
+      locscene->matAlpha = 1.0;
    }
-   vsdata -> EventUpdateColors();
+   locscene->GenerateAlphaTexture();
    SendExposeEvent();
 }
 
 void KeyAPressed()
 {
-   if (!Get_AntiAliasing())
-   {
-      Set_AntiAliasing();
-   }
-   else
-   {
-      Remove_AntiAliasing();
-   }
+   bool curr_aa = GetAppWindow()->getRenderer().getAntialiasing();
+   GetAppWindow()->getRenderer().setAntialiasing(!curr_aa);
 
    cout << "Multisampling/Antialiasing: "
-        << strings_off_on[Get_AntiAliasing() ? 1 : 0] << endl;
+        << strings_off_on[!curr_aa ? 1 : 0] << endl;
 
    // vsdata -> EventUpdateColors();
    SendExposeEvent();
@@ -1014,21 +843,23 @@ void KeyAPressed()
 
 void KeyCommaPressed()
 {
-   MatAlphaCenter -= 0.25;
-   vsdata -> EventUpdateColors();
+   locscene->matAlphaCenter -= 0.25;
+   // vsdata -> EventUpdateColors();
+   locscene->GenerateAlphaTexture();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
-   cout << "MatAlphaCenter = " << MatAlphaCenter << endl;
+   cout << "MatAlphaCenter = " << locscene->matAlphaCenter << endl;
 #endif
 }
 
 void KeyLessPressed()
 {
-   MatAlphaCenter += 0.25;
-   vsdata -> EventUpdateColors();
+   locscene->matAlphaCenter += 0.25;
+   // vsdata -> EventUpdateColors();
+   locscene->GenerateAlphaTexture();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
-   cout << "MatAlphaCenter = " << MatAlphaCenter << endl;
+   cout << "MatAlphaCenter = " << locscene->matAlphaCenter << endl;
 #endif
 }
 
@@ -1053,8 +884,10 @@ void KeyToggleTexture()
 void VisualizationSceneScalarData::PrintLogscale(bool warn)
 {
    if (warn)
+   {
       cout << "The range [" << minv << ',' << maxv
            << "] is not appropriate for logarithmic scale!" << endl;
+   }
    cout << "Logarithmic scale: " << strings_off_on[logscale ? 1 : 0]
         << endl;
 }
@@ -1064,7 +897,7 @@ void VisualizationSceneScalarData::ToggleLogscale(bool print)
    if (logscale || LogscaleRange())
    {
       logscale = !logscale;
-      MySetColorLogscale = logscale;
+      palette.SetUseLogscale(logscale);
       SetLogA();
       SetLevelLines(minv, maxv, nl);
       UpdateLevelLines();
@@ -1078,11 +911,13 @@ void VisualizationSceneScalarData::ToggleLogscale(bool print)
    {
       PrintLogscale(true);
    }
+   PrepareRuler();
 }
 
 void VisualizationSceneScalarData::ToggleRuler()
 {
    ruler_on = (ruler_on + 1) % 3;
+   PrepareRuler();
 }
 
 void VisualizationSceneScalarData::RulerPosition()
@@ -1092,125 +927,320 @@ void VisualizationSceneScalarData::RulerPosition()
    cout << "x = " << flush; cin >> ruler_x;
    cout << "y = " << flush; cin >> ruler_y;
    cout << "z = " << flush; cin >> ruler_z;
-   if (ruler_x < x[0])
+   if (ruler_x < bb.x[0])
    {
-      ruler_x = x[0];
+      ruler_x = bb.x[0];
    }
-   else if (ruler_x > x[1])
+   else if (ruler_x > bb.x[1])
    {
-      ruler_x = x[1];
+      ruler_x = bb.x[1];
    }
-   if (ruler_y < y[0])
+   if (ruler_y < bb.y[0])
    {
-      ruler_y = y[0];
+      ruler_y = bb.y[0];
    }
-   else if (ruler_y > y[1])
+   else if (ruler_y > bb.y[1])
    {
-      ruler_y = y[1];
+      ruler_y = bb.y[1];
    }
-   if (ruler_z < z[0])
+   if (ruler_z < bb.z[0])
    {
-      ruler_z = z[0];
+      ruler_z = bb.z[0];
    }
-   else if (ruler_z > z[1])
+   else if (ruler_z > bb.z[1])
    {
-      ruler_z = z[1];
+      ruler_z = bb.z[1];
    }
    cout << "New ruler position: (" << ruler_x << ','
         << ruler_y << ',' << ruler_z << ")" << endl;
+   PrepareRuler();
 }
 
-void VisualizationSceneScalarData::DrawRuler(bool log_z)
+void VisualizationSceneScalarData::PrepareRuler(bool log_z)
 {
+   float pos_z = LogVal(ruler_z, log_z);
+   float x_f[2] = {(float) bb.x[0], (float) bb.x[1]};
+   float y_f[2] = {(float) bb.y[0], (float) bb.y[1]};
+   float z_f[2] = {(float) bb.z[0], (float) bb.z[1]};
+   float ruler_x_f = (float) ruler_x,
+         ruler_y_f = (float) ruler_y;
+   ruler_buf.clear();
+   if (ruler_on == 2)
+   {
+      std::array<uint8_t, 4> color = gl3::ColorU8(0.8, 0.8, 0.8, 1.0);
+      std::array<float, 3> norm = { 0, 0, 1 };
+      ruler_buf.addQuad<gl3::VertexNormColor>(
+      {{x_f[0], y_f[0], pos_z},norm,color},
+      {{x_f[1], y_f[0], pos_z},norm,color},
+      {{x_f[1], y_f[1], pos_z},norm,color},
+      {{x_f[0], y_f[1], pos_z},norm,color}
+      );
+
+      std::array<float, 3> norm_2 = { 0, 1, 0 };
+      ruler_buf.addQuad<gl3::VertexNormColor>(
+      {{x_f[0], ruler_y_f, z_f[0]},norm_2,color},
+      {{x_f[0], ruler_y_f, z_f[1]},norm_2,color},
+      {{x_f[1], ruler_y_f, z_f[1]},norm_2,color},
+      {{x_f[1], ruler_y_f, z_f[0]},norm_2,color}
+      );
+
+      std::array<float, 3> norm_3 = { 1, 0, 0 };
+      ruler_buf.addQuad<gl3::VertexNormColor>(
+      {{ruler_x_f, y_f[0], z_f[0]},norm_3,color},
+      {{ruler_x_f, y_f[1], z_f[0]},norm_3,color},
+      {{ruler_x_f, y_f[1], z_f[1]},norm_3,color},
+      {{ruler_x_f, y_f[0], z_f[1]},norm_3,color}
+      );
+
+      ruler_buf.addLines<gl3::Vertex>(
+      {
+         {x_f[0], y_f[0], pos_z}, {x_f[1], y_f[0], pos_z},
+         {x_f[1], y_f[0], pos_z}, {x_f[1], y_f[1], pos_z},
+         {x_f[1], y_f[1], pos_z}, {x_f[0], y_f[1], pos_z},
+         {x_f[0], y_f[1], pos_z}, {x_f[0], y_f[0], pos_z},
+
+         {x_f[0], ruler_y_f, z_f[0]}, {x_f[1], ruler_y_f, z_f[0]},
+         {x_f[1], ruler_y_f, z_f[0]}, {x_f[1], ruler_y_f, z_f[1]},
+         {x_f[1], ruler_y_f, z_f[1]}, {x_f[0], ruler_y_f, z_f[1]},
+         {x_f[0], ruler_y_f, z_f[1]}, {x_f[0], ruler_y_f, z_f[0]},
+
+         {ruler_x_f, y_f[0], z_f[0]}, {ruler_x_f, y_f[1], z_f[0]},
+         {ruler_x_f, y_f[1], z_f[0]}, {ruler_x_f, y_f[1], z_f[1]},
+         {ruler_x_f, y_f[1], z_f[1]}, {ruler_x_f, y_f[0], z_f[1]},
+         {ruler_x_f, y_f[0], z_f[1]}, {ruler_x_f, y_f[0], z_f[0]}
+      });
+   }
+
+   ruler_buf.addLines<gl3::Vertex>(
+   {
+      {x_f[0], ruler_y_f, pos_z},
+      {x_f[1], ruler_y_f, pos_z},
+      {ruler_x_f, y_f[0], pos_z},
+      {ruler_x_f, y_f[1], pos_z},
+      {ruler_x_f, ruler_y_f, z_f[0]},
+      {ruler_x_f, ruler_y_f, z_f[1]}
+   });
+
+   updated_bufs.emplace_back(&ruler_buf);
+}
+
+void VisualizationSceneScalarData::Toggle2DView()
+{
+   gl3::GlMatrix newrot;
+   newrot.identity();
+   translmat = newrot.mtx;
+
+   switch (key_r_state)
+   {
+      case 0:
+         break;
+
+      case 1:
+         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         break;
+
+      case 2:
+         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         newrot.rotate(-90.0, 0.0f, 0.0f, 1.0f);
+         break;
+
+      case 3:
+         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         newrot.rotate(-180.0, 0.0f, 0.0f, 1.0f);
+         break;
+
+      case 4:
+         newrot.rotate(-90.0, 1.0f, 0.0f, 0.0f);
+         newrot.rotate(-270.0, 0.0f, 0.0f, 1.0f);
+         break;
+
+      case 5:
+         newrot.rotate(180.0, 1.0f, 0.0f, 0.0f);
+         break;
+   }
+
+   // if (locscene -> view != 2) // make 'R' work the same in 2D and 3D
+   key_r_state = (key_r_state+1)%6;
+
+   rotmat = newrot.mtx;
+}
+
+gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
+{
+   int w, h;
+   wnd->getWindowSize(w, h);
+   gl3::SceneInfo scene {};
+
+   gl3::RenderParams params {};
+   params.model_view.identity();
+   params.projection.identity();
+   params.mesh_material = BLK_MAT;
+   params.num_pt_lights = 0;
+   params.static_color = this->GetLineColor();
+   params.use_clip_plane = false;
+   params.contains_translucent = false;
+
+   if (colorbar)
+   {
+      // add color bar to draw list
+      params.projection.mtx = proj_mtx;
+      scene.queue.emplace_back(params, &color_bar);
+      params.projection.identity();
+   }
+   if (colorbar == 1)
+   {
+      // caption size is in screen pixels and needs to be centered with
+      // GL pixel size
+      int gl_w, gl_h;
+      wnd->getGLDrawSize(gl_w, gl_h);
+      // add caption to draw list
+      double v_pos = 2.;
+      double line_h = GetFont()->getFontLineSpacing();
+      params.model_view.translate(-(double)caption_w / gl_w,
+                                  1.0 - 2 * v_pos * line_h / gl_h, 0.0);
+      scene.queue.emplace_back(params, &caption_buf);
+   }
+   params.contains_translucent = true;
+   if (drawaxes && drawaxes != 3)
+   {
+      // add coordinate cross to draw list
+      params.projection.ortho(-1.,1.,-1.,1.,-2.,2.);
+      params.model_view.identity();
+      params.model_view.translate(-1, -1, 0.0);
+      params.model_view.scale(40.0 / w, 40.0 / h, 1);
+      params.model_view.translate(2.0, 2.0, 0.0);
+      params.model_view.mult(cam.RotMatrix());
+      params.model_view.mult(rotmat);
+      scene.queue.emplace_back(params, &coord_cross_buf);
+   }
+   params.projection.mtx = proj_mtx;
+   params.model_view.mtx = GetModelViewMtx();
+   if (drawaxes)
+   {
+      // add axes to draw list
+      scene.queue.emplace_back(params, &axes_buf);
+   }
+   params.contains_translucent = false;
    if (ruler_on)
    {
-      double pos_z = LogVal(ruler_z, log_z);
-      if (ruler_on == 2)
-      {
-         Set_Material();
-         if (light)
-         {
-            glEnable(GL_LIGHTING);
-         }
-         glBegin(GL_QUADS);
-         glColor4d(0.8, 0.8, 0.8, 1.0);
-         if (light)
-         {
-            glNormal3d(0, 0, 1);
-         }
-         glVertex3d(x[0], y[0], pos_z);
-         glVertex3d(x[1], y[0], pos_z);
-         glVertex3d(x[1], y[1], pos_z);
-         glVertex3d(x[0], y[1], pos_z);
-
-         if (light)
-         {
-            glNormal3d(0, 1, 0);
-         }
-         glVertex3d(x[0], ruler_y, z[0]);
-         glVertex3d(x[0], ruler_y, z[1]);
-         glVertex3d(x[1], ruler_y, z[1]);
-         glVertex3d(x[1], ruler_y, z[0]);
-
-         if (light)
-         {
-            glNormal3d(1, 0, 0);
-         }
-         glVertex3d(ruler_x, y[0], z[0]);
-         glVertex3d(ruler_x, y[1], z[0]);
-         glVertex3d(ruler_x, y[1], z[1]);
-         glVertex3d(ruler_x, y[0], z[1]);
-         glEnd();
-         if (light)
-         {
-            glDisable(GL_LIGHTING);
-         }
-         Set_Black_Material();
-
-         glBegin(GL_LINE_LOOP);
-         glVertex3d(x[0], y[0], pos_z);
-         glVertex3d(x[1], y[0], pos_z);
-         glVertex3d(x[1], y[1], pos_z);
-         glVertex3d(x[0], y[1], pos_z);
-         glEnd();
-
-         glBegin(GL_LINE_LOOP);
-         glVertex3d(x[0], ruler_y, z[0]);
-         glVertex3d(x[1], ruler_y, z[0]);
-         glVertex3d(x[1], ruler_y, z[1]);
-         glVertex3d(x[0], ruler_y, z[1]);
-         glEnd();
-
-         glBegin(GL_LINE_LOOP);
-         glVertex3d(ruler_x, y[0], z[0]);
-         glVertex3d(ruler_x, y[1], z[0]);
-         glVertex3d(ruler_x, y[1], z[1]);
-         glVertex3d(ruler_x, y[0], z[1]);
-         glEnd();
-      }
-
-      glBegin(GL_LINES);
-      glVertex3d(x[0], ruler_y, pos_z);
-      glVertex3d(x[1], ruler_y, pos_z);
-      glVertex3d(ruler_x, y[0], pos_z);
-      glVertex3d(ruler_x, y[1], pos_z);
-      glVertex3d(ruler_x, ruler_y, z[0]);
-      glVertex3d(ruler_x, ruler_y, z[1]);
-      glEnd();
+      // add ruler to draw list
+      params = GetMeshDrawParams();
+      params.use_clip_plane = false;
+      params.contains_translucent = false;
+      scene.queue.emplace_back(params, &ruler_buf);
    }
+   return scene;
+}
+
+void VisualizationSceneScalarData::ProcessUpdatedBufs(gl3::SceneInfo& scene)
+{
+   std::unordered_set<gl3::GlDrawable*> bufs_in_scene;
+   for (const auto& qelem : scene.queue)
+   {
+      bufs_in_scene.insert(qelem.second);
+   }
+
+   auto it = updated_bufs.begin();
+   while (it != updated_bufs.end())
+   {
+      if (bufs_in_scene.find(*it) != bufs_in_scene.end())
+      {
+         scene.needs_buffering.emplace_back(*it);
+         it = updated_bufs.erase(it);
+      }
+      else
+      {
+         ++it;
+      }
+   }
+}
+
+void VisualizationSceneScalarData::glTF_ExportBox(
+   glTF_Builder &bld,
+   glTF_Builder::buffer_id buffer,
+   glTF_Builder::material_id black_mat)
+{
+   auto white_mat = glTF_Builder::material_id{glTF_Builder::INVALID_ID};
+
+   auto box_node = AddModelNode(bld, "Box");
+   auto box_mesh = bld.addMesh("Box Mesh");
+   bld.addNodeMesh(box_node, box_mesh);
+
+   int nlines = AddLines(
+                   bld,
+                   box_mesh,
+                   buffer,
+                   (drawaxes != 3) ? black_mat : white_mat,
+                   axes_buf);
+   if (nlines == 0)
+   {
+      cout << "glTF export: no box found to export!" << endl;
+   }
+}
+
+void VisualizationSceneScalarData::glTF_ExportElements(
+   glTF_Builder &bld,
+   glTF_Builder::buffer_id buffer,
+   glTF_Builder::material_id palette_mat,
+   const gl3::GlDrawable &gl_drawable)
+{
+   auto elements_node = AddModelNode(bld, "Elements");
+   auto elements_mesh = bld.addMesh("Elements Mesh");
+   bld.addNodeMesh(elements_node, elements_mesh);
+
+   int ntria = AddTriangles(
+                  bld,
+                  elements_mesh,
+                  buffer,
+                  palette_mat,
+                  gl_drawable);
+   if (ntria == 0)
+   {
+      cout << "glTF export: no elements found to export!" << endl;
+   }
+}
+
+void VisualizationSceneScalarData::glTF_ExportMesh(
+   glTF_Builder &bld,
+   glTF_Builder::buffer_id buffer,
+   glTF_Builder::material_id black_mat,
+   const gl3::GlDrawable &gl_drawable)
+{
+   auto lines_node = AddModelNode(bld, "Lines");
+   auto lines_mesh = bld.addMesh("Lines Mesh");
+   bld.addNodeMesh(lines_node, lines_mesh);
+
+   int nlines = AddLines(
+                   bld,
+                   lines_mesh,
+                   buffer,
+                   black_mat,
+                   gl_drawable);
+   if (nlines == 0)
+   {
+      cout << "glTF export: no mesh/level lines found to export!" << endl;
+   }
+}
+
+void VisualizationSceneScalarData::glTF_Export()
+{
+   cout << "glTF export is not yet implemented for this visualization mode."
+        << endl;
 }
 
 void VisualizationSceneScalarData::ToggleTexture()
 {
-   SetUseTexture((GetUseTexture()+1)%3);
-   if (GetUseTexture() != 2)
+   int isSmooth = palette.GetSmoothSetting();
+   if (isSmooth)
    {
-      EventUpdateColors();
+      palette.UseDiscrete();
+      cout << "Texture type : discrete" << endl;
    }
-
-   static const char *texture_type[3] =
-   {"no texture", "discrete", "smooth"};
-   cout << "Texture type : " << texture_type[GetUseTexture()] << endl;
+   else
+   {
+      palette.UseSmooth();
+      cout << "Texture type : smooth" << endl;
+   }
 }
 
 void VisualizationSceneScalarData::SetAutoscale(int _autoscale)
@@ -1235,19 +1265,18 @@ VisualizationSceneScalarData::VisualizationSceneScalarData(
 void VisualizationSceneScalarData::Init()
 {
    vsdata = this;
+   wnd = GetAppWindow();
 
    arrow_type = arrow_scaling_type = 0;
    scaling = 0;
-   light   = 1;
    drawaxes = colorbar = 0;
    auto_ref_max = 16;
    auto_ref_max_surf_elem = 20000;
    minv = 0.0;
    maxv = 1.0;
    logscale = false;
-   MySetColorLogscale = 0;
    SetLogA();
-   UpdateCaption(); // turn on or off the caption
+   PrepareCaption(); // turn on or off the caption
 
    CuttingPlane = NULL;
 
@@ -1258,68 +1287,66 @@ void VisualizationSceneScalarData::Init()
    {
       // init = 1;
 
-      auxKeyFunc (AUX_l, KeylPressed);
-      auxKeyFunc (AUX_L, KeyLPressed);
+      wnd->setOnKeyDown('l', KeylPressed);
+      wnd->setOnKeyDown('L', KeyLPressed);
 
-      auxKeyFunc (AUX_s, KeySPressed);
+      wnd->setOnKeyDown('s', KeySPressed);
 
-      // auxKeyFunc (AUX_a, KeyaPressed);
-      auxModKeyFunc(AUX_a, Key_Mod_a_Pressed);
-      auxKeyFunc (AUX_A, KeyAPressed);
+      // wnd->setOnKeyDown('a', KeyaPressed);
+      wnd->setOnKeyDown('a', Key_Mod_a_Pressed);
+      wnd->setOnKeyDown('A', KeyAPressed);
 
-      auxKeyFunc (AUX_r, KeyrPressed);
-      auxKeyFunc (AUX_R, KeyRPressed);
+      wnd->setOnKeyDown('r', KeyrPressed);
+      wnd->setOnKeyDown('R', KeyRPressed);
 
-      auxModKeyFunc (AUX_p, KeypPressed);
-      auxKeyFunc (AUX_P, KeyPPressed);
+      wnd->setOnKeyDown('p', KeypPressed);
+      wnd->setOnKeyDown('P', KeyPPressed);
 
-      auxKeyFunc (XK_F5, KeyF5Pressed);
-      auxKeyFunc (XK_F6, KeyF6Pressed);
-      auxModKeyFunc (XK_F7, KeyF7Pressed);
+      wnd->setOnKeyDown('h', KeyHPressed);
+      wnd->setOnKeyDown('H', KeyHPressed);
 
-      auxKeyFunc (XK_backslash, KeyBackslashPressed);
-      auxKeyFunc (AUX_t, KeyTPressed);
-      auxKeyFunc (AUX_T, KeyTPressed);
+      wnd->setOnKeyDown(SDLK_F5, KeyF5Pressed);
+      wnd->setOnKeyDown(SDLK_F6, KeyF6Pressed);
+      wnd->setOnKeyDown(SDLK_F7, KeyF7Pressed);
 
-      auxKeyFunc (AUX_g, KeyGPressed);
-      auxKeyFunc (AUX_G, KeyGPressed);
+      wnd->setOnKeyDown(SDLK_BACKSLASH, KeyBackslashPressed);
+      wnd->setOnKeyDown('t', KeyTPressed);
+      wnd->setOnKeyDown('T', KeyTPressed);
 
-      auxKeyFunc (AUX_c, KeycPressed);
-      auxKeyFunc (AUX_C, KeyCPressed);
+      wnd->setOnKeyDown('g', KeygPressed);
+      wnd->setOnKeyDown('G', KeyGPressed);
 
-      auxKeyFunc (AUX_k, KeykPressed);
-      auxKeyFunc (AUX_K, KeyKPressed);
+      wnd->setOnKeyDown('c', KeycPressed);
+      wnd->setOnKeyDown('C', KeyCPressed);
 
-      auxKeyFunc (XK_F1, KeyF1Pressed);
-      auxKeyFunc (XK_F2, KeyF2Pressed);
+      wnd->setOnKeyDown('k', KeykPressed);
+      wnd->setOnKeyDown('K', KeyKPressed);
 
-      auxKeyFunc (XK_comma, KeyCommaPressed);
-      auxKeyFunc (XK_less, KeyLessPressed);
-      auxKeyFunc (XK_grave, KeyGravePressed);
-      auxKeyFunc (XK_asciitilde, KeyTildePressed);
+      wnd->setOnKeyDown(SDLK_F1, KeyF1Pressed);
+      wnd->setOnKeyDown(SDLK_F2, KeyF2Pressed);
 
-      auxKeyFunc (XK_exclam, KeyToggleTexture);
+      wnd->setOnKeyDown(SDLK_COMMA, KeyCommaPressed);
+      wnd->setOnKeyDown(SDLK_LESS, KeyLessPressed);
+      wnd->setOnKeyDown('~', KeyTildePressed);
+      wnd->setOnKeyDown('`', KeyGravePressed);
+
+      wnd->setOnKeyDown(SDLK_EXCLAIM, KeyToggleTexture);
    }
 
-   Set_Light();
+   //Set_Light();
 
-   glEnable (GL_COLOR_MATERIAL);
-   glShadeModel (GL_SMOOTH);
+   //glEnable (GL_COLOR_MATERIAL);
+   //glShadeModel (GL_SMOOTH);
 
-   glEnable(GL_LIGHTING);
-   glEnable(GL_LIGHT0);
-   glDepthFunc(GL_LEQUAL);
-   glEnable(GL_DEPTH_TEST);
-   glEnable(GL_AUTO_NORMAL);
-   glEnable(GL_NORMALIZE);
-
-   glLineWidth(Get_LineWidth());
+   //gl->enableLight();
+   //gl->enableDepthTest();
+   //glEnable(GL_AUTO_NORMAL);
+   //glEnable(GL_NORMALIZE);
 
    if (GetMultisample() > 0)
    {
       glDisable(GL_MULTISAMPLE);
    }
-
    // add black fog
    // glEnable(GL_FOG);
    // GLfloat fogcol[4] = {0,0,0,1};
@@ -1328,19 +1355,19 @@ void VisualizationSceneScalarData::Init()
 
    SetLevelLines(minv, maxv, 15);
 
-   axeslist = glGenLists(1);
    FindNewBox(false);
    ruler_on = 0;
-   ruler_x = 0.5 * (x[0] + x[1]);
-   ruler_y = 0.5 * (y[0] + y[1]);
-   ruler_z = 0.5 * (z[0] + z[1]);
+   ruler_x = 0.5 * (bb.x[0] + bb.x[1]);
+   ruler_y = 0.5 * (bb.y[0] + bb.y[1]);
+   ruler_z = 0.5 * (bb.z[0] + bb.z[1]);
+
+   PrepareRuler();
 
    autoscale = 1;
 }
 
 VisualizationSceneScalarData::~VisualizationSceneScalarData()
 {
-   glDeleteLists (axeslist, 1);
    delete CuttingPlane;
 }
 
@@ -1354,16 +1381,16 @@ void VisualizationSceneScalarData::SetNewScalingFromBox()
    {
       // Scale all sides of the box to 1.
       xscale = yscale = zscale = 1.;
-      if ((x[1]-x[0])>eps) { xscale /= (x[1]-x[0]); }
-      if ((y[1]-y[0])>eps) { yscale /= (y[1]-y[0]); }
-      if ((z[1]-z[0])>eps) { zscale /= (z[1]-z[0]); }
+      if ((bb.x[1]-bb.x[0])>eps) { xscale /= (bb.x[1]-bb.x[0]); }
+      if ((bb.y[1]-bb.y[0])>eps) { yscale /= (bb.y[1]-bb.y[0]); }
+      if ((bb.z[1]-bb.z[0])>eps) { zscale /= (bb.z[1]-bb.z[0]); }
    }
    else
    {
       // Find the largest side of the box in xscale
-      xscale = x[1]-x[0];
-      yscale = y[1]-y[0];
-      zscale = z[1]-z[0];
+      xscale = bb.x[1]-bb.x[0];
+      yscale = bb.y[1]-bb.y[0];
+      zscale = bb.z[1]-bb.z[0];
       if (xscale < yscale) { xscale = yscale; }
       if (xscale < zscale) { xscale = zscale; }
       // Set proportional scaling so that the largest side of the box is 1.
@@ -1395,81 +1422,84 @@ void VisualizationSceneScalarData::SetAxisLabels(const char * a_x,
    a_label_x = a_x;
    a_label_y = a_y;
    a_label_z = a_z;
+   PrepareAxes();
 }
 
 void VisualizationSceneScalarData::PrepareAxes()
 {
-   Set_Black_Material();
-   GLfloat blk[4];
-   glGetFloatv(GL_CURRENT_COLOR, blk);
+   // std::array<float, 4> blk = GetLineColor();
+   axes_buf.clear();
 
-   glNewList(axeslist, GL_COMPILE);
-
+   gl3::GlBuilder bld = axes_buf.createBuilder();
    if (drawaxes == 3)
    {
-      glLineStipple(1, 255);
-      glBegin(GL_LINES);
-      glColor3f(1., 0., 0.);
-      glVertex3d(x[0], y[0], z[0]);
-      glColor4fv(blk);
-      glVertex3d(x[1], y[0], z[0]);
-      glVertex3d(x[0], y[1], z[0]);
-      glColor3f(0., 1., 0.);
-      glVertex3d(x[0], y[0], z[0]);
-      glEnd();
-      glColor4fv(blk);
-      glEnable(GL_LINE_STIPPLE);
-      glBegin(GL_LINE_STRIP);
-      glVertex3d(x[1], y[0], z[0]);
-      glVertex3d(x[1], y[1], z[0]);
-      glVertex3d(x[0], y[1], z[0]);
-      glEnd();
+      // glLineStipple(1, 255);
+      bld.glBegin(GL_LINES);
+      bld.glColor3f(1., 0., 0.);
+      bld.glVertex3d(bb.x[0], bb.y[0], bb.z[0]);
+      bld.glColor3f(0.75, 0.75, 0.75); // bld.glColor4fv(blk.data());
+      bld.glVertex3d(bb.x[1], bb.y[0], bb.z[0]);
+      bld.glVertex3d(bb.x[0], bb.y[1], bb.z[0]);
+      bld.glColor3f(0., 1., 0.);
+      bld.glVertex3d(bb.x[0], bb.y[0], bb.z[0]);
+      bld.glEnd();
+      // bld.glColor4fv(blk.data());
+      // bld.setUseColor(false);
+      // bld.glEnable(GL_LINE_STIPPLE);
+      bld.glBegin(GL_LINE_STRIP);
+      bld.glColor3f(0.75, 0.75, 0.75);
+      bld.glVertex3d(bb.x[1], bb.y[0], bb.z[0]);
+      bld.glVertex3d(bb.x[1], bb.y[1], bb.z[0]);
+      bld.glVertex3d(bb.x[0], bb.y[1], bb.z[0]);
+      bld.glEnd();
    }
    else
    {
-      glBegin(GL_LINE_LOOP);
-      glVertex3d(x[0], y[0], z[0]);
-      glVertex3d(x[1], y[0], z[0]);
-      glVertex3d(x[1], y[1], z[0]);
-      glVertex3d(x[0], y[1], z[0]);
-      glEnd();
+      // bld.setUseColor(false);
+      bld.glBegin(GL_LINE_LOOP);
+      bld.glVertex3d(bb.x[0], bb.y[0], bb.z[0]);
+      bld.glVertex3d(bb.x[1], bb.y[0], bb.z[0]);
+      bld.glVertex3d(bb.x[1], bb.y[1], bb.z[0]);
+      bld.glVertex3d(bb.x[0], bb.y[1], bb.z[0]);
+      bld.glEnd();
    }
-
-   glBegin(GL_LINE_LOOP);
-   glVertex3d(x[0], y[0], z[1]);
-   glVertex3d(x[1], y[0], z[1]);
-   glVertex3d(x[1], y[1], z[1]);
-   glVertex3d(x[0], y[1], z[1]);
-   glEnd();
+   bld.glBegin(GL_LINE_LOOP);
+   bld.glVertex3d(bb.x[0], bb.y[0], bb.z[1]);
+   bld.glVertex3d(bb.x[1], bb.y[0], bb.z[1]);
+   bld.glVertex3d(bb.x[1], bb.y[1], bb.z[1]);
+   bld.glVertex3d(bb.x[0], bb.y[1], bb.z[1]);
+   bld.glEnd();
 
    if (drawaxes == 3)
    {
-      glDisable(GL_LINE_STIPPLE);
-      glBegin(GL_LINES);
-      glVertex3d(x[0], y[0], z[1]);
-      glColor3f(0., 0., 1.);
-      glVertex3d(x[0], y[0], z[0]);
-      glEnd();
-      glEnable(GL_LINE_STIPPLE);
-      glColor4fv(blk);
-      glBegin(GL_LINES);
+      // bld.setUseColor(true);
+      // bld.glDisable(GL_LINE_STIPPLE);
+      bld.glBegin(GL_LINES);
+      bld.glVertex3d(bb.x[0], bb.y[0], bb.z[1]);
+      bld.glColor3f(0., 0., 1.);
+      bld.glVertex3d(bb.x[0], bb.y[0], bb.z[0]);
+      bld.glEnd();
+      // bld.setUseColor(false);
+      // bld.glEnable(GL_LINE_STIPPLE);
+      bld.glColor3f(0.75, 0.75, 0.75);
+      bld.glBegin(GL_LINES);
    }
    else
    {
-      glBegin(GL_LINES);
-      glVertex3d(x[0], y[0], z[0]);
-      glVertex3d(x[0], y[0], z[1]);
+      bld.glBegin(GL_LINES);
+      bld.glVertex3d(bb.x[0], bb.y[0], bb.z[0]);
+      bld.glVertex3d(bb.x[0], bb.y[0], bb.z[1]);
    }
-   glVertex3d(x[1], y[0], z[0]);
-   glVertex3d(x[1], y[0], z[1]);
-   glVertex3d(x[1], y[1], z[0]);
-   glVertex3d(x[1], y[1], z[1]);
-   glVertex3d(x[0], y[1], z[0]);
-   glVertex3d(x[0], y[1], z[1]);
-   glEnd();
+   bld.glVertex3d(bb.x[1], bb.y[0], bb.z[0]);
+   bld.glVertex3d(bb.x[1], bb.y[0], bb.z[1]);
+   bld.glVertex3d(bb.x[1], bb.y[1], bb.z[0]);
+   bld.glVertex3d(bb.x[1], bb.y[1], bb.z[1]);
+   bld.glVertex3d(bb.x[0], bb.y[1], bb.z[0]);
+   bld.glVertex3d(bb.x[0], bb.y[1], bb.z[1]);
+   bld.glEnd();
    if (drawaxes == 3)
    {
-      glDisable(GL_LINE_STIPPLE);
+      // bld.glDisable(GL_LINE_STIPPLE);
    }
 
    // Write the coordinates of the lower left and upper right corner.
@@ -1479,54 +1509,54 @@ void VisualizationSceneScalarData::PrepareAxes()
 
    if (drawaxes == 1)
    {
-#ifndef GLVIS_USE_FREETYPE
-      glPushAttrib (GL_LIST_BIT);
-      glListBase (fontbase);
-#endif
-
+      int desc = GetFont()->getFontDescender();
+      int ox = -desc/2;
+      int oy = -3*desc/2;
       ostringstream buf;
       buf << setprecision(4)
-          << "(" << x[0] << "," << y[0] << ","  << z[0] << ")" ;
-      glRasterPos3d (x[0], y[0], z[0]);
-#ifndef GLVIS_USE_FREETYPE
-      glCallLists(buf.str().size(), GL_UNSIGNED_BYTE, buf.str().c_str());
-#else
-      DrawBitmapText(buf.str().c_str());
-#endif
+          << "(" << bb.x[0] << "," << bb.y[0] << ","  << bb.z[0] << ")" ;
+      axes_buf.addText(bb.x[0], bb.y[0], bb.z[0], ox, oy, buf.str());
 
       ostringstream buf1;
       buf1 << setprecision(4)
-           << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
-      glRasterPos3d (x[1], y[1], z[1]);
-#ifndef GLVIS_USE_FREETYPE
-      glCallLists(buf1.str().size(), GL_UNSIGNED_BYTE, buf1.str().c_str());
-#else
-      DrawBitmapText(buf1.str().c_str());
-#endif
-
-#ifndef GLVIS_USE_FREETYPE
-      glPopAttrib();
-#endif
+           << "(" << bb.x[1] << "," << bb.y[1] << "," << bb.z[1] << ")" ;
+      axes_buf.addText(bb.x[1], bb.y[1], bb.z[1], ox, oy, buf1.str());
    }
+   updated_bufs.emplace_back(&axes_buf);
 
-   glEndList();
+   constexpr float len = 1.2f;
+   constexpr float l = .9f, cl = .27f, cb = l-cl;
+   coord_cross_buf.clear();
+   coord_cross_buf.addLines<gl3::Vertex>(
+   {
+      {0, 0, 0}, {0, 0, l},
+      {0, 0, 0}, {0, l, 0},
+      {0, 0, 0}, {l, 0, 0}
+   });
+   coord_cross_buf.addCone(0,0,cb,0,0,1, cl);
+   coord_cross_buf.addCone(0,cb,0,0,1,0, cl);
+   coord_cross_buf.addCone(cb,0,0,1,0,0, cl);
+   coord_cross_buf.addText(len, 0.0f, 0.0f, a_label_x);
+   coord_cross_buf.addText(0.0f, len, 0.0f, a_label_y);
+   coord_cross_buf.addText(0.0f, 0.0f, len, a_label_z);
+   updated_bufs.emplace_back(&coord_cross_buf);
 }
 
 void VisualizationSceneScalarData::DrawPolygonLevelLines(
-   double * point, int n, Array<double> &level, bool log_vals)
+   gl3::GlBuilder& builder, double * point, int n, Array<double> &mesh_level,
+   bool log_vals)
 {
    int l, k, k1;
    double curve, t;
    double p[3];
 
-   for (l = 0; l < level.Size(); l++)
+   for (l = 0; l < mesh_level.Size(); l++)
    {
       // Using GL_LINE_STRIP (explicitly closed for more than 2 points)
       // should produce the same result, however visually the level lines
       // have discontinuities. Using GL_LINE_LOOP does not have that problem.
-      glBegin(GL_LINE_LOOP);
-
-      curve = LogVal(level[l], log_vals);
+      builder.glBegin(GL_LINE_LOOP);
+      curve = LogVal(mesh_level[l], log_vals);
       for (k = 0; k < n; k++)
       {
          k1 = (k+1)%n;
@@ -1548,10 +1578,10 @@ void VisualizationSceneScalarData::DrawPolygonLevelLines(
             p[0] = (1.0-t)*point[4*k+0]+t*point[4*k1+0];
             p[1] = (1.0-t)*point[4*k+1]+t*point[4*k1+1];
             p[2] = (1.0-t)*point[4*k+2]+t*point[4*k1+2];
-            glVertex3dv(p);
+            builder.glVertex3d(p[0], p[1], p[2]);
          }
       }
-      glEnd();
+      builder.glEnd();
    }
 }
 
@@ -1598,13 +1628,14 @@ void VisualizationSceneScalarData::SetLevelLines (
 
 void VisualizationSceneScalarData::PrintState()
 {
-   cout << "\nlight " << strings_off_on[light ? 1 : 0]
+   cout << "\nkeys: " << GetAppWindow()->getSavedKeys() << "\n"
+        << "\nlight " << strings_off_on[use_light ? 1 : 0]
         << "\nperspective " << strings_off_on[OrthogonalProjection ? 0 : 1]
         << "\nviewcenter " << ViewCenterX << ' ' << ViewCenterY
         << "\nzoom " << (OrthogonalProjection ? ViewScale :
                          tan(M_PI / 8.) / tan(ViewAngle * (M_PI / 360.0)))
         << "\nvaluerange " << minv << ' ' << maxv;
-   const double *r = rotmat;
+   const float *r = glm::value_ptr(rotmat);
    ios::fmtflags fmt = cout.flags();
    cout << fixed << showpos
         << "\nrotmat " << r[ 0] << ' ' << r[ 1] << ' ' << r[ 2] << ' ' << r[ 3]
@@ -1751,9 +1782,9 @@ Plane::Plane(double A,double B,double C,double D)
 
    CartesianToSpherical();
 
-   double x[2] = {vsdata -> x[0], vsdata -> x[1]};
-   double y[2] = {vsdata -> y[0], vsdata -> y[1]};
-   double z[2] = {vsdata -> z[0], vsdata -> z[1]};
+   double x[2] = {vsdata -> bb.x[0], vsdata -> bb.x[1]};
+   double y[2] = {vsdata -> bb.y[0], vsdata -> bb.y[1]};
+   double z[2] = {vsdata -> bb.z[0], vsdata -> bb.z[1]};
    bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
                       (y[1]-y[0])*(y[1]-y[0]) +
                       (z[1]-z[0])*(z[1]-z[0]) );

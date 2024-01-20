@@ -1,37 +1,31 @@
-// Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
-// the Lawrence Livermore National Laboratory. LLNL-CODE-443271. All Rights
-// reserved. See file COPYRIGHT for details.
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// at the Lawrence Livermore National Laboratory. All Rights reserved. See files
+// LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.org.
+// information and source code availability see https://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
-// terms of the GNU Lesser General Public License (as published by the Free
-// Software Foundation) version 2.1 dated February 1999.
+// terms of the BSD-3 license. We welcome feedback and contributions, see file
+// CONTRIBUTING.md for details.
 
-extern void Set_Material();
+#ifndef GLVIS_MATERIAL_HPP
+#define GLVIS_MATERIAL_HPP
+#include <array>
 
-extern void Set_Light();
+struct Material
+{
+   std::array<float, 4> ambient;
+   std::array<float, 4> diffuse;
+   std::array<float, 4> specular;
+   float shininess;
+};
 
-extern int Next_Material_And_Light();
+struct Light
+{
+   std::array<float, 4> position;
+   std::array<float, 4> diffuse;
+   std::array<float, 4> specular;
+};
 
-extern void Set_Material_And_Light(int,int);
-
-extern void Set_Black_Material();
-
-extern void Set_Background();
-
-extern void Toggle_Background();
-
-extern void Set_Transparency();
-
-extern void Remove_Transparency();
-
-extern int  Get_AntiAliasing();
-extern void Set_AntiAliasing();
-extern void Remove_AntiAliasing();
-
-extern double Get_LineWidth();
-extern void Set_LineWidth(double);
-extern double Get_MS_LineWidth();
-extern void Set_MS_LineWidth(double);
+#endif

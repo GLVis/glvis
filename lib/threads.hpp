@@ -1,37 +1,38 @@
-// Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
-// the Lawrence Livermore National Laboratory. LLNL-CODE-443271. All Rights
-// reserved. See file COPYRIGHT for details.
+// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// at the Lawrence Livermore National Laboratory. All Rights reserved. See files
+// LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
 // This file is part of the GLVis visualization tool and library. For more
-// information and source code availability see http://glvis.org.
+// information and source code availability see https://glvis.org.
 //
 // GLVis is free software; you can redistribute it and/or modify it under the
-// terms of the GNU Lesser General Public License (as published by the Free
-// Software Foundation) version 2.1 dated February 1999.
+// terms of the BSD-3 license. We welcome feedback and contributions, see file
+// CONTRIBUTING.md for details.
 
-#ifndef GLVIS_THREADS
-#define GLVIS_THREADS
+#ifndef GLVIS_THREADS_HPP
+#define GLVIS_THREADS_HPP
 
 #include "vsdata.hpp"
+#include "stream_reader.hpp"
 #include <mfem.hpp>
-#include <pthread.h>
+#include <thread>
+#include <atomic>
+#include <condition_variable>
 
 class GLVisCommand
 {
 private:
    // Pointers to global GLVis data
    VisualizationSceneScalarData **vs;
-   mfem::Mesh          **mesh;
-   mfem::GridFunction  **grid_f;
-   mfem::Vector         *sol;
+   StreamState&         curr_state;
    bool                 *keep_attr;
-   bool                 *fix_elem_orient;
+   SdlWindow            *thread_wnd;
 
-   pthread_mutex_t glvis_mutex;
-   pthread_cond_t  glvis_cond;
+   std::mutex glvis_mutex;
+   std::condition_variable glvis_cond;
+
    int num_waiting;
    bool terminating;
-   int pfd[2];  // pfd[0] -- reading, pfd[1] -- writing
 
    enum
    {
@@ -55,15 +56,17 @@ private:
       WINDOW_GEOMETRY = 17,
       PLOT_CAPTION = 18,
       AXIS_LABELS = 19,
-      PALETTE_REPEAT = 20
+      PALETTE_REPEAT = 20,
+      LEVELLINES = 21
    };
+
+   std::atomic<bool> command_ready{false};
 
    // command to be executed
    int command;
 
    // command arguments
-   Mesh         *new_m;
-   GridFunction *new_g;
+   StreamState   new_state;
    std::string   screenshot_filename;
    std::string   key_commands;
    int           window_x, window_y;
@@ -81,6 +84,8 @@ private:
    double        view_center_x, view_center_y;
    std::string   autoscale_mode;
    int           palette, palette_repeat;
+   double        lvl_min, lvl_max;
+   int           lvl_num;
    double        camera[9];
    std::string   autopause_mode;
 
@@ -93,19 +98,16 @@ private:
 
 public:
    // called by the main execution thread
-   GLVisCommand(VisualizationSceneScalarData **_vs, Mesh **_mesh,
-                GridFunction **_grid_f, Vector *_sol, bool *_keep_attr,
-                bool *_fix_elem_orient);
+   GLVisCommand(VisualizationSceneScalarData **_vs,
+                StreamState& thread_state, bool *_keep_attr);
 
-   // to be used by the main execution (visualization) thread
-   int ReadFD() { return pfd[0]; }
-
-   // to be used worker threads
+   // to be used by worker threads
    bool KeepAttrib() { return *keep_attr; } // may need to sync this
-   bool FixElementOrientations() { return *fix_elem_orient; }
+   bool FixElementOrientations() { return curr_state.fix_elem_orient; }
 
    // called by worker threads
-   int NewMeshAndSolution(Mesh *_new_m, GridFunction *_new_g);
+   int NewMeshAndSolution(std::unique_ptr<Mesh> _new_m,
+                          std::unique_ptr<GridFunction> _new_g);
    int Screenshot(const char *filename);
    int KeyCommands(const char *keys);
    int WindowSize(int w, int h);
@@ -123,6 +125,7 @@ public:
    int Autoscale(const char *mode);
    int Palette(int pal);
    int PaletteRepeat(int n);
+   int Levellines(double minv, double maxv, int number);
    int Camera(const double cam[]);
    int Autopause(const char *mode);
 
@@ -138,36 +141,31 @@ public:
    ~GLVisCommand();
 };
 
-extern GLVisCommand *glvis_command;
-
 class communication_thread
 {
+public:
+   using StreamCollection = std::vector<std::unique_ptr<std::istream>>;
+
 private:
    // streams to read data from
-   Array<std::istream *> &is;
+   StreamCollection is;
+
+   GLVisCommand* glvis_command;
 
    // data that may be dynamically allocated by the thread
-   Mesh *new_m;
-   GridFunction *new_g;
+   std::unique_ptr<Mesh> new_m;
+   std::unique_ptr<GridFunction> new_g;
    std::string ident;
 
-   // thread id
-   pthread_t tid;
+   // thread object
+   std::thread tid;
+   // signal for thread cancellation
+   std::atomic<bool> terminate_thread {false};
 
-   static void cancel_off()
-   {
-      pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-   }
-
-   static void cancel_on()
-   {
-      pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-   }
-
-   static void *execute(void *);
+   void execute();
 
 public:
-   communication_thread(Array<std::istream *> &_is);
+   communication_thread(StreamCollection _is, GLVisCommand* cmd);
 
    ~communication_thread();
 };
