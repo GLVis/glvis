@@ -67,14 +67,14 @@ jobs:
     - name: cache hypre
       if: matrix.mpi == 'par'
       id: hypre-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ${{ env.HYPRE_TOP_DIR }}
         key: ${{ runner.os }}-build-${{ env.HYPRE_TOP_DIR }}-v2.2
 
     - name: build hypre
       if: steps.hypre-cache.outputs.cache-hit != 'true' && matrix.mpi == 'par'
-      uses: mfem/github-actions/build-hypre@v2.2
+      uses: mfem/github-actions/build-hypre@v2.4
       with:
         archive: ${{ env.HYPRE_ARCHIVE }}
         dir: ${{ env.HYPRE_TOP_DIR }}
@@ -85,14 +85,14 @@ jobs:
     - name: cache metis
       if: matrix.mpi == 'par'
       id: metis-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ${{ env.METIS_TOP_DIR }}
         key: ${{ runner.os }}-build-${{ env.METIS_TOP_DIR }}-v2.2
 
     - name: build metis
       if: steps.metis-cache.outputs.cache-hit != 'true' && matrix.mpi == 'par'
-      uses: mfem/github-actions/build-metis@v2.2
+      uses: mfem/github-actions/build-metis@v2.4
       with:
         archive: ${{ env.METIS_ARCHIVE }}
         dir: ${{ env.METIS_TOP_DIR }}
@@ -115,7 +115,7 @@ jobs:
     # Install will only run on cache miss.
     - name: cache mfem
       id: cache-mfem
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ${{ env.MFEM_TOP_DIR }}
         key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-${{ matrix.build-system}}-v2.2
@@ -127,7 +127,7 @@ jobs:
     # superfluous.
     - name: build mfem
       if: steps.cache-mfem.outputs.cache-hit != 'true'
-      uses: mfem/github-actions/build-mfem@v2.2
+      uses: mfem/github-actions/build-mfem@v2.4
       with:
         os: ${{ matrix.os }}
         target: ${{ matrix.target }}
@@ -160,7 +160,7 @@ jobs:
 
     - name: cache deps (Windows)
       id: cache-deps
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: vcpkg_cache
         key: ${{ runner.os }}-vcpkg-v1
@@ -171,7 +171,7 @@ jobs:
         mkdir -p vcpkg_cache
 
     - name: checkout GLVis
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         path: glvis
         submodules: recursive
@@ -227,7 +227,7 @@ jobs:
         cp GLVis.dmg ${GLVIS_EXPORT_NAME}
 
     - name: upload binary
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
         path: glvis/build/glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
