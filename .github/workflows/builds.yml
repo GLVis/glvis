@@ -83,14 +83,14 @@ jobs:
     - name: cache hypre
       if: matrix.mpi == 'par'
       id: hypre-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ${{ env.HYPRE_TOP_DIR }}
         key: ${{ runner.os }}-build-${{ env.HYPRE_TOP_DIR }}-v2.2
 
     - name: build hypre
       if: steps.hypre-cache.outputs.cache-hit != 'true' && matrix.mpi == 'par'
-      uses: mfem/github-actions/build-hypre@v2.2
+      uses: mfem/github-actions/build-hypre@v2.4
       with:
         archive: ${{ env.HYPRE_ARCHIVE }}
         dir: ${{ env.HYPRE_TOP_DIR }}
@@ -101,14 +101,14 @@ jobs:
     - name: cache metis
       if: matrix.mpi == 'par'
       id: metis-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ${{ env.METIS_TOP_DIR }}
         key: ${{ runner.os }}-build-${{ env.METIS_TOP_DIR }}-v2.2
 
     - name: build metis
       if: steps.metis-cache.outputs.cache-hit != 'true' && matrix.mpi == 'par'
-      uses: mfem/github-actions/build-metis@v2.2
+      uses: mfem/github-actions/build-metis@v2.4
       with:
         archive: ${{ env.METIS_ARCHIVE }}
         dir: ${{ env.METIS_TOP_DIR }}
@@ -131,7 +131,7 @@ jobs:
     # Install will only run on cache miss.
     - name: cache mfem
       id: cache-mfem
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ${{ env.MFEM_TOP_DIR }}
         key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.target }}-${{ matrix.build-system}}-v2.4
@@ -177,7 +177,7 @@ jobs:
 
     - name: cache deps (Windows)
       id: cache-deps
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: vcpkg_cache
         key: ${{ runner.os }}-vcpkg-v1
@@ -188,7 +188,7 @@ jobs:
         mkdir -p vcpkg_cache
 
     - name: checkout GLVis
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         path: glvis
         submodules: recursive
@@ -222,7 +222,7 @@ jobs:
 
     - name: setup Python
       if: matrix.build-system == 'cmake'
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: 3.9
 
@@ -258,7 +258,7 @@ jobs:
 
     - name: upload test screenshots
       if: always() && matrix.build-system == 'cmake' && matrix.os != 'windows-latest'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: test-screenshots-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.mpi }}
         path: glvis/build/test_screenshots.tar.gz
