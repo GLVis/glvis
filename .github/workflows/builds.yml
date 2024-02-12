@@ -165,9 +165,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install libfontconfig1-dev libfreetype6-dev libsdl2-dev libglew-dev libglm-dev libpng-dev
 
-    - name: Set up Homebrew
-      if: matrix.os == 'macos-latest'
-      uses: Homebrew/actions/setup-homebrew@master
+    # - name: Set up Homebrew
+    #   if: matrix.os == 'macos-latest'
+    #   uses: Homebrew/actions/setup-homebrew@master
 
     - name: get deps (MacOS)
       if: matrix.os == 'macos-latest'
