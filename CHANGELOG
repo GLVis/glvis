@@ -16,6 +16,9 @@ Version 4.2.1 (development)
 
 - Add support to visualize solutions on 1D elements embedded in 2D and 3D.
 
+- Added two new modes for visualization of vector fields in 2D, placing the
+  arrows above the plotted surface and using a single color.
+
 
 Version 4.2 released on May 23, 2022
 ====================================
