@@ -114,6 +114,8 @@ Some important variables for CMake are:
 - GLVIS_MULTISAMPLE and GLVIS_MS_LINEWIDTH: See building considerations below
      for more information on these variables.
 
+- GLVIS_FONT_SIZE: Default font size for text. Default is "12".
+
 
 Some building considerations
 ============================
