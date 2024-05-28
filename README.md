@@ -238,8 +238,7 @@ Key commands
   - show vector field; vectors are uniformly scaled; the color varies with the
     magnitude (or the current *vector-to-scalar function*, see keys <kbd>u</kbd> / <kbd>U</kbd>)
   - show vector field as above, but the vectors are scaled proportionally to their magnitude
-  - show vector field; vectors are uniformly scaled; the color is from the beggining
-    of the colormap; arrows are above the surface
+  - show vector field; vectors are uniformly scaled; the color is gray; arrows are above the surface
   - show vector field as above, but the vectors are scaled proportionally to their magnitude
 - <kbd>V</kbd> – Change the scaling of the vectors relative to the default
 - <kbd>d</kbd> – Toggle the *displaced mesh* state: (see also keys <kbd>n</kbd> / <kbd>b</kbd>). The options are:

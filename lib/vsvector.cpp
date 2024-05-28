@@ -860,7 +860,7 @@ void VisualizationSceneVector::DrawVector(double px, double py, double vx,
       arrow_type = 1;
       arrow_scaling_type = 1;
 
-      if (drawvector > 3) { cval = 0.; }
+      if (drawvector > 3) { cval = HUGE_VAL; }
 
       if (drawvector == 2 || drawvector == 4)
       {
@@ -968,7 +968,7 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
    double* cp_eqn = CuttingPlane->Equation();
    params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};
    params.contains_translucent = false;
-   if (drawvector > 1)
+   if (drawvector == 2 || drawvector == 3)
    {
       scene.queue.emplace_back(params, &vector_buf);
    }
@@ -1015,8 +1015,12 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
       scene.queue.emplace_back(params, &v_nums_buf);
    }
 
-   if (drawvector == 1)
+   if (drawvector == 1 || drawvector > 3)
    {
+      if (drawvector > 3)
+      {
+         params.static_color = {.3f, .3f, .3f, 1.f};
+      }
       scene.queue.emplace_back(params, &vector_buf);
    }
 
@@ -1025,6 +1029,10 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
       if (drawmesh == 1)
       {
          params.static_color = {1.f, 0.f, 0.f, 1.f};
+      }
+      else
+      {
+         params.static_color = GetLineColor();
       }
       scene.queue.emplace_back(params, &displine_buf);
    }
