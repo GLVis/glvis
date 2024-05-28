@@ -1061,13 +1061,13 @@ void VisualizationSceneVector::glTF_Export()
                      bld,
                      vec_mesh,
                      buf,
-                     (drawvector == 1) ? black_mat : palette_mat,
+                     (drawvector == 1 || drawvector > 3) ? black_mat : palette_mat,
                      vector_buf);
       int nlines = AddLines(
                       bld,
                       vec_mesh,
                       buf,
-                      (drawvector == 1) ? black_mat : pal_lines_mat,
+                      (drawvector == 1 || drawvector > 3) ? black_mat : pal_lines_mat,
                       vector_buf);
       if (ntria == 0 || nlines == 0)
       {
