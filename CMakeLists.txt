@@ -77,6 +77,11 @@ if (NOT GLVIS_MS_LINEWIDTH)
   endif()
 endif (NOT GLVIS_MS_LINEWIDTH)
 
+# Default font size
+if (NOT GLVIS_FONT_SIZE)
+  set(GLVIS_FONT_SIZE 12)
+endif (NOT GLVIS_FONT_SIZE)
+
 #
 # Start finding everything
 #
@@ -88,6 +93,7 @@ set(_glvis_libraries)
 
 list(APPEND _glvis_compile_defs "GLVIS_MULTISAMPLE=${GLVIS_MULTISAMPLE}")
 list(APPEND _glvis_compile_defs "GLVIS_MS_LINEWIDTH=${GLVIS_MS_LINEWIDTH}")
+list(APPEND _glvis_compile_defs "GLVIS_FONT_SIZE=${GLVIS_FONT_SIZE}")
 if (NOT WIN32)
   list(APPEND _glvis_compile_defs "GLVIS_USE_LOGO")
 else()
