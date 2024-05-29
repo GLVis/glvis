@@ -1632,6 +1632,7 @@ gl3::SceneInfo VisualizationSceneVector3d::GetSceneObjs()
    {
       params.static_color = {0.3,0.3,0.3,1.0};
       scene.queue.emplace_back(params, &vector_buf);
+      params.static_color = GetLineColor();
    }
 
    // draw lines
