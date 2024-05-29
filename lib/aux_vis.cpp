@@ -1637,7 +1637,11 @@ vector<string> fc_font_patterns =
    "Arial:style=Regular:weight=80"
 };
 
+#ifdef GLVIS_FONT_SIZE
+constexpr int default_font_size = GLVIS_FONT_SIZE;
+#else
 constexpr int default_font_size = 12;
+#endif
 int font_size = default_font_size;
 
 thread_local GlVisFont glvis_font;

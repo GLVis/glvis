@@ -132,8 +132,10 @@ NOTMAC := $(subst Darwin,,$(shell uname -s))
 # Default multisampling mode and multisampling line-width
 GLVIS_MULTISAMPLE  ?= 4
 GLVIS_MS_LINEWIDTH ?= $(if $(NOTMAC),1.4,1.0)
+GLVIS_FONT_SIZE ?= 12
 DEFINES = -DGLVIS_MULTISAMPLE=$(GLVIS_MULTISAMPLE)\
  -DGLVIS_MS_LINEWIDTH=$(GLVIS_MS_LINEWIDTH)\
+ -DGLVIS_FONT_SIZE=$(GLVIS_FONT_SIZE)\
  -DGLVIS_OGL3
 
 # Enable logo setting via SDL (disabled on Windows/CMake build)

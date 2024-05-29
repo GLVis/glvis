@@ -16,6 +16,8 @@ Version 4.2.1 (development)
 
 - Add support to visualize solutions on 1D elements embedded in 2D and 3D.
 
+- Added a compilation parameter for the default font size.
+
 
 Version 4.2 released on May 23, 2022
 ====================================
