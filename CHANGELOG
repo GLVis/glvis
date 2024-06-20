@@ -12,6 +12,10 @@
 Version 4.2.1 (development)
 ===========================
 
+- Increased the default auto-refinement limits to maximum of 32 refinement
+  levels or 5M elements. Note that you may still need to press 'o' if the mesh
+  is larger and/or appears not as curved as it should be.
+
 - Significantly improved memory usage.
 
 - Add support to visualize solutions on 1D elements embedded in 2D and 3D.
