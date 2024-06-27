@@ -61,7 +61,16 @@ thread_local string      extra_caption;
 bool        secure          = socketstream::secure_default;
 
 // Global variables
-int input = 1;
+enum InputOptions
+{
+   INPUT_SERVER_MODE = 1,
+   INPUT_MESH = 2,
+   INPUT_SCALAR_SOL = 4,
+   INPUT_VECTOR_SOL = 8,
+   //...
+   INPUT_PARALLEL = 256,
+};
+int input = INPUT_SERVER_MODE;
 thread_local StreamState stream_state;
 thread_local VisualizationSceneScalarData *vs = NULL;
 extern thread_local GLVisCommand* glvis_command;
@@ -1258,16 +1267,16 @@ int main (int argc, char *argv[])
    // set options
    if (mesh_file != string_none)
    {
-      input |= 2;
+      input |= INPUT_MESH;
    }
    if (sol_file != string_none)
    {
-      input |= 4;
+      input |= INPUT_SCALAR_SOL;
    }
    if (vec_sol_file != string_none)
    {
       sol_file = vec_sol_file;
-      input |= 8;
+      input |= INPUT_VECTOR_SOL;
    }
    if (gfunc_file != string_none)
    {
@@ -1276,7 +1285,7 @@ int main (int argc, char *argv[])
    }
    if (np > 0)
    {
-      input |= 256;
+      input |= INPUT_PARALLEL;
    }
    if (arg_keys != string_none)
    {
@@ -1341,8 +1350,14 @@ int main (int argc, char *argv[])
    }
 
    // print help for wrong input
-   if (!(input == 1 || input == 3 || input == 7 || input == 11 || input == 259 ||
-         (stream_state.is_gf && (input == 3 || input == 259))))
+   if (!(input == INPUT_SERVER_MODE
+         || input == (INPUT_SERVER_MODE | INPUT_MESH)
+         || input == (INPUT_SERVER_MODE | INPUT_MESH | INPUT_SCALAR_SOL)
+         || input == (INPUT_SERVER_MODE | INPUT_MESH | INPUT_VECTOR_SOL)
+         || input == (INPUT_SERVER_MODE | INPUT_MESH | INPUT_PARALLEL)
+         || (stream_state.is_gf
+             && (input == (INPUT_SERVER_MODE | INPUT_MESH)
+                 || input == (INPUT_SERVER_MODE | INPUT_MESH | INPUT_PARALLEL)))))
    {
       cout << "Invalid combination of mesh/solution options!\n\n";
       PrintSampleUsage(cout);
@@ -1360,7 +1375,7 @@ int main (int argc, char *argv[])
 #endif
 
    // server mode, read the mesh and the solution from a socket
-   if (input == 1)
+   if (input == INPUT_SERVER_MODE)
    {
       // Run server in new thread
       std::thread serverThread{GLVisServer, portnum, save_stream,
@@ -1374,7 +1389,7 @@ int main (int argc, char *argv[])
    }
    else  // input != 1, non-server mode
    {
-      if (input & 256)
+      if (input & INPUT_PARALLEL)
       {
          ReadParallel(np, stream_state);
       }
@@ -1383,8 +1398,8 @@ int main (int argc, char *argv[])
          ReadSerial(stream_state);
       }
 
-      bool use_vector_soln = (input & 8);
-      bool use_soln = (input & 4);
+      bool use_vector_soln = (input & INPUT_VECTOR_SOL);
+      bool use_soln = (input & INPUT_SCALAR_SOL);
       int field_type;
       if (use_vector_soln)
       {
@@ -1433,7 +1448,7 @@ void ReadSerial(StreamState& state)
 
    state.mesh.reset(new Mesh(meshin, 1, 0, state.fix_elem_orient));
 
-   if (state.is_gf || (input & 4) || (input & 8))
+   if (state.is_gf || (input & INPUT_SCALAR_SOL) || (input & INPUT_VECTOR_SOL))
    {
       // get the solution from file
       bool freesolin = false;
@@ -1458,14 +1473,14 @@ void ReadSerial(StreamState& state)
          state.grid_f.reset(new GridFunction(state.mesh.get(), *solin));
          SetGridFunction(state);
       }
-      else if (input & 4)
+      else if (input & INPUT_SCALAR_SOL)
       {
          // get rid of NetGen's info line
          char buff[128];
          solin->getline(buff,128);
          state.sol.Load(*solin, state.mesh->GetNV());
       }
-      else if (input & 8)
+      else if (input & INPUT_VECTOR_SOL)
       {
          state.solu.Load(*solin, state.mesh->GetNV());
          state.solv.Load(*solin, state.mesh->GetNV());
@@ -1512,11 +1527,11 @@ void SetGridFunction(StreamState& state)
    if (state.grid_f->VectorDim() == 1)
    {
       state.grid_f->GetNodalValues(state.sol);
-      input |= 4;
+      input |= INPUT_SCALAR_SOL;
    }
    else
    {
-      input |= 8;
+      input |= INPUT_VECTOR_SOL;
    }
 }
 
