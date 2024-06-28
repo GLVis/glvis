@@ -147,6 +147,21 @@ void StreamState::SetMeshSolution()
    }
 }
 
+void StreamState::SetQuadSolution(QuadSolution type)
+{
+   //if(type == QuadSolution::HO_L2)
+   {
+      //assume identical order
+      const int order = quad_f->GetIntRule(0).GetOrder()/2;//<---Gauss-Legendre
+      FiniteElementCollection *fec = new L2_FECollection(order, mesh->Dimension());
+      FiniteElementSpace *fes = new FiniteElementSpace(mesh.get(), fec,
+                                                       quad_f->GetVDim(), Ordering::byVDIM);
+      GridFunction *gf = new GridFunction(fes);
+      gf->MakeOwner(fec);
+      *gf = *quad_f;
+      grid_f.reset(gf);
+   }
+}
 
 // Read the content of an input stream (e.g. from socket/file)
 StreamState::FieldType StreamState::ReadStream(istream &is,
@@ -235,6 +250,7 @@ StreamState::FieldType StreamState::ReadStream(istream &is,
    {
       mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
       quad_f.reset(new QuadratureFunction(mesh.get(), is));
+      SetQuadSolution();
       field_type = (quad_f->GetVDim() == 1) ? FieldType::SCALAR : FieldType::VECTOR;
    }
    else if (data_type == "mesh")
@@ -442,6 +458,7 @@ StreamState::FieldType StreamState::ReadStreams(const StreamCollection&
    else if (qf_count > 0)
    {
       CollectQuadratures(qf_array, nproc);
+      SetQuadSolution();
       field_type = (quad_f->GetVDim() == 1) ? FieldType::SCALAR : FieldType::VECTOR;
    }
    else

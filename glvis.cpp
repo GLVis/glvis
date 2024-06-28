@@ -1609,6 +1609,8 @@ void SetQuadFunction(StreamState& state)
    {
       input |= INPUT_VECTOR_SOL;
    }
+
+   state.SetQuadSolution();
 }
 
 void ReadParallel(int np, StreamState& state)

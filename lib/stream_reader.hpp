@@ -46,6 +46,12 @@ struct StreamState
       MAX
    };
 
+   enum class QuadSolution
+   {
+      LOR_GLL,
+      HO_L2,
+   };
+
    /// Helper function for visualizing 1D data
    void Extrude1DMeshAndSolution();
 
@@ -54,6 +60,9 @@ struct StreamState
 
    /// Set a (checkerboard) solution when only the mesh is given
    void SetMeshSolution();
+
+   /// Set a quadrature function solution producing a proxy grid function
+   void SetQuadSolution(QuadSolution type = QuadSolution::LOR_GLL);
 
    FieldType ReadStream(std::istream &is, const std::string &data_type);
 
