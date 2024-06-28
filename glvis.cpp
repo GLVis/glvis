@@ -1471,7 +1471,11 @@ void PrintSampleUsage(ostream &os)
       "Visualize mesh and solution (grid function):\n"
       "   glvis -m <mesh_file> -g <grid_function_file> [-gc <component>]\n"
       "Visualize parallel mesh and solution (grid function):\n"
-      "   glvis -np <#proc> -m <mesh_prefix> [-g <grid_function_prefix>]\n\n"
+      "   glvis -np <#proc> -m <mesh_prefix> [-g <grid_function_prefix>]\n"
+      "Visualize mesh and quadrature function:\n"
+      "   glvis -m <mesh_file> -q <quadrature_function_file> [-qc <component>]\n"
+      "Visualize parallel mesh and quadrature function:\n"
+      "   glvis -np <#proc> -m <mesh_prefix> [-q <quadrature_function_prefix>]\n\n"
       "All Options:\n";
 }
 
