@@ -1133,9 +1133,18 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          {
             new_session.state.ReadStreams(input_streams);
             ofs.precision(8);
-            ofs << "solution\n";
-            new_session.state.mesh->Print(ofs);
-            new_session.state.grid_f->Save(ofs);
+            if (new_session.state.grid_f)
+            {
+               ofs << "solution\n";
+               new_session.state.mesh->Print(ofs);
+               new_session.state.grid_f->Save(ofs);
+            }
+            if (new_session.state.quad_f)
+            {
+               ofs << "quadrature\n";
+               new_session.state.mesh->Print(ofs);
+               new_session.state.quad_f->Save(ofs);
+            }
          }
          ofs.close();
          cout << "Data saved in " << tmp_file << endl;
@@ -1801,23 +1810,7 @@ int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,
       state.mesh.reset(new Mesh(mesh_array, np));
       if (sol_prefix)
       {
-         //assume the same vdim
-         const int vdim = qf_array[0]->GetVDim();
-         //assume the same quadrature rule
-         QuadratureSpace *qspace = new QuadratureSpace(*state.mesh,
-                                                       qf_array[0]->GetIntRule(0));
-         state.quad_f.reset(new QuadratureFunction(qspace, vdim));
-         state.quad_f->SetOwnsSpace(true);
-         real_t *g_data = state.quad_f->GetData();
-         for (int p = 0; p < np; p++)
-         {
-            const real_t *l_data = qf_array[p]->GetData();
-            const int l_size = qf_array[p]->Size();
-            MFEM_ASSERT(g_data + l_size >= state.quad_f->GetData() + state.quad_f->Size(),
-                        "Local parts do not fit to the global quadrature function!");
-            memcpy(g_data, l_data, l_size * sizeof(real_t));
-            g_data += l_size;
-         }
+         state.CollectQuadratures(qf_array, np);
       }
    }
 

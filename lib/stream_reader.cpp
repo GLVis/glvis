@@ -62,6 +62,27 @@ void StreamState::Extrude1DMeshAndSolution()
    mesh.reset(mesh2d);
 }
 
+void StreamState::CollectQuadratures(QuadratureFunction *qf_array[],
+                                     int npieces)
+{
+   //assume the same vdim
+   const int vdim = qf_array[0]->GetVDim();
+   //assume the same quadrature rule
+   QuadratureSpace *qspace = new QuadratureSpace(*mesh,
+                                                 qf_array[0]->GetIntRule(0));
+   quad_f.reset(new QuadratureFunction(qspace, vdim));
+   quad_f->SetOwnsSpace(true);
+   real_t *g_data = quad_f->GetData();
+   for (int p = 0; p < npieces; p++)
+   {
+      const real_t *l_data = qf_array[p]->GetData();
+      const int l_size = qf_array[p]->Size();
+      MFEM_ASSERT(g_data + l_size >= quad_f->GetData() + quad_f->Size(),
+                  "Local parts do not fit to the global quadrature function!");
+      memcpy(g_data, l_data, l_size * sizeof(real_t));
+      g_data += l_size;
+   }
+}
 
 void StreamState::SetMeshSolution()
 {
@@ -198,6 +219,12 @@ int StreamState::ReadStream(istream &is, const string &data_type)
       mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
       grid_f.reset(new GridFunction(mesh.get(), is));
       field_type = (grid_f->VectorDim() == 1) ? 0 : 1;
+   }
+   else if (data_type == "quadrature")
+   {
+      mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
+      quad_f.reset(new QuadratureFunction(mesh.get(), is));
+      field_type = (quad_f->GetVDim() == 1) ? 0 : 1;
    }
    else if (data_type == "mesh")
    {
@@ -340,10 +367,12 @@ int StreamState::ReadStreams(const StreamCollection& input_streams)
    const int nproc = input_streams.size();
    Array<Mesh *> mesh_array(nproc);
    Array<GridFunction *> gf_array(nproc);
+   Array<QuadratureFunction *> qf_array(nproc);
 
    std::string data_type;
 
    int gf_count = 0;
+   int qf_count = 0;
    int field_type = 0;
 
    for (int p = 0; p < nproc; p++)
@@ -371,7 +400,12 @@ int StreamState::ReadStreams(const StreamCollection& input_streams)
          }
       }
       gf_array[p] = NULL;
-      if (data_type != "mesh")
+      if (data_type == "quadrature")
+      {
+         qf_array[p] = new QuadratureFunction(mesh_array[p], isock);
+         qf_count++;
+      }
+      else if (data_type != "mesh")
       {
          gf_array[p] = new GridFunction(mesh_array[p], isock);
          gf_count++;
@@ -381,21 +415,27 @@ int StreamState::ReadStreams(const StreamCollection& input_streams)
 #endif
    }
 
-   if (gf_count > 0 && gf_count != nproc)
+   if ((gf_count > 0 && gf_count != nproc)
+       || (qf_count > 0 && qf_count != nproc))
    {
       mfem_error("Input streams contain a mixture of data types!");
    }
 
    mesh.reset(new Mesh(mesh_array, nproc));
-   if (gf_count == 0)
-   {
-      SetMeshSolution();
-      field_type = 2;
-   }
-   else
+   if (gf_count > 0)
    {
       grid_f.reset(new GridFunction(mesh.get(), gf_array, nproc));
       field_type = (grid_f->VectorDim() == 1) ? 0 : 1;
+   }
+   else if (qf_count > 0)
+   {
+      CollectQuadratures(qf_array, nproc);
+      field_type = (quad_f->GetVDim() == 1) ? 0 : 1;
+   }
+   else
+   {
+      SetMeshSolution();
+      field_type = 2;
    }
 
    for (int p = 0; p < nproc; p++)

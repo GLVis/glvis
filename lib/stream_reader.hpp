@@ -37,6 +37,9 @@ struct StreamState
    /// Helper function for visualizing 1D data
    void Extrude1DMeshAndSolution();
 
+   /// Helper function to build the quadrature function from pieces
+   void CollectQuadratures(mfem::QuadratureFunction *qf_array[], int npieces);
+
    /// Set a (checkerboard) solution when only the mesh is given
    void SetMeshSolution();
 
