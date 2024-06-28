@@ -138,10 +138,10 @@ void StreamState::SetMeshSolution()
 
 
 // Read the content of an input stream (e.g. from socket/file)
-int StreamState::ReadStream(istream &is, const string &data_type)
+StreamState::FieldType StreamState::ReadStream(istream &is,
+                                               const string &data_type)
 {
-   // 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
-   int field_type = 0;
+   FieldType field_type = FieldType::SCALAR;
    keys.clear();
    if (data_type == "fem2d_data")
    {
@@ -150,7 +150,7 @@ int StreamState::ReadStream(istream &is, const string &data_type)
    }
    else if (data_type == "vfem2d_data" || data_type == "vfem2d_data_keys")
    {
-      field_type = 1;
+      field_type = FieldType::VECTOR;
       mesh.reset(new Mesh(is, 0, 0, fix_elem_orient));
       solu.Load(is, mesh->GetNV());
       solv.Load(is, mesh->GetNV());
@@ -166,7 +166,7 @@ int StreamState::ReadStream(istream &is, const string &data_type)
    }
    else if (data_type == "vfem3d_data" || data_type == "vfem3d_data_keys")
    {
-      field_type = 1;
+      field_type = FieldType::VECTOR;
       mesh.reset(new Mesh(is, 0, 0, fix_elem_orient));
       solu.Load(is, mesh->GetNV());
       solv.Load(is, mesh->GetNV());
@@ -187,7 +187,7 @@ int StreamState::ReadStream(istream &is, const string &data_type)
    }
    else if (data_type == "vfem2d_gf_data" || data_type == "vfem2d_gf_data_keys")
    {
-      field_type = 1;
+      field_type = FieldType::VECTOR;
       mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
       grid_f.reset(new GridFunction(mesh.get(), is));
       if (data_type == "vfem2d_gf_data_keys")
@@ -206,7 +206,7 @@ int StreamState::ReadStream(istream &is, const string &data_type)
    }
    else if (data_type == "vfem3d_gf_data" || data_type == "vfem3d_gf_data_keys")
    {
-      field_type = 1;
+      field_type = FieldType::VECTOR;
       mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
       grid_f.reset(new GridFunction(mesh.get(), is));
       if (data_type == "vfem3d_gf_data_keys")
@@ -218,19 +218,19 @@ int StreamState::ReadStream(istream &is, const string &data_type)
    {
       mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
       grid_f.reset(new GridFunction(mesh.get(), is));
-      field_type = (grid_f->VectorDim() == 1) ? 0 : 1;
+      field_type = (grid_f->VectorDim() == 1) ? FieldType::SCALAR : FieldType::VECTOR;
    }
    else if (data_type == "quadrature")
    {
       mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
       quad_f.reset(new QuadratureFunction(mesh.get(), is));
-      field_type = (quad_f->GetVDim() == 1) ? 0 : 1;
+      field_type = (quad_f->GetVDim() == 1) ? FieldType::SCALAR : FieldType::VECTOR;
    }
    else if (data_type == "mesh")
    {
       mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
       SetMeshSolution();
-      field_type = 2;
+      field_type = FieldType::MESH;
    }
    else if (data_type == "raw_scalar_2d")
    {
@@ -345,16 +345,16 @@ int StreamState::ReadStream(istream &is, const string &data_type)
          delete vertices[i];
       }
 
-      field_type = 0;
+      field_type = FieldType::SCALAR;
    }
    else
    {
-      field_type = -1;
+      field_type = FieldType::UNKNOWN;
       cerr << "Unknown data format" << endl;
       cerr << data_type << endl;
    }
 
-   if (field_type >= 0 && field_type <= 2)
+   if (field_type > FieldType::MIN && field_type < FieldType::MAX)
    {
       Extrude1DMeshAndSolution();
    }
@@ -362,7 +362,8 @@ int StreamState::ReadStream(istream &is, const string &data_type)
    return field_type;
 }
 
-int StreamState::ReadStreams(const StreamCollection& input_streams)
+StreamState::FieldType StreamState::ReadStreams(const StreamCollection&
+                                                input_streams)
 {
    const int nproc = input_streams.size();
    Array<Mesh *> mesh_array(nproc);
@@ -373,7 +374,7 @@ int StreamState::ReadStreams(const StreamCollection& input_streams)
 
    int gf_count = 0;
    int qf_count = 0;
-   int field_type = 0;
+   FieldType field_type = FieldType::SCALAR;
 
    for (int p = 0; p < nproc; p++)
    {
@@ -425,17 +426,17 @@ int StreamState::ReadStreams(const StreamCollection& input_streams)
    if (gf_count > 0)
    {
       grid_f.reset(new GridFunction(mesh.get(), gf_array, nproc));
-      field_type = (grid_f->VectorDim() == 1) ? 0 : 1;
+      field_type = (grid_f->VectorDim() == 1) ? FieldType::SCALAR : FieldType::VECTOR;
    }
    else if (qf_count > 0)
    {
       CollectQuadratures(qf_array, nproc);
-      field_type = (quad_f->GetVDim() == 1) ? 0 : 1;
+      field_type = (quad_f->GetVDim() == 1) ? FieldType::SCALAR : FieldType::VECTOR;
    }
    else
    {
       SetMeshSolution();
-      field_type = 2;
+      field_type = FieldType::MESH;
    }
 
    for (int p = 0; p < nproc; p++)

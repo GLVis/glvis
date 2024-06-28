@@ -34,6 +34,18 @@ struct StreamState
    bool save_coloring{false};
    bool keep_attr{false};
 
+   enum class FieldType
+   {
+      UNKNOWN = -1,
+      MIN = -1,
+      //----------
+      SCALAR,
+      VECTOR,
+      MESH,
+      //----------
+      MAX
+   };
+
    /// Helper function for visualizing 1D data
    void Extrude1DMeshAndSolution();
 
@@ -43,9 +55,9 @@ struct StreamState
    /// Set a (checkerboard) solution when only the mesh is given
    void SetMeshSolution();
 
-   int ReadStream(std::istream &is, const std::string &data_type);
+   FieldType ReadStream(std::istream &is, const std::string &data_type);
 
-   int ReadStreams(const StreamCollection& input_streams);
+   FieldType ReadStreams(const StreamCollection& input_streams);
 
    /// Sets a new mesh and solution from another StreamState object, and
    /// updates the given VisualizationScene pointer with the new data.

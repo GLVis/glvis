@@ -81,7 +81,8 @@ thread_local communication_thread *comm_thread = NULL;
 thread_local GeometryRefiner GLVisGeometryRefiner;
 
 const char *window_titles[] = { "GLVis [scalar data]",
-                                "GLVis [vector data]", "GLVis [mesh]"
+                                "GLVis [vector data]",
+                                "GLVis [mesh]"
                               };
 istream *script = NULL;
 int scr_running = 0;
@@ -113,16 +114,17 @@ int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,
                                const char *sol_prefix, StreamState& state);
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
-// 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
-bool GLVisInitVis(int field_type, StreamCollection input_streams)
+bool GLVisInitVis(StreamState::FieldType field_type,
+                  StreamCollection input_streams)
 {
-   if (field_type < 0 || field_type > 2)
+   if (field_type < StreamState::FieldType::MIN
+       || field_type > StreamState::FieldType::MAX)
    {
       return false;
    }
 
    const char *win_title = (window_title == string_default) ?
-                           window_titles[field_type] : window_title;
+                           window_titles[(int)field_type] : window_title;
 
    if (InitVisualization(win_title, window_x, window_y, window_w, window_h))
    {
@@ -138,7 +140,8 @@ bool GLVisInitVis(int field_type, StreamCollection input_streams)
    }
 
    double mesh_range = -1.0;
-   if (field_type == 0 || field_type == 2)
+   if (field_type == StreamState::FieldType::SCALAR
+       || field_type == StreamState::FieldType::MESH)
    {
       if (stream_state.grid_f)
       {
@@ -160,7 +163,7 @@ bool GLVisInitVis(int field_type, StreamCollection input_streams)
          {
             vss->SetGridFunction(*stream_state.grid_f);
          }
-         if (field_type == 2)
+         if (field_type == StreamState::FieldType::MESH)
          {
             vs->OrthogonalProjection = 1;
             vs->SetLight(false);
@@ -179,7 +182,7 @@ bool GLVisInitVis(int field_type, StreamCollection input_streams)
          {
             vss->SetGridFunction(stream_state.grid_f.get());
          }
-         if (field_type == 2)
+         if (field_type == StreamState::FieldType::MESH)
          {
             if (stream_state.mesh->Dimension() == 3)
             {
@@ -197,7 +200,7 @@ bool GLVisInitVis(int field_type, StreamCollection input_streams)
             vss->ToggleDrawMesh();
          }
       }
-      if (field_type == 2)
+      if (field_type == StreamState::FieldType::MESH)
       {
          if (stream_state.grid_f)
          {
@@ -209,7 +212,7 @@ bool GLVisInitVis(int field_type, StreamCollection input_streams)
          }
       }
    }
-   else if (field_type == 1)
+   else if (field_type == StreamState::FieldType::VECTOR)
    {
       if (stream_state.mesh->SpaceDimension() == 2)
       {
@@ -252,7 +255,8 @@ bool GLVisInitVis(int field_type, StreamCollection input_streams)
          vs->SetValueRange(-mesh_range, mesh_range);
          vs->SetAutoscale(0);
       }
-      if (stream_state.mesh->SpaceDimension() == 2 && field_type == 2)
+      if (stream_state.mesh->SpaceDimension() == 2
+          && field_type == StreamState::FieldType::MESH)
       {
          SetVisualizationScene(vs, 2, stream_state.keys.c_str());
       }
@@ -880,7 +884,9 @@ void PlayScript(istream &scr)
          {
             plot_caption = c_plot_caption;
          }
-         if (GLVisInitVis((stream_state.grid_f->VectorDim() == 1) ? 0 : 1, {}))
+         if (GLVisInitVis((stream_state.grid_f->VectorDim() == 1) ?
+                          StreamState::FieldType::SCALAR : StreamState::FieldType::VECTOR,
+                          {}))
          {
             GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
             GLVisStartVis();
@@ -904,7 +910,7 @@ struct Session
 {
    StreamCollection input_streams;
    StreamState state;
-   int ft = -1;
+   StreamState::FieldType ft = StreamState::FieldType::UNKNOWN;
    std::thread handler;
 
    Session(bool fix_elem_orient,
@@ -914,7 +920,7 @@ struct Session
       state.save_coloring = save_coloring;
    }
 
-   Session(int other_ft, StreamState other_state)
+   Session(StreamState::FieldType other_ft, StreamState other_state)
       : state(std::move(other_state))
       , ft(other_ft)
    { }
@@ -927,7 +933,7 @@ struct Session
    void StartSession()
    {
       auto funcThread =
-         [](StreamState thread_state, int ftype, StreamCollection is)
+         [](StreamState thread_state, StreamState::FieldType ftype, StreamCollection is)
       {
          // Set thread-local stream state
          stream_state = std::move(thread_state);
@@ -1433,14 +1439,15 @@ int main (int argc, char *argv[])
 
       bool use_vector_soln = (input & INPUT_VECTOR_SOL);
       bool use_soln = (input & INPUT_SCALAR_SOL);
-      int field_type;
+      StreamState::FieldType field_type;
       if (use_vector_soln)
       {
-         field_type = 1;
+         field_type = StreamState::FieldType::VECTOR;
       }
       else
       {
-         field_type = (use_soln) ? 0 : 2;
+         field_type = (use_soln) ? StreamState::FieldType::SCALAR
+                      : StreamState::FieldType::MESH;
       }
       Session single_session(field_type, std::move(stream_state));
       single_session.StartSession();
