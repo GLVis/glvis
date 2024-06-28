@@ -164,6 +164,8 @@ void StreamState::SetQuadSolution(QuadSolution type)
       FiniteElementSpace *fes = new FiniteElementSpace(mesh.get(), fec,
                                                        quad_f->GetVDim(), Ordering::byVDIM);
       MFEM_ASSERT(quad_f->Size() == fes->GetVSize(), "Size mismatch");
+      cout << "Representing quadrature by grid function of order "
+           << order << endl;
       GridFunction *gf = new GridFunction(fes, *quad_f, 0);
       gf->MakeOwner(fec);
       grid_f.reset(gf);
