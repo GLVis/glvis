@@ -1376,18 +1376,21 @@ int main (int argc, char *argv[])
       return 0;
    }
 
+   //turn off the server mode if other options are present
+   if (input & ~INPUT_SERVER_MODE) { input &= ~INPUT_SERVER_MODE; }
+
    // print help for wrong input
    if (!(input == INPUT_SERVER_MODE
-         || input == (INPUT_SERVER_MODE | INPUT_MESH)
-         || input == (INPUT_SERVER_MODE | INPUT_MESH | INPUT_SCALAR_SOL)
-         || input == (INPUT_SERVER_MODE | INPUT_MESH | INPUT_VECTOR_SOL)
-         || input == (INPUT_SERVER_MODE | INPUT_MESH | INPUT_PARALLEL)
+         || input == (INPUT_MESH)
+         || input == (INPUT_MESH | INPUT_SCALAR_SOL)
+         || input == (INPUT_MESH | INPUT_VECTOR_SOL)
+         || input == (INPUT_MESH | INPUT_PARALLEL)
          || (stream_state.is_gf
-             && (input == (INPUT_SERVER_MODE | INPUT_MESH)
-                 || input == (INPUT_SERVER_MODE | INPUT_MESH | INPUT_PARALLEL)))
+             && (input == (INPUT_MESH)
+                 || input == (INPUT_MESH | INPUT_PARALLEL)))
          || (stream_state.is_qf
-             && (input == (INPUT_SERVER_MODE | INPUT_MESH)
-                 || input == (INPUT_SERVER_MODE | INPUT_MESH | INPUT_PARALLEL)))))
+             && (input == (INPUT_MESH)
+                 || input == (INPUT_MESH | INPUT_PARALLEL)))))
    {
       cout << "Invalid combination of mesh/solution options!\n\n";
       PrintSampleUsage(cout);
