@@ -46,19 +46,19 @@ void StreamState::Extrude1DMeshAndSolution()
 
    Mesh *mesh2d = Extrude1D(mesh.get(), 1, 0.1*(xmax - xmin));
 
-   if (grid_f)
-   {
-      GridFunction *grid_f_2d =
-         Extrude1DGridFunction(mesh.get(), mesh2d, grid_f.get(), 1);
-
-      grid_f.reset(grid_f_2d);
-   }
-   else if (quad_f)
+   if (quad_f)
    {
       QuadratureFunction *quad_f_2d =
          Extrude1DQuadFunction(mesh.get(), mesh2d, quad_f.get(), 1);
 
       quad_f.reset(quad_f_2d);
+   }
+   else if (grid_f)
+   {
+      GridFunction *grid_f_2d =
+         Extrude1DGridFunction(mesh.get(), mesh2d, grid_f.get(), 1);
+
+      grid_f.reset(grid_f_2d);
    }
    else if (sol.Size() == mesh->GetNV())
    {
