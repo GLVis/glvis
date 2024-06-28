@@ -322,6 +322,46 @@ int ScriptReadSolution(istream &scr, StreamState& state)
    return 0;
 }
 
+int ScriptReadQuadrature(istream &scr, StreamState& state)
+{
+   string mword,sword;
+
+   cout << "Script: quadrature: " << flush;
+   // read the mesh
+   scr >> ws >> mword; // mesh filename (can't contain spaces)
+   cout << "mesh: " << mword << "; " << flush;
+   named_ifgzstream imesh(mword.c_str());
+   if (!imesh)
+   {
+      cout << "Can not open mesh file: " << mword << endl;
+      return 1;
+   }
+   state.mesh.reset(new Mesh(imesh, 1, 0, state.fix_elem_orient));
+
+   // read the quadrature (QuadratureFunction)
+   scr >> ws >> sword;
+   if (sword == mword) // mesh and quadrature in the same file
+   {
+      cout << "quadrature: " << mword << endl;
+      state.quad_f.reset(new QuadratureFunction(state.mesh.get(), imesh));
+   }
+   else
+   {
+      cout << "quadrature: " << sword << endl;
+      ifgzstream isol(sword.c_str());
+      if (!isol)
+      {
+         cout << "Can not open quadrature file: " << sword << endl;
+         return 2;
+      }
+      state.quad_f.reset(new QuadratureFunction(state.mesh.get(), isol));
+   }
+
+   state.Extrude1DMeshAndSolution();
+
+   return 0;
+}
+
 int ScriptReadParSolution(istream &scr, StreamState& state)
 {
    int np, scr_keep_attr, err_read;
@@ -349,6 +389,40 @@ int ScriptReadParSolution(istream &scr, StreamState& state)
 
    err_read = ReadParMeshAndGridFunction(np, mesh_prefix.c_str(),
                                          sol_prefix.c_str(), state);
+   if (!err_read)
+   {
+      state.Extrude1DMeshAndSolution();
+   }
+   return err_read;
+}
+
+int ScriptReadParQuadrature(istream &scr, StreamState& state)
+{
+   int np, scr_keep_attr, err_read;
+   string mesh_prefix, quad_prefix;
+
+   cout << "Script: pquadrature: " << flush;
+   // read number of processors
+   scr >> np;
+   cout << "# processors: " << np << "; " << flush;
+   // read the mesh prefix
+   scr >> ws >> mesh_prefix; // mesh prefix (can't contain spaces)
+   cout << "mesh prefix: " << mesh_prefix << "; " << flush;
+   scr >> ws >> scr_keep_attr;
+   if (scr_keep_attr)
+   {
+      cout << "(real attributes); " << flush;
+   }
+   else
+   {
+      cout << "(processor attributes); " << flush;
+   }
+   // read the quadrature prefix
+   scr >> ws >> quad_prefix;
+   cout << "quadrature prefix: " << quad_prefix << endl;
+
+   err_read = ReadParMeshAndQuadFunction(np, mesh_prefix.c_str(),
+                                         quad_prefix.c_str(), state);
    if (!err_read)
    {
       state.Extrude1DMeshAndSolution();
@@ -455,13 +529,22 @@ void ExecuteScriptCommand()
             scr_level = 0;
          }
       }
-      else if (word == "solution" || word == "mesh" || word == "psolution")
+      else if (word == "solution" || word == "mesh" || word == "psolution"
+               || word == "quadrature" || word == "pquadrature")
       {
          StreamState new_state;
 
          if (word == "solution")
          {
             if (ScriptReadSolution(scr, new_state))
+            {
+               done_one_command = 1;
+               continue;
+            }
+         }
+         else if (word == "quadrature")
+         {
+            if (ScriptReadQuadrature(scr, new_state))
             {
                done_one_command = 1;
                continue;
@@ -484,6 +567,14 @@ void ExecuteScriptCommand()
          else if (word == "psolution")
          {
             if (ScriptReadParSolution(scr, new_state))
+            {
+               done_one_command = 1;
+               continue;
+            }
+         }
+         else if (word == "pquadrature")
+         {
+            if (ScriptReadParQuadrature(scr, new_state))
             {
                done_one_command = 1;
                continue;
@@ -843,9 +934,29 @@ void PlayScript(istream &scr)
          // start the visualization
          break;
       }
+      else if (word == "quadrature")
+      {
+         if (ScriptReadQuadrature(scr, stream_state))
+         {
+            return;
+         }
+
+         // start the visualization
+         break;
+      }
       else if (word == "psolution")
       {
          if (ScriptReadParSolution(scr, stream_state))
+         {
+            return;
+         }
+
+         // start the visualization
+         break;
+      }
+      else if (word == "pquadrature")
+      {
+         if (ScriptReadParQuadrature(scr, stream_state))
          {
             return;
          }
