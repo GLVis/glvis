@@ -570,6 +570,8 @@ bool StreamState::SetNewMeshAndSolution(StreamState new_state,
    {
       std::unique_ptr<mfem::Mesh> new_m = std::move(new_state.mesh);
       std::unique_ptr<mfem::GridFunction> new_g = std::move(new_state.grid_f);
+      std::unique_ptr<mfem::Mesh> new_mq = std::move(new_state.mesh_quad);
+      std::unique_ptr<mfem::QuadratureFunction> new_q = std::move(new_state.quad_f);
       if (new_m->SpaceDimension() == 2)
       {
          if (new_g->VectorDim() == 1)
@@ -606,6 +608,8 @@ bool StreamState::SetNewMeshAndSolution(StreamState new_state,
       }
       grid_f = std::move(new_g);
       mesh = std::move(new_m);
+      quad_f = std::move(new_q);
+      mesh_quad = std::move(new_mq);
       return true;
    }
    else
