@@ -156,9 +156,9 @@ void StreamState::SetQuadSolution(QuadSolution type)
       FiniteElementCollection *fec = new L2_FECollection(order, mesh->Dimension());
       FiniteElementSpace *fes = new FiniteElementSpace(mesh.get(), fec,
                                                        quad_f->GetVDim(), Ordering::byVDIM);
-      GridFunction *gf = new GridFunction(fes);
+      MFEM_ASSERT(quad_f->Size() == fes->GetVSize(), "Size mismatch");
+      GridFunction *gf = new GridFunction(fes, *quad_f, 0);
       gf->MakeOwner(fec);
-      *gf = *quad_f;
       grid_f.reset(gf);
    }
 }
