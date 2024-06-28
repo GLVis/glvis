@@ -26,6 +26,7 @@ struct StreamState
    mfem::Vector sol, solu, solv, solw, normals;
    std::string keys;
    std::unique_ptr<mfem::Mesh> mesh;
+   std::unique_ptr<mfem::Mesh> mesh_quad;
    std::unique_ptr<mfem::GridFunction> grid_f;
    std::unique_ptr<mfem::QuadratureFunction> quad_f;
    int is_gf{0};

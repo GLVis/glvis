@@ -152,6 +152,12 @@ void StreamState::SetQuadSolution(QuadSolution type)
 {
    //assume identical order
    const int order = quad_f->GetIntRule(0).GetOrder()/2;//<---Gauss-Legendre
+   //use the original mesh when available
+   if (mesh_quad.get())
+   {
+      mesh.swap(mesh_quad);
+      mesh_quad.reset();
+   }
    if (type == QuadSolution::LOR_GLL)
    {
       const int ref_factor = order + 1;
@@ -168,6 +174,7 @@ void StreamState::SetQuadSolution(QuadSolution type)
          GridFunction *gf = new GridFunction(fes, *quad_f, 0);
          gf->MakeOwner(fec);
          grid_f.reset(gf);
+         mesh.swap(mesh_quad);
          mesh.reset(mesh_lor);
       }
       else
@@ -511,7 +518,14 @@ void StreamState::WriteStream(std::ostream &os)
    if (quad_f)
    {
       os << "quadrature\n";
-      mesh->Print(os);
+      if (mesh_quad.get())
+      {
+         mesh_quad->Print(os);
+      }
+      else
+      {
+         mesh->Print(os);
+      }
       quad_f->Save(os);
    }
    else if (grid_f)
