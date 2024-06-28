@@ -47,9 +47,11 @@ const char *mesh_file       = string_none;
 const char *sol_file        = string_none;
 const char *vec_sol_file    = string_none;
 const char *gfunc_file      = string_none;
+const char *qfunc_file      = string_none;
 const char *arg_keys        = string_none;
 int         pad_digits      = 6;
 int         gf_component    = -1;
+int         qf_component    = -1;
 int         window_x        = 0; // not a command line option
 int         window_y        = 0; // not a command line option
 int         window_w        = 400;
@@ -98,10 +100,16 @@ void ReadSerial(StreamState& state);
 // choose grid function component and set the input flag
 void SetGridFunction(StreamState& state);
 
+// choose quadrature function component and set the input flag
+void SetQuadFunction(StreamState& state);
+
 // read the mesh and the solution from multiple files
 void ReadParallel(int np, StreamState& state);
 
 int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
+                               const char *sol_prefix, StreamState& state);
+
+int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,
                                const char *sol_prefix, StreamState& state);
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
@@ -1183,6 +1191,11 @@ int main (int argc, char *argv[])
    args.AddOption(&gf_component, "-gc", "--grid-function-component",
                   "Select a grid function component, [0-<num-comp>) or"
                   " -1 for all.");
+   args.AddOption(&qfunc_file, "-q", "--quadrature-function",
+                  "Quadrature function file to visualize.");
+   args.AddOption(&qf_component, "-qc", "--quadrature-function-component",
+                  "Select a quadrature function component, [0-<num-comp>) or"
+                  " -1 for all.");
    args.AddOption(&sol_file, "-s", "--scalar-solution",
                   "Scalar solution (vertex values) file to visualize.");
    args.AddOption(&vec_sol_file, "-v", "--vector-solution",
@@ -1283,6 +1296,11 @@ int main (int argc, char *argv[])
       sol_file = gfunc_file;
       stream_state.is_gf = 255;
    }
+   if (qfunc_file != string_none)
+   {
+      sol_file = qfunc_file;
+      stream_state.is_qf = 255;
+   }
    if (np > 0)
    {
       input |= INPUT_PARALLEL;
@@ -1356,6 +1374,9 @@ int main (int argc, char *argv[])
          || input == (INPUT_SERVER_MODE | INPUT_MESH | INPUT_VECTOR_SOL)
          || input == (INPUT_SERVER_MODE | INPUT_MESH | INPUT_PARALLEL)
          || (stream_state.is_gf
+             && (input == (INPUT_SERVER_MODE | INPUT_MESH)
+                 || input == (INPUT_SERVER_MODE | INPUT_MESH | INPUT_PARALLEL)))
+         || (stream_state.is_qf
              && (input == (INPUT_SERVER_MODE | INPUT_MESH)
                  || input == (INPUT_SERVER_MODE | INPUT_MESH | INPUT_PARALLEL)))))
    {
@@ -1448,7 +1469,8 @@ void ReadSerial(StreamState& state)
 
    state.mesh.reset(new Mesh(meshin, 1, 0, state.fix_elem_orient));
 
-   if (state.is_gf || (input & INPUT_SCALAR_SOL) || (input & INPUT_VECTOR_SOL))
+   if (state.is_gf || state.is_qf || (input & INPUT_SCALAR_SOL) ||
+       (input & INPUT_VECTOR_SOL))
    {
       // get the solution from file
       bool freesolin = false;
@@ -1472,6 +1494,11 @@ void ReadSerial(StreamState& state)
       {
          state.grid_f.reset(new GridFunction(state.mesh.get(), *solin));
          SetGridFunction(state);
+      }
+      else if (state.is_qf)
+      {
+         state.quad_f.reset(new QuadratureFunction(state.mesh.get(), *solin));
+         SetQuadFunction(state);
       }
       else if (input & INPUT_SCALAR_SOL)
       {
@@ -1535,6 +1562,35 @@ void SetGridFunction(StreamState& state)
    }
 }
 
+void SetQuadFunction(StreamState& state)
+{
+   const int vdim = state.quad_f->GetVDim();
+   if (qf_component != -1)
+   {
+      if (qf_component < 0 || qf_component >= vdim)
+      {
+         cerr << "Invalid component " << qf_component << '.' << endl;
+         exit(1);
+      }
+      QuadratureSpaceBase *qspace = state.quad_f->GetSpace();
+      QuadratureFunction *new_qf = new QuadratureFunction(qspace);
+      for (int i = 0; i < new_qf->Size(); i++)
+      {
+         (*new_qf)(i) = (*state.quad_f)(i * vdim + qf_component);
+      }
+      state.quad_f->SetOwnsSpace(false);
+      new_qf->SetOwnsSpace(true);
+      state.quad_f.reset(new_qf);
+   }
+   if (vdim == 1)
+   {
+      input |= INPUT_SCALAR_SOL;
+   }
+   else
+   {
+      input |= INPUT_VECTOR_SOL;
+   }
+}
 
 void ReadParallel(int np, StreamState& state)
 {
@@ -1547,6 +1603,15 @@ void ReadParallel(int np, StreamState& state)
       if (!read_err)
       {
          SetGridFunction(state);
+      }
+   }
+   else if (state.is_qf)
+   {
+      read_err = ReadParMeshAndQuadFunction(np, mesh_file, sol_file, state);
+
+      if (!read_err)
+      {
+         SetQuadFunction(state);
       }
    }
    else
@@ -1652,6 +1717,113 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    for (int p = 0; p < np; p++)
    {
       delete gf_array[np-1-p];
+      delete mesh_array[np-1-p];
+   }
+
+   return read_err;
+}
+
+int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,
+                               const char *sol_prefix,
+                               StreamState& state)
+{
+   state.mesh = NULL;
+
+   // are the solutions bundled together with the mesh files?
+   bool same_file = false;
+   if (sol_prefix)
+   {
+      same_file = !strcmp(sol_prefix, mesh_prefix);
+      state.grid_f = NULL;
+   }
+
+   Array<Mesh *> mesh_array(np);
+   Array<QuadratureFunction *> qf_array(np);
+   mesh_array = NULL;
+   qf_array = NULL;
+
+   int read_err = 0;
+   for (int p = 0; p < np; p++)
+   {
+      ostringstream fname;
+      fname << mesh_prefix << '.' << setfill('0') << setw(pad_digits) << p;
+      named_ifgzstream meshfile(fname.str().c_str());
+      if (!meshfile)
+      {
+         cerr << "Could not open mesh file: " << fname.str() << '!' << endl;
+         read_err = 1;
+         break;
+      }
+
+      mesh_array[p] = new Mesh(meshfile, 1, 0, state.fix_elem_orient);
+
+      if (!state.keep_attr)
+      {
+         // set element and boundary attributes to be the processor number + 1
+         for (int i = 0; i < mesh_array[p]->GetNE(); i++)
+         {
+            mesh_array[p]->GetElement(i)->SetAttribute(p+1);
+         }
+         for (int i = 0; i < mesh_array[p]->GetNBE(); i++)
+         {
+            mesh_array[p]->GetBdrElement(i)->SetAttribute(p+1);
+         }
+      }
+
+      // read the solution
+      if (sol_prefix)
+      {
+         if (!same_file)
+         {
+            ostringstream sol_fname;
+            sol_fname << sol_prefix << '.' << setfill('0') << setw(pad_digits) << p;
+            ifgzstream solfile(sol_fname.str().c_str());
+            if (!solfile)
+            {
+               cerr << "Could not open solution file "
+                    << sol_fname.str() << '!' << endl;
+               read_err = 2;
+               break;
+            }
+
+            qf_array[p] = new QuadratureFunction(mesh_array[p], solfile);
+         }
+         else  // mesh and solution in the same file
+         {
+            qf_array[p] = new QuadratureFunction(mesh_array[p], meshfile);
+         }
+      }
+   }
+
+   if (!read_err)
+   {
+      // create the combined mesh and gf
+      state.mesh.reset(new Mesh(mesh_array, np));
+      if (sol_prefix)
+      {
+         //assume the same vdim
+         const int vdim = qf_array[0]->GetVDim();
+         //assume the same quadrature rule
+         QuadratureSpace *qspace = new QuadratureSpace(*state.mesh,
+                                                       qf_array[0]->GetIntRule(0));
+         state.quad_f.reset(new QuadratureFunction(qspace, vdim));
+         state.quad_f->SetOwnsSpace(true);
+         real_t *g_data = state.quad_f->GetData();
+         for (int p = 0; p < np; p++)
+         {
+            const real_t *l_data = qf_array[p]->GetData();
+            const int l_size = qf_array[p]->Size();
+            MFEM_ASSERT(g_data + l_size >= state.quad_f->GetData() + state.quad_f->Size(),
+                        "Local parts do not fit to the global quadrature function!");
+            memcpy(g_data, l_data, l_size * sizeof(real_t));
+            g_data += l_size;
+         }
+      }
+   }
+
+   for (int p = 0; p < np; p++)
+   {
+      delete qf_array[np-1-p];
       delete mesh_array[np-1-p];
    }
 
