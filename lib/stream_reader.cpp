@@ -150,16 +150,34 @@ void StreamState::SetMeshSolution()
 
 void StreamState::SetQuadSolution(QuadSolution type)
 {
-   /*if(type == QuadSolution::LOR_GLL)
+   //assume identical order
+   const int order = quad_f->GetIntRule(0).GetOrder()/2;//<---Gauss-Legendre
+   if (type == QuadSolution::LOR_GLL)
    {
-      //assume identical order
-      const int order = quad_f->GetIntRule(0).Size();
-      Mesh *mesh_lor = new Mesh(Mesh::MakeRefined(*mesh, order, ));
-   }*/
-   //if(type == QuadSolution::HO_L2)
+      const int ref_factor = order + 1;
+      if (ref_factor > 1)
+      {
+         Mesh *mesh_lor = new Mesh(Mesh::MakeRefined(*mesh, ref_factor,
+                                                     BasisType::GaussLobatto));
+         FiniteElementCollection *fec = new L2_FECollection(0, mesh->Dimension());
+         FiniteElementSpace *fes = new FiniteElementSpace(mesh_lor, fec,
+                                                          quad_f->GetVDim(), Ordering::byVDIM);
+         MFEM_ASSERT(quad_f->Size() == fes->GetVSize(), "Size mismatch");
+         cout << "Representing quadrature by piecewise-constant function on mesh refined "
+              << ref_factor << " times" << endl;
+         GridFunction *gf = new GridFunction(fes, *quad_f, 0);
+         gf->MakeOwner(fec);
+         grid_f.reset(gf);
+         mesh.reset(mesh_lor);
+      }
+      else
+      {
+         //low-order
+         type = QuadSolution::HO_L2;
+      }
+   }
+   if (type == QuadSolution::HO_L2)
    {
-      //assume identical order
-      const int order = quad_f->GetIntRule(0).GetOrder()/2;//<---Gauss-Legendre
       FiniteElementCollection *fec = new L2_FECollection(order, mesh->Dimension());
       FiniteElementSpace *fes = new FiniteElementSpace(mesh.get(), fec,
                                                        quad_f->GetVDim(), Ordering::byVDIM);
