@@ -117,8 +117,8 @@ int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,
 bool GLVisInitVis(StreamState::FieldType field_type,
                   StreamCollection input_streams)
 {
-   if (field_type < StreamState::FieldType::MIN
-       || field_type > StreamState::FieldType::MAX)
+   if (field_type <= StreamState::FieldType::MIN
+       || field_type >= StreamState::FieldType::MAX)
    {
       return false;
    }
