@@ -505,6 +505,23 @@ StreamState::FieldType StreamState::ReadStreams(const StreamCollection&
    return field_type;
 }
 
+void StreamState::WriteStream(std::ostream &os)
+{
+   os.precision(8);
+   if (quad_f)
+   {
+      os << "quadrature\n";
+      mesh->Print(os);
+      quad_f->Save(os);
+   }
+   else if (grid_f)
+   {
+      os << "solution\n";
+      mesh->Print(os);
+      grid_f->Save(os);
+   }
+}
+
 // Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec
 // or Raviart-Thomas space) with a discontinuous piece-wise polynomial Cartesian
 // product vector grid function of the same order.

@@ -1138,19 +1138,7 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          else
          {
             new_session.state.ReadStreams(input_streams);
-            ofs.precision(8);
-            if (new_session.state.quad_f)
-            {
-               ofs << "quadrature\n";
-               new_session.state.mesh->Print(ofs);
-               new_session.state.quad_f->Save(ofs);
-            }
-            else if (new_session.state.grid_f)
-            {
-               ofs << "solution\n";
-               new_session.state.mesh->Print(ofs);
-               new_session.state.grid_f->Save(ofs);
-            }
+            new_session.state.WriteStream(ofs);
          }
          ofs.close();
          cout << "Data saved in " << tmp_file << endl;

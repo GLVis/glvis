@@ -68,6 +68,8 @@ struct StreamState
 
    FieldType ReadStreams(const StreamCollection& input_streams);
 
+   void WriteStream(std::ostream &os);
+
    /// Sets a new mesh and solution from another StreamState object, and
    /// updates the given VisualizationScene pointer with the new data.
    ///
