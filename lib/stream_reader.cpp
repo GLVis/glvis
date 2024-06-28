@@ -52,6 +52,7 @@ void StreamState::Extrude1DMeshAndSolution()
          Extrude1DQuadFunction(mesh.get(), mesh2d, quad_f.get(), 1);
 
       quad_f.reset(quad_f_2d);
+      SetQuadSolution();
    }
    else if (grid_f)
    {
@@ -149,6 +150,12 @@ void StreamState::SetMeshSolution()
 
 void StreamState::SetQuadSolution(QuadSolution type)
 {
+   /*if(type == QuadSolution::LOR_GLL)
+   {
+      //assume identical order
+      const int order = quad_f->GetIntRule(0).Size();
+      Mesh *mesh_lor = new Mesh(Mesh::MakeRefined(*mesh, order, ));
+   }*/
    //if(type == QuadSolution::HO_L2)
    {
       //assume identical order
