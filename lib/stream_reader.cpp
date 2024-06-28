@@ -17,6 +17,10 @@
 using namespace std;
 using namespace mfem;
 
+/// Helper function for extrusion of 1D quadrature functions to 2D
+QuadratureFunction* Extrude1DQuadFunction(Mesh *mesh, Mesh *mesh2d,
+                                          QuadratureFunction *qf, int ny);
+
 void StreamState::Extrude1DMeshAndSolution()
 {
    if (mesh->Dimension() != 1 || mesh->SpaceDimension() != 1)
@@ -48,6 +52,13 @@ void StreamState::Extrude1DMeshAndSolution()
          Extrude1DGridFunction(mesh.get(), mesh2d, grid_f.get(), 1);
 
       grid_f.reset(grid_f_2d);
+   }
+   else if (quad_f)
+   {
+      QuadratureFunction *quad_f_2d =
+         Extrude1DQuadFunction(mesh.get(), mesh2d, quad_f.get(), 1);
+
+      quad_f.reset(quad_f_2d);
    }
    else if (sol.Size() == mesh->GetNV())
    {
@@ -526,4 +537,34 @@ bool StreamState::SetNewMeshAndSolution(StreamState new_state,
    {
       return false;
    }
+}
+
+QuadratureFunction *Extrude1DQuadFunction(Mesh *mesh, Mesh *mesh2d,
+                                          QuadratureFunction *qf, int ny)
+{
+   //assume identical orders
+   const int order = qf->GetIntRule(0).GetOrder();
+   const int vdim = qf->GetVDim();
+   QuadratureSpace *qspace2d = new QuadratureSpace(mesh2d, order);
+   QuadratureFunction *qf2d = new QuadratureFunction(qspace2d);
+   qf2d->SetOwnsSpace(true);
+
+   DenseMatrix vals, vals2d;
+   for (int ix = 0; ix < mesh->GetNE(); ix++)
+   {
+      qf->GetValues(ix, vals);
+      const int nq = vals.Width();
+      for (int iy = 0; iy < ny; iy++)
+      {
+         qf2d->GetValues(ix*ny+iy, vals2d);
+         for (int qx = 0; qx < nq; qx++)
+            for (int qy = 0; qy < nq; qy++)
+               for (int d = 0; d < vdim; d++)
+               {
+                  vals2d(d, qy*nq+qx) = vals(d, qx);
+               }
+      }
+   }
+
+   return qf2d;
 }
