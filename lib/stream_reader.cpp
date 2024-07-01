@@ -195,6 +195,8 @@ void StreamState::SetQuadSolution(QuadSolution type)
       gf->MakeOwner(fec);
       grid_f.reset(gf);
    }
+
+   quad_sol = type;
 }
 
 // Read the content of an input stream (e.g. from socket/file)

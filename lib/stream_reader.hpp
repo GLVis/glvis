@@ -49,9 +49,13 @@ struct StreamState
 
    enum class QuadSolution
    {
+      MIN = -1,
+      //----------
       LOR_GLL,
       HO_L2,
-   };
+      //----------
+      MAX
+   } quad_sol;
 
    /// Helper function for visualizing 1D data
    void Extrude1DMeshAndSolution();
@@ -64,6 +68,9 @@ struct StreamState
 
    /// Set a quadrature function solution producing a proxy grid function
    void SetQuadSolution(QuadSolution type = QuadSolution::LOR_GLL);
+
+   /// Get the current representation of quadrature solution
+   inline QuadSolution GetQuadSolution() const { return quad_sol; }
 
    FieldType ReadStream(std::istream &is, const std::string &data_type);
 
