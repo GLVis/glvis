@@ -113,6 +113,9 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
 int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,
                                const char *sol_prefix, StreamState& state);
 
+// switch representation of the quadrature function
+void SwitchQuadSolution();
+
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 bool GLVisInitVis(StreamState::FieldType field_type,
                   StreamCollection input_streams)
@@ -137,6 +140,11 @@ bool GLVisInitVis(StreamState::FieldType field_type,
       GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
       glvis_command = new GLVisCommand(&vs, stream_state, &stream_state.keep_attr);
       comm_thread = new communication_thread(std::move(input_streams), glvis_command);
+   }
+
+   if (stream_state.quad_f)
+   {
+      GetAppWindow()->setOnKeyDown('Q', SwitchQuadSolution);
    }
 
    double mesh_range = -1.0;
@@ -1939,4 +1947,13 @@ int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,
    }
 
    return read_err;
+}
+
+void SwitchQuadSolution()
+{
+   int iqs = ((int)stream_state.GetQuadSolution()+1)
+             % ((int)StreamState::QuadSolution::MAX);
+   stream_state.SetQuadSolution((StreamState::QuadSolution)iqs);
+   stream_state.ResetMeshAndSolution(vs);
+   SendExposeEvent();
 }

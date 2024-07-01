@@ -87,6 +87,12 @@ struct StreamState
    /// updated.
    bool SetNewMeshAndSolution(StreamState new_state,
                               VisualizationScene* vs);
+
+   /// Updates the given VisualizationScene pointer with the new data
+   /// of this object.
+   /// @note: Use with caution when the update is compatible
+   /// @see SetNewMeshAndSolution()
+   void ResetMeshAndSolution(VisualizationScene* vs);
 };
 
 // Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec
