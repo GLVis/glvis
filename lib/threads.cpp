@@ -454,6 +454,7 @@ int GLVisCommand::Execute()
             else
             {
                new_state.SetQuadSolution();
+               new_state.Extrude1DMeshAndSolution();
             }
          }
          if (curr_state.SetNewMeshAndSolution(std::move(new_state), *vs))
