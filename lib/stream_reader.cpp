@@ -283,6 +283,7 @@ StreamState::FieldType StreamState::ReadStream(istream &is,
    else if (data_type == "quadrature")
    {
       mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
+      mesh_quad.reset();
       quad_f.reset(new QuadratureFunction(mesh.get(), is));
       SetQuadSolution();
       field_type = (quad_f->GetVDim() == 1) ? FieldType::SCALAR : FieldType::VECTOR;
@@ -484,6 +485,7 @@ StreamState::FieldType StreamState::ReadStreams(const StreamCollection&
    }
 
    mesh.reset(new Mesh(mesh_array, nproc));
+   mesh_quad.reset();
    if (gf_count > 0)
    {
       grid_f.reset(new GridFunction(mesh.get(), gf_array, nproc));

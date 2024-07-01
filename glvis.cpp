@@ -337,6 +337,7 @@ int ScriptReadQuadrature(istream &scr, StreamState& state)
       return 1;
    }
    state.mesh.reset(new Mesh(imesh, 1, 0, state.fix_elem_orient));
+   state.mesh_quad.reset();
 
    // read the quadrature (QuadratureFunction)
    scr >> ws >> sword;
@@ -1590,6 +1591,7 @@ void ReadSerial(StreamState& state)
    }
 
    state.mesh.reset(new Mesh(meshin, 1, 0, state.fix_elem_orient));
+   state.mesh_quad.reset();
 
    if (state.is_gf || state.is_qf || (input & INPUT_SCALAR_SOL) ||
        (input & INPUT_VECTOR_SOL))
@@ -1923,6 +1925,7 @@ int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,
    {
       // create the combined mesh and gf
       state.mesh.reset(new Mesh(mesh_array, np));
+      state.mesh_quad.reset();
       if (sol_prefix)
       {
          state.CollectQuadratures(qf_array, np);
