@@ -151,11 +151,17 @@ void StreamState::SetQuadSolution(QuadSolution type)
       mesh.swap(mesh_quad);
       mesh_quad.reset();
    }
-   if (type == QuadSolution::LOR_ClosedGL)
+
+   switch (type)
    {
-      const int ref_factor = order + 1;
-      if (ref_factor > 1)
+      case QuadSolution::LOR_ClosedGL:
       {
+         const int ref_factor = order + 1;
+         if (ref_factor <= 1)
+         {
+            SetQuadSolution(QuadSolution::HO_L2);//low-order
+            return;
+         }
          Mesh *mesh_lor = new Mesh(Mesh::MakeRefined(*mesh, ref_factor,
                                                      BasisType::ClosedGL));
          FiniteElementCollection *fec = new L2_FECollection(0, mesh->Dimension());
@@ -170,23 +176,36 @@ void StreamState::SetQuadSolution(QuadSolution type)
          mesh.swap(mesh_quad);
          mesh.reset(mesh_lor);
       }
-      else
+      break;
+      case QuadSolution::HO_L2:
       {
-         //low-order
-         type = QuadSolution::HO_L2;
+         FiniteElementCollection *fec = new L2_FECollection(order, mesh->Dimension());
+         if (order > 0)
+         {
+            Array<Geometry::Type> geoms;
+            mesh->GetGeometries(mesh->Dimension(), geoms);
+            for (auto geom : geoms)
+               if (!Geometry::IsTensorProduct(geom))
+               {
+                  cout << "High-order representation is available only for tensor-product bases"
+                       << endl;
+                  SetQuadSolution(QuadSolution::LOR_ClosedGL);
+                  return;
+               }
+         }
+         FiniteElementSpace *fes = new FiniteElementSpace(mesh.get(), fec,
+                                                          quad_f->GetVDim(), Ordering::byVDIM);
+         MFEM_ASSERT(quad_f->Size() == fes->GetVSize(), "Size mismatch");
+         cout << "Representing quadrature by grid function of order "
+              << order << endl;
+         GridFunction *gf = new GridFunction(fes, *quad_f, 0);
+         gf->MakeOwner(fec);
+         grid_f.reset(gf);
       }
-   }
-   if (type == QuadSolution::HO_L2)
-   {
-      FiniteElementCollection *fec = new L2_FECollection(order, mesh->Dimension());
-      FiniteElementSpace *fes = new FiniteElementSpace(mesh.get(), fec,
-                                                       quad_f->GetVDim(), Ordering::byVDIM);
-      MFEM_ASSERT(quad_f->Size() == fes->GetVSize(), "Size mismatch");
-      cout << "Representing quadrature by grid function of order "
-           << order << endl;
-      GridFunction *gf = new GridFunction(fes, *quad_f, 0);
-      gf->MakeOwner(fec);
-      grid_f.reset(gf);
+      break;
+      default:
+         cout << "Unknon quadrarture function representation" << endl;
+         return;
    }
 
    quad_sol = type;
