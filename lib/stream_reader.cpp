@@ -28,6 +28,12 @@ void StreamState::Extrude1DMeshAndSolution()
       return;
    }
 
+   if (mesh_quad)
+   {
+      mesh.swap(mesh_quad);
+      mesh_quad.reset();
+   }
+
    // find xmin and xmax over the vertices of the 1D mesh
    double xmin = numeric_limits<double>::infinity();
    double xmax = -xmin;
@@ -52,7 +58,6 @@ void StreamState::Extrude1DMeshAndSolution()
          Extrude1DQuadFunction(mesh.get(), mesh2d, quad_f.get(), 1);
 
       quad_f.reset(quad_f_2d);
-      SetQuadSolution();
    }
    else if (grid_f)
    {
@@ -72,6 +77,7 @@ void StreamState::Extrude1DMeshAndSolution()
    }
 
    mesh.reset(mesh2d);
+   if (quad_f) { SetQuadSolution(); }
 }
 
 void StreamState::CollectQuadratures(QuadratureFunction *qf_array[],
