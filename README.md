@@ -144,6 +144,7 @@ Key commands
 - <kbd>Ctrl</kbd> + <kbd>p</kbd> – Print to a PDF file using `gl2ps`. Other
   vector formats (SVG, EPS) are also possible, but keep in mind that the
   printing takes a while and the generated files are big.
+- <kbd>Q</kbd> – Cycle between representations of the quadrature (piece-wise constant refined/L2 element dof collocation) 
 - <kbd>q</kbd> – Exit
 
 ## Advanced

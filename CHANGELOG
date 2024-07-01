@@ -21,6 +21,13 @@ Version 4.2.1 (development)
 
 - Added a compilation parameter for the default font size.
 
+- Added visualization of quadratures. They can be loaded from a file through the
+  new command line argument '-q' or in a socket stream with the keyword 'quadrature'
+  (instead of solution). Two options of visualization are offered (which can be
+  switched by 'Q' key): piece-wise constant function on a refined mesh (closed
+  Gauss-Legendre refinement), or discontinuous elements with DOFs collocated with
+  the quadrature on the original mesh.
+
 
 Version 4.2 released on May 23, 2022
 ====================================
