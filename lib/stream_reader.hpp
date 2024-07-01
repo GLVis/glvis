@@ -51,7 +51,7 @@ struct StreamState
    {
       MIN = -1,
       //----------
-      LOR_GLL,
+      LOR_ClosedGL,
       HO_L2,
       //----------
       MAX
@@ -67,7 +67,7 @@ struct StreamState
    void SetMeshSolution();
 
    /// Set a quadrature function solution producing a proxy grid function
-   void SetQuadSolution(QuadSolution type = QuadSolution::LOR_GLL);
+   void SetQuadSolution(QuadSolution type = QuadSolution::LOR_ClosedGL);
 
    /// Get the current representation of quadrature solution
    inline QuadSolution GetQuadSolution() const { return quad_sol; }

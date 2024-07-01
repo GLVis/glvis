@@ -151,13 +151,13 @@ void StreamState::SetQuadSolution(QuadSolution type)
       mesh.swap(mesh_quad);
       mesh_quad.reset();
    }
-   if (type == QuadSolution::LOR_GLL)
+   if (type == QuadSolution::LOR_ClosedGL)
    {
       const int ref_factor = order + 1;
       if (ref_factor > 1)
       {
          Mesh *mesh_lor = new Mesh(Mesh::MakeRefined(*mesh, ref_factor,
-                                                     BasisType::GaussLobatto));
+                                                     BasisType::ClosedGL));
          FiniteElementCollection *fec = new L2_FECollection(0, mesh->Dimension());
          FiniteElementSpace *fes = new FiniteElementSpace(mesh_lor, fec,
                                                           quad_f->GetVDim(), Ordering::byVDIM);
