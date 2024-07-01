@@ -26,21 +26,57 @@ struct StreamState
    mfem::Vector sol, solu, solv, solw, normals;
    std::string keys;
    std::unique_ptr<mfem::Mesh> mesh;
+   std::unique_ptr<mfem::Mesh> mesh_quad;
    std::unique_ptr<mfem::GridFunction> grid_f;
+   std::unique_ptr<mfem::QuadratureFunction> quad_f;
    int is_gf{0};
+   int is_qf{0};
    bool fix_elem_orient{false};
    bool save_coloring{false};
    bool keep_attr{false};
 
+   enum class FieldType
+   {
+      UNKNOWN = -1,
+      MIN = -1,
+      //----------
+      SCALAR,
+      VECTOR,
+      MESH,
+      //----------
+      MAX
+   };
+
+   enum class QuadSolution
+   {
+      MIN = -1,
+      //----------
+      LOR_ClosedGL,
+      HO_L2,
+      //----------
+      MAX
+   } quad_sol;
+
    /// Helper function for visualizing 1D data
    void Extrude1DMeshAndSolution();
+
+   /// Helper function to build the quadrature function from pieces
+   void CollectQuadratures(mfem::QuadratureFunction *qf_array[], int npieces);
 
    /// Set a (checkerboard) solution when only the mesh is given
    void SetMeshSolution();
 
-   int ReadStream(std::istream &is, const std::string &data_type);
+   /// Set a quadrature function solution producing a proxy grid function
+   void SetQuadSolution(QuadSolution type = QuadSolution::LOR_ClosedGL);
 
-   int ReadStreams(const StreamCollection& input_streams);
+   /// Get the current representation of quadrature solution
+   inline QuadSolution GetQuadSolution() const { return quad_sol; }
+
+   FieldType ReadStream(std::istream &is, const std::string &data_type);
+
+   FieldType ReadStreams(const StreamCollection& input_streams);
+
+   void WriteStream(std::ostream &os);
 
    /// Sets a new mesh and solution from another StreamState object, and
    /// updates the given VisualizationScene pointer with the new data.
@@ -51,6 +87,12 @@ struct StreamState
    /// updated.
    bool SetNewMeshAndSolution(StreamState new_state,
                               VisualizationScene* vs);
+
+   /// Updates the given VisualizationScene pointer with the new data
+   /// of this object.
+   /// @note: Use with caution when the update is compatible
+   /// @see SetNewMeshAndSolution()
+   void ResetMeshAndSolution(VisualizationScene* vs);
 };
 
 // Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec

@@ -108,6 +108,8 @@ public:
    // called by worker threads
    int NewMeshAndSolution(std::unique_ptr<Mesh> _new_m,
                           std::unique_ptr<GridFunction> _new_g);
+   int NewMeshAndQuadrature(std::unique_ptr<Mesh> _new_m,
+                            std::unique_ptr<QuadratureFunction> _new_q);
    int Screenshot(const char *filename);
    int KeyCommands(const char *keys);
    int WindowSize(int w, int h);
