@@ -96,6 +96,24 @@ int GLVisCommand::NewMeshAndSolution(std::unique_ptr<Mesh> _new_m,
    return 0;
 }
 
+int GLVisCommand::NewMeshAndQuadrature(std::unique_ptr<Mesh> _new_m,
+                                       std::unique_ptr<QuadratureFunction> _new_q)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = NEW_MESH_AND_SOLUTION;
+   new_state.mesh = std::move(_new_m);
+   new_state.mesh_quad.reset();
+   new_state.quad_f = std::move(_new_q);
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
+
 int GLVisCommand::Screenshot(const char *filename)
 {
    if (lock() < 0)
@@ -427,9 +445,16 @@ int GLVisCommand::Execute()
          double mesh_range = -1.0;
          if (!new_state.grid_f)
          {
-            new_state.save_coloring = false;
-            new_state.SetMeshSolution();
-            mesh_range = new_state.grid_f->Max() + 1.0;
+            if (!new_state.quad_f)
+            {
+               new_state.save_coloring = false;
+               new_state.SetMeshSolution();
+               mesh_range = new_state.grid_f->Max() + 1.0;
+            }
+            else
+            {
+               new_state.SetQuadSolution();
+            }
          }
          if (curr_state.SetNewMeshAndSolution(std::move(new_state), *vs))
          {
@@ -855,6 +880,85 @@ void communication_thread::execute()
 
          if (glvis_command->NewMeshAndSolution(std::move(tmp.mesh),
                                                std::move(tmp.grid_f)))
+         {
+            goto comm_terminate;
+         }
+      }
+      else if (ident == "quadrature" || ident == "pquadrature")
+      {
+         bool fix_elem_orient = glvis_command->FixElementOrientations();
+         StreamState tmp;
+         if (ident == "quadrature")
+         {
+            tmp.mesh.reset(new Mesh(*is[0], 1, 0, fix_elem_orient));
+            tmp.mesh_quad.reset();
+            if (!(*is[0]))
+            {
+               break;
+            }
+            tmp.quad_f.reset(new QuadratureFunction(tmp.mesh.get(), *is[0]));
+            if (!(*is[0]))
+            {
+               break;
+            }
+         }
+         else if (ident == "pquadrature")
+         {
+            Array<Mesh *> mesh_array;
+            Array<QuadratureFunction *> qf_array;
+            int proc, nproc, np = 0;
+            bool keep_attr = glvis_command->KeepAttrib();
+            do
+            {
+               istream &isock = *is[np];
+               isock >> nproc >> proc >> ws;
+#ifdef GLVIS_DEBUG
+               cout << "connection[" << np << "]: pquadrature " << nproc << ' '
+                    << proc << endl;
+#endif
+               isock >> ident >> ws; // "quadrature"
+               mesh_array.SetSize(nproc);
+               qf_array.SetSize(nproc);
+               mesh_array[proc] = new Mesh(isock, 1, 0, fix_elem_orient);
+               if (!keep_attr)
+               {
+                  // set element and boundary attributes to proc+1
+                  for (int i = 0; i < mesh_array[proc]->GetNE(); i++)
+                  {
+                     mesh_array[proc]->GetElement(i)->SetAttribute(proc+1);
+                  }
+                  for (int i = 0; i < mesh_array[proc]->GetNBE(); i++)
+                  {
+                     mesh_array[proc]->GetBdrElement(i)->SetAttribute(proc+1);
+                  }
+               }
+               qf_array[proc] = new QuadratureFunction(mesh_array[proc], isock);
+               np++;
+               if (np == nproc)
+               {
+                  break;
+               }
+               *is[np] >> ident >> ws; // "pquadrature"
+            }
+            while (1);
+            tmp.mesh.reset(new Mesh(mesh_array, nproc));
+            tmp.CollectQuadratures(qf_array, nproc);
+
+            for (int p = 0; p < nproc; p++)
+            {
+               delete qf_array[nproc-1-p];
+               delete mesh_array[nproc-1-p];
+            }
+            qf_array.DeleteAll();
+            mesh_array.DeleteAll();
+         }
+
+         // cout << "Stream: new solution" << endl;
+
+         tmp.Extrude1DMeshAndSolution();
+
+         if (glvis_command->NewMeshAndQuadrature(std::move(tmp.mesh),
+                                                 std::move(tmp.quad_f)))
          {
             goto comm_terminate;
          }
