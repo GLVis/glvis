@@ -86,7 +86,7 @@ int GLVisCommand::NewMeshAndSolution(StreamState &&ss)
       return -1;
    }
    command = NEW_MESH_AND_SOLUTION;
-   new_state = move(ss);
+   new_state = std::move(ss);
    if (signal() < 0)
    {
       return -2;

@@ -23,17 +23,17 @@ QuadratureFunction* Extrude1DQuadFunction(Mesh *mesh, Mesh *mesh2d,
 
 StreamState &StreamState::operator=(StreamState &&ss)
 {
-   internal.mesh = move(ss.internal.mesh);
-   internal.mesh_quad = move(ss.internal.mesh_quad);
-   internal.grid_f = move(ss.internal.grid_f);
-   internal.quad_f = move(ss.internal.quad_f);
+   internal.mesh = std::move(ss.internal.mesh);
+   internal.mesh_quad = std::move(ss.internal.mesh_quad);
+   internal.grid_f = std::move(ss.internal.grid_f);
+   internal.quad_f = std::move(ss.internal.quad_f);
 
-   sol = move(ss.sol);
-   solu = move(ss.solu);
-   solv = move(ss.solv);
-   solw = move(ss.solw);
-   normals = move(ss.normals);
-   keys = move(ss.keys);
+   sol = std::move(ss.sol);
+   solu = std::move(ss.solu);
+   solv = std::move(ss.solv);
+   solw = std::move(ss.solw);
+   normals = std::move(ss.normals);
+   keys = std::move(ss.keys);
 
    is_gf = ss.is_gf;
    is_qf = ss.is_qf;
@@ -47,12 +47,12 @@ StreamState &StreamState::operator=(StreamState &&ss)
 void StreamState::SetMesh(mfem::Mesh *mesh_)
 {
    internal.mesh.reset(mesh_);
-   SetMesh(move(internal.mesh));
+   SetMesh(std::move(internal.mesh));
 }
 
 void StreamState::SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh)
 {
-   internal.mesh = move(pmesh);
+   internal.mesh = std::move(pmesh);
    internal.mesh_quad.reset();
    if (grid_f && grid_f->FESpace()->GetMesh() != mesh.get()) { SetGridFunction(NULL); }
    if (quad_f && quad_f->GetSpace()->GetMesh() != mesh.get()) { SetQuadFunction(NULL); }
@@ -61,12 +61,12 @@ void StreamState::SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh)
 void StreamState::SetGridFunction(mfem::GridFunction *gf)
 {
    internal.grid_f.reset(gf);
-   SetGridFunction(move(internal.grid_f));
+   SetGridFunction(std::move(internal.grid_f));
 }
 
 void StreamState::SetGridFunction(std::unique_ptr<mfem::GridFunction> &&pgf)
 {
-   internal.grid_f = move(pgf);
+   internal.grid_f = std::move(pgf);
    internal.quad_f.reset();
    quad_sol = QuadSolution::NONE;
 }
@@ -89,7 +89,7 @@ void StreamState::SetQuadFunction(std::unique_ptr<mfem::QuadratureFunction>
       internal.grid_f.reset();
       quad_sol = QuadSolution::NONE;
    }
-   internal.quad_f = move(pqf);
+   internal.quad_f = std::move(pqf);
 }
 
 void StreamState::Extrude1DMeshAndSolution()
