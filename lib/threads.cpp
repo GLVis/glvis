@@ -79,34 +79,14 @@ void GLVisCommand::unlock()
    }
 }
 
-int GLVisCommand::NewMeshAndSolution(std::unique_ptr<Mesh> _new_m,
-                                     std::unique_ptr<GridFunction> _new_g)
+int GLVisCommand::NewMeshAndSolution(StreamState &&ss)
 {
    if (lock() < 0)
    {
       return -1;
    }
    command = NEW_MESH_AND_SOLUTION;
-   new_state.mesh = std::move(_new_m);
-   new_state.grid_f = std::move(_new_g);
-   if (signal() < 0)
-   {
-      return -2;
-   }
-   return 0;
-}
-
-int GLVisCommand::NewMeshAndQuadrature(std::unique_ptr<Mesh> _new_m,
-                                       std::unique_ptr<QuadratureFunction> _new_q)
-{
-   if (lock() < 0)
-   {
-      return -1;
-   }
-   command = NEW_MESH_AND_SOLUTION;
-   new_state.mesh = std::move(_new_m);
-   new_state.mesh_quad.reset();
-   new_state.quad_f = std::move(_new_q);
+   new_state = move(ss);
    if (signal() < 0)
    {
       return -2;
@@ -804,21 +784,21 @@ void communication_thread::execute()
          StreamState tmp;
          if (ident == "mesh")
          {
-            tmp.mesh.reset(new Mesh(*is[0], 1, 0, fix_elem_orient));
+            tmp.SetMesh(new Mesh(*is[0], 1, 0, fix_elem_orient));
             if (!(*is[0]))
             {
                break;
             }
-            tmp.grid_f = NULL;
+            tmp.SetGridFunction(NULL);
          }
          else if (ident == "solution")
          {
-            tmp.mesh.reset(new Mesh(*is[0], 1, 0, fix_elem_orient));
+            tmp.SetMesh(new Mesh(*is[0], 1, 0, fix_elem_orient));
             if (!(*is[0]))
             {
                break;
             }
-            tmp.grid_f.reset(new GridFunction(tmp.mesh.get(), *is[0]));
+            tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), *is[0]));
             if (!(*is[0]))
             {
                break;
@@ -863,8 +843,8 @@ void communication_thread::execute()
                *is[np] >> ident >> ws; // "parallel"
             }
             while (1);
-            tmp.mesh.reset(new Mesh(mesh_array, nproc));
-            tmp.grid_f.reset(new GridFunction(tmp.mesh.get(), gf_array, nproc));
+            tmp.SetMesh(new Mesh(mesh_array, nproc));
+            tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), gf_array, nproc));
 
             for (int p = 0; p < nproc; p++)
             {
@@ -879,8 +859,7 @@ void communication_thread::execute()
 
          tmp.Extrude1DMeshAndSolution();
 
-         if (glvis_command->NewMeshAndSolution(std::move(tmp.mesh),
-                                               std::move(tmp.grid_f)))
+         if (glvis_command->NewMeshAndSolution(std::move(tmp)))
          {
             goto comm_terminate;
          }
@@ -891,13 +870,12 @@ void communication_thread::execute()
          StreamState tmp;
          if (ident == "quadrature")
          {
-            tmp.mesh.reset(new Mesh(*is[0], 1, 0, fix_elem_orient));
-            tmp.mesh_quad.reset();
+            tmp.SetMesh(new Mesh(*is[0], 1, 0, fix_elem_orient));
             if (!(*is[0]))
             {
                break;
             }
-            tmp.quad_f.reset(new QuadratureFunction(tmp.mesh.get(), *is[0]));
+            tmp.SetQuadFunction(new QuadratureFunction(tmp.mesh.get(), *is[0]));
             if (!(*is[0]))
             {
                break;
@@ -942,7 +920,7 @@ void communication_thread::execute()
                *is[np] >> ident >> ws; // "pquadrature"
             }
             while (1);
-            tmp.mesh.reset(new Mesh(mesh_array, nproc));
+            tmp.SetMesh(new Mesh(mesh_array, nproc));
             tmp.CollectQuadratures(qf_array, nproc);
 
             for (int p = 0; p < nproc; p++)
@@ -958,8 +936,7 @@ void communication_thread::execute()
 
          tmp.Extrude1DMeshAndSolution();
 
-         if (glvis_command->NewMeshAndQuadrature(std::move(tmp.mesh),
-                                                 std::move(tmp.quad_f)))
+         if (glvis_command->NewMeshAndSolution(std::move(tmp)))
          {
             goto comm_terminate;
          }

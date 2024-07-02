@@ -238,8 +238,7 @@ bool GLVisInitVis(StreamState::FieldType field_type,
       {
          if (stream_state.grid_f)
          {
-            stream_state.grid_f
-               = ProjectVectorFEGridFunction(std::move(stream_state.grid_f));
+            stream_state.ProjectVectorFEGridFunction();
             vs = new VisualizationSceneVector3d(*stream_state.grid_f);
          }
          else
@@ -304,14 +303,14 @@ int ScriptReadSolution(istream &scr, StreamState& state)
       cout << "Can not open mesh file: " << mword << endl;
       return 1;
    }
-   state.mesh.reset(new Mesh(imesh, 1, 0, state.fix_elem_orient));
+   state.SetMesh(new Mesh(imesh, 1, 0, state.fix_elem_orient));
 
    // read the solution (GridFunction)
    scr >> ws >> sword;
    if (sword == mword) // mesh and solution in the same file
    {
       cout << "solution: " << mword << endl;
-      state.grid_f.reset(new GridFunction(state.mesh.get(), imesh));
+      state.SetGridFunction(new GridFunction(state.mesh.get(), imesh));
    }
    else
    {
@@ -322,7 +321,7 @@ int ScriptReadSolution(istream &scr, StreamState& state)
          cout << "Can not open solution file: " << sword << endl;
          return 2;
       }
-      state.grid_f.reset(new GridFunction(state.mesh.get(), isol));
+      state.SetGridFunction(new GridFunction(state.mesh.get(), isol));
    }
 
    state.Extrude1DMeshAndSolution();
@@ -344,15 +343,14 @@ int ScriptReadQuadrature(istream &scr, StreamState& state)
       cout << "Can not open mesh file: " << mword << endl;
       return 1;
    }
-   state.mesh.reset(new Mesh(imesh, 1, 0, state.fix_elem_orient));
-   state.mesh_quad.reset();
+   state.SetMesh(new Mesh(imesh, 1, 0, state.fix_elem_orient));
 
    // read the quadrature (QuadratureFunction)
    scr >> ws >> sword;
    if (sword == mword) // mesh and quadrature in the same file
    {
       cout << "quadrature: " << mword << endl;
-      state.quad_f.reset(new QuadratureFunction(state.mesh.get(), imesh));
+      state.SetQuadFunction(new QuadratureFunction(state.mesh.get(), imesh));
    }
    else
    {
@@ -363,7 +361,7 @@ int ScriptReadQuadrature(istream &scr, StreamState& state)
          cout << "Can not open quadrature file: " << sword << endl;
          return 2;
       }
-      state.quad_f.reset(new QuadratureFunction(state.mesh.get(), isol));
+      state.SetQuadFunction(new QuadratureFunction(state.mesh.get(), isol));
    }
 
    state.Extrude1DMeshAndSolution();
@@ -454,7 +452,7 @@ int ScriptReadDisplMesh(istream &scr, StreamState& state)
          return 1;
       }
       cout << word << endl;
-      meshstate.mesh.reset(new Mesh(imesh, 1, 0, state.fix_elem_orient));
+      meshstate.SetMesh(new Mesh(imesh, 1, 0, state.fix_elem_orient));
    }
    meshstate.Extrude1DMeshAndSolution();
    Mesh* const m = meshstate.mesh.get();
@@ -462,8 +460,8 @@ int ScriptReadDisplMesh(istream &scr, StreamState& state)
    {
       init_nodes = new Vector;
       meshstate.mesh->GetNodes(*init_nodes);
-      state.mesh = NULL;
-      state.grid_f = NULL;
+      state.SetMesh(NULL);
+      state.SetGridFunction(NULL);
    }
    else
    {
@@ -476,7 +474,7 @@ int ScriptReadDisplMesh(istream &scr, StreamState& state)
          vfes = new FiniteElementSpace(m, vfec, m->SpaceDimension());
       }
 
-      meshstate.grid_f.reset(new GridFunction(vfes));
+      meshstate.SetGridFunction(new GridFunction(vfes));
       GridFunction * const g = meshstate.grid_f.get();
       if (vfec)
       {
@@ -493,8 +491,7 @@ int ScriptReadDisplMesh(istream &scr, StreamState& state)
          *g = 0.0;
       }
 
-      state.mesh = std::move(meshstate.mesh);
-      state.grid_f = std::move(meshstate.grid_f);
+      state = std::move(meshstate);
    }
 
    return 0;
@@ -1598,8 +1595,7 @@ void ReadSerial(StreamState& state)
       exit(1);
    }
 
-   state.mesh.reset(new Mesh(meshin, 1, 0, state.fix_elem_orient));
-   state.mesh_quad.reset();
+   state.SetMesh(new Mesh(meshin, 1, 0, state.fix_elem_orient));
 
    if (state.is_gf || state.is_qf || (input & INPUT_SCALAR_SOL) ||
        (input & INPUT_VECTOR_SOL))
@@ -1624,12 +1620,12 @@ void ReadSerial(StreamState& state)
 
       if (state.is_gf)
       {
-         state.grid_f.reset(new GridFunction(state.mesh.get(), *solin));
+         state.SetGridFunction(new GridFunction(state.mesh.get(), *solin));
          SetGridFunction(state);
       }
       else if (state.is_qf)
       {
-         state.quad_f.reset(new QuadratureFunction(state.mesh.get(), *solin));
+         state.SetQuadFunction(new QuadratureFunction(state.mesh.get(), *solin));
          SetQuadFunction(state);
       }
       else if (input & INPUT_SCALAR_SOL)
@@ -1681,7 +1677,7 @@ void SetGridFunction(StreamState& state)
       {
          (*new_gf)(i) = (*state.grid_f)(ofes->DofToVDof(i, gf_component));
       }
-      state.grid_f.reset(new_gf);
+      state.SetGridFunction(new_gf);
    }
    if (state.grid_f->VectorDim() == 1)
    {
@@ -1712,7 +1708,7 @@ void SetQuadFunction(StreamState& state)
       }
       state.quad_f->SetOwnsSpace(false);
       new_qf->SetOwnsSpace(true);
-      state.quad_f.reset(new_qf);
+      state.SetQuadFunction(new_qf);
    }
    if (vdim == 1)
    {
@@ -1770,14 +1766,14 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                                const char *sol_prefix,
                                StreamState& state)
 {
-   state.mesh = NULL;
+   state.SetMesh(NULL);
 
    // are the solutions bundled together with the mesh files?
    bool same_file = false;
    if (sol_prefix)
    {
       same_file = !strcmp(sol_prefix, mesh_prefix);
-      state.grid_f = NULL;
+      state.SetGridFunction(NULL);
    }
 
    Array<Mesh *> mesh_array(np);
@@ -1841,10 +1837,10 @@ int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    if (!read_err)
    {
       // create the combined mesh and gf
-      state.mesh.reset(new Mesh(mesh_array, np));
+      state.SetMesh(new Mesh(mesh_array, np));
       if (sol_prefix)
       {
-         state.grid_f.reset(new GridFunction(state.mesh.get(), gf_array, np));
+         state.SetGridFunction(new GridFunction(state.mesh.get(), gf_array, np));
       }
    }
 
@@ -1861,14 +1857,14 @@ int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,
                                const char *sol_prefix,
                                StreamState& state)
 {
-   state.mesh = NULL;
+   state.SetMesh(NULL);
 
    // are the solutions bundled together with the mesh files?
    bool same_file = false;
    if (sol_prefix)
    {
       same_file = !strcmp(sol_prefix, mesh_prefix);
-      state.grid_f = NULL;
+      state.SetGridFunction(NULL);
    }
 
    Array<Mesh *> mesh_array(np);
@@ -1932,8 +1928,7 @@ int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,
    if (!read_err)
    {
       // create the combined mesh and gf
-      state.mesh.reset(new Mesh(mesh_array, np));
-      state.mesh_quad.reset();
+      state.SetMesh(new Mesh(mesh_array, np));
       if (sol_prefix)
       {
          state.CollectQuadratures(qf_array, np);

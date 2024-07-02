@@ -21,6 +21,77 @@ using namespace mfem;
 QuadratureFunction* Extrude1DQuadFunction(Mesh *mesh, Mesh *mesh2d,
                                           QuadratureFunction *qf, int ny);
 
+StreamState &StreamState::operator=(StreamState &&ss)
+{
+   internal.mesh = move(ss.internal.mesh);
+   internal.mesh_quad = move(ss.internal.mesh_quad);
+   internal.grid_f = move(ss.internal.grid_f);
+   internal.quad_f = move(ss.internal.quad_f);
+
+   sol = move(ss.sol);
+   solu = move(ss.solu);
+   solv = move(ss.solv);
+   solw = move(ss.solw);
+   normals = move(ss.normals);
+   keys = move(ss.keys);
+
+   is_gf = ss.is_gf;
+   is_qf = ss.is_qf;
+   fix_elem_orient = ss.fix_elem_orient;
+   save_coloring = ss.save_coloring;
+   keep_attr = ss.keep_attr;
+
+   return *this;
+}
+
+void StreamState::SetMesh(mfem::Mesh *mesh_)
+{
+   internal.mesh.reset(mesh_);
+   SetMesh(move(internal.mesh));
+}
+
+void StreamState::SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh)
+{
+   internal.mesh = move(pmesh);
+   internal.mesh_quad.reset();
+   if (grid_f && grid_f->FESpace()->GetMesh() != mesh.get()) { SetGridFunction(NULL); }
+   if (quad_f && quad_f->GetSpace()->GetMesh() != mesh.get()) { SetQuadFunction(NULL); }
+}
+
+void StreamState::SetGridFunction(mfem::GridFunction *gf)
+{
+   internal.grid_f.reset(gf);
+   SetGridFunction(move(internal.grid_f));
+}
+
+void StreamState::SetGridFunction(std::unique_ptr<mfem::GridFunction> &&pgf)
+{
+   internal.grid_f = move(pgf);
+   internal.quad_f.reset();
+   quad_sol = QuadSolution::NONE;
+}
+
+void StreamState::SetQuadFunction(mfem::QuadratureFunction *qf)
+{
+   if (quad_f.get() != qf)
+   {
+      internal.grid_f.reset();
+      quad_sol = QuadSolution::NONE;
+   }
+   internal.quad_f.reset(qf);
+}
+
+void StreamState::SetQuadFunction(std::unique_ptr<mfem::QuadratureFunction>
+                                  &&pqf)
+{
+   if (quad_f.get() != pqf.get())
+   {
+      internal.grid_f.reset();
+      quad_sol = QuadSolution::NONE;
+   }
+   internal.quad_f = move(pqf);
+}
+
 void StreamState::Extrude1DMeshAndSolution()
 {
    if (mesh->Dimension() != 1 || mesh->SpaceDimension() != 1)
@@ -51,7 +122,7 @@ void StreamState::Extrude1DMeshAndSolution()
       GridFunction *grid_f_2d =
          Extrude1DGridFunction(mesh.get(), mesh2d, grid_f.get(), 1);
 
-      grid_f.reset(grid_f_2d);
+      internal.grid_f.reset(grid_f_2d);
    }
    else if (sol.Size() == mesh->GetNV())
    {
@@ -63,8 +134,8 @@ void StreamState::Extrude1DMeshAndSolution()
       sol = sol2d;
    }
 
-   if (!mesh_quad) { mesh.swap(mesh_quad); }
-   mesh.reset(mesh2d);
+   if (!mesh_quad) { internal.mesh.swap(internal.mesh_quad); }
+   internal.mesh.reset(mesh2d);
 }
 
 void StreamState::CollectQuadratures(QuadratureFunction *qf_array[],
@@ -75,7 +146,7 @@ void StreamState::CollectQuadratures(QuadratureFunction *qf_array[],
    //assume the same quadrature rule
    QuadratureSpace *qspace = new QuadratureSpace(*mesh,
                                                  qf_array[0]->GetIntRule(0));
-   quad_f.reset(new QuadratureFunction(qspace, vdim));
+   SetQuadFunction(new QuadratureFunction(qspace, vdim));
    quad_f->SetOwnsSpace(true);
    real_t *g_data = quad_f->GetData();
    for (int p = 0; p < npieces; p++)
@@ -107,7 +178,7 @@ void StreamState::SetMeshSolution()
          cfec = new Const3DFECollection;
       }
       FiniteElementSpace *cfes = new FiniteElementSpace(mesh.get(), cfec);
-      grid_f.reset(new GridFunction(cfes));
+      SetGridFunction(new GridFunction(cfes));
       grid_f->MakeOwner(cfec);
       {
          Array<int> coloring;
@@ -148,8 +219,8 @@ void StreamState::SetQuadSolution(QuadSolution type)
    //use the original mesh when available
    if (mesh_quad.get())
    {
-      mesh.swap(mesh_quad);
-      mesh_quad.reset();
+      internal.mesh.swap(internal.mesh_quad);
+      internal.mesh_quad.reset();
    }
 
    switch (type)
@@ -172,9 +243,9 @@ void StreamState::SetQuadSolution(QuadSolution type)
               << ref_factor << " times" << endl;
          GridFunction *gf = new GridFunction(fes, *quad_f, 0);
          gf->MakeOwner(fec);
-         grid_f.reset(gf);
-         mesh.swap(mesh_quad);
-         mesh.reset(mesh_lor);
+         internal.grid_f.reset(gf);
+         internal.mesh.swap(internal.mesh_quad);
+         internal.mesh.reset(mesh_lor);
       }
       break;
       case QuadSolution::HO_L2:
@@ -200,7 +271,7 @@ void StreamState::SetQuadSolution(QuadSolution type)
               << order << endl;
          GridFunction *gf = new GridFunction(fes, *quad_f, 0);
          gf->MakeOwner(fec);
-         grid_f.reset(gf);
+         internal.grid_f.reset(gf);
       }
       break;
       default:
@@ -219,13 +290,13 @@ StreamState::FieldType StreamState::ReadStream(istream &is,
    keys.clear();
    if (data_type == "fem2d_data")
    {
-      mesh.reset(new Mesh(is, 0, 0, fix_elem_orient));
+      SetMesh(new Mesh(is, 0, 0, fix_elem_orient));
       sol.Load(is, mesh->GetNV());
    }
    else if (data_type == "vfem2d_data" || data_type == "vfem2d_data_keys")
    {
       field_type = FieldType::VECTOR;
-      mesh.reset(new Mesh(is, 0, 0, fix_elem_orient));
+      SetMesh(new Mesh(is, 0, 0, fix_elem_orient));
       solu.Load(is, mesh->GetNV());
       solv.Load(is, mesh->GetNV());
       if (data_type == "vfem2d_data_keys")
@@ -235,13 +306,13 @@ StreamState::FieldType StreamState::ReadStream(istream &is,
    }
    else if (data_type == "fem3d_data")
    {
-      mesh.reset(new Mesh(is, 0, 0, fix_elem_orient));
+      SetMesh(new Mesh(is, 0, 0, fix_elem_orient));
       sol.Load(is, mesh->GetNV());
    }
    else if (data_type == "vfem3d_data" || data_type == "vfem3d_data_keys")
    {
       field_type = FieldType::VECTOR;
-      mesh.reset(new Mesh(is, 0, 0, fix_elem_orient));
+      SetMesh(new Mesh(is, 0, 0, fix_elem_orient));
       solu.Load(is, mesh->GetNV());
       solv.Load(is, mesh->GetNV());
       solw.Load(is, mesh->GetNV());
@@ -252,8 +323,8 @@ StreamState::FieldType StreamState::ReadStream(istream &is,
    }
    else if (data_type == "fem2d_gf_data" || data_type == "fem2d_gf_data_keys")
    {
-      mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
-      grid_f.reset(new GridFunction(mesh.get(), is));
+      SetMesh(new Mesh(is, 1, 0, fix_elem_orient));
+      SetGridFunction(new GridFunction(mesh.get(), is));
       if (data_type == "fem2d_gf_data_keys")
       {
          is >> keys;
@@ -262,8 +333,8 @@ StreamState::FieldType StreamState::ReadStream(istream &is,
    else if (data_type == "vfem2d_gf_data" || data_type == "vfem2d_gf_data_keys")
    {
       field_type = FieldType::VECTOR;
-      mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
-      grid_f.reset(new GridFunction(mesh.get(), is));
+      SetMesh(new Mesh(is, 1, 0, fix_elem_orient));
+      SetGridFunction(new GridFunction(mesh.get(), is));
       if (data_type == "vfem2d_gf_data_keys")
       {
          is >> keys;
@@ -271,8 +342,8 @@ StreamState::FieldType StreamState::ReadStream(istream &is,
    }
    else if (data_type == "fem3d_gf_data" || data_type == "fem3d_gf_data_keys")
    {
-      mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
-      grid_f.reset(new GridFunction(mesh.get(), is));
+      SetMesh(new Mesh(is, 1, 0, fix_elem_orient));
+      SetGridFunction(new GridFunction(mesh.get(), is));
       if (data_type == "fem3d_gf_data_keys")
       {
          is >> keys;
@@ -281,8 +352,8 @@ StreamState::FieldType StreamState::ReadStream(istream &is,
    else if (data_type == "vfem3d_gf_data" || data_type == "vfem3d_gf_data_keys")
    {
       field_type = FieldType::VECTOR;
-      mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
-      grid_f.reset(new GridFunction(mesh.get(), is));
+      SetMesh(new Mesh(is, 1, 0, fix_elem_orient));
+      SetGridFunction(new GridFunction(mesh.get(), is));
       if (data_type == "vfem3d_gf_data_keys")
       {
          is >> keys;
@@ -290,21 +361,20 @@ StreamState::FieldType StreamState::ReadStream(istream &is,
    }
    else if (data_type == "solution")
    {
-      mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
-      grid_f.reset(new GridFunction(mesh.get(), is));
+      SetMesh(new Mesh(is, 1, 0, fix_elem_orient));
+      SetGridFunction(new GridFunction(mesh.get(), is));
       field_type = (grid_f->VectorDim() == 1) ? FieldType::SCALAR : FieldType::VECTOR;
    }
    else if (data_type == "quadrature")
    {
-      mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
-      mesh_quad.reset();
-      quad_f.reset(new QuadratureFunction(mesh.get(), is));
+      SetMesh(new Mesh(is, 1, 0, fix_elem_orient));
+      SetQuadFunction(new QuadratureFunction(mesh.get(), is));
       SetQuadSolution();
       field_type = (quad_f->GetVDim() == 1) ? FieldType::SCALAR : FieldType::VECTOR;
    }
    else if (data_type == "mesh")
    {
-      mesh.reset(new Mesh(is, 1, 0, fix_elem_orient));
+      SetMesh(new Mesh(is, 1, 0, fix_elem_orient));
       SetMeshSolution();
       field_type = FieldType::MESH;
    }
@@ -363,7 +433,7 @@ StreamState::FieldType StreamState::ReadStream(istream &is,
          tot_num_elem += num_elem;
       }
 
-      mesh.reset(new Mesh(2, tot_num_vert, tot_num_elem, 0));
+      SetMesh(new Mesh(2, tot_num_vert, tot_num_elem, 0));
       sol.SetSize(tot_num_vert);
       normals.SetSize(3*tot_num_vert);
 
@@ -498,11 +568,10 @@ StreamState::FieldType StreamState::ReadStreams(const StreamCollection&
       mfem_error("Input streams contain a mixture of data types!");
    }
 
-   mesh.reset(new Mesh(mesh_array, nproc));
-   mesh_quad.reset();
+   SetMesh(new Mesh(mesh_array, nproc));
    if (gf_count > 0)
    {
-      grid_f.reset(new GridFunction(mesh.get(), gf_array, nproc));
+      SetGridFunction(new GridFunction(mesh.get(), gf_array, nproc));
       field_type = (grid_f->VectorDim() == 1) ? FieldType::SCALAR : FieldType::VECTOR;
    }
    else if (qf_count > 0)
@@ -556,7 +625,7 @@ void StreamState::WriteStream(std::ostream &os)
 // or Raviart-Thomas space) with a discontinuous piece-wise polynomial Cartesian
 // product vector grid function of the same order.
 std::unique_ptr<GridFunction>
-ProjectVectorFEGridFunction(std::unique_ptr<GridFunction> gf)
+StreamState::ProjectVectorFEGridFunction(std::unique_ptr<GridFunction> gf)
 {
    if ((gf->VectorDim() == 3) && (gf->FESpace()->GetVDim() == 1))
    {
@@ -584,10 +653,10 @@ bool StreamState::SetNewMeshAndSolution(StreamState new_state,
    if (new_state.mesh->SpaceDimension() == mesh->SpaceDimension() &&
        new_state.grid_f->VectorDim() == grid_f->VectorDim())
    {
-      grid_f = std::move(new_state.grid_f);
-      mesh = std::move(new_state.mesh);
-      quad_f = std::move(new_state.quad_f);
-      mesh_quad = std::move(new_state.mesh_quad);
+      internal.grid_f = std::move(new_state.internal.grid_f);
+      internal.mesh = std::move(new_state.internal.mesh);
+      internal.quad_f = std::move(new_state.internal.quad_f);
+      internal.mesh_quad = std::move(new_state.internal.mesh_quad);
 
       ResetMeshAndSolution(vs);
 
@@ -628,7 +697,7 @@ void StreamState::ResetMeshAndSolution(VisualizationScene* vs)
       }
       else
       {
-         grid_f = ProjectVectorFEGridFunction(std::move(grid_f));
+         SetGridFunction(ProjectVectorFEGridFunction(std::move(internal.grid_f)));
 
          VisualizationSceneVector3d *vss =
             dynamic_cast<VisualizationSceneVector3d *>(vs);

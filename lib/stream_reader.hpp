@@ -23,12 +23,22 @@ using StreamCollection = std::vector<std::unique_ptr<std::istream>>;
 
 struct StreamState
 {
+private:
+   struct
+   {
+      std::unique_ptr<mfem::Mesh> mesh;
+      std::unique_ptr<mfem::Mesh> mesh_quad;
+      std::unique_ptr<mfem::GridFunction> grid_f;
+      std::unique_ptr<mfem::QuadratureFunction> quad_f;
+   } internal;
+
+public:
    mfem::Vector sol, solu, solv, solw, normals;
    std::string keys;
-   std::unique_ptr<mfem::Mesh> mesh;
-   std::unique_ptr<mfem::Mesh> mesh_quad;
-   std::unique_ptr<mfem::GridFunction> grid_f;
-   std::unique_ptr<mfem::QuadratureFunction> quad_f;
+   const std::unique_ptr<mfem::Mesh> &mesh{internal.mesh};
+   const std::unique_ptr<mfem::Mesh> &mesh_quad{internal.mesh_quad};
+   const std::unique_ptr<mfem::GridFunction> &grid_f{internal.grid_f};
+   const std::unique_ptr<mfem::QuadratureFunction> &quad_f{internal.quad_f};
    int is_gf{0};
    int is_qf{0};
    bool fix_elem_orient{false};
@@ -58,6 +68,19 @@ struct StreamState
       MAX
    } quad_sol {QuadSolution::NONE};
 
+   StreamState() = default;
+   StreamState(StreamState &&ss) { *this = std::move(ss); }
+   StreamState& operator=(StreamState &&ss);
+
+   void SetMesh(mfem::Mesh *mesh);
+   void SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh);
+
+   void SetGridFunction(mfem::GridFunction *gf);
+   void SetGridFunction(std::unique_ptr<mfem::GridFunction> &&pgf);
+
+   void SetQuadFunction(mfem::QuadratureFunction *qf);
+   void SetQuadFunction(std::unique_ptr<mfem::QuadratureFunction> &&pqf);
+
    /// Helper function for visualizing 1D data
    void Extrude1DMeshAndSolution();
 
@@ -79,6 +102,15 @@ struct StreamState
 
    void WriteStream(std::ostream &os);
 
+   // Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec
+   // or Raviart-Thomas space) with a discontinuous piece-wise polynomial Cartesian
+   // product vector grid function of the same order.
+   static std::unique_ptr<mfem::GridFunction>
+   ProjectVectorFEGridFunction(std::unique_ptr<mfem::GridFunction> gf);
+
+   void ProjectVectorFEGridFunction()
+   { internal.grid_f = ProjectVectorFEGridFunction(std::move(internal.grid_f)); }
+
    /// Sets a new mesh and solution from another StreamState object, and
    /// updates the given VisualizationScene pointer with the new data.
    ///
@@ -95,11 +127,5 @@ struct StreamState
    /// @see SetNewMeshAndSolution()
    void ResetMeshAndSolution(VisualizationScene* vs);
 };
-
-// Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec
-// or Raviart-Thomas space) with a discontinuous piece-wise polynomial Cartesian
-// product vector grid function of the same order.
-std::unique_ptr<mfem::GridFunction>
-ProjectVectorFEGridFunction(std::unique_ptr<mfem::GridFunction> gf);
 
 #endif // GLVIS_STREAM_READER_HPP
