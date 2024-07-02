@@ -49,13 +49,14 @@ struct StreamState
 
    enum class QuadSolution
    {
+      NONE = -1,
       MIN = -1,
       //----------
       LOR_ClosedGL,
       HO_L2,
       //----------
       MAX
-   } quad_sol;
+   } quad_sol {QuadSolution::NONE};
 
    /// Helper function for visualizing 1D data
    void Extrude1DMeshAndSolution();
