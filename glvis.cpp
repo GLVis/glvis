@@ -364,6 +364,7 @@ int ScriptReadQuadrature(istream &scr, StreamState& state)
       state.SetQuadFunction(new QuadratureFunction(state.mesh.get(), isol));
    }
 
+   state.SetQuadSolution();
    state.Extrude1DMeshAndSolution();
 
    return 0;
@@ -432,6 +433,7 @@ int ScriptReadParQuadrature(istream &scr, StreamState& state)
                                          quad_prefix.c_str(), state);
    if (!err_read)
    {
+      state.SetQuadSolution();
       state.Extrude1DMeshAndSolution();
    }
    return err_read;
