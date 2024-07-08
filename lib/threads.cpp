@@ -433,7 +433,15 @@ int GLVisCommand::Execute()
             }
             else
             {
-               new_state.SetQuadSolution();
+               auto qs = curr_state.GetQuadSolution();
+               if (qs != StreamState::QuadSolution::NONE)
+               {
+                  new_state.SetQuadSolution(qs);
+               }
+               else
+               {
+                  new_state.SetQuadSolution();
+               }
                new_state.Extrude1DMeshAndSolution();
             }
          }
