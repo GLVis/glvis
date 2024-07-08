@@ -23,10 +23,7 @@ QuadratureFunction* Extrude1DQuadFunction(Mesh *mesh, Mesh *mesh2d,
 
 StreamState &StreamState::operator=(StreamState &&ss)
 {
-   internal.mesh = std::move(ss.internal.mesh);
-   internal.mesh_quad = std::move(ss.internal.mesh_quad);
-   internal.grid_f = std::move(ss.internal.grid_f);
-   internal.quad_f = std::move(ss.internal.quad_f);
+   internal = std::move(ss.internal);
 
    sol = std::move(ss.sol);
    solu = std::move(ss.solu);
@@ -40,6 +37,8 @@ StreamState &StreamState::operator=(StreamState &&ss)
    fix_elem_orient = ss.fix_elem_orient;
    save_coloring = ss.save_coloring;
    keep_attr = ss.keep_attr;
+
+   quad_sol = ss.quad_sol;
 
    return *this;
 }
