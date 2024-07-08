@@ -3933,12 +3933,25 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
          {
             FiniteElementSpace *fes = GridF->FESpace();
             const FiniteElement *fe = fes->GetFE(ie);
+            const int ndof = fe->GetDof();
+            const int ndim = fe->GetDim();
             ElementTransformation *Trans = fes->GetElementTransformation(ie);
             const IntegrationRule &ir = RefG->RefPts;
-            DenseMatrix dshape(fe->GetDof(), fe->GetDim());
-            Vector lval, gh(fe->GetDim()), gcol;
+            DenseMatrix dshape(ndof, ndim);
+            Vector lval, gh(ndim), gcol;
 
             GridF->GetElementDofValues(ie, lval);
+
+            // Local projection to value-based FE
+            const IntegrationRule &nodes = fe->GetNodes();
+            for (int n = 0; n < nodes.GetNPoints(); n++)
+            {
+               const IntegrationPoint &ip = nodes.IntPoint(n);
+               Trans->SetIntPoint(&ip);
+               lval(n) /= Trans->Weight();
+            }
+
+            // Gradient calculation
             grad.SetSize(fe->GetDim(), ir.GetNPoints());
             for (int q = 0; q < ir.GetNPoints(); q++)
             {
@@ -3946,7 +3959,6 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
                fe->CalcDShape(ip, dshape);
                dshape.MultTranspose(lval, gh);
                Trans->SetIntPoint(&ip);
-               gh /= Trans->Weight();
                grad.GetColumnReference(q, gcol);
                const DenseMatrix &Jinv = Trans->InverseJacobian();
                Jinv.MultTranspose(gh, gcol);
