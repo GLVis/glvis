@@ -1790,7 +1790,7 @@ void SetFont(const std::string& fn)
 #endif
 }
 
-string FormatNumber(double x, char format, int precision, bool showsign) {
+string FormatNumber(double x, int precision, char format, bool showsign) {
     ostringstream oss;
     switch (format) {
         case 'f':
