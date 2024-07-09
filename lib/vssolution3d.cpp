@@ -3948,7 +3948,7 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
             {
                const IntegrationPoint &ip = nodes.IntPoint(n);
                Trans->SetIntPoint(&ip);
-               lval(n) /= Trans->Weight();
+               lval(n) /= Trans->Weight();//value = dof / |J|
             }
 
             // Gradient calculation
