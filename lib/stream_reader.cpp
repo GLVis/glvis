@@ -152,7 +152,7 @@ void StreamState::CollectQuadratures(QuadratureFunction *qf_array[],
    {
       const real_t *l_data = qf_array[p]->GetData();
       const int l_size = qf_array[p]->Size();
-      MFEM_ASSERT(g_data + l_size >= quad_f->GetData() + quad_f->Size(),
+      MFEM_ASSERT(g_data + l_size <= quad_f->GetData() + quad_f->Size(),
                   "Local parts do not fit to the global quadrature function!");
       memcpy(g_data, l_data, l_size * sizeof(real_t));
       g_data += l_size;
