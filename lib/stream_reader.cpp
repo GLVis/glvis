@@ -696,7 +696,7 @@ void StreamState::ResetMeshAndSolution(VisualizationScene* vs)
       }
       else
       {
-         SetGridFunction(ProjectVectorFEGridFunction(std::move(internal.grid_f)));
+         ProjectVectorFEGridFunction();
 
          VisualizationSceneVector3d *vss =
             dynamic_cast<VisualizationSceneVector3d *>(vs);
