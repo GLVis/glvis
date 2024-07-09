@@ -3924,12 +3924,13 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
          RefG = GLVisGeometryRefiner.Refine(geom, TimesToRefine);
          GridF->GetValues(ie, RefG->RefPts, vals, pointmat);
 #ifdef GLVIS_SMOOTH_LEVELSURF_NORMALS
-         if (GridF->FESpace()->GetFE(ie)->GetMapType() == FiniteElement::VALUE)
+         const int map_type = GridF->FESpace()->GetFE(ie)->GetMapType();
+         if (map_type == FiniteElement::MapType::VALUE)
          {
             GridF->GetGradients(ie, RefG->RefPts, grad);
             gp = &grad;
          }
-         else
+         else if (map_type == FiniteElement::MapType::INTEGRAL)
          {
             FiniteElementSpace *fes = GridF->FESpace();
             const FiniteElement *fe = fes->GetFE(ie);
@@ -3964,6 +3965,10 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
                Jinv.MultTranspose(gh, gcol);
             }
             gp = &grad;
+         }
+         else
+         {
+            MFEM_ABORT("Unknown mapping type");
          }
 #endif
 

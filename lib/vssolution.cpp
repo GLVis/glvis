@@ -727,11 +727,12 @@ int VisualizationSceneSolution::GetRefinedValuesAndNormals(
       // In 1D we do not have well-defined normals.
       if (dim > 1)
       {
-         if (rsol->FESpace()->GetFE(i)->GetMapType() == FiniteElement::VALUE)
+         const int map_type = rsol->FESpace()->GetFE(i)->GetMapType();
+         if (map_type == FiniteElement::MapType::VALUE)
          {
             rsol->GetGradients(i, ir, tr);
          }
-         else
+         else (map_type == FiniteElement::MapType::INTEGRAL)
          {
             FiniteElementSpace *fes = rsol->FESpace();
             const FiniteElement *fe = fes->GetFE(i);
@@ -765,6 +766,11 @@ int VisualizationSceneSolution::GetRefinedValuesAndNormals(
                Jinv.MultTranspose(gh, gcol);
             }
          }
+         else
+         {
+            MFEM_ABORT("Unknown mapping type");
+         }
+
          normals.SetSize(3, tr.Width());
          for (int j = 0; j < tr.Width(); j++)
          {
