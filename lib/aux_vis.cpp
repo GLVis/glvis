@@ -1799,15 +1799,12 @@ string FormatNumber(double x, char format, int precision, bool showsign) {
         case 's':
             oss << scientific;
             break;
-        case 'h':
-            oss << hexfloat;
-            break;
         case 'd':
             oss << defaultfloat;
             break;
         default:
             MFEM_WARNING("Unknown formatting type. Using default. "
-            << "Valid options include: ['f', 's', 'h', 'd']" << endl);
+            << "Valid options include: ['f', 's', 'd']" << endl);
             oss << defaultfloat;
             break;
     };
