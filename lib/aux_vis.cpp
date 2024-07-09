@@ -219,6 +219,9 @@ void SendKeySequence(const char *seq)
             case 'd': // down arrow
                wnd->signalKeyDown(SDLK_DOWN);
                break;
+            case '2': // F2
+               wnd->signalKeyDown(SDLK_F2);
+               break;
             case '3': // F3
                wnd->signalKeyDown(SDLK_F3);
                break;
@@ -277,6 +280,9 @@ void CallKeySequence(const char *seq)
                break;
             case 'd': // down arrow
                wnd->callKeyDown(SDLK_DOWN);
+               break;
+            case '2': // F2
+               wnd->callKeyDown(SDLK_F2);
                break;
             case '3': // F3
                wnd->callKeyDown(SDLK_F3);

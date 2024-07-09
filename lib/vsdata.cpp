@@ -651,6 +651,19 @@ void KeyPPressed()
    SendExposeEvent();
 }
 
+static void KeyF2Pressed()
+{
+   char location;
+   char format;
+   int precision;
+   bool showsign;
+
+   cout << "Setting number format...";
+   cout << "Where to set ['a'=axes, 'c'=colorbar] : ";
+   cout << "Enter precision : ";
+   cout << "Enter format ['d'=default, 'f'=fixed, 's'=scientific]: ";
+}
+
 static void KeyF5Pressed()
 {
    int n;
@@ -1302,6 +1315,7 @@ void VisualizationSceneScalarData::Init()
       wnd->setOnKeyDown('h', KeyHPressed);
       wnd->setOnKeyDown('H', KeyHPressed);
 
+      wnd->setOnKeyDown(SDLK_F2, KeyF2Pressed);
       wnd->setOnKeyDown(SDLK_F5, KeyF5Pressed);
       wnd->setOnKeyDown(SDLK_F6, KeyF6Pressed);
       wnd->setOnKeyDown(SDLK_F7, KeyF7Pressed);
