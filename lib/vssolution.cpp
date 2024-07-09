@@ -732,7 +732,7 @@ int VisualizationSceneSolution::GetRefinedValuesAndNormals(
          {
             rsol->GetGradients(i, ir, tr);
          }
-         else (map_type == FiniteElement::MapType::INTEGRAL)
+         else if (map_type == FiniteElement::MapType::INTEGRAL)
          {
             FiniteElementSpace *fes = rsol->FESpace();
             const FiniteElement *fe = fes->GetFE(i);
