@@ -20,6 +20,11 @@ Version 4.2.1 (development)
   surface normals was not implemented and was crashing GLVis. The normals are
   approximately calculated from the point-wise projected value-based FEs.
 
+- Added two new modes for visualization of vector fields in 2D, placing the
+  arrows above the plotted surface and using a single color.
+
+- Added a compilation parameter for the default font size.
+
 
 Version 4.2 released on May 23, 2022
 ====================================
