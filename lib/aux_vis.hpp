@@ -136,6 +136,6 @@ bool SetFont(const vector<std::string>& patterns, int height);
 void SetFont(const std::string& fn);
 
 void SetUseHiDPI(bool status);
-std::string FormatNumber(double x, char format='d', int precision=4);
+std::string FormatNumber(double x, char format='d', int precision=4, bool showsign=false);
 
 #endif

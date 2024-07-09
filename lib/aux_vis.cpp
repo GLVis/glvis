@@ -1784,7 +1784,7 @@ void SetFont(const std::string& fn)
 #endif
 }
 
-string FormatNumber(double x, char format, int precision) {
+string FormatNumber(double x, char format, int precision, bool showsign) {
     ostringstream oss;
     switch (format) {
         case 'f':
@@ -1805,6 +1805,9 @@ string FormatNumber(double x, char format, int precision) {
             oss << defaultfloat;
             break;
     };
+    if (showsign){
+      oss << showpos;
+    }
     oss << setprecision(precision) << x;
     return oss.str();
 }
