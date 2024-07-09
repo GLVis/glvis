@@ -219,9 +219,6 @@ void SendKeySequence(const char *seq)
             case 'd': // down arrow
                wnd->signalKeyDown(SDLK_DOWN);
                break;
-            case '2': // F2
-               wnd->signalKeyDown(SDLK_F2);
-               break;
             case '3': // F3
                wnd->signalKeyDown(SDLK_F3);
                break;
@@ -280,9 +277,6 @@ void CallKeySequence(const char *seq)
                break;
             case 'd': // down arrow
                wnd->callKeyDown(SDLK_DOWN);
-               break;
-            case '2': // F2
-               wnd->callKeyDown(SDLK_F2);
                break;
             case '3': // F3
                wnd->callKeyDown(SDLK_F3);
@@ -1813,5 +1807,33 @@ string FormatNumber(double x, int precision, char format, bool showsign) {
     }
     oss << setprecision(precision) << x;
     return oss.str();
+}
+
+// This is a helper function for prompting the user for inputs. The benefit
+// over using just `cin >> input` is that you can specify a type and optionally
+// a validator lambda. The a validator if not specified, it defaults to the
+// True function. If the input cannot be type casted to the expected type, or
+// if it fails the validation, the user is asked again for a new input.
+template <typename T>
+T prompt(const string question, function<bool(T)> validator){
+    T input;
+    string strInput;
+
+    while (true) {
+        cout << question << endl;
+        getline(cin, strInput);
+        stringstream buf(strInput);
+
+        if (buf >> input) {
+            if (validator(input)) {
+                break;
+            } else {
+               cout << "Input is not valid. Please try again." << endl;
+            }
+        } else {
+           cout << "Input can not be casted to expected type. Please try again." << endl;
+        }
+    }
+    return input;
 }
 

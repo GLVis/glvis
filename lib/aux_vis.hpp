@@ -138,4 +138,7 @@ void SetFont(const std::string& fn);
 void SetUseHiDPI(bool status);
 std::string FormatNumber(double x, int precision=4, char format='d', bool showsign=false);
 
+template <typename T>
+T prompt(const string question, function<bool(T)> validator=[](T) { return true; });
+
 #endif
