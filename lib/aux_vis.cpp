@@ -1783,3 +1783,29 @@ void SetFont(const std::string& fn)
         << "', height = " << font_size << endl;
 #endif
 }
+
+string FormatNumber(double x, char format, int precision) {
+    ostringstream oss;
+    switch (format) {
+        case 'f':
+            oss << fixed;
+            break;
+        case 's':
+            oss << scientific;
+            break;
+        case 'h':
+            oss << hexfloat;
+            break;
+        case 'd':
+            oss << defaultfloat;
+            break;
+        default:
+            MFEM_WARNING("Unknown formatting type. Using default. "
+            << "Valid options include: ['f', 's', 'h', 'd']" << endl);
+            oss << defaultfloat;
+            break;
+    };
+    oss << setprecision(precision) << x;
+    return oss.str();
+}
+

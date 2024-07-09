@@ -496,9 +496,8 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
 
          val = ULogVal(i / 4.0);
 
-         ostringstream buf;
-         buf << setprecision(4) << val;
-         color_bar.addText(text_x,Y,posz, buf.str());
+         string valstr = FormatNumber(val);
+         color_bar.addText(text_x,Y,posz, valstr);
       }
    }
    else
@@ -508,9 +507,8 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
          val = (*mesh_level)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
 
-         ostringstream buf;
-         buf << setprecision(4) << val;
-         color_bar.addText(text_x,Y,posz, buf.str());
+         string valstr = FormatNumber(val);
+         color_bar.addText(text_x,Y,posz, valstr);
       }
    }
 
@@ -521,9 +519,8 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
          val = (*lsurf_levels)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
 
-         ostringstream buf;
-         buf << setprecision(4) << val;
-         color_bar.addText(text_x,Y,posz, buf.str());
+         string valstr = FormatNumber(val);
+         color_bar.addText(text_x,Y,posz, valstr);
       }
    }
    updated_bufs.emplace_back(&color_bar);
@@ -1513,13 +1510,17 @@ void VisualizationSceneScalarData::PrepareAxes()
       int ox = -desc/2;
       int oy = -3*desc/2;
       ostringstream buf;
-      buf << setprecision(4)
-          << "(" << bb.x[0] << "," << bb.y[0] << ","  << bb.z[0] << ")" ;
+      buf << "("
+          << FormatNumber(bb.x[0]) << ","
+          << FormatNumber(bb.y[0]) << ","
+          << FormatNumber(bb.z[0]) << ")";
       axes_buf.addText(bb.x[0], bb.y[0], bb.z[0], ox, oy, buf.str());
 
       ostringstream buf1;
-      buf1 << setprecision(4)
-           << "(" << bb.x[1] << "," << bb.y[1] << "," << bb.z[1] << ")" ;
+      buf1 << "("
+           << FormatNumber(bb.x[1]) << ","
+           << FormatNumber(bb.y[1]) << ","
+           << FormatNumber(bb.z[1]) << ")";
       axes_buf.addText(bb.x[1], bb.y[1], bb.z[1], ox, oy, buf1.str());
    }
    updated_bufs.emplace_back(&axes_buf);
