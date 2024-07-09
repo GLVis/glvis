@@ -222,6 +222,18 @@ void StreamState::SetQuadSolution(QuadSolution type)
       internal.mesh_quad.reset();
    }
 
+   //check for tensor-product basis
+   if (order > 0)
+   {
+      Array<Geometry::Type> geoms;
+      mesh->GetGeometries(mesh->Dimension(), geoms);
+      for (auto geom : geoms)
+         if (!Geometry::IsTensorProduct(geom))
+         {
+            MFEM_ABORT("High-order quadratures are available only for tensor-product finite elements");
+         }
+   }
+
    switch (type)
    {
       case QuadSolution::LOR_ClosedGL:
@@ -250,19 +262,6 @@ void StreamState::SetQuadSolution(QuadSolution type)
       case QuadSolution::HO_L2:
       {
          FiniteElementCollection *fec = new L2_FECollection(order, mesh->Dimension());
-         if (order > 0)
-         {
-            Array<Geometry::Type> geoms;
-            mesh->GetGeometries(mesh->Dimension(), geoms);
-            for (auto geom : geoms)
-               if (!Geometry::IsTensorProduct(geom))
-               {
-                  cout << "High-order representation is available only for tensor-product bases"
-                       << endl;
-                  SetQuadSolution(QuadSolution::LOR_ClosedGL);
-                  return;
-               }
-         }
          FiniteElementSpace *fes = new FiniteElementSpace(mesh.get(), fec,
                                                           quad_f->GetVDim(), Ordering::byVDIM);
          MFEM_ASSERT(quad_f->Size() == fes->GetVSize(), "Size mismatch");
@@ -274,7 +273,7 @@ void StreamState::SetQuadSolution(QuadSolution type)
       }
       break;
       default:
-         cout << "Unknon quadrarture function representation" << endl;
+         cout << "Unknown quadrature function representation" << endl;
          return;
    }
 
