@@ -65,6 +65,14 @@ protected:
    int scaling, colorbar, drawaxes;
    int auto_ref_max, auto_ref_max_surf_elem;
 
+   // Formatting for axes & colorbar numbers
+   int axes_precision = 4;
+   int colorbar_precision = 4;
+   char axes_format = 'd';
+   char colorbar_format = 'd';
+   bool axes_showsign = false;
+   bool colorbar_showsign = false;
+
    vector<gl3::GlDrawable*> updated_bufs;
    gl3::GlDrawable axes_buf;
    gl3::GlDrawable coord_cross_buf;
@@ -253,11 +261,15 @@ public:
    // Turn on or off the caption
    void PrepareCaption();
 
+   void SetColorbarNumberFormat(int precision, char format, bool showsign);
+
    void PrepareColorBar(double minval, double maxval,
                         Array<double> * level = NULL,
                         Array<double> * levels = NULL);
 
    void SetAxisLabels(const char * a_x, const char * a_y, const char * a_z);
+
+   void SetAxisNumberFormat(int precision, char format, bool showsign);
 
    void PrepareAxes();
    void ToggleDrawAxes()
