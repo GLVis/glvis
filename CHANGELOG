@@ -23,11 +23,12 @@ Version 4.2.1 (development)
 
 - Added visualization of quadratures. They can be loaded from a file through the
   new command line argument '-q' or in a socket stream with the keyword 'quadrature'
-  (instead of solution). Two options of visualization are offered (which can be
+  (instead of solution). Three options of visualization are offered (which can be
   switched by 'Q' key): piece-wise constant function on a refined mesh (closed
-  Gauss-Legendre refinement), or discontinuous elements with DOFs collocated with
-  the quadrature on the original mesh. High-order quadratures are supported only
-  for tensor finite elements.
+  Gauss-Legendre refinement), discontinuous elements with DOFs collocated with
+  the quadrature on the original mesh, or projection to discontinuous elements.
+  High-order quadratures are supported only for tensor finite elements with the
+  first two options.
 
 
 Version 4.2 released on May 23, 2022

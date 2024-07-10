@@ -223,14 +223,18 @@ void StreamState::SetQuadSolution(QuadSolution type)
    }
 
    //check for tensor-product basis
-   if (order > 0)
+   if (order > 0 && type != QuadSolution::HO_L2_projected)
    {
       Array<Geometry::Type> geoms;
       mesh->GetGeometries(mesh->Dimension(), geoms);
       for (auto geom : geoms)
          if (!Geometry::IsTensorProduct(geom))
          {
-            MFEM_ABORT("High-order quadratures are available only for tensor-product finite elements");
+            cout << "High-order quadratures are available only for "
+                 << "tensor-product finite elements with this representation"
+                 << endl;
+            SetQuadSolution(QuadSolution::HO_L2_projected);
+            return;
          }
    }
 
@@ -241,7 +245,7 @@ void StreamState::SetQuadSolution(QuadSolution type)
          const int ref_factor = order + 1;
          if (ref_factor <= 1)
          {
-            SetQuadSolution(QuadSolution::HO_L2);//low-order
+            SetQuadSolution(QuadSolution::HO_L2_collocated);//low-order
             return;
          }
          Mesh *mesh_lor = new Mesh(Mesh::MakeRefined(*mesh, ref_factor,
@@ -259,7 +263,7 @@ void StreamState::SetQuadSolution(QuadSolution type)
          internal.mesh.reset(mesh_lor);
       }
       break;
-      case QuadSolution::HO_L2:
+      case QuadSolution::HO_L2_collocated:
       {
          FiniteElementCollection *fec = new L2_FECollection(order, mesh->Dimension());
          FiniteElementSpace *fes = new FiniteElementSpace(mesh.get(), fec,
@@ -269,6 +273,46 @@ void StreamState::SetQuadSolution(QuadSolution type)
               << order << endl;
          GridFunction *gf = new GridFunction(fes, *quad_f, 0);
          gf->MakeOwner(fec);
+         internal.grid_f.reset(gf);
+      }
+      break;
+      case QuadSolution::HO_L2_projected:
+      {
+         FiniteElementCollection *fec = new L2_FECollection(order, mesh->Dimension());
+         FiniteElementSpace *fes = new FiniteElementSpace(mesh.get(), fec,
+                                                          quad_f->GetVDim(), Ordering::byVDIM);
+         cout << "Projecting quadrature to grid function of order "
+              << order << endl;
+         GridFunction *gf = new GridFunction(fes);
+         gf->MakeOwner(fec);
+
+         VectorQuadratureFunctionCoefficient coeff_qf(*quad_f);
+         VectorDomainLFIntegrator bi(coeff_qf);
+         VectorMassIntegrator Mi;
+         Mi.SetVDim(quad_f->GetVDim());
+
+         DenseMatrix M_i;
+         Vector x_i, b_i;
+         DenseMatrixInverse M_i_inv;
+         Array<int> vdofs;
+
+         for (int i = 0; i < mesh->GetNE(); i++)
+         {
+            const FiniteElement *fe = fes->GetFE(i);
+            ElementTransformation *Tr = mesh->GetElementTransformation(i);
+            Mi.AssembleElementMatrix(*fe, *Tr, M_i);
+            M_i_inv.Factor(M_i);
+
+            bi.SetIntRule(&quad_f->GetIntRule(i));
+            bi.AssembleRHSElementVect(*fe, *Tr, b_i);
+
+            x_i.SetSize(b_i.Size());
+            M_i_inv.Mult(b_i, x_i);
+
+            fes->GetElementVDofs(i, vdofs);
+            gf->SetSubVector(vdofs, x_i);
+         }
+
          internal.grid_f.reset(gf);
       }
       break;

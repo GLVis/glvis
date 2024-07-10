@@ -63,7 +63,8 @@ public:
       MIN = -1,
       //----------
       LOR_ClosedGL,
-      HO_L2,
+      HO_L2_collocated,
+      HO_L2_projected,
       //----------
       MAX
    } quad_sol {QuadSolution::NONE};
