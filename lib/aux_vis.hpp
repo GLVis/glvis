@@ -144,18 +144,25 @@ std::string FormatNumber(double x, int precision=4, char format='d', bool showsi
 // True function. If the input cannot be type casted to the expected type, or
 // if it fails the validation, the user is asked again for a new input.
 template <typename T>
-T prompt(const string question, function<bool(T)> validator=[](T) { return true; }) {
+T prompt(const string question,
+         const T* default_value = nullptr,
+         function<bool(T)> validator = [](T) { return true; })
+{
     T input;
     string strInput;
 
     while (true) {
-        cout << question << endl;
+        cout << question << " ";
         getline(cin, strInput);
         stringstream buf(strInput);
 
+        if (strInput.empty() && default_value != nullptr) {
+            return *default_value;
+        }
+
         if (buf >> input) {
             if (validator(input)) {
-                break;
+                return input;
             } else {
                cout << "Input is not valid. Please try again." << endl;
             }
