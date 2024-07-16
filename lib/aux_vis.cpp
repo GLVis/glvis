@@ -1809,3 +1809,8 @@ string FormatNumber(double x, int precision, char format, bool showsign) {
     return oss.str();
 }
 
+string FormatNumber(double x, string formatting) {
+   char buf[64];
+   snprintf(buf, sizeof(buf), formatting, x);
+   return string(buf);
+}

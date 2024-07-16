@@ -137,6 +137,7 @@ void SetFont(const std::string& fn);
 
 void SetUseHiDPI(bool status);
 std::string FormatNumber(double x, int precision=4, char format='d', bool showsign=false);
+std::string FormatNumber(double x, string formatting);
 
 // This is a helper function for prompting the user for inputs. The benefit
 // over using just `cin >> input` is that you can specify a type and optionally
