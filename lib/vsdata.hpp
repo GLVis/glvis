@@ -16,6 +16,7 @@
 
 #include "mfem.hpp"
 #include "openglvis.hpp"
+#include "aux_vis.hpp"
 
 using namespace mfem;
 
@@ -65,9 +66,9 @@ protected:
    int scaling, colorbar, drawaxes;
    int auto_ref_max, auto_ref_max_surf_elem;
 
-   // Formatter for axes & colorbar numbers
-   function<string(double)> axis_formatter;
-   function<string(double)> colorbar_formatter;
+   // Formatter for axes & colorbar numbers. Set defaults.
+   function<string(double)> axis_formatter = NumberFormatter(4, 'd', false);
+   function<string(double)> colorbar_formatter = NumberFormatter(4, 'd', false);
 
    vector<gl3::GlDrawable*> updated_bufs;
    gl3::GlDrawable axes_buf;
