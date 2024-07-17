@@ -73,6 +73,8 @@ std::string VisualizationSceneVector3d::GetHelpString() const
       << "| y/Y  Rotate cutting plane (theta)  |" << endl
       << "| z/Z  Translate cutting plane       |" << endl
       << "| \\ -  Set light source position     |" << endl
+      << "| Alt+a -  Axes number format        |" << endl
+      << "| Alt+c -  Colorbar number format    |" << endl
       << "| Ctrl+p - Print to a PDF file       |" << endl
       << "+------------------------------------+" << endl
       << "| Function keys                      |" << endl
