@@ -1816,5 +1816,5 @@ function<string(double)> NumberFormatter(string formatting) {
       char buf[64];
       snprintf(buf, sizeof(buf), formatting, x);
       return string(buf);
-   }
+   };
 }
