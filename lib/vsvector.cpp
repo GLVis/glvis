@@ -51,12 +51,12 @@ std::string VisualizationSceneVector::GetHelpString() const
       << "| O -  Switch 'o' func. (NC shading) |" << endl
       << "| p/P  Cycle through color palettes  |" << endl
       << "| q -  Quits                         |" << endl
+      << "| Q -  Cycle quadrature data mode    |" << endl
       << "| r -  Reset the plot to 3D view     |" << endl
       << "| R -  Reset the plot to 2D view     |" << endl
       << "| s -  Turn on/off unit cube scaling |" << endl
       << "| S -  Take snapshot/Record a movie  |" << endl
       << "| t -  Cycle materials and lights    |" << endl
-      << "| Q -  Cycle quadrature data repre.  |" << endl
       << "| u -  Vector sampling; scalar func. |" << endl
       << "| U -  Switch 'u' functionality      |" << endl
       << "| v -  Cycle through vector fields   |" << endl
