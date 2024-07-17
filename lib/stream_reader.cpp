@@ -230,7 +230,7 @@ void StreamState::SetQuadSolution(QuadSolution type)
       for (auto geom : geoms)
          if (!Geometry::IsTensorProduct(geom))
          {
-            cout << "High-order quadratures are available only for "
+            cout << "High-order quadrature data are supported only for "
                  << "tensor-product finite elements with this representation"
                  << endl;
             SetQuadSolution(QuadSolution::HO_L2_projected);
@@ -254,7 +254,7 @@ void StreamState::SetQuadSolution(QuadSolution type)
          FiniteElementSpace *fes = new FiniteElementSpace(mesh_lor, fec,
                                                           quad_f->GetVDim(), Ordering::byVDIM);
          MFEM_ASSERT(quad_f->Size() == fes->GetVSize(), "Size mismatch");
-         cout << "Representing quadrature by piecewise-constant function on mesh refined "
+         cout << "Representing quadrature data by piecewise-constant function on mesh refined "
               << ref_factor << " times" << endl;
          GridFunction *gf = new GridFunction(fes, *quad_f, 0);
          gf->MakeOwner(fec);
@@ -269,7 +269,7 @@ void StreamState::SetQuadSolution(QuadSolution type)
          FiniteElementSpace *fes = new FiniteElementSpace(mesh.get(), fec,
                                                           quad_f->GetVDim(), Ordering::byVDIM);
          MFEM_ASSERT(quad_f->Size() == fes->GetVSize(), "Size mismatch");
-         cout << "Representing quadrature by grid function of order "
+         cout << "Representing quadrature data by grid function of order "
               << order << endl;
          GridFunction *gf = new GridFunction(fes, *quad_f, 0);
          gf->MakeOwner(fec);
@@ -281,7 +281,7 @@ void StreamState::SetQuadSolution(QuadSolution type)
          FiniteElementCollection *fec = new L2_FECollection(order, mesh->Dimension());
          FiniteElementSpace *fes = new FiniteElementSpace(mesh.get(), fec,
                                                           quad_f->GetVDim(), Ordering::byVDIM);
-         cout << "Projecting quadrature to grid function of order "
+         cout << "Projecting quadrature data to grid function of order "
               << order << endl;
          GridFunction *gf = new GridFunction(fes);
          gf->MakeOwner(fec);
@@ -317,7 +317,7 @@ void StreamState::SetQuadSolution(QuadSolution type)
       }
       break;
       default:
-         cout << "Unknown quadrature function representation" << endl;
+         cout << "Unknown quadrature data representation" << endl;
          return;
    }
 
