@@ -1358,6 +1358,8 @@ int main (int argc, char *argv[])
          cout << "Can not open script: " << script_file << endl;
          return 1;
       }
+      cout << "Running script from file: " << script_file << endl;
+      cout << "You may need to press <space> to execute the script steps." << endl;
       PlayScript(scr);
       return 0;
    }
