@@ -645,6 +645,28 @@ void ExecuteScriptCommand()
          cout << min << ' ' << max << ' ' << num << endl;
          MyExpose();
       }
+      else if (word == "axis_numberformat")
+      {
+         char delim;
+         string axis_formatting;
+         scr >> ws >> delim;
+         getline(scr, axis_formatting, delim);
+         cout << "Script: axis_numberformat: " << flush;
+         vs->SetAxisNumberFormat(axis_formatting);
+         cout << axis_formatting << endl;
+         MyExpose();
+      }
+      else if (word == "colorbar_numberformat")
+      {
+         char delim;
+         string colorbar_formatting;
+         scr >> ws >> delim;
+         getline(scr, colorbar_formatting, delim);
+         cout << "Script: colorbar_numberformat: " << flush;
+         vs->SetColorbarNumberFormat(colorbar_formatting);
+         cout << colorbar_formatting << endl;
+         MyExpose();
+      }
       else if (word == "window")
       {
          scr >> window_x >> window_y >> window_w >> window_h;
