@@ -1814,7 +1814,7 @@ function<string(double)> NumberFormatter(int precision, char format, bool showsi
 function<string(double)> NumberFormatter(string formatting) {
    return [formatting](double x) -> string {
       char buf[64];
-      snprintf(buf, sizeof(buf), formatting, x);
+      snprintf(buf, sizeof(buf), formatting.c_str(), x);
       return string(buf);
    };
 }

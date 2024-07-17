@@ -418,13 +418,13 @@ void VisualizationSceneScalarData::SetColorbarNumberFormat(int precision,
                                                            char format,
                                                            bool showsign)
 {
-   colorbar_formatter = NumberFormatter(precision, format, showsign)
+   colorbar_formatter = NumberFormatter(precision, format, showsign);
    // The first two arguments are required but I don't think they are used?
    PrepareColorBar(0,0);
 }
 void VisualizationSceneScalarData::SetColorbarNumberFormat(string formatting)
 {
-   colorbar_formatter = NumberFormatter(formatting)
+   colorbar_formatter = NumberFormatter(formatting);
    // The first two arguments are required but I don't think they are used?
    PrepareColorBar(0,0);
 }
@@ -1477,13 +1477,13 @@ void VisualizationSceneScalarData::SetAxisNumberFormat(int precision,
                                                        char format,
                                                        bool showsign)
 {
-   axis_formatter = NumberFormatter(precision, format, showsign)
+   axis_formatter = NumberFormatter(precision, format, showsign);
    PrepareAxes();
 }
 
 void VisualizationSceneScalarData::SetAxisNumberFormat(string formatting)
 {
-   axis_formatter = NumberFormatter(formatting)
+   axis_formatter = NumberFormatter(formatting);
    PrepareAxes();
 }
 
