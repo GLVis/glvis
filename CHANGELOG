@@ -18,7 +18,7 @@ Version 4.2.1 (development)
 
 - Added support for scalar integral finite elements, where calculation of the
   surface normals was not implemented and was crashing GLVis. The normals are
-  approximately calculated from the point-wise projected value-based FEs.
+  approximately calculated from the point-wise projected value-based elements.
 
 - Added two new modes for visualization of vector fields in 2D, placing the
   arrows above the plotted surface and using a single color.
