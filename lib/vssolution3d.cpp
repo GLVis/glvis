@@ -69,6 +69,7 @@ std::string VisualizationSceneSolution3d::GetHelpString() const
       << "| s -  Turn on/off unit cube scaling |" << endl
       << "| S -  Take snapshot/Record a movie  |" << endl
       << "| t -  Cycle materials and lights    |" << endl
+      << "| Q -  Cycle quadrature data repre.  |" << endl
       << "| u/U  Move the level surface        |" << endl
       << "| v/V  Add/Delete a level surface    |" << endl
       << "| w/W  Move bdr elements up/down     |" << endl

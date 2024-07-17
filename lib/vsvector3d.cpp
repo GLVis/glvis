@@ -66,6 +66,7 @@ std::string VisualizationSceneVector3d::GetHelpString() const
       << "| s -  Turn on/off unit cube scaling |" << endl
       << "| S -  Take snapshot/Record a movie  |" << endl
       << "| t -  Cycle materials and lights    |" << endl
+      << "| Q -  Cycle quadrature data repre.  |" << endl
       << "| u/U  Move the level field vectors  |" << endl
       << "| v/V  Vector field                  |" << endl
       << "| w/W  Add/Delete level field vector |" << endl

@@ -56,6 +56,7 @@ std::string VisualizationSceneVector::GetHelpString() const
       << "| s -  Turn on/off unit cube scaling |" << endl
       << "| S -  Take snapshot/Record a movie  |" << endl
       << "| t -  Cycle materials and lights    |" << endl
+      << "| Q -  Cycle quadrature data repre.  |" << endl
       << "| u -  Vector sampling; scalar func. |" << endl
       << "| U -  Switch 'u' functionality      |" << endl
       << "| v -  Cycle through vector fields   |" << endl
