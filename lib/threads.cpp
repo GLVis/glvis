@@ -222,6 +222,20 @@ int GLVisCommand::AxisNumberFormat(string formatting)
    return 0;
 }
 
+int GLVisCommand::ColorbarNumberFormat(string formatting)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = COLORBAR_NUMBERFORMAT;
+   colorbar_formatting = formatting;
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
 
 int GLVisCommand::Pause()
 {
@@ -531,6 +545,14 @@ int GLVisCommand::Execute()
       {
          cout << "Command: axis_numberformat: '" << axis_formatting << endl;
          (*vs)->SetAxisNumberFormat(axis_formatting);
+         MyExpose();
+         break;
+      }
+
+      case COLORBAR_NUMBERFORMAT:
+      {
+         cout << "Command: colorbar_numberformat: '" << colorbar_formatting << endl;
+         (*vs)->SetColorbarNumberFormat(colorbar_formatting);
          MyExpose();
          break;
       }
@@ -1141,8 +1163,7 @@ void communication_thread::execute()
          string formatting;
 
          *is[0] >> ws >> c; // read the opening char
-         getline(*is[0], formatting, c); // read formatting string
-         *is[0] >> ws >> c; // use the opening char as termination as well
+         getline(*is[0], formatting, c); // read formatting string & use c for termination
 
          // all processors sent the command
          for (size_t i = 1; i < is.size(); i++)
@@ -1150,10 +1171,30 @@ void communication_thread::execute()
             *is[i] >> ws >> ident; // 'axis_numberformat'
             *is[i] >> ws >> c;
             getline(*is[i], ident, c);
-            *is[i] >> ws >> c;
          }
 
          if (glvis_command->AxisNumberFormat(formatting))
+         {
+            goto comm_terminate;
+         }
+      }
+      else if (ident == "colorbar_numberformat")
+      {
+         char c;
+         string formatting;
+
+         *is[0] >> ws >> c; // read the opening char
+         getline(*is[0], formatting, c); // read formatting string & use c for termination
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'colorbar_numberformat'
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
+         }
+
+         if (glvis_command->ColorbarNumberFormat(formatting))
          {
             goto comm_terminate;
          }
