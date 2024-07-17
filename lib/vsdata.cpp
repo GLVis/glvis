@@ -418,9 +418,13 @@ void VisualizationSceneScalarData::SetColorbarNumberFormat(int precision,
                                                            char format,
                                                            bool showsign)
 {
-   colorbar_precision = precision;
-   colorbar_format = format;
-   colorbar_showsign = showsign;
+   colorbar_formatter = NumberFormatter(precision, format, showsign)
+   // The first two arguments are required but I don't think they are used?
+   PrepareColorBar(0,0);
+}
+void VisualizationSceneScalarData::SetColorbarNumberFormat(string formatting)
+{
+   colorbar_formatter = NumberFormatter(formatting)
    // The first two arguments are required but I don't think they are used?
    PrepareColorBar(0,0);
 }
@@ -507,11 +511,7 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
 
          val = ULogVal(i / 4.0);
 
-         string valstr = FormatNumber(val,
-                                      colorbar_precision,
-                                      colorbar_format,
-                                      colorbar_showsign);
-         color_bar.addText(text_x,Y,posz,valstr);
+         color_bar.addText(text_x,Y,posz,colorbar_formatter(val));
       }
    }
    else
@@ -521,11 +521,7 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
          val = (*mesh_level)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
 
-         string valstr = FormatNumber(val,
-                                      colorbar_precision,
-                                      colorbar_format,
-                                      colorbar_showsign);
-         color_bar.addText(text_x,Y,posz,valstr);
+         color_bar.addText(text_x,Y,posz,colorbar_formatter(val));
       }
    }
 
@@ -536,11 +532,7 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
          val = (*lsurf_levels)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
 
-         string valstr = FormatNumber(val,
-                                      colorbar_precision,
-                                      colorbar_format,
-                                      colorbar_showsign);
-         color_bar.addText(text_x,Y,posz,valstr);
+         color_bar.addText(text_x,Y,posz,colorbar_formatter(val));
       }
    }
    updated_bufs.emplace_back(&color_bar);
@@ -1485,9 +1477,13 @@ void VisualizationSceneScalarData::SetAxisNumberFormat(int precision,
                                                        char format,
                                                        bool showsign)
 {
-   axes_precision = precision;
-   axes_format = format;
-   axes_showsign = showsign;
+   axis_formatter = NumberFormatter(precision, format, showsign)
+   PrepareAxes();
+}
+
+void VisualizationSceneScalarData::SetAxisNumberFormat(string formatting)
+{
+   axis_formatter = NumberFormatter(formatting)
    PrepareAxes();
 }
 
@@ -1580,16 +1576,16 @@ void VisualizationSceneScalarData::PrepareAxes()
       int oy = -3*desc/2;
       ostringstream buf;
       buf << "("
-          << FormatNumber(bb.x[0], axes_precision, axes_format, axes_showsign) << ","
-          << FormatNumber(bb.y[0], axes_precision, axes_format, axes_showsign) << ","
-          << FormatNumber(bb.z[0], axes_precision, axes_format, axes_showsign) << ")";
+          << axis_formatter(bb.x[0]) << ","
+          << axis_formatter(bb.y[0]) << ","
+          << axis_formatter(bb.z[0]) << ")";
       axes_buf.addText(bb.x[0], bb.y[0], bb.z[0], ox, oy, buf.str());
 
       ostringstream buf1;
       buf1 << "("
-           << FormatNumber(bb.x[1], axes_precision, axes_format, axes_showsign) << ","
-           << FormatNumber(bb.y[1], axes_precision, axes_format, axes_showsign) << ","
-           << FormatNumber(bb.z[1], axes_precision, axes_format, axes_showsign) << ")";
+           << axis_formatter(bb.x[1]) << ","
+           << axis_formatter(bb.y[1]) << ","
+           << axis_formatter(bb.z[1]) << ")";
       axes_buf.addText(bb.x[1], bb.y[1], bb.z[1], ox, oy, buf1.str());
    }
    updated_bufs.emplace_back(&axes_buf);

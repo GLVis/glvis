@@ -65,13 +65,9 @@ protected:
    int scaling, colorbar, drawaxes;
    int auto_ref_max, auto_ref_max_surf_elem;
 
-   // Formatting for axes & colorbar numbers
-   int axes_precision = 4;
-   int colorbar_precision = 4;
-   char axes_format = 'd';
-   char colorbar_format = 'd';
-   bool axes_showsign = false;
-   bool colorbar_showsign = false;
+   // Formatter for axes & colorbar numbers
+   function<string(double)> axis_formatter;
+   function<string(double)> colorbar_formatter;
 
    vector<gl3::GlDrawable*> updated_bufs;
    gl3::GlDrawable axes_buf;
@@ -262,6 +258,7 @@ public:
    void PrepareCaption();
 
    void SetColorbarNumberFormat(int precision, char format, bool showsign);
+   void SetColorbarNumberFormat(string formatting);
 
    void PrepareColorBar(double minval, double maxval,
                         Array<double> * level = NULL,
@@ -270,6 +267,7 @@ public:
    void SetAxisLabels(const char * a_x, const char * a_y, const char * a_z);
 
    void SetAxisNumberFormat(int precision, char format, bool showsign);
+   void SetAxisNumberFormat(string formatting);
 
    void PrepareAxes();
    void ToggleDrawAxes()
