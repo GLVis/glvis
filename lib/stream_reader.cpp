@@ -725,7 +725,7 @@ void StreamState::ResetMeshAndSolution(VisualizationScene* vs)
       {
          VisualizationSceneVector *vsv =
             dynamic_cast<VisualizationSceneVector *>(vs);
-         vsv->NewMeshAndSolution(*grid_f);
+         vsv->NewMeshAndSolution(*grid_f, mesh_quad.get());
       }
    }
    else

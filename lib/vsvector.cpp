@@ -255,9 +255,10 @@ const char *Vec2ScalarNames[7] =
 };
 
 VisualizationSceneVector::VisualizationSceneVector(Mesh & m,
-                                                   Vector & sx, Vector & sy)
+                                                   Vector & sx, Vector & sy, Mesh *mc)
 {
    mesh = &m;
+   mesh_coarse = mc;
    solx = &sx;
    soly = &sy;
 
@@ -405,7 +406,7 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
    }
 }
 
-void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
+void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
 {
    delete sol;
 
@@ -436,6 +437,7 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
       }
    }
    mesh = new_mesh;
+   mesh_coarse = mc;
 
    solx = new Vector(mesh->GetNV());
    soly = new Vector(mesh->GetNV());
@@ -459,7 +461,7 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
    }
 
-   VisualizationSceneSolution::NewMeshAndSolution(mesh, NULL, sol, &vgf);
+   VisualizationSceneSolution::NewMeshAndSolution(mesh, mesh_coarse, sol, &vgf);
 
    if (autoscale)
    {

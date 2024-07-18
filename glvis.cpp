@@ -232,7 +232,7 @@ bool GLVisInitVis(StreamState::FieldType field_type,
          else
          {
             vs = new VisualizationSceneVector(*stream_state.mesh, stream_state.solu,
-                                              stream_state.solv);
+                                              stream_state.solv, stream_state.mesh_quad.get());
          }
       }
       else if (stream_state.mesh->SpaceDimension() == 3)
