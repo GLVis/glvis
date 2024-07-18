@@ -188,7 +188,7 @@ void KeyuPressed()
       case 0:
       case 1:
          if (update &&
-             vsvector->shading == VisualizationSceneSolution::Shading::Noncomforming)
+             vsvector->GetShading() == VisualizationSceneSolution::Shading::Noncomforming)
          {
             vsvector->PrepareVectorField();
             SendExposeEvent();

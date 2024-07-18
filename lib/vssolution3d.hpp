@@ -148,9 +148,8 @@ public:
    //           3 - no arrows (black), 4 - with arrows (black)
    void ToggleDrawOrdering() { draworder = (draworder+1)%5; }
 
-   void ToggleShading();
-   Shading GetShading() { return shading; };
    virtual void SetShading(Shading, bool);
+   virtual void ToggleShading();
    virtual void SetRefineFactors(int, int);
    virtual void AutoRefine();
    virtual void ToggleAttributes(Array<int> &attr_list);

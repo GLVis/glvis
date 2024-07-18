@@ -83,8 +83,6 @@ protected:
    double GetElementLengthScale(int k);
 
 public:
-   Shading shading;
-
    int attr_to_show, bdr_attr_to_show;
    Array<int> el_attr_to_show, bdr_el_attr_to_show;
 
@@ -166,7 +164,7 @@ public:
    }
 
    virtual void SetShading(Shading, bool);
-   void ToggleShading();
+   virtual void ToggleShading();
 
    void ToggleDrawCP() { draw_cp = !draw_cp; PrepareCP(); }
 
@@ -178,7 +176,6 @@ public:
    virtual void ToggleAttributes(Array<int> &attr_list);
 
    virtual void SetDrawMesh(int i) { drawmesh = i % 3; }
-   virtual Shading GetShading() { return shading; }
    virtual int GetDrawMesh() { return drawmesh; }
 };
 

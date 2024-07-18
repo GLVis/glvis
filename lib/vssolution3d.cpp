@@ -887,7 +887,7 @@ void VisualizationSceneSolution3d::ToggleShading()
 {
    if (GridF)
    {
-      SetShading((Shading)(((int)shading+1) % (int)Shading::Max), true);
+      VisualizationSceneScalarData::ToogleShading();
    }
    else
    {

@@ -356,7 +356,7 @@ static void KeyZPressed()
 
 static void KeyF3Pressed()
 {
-   if (vssol->shading == VisualizationSceneScalarData::Shading::Noncomforming)
+   if (vssol->GetShading() == VisualizationSceneScalarData::Shading::Noncomforming)
    {
       vssol->shrink *= 0.9;
       vssol->Prepare();
@@ -370,7 +370,7 @@ static void KeyF3Pressed()
 
 static void KeyF4Pressed()
 {
-   if (vssol->shading == VisualizationSceneScalarData::Shading::Noncomforming)
+   if (vssol->GetShading() == VisualizationSceneScalarData::Shading::Noncomforming)
    {
       vssol->shrink *= 1.11111111111111111111111;
       vssol->Prepare();
@@ -383,7 +383,7 @@ static void KeyF4Pressed()
 
 static void KeyF11Pressed()
 {
-   if (vssol->shading == VisualizationSceneScalarData::Shading::Noncomforming)
+   if (vssol->GetShading() == VisualizationSceneScalarData::Shading::Noncomforming)
    {
       if (vssol->matc.Width() == 0)
       {
@@ -401,7 +401,7 @@ static void KeyF11Pressed()
 
 static void KeyF12Pressed()
 {
-   if (vssol->shading == VisualizationSceneScalarData::Shading::Noncomforming)
+   if (vssol->GetShading() == VisualizationSceneScalarData::Shading::Noncomforming)
    {
       if (vssol->matc.Width() == 0)
       {
@@ -877,7 +877,7 @@ void VisualizationSceneSolution::ToggleShading()
 {
    if (rsol)
    {
-      SetShading((Shading)(((int)shading + 1) % (int)Shading::Max), true);
+      VisualizationSceneScalarData::ToogleShading();
    }
    else
    {
