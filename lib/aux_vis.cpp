@@ -14,6 +14,7 @@
 #include <fstream>
 #include <cmath>
 #include <chrono>
+#include <regex>
 
 #include "mfem.hpp"
 #include "sdl.hpp"
@@ -1812,9 +1813,20 @@ function<string(double)> NumberFormatter(int precision, char format, bool showsi
 }
 
 function<string(double)> NumberFormatter(string formatting) {
-   return [formatting](double x) -> string {
-      char buf[64];
-      snprintf(buf, sizeof(buf), formatting.c_str(), x);
-      return string(buf);
-   };
+   if (!isValidNumberFormatting(formatting)) {
+      MFEM_WARNING("Invalid formatting string. Using default. " << endl);
+      return NumberFormatter();
+   }
+   else {
+      return [formatting](double x) -> string {
+         char buf[64];
+         snprintf(buf, sizeof(buf), formatting.c_str(), x);
+         return string(buf);
+      };
+   }
+}
+
+bool isValidNumberFormatting(const string& formatting) {
+   regex rgx = regex(R"(%['\-+#0\s]?[0-9]{0,3}\.?[0-9]{0,3}[FfEeGg])");
+   return regex_match(formatting, rgx);
 }

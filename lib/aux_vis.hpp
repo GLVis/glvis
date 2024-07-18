@@ -138,6 +138,7 @@ void SetFont(const std::string& fn);
 void SetUseHiDPI(bool status);
 function<string(double)> NumberFormatter(int precision=4, char format='d', bool showsign=false);
 function<string(double)> NumberFormatter(string formatting);
+bool isValidNumberFormatting(const string& formatting);
 
 // This is a helper function for prompting the user for inputs. The benefit
 // over using just `cin >> input` is that you can specify a type and optionally
