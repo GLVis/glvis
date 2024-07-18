@@ -580,20 +580,21 @@ int GLVisCommand::Execute()
       case SHADING:
       {
          cout << "Command: shading: " << flush;
-         int s = -1;
+         VisualizationSceneScalarData::Shading s =
+            VisualizationSceneScalarData::Shading::Invalid;
          if (shading == "flat")
          {
-            s = 0;
+            s = VisualizationSceneScalarData::Shading::Flat;
          }
          else if (shading == "smooth")
          {
-            s = 1;
+            s = VisualizationSceneScalarData::Shading::Smooth;
          }
          else if (shading == "cool")
          {
-            s = 2;
+            s = VisualizationSceneScalarData::Shading::Noncomforming;
          }
-         if (s != -1)
+         if (s != VisualizationSceneScalarData::Shading::Invalid)
          {
             (*vs)->SetShading(s, false);
             cout << shading << endl;

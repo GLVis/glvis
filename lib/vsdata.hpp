@@ -127,6 +127,18 @@ protected:
    void Cone(gl3::GlDrawable& buf, glm::mat4 transform, double cval);
 
 public:
+   enum class Shading
+   {
+      Invalid = -1,
+      Min = -1,
+      //---------
+      Flat,
+      Smooth,
+      Noncomforming,
+      //---------
+      Max
+   };
+
    Plane *CuttingPlane;
    int key_r_state;
    /** Shrink factor with respect to the center of each element (2D) or the
@@ -182,7 +194,7 @@ public:
    virtual void UpdateValueRange(bool prepare) = 0;
    void SetValueRange(double, double);
 
-   virtual void SetShading(int, bool) = 0;
+   virtual void SetShading(Shading, bool) = 0;
    virtual void SetRefineFactors(int, int) = 0;
    void SetAutoRefineLimits(int max_ref, int max_surf_elem)
    {

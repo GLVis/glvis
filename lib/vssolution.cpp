@@ -356,7 +356,7 @@ static void KeyZPressed()
 
 static void KeyF3Pressed()
 {
-   if (vssol->shading == 2)
+   if (vssol->shading == VisualizationSceneScalarData::Shading::Noncomforming)
    {
       vssol->shrink *= 0.9;
       vssol->Prepare();
@@ -370,7 +370,7 @@ static void KeyF3Pressed()
 
 static void KeyF4Pressed()
 {
-   if (vssol->shading == 2)
+   if (vssol->shading == VisualizationSceneScalarData::Shading::Noncomforming)
    {
       vssol->shrink *= 1.11111111111111111111111;
       vssol->Prepare();
@@ -383,7 +383,7 @@ static void KeyF4Pressed()
 
 static void KeyF11Pressed()
 {
-   if (vssol->shading == 2)
+   if (vssol->shading == VisualizationSceneScalarData::Shading::Noncomforming)
    {
       if (vssol->matc.Width() == 0)
       {
@@ -401,7 +401,7 @@ static void KeyF11Pressed()
 
 static void KeyF12Pressed()
 {
-   if (vssol->shading == 2)
+   if (vssol->shading == VisualizationSceneScalarData::Shading::Noncomforming)
    {
       if (vssol->matc.Width() == 0)
       {
@@ -437,7 +437,8 @@ void VisualizationSceneSolution::Init()
    rsol  = NULL;
    vssol = this;
 
-   drawelems = shading = 1;
+   drawelems = 1;
+   shading = Shading::Smooth;
    drawmesh  = 0;
    draworder = 0;
    drawnums  = 0;
@@ -558,7 +559,7 @@ void VisualizationSceneSolution::ToggleDrawElems()
       maxv_sol = maxv;
       have_sol_range = true;
    }
-   else if (shading == 2)
+   else if (shading == Shading::Noncomforming)
    {
       if (drawelems == 1 && have_sol_range)
       {
@@ -823,21 +824,21 @@ int VisualizationSceneSolution::GetRefinedValuesAndNormals(
    return have_normals;
 }
 
-void VisualizationSceneSolution::SetShading(int s, bool print)
+void VisualizationSceneSolution::SetShading(Shading s, bool print)
 {
-   if (shading == s || s < 0)
+   if (shading == s || s <= Shading::Min)
    {
       return;
    }
 
    if (rsol)
    {
-      if (s > 2)
+      if (s >= Shading::Max)
       {
          return;
       }
 
-      if (s == 2 || shading == 2)
+      if (s == Shading::Noncomforming || shading == Shading::Noncomforming)
       {
          shading = s;
          have_sol_range = false;
@@ -856,7 +857,7 @@ void VisualizationSceneSolution::SetShading(int s, bool print)
    }
    else
    {
-      if (s > 1)
+      if (s > Shading::Smooth)
       {
          return;
       }
@@ -868,7 +869,7 @@ void VisualizationSceneSolution::SetShading(int s, bool print)
    {"flat", "smooth", "non-conforming (with subdivision)"};
    if (print)
    {
-      cout << "Shading type : " << shading_type[shading] << endl;
+      cout << "Shading type : " << shading_type[(int)shading] << endl;
    }
 }
 
@@ -876,11 +877,11 @@ void VisualizationSceneSolution::ToggleShading()
 {
    if (rsol)
    {
-      SetShading((shading + 1) % 3, true);
+      SetShading((Shading)(((int)shading + 1) % (int)Shading::Max), true);
    }
    else
    {
-      SetShading(1 - shading, true);
+      SetShading((Shading)(1 - (int)shading), true);
    }
 }
 
@@ -920,7 +921,7 @@ void VisualizationSceneSolution::ToggleRefinements()
          }
          break;
    }
-   if (update && shading == 2)
+   if (update && shading == Shading::Noncomforming)
    {
       have_sol_range = false;
       DoAutoscale(false);
@@ -971,7 +972,7 @@ void VisualizationSceneSolution::SetRefineFactors(int tot, int bdr)
    TimesToRefine = tot;
    EdgeRefineFactor = bdr;
 
-   if (shading == 2)
+   if (shading == Shading::Noncomforming)
    {
       have_sol_range = false;
       DoAutoscale(false);
@@ -1054,7 +1055,7 @@ void VisualizationSceneSolution::FindNewBox(double rx[], double ry[],
 {
    int i, j;
 
-   if (shading != 2)
+   if (shading != Shading::Noncomforming)
    {
       int nv = mesh -> GetNV();
 
@@ -1437,10 +1438,10 @@ void VisualizationSceneSolution::Prepare()
 
    switch (shading)
    {
-      case 0:
+      case Shading::Flat:
          PrepareFlat();
          return;
-      case 2:
+      case Shading::Noncomforming:
          PrepareFlat2();
          return;
       default:
@@ -1553,7 +1554,7 @@ void VisualizationSceneSolution::Prepare()
 
 void VisualizationSceneSolution::PrepareLevelCurves()
 {
-   if (shading == 2)
+   if (shading == Shading::Noncomforming)
    {
       PrepareLevelCurves2();
       return;
@@ -1691,7 +1692,7 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
 
 void VisualizationSceneSolution::PrepareLines()
 {
-   if (shading == 2 &&
+   if (shading == Shading::Noncomforming &&
        mesh->Dimension() > 1) // PrepareLines3 does not make sense for 1d meshes.
    {
       // PrepareLines2();
@@ -1762,7 +1763,7 @@ double VisualizationSceneSolution::GetElementLengthScale(int k)
 
 void VisualizationSceneSolution::PrepareElementNumbering()
 {
-   if (2 == shading)
+   if (shading == Shading::Noncomforming)
    {
       PrepareElementNumbering2();
    }
@@ -1844,7 +1845,7 @@ void VisualizationSceneSolution::PrepareElementNumbering2()
 
 void VisualizationSceneSolution::PrepareVertexNumbering()
 {
-   if (2 == shading)
+   if (shading == Shading::Noncomforming)
    {
       PrepareVertexNumbering2();
    }
@@ -2190,7 +2191,7 @@ void VisualizationSceneSolution::PrepareBoundary()
 
    bdr_buf.clear();
    gl3::GlBuilder bl = bdr_buf.createBuilder();
-   if (shading != 2)
+   if (shading != Shading::Noncomforming)
    {
       bl.glBegin(GL_LINES);
       for (i = 0; i < ne; i++)
@@ -2277,7 +2278,7 @@ void VisualizationSceneSolution::PrepareCP()
    gl3::GlBuilder bld = cp_buf.createBuilder();
    bld.glBegin(GL_LINES);
 
-   if (shading != 2)
+   if (shading != Shading::Noncomforming)
    {
       Array<int> vertices;
 

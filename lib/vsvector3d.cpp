@@ -794,10 +794,10 @@ void VisualizationSceneVector3d::Prepare()
 
    switch (shading)
    {
-      case 0:
+      case Shading::Flat:
          PrepareFlat();
          return;
-      case 2:
+      case Shading::Noncomforming:
          PrepareFlat2();
          return;
       default:
@@ -928,7 +928,7 @@ void VisualizationSceneVector3d::PrepareLines()
 {
    if (!drawmesh) { return; }
 
-   if (shading == 2)
+   if (shading == Shading::Noncomforming)
    {
       PrepareLines2();
       return;

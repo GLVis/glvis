@@ -349,7 +349,8 @@ static void KeyoPressed(GLenum state)
       if (vssol3d -> TimesToRefine < 32)
       {
          cout << "Subdivision factor = " << ++vssol3d->TimesToRefine << endl;
-         if (vssol3d -> GetShading() == 2)
+         if (vssol3d -> GetShading() ==
+             VisualizationSceneScalarData::Shading::Noncomforming)
          {
             vssol3d->DoAutoscale(false);
             vssol3d -> Prepare();
@@ -367,7 +368,8 @@ static void KeyOPressed()
    if (vssol3d -> TimesToRefine > 1)
    {
       cout << "Subdivision factor = " << --vssol3d->TimesToRefine << endl;
-      if (vssol3d -> GetShading() == 2)
+      if (vssol3d -> GetShading() ==
+          VisualizationSceneScalarData::Shading::Noncomforming)
       {
          vssol3d->DoAutoscale(false);
          vssol3d -> Prepare();
@@ -381,7 +383,8 @@ static void KeyOPressed()
 
 static void KeywPressed()
 {
-   if (vssol3d -> GetShading() == 2)
+   if (vssol3d -> GetShading() ==
+       VisualizationSceneScalarData::Shading::Noncomforming)
    {
       if ( fabs(vssol3d -> FaceShiftScale += 0.01) < 0.001 )
       {
@@ -398,7 +401,8 @@ static void KeywPressed()
 
 static void KeyWPressed()
 {
-   if (vssol3d -> GetShading() == 2)
+   if (vssol3d -> GetShading() ==
+       VisualizationSceneScalarData::Shading::Noncomforming)
    {
       if ( fabs(vssol3d -> FaceShiftScale -= 0.01) < 0.001 )
       {
@@ -461,7 +465,8 @@ static void KeyF3Pressed(GLenum state)
    }
    else
    {
-      if (vssol3d->GetShading() == 2)
+      if (vssol3d->GetShading() ==
+          VisualizationSceneScalarData::Shading::Noncomforming)
       {
          if (vssol3d->GetMesh()->Dimension() == 3 && vssol3d->bdrc.Width() == 0)
          {
@@ -502,7 +507,8 @@ static void KeyF4Pressed(GLenum state)
    }
    else
    {
-      if (vssol3d->GetShading() == 2)
+      if (vssol3d->GetShading() ==
+          VisualizationSceneScalarData::Shading::Noncomforming)
       {
          if (vssol3d->GetMesh()->Dimension() == 3 && vssol3d->bdrc.Width() == 0)
          {
@@ -526,7 +532,8 @@ static void KeyF4Pressed(GLenum state)
 
 static void KeyF11Pressed()
 {
-   if (vssol3d->GetShading() == 2)
+   if (vssol3d->GetShading() ==
+       VisualizationSceneScalarData::Shading::Noncomforming)
    {
       if (vssol3d->matc.Width() == 0)
       {
@@ -545,7 +552,8 @@ static void KeyF11Pressed()
 
 static void KeyF12Pressed()
 {
-   if (vssol3d->GetShading() == 2)
+   if (vssol3d->GetShading() ==
+       VisualizationSceneScalarData::Shading::Noncomforming)
    {
       if (vssol3d->matc.Width() == 0)
       {
@@ -699,7 +707,8 @@ void VisualizationSceneSolution3d::Init()
    drawlsurf = 0;
    cp_algo = 0;
 
-   drawelems = shading = 1;
+   drawelems = 1;
+   shading = Shading::Smooth;
    drawmesh = 0;
    draworder = 0;
    scaling = 0;
@@ -843,20 +852,21 @@ void VisualizationSceneSolution3d::NewMeshAndSolution(
    PrepareOrderingCurve();
 }
 
-void VisualizationSceneSolution3d::SetShading(int s, bool print)
+void VisualizationSceneSolution3d::SetShading(Shading s, bool print)
 {
-   if (shading == s || s < 0)
+   if (shading == s || s <= Shading::Min)
    {
       return;
    }
 
-   if (s > 2 || (GridF == NULL && s > 1))
+   if (s >= Shading::Max || (GridF == NULL && s > Shading::Smooth))
    {
       return;
    }
-   int os = shading;
+   Shading os = shading;
    shading = s;
-   if (GridF != NULL && (s == 2 || os == 2))
+   if (GridF != NULL && (s == Shading::Noncomforming ||
+                         os == Shading::Noncomforming))
    {
       DoAutoscale(false);
       PrepareLines();
@@ -869,7 +879,7 @@ void VisualizationSceneSolution3d::SetShading(int s, bool print)
    {"flat", "smooth", "non-conforming (with subdivision)"};
    if (print)
    {
-      cout << "Shading type : " << shading_type[shading] << endl;
+      cout << "Shading type : " << shading_type[(int)shading] << endl;
    }
 }
 
@@ -877,11 +887,11 @@ void VisualizationSceneSolution3d::ToggleShading()
 {
    if (GridF)
    {
-      SetShading((shading+1)%3, true);
+      SetShading((Shading)(((int)shading+1) % (int)Shading::Max), true);
    }
    else
    {
-      SetShading(1-shading, true);
+      SetShading((Shading)(1 - (int)shading), true);
    }
 }
 
@@ -894,7 +904,7 @@ void VisualizationSceneSolution3d::SetRefineFactors(int f, int ignored)
 
    TimesToRefine = f;
 
-   if (shading == 2)
+   if (shading == Shading::Noncomforming)
    {
       DoAutoscale(false);
       Prepare();
@@ -979,7 +989,7 @@ void VisualizationSceneSolution3d::FindNewBox(bool prepare)
       if (coord[2] > bb.z[1]) { bb.z[1] = coord[2]; }
    }
 
-   if (shading == 2)
+   if (shading == Shading::Noncomforming)
    {
       int dim = mesh->Dimension();
       int ne = (dim == 3) ? mesh->GetNBE() : mesh->GetNE();
@@ -1030,7 +1040,7 @@ void VisualizationSceneSolution3d::FindNewValueRange(bool prepare)
                   GridF->FESpace()->FEColl()->GetMapType(mesh->Dimension()) :
                   FiniteElement::VALUE;
 
-   if (shading < 2 || map_type != (int)FiniteElement::VALUE)
+   if (shading < Shading::Noncomforming || map_type != (int)FiniteElement::VALUE)
    {
       minv = sol->Min();
       maxv = sol->Max();
@@ -1050,7 +1060,7 @@ void VisualizationSceneSolution3d::EventUpdateColors()
    PrepareCuttingPlane();
    PrepareLevelSurf();
    PrepareOrderingCurve();
-   if (shading == 2 && drawmesh != 0 && FaceShiftScale != 0.0)
+   if (shading == Shading::Noncomforming && drawmesh != 0 && FaceShiftScale != 0.0)
    {
       PrepareLines();
    }
@@ -1127,7 +1137,7 @@ void VisualizationSceneSolution3d::ToggleCPDrawMesh()
 void VisualizationSceneSolution3d::ToggleCPAlgorithm()
 {
    cp_algo = (cp_algo+1)%2;
-   if (shading == 2 && cplane == 1)
+   if (shading == Shading::Noncomforming && cplane == 1)
    {
       CPPrepare();
    }
@@ -1817,10 +1827,10 @@ void VisualizationSceneSolution3d::Prepare()
 
    switch (shading)
    {
-      case 0:
+      case Shading::Flat:
          PrepareFlat();
          return;
-      case 2:
+      case Shading::Noncomforming:
          PrepareFlat2();
          return;
       default:
@@ -2003,7 +2013,7 @@ void VisualizationSceneSolution3d::PrepareLines()
       return;
    }
 
-   if (shading == 2)
+   if (shading == Shading::Noncomforming)
    {
       PrepareLines2();
       return;
@@ -2523,7 +2533,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
 
       while (n > 2)
       {
-         if (shading != 2)
+         if (shading != Shading::Noncomforming)
          {
             mesh -> GetPointMatrix (i, pointmat);
          }
@@ -2556,7 +2566,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
          {
             case 1:  // PrepareCuttingPlane()
             {
-               if (shading == 2)
+               if (shading == Shading::Noncomforming)
                {
                   // changes point for n > 4
                   DrawRefinedSurf(n, point[0], i, 1);
@@ -2606,7 +2616,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
 
             case 2:  // PrepareCuttingPlaneLines() with mesh
             {
-               if (shading == 2)
+               if (shading == Shading::Noncomforming)
                {
                   // changes point for n > 4
                   DrawRefinedSurf(n, point[0], i, 2);
@@ -2627,7 +2637,7 @@ void VisualizationSceneSolution3d::CuttingPlaneFunc(int func)
 
             case 3:  // PrepareCuttingPlaneLines() with level lines
             {
-               if (shading == 2)
+               if (shading == Shading::Noncomforming)
                {
                   // changes point for n > 4
                   DrawRefinedSurf(n, point[0], i, 3);
@@ -2918,7 +2928,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
       mesh -> GetFaceElements (i, &e1, &e2);
       if (e2 >= 0 && partition[e1] != partition[e2])
       {
-         if (shading != 2)
+         if (shading != Shading::Noncomforming)
          {
             mesh -> GetFaceVertices (i, nodes);
             for (j = 0; j < nodes.Size(); j++)
@@ -3080,7 +3090,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines2()
       mesh -> GetFaceElements (i, &e1, &e2);
       if (e2 >= 0 && partition[e1] != partition[e2])
       {
-         if (shading != 2)
+         if (shading != Shading::Noncomforming)
          {
             mesh -> GetFaceVertices (i, nodes);
             for (j = 0; j < nodes.Size(); j++)
@@ -3869,7 +3879,7 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
 
    Array<int> faces, ofaces;
 
-   if (shading != 2)
+   if (shading != Shading::Noncomforming)
    {
       for (int ie = 0; ie < mesh->GetNE(); ie++)
       {

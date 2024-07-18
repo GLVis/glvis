@@ -255,7 +255,7 @@ bool GLVisInitVis(StreamState::FieldType field_type,
       if (stream_state.grid_f)
       {
          vs->AutoRefine();
-         vs->SetShading(2, true);
+         vs->SetShading(VisualizationSceneScalarData::Shading::Noncomforming, true);
       }
       if (mesh_range > 0.0)
       {
@@ -686,20 +686,21 @@ void ExecuteScriptCommand()
       {
          scr >> ws >> word;
          cout << "Script: shading: " << flush;
-         int s = -1;
+         VisualizationSceneScalarData::Shading s =
+            VisualizationSceneScalarData::Shading::Invalid;
          if (word == "flat")
          {
-            s = 0;
+            s = VisualizationSceneScalarData::Shading::Flat;
          }
          else if (word == "smooth")
          {
-            s = 1;
+            s = VisualizationSceneScalarData::Shading::Smooth;
          }
          else if (word == "cool")
          {
-            s = 2;
+            s = VisualizationSceneScalarData::Shading::Noncomforming;
          }
-         if (s != -1)
+         if (s != VisualizationSceneScalarData::Shading::Invalid)
          {
             vs->SetShading(s, false);
             cout << word << endl;

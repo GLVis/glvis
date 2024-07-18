@@ -187,7 +187,8 @@ void KeyuPressed()
    {
       case 0:
       case 1:
-         if (update && vsvector->shading == 2)
+         if (update &&
+             vsvector->shading == VisualizationSceneSolution::Shading::Noncomforming)
          {
             vsvector->PrepareVectorField();
             SendExposeEvent();
@@ -230,7 +231,7 @@ void VisualizationSceneVector::ToggleDrawElems()
 
    cout << "Surface elements mode : " << modes[drawelems] << endl;
 
-   if (drawelems != 0 && shading == 2)
+   if (drawelems != 0 && shading == Shading::Noncomforming)
    {
       DoAutoscaleValue(false);
       PrepareLines();
@@ -660,7 +661,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
    // prepare the displaced mesh
    displine_buf.clear();
    gl3::GlBuilder build = displine_buf.createBuilder();
-   if (shading != 2)
+   if (shading != Shading::Noncomforming)
    {
       for (int i = 0; i < ne; i++)
       {
@@ -905,7 +906,7 @@ void VisualizationSceneVector::PrepareVectorField()
             DrawVector(v[0], v[1], (*solx)(i), (*soly)(i), (*sol)(i));
          }
 
-         if (shading == 2 && RefineFactor > 1)
+         if (shading == Shading::Noncomforming && RefineFactor > 1)
          {
             DenseMatrix vvals, pm;
             for (i = 0; i < mesh->GetNE(); i++)
