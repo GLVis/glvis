@@ -543,7 +543,8 @@ int GLVisCommand::Execute()
 
       case AXIS_NUMBERFORMAT:
       {
-         cout << "Command: axis_numberformat: '" << axis_formatting << endl;
+         cout << "Command: axis_numberformat: '"
+              << axis_formatting << "'" << endl;
          (*vs)->SetAxisNumberFormat(axis_formatting);
          MyExpose();
          break;
@@ -551,7 +552,8 @@ int GLVisCommand::Execute()
 
       case COLORBAR_NUMBERFORMAT:
       {
-         cout << "Command: colorbar_numberformat: '" << colorbar_formatting << endl;
+         cout << "Command: colorbar_numberformat: '"
+              << colorbar_formatting << "'" << endl;
          (*vs)->SetColorbarNumberFormat(colorbar_formatting);
          MyExpose();
          break;
