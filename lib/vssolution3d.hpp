@@ -23,7 +23,6 @@ class VisualizationSceneSolution3d : public VisualizationSceneScalarData
 protected:
 
    int drawmesh, drawelems, draworder;
-   Shading shading;
    int cplane;
    int cp_drawmesh, cp_drawelems, drawlsurf;
    // Algorithm used to draw the cutting plane when shading is 2 and cplane is 1
