@@ -423,9 +423,10 @@ VisualizationSceneSolution::VisualizationSceneSolution()
 }
 
 VisualizationSceneSolution::VisualizationSceneSolution(
-   Mesh &m, Vector &s, Vector *normals)
+   Mesh &m, Vector &s, Mesh *mc, Vector *normals)
 {
    mesh = &m;
+   mesh_coarse = mc;
    sol = &s;
    v_normals = normals;
 
@@ -584,7 +585,7 @@ void VisualizationSceneSolution::ToggleDrawElems()
 }
 
 void VisualizationSceneSolution::NewMeshAndSolution(
-   Mesh *new_m, Vector *new_sol, GridFunction *new_u)
+   Mesh *new_m, Mesh *new_mc, Vector *new_sol, GridFunction *new_u)
 {
    // If the number of elements changes, recompute the refinement factor
    if (mesh->GetNE() != new_m->GetNE())
@@ -599,6 +600,7 @@ void VisualizationSceneSolution::NewMeshAndSolution(
       }
    }
    mesh = new_m;
+   mesh_coarse = new_mc;
    sol = new_sol;
    rsol = new_u;
 
@@ -1707,24 +1709,87 @@ void VisualizationSceneSolution::PrepareLines()
    line_buf.clear();
    gl3::GlBuilder lb = line_buf.createBuilder();
 
-   for (i = 0; i < ne; i++)
+   if (mesh_coarse)
    {
-      if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
+      auto &ref = mesh->GetRefinementTransforms();
+      IsoparametricTransformation trans;
+      BiLinear2DFiniteElement fe;
+      trans.SetFE(&fe);
+      DenseMatrix emb_pointmat;
 
-      lb.glBegin(GL_LINE_LOOP);
-      mesh->GetPointMatrix (i, pointmat);
-      mesh->GetElementVertices (i, vertices);
-      for (j = 0; j < pointmat.Size(); j++)
+      for (i = 0; i < ne; i++)
       {
-         // 1D meshes get rendered flat
-         double z = GetMinV();
-         if (mesh->Dimension() > 1) // In 1D we just put the mesh below the solution
+         if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
+
+         lb.glBegin(GL_LINES);
+         mesh->GetPointMatrix (i, pointmat);
+         mesh->GetElementVertices (i, vertices);
+
+         MFEM_ASSERT(pointmat.Size() == 4, "Not a quadrilateral!");
+
+         //we assume that mesh_course is used only for tensor finite elements,
+         //like for representation of quadratures, so in 2D it is square
+         const int geom =
+            Geometry::Type::SQUARE; //ref.embeddings[i].geom; //<---- bugged!?
+         const int mat = ref.embeddings[i].matrix;
+         const DenseMatrix &emb_mat = ref.point_matrices[geom](mat);
+         trans.SetPointMat(emb_mat);
+         trans.Transform(fe.GetNodes(), emb_pointmat);
+
+         for (j = 0; j < 4; j++)
          {
-            z = LogVal((*sol)(vertices[j]));
+            int jp1 = (j+1) % 4;
+            Vector emb_ip1, emb_ip2;
+            emb_pointmat.GetColumnReference(j, emb_ip1);
+            emb_pointmat.GetColumnReference(jp1, emb_ip2);
+
+            //check if we are on the parent edge
+            if (!((   emb_ip1(0) == 0. && emb_ip2(0) == 0.)
+                  || (emb_ip1(0) == 1. && emb_ip2(0) == 1.)
+                  || (emb_ip1(1) == 0. && emb_ip2(1) == 0.)
+                  || (emb_ip1(1) == 1. && emb_ip2(1) == 1.)))
+            { continue; }
+
+            // 1D meshes get rendered flat
+            double z1 = GetMinV();
+            double z2 = z1;
+            if (mesh->Dimension() > 1) // In 1D we just put the mesh below the solution
+            {
+               z1 = LogVal((*sol)(vertices[j]));
+               z2 = LogVal((*sol)(vertices[jp1]));
+            }
+
+            lb.glVertex3d (pointmat(0, j),
+                           pointmat(1, j),
+                           z1);
+            lb.glVertex3d (pointmat(0, jp1),
+                           pointmat(1, jp1),
+                           z2);
          }
-         lb.glVertex3d(pointmat(0, j), pointmat(1, j), z);
+         lb.glEnd();
       }
-      lb.glEnd();
+   }
+   else
+   {
+      for (i = 0; i < ne; i++)
+      {
+         if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
+
+         lb.glBegin(GL_LINE_LOOP);
+         mesh->GetPointMatrix (i, pointmat);
+         mesh->GetElementVertices (i, vertices);
+         for (j = 0; j < pointmat.Size(); j++)
+         {
+            // 1D meshes get rendered flat
+            double z = GetMinV();
+            if (mesh->Dimension() > 1) // In 1D we just put the mesh below the solution
+            {
+               z = LogVal((*sol)(vertices[j]));
+            }
+            lb.glVertex3d(pointmat(0, j), pointmat(1, j), z);
+         }
+         lb.glEnd();
+      }
    }
 
    updated_bufs.emplace_back(&line_buf);
@@ -2138,14 +2203,51 @@ void VisualizationSceneSolution::PrepareLines3()
       Array<int> &RE = RefG->RefEdges;
 
       lb.glBegin (GL_LINES);
-      for (k = 0; k < RE.Size()/2; k++)
+      if (mesh_coarse)
       {
-         lb.glVertex3d (pointmat(0, RE[2*k]),
-                        pointmat(1, RE[2*k]),
-                        values(RE[2*k]));
-         lb.glVertex3d (pointmat(0, RE[2*k+1]),
-                        pointmat(1, RE[2*k+1]),
-                        values(RE[2*k+1]));
+         auto &ref = mesh->GetRefinementTransforms();
+         //we assume that mesh_course is used only for tensor finite elements,
+         //like for representation of quadratures, so in 2D it is square
+         const int geom =
+            Geometry::Type::SQUARE; //ref.embeddings[i].geom; //<---- bugged!?
+         const int mat = ref.embeddings[i].matrix;
+         const DenseMatrix &emb_mat = ref.point_matrices[geom](mat);
+         IsoparametricTransformation trans;
+         BiLinear2DFiniteElement fe;
+         trans.SetFE(&fe);
+         trans.SetPointMat(emb_mat);
+         for (k = 0; k < RE.Size()/2; k++)
+         {
+            Vector emb_ip1, emb_ip2;
+            trans.Transform(RefG->RefPts[RE[2*k]], emb_ip1);
+            trans.Transform(RefG->RefPts[RE[2*k+1]], emb_ip2);
+
+            //check if we are on the parent edge
+            if (!((   emb_ip1(0) == 0. && emb_ip2(0) == 0.)
+                  || (emb_ip1(0) == 1. && emb_ip2(0) == 1.)
+                  || (emb_ip1(1) == 0. && emb_ip2(1) == 0.)
+                  || (emb_ip1(1) == 1. && emb_ip2(1) == 1.)))
+            { continue; }
+
+            lb.glVertex3d (pointmat(0, RE[2*k]),
+                           pointmat(1, RE[2*k]),
+                           values(RE[2*k]));
+            lb.glVertex3d (pointmat(0, RE[2*k+1]),
+                           pointmat(1, RE[2*k+1]),
+                           values(RE[2*k+1]));
+         }
+      }
+      else
+      {
+         for (k = 0; k < RE.Size()/2; k++)
+         {
+            lb.glVertex3d (pointmat(0, RE[2*k]),
+                           pointmat(1, RE[2*k]),
+                           values(RE[2*k]));
+            lb.glVertex3d (pointmat(0, RE[2*k+1]),
+                           pointmat(1, RE[2*k+1]),
+                           values(RE[2*k+1]));
+         }
       }
       lb.glEnd();
    }

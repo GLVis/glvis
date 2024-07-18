@@ -68,8 +68,8 @@ public:
    };
 
 protected:
-   Mesh   *mesh;
-   Vector *sol;
+   Mesh   *mesh{}, *mesh_coarse{};
+   Vector *sol{};
 
    double minv, maxv;
 
@@ -151,7 +151,7 @@ public:
 
    VisualizationSceneScalarData()
       : a_label_x("x"), a_label_y("y"), a_label_z("z") {}
-   VisualizationSceneScalarData (Mesh & m, Vector & s);
+   VisualizationSceneScalarData (Mesh & m, Vector & s, Mesh *mc = NULL);
 
    virtual ~VisualizationSceneScalarData();
 

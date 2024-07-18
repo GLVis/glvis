@@ -161,11 +161,12 @@ bool GLVisInitVis(StreamState::FieldType field_type,
          if (stream_state.normals.Size() > 0)
          {
             vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
-                                                      &stream_state.normals);
+                                                      stream_state.mesh_quad.get(), &stream_state.normals);
          }
          else
          {
-            vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol);
+            vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
+                                                      stream_state.mesh_quad.get());
          }
          if (stream_state.grid_f)
          {

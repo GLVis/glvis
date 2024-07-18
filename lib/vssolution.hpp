@@ -87,7 +87,8 @@ public:
    Array<int> el_attr_to_show, bdr_el_attr_to_show;
 
    VisualizationSceneSolution();
-   VisualizationSceneSolution(Mesh &m, Vector &s, Vector *normals = NULL);
+   VisualizationSceneSolution(Mesh &m, Vector &s, Mesh *mc = NULL,
+                              Vector *normals = NULL);
 
    virtual ~VisualizationSceneSolution();
 
@@ -95,7 +96,7 @@ public:
 
    void SetGridFunction(GridFunction & u) { rsol = &u; }
 
-   void NewMeshAndSolution(Mesh *new_m, Vector *new_sol,
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
                            GridFunction *new_u = NULL);
 
    virtual void SetNewScalingFromBox();

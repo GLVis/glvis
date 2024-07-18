@@ -719,7 +719,7 @@ void StreamState::ResetMeshAndSolution(VisualizationScene* vs)
          VisualizationSceneSolution *vss =
             dynamic_cast<VisualizationSceneSolution *>(vs);
          grid_f->GetNodalValues(sol);
-         vss->NewMeshAndSolution(mesh.get(), &sol, grid_f.get());
+         vss->NewMeshAndSolution(mesh.get(), mesh_quad.get(), &sol, grid_f.get());
       }
       else
       {
