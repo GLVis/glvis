@@ -1827,6 +1827,6 @@ function<string(double)> NumberFormatter(string formatting) {
 }
 
 bool isValidNumberFormatting(const string& formatting) {
-   regex rgx = regex(R"(%['\-+#0\s]?[0-9]{0,3}\.?[0-9]{0,3}[FfEeGg])");
+   regex rgx = regex(R"(%[\-+#0\s]?[0-9]{0,3}\.?[0-9]{0,3}[FfEeGg])");
    return regex_match(formatting, rgx);
 }
