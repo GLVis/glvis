@@ -1456,8 +1456,8 @@ void VisualizationSceneSolution3d::DrawCoarseSurfEdges(
    }
    auto &ref = mesh->GetRefinementTransforms();
    IsoparametricTransformation trans;
-   BiLinear2DFiniteElement fe_face;
-   TriLinear3DFiniteElement fe;
+   static const BiLinear2DFiniteElement fe_face;
+   static const TriLinear3DFiniteElement fe;
    trans.SetFE(&fe);
    DenseMatrix emb_pointmat;
 
@@ -1522,7 +1522,7 @@ void VisualizationSceneSolution3d::DrawCoarseSurfEdges(
          if ((emb_ip1(d) != 0. && emb_ip1(d) != 1.)
              || (emb_ip2(d) != 0. && emb_ip2(d) != 1.))
          { inter++; }
-      if (e2>= 0 && ref.embeddings[e1].parent == ref.embeddings[e2].parent)
+      if (e2 >= 0 && ref.embeddings[e1].parent == ref.embeddings[e2].parent)
       { inter--; }
       if (inter != 1) { continue; }
 
