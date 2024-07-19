@@ -112,11 +112,11 @@ public:
    Array<int> bdr_attr_to_show;
 
    VisualizationSceneSolution3d();
-   VisualizationSceneSolution3d(Mesh & m, Vector & s);
+   VisualizationSceneSolution3d(Mesh & m, Vector & s, Mesh *mc);
 
    void SetGridFunction (GridFunction *gf) { GridF = gf; }
 
-   void NewMeshAndSolution(Mesh *new_m, Vector *new_sol,
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
                            GridFunction *new_u = NULL);
 
    virtual ~VisualizationSceneSolution3d();

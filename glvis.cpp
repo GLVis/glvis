@@ -186,7 +186,7 @@ bool GLVisInitVis(StreamState::FieldType field_type,
       {
          VisualizationSceneSolution3d * vss;
          vs = vss = new VisualizationSceneSolution3d(*stream_state.mesh,
-                                                     stream_state.sol);
+                                                     stream_state.sol, stream_state.mesh_quad.get());
          if (stream_state.grid_f)
          {
             vss->SetGridFunction(stream_state.grid_f.get());
