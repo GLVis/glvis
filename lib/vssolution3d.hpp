@@ -59,6 +59,14 @@ protected:
    void DrawRefinedSurfEdges (int n, DenseMatrix &pointmat,
                               Vector &values, Array<int> &RefEdges,
                               int part = -1);
+   void DrawBdrElCoarseSurfEdges(gl3::GlBuilder &line, int be,
+                                 DenseMatrix &pointmat, const IntegrationRule *ir = NULL,
+                                 Array<int> *idxs = NULL);
+   void DrawFaceCoarseSurfEdges(gl3::GlBuilder &line, int f, DenseMatrix &pointmat,
+                                const IntegrationRule *ir = NULL, Array<int> *idxs = NULL);
+   void DrawCoarseSurfEdges(gl3::GlBuilder &line, int f, int e1, int e2,
+                            DenseMatrix &pointmat, const IntegrationRule *ir = NULL,
+                            Array<int> *idxs = NULL);
    void LiftRefinedSurf (int n, DenseMatrix &pointmat,
                          Vector &values, int *RG);
    void DrawTetLevelSurf(gl3::GlDrawable& target, const DenseMatrix &verts,
