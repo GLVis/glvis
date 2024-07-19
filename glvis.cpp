@@ -240,12 +240,14 @@ bool GLVisInitVis(StreamState::FieldType field_type,
          if (stream_state.grid_f)
          {
             stream_state.ProjectVectorFEGridFunction();
-            vs = new VisualizationSceneVector3d(*stream_state.grid_f);
+            vs = new VisualizationSceneVector3d(*stream_state.grid_f,
+                                                stream_state.mesh_quad.get());
          }
          else
          {
             vs = new VisualizationSceneVector3d(*stream_state.mesh, stream_state.solu,
-                                                stream_state.solv, stream_state.solw);
+                                                stream_state.solv, stream_state.solw,
+                                                stream_state.mesh_quad.get());
          }
       }
    }

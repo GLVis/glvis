@@ -36,10 +36,11 @@ protected:
 public:
    int ianim, ianimd, ianimmax, drawdisp;
 
-   VisualizationSceneVector3d(Mesh & m, Vector & sx, Vector & sy, Vector & sz);
-   VisualizationSceneVector3d (GridFunction &vgf);
+   VisualizationSceneVector3d(Mesh & m, Vector & sx, Vector & sy, Vector & sz,
+                              Mesh *mc = NULL);
+   VisualizationSceneVector3d (GridFunction &vgf, Mesh *mc = NULL);
 
-   void NewMeshAndSolution(Mesh *new_m, GridFunction *new_v);
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, GridFunction *new_v);
 
    virtual ~VisualizationSceneVector3d();
 

@@ -743,7 +743,7 @@ void StreamState::ResetMeshAndSolution(VisualizationScene* vs)
 
          VisualizationSceneVector3d *vss =
             dynamic_cast<VisualizationSceneVector3d *>(vs);
-         vss->NewMeshAndSolution(mesh.get(), grid_f.get());
+         vss->NewMeshAndSolution(mesh.get(), mesh_quad.get(), grid_f.get());
       }
    }
 }
