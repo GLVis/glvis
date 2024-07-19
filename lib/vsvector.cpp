@@ -51,6 +51,7 @@ std::string VisualizationSceneVector::GetHelpString() const
       << "| O -  Switch 'o' func. (NC shading) |" << endl
       << "| p/P  Cycle through color palettes  |" << endl
       << "| q -  Quits                         |" << endl
+      << "| Q -  Cycle quadrature data mode    |" << endl
       << "| r -  Reset the plot to 3D view     |" << endl
       << "| R -  Reset the plot to 2D view     |" << endl
       << "| s -  Turn on/off unit cube scaling |" << endl
@@ -188,7 +189,8 @@ void KeyuPressed()
    {
       case 0:
       case 1:
-         if (update && vsvector->shading == 2)
+         if (update &&
+             vsvector->GetShading() == VisualizationSceneSolution::Shading::Noncomforming)
          {
             vsvector->PrepareVectorField();
             SendExposeEvent();
@@ -231,7 +233,7 @@ void VisualizationSceneVector::ToggleDrawElems()
 
    cout << "Surface elements mode : " << modes[drawelems] << endl;
 
-   if (drawelems != 0 && shading == 2)
+   if (drawelems != 0 && shading == Shading::Noncomforming)
    {
       DoAutoscaleValue(false);
       PrepareLines();
@@ -255,9 +257,10 @@ const char *Vec2ScalarNames[7] =
 };
 
 VisualizationSceneVector::VisualizationSceneVector(Mesh & m,
-                                                   Vector & sx, Vector & sy)
+                                                   Vector & sx, Vector & sy, Mesh *mc)
 {
    mesh = &m;
+   mesh_coarse = mc;
    solx = &sx;
    soly = &sy;
 
@@ -405,7 +408,7 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
    }
 }
 
-void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
+void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
 {
    delete sol;
 
@@ -436,6 +439,7 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
       }
    }
    mesh = new_mesh;
+   mesh_coarse = mc;
 
    solx = new Vector(mesh->GetNV());
    soly = new Vector(mesh->GetNV());
@@ -459,7 +463,7 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
    }
 
-   VisualizationSceneSolution::NewMeshAndSolution(mesh, sol, &vgf);
+   VisualizationSceneSolution::NewMeshAndSolution(mesh, mesh_coarse, sol, &vgf);
 
    if (autoscale)
    {
@@ -661,7 +665,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
    // prepare the displaced mesh
    displine_buf.clear();
    gl3::GlBuilder build = displine_buf.createBuilder();
-   if (shading != 2)
+   if (shading != Shading::Noncomforming)
    {
       for (int i = 0; i < ne; i++)
       {
@@ -906,7 +910,7 @@ void VisualizationSceneVector::PrepareVectorField()
             DrawVector(v[0], v[1], (*solx)(i), (*soly)(i), (*sol)(i));
          }
 
-         if (shading == 2 && RefineFactor > 1)
+         if (shading == Shading::Noncomforming && RefineFactor > 1)
          {
             DenseMatrix vvals, pm;
             for (i = 0; i < mesh->GetNE(); i++)

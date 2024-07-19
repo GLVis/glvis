@@ -110,8 +110,7 @@ public:
    bool FixElementOrientations() { return curr_state.fix_elem_orient; }
 
    // called by worker threads
-   int NewMeshAndSolution(std::unique_ptr<Mesh> _new_m,
-                          std::unique_ptr<GridFunction> _new_g);
+   int NewMeshAndSolution(StreamState &&ss);
    int Screenshot(const char *filename);
    int KeyCommands(const char *keys);
    int WindowSize(int w, int h);

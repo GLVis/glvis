@@ -1301,10 +1301,11 @@ void VisualizationSceneScalarData::SetAutoscale(int _autoscale)
 }
 
 VisualizationSceneScalarData::VisualizationSceneScalarData(
-   Mesh & m, Vector & s)
+   Mesh & m, Vector & s, Mesh *mc)
    : a_label_x("x"), a_label_y("y"), a_label_z("z")
 {
    mesh = &m;
+   mesh_coarse = mc;
    sol  = &s;
 
    Init();
