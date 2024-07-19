@@ -3246,14 +3246,64 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines2()
             switch (cp_drawmesh)
             {
                case 1:
-                  // glBegin(GL_POLYGON);
-                  line.glBegin(GL_LINE_LOOP);
-                  for (j = 0; j < nodes.Size(); j++)
+               {
+                  if (mesh_coarse)
                   {
-                     line.glVertex3dv (point[j]);
+                     FaceElementTransformations *ftr;
+                     ftr = mesh->GetFaceElementTransformations(i);
+                     auto &ref = mesh->GetRefinementTransforms();
+                     IsoparametricTransformation trans;
+                     BiLinear2DFiniteElement fe_face;
+                     TriLinear3DFiniteElement fe;
+                     trans.SetFE(&fe);
+                     DenseMatrix emb_pointmat;
+
+                     //we assume that mesh_course is used only for tensor finite elements,
+                     //like for representation of quadratures, so in 2D it is square
+                     const int geom =
+                        Geometry::Type::CUBE; //ref.embeddings[e1].geom; //<---- bugged!?
+                     const int mat = ref.embeddings[e1].matrix;
+                     const DenseMatrix &emb_mat = ref.point_matrices[geom](mat);
+                     trans.SetPointMat(emb_mat);
+                     IntegrationRule nodes3d(4);
+                     ftr->Loc1.Transform(fe_face.GetNodes(), nodes3d);
+                     trans.Transform(nodes3d, emb_pointmat);
+
+                     line.glBegin(GL_LINES);
+
+                     for (j = 0; j < 4; j++)
+                     {
+                        int jp1 = (j+1) % 4;
+                        Vector emb_ip1, emb_ip2;
+                        emb_pointmat.GetColumnReference(j, emb_ip1);
+                        emb_pointmat.GetColumnReference(jp1, emb_ip2);
+
+                        //check if we are on the outer edge
+                        int inter = 0;
+                        for (int d = 0; d < 3; d++)
+                           if ((emb_ip1(d) != 0. && emb_ip1(d) != 1.)
+                               || (emb_ip2(d) != 0. && emb_ip2(d) != 1.))
+                           { inter++; }
+                        if (inter != 1) { continue; }
+
+                        line.glVertex3dv(point[j]);
+                        line.glVertex3dv(point[jp1]);
+                     }
+
+                     line.glEnd();
                   }
-                  line.glEnd();
+                  else
+                  {
+                     // glBegin(GL_POLYGON);
+                     line.glBegin(GL_LINE_LOOP);
+                     for (j = 0; j < nodes.Size(); j++)
+                     {
+                        line.glVertex3dv (point[j]);
+                     }
+                     line.glEnd();
+                  }
                   break;
+               }
                case 2:
                   DrawPolygonLevelLines(line, point[0], nodes.Size(), level, false);
                   break;
@@ -3278,8 +3328,62 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines2()
             switch (cp_drawmesh)
             {
                case 1:
-                  DrawRefinedSurfEdges (n, pointmat, values, RefG->RefEdges);
+               {
+                  if (mesh_coarse)
+                  {
+                     FaceElementTransformations *ftr;
+                     ftr = mesh->GetFaceElementTransformations(i);
+                     auto &ref = mesh->GetRefinementTransforms();
+                     IsoparametricTransformation trans;
+                     BiLinear2DFiniteElement fe_face;
+                     TriLinear3DFiniteElement fe;
+                     trans.SetFE(&fe);
+                     DenseMatrix emb_pointmat;
+
+                     //we assume that mesh_course is used only for tensor finite elements,
+                     //like for representation of quadratures, so in 2D it is square
+                     const int geom =
+                        Geometry::Type::CUBE; //ref.embeddings[e1].geom; //<---- bugged!?
+                     const int mat = ref.embeddings[e1].matrix;
+                     const DenseMatrix &emb_mat = ref.point_matrices[geom](mat);
+                     trans.SetPointMat(emb_mat);
+                     IntegrationRule nodes3d(4);
+                     ftr->Loc1.Transform(fe_face.GetNodes(), nodes3d);
+                     trans.Transform(nodes3d, emb_pointmat);
+
+                     gl3::GlBuilder line = cplines_buf.createBuilder();
+                     line.glBegin(GL_LINES);
+
+                     auto &RE = RefG->RefEdges;
+                     for (int k = 0; k < RE.Size()/2; k++)
+                     {
+                        IntegrationPoint ip1_3d, ip2_3d;
+                        Vector emb_ip1, emb_ip2;
+                        ftr->Loc1.Transform(RefG->RefPts[RE[2*k]], ip1_3d);
+                        ftr->Loc1.Transform(RefG->RefPts[RE[2*k+1]], ip2_3d);
+                        trans.Transform(ip1_3d, emb_ip1);
+                        trans.Transform(ip2_3d, emb_ip2);
+
+                        //check if we are on the outer edge
+                        int inter = 0;
+                        for (int d = 0; d < 3; d++)
+                           if ((emb_ip1(d) != 0. && emb_ip1(d) != 1.)
+                               || (emb_ip2(d) != 0. && emb_ip2(d) != 1.))
+                           { inter++; }
+                        if (inter != 1) { continue; }
+
+                        line.glVertex3dv(&pointmat(0, RE[2*k]));
+                        line.glVertex3dv(&pointmat(0, RE[2*k+1]));
+                     }
+
+                     line.glEnd();
+                  }
+                  else
+                  {
+                     DrawRefinedSurfEdges (n, pointmat, values, RefG->RefEdges);
+                  }
                   break;
+               }
                case 2:
                   DrawRefinedSurfLevelLines (n, pointmat, values,
                                              RefG->RefGeoms);
