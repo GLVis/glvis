@@ -1785,7 +1785,8 @@ void SetFont(const std::string& fn)
 #endif
 }
 
-function<string(double)> NumberFormatter(int precision, char format, bool showsign) {
+function<string(double)> NumberFormatter(int precision, char format, bool showsign)
+{
    return [precision, format, showsign](double x) -> string {
       ostringstream oss;
       switch (format) {
@@ -1804,7 +1805,8 @@ function<string(double)> NumberFormatter(int precision, char format, bool showsi
             oss << defaultfloat;
             break;
       };
-      if (showsign){
+      if (showsign)
+      {
          oss << showpos;
       }
       oss << setprecision(precision) << x;
@@ -1812,12 +1814,15 @@ function<string(double)> NumberFormatter(int precision, char format, bool showsi
    };
 }
 
-function<string(double)> NumberFormatter(string formatting) {
-   if (!isValidNumberFormatting(formatting)) {
+function<string(double)> NumberFormatter(string formatting)
+{
+   if (!isValidNumberFormatting(formatting))
+   {
       MFEM_WARNING("Invalid formatting string. Using default. " << endl);
       return NumberFormatter();
    }
-   else {
+   else
+   {
       return [formatting](double x) -> string {
          char buf[64];
          snprintf(buf, sizeof(buf), formatting.c_str(), x);
@@ -1826,7 +1831,8 @@ function<string(double)> NumberFormatter(string formatting) {
    }
 }
 
-bool isValidNumberFormatting(const string& formatting) {
+bool isValidNumberFormatting(const string& formatting)
+{
    regex rgx = regex(R"(%[\-+#0\s]?[0-9]{0,3}\.?[0-9]{0,3}[FfEeGg])");
    return regex_match(formatting, rgx);
 }

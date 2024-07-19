@@ -422,6 +422,7 @@ void VisualizationSceneScalarData::SetColorbarNumberFormat(int precision,
    // The first two arguments are required but I don't think they are used?
    PrepareColorBar(0,0);
 }
+
 void VisualizationSceneScalarData::SetColorbarNumberFormat(string formatting)
 {
    colorbar_formatter = NumberFormatter(formatting);

@@ -62,8 +62,8 @@ std::string VisualizationSceneVector::GetHelpString() const
       << "| v -  Cycle through vector fields   |" << endl
       << "| V -  Change the arrows scaling     |" << endl
       << "| \\ -  Set light source position     |" << endl
-      << "| Alt+a -  Axes number format        |" << endl
-      << "| Alt+c -  Colorbar number format    |" << endl
+      << "| Alt+a  - Axes number format        |" << endl
+      << "| Alt+c  - Colorbar number format    |" << endl
       << "| Ctrl+p - Print to a PDF file       |" << endl
       << "+------------------------------------+" << endl
       << "| Function keys                      |" << endl
