@@ -1445,7 +1445,6 @@ void VisualizationSceneSolution3d::DrawCoarseSurfEdges(
    MFEM_ASSERT(mesh_coarse, "Cannot be used without the coarse mesh");
    MFEM_ASSERT(mesh->GetLastOperation() == Mesh::Operation::REFINE,
                "Not a refined mesh");
-   MFEM_ASSERT(!idxs || idxs->Size() == 8, "Not expected 4 edges");
 
    const int dim = mesh->Dimension();
    FaceElementTransformations *ftr;
@@ -1485,7 +1484,9 @@ void VisualizationSceneSolution3d::DrawCoarseSurfEdges(
 
    line.glBegin(GL_LINES);
 
-   for (int k = 0; k < 4; k++)
+   const int k_max = (idxs)?(idxs->Size()/2):(4);
+
+   for (int k = 0; k < k_max; k++)
    {
       int j, jp1;
       Vector emb_ip1, emb_ip2;
