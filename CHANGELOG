@@ -25,11 +25,11 @@ Version 4.2.1 (development)
 
 - Added a compilation parameter for the default font size.
 
-- Added option to specify number formatting for axes and colorbar. Number
-  formatting is specified while in GLVis via `Alt+a` (axes) or `Alt+c`
-  (colorbar). Formatting can also be specified via socket stream or glvis
-  script using the keywords `axis_numberformat` or `colorbar_numberformat`,
-  followed by a formatting string, e.g. `colorbar_numberformat '%+06.1f'`.
+- Added option to specify the floating point number formatting in GLVis axes and
+  colorbar. Use 'Alt+a' for the axes and 'Alt+c' for the colorbar. Formatting
+  can also be specified in socket stream or glvis script with axis_numberformat
+  or colorbar_numberformat, followed by a C-like formatting string, for example
+  "colorbar_numberformat '%+06.1f'".
 
 
 Version 4.2 released on May 23, 2022
