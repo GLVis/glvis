@@ -3917,11 +3917,7 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
    {
       RefinedGeometry *RefG;
 #define GLVIS_SMOOTH_LEVELSURF_NORMALS
-#ifdef GLVIS_SMOOTH_LEVELSURF_NORMALS
-      const DenseMatrix *gp = &grad;
-#else
       const DenseMatrix *gp = NULL;
-#endif
 
       for (int ie = 0; ie < mesh->GetNE(); ie++)
       {
@@ -3930,7 +3926,52 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
          RefG = GLVisGeometryRefiner.Refine(geom, TimesToRefine);
          GridF->GetValues(ie, RefG->RefPts, vals, pointmat);
 #ifdef GLVIS_SMOOTH_LEVELSURF_NORMALS
-         GridF->GetGradients(ie, RefG->RefPts, grad);
+         const int map_type = GridF->FESpace()->GetFE(ie)->GetMapType();
+         if (map_type == FiniteElement::MapType::VALUE)
+         {
+            GridF->GetGradients(ie, RefG->RefPts, grad);
+            gp = &grad;
+         }
+         else if (map_type == FiniteElement::MapType::INTEGRAL)
+         {
+            FiniteElementSpace *fes = GridF->FESpace();
+            const FiniteElement *fe = fes->GetFE(ie);
+            const int ndof = fe->GetDof();
+            const int ndim = fe->GetDim();
+            ElementTransformation *Trans = fes->GetElementTransformation(ie);
+            const IntegrationRule &ir = RefG->RefPts;
+            DenseMatrix dshape(ndof, ndim);
+            Vector lval, gh(ndim), gcol;
+
+            GridF->GetElementDofValues(ie, lval);
+
+            // Local projection to value-based FE
+            const IntegrationRule &nodes = fe->GetNodes();
+            for (int n = 0; n < nodes.GetNPoints(); n++)
+            {
+               const IntegrationPoint &ip = nodes.IntPoint(n);
+               Trans->SetIntPoint(&ip);
+               lval(n) /= Trans->Weight();//value = dof / |J|
+            }
+
+            // Gradient calculation
+            grad.SetSize(fe->GetDim(), ir.GetNPoints());
+            for (int q = 0; q < ir.GetNPoints(); q++)
+            {
+               const IntegrationPoint &ip = ir.IntPoint(q);
+               fe->CalcDShape(ip, dshape);
+               dshape.MultTranspose(lval, gh);
+               Trans->SetIntPoint(&ip);
+               grad.GetColumnReference(q, gcol);
+               const DenseMatrix &Jinv = Trans->InverseJacobian();
+               Jinv.MultTranspose(gh, gcol);
+            }
+            gp = &grad;
+         }
+         else
+         {
+            MFEM_ABORT("Unknown mapping type");
+         }
 #endif
 
          Array<int> &RG = RefG->RefGeoms;

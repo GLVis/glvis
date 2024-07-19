@@ -729,7 +729,50 @@ int VisualizationSceneSolution::GetRefinedValuesAndNormals(
       // In 1D we do not have well-defined normals.
       if (dim > 1)
       {
-         rsol->GetGradients(i, ir, tr);
+         const int map_type = rsol->FESpace()->GetFE(i)->GetMapType();
+         if (map_type == FiniteElement::MapType::VALUE)
+         {
+            rsol->GetGradients(i, ir, tr);
+         }
+         else if (map_type == FiniteElement::MapType::INTEGRAL)
+         {
+            FiniteElementSpace *fes = rsol->FESpace();
+            const FiniteElement *fe = fes->GetFE(i);
+            const int ndof = fe->GetDof();
+            const int ndim = fe->GetDim();
+            ElementTransformation *Trans = fes->GetElementTransformation(i);
+            DenseMatrix dshape(ndof, ndim);
+            Vector lval, gh(ndim), gcol;
+
+            rsol->GetElementDofValues(i, lval);
+
+            // Local projection to value-based FE
+            const IntegrationRule &nodes = fe->GetNodes();
+            for (int n = 0; n < nodes.GetNPoints(); n++)
+            {
+               const IntegrationPoint &ip = nodes.IntPoint(n);
+               Trans->SetIntPoint(&ip);
+               lval(n) /= Trans->Weight();//value = dof / |J|
+            }
+
+            // Gradient calculation
+            tr.SetSize(fe->GetDim(), ir.GetNPoints());
+            for (int q = 0; q < ir.GetNPoints(); q++)
+            {
+               const IntegrationPoint &ip = ir.IntPoint(q);
+               fe->CalcDShape(ip, dshape);
+               dshape.MultTranspose(lval, gh);
+               Trans->SetIntPoint(&ip);
+               tr.GetColumnReference(q, gcol);
+               const DenseMatrix &Jinv = Trans->InverseJacobian();
+               Jinv.MultTranspose(gh, gcol);
+            }
+         }
+         else
+         {
+            MFEM_ABORT("Unknown mapping type");
+         }
+
          normals.SetSize(3, tr.Width());
          for (int j = 0; j < tr.Width(); j++)
          {
