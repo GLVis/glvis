@@ -3284,6 +3284,8 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines2()
                            if ((emb_ip1(d) != 0. && emb_ip1(d) != 1.)
                                || (emb_ip2(d) != 0. && emb_ip2(d) != 1.))
                            { inter++; }
+                        if (ref.embeddings[e1].parent == ref.embeddings[e2].parent)
+                        { inter--; }
                         if (inter != 1) { continue; }
 
                         line.glVertex3dv(point[j]);
@@ -3370,6 +3372,8 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines2()
                            if ((emb_ip1(d) != 0. && emb_ip1(d) != 1.)
                                || (emb_ip2(d) != 0. && emb_ip2(d) != 1.))
                            { inter++; }
+                        if (ref.embeddings[e1].parent == ref.embeddings[e2].parent)
+                        { inter--; }
                         if (inter != 1) { continue; }
 
                         line.glVertex3dv(&pointmat(0, RE[2*k]));
