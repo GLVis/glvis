@@ -921,38 +921,7 @@ int VisualizationSceneSolution3d::GetFunctionAutoRefineFactor()
 {
    if (!GridF) { return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(); }
 
-   //grid function
-
-   const int dim = mesh->Dimension();
-   int ref = 1;
-   if (dim == 3)
-   {
-      for (int i = 0; i < mesh->GetNBE(); i++)
-      {
-         const FiniteElement &fe = *GridF->FESpace()->GetBE(i);
-         int order = fe.GetOrder();
-         if (fe.GetMapType() == FiniteElement::MapType::INTEGRAL)
-         {
-            order += mesh->GetBdrElementTransformation(i)->OrderW();
-         }
-         ref = std::max(ref, 2 * order);
-      }
-   }
-   else
-   {
-      for (int i = 0; i < mesh->GetNE(); i++)
-      {
-         const FiniteElement &fe = *GridF->FESpace()->GetFE(i);
-         int order = fe.GetOrder();
-         if (fe.GetMapType() == FiniteElement::MapType::INTEGRAL)
-         {
-            order += mesh->GetElementTransformation(i)->OrderW();
-         }
-         ref = std::max(ref, 2 * order);
-      }
-   }
-
-   return ref;
+   return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(*GridF);
 }
 
 void VisualizationSceneSolution3d::AutoRefine()

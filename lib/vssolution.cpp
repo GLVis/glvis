@@ -990,22 +990,7 @@ int VisualizationSceneSolution::GetFunctionAutoRefineFactor()
 {
    if (!rsol) { return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(); }
 
-   //grid function
-
-   const int ne = mesh->GetNE();
-   int ref = 1;
-   for (int i = 0; i < ne; i++)
-   {
-      const FiniteElement &fe = *rsol->FESpace()->GetFE(i);
-      int order = fe.GetOrder();
-      if (fe.GetMapType() == FiniteElement::MapType::INTEGRAL)
-      {
-         order += mesh->GetElementTransformation(i)->OrderW();
-      }
-      ref = std::max(ref, 2 * order);
-   }
-
-   return ref;
+   return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(*rsol);
 }
 
 void VisualizationSceneSolution::AutoRefine()

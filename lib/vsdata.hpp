@@ -138,6 +138,7 @@ protected:
 
    void FixValueRange();
 
+   static int GetFunctionAutoRefineFactor(GridFunction &gf);
    virtual int GetFunctionAutoRefineFactor();
    virtual int GetAutoRefineFactor();
 

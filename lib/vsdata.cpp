@@ -47,6 +47,41 @@ void VisualizationSceneScalarData::FixValueRange()
    }
 }
 
+int VisualizationSceneScalarData::GetFunctionAutoRefineFactor(GridFunction &gf)
+{
+   Mesh *mesh = gf.FESpace()->GetMesh();
+   const int dim = mesh->Dimension();
+   int ref = 1;
+   if (dim == 3)
+   {
+      for (int i = 0; i < mesh->GetNBE(); i++)
+      {
+         const FiniteElement &fe = *gf.FESpace()->GetBE(i);
+         int order = fe.GetOrder();
+         if (fe.GetMapType() == FiniteElement::MapType::INTEGRAL)
+         {
+            order += mesh->GetBdrElementTransformation(i)->OrderW();
+         }
+         ref = std::max(ref, 2 * order);
+      }
+   }
+   else
+   {
+      for (int i = 0; i < mesh->GetNE(); i++)
+      {
+         const FiniteElement &fe = *gf.FESpace()->GetFE(i);
+         int order = fe.GetOrder();
+         if (fe.GetMapType() == FiniteElement::MapType::INTEGRAL)
+         {
+            order += mesh->GetElementTransformation(i)->OrderW();
+         }
+         ref = std::max(ref, 2 * order);
+      }
+   }
+
+   return ref;
+}
+
 int VisualizationSceneScalarData::GetFunctionAutoRefineFactor()
 {
    if (!sol) { return 1; }
