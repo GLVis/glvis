@@ -1787,7 +1787,8 @@ void SetFont(const std::string& fn)
 
 function<string(double)> NumberFormatter(int precision, char format, bool showsign)
 {
-   return [precision, format, showsign](double x) -> string {
+   return [precision, format, showsign](double x) -> string
+   {
       ostringstream oss;
       switch (format) {
          case 'f':
@@ -1823,7 +1824,8 @@ function<string(double)> NumberFormatter(string formatting)
    }
    else
    {
-      return [formatting](double x) -> string {
+      return [formatting](double x) -> string
+      {
          char buf[64];
          snprintf(buf, sizeof(buf), formatting.c_str(), x);
          return string(buf);

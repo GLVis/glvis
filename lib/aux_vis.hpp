@@ -153,22 +153,31 @@ T prompt(const string question,
     T input;
     string strInput;
 
-    while (true) {
+    while (true)
+    {
         cout << question << " ";
         getline(cin, strInput);
         stringstream buf(strInput);
 
-        if (strInput.empty() && default_value != nullptr) {
+        if (strInput.empty() && default_value != nullptr)
+        {
+            cout << "Input empty. Using default value: " << *default_value << endl;
             return *default_value;
         }
 
-        if (buf >> input) {
-            if (validator(input)) {
+        if (buf >> input)
+        {
+            if (validator(input))
+            {
                 return input;
-            } else {
+            }
+            else
+            {
                cout << "Input is not valid. Please try again." << endl;
             }
-        } else {
+        }
+        else
+        {
            cout << "Input can not be casted to expected type. Please try again." << endl;
         }
     }
