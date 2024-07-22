@@ -12,9 +12,11 @@
 Version 4.2.1 (development)
 ===========================
 
-- Increased the default auto-refinement limits to maximum of 32 refinement
-  levels or 5M elements. Note that you may still need to press 'o' if the mesh
-  is larger and/or appears not as curved as it should be.
+- Changed the auto refinement algorithm, which is now based on the order of
+  the grid function and mesh. The total number of elements is limited to the
+  range between 100k and 2M. If the upper limit is reached a warning is shown
+  and you may still need to press 'o' if you want to increase the refinement
+  even further.
 
 - Significantly improved memory usage.
 
