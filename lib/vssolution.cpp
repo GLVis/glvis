@@ -986,49 +986,24 @@ void VisualizationSceneSolution::SetRefineFactors(int tot, int bdr)
    }
 }
 
-int VisualizationSceneSolution::GetAutoRefineFactor()
+int VisualizationSceneSolution::GetFunctionAutoRefineFactor()
 {
-   const int ne = mesh->GetNE();
-
-   //determine the refinement based on the order of the mesh and grid function
-   int order_ref = 1;
+   if (!rsol) { return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(); }
 
    //grid function
-   if (rsol)
-   {
-      for (int i = 0; i < ne; i++)
-      {
-         const FiniteElement &fe = *rsol->FESpace()->GetFE(i);
-         int order = fe.GetOrder();
-         if (fe.GetMapType() == FiniteElement::MapType::INTEGRAL)
-         {
-            order += mesh->GetElementTransformation(i)->OrderW();
-         }
-         order_ref = std::max(order_ref, 2 * order);
-      }
-   }
-   else
-   {
-      order_ref = (sol->Size() == mesh->GetNV())?(2):(1);
-   }
 
-   //mesh
-   const FiniteElementSpace *nfes = mesh->GetNodalFESpace();
-   if (nfes)
-   {
-      const int order = nfes->GetMaxElementOrder();
-      order_ref = std::max(order_ref, 2 * order);
-   }
-
-   //limit the total number of elements
-   int auto_ref_surf_elem = ne*(order_ref+1)*(order_ref+1);
-   auto_ref_surf_elem = std::min(std::max(auto_ref_surf_elem,
-                                          auto_ref_min_surf_elem), auto_ref_max_surf_elem);
-
-   //approach the given number of elements
+   const int ne = mesh->GetNE();
    int ref = 1;
-   while (ref < auto_ref_max && ne*(ref+1)*(ref+1) <= auto_ref_surf_elem)
-   { ref++; }
+   for (int i = 0; i < ne; i++)
+   {
+      const FiniteElement &fe = *rsol->FESpace()->GetFE(i);
+      int order = fe.GetOrder();
+      if (fe.GetMapType() == FiniteElement::MapType::INTEGRAL)
+      {
+         order += mesh->GetElementTransformation(i)->OrderW();
+      }
+      ref = std::max(ref, 2 * order);
+   }
 
    return ref;
 }

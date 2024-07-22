@@ -101,7 +101,7 @@ protected:
                                 const int nh, const int face_splits,
                                 const DenseMatrix *grad = NULL);
 
-   int GetAutoRefineFactor();
+   virtual int GetFunctionAutoRefineFactor() override;
 
    bool CheckPositions(Array<int> &vertices) const
    {

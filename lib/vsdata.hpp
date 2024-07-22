@@ -138,6 +138,9 @@ protected:
 
    void FixValueRange();
 
+   virtual int GetFunctionAutoRefineFactor();
+   virtual int GetAutoRefineFactor();
+
    void Cone(gl3::GlDrawable& buf, glm::mat4 transform, double cval);
 
 public:

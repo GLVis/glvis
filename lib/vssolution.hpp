@@ -77,7 +77,7 @@ protected:
                         Vector &values, int sides, Array<double> &lvl,
                         int flat = 0);
 
-   int GetAutoRefineFactor();
+   virtual int GetFunctionAutoRefineFactor() override;
 
    // Used for drawing markers for element and vertex numbering
    double GetElementLengthScale(int k);

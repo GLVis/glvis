@@ -47,6 +47,42 @@ void VisualizationSceneScalarData::FixValueRange()
    }
 }
 
+int VisualizationSceneScalarData::GetFunctionAutoRefineFactor()
+{
+   if (!sol) { return 1; }
+
+   return (sol->Size() == mesh->GetNV())?(2):(1);
+}
+
+int VisualizationSceneScalarData::GetAutoRefineFactor()
+{
+   const int dim = mesh->Dimension();
+   const int ne = (dim == 3)?(mesh->GetNBE()):(mesh->GetNE());
+
+   //determine the refinement based on the order of the mesh and grid function
+   int order_ref = GetFunctionAutoRefineFactor();
+
+   //mesh
+   const FiniteElementSpace *nfes = mesh->GetNodalFESpace();
+   if (nfes)
+   {
+      const int order = nfes->GetMaxElementOrder();
+      order_ref = std::max(order_ref, 2 * order);
+   }
+
+   //limit the total number of elements
+   int auto_ref_surf_elem = ne*(order_ref+1)*(order_ref+1);
+   auto_ref_surf_elem = std::min(std::max(auto_ref_surf_elem,
+                                          auto_ref_min_surf_elem), auto_ref_max_surf_elem);
+
+   //approach the given number of elements
+   int ref = 1;
+   while (ref < auto_ref_max && ne*(ref+1)*(ref+1) <= auto_ref_surf_elem)
+   { ref++; }
+
+   return ref;
+}
+
 void VisualizationSceneScalarData::DoAutoscale(bool prepare)
 {
    if (autoscale == 1)
