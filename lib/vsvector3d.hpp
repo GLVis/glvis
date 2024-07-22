@@ -33,7 +33,7 @@ protected:
    Array<int> vflevel;
    Array<double> dvflevel;
 
-   virtual int GetFunctionAutoRefineFactor() override;
+   virtual int GetFunctionAutoRefineFactor();
 
 public:
    int ianim, ianimd, ianimmax, drawdisp;

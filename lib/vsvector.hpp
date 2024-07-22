@@ -45,7 +45,7 @@ protected:
    Vector vc0;
    IsoparametricTransformation T0;
 
-   virtual int GetFunctionAutoRefineFactor() override;
+   virtual int GetFunctionAutoRefineFactor();
 
 public:
    VisualizationSceneVector(Mesh &m, Vector &sx, Vector &sy, Mesh *mc = NULL);
