@@ -267,51 +267,33 @@ void SdlWindow::mouseEventUp(SDL_MouseButtonEvent& eb)
    }
 }
 
-void SdlWindow::keyEvent(SDL_Keysym& ks)
+void SdlWindow::keyDownEvent(SDL_Keysym& ks)
 {
-   bool handled = false;
-   if (ks.sym >= 128 || ks.sym < 32)
+   // Some keyDown events will be followed by a textInput event which will
+   // handle key translation due to Shift or CapsLock, so we leave such events
+   // to be processed there.
+   if ((ks.sym >= 32 && ks.sym < 127) &&
+       (ks.mod & ~(KMOD_SHIFT | KMOD_CAPS)) == 0)
    {
-      if (onKeyDown[ks.sym])
-      {
-         onKeyDown[ks.sym](ks.mod);
-         handled = true;
-      }
+      lastKeyDownProcessed = false;
+      return;
    }
-   else if (ks.sym < 256 && std::isdigit(ks.sym))
+   // If any 'mod' key other than KMOD_SHIFT or KMOD_CAPS is pressed, or the key
+   // is not in the range [32,127) then we processed the event here.
+   lastKeyDownProcessed = true;
+   if (onKeyDown[ks.sym])
    {
-      if (!(SDL_GetModState() & KMOD_SHIFT))
-      {
-         // handle number key event here
-         onKeyDown[ks.sym](ks.mod);
-         handled = true;
-      }
-   }
-   else if (ctrlDown)
-   {
-      if (onKeyDown[ks.sym])
-      {
-         onKeyDown[ks.sym](ks.mod);
-         handled = true;
-      }
-   }
-   if (ks.sym == SDLK_RCTRL || ks.sym == SDLK_LCTRL)
-   {
-      ctrlDown = true;
-   }
-   if (handled)
-   {
+      onKeyDown[ks.sym](ks.mod);
+
+      // Record the key in 'saved_keys':
       bool isAlt = ks.mod & (KMOD_ALT);
       bool isCtrl = ks.mod & (KMOD_CTRL);
       saved_keys += "[";
       if (isCtrl) { saved_keys += "C-"; }
       if (isAlt) { saved_keys += "Alt-"; }
-      if (ks.sym < 256 && std::isalpha(ks.sym))
+      if (ks.sym >= 32 && ks.sym < 127)
       {
-         // key with corresponding text output
-         char c = ks.sym;
-         if (!(ks.mod & KMOD_SHIFT)) { c = std::tolower(c); }
-         saved_keys += c;
+         saved_keys += (char)(ks.sym);
       }
       else
       {
@@ -321,25 +303,21 @@ void SdlWindow::keyEvent(SDL_Keysym& ks)
    }
 }
 
-void SdlWindow::keyEvent(char c)
+void SdlWindow::textInputEvent(const SDL_TextInputEvent &tie)
 {
-   if (!std::isdigit(c) && onKeyDown[c])
+   // This event follows a keyDown event where we've recorded if the event was
+   // processed in keyDownEvent(). If it was not processed, we do it here.
+   if (lastKeyDownProcessed) { return; }
+   const char c = tie.text[0];
+   if (onKeyDown[c])
    {
-      SDL_Keymod mods = SDL_GetModState();
-      bool isAlt = mods & (KMOD_ALT);
-      bool isCtrl = mods & (KMOD_CTRL);
+      // Keys with 'mods' (other than Shift and CapsLock) are processed in
+      // keyDownEvent().
+      const int mods = 0;
       onKeyDown[c](mods);
-      if (isAlt || isCtrl)
-      {
-         saved_keys += "[";
-         if (isCtrl) { saved_keys += "C-"; }
-         if (isAlt) { saved_keys += "Alt-"; }
-      }
+
+      // Record the key in 'saved_keys':
       saved_keys += c;
-      if (isAlt || isCtrl)
-      {
-         saved_keys += "]";
-      }
    }
 }
 
@@ -403,17 +381,30 @@ void SdlWindow::mainIter()
                keep_going = true;
                break;
             case SDL_KEYDOWN:
-               keyEvent(e.key.keysym);
+// For debugging: uncomment the next line to track key events.
+// #define TRACK_KEY_EVENTS
+#ifdef TRACK_KEY_EVENTS
+               cout << "Event: SDL_KEYDOWN sym=" << e.key.keysym.sym
+                    << " mod=" << e.key.keysym.mod << endl;
+#endif
+               keyDownEvent(e.key.keysym);
                break;
             case SDL_KEYUP:
-               if (e.key.keysym.sym == SDLK_LCTRL
-                   || e.key.keysym.sym == SDLK_RCTRL)
-               {
-                  ctrlDown = false;
-               }
+#ifdef TRACK_KEY_EVENTS
+               cout << "Event: SDL_KEYUP sym=" << e.key.keysym.sym
+                    << " mod=" << e.key.keysym.mod << endl;
+#endif
                break;
             case SDL_TEXTINPUT:
-               keyEvent(e.text.text[0]);
+#ifdef TRACK_KEY_EVENTS
+               cout << "Event: SDL_TEXTINPUT text[0..3]="
+                    << (int)(unsigned char)(e.text.text[0])
+                    << ' ' << (int)(unsigned char)(e.text.text[1])
+                    << ' ' << (int)(unsigned char)(e.text.text[2])
+                    << ' ' << (int)(unsigned char)(e.text.text[3])
+                    << " (as codes 0-255)" << endl;
+#endif
+               textInputEvent(e.text);
                break;
             case SDL_MOUSEMOTION:
                motionEvent(e.motion);
