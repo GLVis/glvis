@@ -115,6 +115,12 @@ int VisualizationSceneScalarData::GetAutoRefineFactor()
    while (ref < auto_ref_max && ne*(ref+1)*(ref+1) <= auto_ref_surf_elem)
    { ref++; }
 
+   if (ref < order_ref)
+   {
+      cout << "Warning: the automatic refinement does not resolve the function fully"
+           << endl;
+   }
+
    return ref;
 }
 
