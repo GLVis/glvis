@@ -51,6 +51,7 @@ std::string VisualizationSceneVector::GetHelpString() const
       << "| O -  Switch 'o' func. (NC shading) |" << endl
       << "| p/P  Cycle through color palettes  |" << endl
       << "| q -  Quits                         |" << endl
+      << "| Q -  Cycle quadrature data mode    |" << endl
       << "| r -  Reset the plot to 3D view     |" << endl
       << "| R -  Reset the plot to 2D view     |" << endl
       << "| s -  Turn on/off unit cube scaling |" << endl
@@ -186,7 +187,8 @@ void KeyuPressed()
    {
       case 0:
       case 1:
-         if (update && vsvector->shading == 2)
+         if (update &&
+             vsvector->GetShading() == VisualizationSceneSolution::Shading::Noncomforming)
          {
             vsvector->PrepareVectorField();
             SendExposeEvent();
@@ -229,7 +231,7 @@ void VisualizationSceneVector::ToggleDrawElems()
 
    cout << "Surface elements mode : " << modes[drawelems] << endl;
 
-   if (drawelems != 0 && shading == 2)
+   if (drawelems != 0 && shading == Shading::Noncomforming)
    {
       DoAutoscaleValue(false);
       PrepareLines();
@@ -242,7 +244,7 @@ void VisualizationSceneVector::ToggleDrawElems()
 
 void VisualizationSceneVector::ToggleVectorField()
 {
-   drawvector = (drawvector+1)%4;
+   drawvector = (drawvector+1)%6;
    PrepareVectorField();
 }
 
@@ -253,9 +255,10 @@ const char *Vec2ScalarNames[7] =
 };
 
 VisualizationSceneVector::VisualizationSceneVector(Mesh & m,
-                                                   Vector & sx, Vector & sy)
+                                                   Vector & sx, Vector & sy, Mesh *mc)
 {
    mesh = &m;
+   mesh_coarse = mc;
    solx = &sx;
    soly = &sy;
 
@@ -403,7 +406,7 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
    }
 }
 
-void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
+void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
 {
    delete sol;
 
@@ -434,6 +437,7 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
       }
    }
    mesh = new_mesh;
+   mesh_coarse = mc;
 
    solx = new Vector(mesh->GetNV());
    soly = new Vector(mesh->GetNV());
@@ -457,7 +461,7 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
    }
 
-   VisualizationSceneSolution::NewMeshAndSolution(mesh, sol, &vgf);
+   VisualizationSceneSolution::NewMeshAndSolution(mesh, mesh_coarse, sol, &vgf);
 
    if (autoscale)
    {
@@ -659,7 +663,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
    // prepare the displaced mesh
    displine_buf.clear();
    gl3::GlBuilder build = displine_buf.createBuilder();
-   if (shading != 2)
+   if (shading != Shading::Noncomforming)
    {
       for (int i = 0; i < ne; i++)
       {
@@ -844,7 +848,7 @@ thread_local double new_maxlen;
 void VisualizationSceneVector::DrawVector(double px, double py, double vx,
                                           double vy, double cval)
 {
-   double zc = 0.5*(bb.z[0]+bb.z[1]);
+   double zc = (drawvector > 3)?(bb.z[1]):(0.5*(bb.z[0]+bb.z[1]));
 
    if (drawvector == 1)
    {
@@ -860,7 +864,9 @@ void VisualizationSceneVector::DrawVector(double px, double py, double vx,
       arrow_type = 1;
       arrow_scaling_type = 1;
 
-      if (drawvector == 2)
+      if (drawvector > 3) { cval = HUGE_VAL; }
+
+      if (drawvector == 2 || drawvector == 4)
       {
          Arrow(vector_buf, px, py, zc, vx, vy, 0.0, h, 0.125, cval);
       }
@@ -892,7 +898,7 @@ void VisualizationSceneVector::PrepareVectorField()
          int i;
 
          palette.SetUseLogscale(logscale);
-         if (drawvector == 3)
+         if (drawvector == 3 || drawvector == 5)
          {
             new_maxlen = 0.0;
          }
@@ -902,7 +908,7 @@ void VisualizationSceneVector::PrepareVectorField()
             DrawVector(v[0], v[1], (*solx)(i), (*soly)(i), (*sol)(i));
          }
 
-         if (shading == 2 && RefineFactor > 1)
+         if (shading == Shading::Noncomforming && RefineFactor > 1)
          {
             DenseMatrix vvals, pm;
             for (i = 0; i < mesh->GetNE(); i++)
@@ -939,7 +945,7 @@ void VisualizationSceneVector::PrepareVectorField()
             }
          }
 
-         if (drawvector == 3 && new_maxlen != maxlen)
+         if ((drawvector == 3 || drawvector == 5) && new_maxlen != maxlen)
          {
             maxlen = new_maxlen;
             rerun = 1;
@@ -966,7 +972,7 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
    double* cp_eqn = CuttingPlane->Equation();
    params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};
    params.contains_translucent = false;
-   if (drawvector > 1)
+   if (drawvector == 2 || drawvector == 3)
    {
       scene.queue.emplace_back(params, &vector_buf);
    }
@@ -1013,8 +1019,12 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
       scene.queue.emplace_back(params, &v_nums_buf);
    }
 
-   if (drawvector == 1)
+   if (drawvector == 1 || drawvector > 3)
    {
+      if (drawvector > 3)
+      {
+         params.static_color = {.3f, .3f, .3f, 1.f};
+      }
       scene.queue.emplace_back(params, &vector_buf);
    }
 
@@ -1023,6 +1033,10 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
       if (drawmesh == 1)
       {
          params.static_color = {1.f, 0.f, 0.f, 1.f};
+      }
+      else
+      {
+         params.static_color = GetLineColor();
       }
       scene.queue.emplace_back(params, &displine_buf);
    }
@@ -1051,13 +1065,13 @@ void VisualizationSceneVector::glTF_Export()
                      bld,
                      vec_mesh,
                      buf,
-                     (drawvector == 1) ? black_mat : palette_mat,
+                     (drawvector == 1 || drawvector > 3) ? black_mat : palette_mat,
                      vector_buf);
       int nlines = AddLines(
                       bld,
                       vec_mesh,
                       buf,
-                      (drawvector == 1) ? black_mat : pal_lines_mat,
+                      (drawvector == 1 || drawvector > 3) ? black_mat : pal_lines_mat,
                       vector_buf);
       if (ntria == 0 || nlines == 0)
       {

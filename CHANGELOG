@@ -20,7 +20,24 @@ Version 4.2.1 (development)
 
 - Add support to visualize solutions on 1D elements embedded in 2D and 3D.
 
+- Added support for scalar integral finite elements, where calculation of the
+  surface normals was not implemented and was crashing GLVis. The normals are
+  approximately calculated from the point-wise projected value-based elements.
+
+- Added two new modes for visualization of vector fields in 2D, placing the
+  arrows above the plotted surface and using a single color.
+
 - Added a compilation parameter for the default font size.
+
+- Added visualization of quadrature data (QuadratureFunction in MFEM). Both
+  loading from file, with the new command line argument '-q', or from a socket
+  stream, with the keyword 'quadrature', are supported. Three visualization
+  options are provided: piece-wise constants on a refined mesh (LOR), L2 field
+  with DOFs collocated (interpolation), or projection to discontinuous elements
+  (L2 projection). Use 'Q' to switch between them. High-order quadrature data is
+  supported only for tensor finite elements with the first two options. With the
+  first option, only the mesh lines of the original mesh are visualized. This
+  feature is also supported for the element-wise cutting plane (cplane=2).
 
 
 Version 4.2 released on May 23, 2022

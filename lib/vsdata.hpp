@@ -54,15 +54,29 @@ public:
 
 class VisualizationSceneScalarData : public VisualizationScene
 {
+public:
+   enum class Shading
+   {
+      Invalid = -1,
+      Min = -1,
+      //---------
+      Flat,
+      Smooth,
+      Noncomforming,
+      //---------
+      Max
+   };
+
 protected:
-   Mesh   *mesh;
-   Vector *sol;
+   Mesh   *mesh{}, *mesh_coarse{};
+   Vector *sol{};
 
    double minv, maxv;
 
    std::string a_label_x, a_label_y, a_label_z;
 
    int scaling, colorbar, drawaxes;
+   Shading shading;
    int auto_ref_max, auto_ref_max_surf_elem;
 
    vector<gl3::GlDrawable*> updated_bufs;
@@ -137,7 +151,7 @@ public:
 
    VisualizationSceneScalarData()
       : a_label_x("x"), a_label_y("y"), a_label_z("z") {}
-   VisualizationSceneScalarData (Mesh & m, Vector & s);
+   VisualizationSceneScalarData (Mesh & m, Vector & s, Mesh *mc = NULL);
 
    virtual ~VisualizationSceneScalarData();
 
@@ -182,7 +196,9 @@ public:
    virtual void UpdateValueRange(bool prepare) = 0;
    void SetValueRange(double, double);
 
-   virtual void SetShading(int, bool) = 0;
+   virtual void SetShading(Shading, bool) = 0;
+   virtual void ToogleShading() { SetShading((Shading)(((int)shading + 1) % (int)Shading::Max), true); }
+   virtual Shading GetShading() { return shading; }
    virtual void SetRefineFactors(int, int) = 0;
    void SetAutoRefineLimits(int max_ref, int max_surf_elem)
    {

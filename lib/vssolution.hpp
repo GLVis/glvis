@@ -83,13 +83,12 @@ protected:
    double GetElementLengthScale(int k);
 
 public:
-   int shading;
-
    int attr_to_show, bdr_attr_to_show;
    Array<int> el_attr_to_show, bdr_el_attr_to_show;
 
    VisualizationSceneSolution();
-   VisualizationSceneSolution(Mesh &m, Vector &s, Vector *normals = NULL);
+   VisualizationSceneSolution(Mesh &m, Vector &s, Mesh *mc = NULL,
+                              Vector *normals = NULL);
 
    virtual ~VisualizationSceneSolution();
 
@@ -97,7 +96,7 @@ public:
 
    void SetGridFunction(GridFunction & u) { rsol = &u; }
 
-   void NewMeshAndSolution(Mesh *new_m, Vector *new_sol,
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
                            GridFunction *new_u = NULL);
 
    virtual void SetNewScalingFromBox();
@@ -165,8 +164,8 @@ public:
       PrepareNumbering(false);
    }
 
-   virtual void SetShading(int, bool);
-   void ToggleShading();
+   virtual void SetShading(Shading, bool);
+   virtual void ToggleShading();
 
    void ToggleDrawCP() { draw_cp = !draw_cp; PrepareCP(); }
 
@@ -178,7 +177,6 @@ public:
    virtual void ToggleAttributes(Array<int> &attr_list);
 
    virtual void SetDrawMesh(int i) { drawmesh = i % 3; }
-   virtual int GetShading() { return shading; }
    virtual int GetDrawMesh() { return drawmesh; }
 };
 

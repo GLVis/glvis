@@ -46,10 +46,10 @@ protected:
    IsoparametricTransformation T0;
 
 public:
-   VisualizationSceneVector(Mesh &m, Vector &sx, Vector &sy);
+   VisualizationSceneVector(Mesh &m, Vector &sx, Vector &sy, Mesh *mc = NULL);
    VisualizationSceneVector(GridFunction &vgf);
 
-   void NewMeshAndSolution(GridFunction &vgf);
+   void NewMeshAndSolution(GridFunction &vgf, Mesh *mc = NULL);
 
    virtual ~VisualizationSceneVector();
 
