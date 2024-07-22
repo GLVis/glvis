@@ -883,6 +883,31 @@ void VisualizationSceneVector::DrawVector(double px, double py, double vx,
    }
 }
 
+int VisualizationSceneVector::GetFunctionAutoRefineFactor()
+{
+   if (!VecGridF)
+   {
+      return (solx->Size() == mesh->GetNV() || soly->Size() == mesh->GetNV())?(2):(1);
+   }
+
+   //grid function
+
+   const int ne = mesh->GetNE();
+   int ref = 1;
+   for (int i = 0; i < ne; i++)
+   {
+      const FiniteElement &fe = *VecGridF->FESpace()->GetFE(i);
+      int order = fe.GetOrder();
+      if (fe.GetMapType() == FiniteElement::MapType::INTEGRAL)
+      {
+         order += mesh->GetElementTransformation(i)->OrderW();
+      }
+      ref = std::max(ref, 2 * order);
+   }
+
+   return ref;
+}
+
 void VisualizationSceneVector::PrepareVectorField()
 {
    int rerun;

@@ -45,6 +45,8 @@ protected:
    Vector vc0;
    IsoparametricTransformation T0;
 
+   virtual int GetFunctionAutoRefineFactor() override;
+
 public:
    VisualizationSceneVector(Mesh &m, Vector &sx, Vector &sy, Mesh *mc = NULL);
    VisualizationSceneVector(GridFunction &vgf);
