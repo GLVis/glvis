@@ -272,6 +272,7 @@ void SdlWindow::keyDownEvent(SDL_Keysym& ks)
    // Some keyDown events will be followed by a textInput event which will
    // handle key translation due to Shift or CapsLock, so we leave such events
    // to be processed there.
+   // Note: the same condition has to be used in signalKeyDown().
    if ((ks.sym >= 32 && ks.sym < 127) &&
        (ks.mod & ~(KMOD_SHIFT | KMOD_CAPS)) == 0)
    {
@@ -621,20 +622,21 @@ void SdlWindow::setWindowPos(int x, int y)
 void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
 {
    SDL_Event event;
-   if (k >= 32 && k < 128)
+
+   event.type = SDL_KEYDOWN;
+   event.key.windowID = window_id;
+   event.key.keysym.sym = k;
+   event.key.keysym.mod = m;
+   queueEvents({ event });
+
+   // The same condition as in keyDownEvent().
+   if ((k >= 32 && k < 127) && (m & ~(KMOD_SHIFT | KMOD_CAPS)) == 0)
    {
       event.type = SDL_TEXTINPUT;
       event.text.windowID = window_id;
       event.text.text[0] = k;
+      queueEvents({ event });
    }
-   else
-   {
-      event.type = SDL_KEYDOWN;
-      event.key.windowID = window_id;
-      event.key.keysym.sym = k;
-      event.key.keysym.mod = m;
-   }
-   queueEvents({ event });
 }
 
 void SdlWindow::swapBuffer()
