@@ -57,7 +57,12 @@ int VisualizationSceneScalarData::GetFunctionAutoRefineFactor(GridFunction &gf)
       for (int i = 0; i < mesh->GetNBE(); i++)
       {
          const int f = mesh->GetBdrElementFaceIndex(i);
-         const FiniteElement *fe = gf.FESpace()->GetFaceElement(f);
+         const FiniteElementCollection *fec = gf.FESpace()->FEColl();
+         const FiniteElement *fe = NULL;
+         if (fec && fec->GetContType() != FiniteElementCollection::DISCONTINUOUS)
+         {
+            fe = gf.FESpace()->GetFaceElement(f);//might abort instead of returning NULL!
+         }
          int order;
          if (fe)
          {
