@@ -77,7 +77,7 @@ protected:
 
    int scaling, colorbar, drawaxes;
    Shading shading;
-   int auto_ref_max, auto_ref_max_surf_elem;
+   int auto_ref_max, auto_ref_min_surf_elem, auto_ref_max_surf_elem;
 
    vector<gl3::GlDrawable*> updated_bufs;
    gl3::GlDrawable axes_buf;

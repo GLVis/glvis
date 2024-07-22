@@ -1271,8 +1271,9 @@ void VisualizationSceneScalarData::Init()
    arrow_type = arrow_scaling_type = 0;
    scaling = 0;
    drawaxes = colorbar = 0;
-   auto_ref_max = 32;
-   auto_ref_max_surf_elem = 5000000;
+   auto_ref_max = 16;
+   auto_ref_min_surf_elem = 100000;
+   auto_ref_max_surf_elem = 2000000;
    minv = 0.0;
    maxv = 1.0;
    logscale = false;
