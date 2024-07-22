@@ -440,6 +440,50 @@ void VisualizationSceneVector3d::Init()
    }
 }
 
+int VisualizationSceneVector3d::GetFunctionAutoRefineFactor()
+{
+   if (!VecGridF)
+   {
+      return (solx->Size() == mesh->GetNV()
+              || soly->Size() == mesh->GetNV()
+              || solz->Size() == mesh->GetNV())
+             ?(2):(1);
+   }
+
+   //grid function
+
+   const int dim = mesh->Dimension();
+   int ref = 1;
+   if (dim == 3)
+   {
+      for (int i = 0; i < mesh->GetNBE(); i++)
+      {
+         const FiniteElement &fe = *VecGridF->FESpace()->GetBE(i);
+         int order = fe.GetOrder();
+         if (fe.GetMapType() == FiniteElement::MapType::INTEGRAL)
+         {
+            order += mesh->GetBdrElementTransformation(i)->OrderW();
+         }
+         ref = std::max(ref, 2 * order);
+      }
+   }
+   else
+   {
+      for (int i = 0; i < mesh->GetNE(); i++)
+      {
+         const FiniteElement &fe = *VecGridF->FESpace()->GetFE(i);
+         int order = fe.GetOrder();
+         if (fe.GetMapType() == FiniteElement::MapType::INTEGRAL)
+         {
+            order += mesh->GetElementTransformation(i)->OrderW();
+         }
+         ref = std::max(ref, 2 * order);
+      }
+   }
+
+   return ref;
+}
+
 VisualizationSceneVector3d::~VisualizationSceneVector3d()
 {
    delete sol;
