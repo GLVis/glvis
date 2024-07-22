@@ -56,11 +56,27 @@ int VisualizationSceneScalarData::GetFunctionAutoRefineFactor(GridFunction &gf)
    {
       for (int i = 0; i < mesh->GetNBE(); i++)
       {
-         const FiniteElement &fe = *gf.FESpace()->GetBE(i);
-         int order = fe.GetOrder();
-         if (fe.GetMapType() == FiniteElement::MapType::INTEGRAL)
+         const int f = mesh->GetBdrElementFaceIndex(i);
+         const FiniteElement *fe = gf.FESpace()->GetFaceElement(f);
+         int order;
+         if (fe)
          {
-            order += mesh->GetBdrElementTransformation(i)->OrderW();
+            order = fe->GetOrder();
+            if (fe->GetMapType() == FiniteElement::MapType::INTEGRAL)
+            {
+               order += mesh->GetBdrElementTransformation(i)->OrderW();
+            }
+         }
+         else
+         {
+            int ivol, info;
+            mesh->GetBdrElementAdjacentElement(i, ivol, info);
+            const FiniteElement *fevol = gf.FESpace()->GetFE(ivol);
+            order = fevol->GetOrder() - 1;
+            if (fevol->GetMapType() == FiniteElement::MapType::INTEGRAL)
+            {
+               order += mesh->GetElementTransformation(ivol)->OrderW();
+            }
          }
          ref = std::max(ref, 2 * order);
       }
