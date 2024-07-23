@@ -72,31 +72,31 @@ def compare_images(baseline_file, output_file, expect_fail=False):
             print("[FAIL] Differences were not detected in the control case.")
         else:
             print("[PASS] Images match.")
-    print("       actual ssim = {}, cutoff = {}".format(ssim, cutoff_ssim))
+    print(f"       actual ssim = {ssim}, cutoff = {cutoff_ssim}")
     return ssim >= cutoff_ssim if not expect_fail else ssim < cutoff_ssim
 
 # Function to test a given glvis command with a variety of key-based commands.
 # Not currently in use.
 def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
-    print("Testing {0}:{1}...".format(t_group, t_name))
+    print(f"Testing {t_group0}:{t_name1}..."))
     full_screenshot_cmd = cmd + screenshot_keys
-    cmd = "{0} {1} -k \"{2}\"".format(exec_path, exec_args, full_screenshot_cmd)
-    print("Exec: {}".format(cmd))
+    cmd = f"{exec_path0} {exec_args} -k \"{full_screenshot_cmd2}\""
+    print(f"Exec: {cmd}")
     ret = os.system(cmd + " > /dev/null 2>&1")
     if ret != 0:
-        print("[FAIL] GLVis exited with error code {}.".format(ret))
+        print(f"[FAIL] GLVis exited with error code {ret}.")
         return False
     if not os.path.exists(t_group):
         os.mkdir(t_group)
-    output_name = "{0}/{1}.png".format(t_group, t_name)
+    output_name = f"{t_group0}/{t_name1}.png"
 
-    ret = os.system("mv {0} {1}".format(screenshot_file, output_name))
+    ret = os.system(f"mv {screenshot_file0} {output_name}")
     if ret != 0:
-        print("[FAIL] Could not move output image: exit code {}.".format(ret))
+        print(f"[FAIL] Could not move output image: exit code {ret}.")
         return False
 
     if baseline:
-        baseline_name = "{0}/test.{1}.png".format(baseline, test_name)
+        baseline_name = f"{baseline0}/test.{test_name1}.png"
         return compare_images(baseline_name, output_name)
     else:
         print("[IGNORE] No baseline exists to compare against.")
@@ -106,35 +106,35 @@ def test_stream(exec_path, exec_args, save_file, baseline):
     if exec_args is None:
         exec_args = ""
     test_name = os.path.basename(save_file)
-    print("Testing {}...".format(save_file))
+    print(f"Testing {save_file}...")
 
     # Create new stream file with command to screenshot and close
     stream_data = None
     with open(save_file) as in_f:
         stream_data = in_f.read()
 
-    output_name = "test.{}.png".format(test_name)
-    output_name_fail = "test.fail.{}.png".format(test_name)
+    output_name = f"test.{test_name}.png"
+    output_name_fail = f"test.fail.{test_name}.png"
     tmp_file = "test.saved"
     with open(tmp_file, 'w') as out_f:
         out_f.write(stream_data)
         out_f.write("\nwindow_size 800 600")
-        out_f.write("\nscreenshot {}".format(output_name))
+        out_f.write(f"\nscreenshot {output_name}")
         # Zooming in should create some difference in the images
         out_f.write("\nkeys *")
-        out_f.write("\nscreenshot {}".format(output_name_fail))
+        out_f.write(f"\nscreenshot {output_name_fail}")
         out_f.write("\nkeys q")
 
     # Run GLVis with modified stream file
-    cmd = "{0} {1} -saved {2}".format(exec_path, exec_args, tmp_file)
-    print("Exec: {}".format(cmd))
+    cmd = f"{exec_path} {exec_args} -saved {tmp_file2}"
+    print(f"Exec: {cmd}")
     ret = os.system(cmd)
     if ret != 0:
-        print("[FAIL] GLVis exited with error code {}.".format(ret))
+        print(f"[FAIL] GLVis exited with error code {ret}.")
         return False
 
     if baseline:
-        baseline_name = "{0}/test.{1}.png".format(baseline, test_name)
+        baseline_name = f"{baseline0}/test.{test_name1}.png")
         test_baseline = compare_images(baseline_name, output_name)
         test_control = compare_images(baseline_name, output_name_fail,
                                       expect_fail=True)
