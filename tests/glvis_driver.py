@@ -78,9 +78,9 @@ def compare_images(baseline_file, output_file, expect_fail=False):
 # Function to test a given glvis command with a variety of key-based commands.
 # Not currently in use.
 def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
-    print(f"Testing {t_group0}:{t_name1}..."))
+    print(f"Testing {t_group}:{t_name}..."))
     full_screenshot_cmd = cmd + screenshot_keys
-    cmd = f"{exec_path0} {exec_args} -k \"{full_screenshot_cmd2}\""
+    cmd = f"{exec_path} {exec_args} -k \"{full_screenshot_cmd}\""
     print(f"Exec: {cmd}")
     ret = os.system(cmd + " > /dev/null 2>&1")
     if ret != 0:
@@ -88,15 +88,15 @@ def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
         return False
     if not os.path.exists(t_group):
         os.mkdir(t_group)
-    output_name = f"{t_group0}/{t_name1}.png"
+    output_name = f"{t_group}/{t_name}.png"
 
-    ret = os.system(f"mv {screenshot_file0} {output_name}")
+    ret = os.system(f"mv {screenshot_file} {output_name}")
     if ret != 0:
         print(f"[FAIL] Could not move output image: exit code {ret}.")
         return False
 
     if baseline:
-        baseline_name = f"{baseline0}/test.{test_name1}.png"
+        baseline_name = f"{baseline}/test.{test_name}.png"
         return compare_images(baseline_name, output_name)
     else:
         print("[IGNORE] No baseline exists to compare against.")
@@ -126,7 +126,7 @@ def test_stream(exec_path, exec_args, save_file, baseline):
         out_f.write("\nkeys q")
 
     # Run GLVis with modified stream file
-    cmd = f"{exec_path} {exec_args} -saved {tmp_file2}"
+    cmd = f"{exec_path} {exec_args} -saved {tmp_file}"
     print(f"Exec: {cmd}")
     ret = os.system(cmd)
     if ret != 0:
@@ -134,7 +134,7 @@ def test_stream(exec_path, exec_args, save_file, baseline):
         return False
 
     if baseline:
-        baseline_name = f"{baseline0}/test.{test_name1}.png")
+        baseline_name = f"{baseline}/test.{test_name}.png")
         test_baseline = compare_images(baseline_name, output_name)
         test_control = compare_images(baseline_name, output_name_fail,
                                       expect_fail=True)
