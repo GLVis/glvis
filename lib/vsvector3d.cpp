@@ -442,13 +442,7 @@ void VisualizationSceneVector3d::Init()
 
 int VisualizationSceneVector3d::GetFunctionAutoRefineFactor()
 {
-   if (!VecGridF)
-   {
-      return (solx->Size() == mesh->GetNV()
-              || soly->Size() == mesh->GetNV()
-              || solz->Size() == mesh->GetNV())
-             ?(2):(1);
-   }
+   if (!VecGridF) { return 1; }
 
    return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(*VecGridF);
 }

@@ -83,7 +83,7 @@ int VisualizationSceneScalarData::GetFunctionAutoRefineFactor(GridFunction &gf)
                order += mesh->GetElementTransformation(ivol)->OrderW();
             }
          }
-         ref = std::max(ref, 2 * order);
+         ref = std::max(ref, 2 * order - 1);
       }
    }
    else
@@ -96,18 +96,11 @@ int VisualizationSceneScalarData::GetFunctionAutoRefineFactor(GridFunction &gf)
          {
             order += mesh->GetElementTransformation(i)->OrderW();
          }
-         ref = std::max(ref, 2 * order);
+         ref = std::max(ref, 2 * order - 1);
       }
    }
 
    return ref;
-}
-
-int VisualizationSceneScalarData::GetFunctionAutoRefineFactor()
-{
-   if (!sol) { return 1; }
-
-   return (sol->Size() == mesh->GetNV())?(2):(1);
 }
 
 int VisualizationSceneScalarData::GetAutoRefineFactor()
@@ -123,7 +116,7 @@ int VisualizationSceneScalarData::GetAutoRefineFactor()
    if (nfes)
    {
       const int order = nfes->GetMaxElementOrder();
-      order_ref = std::max(order_ref, 2 * order);
+      order_ref = std::max(order_ref, 2 * order - 1);
    }
 
    //limit the total number of elements

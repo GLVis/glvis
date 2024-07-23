@@ -885,10 +885,7 @@ void VisualizationSceneVector::DrawVector(double px, double py, double vx,
 
 int VisualizationSceneVector::GetFunctionAutoRefineFactor()
 {
-   if (!VecGridF)
-   {
-      return (solx->Size() == mesh->GetNV() || soly->Size() == mesh->GetNV())?(2):(1);
-   }
+   if (!VecGridF) { return 1;}
 
    return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(*VecGridF);
 }

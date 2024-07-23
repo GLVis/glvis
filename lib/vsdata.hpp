@@ -139,7 +139,7 @@ protected:
    void FixValueRange();
 
    static int GetFunctionAutoRefineFactor(GridFunction &gf);
-   virtual int GetFunctionAutoRefineFactor();
+   virtual int GetFunctionAutoRefineFactor() = 0;
    virtual int GetAutoRefineFactor();
 
    void Cone(gl3::GlDrawable& buf, glm::mat4 transform, double cval);

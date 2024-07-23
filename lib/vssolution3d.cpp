@@ -919,7 +919,7 @@ void VisualizationSceneSolution3d::SetRefineFactors(int f, int ignored)
 
 int VisualizationSceneSolution3d::GetFunctionAutoRefineFactor()
 {
-   if (!GridF) { return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(); }
+   if (!GridF) { return 1; }
 
    return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(*GridF);
 }

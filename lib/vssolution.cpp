@@ -988,7 +988,7 @@ void VisualizationSceneSolution::SetRefineFactors(int tot, int bdr)
 
 int VisualizationSceneSolution::GetFunctionAutoRefineFactor()
 {
-   if (!rsol) { return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(); }
+   if (!rsol) { return 1; }
 
    return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(*rsol);
 }
