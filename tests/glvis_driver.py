@@ -78,7 +78,7 @@ def compare_images(baseline_file, output_file, expect_fail=False):
 # Function to test a given glvis command with a variety of key-based commands.
 # Not currently in use.
 def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
-    print(f"Testing {t_group}:{t_name}..."))
+    print(f"Testing {t_group}:{t_name}...")
     full_screenshot_cmd = cmd + screenshot_keys
     cmd = f"{exec_path} {exec_args} -k \"{full_screenshot_cmd}\""
     print(f"Exec: {cmd}")
@@ -134,7 +134,7 @@ def test_stream(exec_path, exec_args, save_file, baseline):
         return False
 
     if baseline:
-        baseline_name = f"{baseline}/test.{test_name}.png")
+        baseline_name = f"{baseline}/test.{test_name}.png"
         test_baseline = compare_images(baseline_name, output_name)
         test_control = compare_images(baseline_name, output_name_fail,
                                       expect_fail=True)
