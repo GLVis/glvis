@@ -231,7 +231,7 @@ jobs:
       if: matrix.build-system == 'cmake'
       run: |
         python -m pip install --upgrade pip
-        pip install scikit-image
+        python -m pip install -r glvis/tests/requirements.txt
 
     - name: setup Linux testing dependencies
       if: matrix.build-system == 'cmake' && matrix.os == 'ubuntu-latest'
