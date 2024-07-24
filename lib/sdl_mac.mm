@@ -65,7 +65,7 @@ void SdlCocoaPlatform::SendEvent()
 
 bool SdlCocoaPlatform::UseThreadWorkaround() const
 {
-   /*static bool first_call = true;
+   static bool first_call = true;
    static bool value = false;
    if (first_call)
    {
@@ -74,8 +74,7 @@ bool SdlCocoaPlatform::UseThreadWorkaround() const
       value = !AtLeastVersion(sdl_ver, 2, 0, 14);
       first_call = false;
    }
-   return value;*/
-   return true;
+   return value;
 }
 
 void SdlCocoaPlatform::ContextUpdate()

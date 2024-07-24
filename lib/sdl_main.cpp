@@ -297,7 +297,7 @@ SdlMainThread::Handle SdlMainThread::GetHandle(SdlWindow* wnd,
       // latest SDL
       SdlCocoaPlatform* mac_platform
          = dynamic_cast<SdlCocoaPlatform*>(platform.get());
-      if (mac_platform && mac_platform->UseThreadWorkaround())
+      if (mac_platform)// && mac_platform->UseThreadWorkaround())
       {
          PRINT_DEBUG("Using temporary COCOA workaround");
          int wnd_id = SDL_GetWindowID(out_hnd.hwnd);
