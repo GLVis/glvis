@@ -37,6 +37,7 @@ typedef void (*Delegate)();
 typedef bool (*IdleDelegate)();
 
 class SdlMainThread;
+SdlMainThread& GetMainThread();
 
 class SdlWindow
 {

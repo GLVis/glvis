@@ -997,6 +997,8 @@ void PlayScript(istream &scr)
    script = &scr;
    stream_state.keys.clear();
 
+   GetMainThread();
+
    std::thread worker_thread
    {
       [&](StreamState local_state)
@@ -1468,6 +1470,8 @@ int main (int argc, char *argv[])
    // check for saved stream file
    if (stream_file != string_none)
    {
+      GetMainThread();
+
       Session stream_session(stream_state.fix_elem_orient,
                              stream_state.save_coloring);
 
@@ -1527,6 +1531,8 @@ int main (int argc, char *argv[])
    // server mode, read the mesh and the solution from a socket
    if (input == INPUT_SERVER_MODE)
    {
+      GetMainThread();
+
       // Run server in new thread
       std::thread serverThread{GLVisServer, portnum, save_stream,
                                stream_state.fix_elem_orient,
@@ -1560,6 +1566,9 @@ int main (int argc, char *argv[])
          field_type = (use_soln) ? StreamState::FieldType::SCALAR
                       : StreamState::FieldType::MESH;
       }
+
+      GetMainThread();
+
       Session single_session(field_type, std::move(stream_state));
       single_session.StartSession();
 
