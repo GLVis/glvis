@@ -143,7 +143,7 @@ jobs:
     # Also, if we apply to MFEM build the same target as GLVis. This may be
     # superfluous.
     - name: build mfem
-      if: steps.cache-mfem.outputs.cache-hit != 'true' || runner.os == 'macos-latest'
+      if: steps.cache-mfem.outputs.cache-hit != 'true' || matrix.os == 'macos-latest'
       uses: mfem/github-actions/build-mfem@v2.4
       with:
         os: ${{ matrix.os }}
