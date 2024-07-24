@@ -15,7 +15,9 @@ import os
 import numpy as np
 from skimage.io import imread
 from skimage.metrics import structural_similarity
-from skimage.color import rgb2gray
+from skimage.color import rgb2gray, gray2rgb
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
 def compare_images(baseline_file, output_file, expect_fail=False, CUTOFF_SSIM=0.999):
     # Try to open output image
@@ -56,10 +58,9 @@ def color_distance(I1, I2):
     # now we scale to [0,255] and cast as uint8 so it is a "proper" image
     Idiff_abs = (delta * 255).astype(np.uint8)
     # get relative version
-    Idiff_rel = (Idiff_abs / Idiff_abs.max()).astype(np.uint8)
+    Idiff_rel = (Idiff_abs / Idiff_abs.max() * 255).astype(np.uint8)
     return {'abs': Idiff_abs,
             'rel': Idiff_rel,}
-
 
 def generate_image_diff(
     image1_filename: str,
@@ -72,9 +73,13 @@ def generate_image_diff(
     # Take absolute "diff"
     Idiff = color_distance(I1, I2) # output is NxM [0,1]
     # Illustrate results
-
-
-
+    fig = make_subplots(rows=1, cols=3, subplot_titles=('I1', 'I2', 'ΔI (normalized)'))
+    fig.add_trace(go.Image(z=I1), 1, 1)
+    fig.add_trace(go.Image(z=I2), 1, 2)
+    fig.add_trace(go.Heatmap(z=Idiff['rel'], colorscale='inferno'), 1, 3)
+    fig.update_yaxes(autorange='reversed', scaleanchor='x', constrain='domain', row=1, col=3)
+    fig.update_xaxes(constrain='domain', row=1, col=3)
+    fig.write_html(imagediff_filename)
 
 def test_stream(exec_path, exec_args, save_file, baseline):
     if exec_args is None:
