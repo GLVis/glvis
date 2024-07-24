@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -79,16 +79,14 @@ void GLVisCommand::unlock()
    }
 }
 
-int GLVisCommand::NewMeshAndSolution(std::unique_ptr<Mesh> _new_m,
-                                     std::unique_ptr<GridFunction> _new_g)
+int GLVisCommand::NewMeshAndSolution(StreamState &&ss)
 {
    if (lock() < 0)
    {
       return -1;
    }
    command = NEW_MESH_AND_SOLUTION;
-   new_state.mesh = std::move(_new_m);
-   new_state.grid_f = std::move(_new_g);
+   new_state = std::move(ss);
    if (signal() < 0)
    {
       return -2;
@@ -200,6 +198,36 @@ int GLVisCommand::AxisLabels(const char *a_x, const char *a_y, const char *a_z)
    axis_label_x = a_x;
    axis_label_y = a_y;
    axis_label_z = a_z;
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
+
+int GLVisCommand::AxisNumberFormat(string formatting)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = AXIS_NUMBERFORMAT;
+   axis_formatting = formatting;
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
+
+int GLVisCommand::ColorbarNumberFormat(string formatting)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = COLORBAR_NUMBERFORMAT;
+   colorbar_formatting = formatting;
    if (signal() < 0)
    {
       return -2;
@@ -427,9 +455,25 @@ int GLVisCommand::Execute()
          double mesh_range = -1.0;
          if (!new_state.grid_f)
          {
-            new_state.save_coloring = false;
-            new_state.SetMeshSolution();
-            mesh_range = new_state.grid_f->Max() + 1.0;
+            if (!new_state.quad_f)
+            {
+               new_state.save_coloring = false;
+               new_state.SetMeshSolution();
+               mesh_range = new_state.grid_f->Max() + 1.0;
+            }
+            else
+            {
+               auto qs = curr_state.GetQuadSolution();
+               if (qs != StreamState::QuadSolution::NONE)
+               {
+                  new_state.SetQuadSolution(qs);
+               }
+               else
+               {
+                  new_state.SetQuadSolution();
+               }
+               new_state.Extrude1DMeshAndSolution();
+            }
          }
          if (curr_state.SetNewMeshAndSolution(std::move(new_state), *vs))
          {
@@ -511,6 +555,24 @@ int GLVisCommand::Execute()
          break;
       }
 
+      case AXIS_NUMBERFORMAT:
+      {
+         cout << "Command: axis_numberformat: '"
+              << axis_formatting << "'" << endl;
+         (*vs)->SetAxisNumberFormat(axis_formatting);
+         MyExpose();
+         break;
+      }
+
+      case COLORBAR_NUMBERFORMAT:
+      {
+         cout << "Command: colorbar_numberformat: '"
+              << colorbar_formatting << "'" << endl;
+         (*vs)->SetColorbarNumberFormat(colorbar_formatting);
+         MyExpose();
+         break;
+      }
+
       case PAUSE:
       {
          cout << "Command: pause: ";
@@ -566,20 +628,21 @@ int GLVisCommand::Execute()
       case SHADING:
       {
          cout << "Command: shading: " << flush;
-         int s = -1;
+         VisualizationSceneScalarData::Shading s =
+            VisualizationSceneScalarData::Shading::Invalid;
          if (shading == "flat")
          {
-            s = 0;
+            s = VisualizationSceneScalarData::Shading::Flat;
          }
          else if (shading == "smooth")
          {
-            s = 1;
+            s = VisualizationSceneScalarData::Shading::Smooth;
          }
          else if (shading == "cool")
          {
-            s = 2;
+            s = VisualizationSceneScalarData::Shading::Noncomforming;
          }
-         if (s != -1)
+         if (s != VisualizationSceneScalarData::Shading::Invalid)
          {
             (*vs)->SetShading(s, false);
             cout << shading << endl;
@@ -778,21 +841,21 @@ void communication_thread::execute()
          StreamState tmp;
          if (ident == "mesh")
          {
-            tmp.mesh.reset(new Mesh(*is[0], 1, 0, fix_elem_orient));
+            tmp.SetMesh(new Mesh(*is[0], 1, 0, fix_elem_orient));
             if (!(*is[0]))
             {
                break;
             }
-            tmp.grid_f = NULL;
+            tmp.SetGridFunction(NULL);
          }
          else if (ident == "solution")
          {
-            tmp.mesh.reset(new Mesh(*is[0], 1, 0, fix_elem_orient));
+            tmp.SetMesh(new Mesh(*is[0], 1, 0, fix_elem_orient));
             if (!(*is[0]))
             {
                break;
             }
-            tmp.grid_f.reset(new GridFunction(tmp.mesh.get(), *is[0]));
+            tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), *is[0]));
             if (!(*is[0]))
             {
                break;
@@ -837,8 +900,8 @@ void communication_thread::execute()
                *is[np] >> ident >> ws; // "parallel"
             }
             while (1);
-            tmp.mesh.reset(new Mesh(mesh_array, nproc));
-            tmp.grid_f.reset(new GridFunction(tmp.mesh.get(), gf_array, nproc));
+            tmp.SetMesh(new Mesh(mesh_array, nproc));
+            tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), gf_array, nproc));
 
             for (int p = 0; p < nproc; p++)
             {
@@ -853,8 +916,84 @@ void communication_thread::execute()
 
          tmp.Extrude1DMeshAndSolution();
 
-         if (glvis_command->NewMeshAndSolution(std::move(tmp.mesh),
-                                               std::move(tmp.grid_f)))
+         if (glvis_command->NewMeshAndSolution(std::move(tmp)))
+         {
+            goto comm_terminate;
+         }
+      }
+      else if (ident == "quadrature" || ident == "pquadrature")
+      {
+         bool fix_elem_orient = glvis_command->FixElementOrientations();
+         StreamState tmp;
+         if (ident == "quadrature")
+         {
+            tmp.SetMesh(new Mesh(*is[0], 1, 0, fix_elem_orient));
+            if (!(*is[0]))
+            {
+               break;
+            }
+            tmp.SetQuadFunction(new QuadratureFunction(tmp.mesh.get(), *is[0]));
+            if (!(*is[0]))
+            {
+               break;
+            }
+         }
+         else if (ident == "pquadrature")
+         {
+            Array<Mesh *> mesh_array;
+            Array<QuadratureFunction *> qf_array;
+            int proc, nproc, np = 0;
+            bool keep_attr = glvis_command->KeepAttrib();
+            do
+            {
+               istream &isock = *is[np];
+               isock >> nproc >> proc >> ws;
+#ifdef GLVIS_DEBUG
+               cout << "connection[" << np << "]: pquadrature " << nproc << ' '
+                    << proc << endl;
+#endif
+               isock >> ident >> ws; // "quadrature"
+               mesh_array.SetSize(nproc);
+               qf_array.SetSize(nproc);
+               mesh_array[proc] = new Mesh(isock, 1, 0, fix_elem_orient);
+               if (!keep_attr)
+               {
+                  // set element and boundary attributes to proc+1
+                  for (int i = 0; i < mesh_array[proc]->GetNE(); i++)
+                  {
+                     mesh_array[proc]->GetElement(i)->SetAttribute(proc+1);
+                  }
+                  for (int i = 0; i < mesh_array[proc]->GetNBE(); i++)
+                  {
+                     mesh_array[proc]->GetBdrElement(i)->SetAttribute(proc+1);
+                  }
+               }
+               qf_array[proc] = new QuadratureFunction(mesh_array[proc], isock);
+               np++;
+               if (np == nproc)
+               {
+                  break;
+               }
+               *is[np] >> ident >> ws; // "pquadrature"
+            }
+            while (1);
+            tmp.SetMesh(new Mesh(mesh_array, nproc));
+            tmp.CollectQuadratures(qf_array, nproc);
+
+            for (int p = 0; p < nproc; p++)
+            {
+               delete qf_array[nproc-1-p];
+               delete mesh_array[nproc-1-p];
+            }
+            qf_array.DeleteAll();
+            mesh_array.DeleteAll();
+         }
+
+         // cout << "Stream: new solution" << endl;
+
+         tmp.Extrude1DMeshAndSolution();
+
+         if (glvis_command->NewMeshAndSolution(std::move(tmp)))
          {
             goto comm_terminate;
          }
@@ -1107,6 +1246,48 @@ void communication_thread::execute()
          }
 
          if (glvis_command->Levellines(minv, maxv, num))
+         {
+            goto comm_terminate;
+         }
+      }
+      else if (ident == "axis_numberformat")
+      {
+         char c;
+         string formatting;
+
+         *is[0] >> ws >> c; // read the opening char
+         getline(*is[0], formatting, c); // read formatting string & use c for termination
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'axis_numberformat'
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
+         }
+
+         if (glvis_command->AxisNumberFormat(formatting))
+         {
+            goto comm_terminate;
+         }
+      }
+      else if (ident == "colorbar_numberformat")
+      {
+         char c;
+         string formatting;
+
+         *is[0] >> ws >> c; // read the opening char
+         getline(*is[0], formatting, c); // read formatting string & use c for termination
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'colorbar_numberformat'
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
+         }
+
+         if (glvis_command->ColorbarNumberFormat(formatting))
          {
             goto comm_terminate;
          }

@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -46,10 +46,10 @@ protected:
    IsoparametricTransformation T0;
 
 public:
-   VisualizationSceneVector(Mesh &m, Vector &sx, Vector &sy);
+   VisualizationSceneVector(Mesh &m, Vector &sx, Vector &sy, Mesh *mc = NULL);
    VisualizationSceneVector(GridFunction &vgf);
 
-   void NewMeshAndSolution(GridFunction &vgf);
+   void NewMeshAndSolution(GridFunction &vgf, Mesh *mc = NULL);
 
    virtual ~VisualizationSceneVector();
 

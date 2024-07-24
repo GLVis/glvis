@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -76,6 +76,7 @@ std::string VisualizationSceneSolution::GetHelpString() const
       << "| O -  Switch 'o' func. (NC shading) |" << endl
       << "| p/P  Cycle through color palettes  |" << endl
       << "| q -  Quits                         |" << endl
+      << "| Q -  Cycle quadrature data mode    |" << endl
       << "| r -  Reset the plot to 3D view     |" << endl
       << "| R -  Reset the plot to 2D view     |" << endl
       << "| s -  Turn on/off unit cube scaling |" << endl
@@ -84,6 +85,8 @@ std::string VisualizationSceneSolution::GetHelpString() const
       << "| y/Y  Rotate the cutting plane      |" << endl
       << "| z/Z  Move the cutting plane        |" << endl
       << "| \\ -  Set light source position     |" << endl
+      << "| Alt+a  - Axes number format        |" << endl
+      << "| Alt+c  - Colorbar number format    |" << endl
       << "| Ctrl+o - Element ordering curve    |" << endl
       << "| Ctrl+p - Print to a PDF file       |" << endl
       << "+------------------------------------+" << endl
@@ -355,7 +358,7 @@ static void KeyZPressed()
 
 static void KeyF3Pressed()
 {
-   if (vssol->shading == 2)
+   if (vssol->GetShading() == VisualizationSceneScalarData::Shading::Noncomforming)
    {
       vssol->shrink *= 0.9;
       vssol->Prepare();
@@ -369,7 +372,7 @@ static void KeyF3Pressed()
 
 static void KeyF4Pressed()
 {
-   if (vssol->shading == 2)
+   if (vssol->GetShading() == VisualizationSceneScalarData::Shading::Noncomforming)
    {
       vssol->shrink *= 1.11111111111111111111111;
       vssol->Prepare();
@@ -382,7 +385,7 @@ static void KeyF4Pressed()
 
 static void KeyF11Pressed()
 {
-   if (vssol->shading == 2)
+   if (vssol->GetShading() == VisualizationSceneScalarData::Shading::Noncomforming)
    {
       if (vssol->matc.Width() == 0)
       {
@@ -400,7 +403,7 @@ static void KeyF11Pressed()
 
 static void KeyF12Pressed()
 {
-   if (vssol->shading == 2)
+   if (vssol->GetShading() == VisualizationSceneScalarData::Shading::Noncomforming)
    {
       if (vssol->matc.Width() == 0)
       {
@@ -422,9 +425,10 @@ VisualizationSceneSolution::VisualizationSceneSolution()
 }
 
 VisualizationSceneSolution::VisualizationSceneSolution(
-   Mesh &m, Vector &s, Vector *normals)
+   Mesh &m, Vector &s, Mesh *mc, Vector *normals)
 {
    mesh = &m;
+   mesh_coarse = mc;
    sol = &s;
    v_normals = normals;
 
@@ -436,7 +440,8 @@ void VisualizationSceneSolution::Init()
    rsol  = NULL;
    vssol = this;
 
-   drawelems = shading = 1;
+   drawelems = 1;
+   shading = Shading::Smooth;
    drawmesh  = 0;
    draworder = 0;
    drawnums  = 0;
@@ -557,7 +562,7 @@ void VisualizationSceneSolution::ToggleDrawElems()
       maxv_sol = maxv;
       have_sol_range = true;
    }
-   else if (shading == 2)
+   else if (shading == Shading::Noncomforming)
    {
       if (drawelems == 1 && have_sol_range)
       {
@@ -582,7 +587,7 @@ void VisualizationSceneSolution::ToggleDrawElems()
 }
 
 void VisualizationSceneSolution::NewMeshAndSolution(
-   Mesh *new_m, Vector *new_sol, GridFunction *new_u)
+   Mesh *new_m, Mesh *new_mc, Vector *new_sol, GridFunction *new_u)
 {
    // If the number of elements changes, recompute the refinement factor
    if (mesh->GetNE() != new_m->GetNE())
@@ -597,6 +602,7 @@ void VisualizationSceneSolution::NewMeshAndSolution(
       }
    }
    mesh = new_m;
+   mesh_coarse = new_mc;
    sol = new_sol;
    rsol = new_u;
 
@@ -822,21 +828,21 @@ int VisualizationSceneSolution::GetRefinedValuesAndNormals(
    return have_normals;
 }
 
-void VisualizationSceneSolution::SetShading(int s, bool print)
+void VisualizationSceneSolution::SetShading(Shading s, bool print)
 {
-   if (shading == s || s < 0)
+   if (shading == s || s <= Shading::Min)
    {
       return;
    }
 
    if (rsol)
    {
-      if (s > 2)
+      if (s >= Shading::Max)
       {
          return;
       }
 
-      if (s == 2 || shading == 2)
+      if (s == Shading::Noncomforming || shading == Shading::Noncomforming)
       {
          shading = s;
          have_sol_range = false;
@@ -855,7 +861,7 @@ void VisualizationSceneSolution::SetShading(int s, bool print)
    }
    else
    {
-      if (s > 1)
+      if (s > Shading::Smooth)
       {
          return;
       }
@@ -867,7 +873,7 @@ void VisualizationSceneSolution::SetShading(int s, bool print)
    {"flat", "smooth", "non-conforming (with subdivision)"};
    if (print)
    {
-      cout << "Shading type : " << shading_type[shading] << endl;
+      cout << "Shading type : " << shading_type[(int)shading] << endl;
    }
 }
 
@@ -875,11 +881,11 @@ void VisualizationSceneSolution::ToggleShading()
 {
    if (rsol)
    {
-      SetShading((shading + 1) % 3, true);
+      VisualizationSceneScalarData::ToogleShading();
    }
    else
    {
-      SetShading(1 - shading, true);
+      SetShading((Shading)(1 - (int)shading), true);
    }
 }
 
@@ -919,7 +925,7 @@ void VisualizationSceneSolution::ToggleRefinements()
          }
          break;
    }
-   if (update && shading == 2)
+   if (update && shading == Shading::Noncomforming)
    {
       have_sol_range = false;
       DoAutoscale(false);
@@ -970,7 +976,7 @@ void VisualizationSceneSolution::SetRefineFactors(int tot, int bdr)
    TimesToRefine = tot;
    EdgeRefineFactor = bdr;
 
-   if (shading == 2)
+   if (shading == Shading::Noncomforming)
    {
       have_sol_range = false;
       DoAutoscale(false);
@@ -1053,7 +1059,7 @@ void VisualizationSceneSolution::FindNewBox(double rx[], double ry[],
 {
    int i, j;
 
-   if (shading != 2)
+   if (shading != Shading::Noncomforming)
    {
       int nv = mesh -> GetNV();
 
@@ -1436,10 +1442,10 @@ void VisualizationSceneSolution::Prepare()
 
    switch (shading)
    {
-      case 0:
+      case Shading::Flat:
          PrepareFlat();
          return;
-      case 2:
+      case Shading::Noncomforming:
          PrepareFlat2();
          return;
       default:
@@ -1552,7 +1558,7 @@ void VisualizationSceneSolution::Prepare()
 
 void VisualizationSceneSolution::PrepareLevelCurves()
 {
-   if (shading == 2)
+   if (shading == Shading::Noncomforming)
    {
       PrepareLevelCurves2();
       return;
@@ -1690,7 +1696,7 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
 
 void VisualizationSceneSolution::PrepareLines()
 {
-   if (shading == 2 &&
+   if (shading == Shading::Noncomforming &&
        mesh->Dimension() > 1) // PrepareLines3 does not make sense for 1d meshes.
    {
       // PrepareLines2();
@@ -1705,24 +1711,87 @@ void VisualizationSceneSolution::PrepareLines()
    line_buf.clear();
    gl3::GlBuilder lb = line_buf.createBuilder();
 
-   for (i = 0; i < ne; i++)
+   if (mesh_coarse)
    {
-      if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
+      auto &ref = mesh->GetRefinementTransforms();
+      IsoparametricTransformation trans;
+      BiLinear2DFiniteElement fe;
+      trans.SetFE(&fe);
+      DenseMatrix emb_pointmat;
 
-      lb.glBegin(GL_LINE_LOOP);
-      mesh->GetPointMatrix (i, pointmat);
-      mesh->GetElementVertices (i, vertices);
-      for (j = 0; j < pointmat.Size(); j++)
+      for (i = 0; i < ne; i++)
       {
-         // 1D meshes get rendered flat
-         double z = GetMinV();
-         if (mesh->Dimension() > 1) // In 1D we just put the mesh below the solution
+         if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
+
+         lb.glBegin(GL_LINES);
+         mesh->GetPointMatrix (i, pointmat);
+         mesh->GetElementVertices (i, vertices);
+
+         MFEM_ASSERT(pointmat.Size() == 4, "Not a quadrilateral!");
+
+         //we assume that mesh_course is used only for tensor finite elements,
+         //like for representation of quadratures, so in 2D it is square
+         const int geom =
+            Geometry::Type::SQUARE; //ref.embeddings[i].geom; //<---- bugged!?
+         const int mat = ref.embeddings[i].matrix;
+         const DenseMatrix &emb_mat = ref.point_matrices[geom](mat);
+         trans.SetPointMat(emb_mat);
+         trans.Transform(fe.GetNodes(), emb_pointmat);
+
+         for (j = 0; j < 4; j++)
          {
-            z = LogVal((*sol)(vertices[j]));
+            int jp1 = (j+1) % 4;
+            Vector emb_ip1, emb_ip2;
+            emb_pointmat.GetColumnReference(j, emb_ip1);
+            emb_pointmat.GetColumnReference(jp1, emb_ip2);
+
+            //check if we are on the parent edge
+            if (!((   emb_ip1(0) == 0. && emb_ip2(0) == 0.)
+                  || (emb_ip1(0) == 1. && emb_ip2(0) == 1.)
+                  || (emb_ip1(1) == 0. && emb_ip2(1) == 0.)
+                  || (emb_ip1(1) == 1. && emb_ip2(1) == 1.)))
+            { continue; }
+
+            // 1D meshes get rendered flat
+            double z1 = GetMinV();
+            double z2 = z1;
+            if (mesh->Dimension() > 1) // In 1D we just put the mesh below the solution
+            {
+               z1 = LogVal((*sol)(vertices[j]));
+               z2 = LogVal((*sol)(vertices[jp1]));
+            }
+
+            lb.glVertex3d (pointmat(0, j),
+                           pointmat(1, j),
+                           z1);
+            lb.glVertex3d (pointmat(0, jp1),
+                           pointmat(1, jp1),
+                           z2);
          }
-         lb.glVertex3d(pointmat(0, j), pointmat(1, j), z);
+         lb.glEnd();
       }
-      lb.glEnd();
+   }
+   else
+   {
+      for (i = 0; i < ne; i++)
+      {
+         if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
+
+         lb.glBegin(GL_LINE_LOOP);
+         mesh->GetPointMatrix (i, pointmat);
+         mesh->GetElementVertices (i, vertices);
+         for (j = 0; j < pointmat.Size(); j++)
+         {
+            // 1D meshes get rendered flat
+            double z = GetMinV();
+            if (mesh->Dimension() > 1) // In 1D we just put the mesh below the solution
+            {
+               z = LogVal((*sol)(vertices[j]));
+            }
+            lb.glVertex3d(pointmat(0, j), pointmat(1, j), z);
+         }
+         lb.glEnd();
+      }
    }
 
    updated_bufs.emplace_back(&line_buf);
@@ -1761,7 +1830,7 @@ double VisualizationSceneSolution::GetElementLengthScale(int k)
 
 void VisualizationSceneSolution::PrepareElementNumbering()
 {
-   if (2 == shading)
+   if (shading == Shading::Noncomforming)
    {
       PrepareElementNumbering2();
    }
@@ -1843,7 +1912,7 @@ void VisualizationSceneSolution::PrepareElementNumbering2()
 
 void VisualizationSceneSolution::PrepareVertexNumbering()
 {
-   if (2 == shading)
+   if (shading == Shading::Noncomforming)
    {
       PrepareVertexNumbering2();
    }
@@ -2136,14 +2205,51 @@ void VisualizationSceneSolution::PrepareLines3()
       Array<int> &RE = RefG->RefEdges;
 
       lb.glBegin (GL_LINES);
-      for (k = 0; k < RE.Size()/2; k++)
+      if (mesh_coarse)
       {
-         lb.glVertex3d (pointmat(0, RE[2*k]),
-                        pointmat(1, RE[2*k]),
-                        values(RE[2*k]));
-         lb.glVertex3d (pointmat(0, RE[2*k+1]),
-                        pointmat(1, RE[2*k+1]),
-                        values(RE[2*k+1]));
+         auto &ref = mesh->GetRefinementTransforms();
+         //we assume that mesh_course is used only for tensor finite elements,
+         //like for representation of quadratures, so in 2D it is square
+         const int geom =
+            Geometry::Type::SQUARE; //ref.embeddings[i].geom; //<---- bugged!?
+         const int mat = ref.embeddings[i].matrix;
+         const DenseMatrix &emb_mat = ref.point_matrices[geom](mat);
+         IsoparametricTransformation trans;
+         BiLinear2DFiniteElement fe;
+         trans.SetFE(&fe);
+         trans.SetPointMat(emb_mat);
+         for (k = 0; k < RE.Size()/2; k++)
+         {
+            Vector emb_ip1, emb_ip2;
+            trans.Transform(RefG->RefPts[RE[2*k]], emb_ip1);
+            trans.Transform(RefG->RefPts[RE[2*k+1]], emb_ip2);
+
+            //check if we are on the parent edge
+            if (!((   emb_ip1(0) == 0. && emb_ip2(0) == 0.)
+                  || (emb_ip1(0) == 1. && emb_ip2(0) == 1.)
+                  || (emb_ip1(1) == 0. && emb_ip2(1) == 0.)
+                  || (emb_ip1(1) == 1. && emb_ip2(1) == 1.)))
+            { continue; }
+
+            lb.glVertex3d (pointmat(0, RE[2*k]),
+                           pointmat(1, RE[2*k]),
+                           values(RE[2*k]));
+            lb.glVertex3d (pointmat(0, RE[2*k+1]),
+                           pointmat(1, RE[2*k+1]),
+                           values(RE[2*k+1]));
+         }
+      }
+      else
+      {
+         for (k = 0; k < RE.Size()/2; k++)
+         {
+            lb.glVertex3d (pointmat(0, RE[2*k]),
+                           pointmat(1, RE[2*k]),
+                           values(RE[2*k]));
+            lb.glVertex3d (pointmat(0, RE[2*k+1]),
+                           pointmat(1, RE[2*k+1]),
+                           values(RE[2*k+1]));
+         }
       }
       lb.glEnd();
    }
@@ -2189,7 +2295,7 @@ void VisualizationSceneSolution::PrepareBoundary()
 
    bdr_buf.clear();
    gl3::GlBuilder bl = bdr_buf.createBuilder();
-   if (shading != 2)
+   if (shading != Shading::Noncomforming)
    {
       bl.glBegin(GL_LINES);
       for (i = 0; i < ne; i++)
@@ -2276,7 +2382,7 @@ void VisualizationSceneSolution::PrepareCP()
    gl3::GlBuilder bld = cp_buf.createBuilder();
    bld.glBegin(GL_LINES);
 
-   if (shading != 2)
+   if (shading != Shading::Noncomforming)
    {
       Array<int> vertices;
 

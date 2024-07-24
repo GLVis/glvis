@@ -144,6 +144,10 @@ Key commands
 - <kbd>Ctrl</kbd> + <kbd>p</kbd> – Print to a PDF file using `gl2ps`. Other
   vector formats (SVG, EPS) are also possible, but keep in mind that the
   printing takes a while and the generated files are big.
+- <kbd>Q</kbd> – Cycle between representations of the visualized *quadrature data*. The options are:
+  - piece-wise constant refined (LOR)
+  - L2 element dof collocation (interpolation)
+  - L2 element projection (L2 projection)
 - <kbd>q</kbd> – Exit
 
 ## Advanced
@@ -161,6 +165,8 @@ Key commands
 - <kbd>.</kbd> – Start/stop `z`-spinning (speed/direction can be controlled with <kbd>0</kbd> / <kbd>Enter</kbd>)
 - <kbd>←</kbd>, <kbd>→</kbd>, <kbd>↑</kbd>, <kbd>↓</kbd> – Manual rotation
 - <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>, <kbd>5</kbd>, <kbd>6</kbd>, <kbd>7</kbd>, <kbd>8</kbd>, <kbd>9</kbd> – Manual rotation along coordinate axes
+- <kbd>Alt</kbd> + <kbd>a</kbd> – Set axes number format
+- <kbd>Alt</kbd> + <kbd>c</kbd> – Set colorbar number format
 - <kbd>Ctrl</kbd> + <kbd>←</kbd>, <kbd>→</kbd>, <kbd>↑</kbd>, <kbd>↓</kbd> – Translate the viewpoint
 - <kbd>Ctrl</kbd> + <kbd>o</kbd> – Toggle an element ordering curve
 - <kbd>n</kbd> / <kbd>N</kbd> – Cycle through numberings. The options are:

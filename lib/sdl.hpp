@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -103,8 +103,6 @@ private:
    TouchDelegate onTouchPinch{nullptr};
    TouchDelegate onTouchRotate{nullptr};
 
-   bool ctrlDown{false};
-
 #ifdef __EMSCRIPTEN__
    std::string canvas_id_;
 #endif
@@ -127,14 +125,15 @@ private:
    bool takeScreenshot{false};
    std::string screenshot_file;
    bool screenshot_convert;
+   bool lastKeyDownProcessed;
 
    // internal event handlers
    void windowEvent(SDL_WindowEvent& ew);
    void motionEvent(SDL_MouseMotionEvent& em);
    void mouseEventDown(SDL_MouseButtonEvent& eb);
    void mouseEventUp(SDL_MouseButtonEvent& eb);
-   void keyEvent(SDL_Keysym& ks);
-   void keyEvent(char c);
+   void keyDownEvent(SDL_Keysym& ks);
+   void textInputEvent(const SDL_TextInputEvent &e);
    void multiGestureEvent(SDL_MultiGestureEvent & e);
 
    bool is_multithreaded{true};

@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -22,7 +22,7 @@ class VisualizationSceneSolution3d : public VisualizationSceneScalarData
 {
 protected:
 
-   int drawmesh, drawelems, shading, draworder;
+   int drawmesh, drawelems, draworder;
    int cplane;
    int cp_drawmesh, cp_drawelems, drawlsurf;
    // Algorithm used to draw the cutting plane when shading is 2 and cplane is 1
@@ -59,6 +59,14 @@ protected:
    void DrawRefinedSurfEdges (int n, DenseMatrix &pointmat,
                               Vector &values, Array<int> &RefEdges,
                               int part = -1);
+   void DrawBdrElCoarseSurfEdges(gl3::GlBuilder &line, int be,
+                                 DenseMatrix &pointmat, const IntegrationRule *ir = NULL,
+                                 Array<int> *idxs = NULL);
+   void DrawFaceCoarseSurfEdges(gl3::GlBuilder &line, int f, DenseMatrix &pointmat,
+                                const IntegrationRule *ir = NULL, Array<int> *idxs = NULL);
+   void DrawCoarseSurfEdges(gl3::GlBuilder &line, int f, int e1, int e2,
+                            DenseMatrix &pointmat, const IntegrationRule *ir = NULL,
+                            Array<int> *idxs = NULL);
    void LiftRefinedSurf (int n, DenseMatrix &pointmat,
                          Vector &values, int *RG);
    void DrawTetLevelSurf(gl3::GlDrawable& target, const DenseMatrix &verts,
@@ -112,11 +120,11 @@ public:
    Array<int> bdr_attr_to_show;
 
    VisualizationSceneSolution3d();
-   VisualizationSceneSolution3d(Mesh & m, Vector & s);
+   VisualizationSceneSolution3d(Mesh & m, Vector & s, Mesh *mc);
 
    void SetGridFunction (GridFunction *gf) { GridF = gf; }
 
-   void NewMeshAndSolution(Mesh *new_m, Vector *new_sol,
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
                            GridFunction *new_u = NULL);
 
    virtual ~VisualizationSceneSolution3d();
@@ -147,9 +155,8 @@ public:
    //           3 - no arrows (black), 4 - with arrows (black)
    void ToggleDrawOrdering() { draworder = (draworder+1)%5; }
 
-   void ToggleShading();
-   int GetShading() { return shading; };
-   virtual void SetShading(int, bool);
+   virtual void SetShading(Shading, bool);
+   virtual void ToggleShading();
    virtual void SetRefineFactors(int, int);
    virtual void AutoRefine();
    virtual void ToggleAttributes(Array<int> &attr_list);
