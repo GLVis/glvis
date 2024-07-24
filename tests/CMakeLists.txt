@@ -60,10 +60,10 @@ foreach(test_name IN LISTS stream_tests)
       COMMAND ${CMAKE_COMMAND} -E make_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/data/baselines/local
       COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_BINARY_DIR}/test.${test_name}.saved.png
+        ${CMAKE_CURRENT_BINARY_DIR}/test.${test_name}.png
         ${CMAKE_CURRENT_SOURCE_DIR}/data/baselines/local
       DEPENDS
-        ${CMAKE_CURRENT_BINARY_DIR}/test.${test_name}.saved.png
+        ${CMAKE_CURRENT_BINARY_DIR}/test.${test_name}.png
       VERBATIM)
 
   add_dependencies(rebaseline _rebaseline_stream_${test_name})
