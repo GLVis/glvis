@@ -122,6 +122,7 @@ def test_stream(exec_path, exec_args, save_file, baseline):
         generate_image_diff(baseline_name, output_name, f"test.diff.{test_name}.html")
         test_control = compare_images(baseline_name, output_name_fail,
                                       expect_fail=True)
+        generate_image_diff(baseline_name, output_name_fail, f"test.diff(zoomed).{test_name}.html")
         return (test_baseline and test_control)
     else:
         print("[IGNORE] No baseline exists to compare against.")
