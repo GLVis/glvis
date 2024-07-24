@@ -15,38 +15,7 @@ import os
 from skimage.io import imread
 from skimage.metrics import structural_similarity
 
-# Below are key commands that are passed to the -keys command-line argument for
-# glvis in order to perform testing on raw mesh/grid function data (i.e. non-
-# streams).
-#
-# Currently not in use.
-test_cases = {
-    "magnify": "*****",
-    "axes1": "a",
-    "axes2": "aa",
-    "mesh1": "m",
-    "mesh2": "mm",
-    "cut_plane": "i",
-    "cut_plane_rotate": "iyyyy",
-    "cut_plane_rotate_back": "iyyyyYYYY",
-    "cut_plane_transl": "izzzz",
-    "cut_plane_transl_back": "izzzzZZZZ",
-    "orient2d_1": "R",
-    "orient2d_2": "RR",
-    "orient2d_3": "RRR",
-    "orient2d_4": "RRRR",
-    "orient2d_5": "RRRRR",
-    "orient2d_6": "RRRRRR",
-    "orient3d": "Rr",
-    "perspective": "j",
-}
-
-screenshot_keys = "Sq"
-screenshot_file = "GLVis_s01.png"
-
-cutoff_ssim = 0.999
-
-def compare_images(baseline_file, output_file, expect_fail=False):
+def compare_images(baseline_file, output_file, expect_fail=False, CUTOFF_SSIM=0.999):
     # Try to open output image
     output_img = imread(output_file)
     if output_img is None:
@@ -62,7 +31,7 @@ def compare_images(baseline_file, output_file, expect_fail=False):
     # Compare images with SSIM metrics. For two exactly-equal images, SSIM=1.0.
     # We set a cutoff of 0.999 to account for possible differences in rendering.
     ssim = structural_similarity(baseline_img, output_img, channel_axis=2)
-    if ssim < cutoff_ssim:
+    if ssim < CUTOFF_SSIM:
         if expect_fail:
             print("[PASS] Differences were detected in the control case.")
         else:
@@ -72,35 +41,8 @@ def compare_images(baseline_file, output_file, expect_fail=False):
             print("[FAIL] Differences were not detected in the control case.")
         else:
             print("[PASS] Images match.")
-    print(f"       actual ssim = {ssim}, cutoff = {cutoff_ssim}")
-    return ssim >= cutoff_ssim if not expect_fail else ssim < cutoff_ssim
-
-# Function to test a given glvis command with a variety of key-based commands.
-# Not currently in use.
-def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
-    print(f"Testing {t_group}:{t_name}...")
-    full_screenshot_cmd = cmd + screenshot_keys
-    cmd = f"{exec_path} {exec_args} -k \"{full_screenshot_cmd}\""
-    print(f"Exec: {cmd}")
-    ret = os.system(cmd + " > /dev/null 2>&1")
-    if ret != 0:
-        print(f"[FAIL] GLVis exited with error code {ret}.")
-        return False
-    if not os.path.exists(t_group):
-        os.mkdir(t_group)
-    output_name = f"{t_group}/{t_name}.png"
-
-    ret = os.system(f"mv {screenshot_file} {output_name}")
-    if ret != 0:
-        print(f"[FAIL] Could not move output image: exit code {ret}.")
-        return False
-
-    if baseline:
-        baseline_name = f"{baseline}/test.{t_name}.png"
-        return compare_images(baseline_name, output_name)
-    else:
-        print("[IGNORE] No baseline exists to compare against.")
-        return True
+    print(f"       actual ssim = {ssim}, cutoff = {CUTOFF_SSIM}")
+    return ssim >= CUTOFF_SSIM if not expect_fail else ssim < CUTOFF_SSIM
 
 def test_stream(exec_path, exec_args, save_file, baseline):
     if exec_args is None:
@@ -143,21 +85,6 @@ def test_stream(exec_path, exec_args, save_file, baseline):
         print("[IGNORE] No baseline exists to compare against.")
         return True
 
-def test_cmd(exec_path, exec_args, tgroup, baseline):
-    try:
-        os.remove(screenshot_file)
-    except OSError:
-        pass
-    all_tests_passed = True
-    for testname, cmds in test_cases.items():
-        result = test_case(exec_path, exec_args, baseline, tgroup, testname, cmds)
-        all_tests_passed = all_tests_passed and result
-
-    if all_tests_passed:
-        print("All tests passed.")
-    else:
-        sys.exit(1)
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--save_stream", help="Path to a GLVis saved stream file.")
@@ -171,4 +98,4 @@ if __name__ == "__main__":
         if not result:
             sys.exit(1)
     else:
-        test_cmd(args.exec_cmd, args.exec_args, args.group_name, args.baseline)
+        raise Exception("test_cmd() is unused. Import from `test_cmd.py`")
