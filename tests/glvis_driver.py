@@ -12,8 +12,10 @@
 import argparse
 import sys
 import os
+import numpy as np
 from skimage.io import imread
 from skimage.metrics import structural_similarity
+from skimage.color import rgb2gray
 
 def compare_images(baseline_file, output_file, expect_fail=False, CUTOFF_SSIM=0.999):
     # Try to open output image
@@ -43,6 +45,36 @@ def compare_images(baseline_file, output_file, expect_fail=False, CUTOFF_SSIM=0.
             print("[PASS] Images match.")
     print(f"       actual ssim = {ssim}, cutoff = {CUTOFF_SSIM}")
     return ssim >= CUTOFF_SSIM if not expect_fail else ssim < CUTOFF_SSIM
+
+def color_distance(I1, I2):
+    """
+    L2-norm in rgb space. There are better ways but this is probably good enough.
+    """
+    NORM_CONSTANT = (3*(255**2))**0.5 # max distance
+    l2norm = lambda x: np.linalg.norm(x, ord=2, axis=2)
+    delta = l2norm(I2.astype(int)-I1.astype(int)) / NORM_CONSTANT # output is NxM [0,1]
+    # now we scale to [0,255] and cast as uint8 so it is a "proper" image
+    Idiff_abs = (delta * 255).astype(np.uint8)
+    # get relative version
+    Idiff_rel = (Idiff_abs / Idiff_abs.max()).astype(np.uint8)
+    return {'abs': Idiff_abs,
+            'rel': Idiff_rel,}
+
+
+def generate_image_diff(
+    image1_filename: str,
+    image2_filename: str,
+    imagediff_filename: str,
+) -> None:
+    # Images are read as NxMx3 [uint8] arrays from [0,255]
+    I1 = imread(image1_filename)
+    I2 = imread(image2_filename)
+    # Take absolute "diff"
+    Idiff = color_distance(I1, I2) # output is NxM [0,1]
+    # Illustrate results
+
+
+
 
 def test_stream(exec_path, exec_args, save_file, baseline):
     if exec_args is None:
