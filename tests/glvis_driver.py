@@ -76,7 +76,7 @@ def test_stream(exec_path, exec_args, save_file, baseline):
         return False
 
     if baseline:
-        baseline_name = f"{baseline}/test.{test_name}.png"
+        baseline_name = f"{baseline}/test.{test_name}.saved.png"
         test_baseline = compare_images(baseline_name, output_name)
         test_control = compare_images(baseline_name, output_name_fail,
                                       expect_fail=True)
