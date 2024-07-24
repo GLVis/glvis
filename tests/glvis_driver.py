@@ -92,8 +92,8 @@ def test_stream(exec_path, exec_args, save_file, baseline):
     with open(save_file) as in_f:
         stream_data = in_f.read()
 
-    output_name = f"test.{test_name}.png"
-    output_name_fail = f"test.fail.{test_name}.png"
+    output_name = f"test.output.{test_name}.png"
+    output_name_fail = f"test.output(zoomed).{test_name}.png"
     tmp_file = "test.saved"
     with open(tmp_file, 'w') as out_f:
         out_f.write(stream_data)
@@ -115,6 +115,7 @@ def test_stream(exec_path, exec_args, save_file, baseline):
     if baseline:
         baseline_name = f"{baseline}/test.{test_name}.saved.png"
         test_baseline = compare_images(baseline_name, output_name)
+        generate_image_diff(baseline_name, output_name, f"test.diff.{test_name}.html")
         test_control = compare_images(baseline_name, output_name_fail,
                                       expect_fail=True)
         return (test_baseline and test_control)
