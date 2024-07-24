@@ -96,7 +96,7 @@ def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
         return False
 
     if baseline:
-        baseline_name = f"{baseline}/test.{test_name}.png"
+        baseline_name = f"{baseline}/test.{t_name}.png"
         return compare_images(baseline_name, output_name)
     else:
         print("[IGNORE] No baseline exists to compare against.")
@@ -105,7 +105,7 @@ def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
 def test_stream(exec_path, exec_args, save_file, baseline):
     if exec_args is None:
         exec_args = ""
-    test_name = os.path.basename(save_file)
+    test_name = os.path.basename(save_file).replace(".saved", "")
     print(f"Testing {save_file}...")
 
     # Create new stream file with command to screenshot and close
