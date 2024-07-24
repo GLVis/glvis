@@ -769,6 +769,28 @@ void ExecuteScriptCommand()
          cout << min << ' ' << max << ' ' << num << endl;
          MyExpose();
       }
+      else if (word == "axis_numberformat")
+      {
+         char delim;
+         string axis_formatting;
+         scr >> ws >> delim;
+         getline(scr, axis_formatting, delim);
+         cout << "Script: axis_numberformat: " << flush;
+         vs->SetAxisNumberFormat(axis_formatting);
+         cout << axis_formatting << endl;
+         MyExpose();
+      }
+      else if (word == "colorbar_numberformat")
+      {
+         char delim;
+         string colorbar_formatting;
+         scr >> ws >> delim;
+         getline(scr, colorbar_formatting, delim);
+         cout << "Script: colorbar_numberformat: " << flush;
+         vs->SetColorbarNumberFormat(colorbar_formatting);
+         cout << colorbar_formatting << endl;
+         MyExpose();
+      }
       else if (word == "window")
       {
          scr >> window_x >> window_y >> window_w >> window_h;
@@ -1489,6 +1511,8 @@ int main (int argc, char *argv[])
          cout << "Can not open script: " << script_file << endl;
          return 1;
       }
+      cout << "Running script from file: " << script_file << endl;
+      cout << "You may need to press <space> to execute the script steps." << endl;
       PlayScript(scr);
       return 0;
    }

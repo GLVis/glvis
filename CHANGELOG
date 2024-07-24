@@ -25,6 +25,12 @@ Version 4.2.1 (development)
 
 - Added a compilation parameter for the default font size.
 
+- Added option to specify the floating point number formatting in GLVis axes and
+  colorbar. Use 'Alt+a' for the axes and 'Alt+c' for the colorbar. Formatting
+  can also be specified in socket stream or glvis script with axis_numberformat
+  or colorbar_numberformat, followed by a C-like formatting string, for example
+  "colorbar_numberformat '%+06.1f'".
+
 - Added visualization of quadrature data (QuadratureFunction in MFEM). Both
   loading from file, with the new command line argument '-q', or from a socket
   stream, with the keyword 'quadrature', are supported. Three visualization
