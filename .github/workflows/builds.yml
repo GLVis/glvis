@@ -254,7 +254,7 @@ jobs:
       if: always() && matrix.build-system == 'cmake' && matrix.os != 'windows-latest'
       run: |
         cd glvis && cd build
-        tar czvf test_screenshots.tar.gz tests/outputs/*
+        cd tests/outputs && tar czvf ../../test_screenshots.tar.gz .
 
     - name: upload test screenshots
       if: always() && matrix.build-system == 'cmake' && matrix.os != 'windows-latest'
