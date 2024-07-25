@@ -103,7 +103,7 @@ def image_comparison_plot(
     fig = make_subplots(rows=1, cols=n,
                         shared_xaxes=True,
                         shared_yaxes=True,
-                        subplot_titles=image_filenames)
+                        subplot_titles=image_names)
     for idx, filename in enumerate(image_filenames):
         fig.add_trace(go.Image(source=_get_image_src(filename)), 1, idx+1)
     fig.update_xaxes(matches='x', showticklabels=False, showgrid=False, zeroline=False)
