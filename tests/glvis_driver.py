@@ -13,13 +13,20 @@ import argparse
 import sys
 import os
 import numpy as np
+from typing import Dict
 from skimage.io import imread
 from skimage.metrics import structural_similarity
 from skimage.color import rgb2gray, gray2rgb
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
-def compare_images(baseline_file, output_file, expect_fail=False, CUTOFF_SSIM=0.999):
+def compare_images(
+    baseline_file: str,
+    output_file: str,
+    expect_fail: bool = False,
+    CUTOFF_SSIM: float = 0.999
+) -> bool:
+
     # Try to open output image
     output_img = imread(output_file)
     if output_img is None:
@@ -48,7 +55,7 @@ def compare_images(baseline_file, output_file, expect_fail=False, CUTOFF_SSIM=0.
     print(f"       actual ssim = {ssim}, cutoff = {CUTOFF_SSIM}")
     return ssim >= CUTOFF_SSIM if not expect_fail else ssim < CUTOFF_SSIM
 
-def color_distance(I1, I2):
+def color_distance(I1: np.array, I2: np.array) -> Dict[str, np.array]:
     """
     L2-norm in rgb space. There are better ways but this is probably good enough.
     """
@@ -70,7 +77,7 @@ def generate_image_diff(
     # Images are read as NxMx3 [uint8] arrays from [0,255]
     I1 = imread(image1_filename)
     I2 = imread(image2_filename)
-    # Take absolute "diff"
+    # Get image diff
     Idiff = color_distance(I1, I2) # output is NxM [0,1]
     # Illustrate results
     fig = make_subplots(rows=1, cols=3,
@@ -85,7 +92,13 @@ def generate_image_diff(
     fig.update_yaxes(matches='y', showticklabels=False, showgrid=False, zeroline=False)
     fig.write_html(imagediff_filename)
 
-def test_stream(exec_path, exec_args, save_file, baseline):
+def test_stream(
+    exec_path: str,
+    exec_args: str,
+    save_file: str,
+    baseline: str
+) -> bool:
+
     if exec_args is None:
         exec_args = ""
     test_name = os.path.basename(save_file).replace(".saved", "")
@@ -119,10 +132,14 @@ def test_stream(exec_path, exec_args, save_file, baseline):
     if baseline:
         baseline_name = f"{baseline}/test.{test_name}.saved.png"
         test_baseline = compare_images(baseline_name, output_name)
-        generate_image_diff(baseline_name, output_name, f"test.diff.{test_name}.html")
+        if not test_baseline:
+            generate_image_diff(baseline_name, output_name,
+                                f"test.diff.{test_name}.html")
         test_control = compare_images(baseline_name, output_name_fail,
                                       expect_fail=True)
-        generate_image_diff(baseline_name, output_name_fail, f"test.diff(zoomed).{test_name}.html")
+        if test_control:
+            generate_image_diff(baseline_name, output_name_fail,
+                                f"test.diff(zoomed).{test_name}.html")
         return (test_baseline and test_control)
     else:
         print("[IGNORE] No baseline exists to compare against.")
