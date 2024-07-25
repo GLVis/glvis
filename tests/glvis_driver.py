@@ -14,7 +14,8 @@ import sys
 import os
 import numpy as np
 from typing import Dict
-from skimage.io import imread
+from base64 import b64encode
+from skimage.io import imread, imsave
 from skimage.metrics import structural_similarity
 from skimage.color import rgb2gray, gray2rgb
 from plotly.subplots import make_subplots
@@ -69,6 +70,12 @@ def color_distance(I1: np.array, I2: np.array) -> Dict[str, np.array]:
     return {'abs': Idiff_abs,
             'rel': Idiff_rel,}
 
+# For the source= argument in plotly
+def get_image_src(filename):
+    with open(filename, "rb") as f:
+        image_bytes = b64encode(f.read()).decode()
+        return f"data:image/png;base64,{image_bytes}"
+
 def generate_image_diff(
     image1_filename: str,
     image2_filename: str,
@@ -79,20 +86,23 @@ def generate_image_diff(
     # Images are read as NxMx3 [uint8] arrays from [0,255]
     I1 = imread(image1_filename)
     I2 = imread(image2_filename)
+
     # Get image diff
-    Idiff = color_distance(I1, I2) # output is NxM [0,1]
+    Idiffs = color_distance(I1, I2) # output is NxM [0,1]
+    Idiff_rel = gray2rgb(Idiffs['rel']) # convert to 3-channel
+    imsave(f"{imagediff_filename}.png", Idiff_rel) # save png to file
+
     # Illustrate results as an interactive plotly figure (html)
     fig = make_subplots(rows=1, cols=3,
                         shared_xaxes=True,
                         shared_yaxes=True,
                         subplot_titles=(image1_name, image2_name, 'ΔI (normalized)'))
-    fig.add_trace(go.Image(z=I1), 1, 1)
-    fig.add_trace(go.Image(z=I2), 1, 2)
-    fig.add_trace(go.Image(z=gray2rgb(Idiff['rel'])), 1, 3)
-    # fig.add_trace(go.Heatmap(z=Idiff['rel'], colorscale='inferno'), 1, 3)
+    fig.add_trace(go.Image(source=get_image_src(image1_filename)), 1, 1)
+    fig.add_trace(go.Image(source=get_image_src(image2_filename)), 1, 2)
+    fig.add_trace(go.Image(source=get_image_src(f"{imagediff_filename}.png")), 1, 3)
     fig.update_xaxes(matches='x', showticklabels=False, showgrid=False, zeroline=False)
     fig.update_yaxes(matches='y', showticklabels=False, showgrid=False, zeroline=False)
-    fig.write_html(imagediff_filename)
+    fig.write_html(f"{imagediff_filename}.html")
 
 def test_stream(
     exec_path: str,
@@ -103,17 +113,19 @@ def test_stream(
 
     if exec_args is None:
         exec_args = ""
-    test_name = os.path.basename(save_file).replace(".saved", "")
     print(f"Testing {save_file}...")
+    test_name = os.path.basename(save_file).replace(".saved", "") # e.g. "ex3"
+    output_dir = f"outputs/{test_name}"
+    os.makedirs(output_dir, exist_ok=True)
 
     # Create new stream file with command to screenshot and close
     stream_data = None
     with open(save_file) as in_f:
         stream_data = in_f.read()
 
-    output_name = f"outputs/test.nominal.{test_name}.png"
-    output_name_fail = f"outputs/test.zoom.{test_name}.png"
-    output_name_diff = f"outputs/test-diff.{test_name}.html"
+    output_name = f"{output_dir}/test.nominal.{test_name}.png"
+    output_name_fail = f"{output_dir}/test.zoom.{test_name}.png"
+    output_name_diff = f"{output_dir}/test-diff.{test_name}"
     tmp_file = "test.saved"
     with open(tmp_file, 'w') as out_f:
         out_f.write(stream_data)
@@ -153,7 +165,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Make a directory for storing test outputs
-    os.makedirs('outputs', exist_ok=True)
+    os.makedirs("outputs", exist_ok=True)
     # Run tests
     if args.save_stream is not None:
         result = test_stream(args.exec_cmd, args.exec_args, args.save_stream, args.baseline)
