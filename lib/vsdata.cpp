@@ -571,10 +571,11 @@ void KeycPressed(GLenum state)
 
       int precision = prompt<int>("Enter precision (4): ",
                                   &default_precision,
-                                  [](int p){ return p>=0; });
-      char format = prompt<char>("Enter format [(d)efault, (f)ixed, (s)cientific] (d): ",
-                                 &default_format,
-                                 [](char c){ return c=='d' || c=='f' || c=='s'; });
+      [](int p) { return p>=0; });
+      char format =
+         prompt<char>("Enter format [(d)efault, (f)ixed, (s)cientific] (d): ",
+                      &default_format,
+      [](char c) { return c=='d' || c=='f' || c=='s'; });
       bool showsign = prompt<bool>("Show sign? [(1)true, (0)false] (0): ",
                                    &default_showsign);
       vsdata->SetColorbarNumberFormat(precision, format, showsign);
@@ -628,10 +629,11 @@ void Key_Mod_a_Pressed(GLenum state)
 
       int precision = prompt<int>("Enter precision (4): ",
                                   &default_precision,
-                                  [](int p){ return p>=0; });
-      char format = prompt<char>("Enter format [(d)efault, (f)ixed, (s)cientific] (d): ",
-                                 &default_format,
-                                 [](char c){ return c=='d' || c=='f' || c=='s'; });
+      [](int p) { return p>=0; });
+      char format =
+         prompt<char>("Enter format [(d)efault, (f)ixed, (s)cientific] (d): ",
+                      &default_format,
+      [](char c) { return c=='d' || c=='f' || c=='s'; });
       bool showsign = prompt<bool>("Show sign? [(1)true, (0)false] (0): ",
                                    &default_showsign);
       vsdata->SetAxisNumberFormat(precision, format, showsign);
