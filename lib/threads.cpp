@@ -1256,7 +1256,8 @@ void communication_thread::execute()
          string formatting;
 
          *is[0] >> ws >> c; // read the opening char
-         getline(*is[0], formatting, c); // read formatting string & use c for termination
+         getline(*is[0], formatting,
+                 c); // read formatting string & use c for termination
 
          // all processors sent the command
          for (size_t i = 1; i < is.size(); i++)
@@ -1277,7 +1278,8 @@ void communication_thread::execute()
          string formatting;
 
          *is[0] >> ws >> c; // read the opening char
-         getline(*is[0], formatting, c); // read formatting string & use c for termination
+         getline(*is[0], formatting,
+                 c); // read formatting string & use c for termination
 
          // all processors sent the command
          for (size_t i = 1; i < is.size(); i++)

@@ -136,7 +136,8 @@ bool SetFont(const vector<std::string>& patterns, int height);
 void SetFont(const std::string& fn);
 
 void SetUseHiDPI(bool status);
-function<string(double)> NumberFormatter(int precision=4, char format='d', bool showsign=false);
+function<string(double)> NumberFormatter(int precision=4, char format='d',
+                                         bool showsign=false);
 function<string(double)> NumberFormatter(string formatting);
 bool isValidNumberFormatting(const string& formatting);
 
@@ -148,40 +149,40 @@ bool isValidNumberFormatting(const string& formatting);
 template <typename T>
 T prompt(const string question,
          const T* default_value = nullptr,
-         function<bool(T)> validator = [](T) { return true; })
+function<bool(T)> validator = [](T) { return true; })
 {
-    T input;
-    string strInput;
+   T input;
+   string strInput;
 
-    while (true)
-    {
-        cout << question << " ";
-        getline(cin, strInput);
-        stringstream buf(strInput);
+   while (true)
+   {
+      cout << question << " ";
+      getline(cin, strInput);
+      stringstream buf(strInput);
 
-        if (strInput.empty() && default_value != nullptr)
-        {
-            cout << "Input empty. Using default value: " << *default_value << endl;
-            return *default_value;
-        }
+      if (strInput.empty() && default_value != nullptr)
+      {
+         cout << "Input empty. Using default value: " << *default_value << endl;
+         return *default_value;
+      }
 
-        if (buf >> input)
-        {
-            if (validator(input))
-            {
-                return input;
-            }
-            else
-            {
-               cout << "Input is not valid. Please try again." << endl;
-            }
-        }
-        else
-        {
-           cout << "Input can not be casted to expected type. Please try again." << endl;
-        }
-    }
-    return input;
+      if (buf >> input)
+      {
+         if (validator(input))
+         {
+            return input;
+         }
+         else
+         {
+            cout << "Input is not valid. Please try again." << endl;
+         }
+      }
+      else
+      {
+         cout << "Input can not be casted to expected type. Please try again." << endl;
+      }
+   }
+   return input;
 }
 
 #endif

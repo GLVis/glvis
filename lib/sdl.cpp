@@ -382,8 +382,8 @@ void SdlWindow::mainIter()
                keep_going = true;
                break;
             case SDL_KEYDOWN:
-// For debugging: uncomment the next line to track key events.
-// #define TRACK_KEY_EVENTS
+               // For debugging: uncomment the next line to track key events.
+               // #define TRACK_KEY_EVENTS
 #ifdef TRACK_KEY_EVENTS
                cout << "Event: SDL_KEYDOWN sym=" << e.key.keysym.sym
                     << " mod=" << e.key.keysym.mod << endl;
