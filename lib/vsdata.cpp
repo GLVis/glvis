@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -505,6 +505,22 @@ void VisualizationSceneScalarData::Arrow(gl3::GlDrawable& buf,
    }
 }
 
+void VisualizationSceneScalarData::SetColorbarNumberFormat(int precision,
+                                                           char format,
+                                                           bool showsign)
+{
+   colorbar_formatter = NumberFormatter(precision, format, showsign);
+   // The first two arguments are required but I don't think they are used?
+   PrepareColorBar(0,0);
+}
+
+void VisualizationSceneScalarData::SetColorbarNumberFormat(string formatting)
+{
+   colorbar_formatter = NumberFormatter(formatting);
+   // The first two arguments are required but I don't think they are used?
+   PrepareColorBar(0,0);
+}
+
 void VisualizationSceneScalarData::PrepareColorBar (double minval,
                                                     double maxval,
                                                     Array<double> *mesh_level,
@@ -587,9 +603,7 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
 
          val = ULogVal(i / 4.0);
 
-         ostringstream buf;
-         buf << setprecision(4) << val;
-         color_bar.addText(text_x,Y,posz, buf.str());
+         color_bar.addText(text_x,Y,posz,colorbar_formatter(val));
       }
    }
    else
@@ -599,9 +613,7 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
          val = (*mesh_level)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
 
-         ostringstream buf;
-         buf << setprecision(4) << val;
-         color_bar.addText(text_x,Y,posz, buf.str());
+         color_bar.addText(text_x,Y,posz,colorbar_formatter(val));
       }
    }
 
@@ -612,9 +624,7 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
          val = (*lsurf_levels)[i];
          Y = miny + (maxy - miny) * LogUVal(val);
 
-         ostringstream buf;
-         buf << setprecision(4) << val;
-         color_bar.addText(text_x,Y,posz, buf.str());
+         color_bar.addText(text_x,Y,posz,colorbar_formatter(val));
       }
    }
    updated_bufs.emplace_back(&color_bar);
@@ -641,10 +651,31 @@ void VisualizationSceneScalarData::PrepareCaption()
 thread_local VisualizationSceneScalarData * vsdata;
 extern thread_local VisualizationScene  * locscene;
 
-void KeycPressed()
+void KeycPressed(GLenum state)
 {
-   vsdata->ToggleDrawColorbar();
-   SendExposeEvent();
+   if (state & KMOD_ALT)
+   {
+      cout << "Setting colorbar number formatting..." << endl;
+      int default_precision = 4;
+      char default_format = 'd';
+      bool default_showsign = false;
+
+      int precision = prompt<int>("Enter precision (4): ",
+                                  &default_precision,
+                                  [](int p){ return p>=0; });
+      char format = prompt<char>("Enter format [(d)efault, (f)ixed, (s)cientific] (d): ",
+                                 &default_format,
+                                 [](char c){ return c=='d' || c=='f' || c=='s'; });
+      bool showsign = prompt<bool>("Show sign? [(1)true, (0)false] (0): ",
+                                   &default_showsign);
+      vsdata->SetColorbarNumberFormat(precision, format, showsign);
+      SendExposeEvent();
+   }
+   else
+   {
+      vsdata->ToggleDrawColorbar();
+      SendExposeEvent();
+   }
 }
 
 void KeyCPressed()
@@ -677,6 +708,24 @@ void Key_Mod_a_Pressed(GLenum state)
       cout << "Autoscale: " << flush;
       vsdata->SetAutoscale(autoscale);
       cout << autoscale_modes[autoscale] << endl;
+      SendExposeEvent();
+   }
+   else if (state & KMOD_ALT)
+   {
+      cout << "Setting axes number formatting..." << endl;
+      int default_precision = 4;
+      char default_format = 'd';
+      bool default_showsign = false;
+
+      int precision = prompt<int>("Enter precision (4): ",
+                                  &default_precision,
+                                  [](int p){ return p>=0; });
+      char format = prompt<char>("Enter format [(d)efault, (f)ixed, (s)cientific] (d): ",
+                                 &default_format,
+                                 [](char c){ return c=='d' || c=='f' || c=='s'; });
+      bool showsign = prompt<bool>("Show sign? [(1)true, (0)false] (0): ",
+                                   &default_showsign);
+      vsdata->SetAxisNumberFormat(precision, format, showsign);
       SendExposeEvent();
    }
    else
@@ -1518,6 +1567,20 @@ void VisualizationSceneScalarData::SetAxisLabels(const char * a_x,
    PrepareAxes();
 }
 
+void VisualizationSceneScalarData::SetAxisNumberFormat(int precision,
+                                                       char format,
+                                                       bool showsign)
+{
+   axis_formatter = NumberFormatter(precision, format, showsign);
+   PrepareAxes();
+}
+
+void VisualizationSceneScalarData::SetAxisNumberFormat(string formatting)
+{
+   axis_formatter = NumberFormatter(formatting);
+   PrepareAxes();
+}
+
 void VisualizationSceneScalarData::PrepareAxes()
 {
    // std::array<float, 4> blk = GetLineColor();
@@ -1606,13 +1669,17 @@ void VisualizationSceneScalarData::PrepareAxes()
       int ox = -desc/2;
       int oy = -3*desc/2;
       ostringstream buf;
-      buf << setprecision(4)
-          << "(" << bb.x[0] << "," << bb.y[0] << ","  << bb.z[0] << ")" ;
+      buf << "("
+          << axis_formatter(bb.x[0]) << ","
+          << axis_formatter(bb.y[0]) << ","
+          << axis_formatter(bb.z[0]) << ")";
       axes_buf.addText(bb.x[0], bb.y[0], bb.z[0], ox, oy, buf.str());
 
       ostringstream buf1;
-      buf1 << setprecision(4)
-           << "(" << bb.x[1] << "," << bb.y[1] << "," << bb.z[1] << ")" ;
+      buf1 << "("
+           << axis_formatter(bb.x[1]) << ","
+           << axis_formatter(bb.y[1]) << ","
+           << axis_formatter(bb.z[1]) << ")";
       axes_buf.addText(bb.x[1], bb.y[1], bb.z[1], ox, oy, buf1.str());
    }
    updated_bufs.emplace_back(&axes_buf);

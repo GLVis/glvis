@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -62,6 +62,8 @@ std::string VisualizationSceneVector::GetHelpString() const
       << "| v -  Cycle through vector fields   |" << endl
       << "| V -  Change the arrows scaling     |" << endl
       << "| \\ -  Set light source position     |" << endl
+      << "| Alt+a  - Axes number format        |" << endl
+      << "| Alt+c  - Colorbar number format    |" << endl
       << "| Ctrl+p - Print to a PDF file       |" << endl
       << "+------------------------------------+" << endl
       << "| Function keys                      |" << endl

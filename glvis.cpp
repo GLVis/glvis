@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -769,6 +769,28 @@ void ExecuteScriptCommand()
          cout << min << ' ' << max << ' ' << num << endl;
          MyExpose();
       }
+      else if (word == "axis_numberformat")
+      {
+         char delim;
+         string axis_formatting;
+         scr >> ws >> delim;
+         getline(scr, axis_formatting, delim);
+         cout << "Script: axis_numberformat: " << flush;
+         vs->SetAxisNumberFormat(axis_formatting);
+         cout << axis_formatting << endl;
+         MyExpose();
+      }
+      else if (word == "colorbar_numberformat")
+      {
+         char delim;
+         string colorbar_formatting;
+         scr >> ws >> delim;
+         getline(scr, colorbar_formatting, delim);
+         cout << "Script: colorbar_numberformat: " << flush;
+         vs->SetColorbarNumberFormat(colorbar_formatting);
+         cout << colorbar_formatting << endl;
+         MyExpose();
+      }
       else if (word == "window")
       {
          scr >> window_x >> window_y >> window_w >> window_h;
@@ -996,6 +1018,10 @@ void PlayScript(istream &scr)
    scr_level = scr_running = 0;
    script = &scr;
    stream_state.keys.clear();
+
+   // Make sure the singleton object returned by GetMainThread() is
+   // initialized from the main thread.
+   GetMainThread();
 
    std::thread worker_thread
    {
@@ -1468,6 +1494,10 @@ int main (int argc, char *argv[])
    // check for saved stream file
    if (stream_file != string_none)
    {
+      // Make sure the singleton object returned by GetMainThread() is
+      // initialized from the main thread.
+      GetMainThread();
+
       Session stream_session(stream_state.fix_elem_orient,
                              stream_state.save_coloring);
 
@@ -1489,6 +1519,8 @@ int main (int argc, char *argv[])
          cout << "Can not open script: " << script_file << endl;
          return 1;
       }
+      cout << "Running script from file: " << script_file << endl;
+      cout << "You may need to press <space> to execute the script steps." << endl;
       PlayScript(scr);
       return 0;
    }
@@ -1527,6 +1559,10 @@ int main (int argc, char *argv[])
    // server mode, read the mesh and the solution from a socket
    if (input == INPUT_SERVER_MODE)
    {
+      // Make sure the singleton object returned by GetMainThread() is
+      // initialized from the main thread.
+      GetMainThread();
+
       // Run server in new thread
       std::thread serverThread{GLVisServer, portnum, save_stream,
                                stream_state.fix_elem_orient,
@@ -1560,6 +1596,11 @@ int main (int argc, char *argv[])
          field_type = (use_soln) ? StreamState::FieldType::SCALAR
                       : StreamState::FieldType::MESH;
       }
+
+      // Make sure the singleton object returned by GetMainThread() is
+      // initialized from the main thread.
+      GetMainThread();
+
       Session single_session(field_type, std::move(stream_state));
       single_session.StartSession();
 

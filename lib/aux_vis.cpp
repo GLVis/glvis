@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -14,6 +14,7 @@
 #include <fstream>
 #include <cmath>
 #include <chrono>
+#include <regex>
 
 #include "mfem.hpp"
 #include "sdl.hpp"
@@ -1782,4 +1783,58 @@ void SetFont(const std::string& fn)
         << (priority_font.empty() ? "(default)" : priority_font)
         << "', height = " << font_size << endl;
 #endif
+}
+
+function<string(double)> NumberFormatter(int precision, char format, bool showsign)
+{
+   return [precision, format, showsign](double x) -> string
+   {
+      ostringstream oss;
+      switch (format) {
+         case 'f':
+               oss << fixed;
+               break;
+         case 's':
+               oss << scientific;
+               break;
+         case 'd':
+               oss << defaultfloat;
+               break;
+         default:
+            MFEM_WARNING("Unknown formatting type. Using default. "
+            << "Valid options include: ['f', 's', 'd']" << endl);
+            oss << defaultfloat;
+            break;
+      };
+      if (showsign)
+      {
+         oss << showpos;
+      }
+      oss << setprecision(precision) << x;
+      return oss.str();
+   };
+}
+
+function<string(double)> NumberFormatter(string formatting)
+{
+   if (!isValidNumberFormatting(formatting))
+   {
+      MFEM_WARNING("Invalid formatting string. Using default. " << endl);
+      return NumberFormatter();
+   }
+   else
+   {
+      return [formatting](double x) -> string
+      {
+         char buf[64];
+         snprintf(buf, sizeof(buf), formatting.c_str(), x);
+         return string(buf);
+      };
+   }
+}
+
+bool isValidNumberFormatting(const string& formatting)
+{
+   regex rgx = regex(R"(%[\-+#0\s]?[0-9]{0,3}\.?[0-9]{0,3}[FfEeGg])");
+   return regex_match(formatting, rgx);
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -136,5 +136,52 @@ bool SetFont(const vector<std::string>& patterns, int height);
 void SetFont(const std::string& fn);
 
 void SetUseHiDPI(bool status);
+function<string(double)> NumberFormatter(int precision=4, char format='d', bool showsign=false);
+function<string(double)> NumberFormatter(string formatting);
+bool isValidNumberFormatting(const string& formatting);
+
+// This is a helper function for prompting the user for inputs. The benefit
+// over using just `cin >> input` is that you can specify a type and optionally
+// a validator lambda. The a validator if not specified, it defaults to the
+// True function. If the input cannot be type casted to the expected type, or
+// if it fails the validation, the user is asked again for a new input.
+template <typename T>
+T prompt(const string question,
+         const T* default_value = nullptr,
+         function<bool(T)> validator = [](T) { return true; })
+{
+    T input;
+    string strInput;
+
+    while (true)
+    {
+        cout << question << " ";
+        getline(cin, strInput);
+        stringstream buf(strInput);
+
+        if (strInput.empty() && default_value != nullptr)
+        {
+            cout << "Input empty. Using default value: " << *default_value << endl;
+            return *default_value;
+        }
+
+        if (buf >> input)
+        {
+            if (validator(input))
+            {
+                return input;
+            }
+            else
+            {
+               cout << "Input is not valid. Please try again." << endl;
+            }
+        }
+        else
+        {
+           cout << "Input can not be casted to expected type. Please try again." << endl;
+        }
+    }
+    return input;
+}
 
 #endif

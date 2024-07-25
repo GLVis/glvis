@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -57,7 +57,9 @@ private:
       PLOT_CAPTION = 18,
       AXIS_LABELS = 19,
       PALETTE_REPEAT = 20,
-      LEVELLINES = 21
+      LEVELLINES = 21,
+      AXIS_NUMBERFORMAT = 22,
+      COLORBAR_NUMBERFORMAT = 23
    };
 
    std::atomic<bool> command_ready{false};
@@ -88,6 +90,8 @@ private:
    int           lvl_num;
    double        camera[9];
    std::string   autopause_mode;
+   std::string   axis_formatting;
+   std::string   colorbar_formatting;
 
    // internal variables
    int autopause;
@@ -125,6 +129,8 @@ public:
    int Palette(int pal);
    int PaletteRepeat(int n);
    int Levellines(double minv, double maxv, int number);
+   int AxisNumberFormat(string formatting);
+   int ColorbarNumberFormat(string formatting);
    int Camera(const double cam[]);
    int Autopause(const char *mode);
 
