@@ -77,7 +77,7 @@ int VisualizationSceneScalarData::GetFunctionAutoRefineFactor(GridFunction &gf)
             int ivol, info;
             mesh->GetBdrElementAdjacentElement(i, ivol, info);
             const FiniteElement *fevol = gf.FESpace()->GetFE(ivol);
-            order = fevol->GetOrder() - 1;
+            order = fevol->GetOrder();
             if (fevol->GetMapType() == FiniteElement::MapType::INTEGRAL)
             {
                order += mesh->GetElementTransformation(ivol)->OrderW();
