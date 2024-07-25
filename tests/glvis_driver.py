@@ -137,7 +137,7 @@ def test_stream(
                                 f"test.diff.{test_name}.html")
         test_control = compare_images(baseline_name, output_name_fail,
                                       expect_fail=True)
-        if test_control:
+        if not test_control:
             generate_image_diff(baseline_name, output_name_fail,
                                 f"test.diff(zoomed).{test_name}.html")
         return (test_baseline and test_control)
