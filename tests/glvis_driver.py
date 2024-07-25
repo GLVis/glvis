@@ -156,10 +156,10 @@ def test_stream(
         test_baseline = compare_images(baseline_name, output_name)
         generate_image_diffs(baseline_name, output_name, absdiff_name, reldiff_name)
         # Generate an interactive html plot, only if the test fails
-        if not test_baseline:
-            image_comparison_plot([baseline_name, output_name, reldiff_name],
-                                  ["Baseline", "Test Output", "Normalized Diff"],
-                                  reldiff_name.replace(".png", ".html"))
+        # if not test_baseline:
+        image_comparison_plot([baseline_name, output_name, reldiff_name],
+                                ["Baseline", "Test Output", "Normalized Diff"],
+                                reldiff_name.replace(".png", ".html"))
         test_control = compare_images(baseline_name, output_name_fail, expect_fail=True)
         return (test_baseline and test_control)
     else:
