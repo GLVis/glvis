@@ -108,7 +108,7 @@ def image_comparison_plot(
         fig.add_trace(go.Image(source=_get_image_src(filename)), 1, idx+1)
     fig.update_xaxes(matches='x', showticklabels=False, showgrid=False, zeroline=False)
     fig.update_yaxes(matches='y', showticklabels=False, showgrid=False, zeroline=False)
-    fig.write_html(output_filename)
+    fig.write_html(output_filename, include_plotlyjs='cdn')
 
 def test_stream(
     exec_path: str,
