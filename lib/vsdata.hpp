@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -16,6 +16,7 @@
 
 #include "mfem.hpp"
 #include "openglvis.hpp"
+#include "aux_vis.hpp"
 
 using namespace mfem;
 
@@ -78,6 +79,10 @@ protected:
    int scaling, colorbar, drawaxes;
    Shading shading;
    int auto_ref_max, auto_ref_max_surf_elem;
+
+   // Formatter for axes & colorbar numbers. Set defaults.
+   function<string(double)> axis_formatter = NumberFormatter(4, 'd', false);
+   function<string(double)> colorbar_formatter = NumberFormatter(4, 'd', false);
 
    vector<gl3::GlDrawable*> updated_bufs;
    gl3::GlDrawable axes_buf;
@@ -269,11 +274,17 @@ public:
    // Turn on or off the caption
    void PrepareCaption();
 
+   void SetColorbarNumberFormat(int precision, char format, bool showsign);
+   void SetColorbarNumberFormat(string formatting);
+
    void PrepareColorBar(double minval, double maxval,
                         Array<double> * level = NULL,
                         Array<double> * levels = NULL);
 
    void SetAxisLabels(const char * a_x, const char * a_y, const char * a_z);
+
+   void SetAxisNumberFormat(int precision, char format, bool showsign);
+   void SetAxisNumberFormat(string formatting);
 
    void PrepareAxes();
    void ToggleDrawAxes()

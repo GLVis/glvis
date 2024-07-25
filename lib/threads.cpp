@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -198,6 +198,36 @@ int GLVisCommand::AxisLabels(const char *a_x, const char *a_y, const char *a_z)
    axis_label_x = a_x;
    axis_label_y = a_y;
    axis_label_z = a_z;
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
+
+int GLVisCommand::AxisNumberFormat(string formatting)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = AXIS_NUMBERFORMAT;
+   axis_formatting = formatting;
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
+
+int GLVisCommand::ColorbarNumberFormat(string formatting)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = COLORBAR_NUMBERFORMAT;
+   colorbar_formatting = formatting;
    if (signal() < 0)
    {
       return -2;
@@ -521,6 +551,24 @@ int GLVisCommand::Execute()
               << axis_label_y << "' '" << axis_label_z << "'" << endl;
          (*vs)->SetAxisLabels(axis_label_x.c_str(), axis_label_y.c_str(),
                               axis_label_z.c_str());
+         MyExpose();
+         break;
+      }
+
+      case AXIS_NUMBERFORMAT:
+      {
+         cout << "Command: axis_numberformat: '"
+              << axis_formatting << "'" << endl;
+         (*vs)->SetAxisNumberFormat(axis_formatting);
+         MyExpose();
+         break;
+      }
+
+      case COLORBAR_NUMBERFORMAT:
+      {
+         cout << "Command: colorbar_numberformat: '"
+              << colorbar_formatting << "'" << endl;
+         (*vs)->SetColorbarNumberFormat(colorbar_formatting);
          MyExpose();
          break;
       }
@@ -1198,6 +1246,48 @@ void communication_thread::execute()
          }
 
          if (glvis_command->Levellines(minv, maxv, num))
+         {
+            goto comm_terminate;
+         }
+      }
+      else if (ident == "axis_numberformat")
+      {
+         char c;
+         string formatting;
+
+         *is[0] >> ws >> c; // read the opening char
+         getline(*is[0], formatting, c); // read formatting string & use c for termination
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'axis_numberformat'
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
+         }
+
+         if (glvis_command->AxisNumberFormat(formatting))
+         {
+            goto comm_terminate;
+         }
+      }
+      else if (ident == "colorbar_numberformat")
+      {
+         char c;
+         string formatting;
+
+         *is[0] >> ws >> c; // read the opening char
+         getline(*is[0], formatting, c); // read formatting string & use c for termination
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'colorbar_numberformat'
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
+         }
+
+         if (glvis_command->ColorbarNumberFormat(formatting))
          {
             goto comm_terminate;
          }
