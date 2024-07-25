@@ -1785,24 +1785,26 @@ void SetFont(const std::string& fn)
 #endif
 }
 
-function<string(double)> NumberFormatter(int precision, char format, bool showsign)
+function<string(double)> NumberFormatter(int precision, char format,
+                                         bool showsign)
 {
    return [precision, format, showsign](double x) -> string
    {
       ostringstream oss;
-      switch (format) {
+      switch (format)
+      {
          case 'f':
-               oss << fixed;
-               break;
+            oss << fixed;
+            break;
          case 's':
-               oss << scientific;
-               break;
+            oss << scientific;
+            break;
          case 'd':
-               oss << defaultfloat;
-               break;
+            oss << defaultfloat;
+            break;
          default:
             MFEM_WARNING("Unknown formatting type. Using default. "
-            << "Valid options include: ['f', 's', 'd']" << endl);
+                         << "Valid options include: ['f', 's', 'd']" << endl);
             oss << defaultfloat;
             break;
       };
