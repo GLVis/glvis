@@ -73,6 +73,8 @@ def generate_image_diff(
     image1_filename: str,
     image2_filename: str,
     imagediff_filename: str,
+    image1_name: str = "Baseline",
+    image2_name: str = "Test Output",
 ) -> None:
     # Images are read as NxMx3 [uint8] arrays from [0,255]
     I1 = imread(image1_filename)
@@ -83,7 +85,7 @@ def generate_image_diff(
     fig = make_subplots(rows=1, cols=3,
                         shared_xaxes=True,
                         shared_yaxes=True,
-                        subplot_titles=('I1', 'I2', 'ΔI (normalized)'))
+                        subplot_titles=(image1_name, image2_name, 'ΔI (normalized)'))
     fig.add_trace(go.Image(z=I1), 1, 1)
     fig.add_trace(go.Image(z=I2), 1, 2)
     fig.add_trace(go.Image(z=gray2rgb(Idiff['rel'])), 1, 3)
