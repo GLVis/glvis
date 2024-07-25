@@ -13,7 +13,6 @@ import argparse
 import sys
 import os
 import numpy as np
-from typing import Dict
 from base64 import b64encode
 from skimage.io import imread, imsave
 from skimage.metrics import structural_similarity
@@ -56,7 +55,7 @@ def compare_images(
     print(f"       actual ssim = {ssim}, cutoff = {CUTOFF_SSIM}")
     return ssim >= CUTOFF_SSIM if not expect_fail else ssim < CUTOFF_SSIM
 
-def color_distance(I1: np.array, I2: np.array) -> Dict[str, np.array]:
+def color_distance(I1: np.array, I2: np.array) -> dict[str, np.array]:
     """
     L2-norm in rgb space. There are better ways but this is probably good enough.
     """
@@ -70,39 +69,46 @@ def color_distance(I1: np.array, I2: np.array) -> Dict[str, np.array]:
     return {'abs': Idiff_abs,
             'rel': Idiff_rel,}
 
-# For the source= argument in plotly
-def get_image_src(filename):
-    with open(filename, "rb") as f:
-        image_bytes = b64encode(f.read()).decode()
-        return f"data:image/png;base64,{image_bytes}"
-
-def generate_image_diff(
+def generate_image_diffs(
     image1_filename: str,
     image2_filename: str,
-    imagediff_filename: str,
-    image1_name: str = "Baseline",
-    image2_name: str = "Test Output",
+    absdiff_filename: str,
+    reldiff_filename: str,
 ) -> None:
     # Images are read as NxMx3 [uint8] arrays from [0,255]
     I1 = imread(image1_filename)
     I2 = imread(image2_filename)
-
-    # Get image diff
+    # Get the image diffs (abs and rel)
     Idiffs = color_distance(I1, I2) # output is NxM [0,1]
-    Idiff_rel = gray2rgb(Idiffs['rel']) # convert to 3-channel
-    imsave(f"{imagediff_filename}.png", Idiff_rel) # save png to file
+    # Save 3-channel image to file
+    imsave(f"{absdiff_filename}.png", gray2rgb(Idiffs['abs']))
+    imsave(f"{reldiff_filename}.png", gray2rgb(Idiffs['rel']))
 
-    # Illustrate results as an interactive plotly figure (html)
-    fig = make_subplots(rows=1, cols=3,
+# For the source= argument in plotly
+def _get_image_src(filename):
+    with open(filename, "rb") as f:
+        image_bytes = b64encode(f.read()).decode()
+        return f"data:image/png;base64,{image_bytes}"
+
+def image_comparison_plot(
+    image_filenames: list[str],
+    image_names: list[str],  # for subtitles
+    output_filename: str,
+):
+    """
+    Illustrate results as an interactive plotly figure (html)
+    """
+    assert len(image_filenames) == len(image_names)
+    n = len(image_filenames)
+    fig = make_subplots(rows=1, cols=n,
                         shared_xaxes=True,
                         shared_yaxes=True,
-                        subplot_titles=(image1_name, image2_name, 'ΔI (normalized)'))
-    fig.add_trace(go.Image(source=get_image_src(image1_filename)), 1, 1)
-    fig.add_trace(go.Image(source=get_image_src(image2_filename)), 1, 2)
-    fig.add_trace(go.Image(source=get_image_src(f"{imagediff_filename}.png")), 1, 3)
+                        subplot_titles=image_filenames)
+    for idx, filename in enumerate(image_filenames):
+        fig.add_trace(go.Image(source=_get_image_src(filename)), 1, idx)
     fig.update_xaxes(matches='x', showticklabels=False, showgrid=False, zeroline=False)
     fig.update_yaxes(matches='y', showticklabels=False, showgrid=False, zeroline=False)
-    fig.write_html(f"{imagediff_filename}.html")
+    fig.write_html(output_filename)
 
 def test_stream(
     exec_path: str,
@@ -125,7 +131,8 @@ def test_stream(
 
     output_name = f"{output_dir}/test.nominal.{test_name}.png"
     output_name_fail = f"{output_dir}/test.zoom.{test_name}.png"
-    output_name_diff = f"{output_dir}/test-diff.{test_name}"
+    absdiff_name = f"{output_dir}/test.nominal.absdiff.{test_name}.png"
+    reldiff_name = f"{output_dir}/test.nominal.reldiff.{test_name}.png"
     tmp_file = "test.saved"
     with open(tmp_file, 'w') as out_f:
         out_f.write(stream_data)
@@ -147,8 +154,12 @@ def test_stream(
     if baseline:
         baseline_name = f"{baseline}/test.{test_name}.saved.png"
         test_baseline = compare_images(baseline_name, output_name)
+        generate_image_diffs(baseline_name, output_name, absdiff_name, reldiff_name)
+        # Generate an interactive html plot, only if the test fails
         if not test_baseline:
-            generate_image_diff(baseline_name, output_name, output_name_diff)
+            image_comparison_plot([baseline_name, output_name, reldiff_name],
+                                  ["Baseline", "Test Output", "Normalized Diff"],
+                                  reldiff_name.replace(".png", ".html"))
         test_control = compare_images(baseline_name, output_name_fail, expect_fail=True)
         return (test_baseline and test_control)
     else:
