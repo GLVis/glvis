@@ -1075,7 +1075,8 @@ void communication_thread::execute()
          char c;
          string title;
 
-         *is[0] >> ws >> c; // read the opening char
+         // read the opening char
+         *is[0] >> ws >> c;
          // use the opening char as termination as well
          getline(*is[0], title, c);
 
@@ -1097,7 +1098,8 @@ void communication_thread::execute()
          char c;
          string caption;
 
-         *is[0] >> ws >> c; // read the opening char
+         // read the opening char
+         *is[0] >> ws >> c;
          // use the opening char as termination as well
          getline(*is[0], caption, c);
 
@@ -1119,7 +1121,8 @@ void communication_thread::execute()
          char c;
          string label_x, label_y, label_z;
 
-         *is[0] >> ws >> c; // read the opening char
+         // read the opening char
+         *is[0] >> ws >> c;
          // use the opening char as termination as well
          getline(*is[0], label_x, c);
          *is[0] >> ws >> c;
@@ -1255,9 +1258,10 @@ void communication_thread::execute()
          char c;
          string formatting;
 
-         *is[0] >> ws >> c; // read the opening char
-         getline(*is[0], formatting,
-                 c); // read formatting string & use c for termination
+         // read the opening char
+         *is[0] >> ws >> c;
+         // read formatting string & use c for termination
+         getline(*is[0], formatting, c);
 
          // all processors sent the command
          for (size_t i = 1; i < is.size(); i++)
@@ -1277,9 +1281,10 @@ void communication_thread::execute()
          char c;
          string formatting;
 
-         *is[0] >> ws >> c; // read the opening char
-         getline(*is[0], formatting,
-                 c); // read formatting string & use c for termination
+         // read the opening char
+         *is[0] >> ws >> c;
+         // read formatting string & use c for termination
+         getline(*is[0], formatting, c);
 
          // all processors sent the command
          for (size_t i = 1; i < is.size(); i++)
