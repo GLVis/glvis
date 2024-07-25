@@ -79,7 +79,7 @@ def generate_image_diff(
     I2 = imread(image2_filename)
     # Get image diff
     Idiff = color_distance(I1, I2) # output is NxM [0,1]
-    # Illustrate results
+    # Illustrate results as an interactive plotly figure (html)
     fig = make_subplots(rows=1, cols=3,
                         shared_xaxes=True,
                         shared_yaxes=True,
@@ -109,8 +109,9 @@ def test_stream(
     with open(save_file) as in_f:
         stream_data = in_f.read()
 
-    output_name = f"test.output.{test_name}.png"
-    output_name_fail = f"test.output(zoomed).{test_name}.png"
+    output_name = f"outputs/test.nominal.{test_name}.png"
+    output_name_fail = f"outputs/test.zoom.{test_name}.png"
+    output_name_diff = f"outputs/test-diff.{test_name}.html"
     tmp_file = "test.saved"
     with open(tmp_file, 'w') as out_f:
         out_f.write(stream_data)
@@ -133,13 +134,8 @@ def test_stream(
         baseline_name = f"{baseline}/test.{test_name}.saved.png"
         test_baseline = compare_images(baseline_name, output_name)
         if not test_baseline:
-            generate_image_diff(baseline_name, output_name,
-                                f"test.diff.{test_name}.html")
-        test_control = compare_images(baseline_name, output_name_fail,
-                                      expect_fail=True)
-        if not test_control:
-            generate_image_diff(baseline_name, output_name_fail,
-                                f"test.diff(zoomed).{test_name}.html")
+            generate_image_diff(baseline_name, output_name, output_name_diff)
+        test_control = compare_images(baseline_name, output_name_fail, expect_fail=True)
         return (test_baseline and test_control)
     else:
         print("[IGNORE] No baseline exists to compare against.")
@@ -153,6 +149,8 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--group_name", help="Name of the test group.")
     parser.add_argument("-b", "--baseline", help="Path to test baseline.")
     args = parser.parse_args()
+
+    os.makedirs('outputs')
     if args.save_stream is not None:
         result = test_stream(args.exec_cmd, args.exec_args, args.save_stream, args.baseline)
         if not result:
