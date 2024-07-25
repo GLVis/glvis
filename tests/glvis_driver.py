@@ -150,10 +150,12 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--baseline", help="Path to test baseline.")
     args = parser.parse_args()
 
-    os.makedirs('outputs')
+    # Make a directory for storing test outputs
+    os.makedirs('outputs', exist_ok=True)
+    # Run tests
     if args.save_stream is not None:
         result = test_stream(args.exec_cmd, args.exec_args, args.save_stream, args.baseline)
         if not result:
             sys.exit(1)
     else:
-        raise Exception("test_cmd() is unused. Import from `test_cmd.py`")
+        raise Exception("--save_stream must be specified. test_cmd() is unused. Import from `test_cmd.py`")
