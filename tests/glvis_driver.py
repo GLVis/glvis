@@ -81,8 +81,8 @@ def generate_image_diffs(
     # Get the image diffs (abs and rel)
     Idiffs = color_distance(I1, I2) # output is NxM [0,1]
     # Save 3-channel image to file
-    imsave(f"{absdiff_filename}.png", gray2rgb(Idiffs['abs']))
-    imsave(f"{reldiff_filename}.png", gray2rgb(Idiffs['rel']))
+    imsave(absdiff_filename", gray2rgb(Idiffs['abs']))
+    imsave(reldiff_filename", gray2rgb(Idiffs['rel']))
 
 # For the source= argument in plotly
 def _get_image_src(filename):
