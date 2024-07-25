@@ -1019,6 +1019,8 @@ void PlayScript(istream &scr)
    script = &scr;
    stream_state.keys.clear();
 
+   // Make sure the singleton object returned by GetMainThread() is
+   // initialized from the main thread.
    GetMainThread();
 
    std::thread worker_thread
@@ -1492,6 +1494,8 @@ int main (int argc, char *argv[])
    // check for saved stream file
    if (stream_file != string_none)
    {
+      // Make sure the singleton object returned by GetMainThread() is
+      // initialized from the main thread.
       GetMainThread();
 
       Session stream_session(stream_state.fix_elem_orient,
@@ -1555,6 +1559,8 @@ int main (int argc, char *argv[])
    // server mode, read the mesh and the solution from a socket
    if (input == INPUT_SERVER_MODE)
    {
+      // Make sure the singleton object returned by GetMainThread() is
+      // initialized from the main thread.
       GetMainThread();
 
       // Run server in new thread
@@ -1591,6 +1597,8 @@ int main (int argc, char *argv[])
                       : StreamState::FieldType::MESH;
       }
 
+      // Make sure the singleton object returned by GetMainThread() is
+      // initialized from the main thread.
       GetMainThread();
 
       Session single_session(field_type, std::move(stream_state));
