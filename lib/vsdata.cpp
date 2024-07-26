@@ -93,7 +93,8 @@ int VisualizationSceneScalarData::GetAutoRefineFactor()
 
    if (ref < order_ref)
    {
-      cout << "Warning: the automatic refinement does not resolve the function fully"
+      cout << "Warning: the automatic refinement does not resolve the data fully,\n"
+           << "         consider increasing the refinement by the key 'o'."
            << endl;
    }
 
