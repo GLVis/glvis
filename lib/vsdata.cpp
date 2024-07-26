@@ -116,7 +116,7 @@ int VisualizationSceneScalarData::GetAutoRefineFactor()
    if (nfes)
    {
       const int order = nfes->GetMaxElementOrder();
-      order_ref = std::max(order_ref, 2 * order - 1);
+      order_ref = std::max(order_ref, order);
    }
 
    //limit the total number of elements
