@@ -50,8 +50,17 @@ void VisualizationSceneScalarData::FixValueRange()
 int VisualizationSceneScalarData::GetFunctionAutoRefineFactor(GridFunction &gf)
 {
    Mesh *mesh = gf.FESpace()->GetMesh();
-   const int dim = mesh->Dimension();
    const int order = gf.FESpace()->GetMaxElementOrder();
+
+   //check for integral elements
+   const int dim = mesh->Dimension();
+   const FiniteElementCollection *fec = gf.FESpace()->FEColl();
+   if (fec && fec->GetMapType(dim) == FiniteElement::INTEGRAL)
+   {
+      cout << "Warning: integral elements are non-polynomial in the physical space,\n"
+           << "         consider increasing the refinement by the key 'o'."
+           << endl;
+   }
 
    return order;
 }
