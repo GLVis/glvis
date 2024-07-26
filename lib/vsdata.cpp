@@ -62,7 +62,7 @@ int VisualizationSceneScalarData::GetFunctionAutoRefineFactor(GridFunction &gf)
            << endl;
    }
 
-   return order;
+   return std::max(order, 1);
 }
 
 int VisualizationSceneScalarData::GetAutoRefineFactor()
