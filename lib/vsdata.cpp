@@ -51,56 +51,9 @@ int VisualizationSceneScalarData::GetFunctionAutoRefineFactor(GridFunction &gf)
 {
    Mesh *mesh = gf.FESpace()->GetMesh();
    const int dim = mesh->Dimension();
-   int ref = 1;
-   if (dim == 3)
-   {
-      for (int i = 0; i < mesh->GetNBE(); i++)
-      {
-         const int f = mesh->GetBdrElementFaceIndex(i);
-         const FiniteElementCollection *fec = gf.FESpace()->FEColl();
-         const FiniteElement *fe = NULL;
-         if (fec && fec->GetContType() != FiniteElementCollection::DISCONTINUOUS)
-         {
-            fe = gf.FESpace()->GetFaceElement(f);//might abort instead of returning NULL!
-         }
-         int order;
-         if (fe)
-         {
-            order = fe->GetOrder();
-            if (fe->GetMapType() == FiniteElement::MapType::INTEGRAL)
-            {
-               order += mesh->GetBdrElementTransformation(i)->OrderW();
-            }
-         }
-         else
-         {
-            int ivol, info;
-            mesh->GetBdrElementAdjacentElement(i, ivol, info);
-            const FiniteElement *fevol = gf.FESpace()->GetFE(ivol);
-            order = fevol->GetOrder();
-            if (fevol->GetMapType() == FiniteElement::MapType::INTEGRAL)
-            {
-               order += mesh->GetElementTransformation(ivol)->OrderW();
-            }
-         }
-         ref = std::max(ref, 2 * order - 1);
-      }
-   }
-   else
-   {
-      for (int i = 0; i < mesh->GetNE(); i++)
-      {
-         const FiniteElement &fe = *gf.FESpace()->GetFE(i);
-         int order = fe.GetOrder();
-         if (fe.GetMapType() == FiniteElement::MapType::INTEGRAL)
-         {
-            order += mesh->GetElementTransformation(i)->OrderW();
-         }
-         ref = std::max(ref, 2 * order - 1);
-      }
-   }
+   const int order = gf.FESpace()->GetMaxElementOrder();
 
-   return ref;
+   return order;
 }
 
 int VisualizationSceneScalarData::GetAutoRefineFactor()
