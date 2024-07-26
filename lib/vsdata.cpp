@@ -52,7 +52,7 @@ int VisualizationSceneScalarData::GetFunctionAutoRefineFactor(GridFunction &gf)
    Mesh *mesh = gf.FESpace()->GetMesh();
    const int order = gf.FESpace()->GetMaxElementOrder();
 
-   //check for integral elements
+   // check for integral elements
    const int dim = mesh->Dimension();
    const FiniteElementCollection *fec = gf.FESpace()->FEColl();
    if (fec && fec->GetMapType(dim) == FiniteElement::INTEGRAL)
@@ -70,10 +70,10 @@ int VisualizationSceneScalarData::GetAutoRefineFactor()
    const int dim = mesh->Dimension();
    const int ne = (dim == 3)?(mesh->GetNBE()):(mesh->GetNE());
 
-   //determine the refinement based on the order of the mesh and grid function
+   // determine the refinement based on the order of the mesh and grid function
    int order_ref = GetFunctionAutoRefineFactor();
 
-   //mesh
+   // mesh
    const FiniteElementSpace *nfes = mesh->GetNodalFESpace();
    if (nfes)
    {
@@ -81,12 +81,12 @@ int VisualizationSceneScalarData::GetAutoRefineFactor()
       order_ref = std::max(order_ref, order);
    }
 
-   //limit the total number of elements
+   // limit the total number of elements
    int auto_ref_surf_elem = ne*(order_ref+1)*(order_ref+1);
    auto_ref_surf_elem = std::min(std::max(auto_ref_surf_elem,
                                           auto_ref_min_surf_elem), auto_ref_max_surf_elem);
 
-   //approach the given number of elements
+   // approach the given number of elements
    int ref = 1;
    while (ref < auto_ref_max && ne*(ref+1)*(ref+1) <= auto_ref_surf_elem)
    { ref++; }
