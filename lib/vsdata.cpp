@@ -82,7 +82,7 @@ int VisualizationSceneScalarData::GetAutoRefineFactor()
    }
 
    // limit the total number of elements
-   int auto_ref_surf_elem = ne*(order_ref+1)*(order_ref+1);
+   int auto_ref_surf_elem = ne * order_ref * order_ref;
    auto_ref_surf_elem = std::min(std::max(auto_ref_surf_elem,
                                           auto_ref_min_surf_elem), auto_ref_max_surf_elem);
 
