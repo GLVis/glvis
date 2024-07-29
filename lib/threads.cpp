@@ -914,6 +914,10 @@ void communication_thread::execute()
                   qf_array.SetSize(nproc);
                   qf_array[proc] = new QuadratureFunction(mesh_array[proc], isock);
                }
+               else
+               {
+                  cout << "Stream: unknown command: " << ident << endl;
+               }
                np++;
                if (np == nproc)
                {
