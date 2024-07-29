@@ -13,10 +13,12 @@ Version 4.2.1 (development)
 ===========================
 
 - Changed the auto refinement algorithm, which is now based on the order of
-  the grid function and mesh. The total number of elements is limited to the
-  range between 100k and 2M. If the upper limit is reached a warning is shown
-  and you may still need to press 'o' if you want to increase the refinement
-  even further.
+  the grid function and mesh. The total number of drawn elements (with the
+  non-conforming refinement shading) is limited to the range between 100k and
+  2M, while the maximum refiment is still limited to 16. If one of the upper
+  limits is reached a warning is shown that the data are potentially not resolved
+  and you may still need to press 'o' if you want to increase the refinement even
+  further.
 
 - Significantly improved memory usage.
 
