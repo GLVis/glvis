@@ -829,12 +829,18 @@ void VisualizationSceneSolution3d::NewMeshAndSolution(
       delete [] node_pos;
       node_pos = new double[new_m->GetNV()];
    }
+
+   Mesh *old_m = mesh;
+   mesh = new_m;
+   mesh_coarse = new_mc;
+   sol = new_sol;
+   GridF = new_u;
+
    // If the number of surface elements changes, recompute the refinement factor
-   if (mesh->Dimension() != new_m->Dimension() ||
-       (mesh->Dimension() == 2 && mesh->GetNE() != new_m->GetNE()) ||
-       (mesh->Dimension() == 3 && mesh->GetNBE() != new_m->GetNBE()))
+   if (mesh->Dimension() != old_m->Dimension() ||
+       (mesh->Dimension() == 2 && mesh->GetNE() != old_m->GetNE()) ||
+       (mesh->Dimension() == 3 && mesh->GetNBE() != old_m->GetNBE()))
    {
-      mesh = new_m;
       int ref = GetAutoRefineFactor();
       if (TimesToRefine != ref)
       {
@@ -842,10 +848,6 @@ void VisualizationSceneSolution3d::NewMeshAndSolution(
          cout << "Subdivision factor = " << TimesToRefine << endl;
       }
    }
-   mesh = new_m;
-   mesh_coarse = new_mc;
-   sol = new_sol;
-   GridF = new_u;
    FindNodePos();
 
    DoAutoscale(false);

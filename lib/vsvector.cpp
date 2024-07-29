@@ -418,13 +418,15 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
       delete solx;
    }
 
+   Mesh *old_m = mesh;
+   Mesh *new_mesh = vgf.FESpace()->GetMesh();
+   mesh = new_mesh;
+   mesh_coarse = mc;
    VecGridF = &vgf;
 
    // If the number of elements changes, recompute the refinement factor
-   Mesh *new_mesh = vgf.FESpace()->GetMesh();
-   if (mesh->GetNE() != new_mesh->GetNE())
+   if (mesh->GetNE() != old_m->GetNE())
    {
-      mesh = new_mesh;
       int ref = GetAutoRefineFactor();
       if (TimesToRefine != ref || EdgeRefineFactor != 1)
       {
@@ -438,8 +440,6 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
          cout << "Vector subdivision factor = 1" << endl;
       }
    }
-   mesh = new_mesh;
-   mesh_coarse = mc;
 
    solx = new Vector(mesh->GetNV());
    soly = new Vector(mesh->GetNV());
