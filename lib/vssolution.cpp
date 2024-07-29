@@ -881,7 +881,7 @@ void VisualizationSceneSolution::ToggleShading()
 {
    if (rsol)
    {
-      VisualizationSceneScalarData::ToogleShading();
+      VisualizationSceneScalarData::ToggleShading();
    }
    else
    {

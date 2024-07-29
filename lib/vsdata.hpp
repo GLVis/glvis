@@ -206,7 +206,7 @@ public:
    void SetValueRange(double, double);
 
    virtual void SetShading(Shading, bool) = 0;
-   virtual void ToogleShading() { SetShading((Shading)(((int)shading + 1) % (int)Shading::Max), true); }
+   virtual void ToggleShading() { SetShading((Shading)(((int)shading + 1) % (int)Shading::Max), true); }
    virtual Shading GetShading() { return shading; }
    virtual void SetRefineFactors(int, int) = 0;
    void SetAutoRefineLimits(int max_ref, int max_surf_elem)

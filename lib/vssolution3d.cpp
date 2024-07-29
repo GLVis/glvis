@@ -892,7 +892,7 @@ void VisualizationSceneSolution3d::ToggleShading()
 {
    if (GridF)
    {
-      VisualizationSceneScalarData::ToogleShading();
+      VisualizationSceneScalarData::ToggleShading();
    }
    else
    {
