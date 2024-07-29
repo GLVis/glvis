@@ -30,11 +30,11 @@ protected:
 
    void Init();
 
-   virtual void GetRefinedValues(int i, const IntegrationRule &ir,
-                                 Vector &vals, DenseMatrix &tr);
-   virtual int GetRefinedValuesAndNormals(int i, const IntegrationRule &ir,
-                                          Vector &vals, DenseMatrix &tr,
-                                          DenseMatrix &normals);
+   void GetRefinedValues(int i, const IntegrationRule &ir,
+                         Vector &vals, DenseMatrix &tr) override;
+   int GetRefinedValuesAndNormals(int i, const IntegrationRule &ir,
+                                  Vector &vals, DenseMatrix &tr,
+                                  DenseMatrix &normals) override;
 
    double (*Vec2Scalar)(double, double);
 
@@ -45,7 +45,7 @@ protected:
    Vector vc0;
    IsoparametricTransformation T0;
 
-   virtual int GetFunctionAutoRefineFactor();
+   int GetFunctionAutoRefineFactor() override;
 
 public:
    VisualizationSceneVector(Mesh &m, Vector &sx, Vector &sy, Mesh *mc = NULL);
@@ -55,14 +55,14 @@ public:
 
    virtual ~VisualizationSceneVector();
 
-   virtual std::string GetHelpString() const;
+   std::string GetHelpString() const override;
 
    void NPressed();
    void PrepareDisplacedMesh();
-   virtual void PrepareLines()
+   void PrepareLines() override
    { VisualizationSceneSolution::PrepareLines(); PrepareDisplacedMesh(); }
 
-   virtual void ToggleDrawElems();
+   void ToggleDrawElems() override;
 
    virtual void PrepareVectorField();
    void ToggleVectorField();
@@ -76,11 +76,11 @@ public:
       }
    }
 
-   virtual gl3::SceneInfo GetSceneObjs();
+   gl3::SceneInfo GetSceneObjs() override;
 
-   virtual void glTF_Export();
+   void glTF_Export() override;
 
-   virtual void EventUpdateColors() { Prepare(); PrepareVectorField(); }
+   void EventUpdateColors() override { Prepare(); PrepareVectorField(); }
 
    // refinement factor for the vectors
    int RefineFactor;

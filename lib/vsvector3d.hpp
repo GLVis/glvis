@@ -33,7 +33,7 @@ protected:
    Array<int> vflevel;
    Array<double> dvflevel;
 
-   virtual int GetFunctionAutoRefineFactor();
+   int GetFunctionAutoRefineFactor() override;
 
 public:
    int ianim, ianimd, ianimmax, drawdisp;
@@ -46,12 +46,12 @@ public:
 
    virtual ~VisualizationSceneVector3d();
 
-   virtual std::string GetHelpString() const;
+   std::string GetHelpString() const override;
 
    void NPressed();
-   virtual void PrepareFlat();
-   virtual void Prepare();
-   virtual void PrepareLines();
+   void PrepareFlat() override;
+   void Prepare() override;
+   void PrepareLines() override;
 
    void PrepareFlat2();
    void PrepareLines2();
@@ -66,13 +66,13 @@ public:
    void SetScalarFunction();
    void ToggleScalarFunction();
 
-   virtual void PrepareCuttingPlane();
+   void PrepareCuttingPlane() override;
 
    void ToggleDisplacements() {drawdisp = (drawdisp+1)%2;};
 
-   virtual gl3::SceneInfo GetSceneObjs();
+   gl3::SceneInfo GetSceneObjs() override;
 
-   virtual void EventUpdateColors()
+   void EventUpdateColors() override
    { Prepare(); PrepareVectorField(); PrepareCuttingPlane(); };
 
    void ToggleVectorFieldLevel(int v);
