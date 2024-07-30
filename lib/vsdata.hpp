@@ -78,7 +78,7 @@ protected:
 
    int scaling, colorbar, drawaxes;
    Shading shading;
-   int auto_ref_max, auto_ref_min_surf_elem, auto_ref_max_surf_elem;
+   int auto_ref_max, auto_ref_min_surf_vert, auto_ref_max_surf_vert;
 
    // Formatter for axes & colorbar numbers. Set defaults.
    function<string(double)> axis_formatter = NumberFormatter(4, 'd', false);
@@ -209,10 +209,10 @@ public:
    virtual void ToggleShading() { SetShading((Shading)(((int)shading + 1) % (int)Shading::Max), true); }
    virtual Shading GetShading() { return shading; }
    virtual void SetRefineFactors(int, int) = 0;
-   void SetAutoRefineLimits(int max_ref, int max_surf_elem)
+   void SetAutoRefineLimits(int max_ref, int max_surf_vert)
    {
       auto_ref_max = max_ref;
-      auto_ref_max_surf_elem = max_surf_elem;
+      auto_ref_max_surf_vert = max_surf_vert;
    }
    virtual void AutoRefine() = 0;
    virtual void ToggleAttributes(Array<int> &attr_list) = 0;

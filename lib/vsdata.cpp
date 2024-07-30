@@ -82,13 +82,13 @@ int VisualizationSceneScalarData::GetAutoRefineFactor()
    }
 
    // limit the total number of elements
-   int auto_ref_surf_elem = ne * order_ref * order_ref;
-   auto_ref_surf_elem = std::min(std::max(auto_ref_surf_elem,
-                                          auto_ref_min_surf_elem), auto_ref_max_surf_elem);
+   int auto_ref_surf_vert = ne * (order_ref+1) * (order_ref+1);
+   auto_ref_surf_vert = std::min(std::max(auto_ref_surf_vert,
+                                          auto_ref_min_surf_vert), auto_ref_max_surf_vert);
 
    // approach the given number of elements
    int ref = 1;
-   while (ref < auto_ref_max && ne*(ref+1)*(ref+1) <= auto_ref_surf_elem)
+   while (ref < auto_ref_max && ne*(ref+2)*(ref+2) <= auto_ref_surf_vert)
    { ref++; }
 
    if (ref < order_ref)
@@ -1375,8 +1375,8 @@ void VisualizationSceneScalarData::Init()
    scaling = 0;
    drawaxes = colorbar = 0;
    auto_ref_max = 16;
-   auto_ref_min_surf_elem = 100000;
-   auto_ref_max_surf_elem = 2000000;
+   auto_ref_min_surf_vert = 100000;
+   auto_ref_max_surf_vert = 2000000;
    minv = 0.0;
    maxv = 1.0;
    logscale = false;
