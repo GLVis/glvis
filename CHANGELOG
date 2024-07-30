@@ -12,13 +12,11 @@
 Version 4.2.1 (development)
 ===========================
 
-- Changed the auto refinement algorithm, which is now based on the order of
-  the grid function and mesh. The total number of drawn elements (with the
-  non-conforming refinement shading) is limited to the range between 100k and
-  2M, while the maximum refiment is still limited to 16. If one of the upper
-  limits is reached a warning is shown that the data are potentially not resolved
-  and you may still need to press 'o' if you want to increase the refinement even
-  further.
+- The GLVis auto refinement algorithm now takes into account the order of the
+  data (mesh and grid function). The new refinement is chosen to be sufficient
+  for resolving the curvature of the data, but only if we can do that with less
+  than 2M vertices and 16 refinements. Otherwise, we print a warning and the
+  user may still needs to press 'o' to fully resolve the data.
 
 - Significantly improved memory usage.
 
