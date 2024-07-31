@@ -695,12 +695,12 @@ bool StreamState::SetNewMeshAndSolution(StreamState new_state,
    if (new_state.mesh->SpaceDimension() == mesh->SpaceDimension() &&
        new_state.grid_f->VectorDim() == grid_f->VectorDim())
    {
+      ResetMeshAndSolution(new_state, vs);
+
       internal.grid_f = std::move(new_state.internal.grid_f);
       internal.mesh = std::move(new_state.internal.mesh);
       internal.quad_f = std::move(new_state.internal.quad_f);
       internal.mesh_quad = std::move(new_state.internal.mesh_quad);
-
-      ResetMeshAndSolution(vs);
 
       return true;
    }
@@ -710,40 +710,42 @@ bool StreamState::SetNewMeshAndSolution(StreamState new_state,
    }
 }
 
-void StreamState::ResetMeshAndSolution(VisualizationScene* vs)
+void StreamState::ResetMeshAndSolution(StreamState &ss, VisualizationScene* vs)
 {
-   if (mesh->SpaceDimension() == 2)
+   if (ss.mesh->SpaceDimension() == 2)
    {
-      if (grid_f->VectorDim() == 1)
+      if (ss.grid_f->VectorDim() == 1)
       {
          VisualizationSceneSolution *vss =
             dynamic_cast<VisualizationSceneSolution *>(vs);
-         grid_f->GetNodalValues(sol);
-         vss->NewMeshAndSolution(mesh.get(), mesh_quad.get(), &sol, grid_f.get());
+         ss.grid_f->GetNodalValues(ss.sol);
+         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
+                                 ss.grid_f.get());
       }
       else
       {
          VisualizationSceneVector *vsv =
             dynamic_cast<VisualizationSceneVector *>(vs);
-         vsv->NewMeshAndSolution(*grid_f, mesh_quad.get());
+         vsv->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
       }
    }
    else
    {
-      if (grid_f->VectorDim() == 1)
+      if (ss.grid_f->VectorDim() == 1)
       {
          VisualizationSceneSolution3d *vss =
             dynamic_cast<VisualizationSceneSolution3d *>(vs);
-         grid_f->GetNodalValues(sol);
-         vss->NewMeshAndSolution(mesh.get(), mesh_quad.get(), &sol, grid_f.get());
+         ss.grid_f->GetNodalValues(ss.sol);
+         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
+                                 ss.grid_f.get());
       }
       else
       {
-         ProjectVectorFEGridFunction();
+         ss.ProjectVectorFEGridFunction();
 
          VisualizationSceneVector3d *vss =
             dynamic_cast<VisualizationSceneVector3d *>(vs);
-         vss->NewMeshAndSolution(mesh.get(), mesh_quad.get(), grid_f.get());
+         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.grid_f.get());
       }
    }
 }

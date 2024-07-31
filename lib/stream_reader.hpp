@@ -123,10 +123,16 @@ public:
                               VisualizationScene* vs);
 
    /// Updates the given VisualizationScene pointer with the new data
-   /// of this object.
+   /// of the given StreamState object.
    /// @note: Use with caution when the update is compatible
    /// @see SetNewMeshAndSolution()
-   void ResetMeshAndSolution(VisualizationScene* vs);
+   static void ResetMeshAndSolution(StreamState &ss, VisualizationScene* vs);
+
+   /// Updates the given VisualizationScene pointer with the new data
+   /// of this object.
+   /// @note: Use with caution when the update is compatible and the old data are available
+   /// @see SetNewMeshAndSolution()
+   void ResetMeshAndSolution(VisualizationScene* vs) { ResetMeshAndSolution(*this, vs); }
 };
 
 #endif // GLVIS_STREAM_READER_HPP
