@@ -91,8 +91,11 @@ public:
    /// Set a (checkerboard) solution when only the mesh is given
    void SetMeshSolution();
 
-   /// Set a quadrature function solution producing a proxy grid function
+   /// Set the quadrature function representation producing a proxy grid function
    void SetQuadSolution(QuadSolution type = QuadSolution::LOR_ClosedGL);
+
+   /// Switch the quadrature function represenation and update the visualization
+   void SwitchQuadSolution(QuadSolution type, VisualizationScene* vs);
 
    /// Get the current representation of quadrature solution
    inline QuadSolution GetQuadSolution() const { return quad_sol; }
@@ -127,12 +130,6 @@ public:
    /// @note: Use with caution when the update is compatible
    /// @see SetNewMeshAndSolution()
    static void ResetMeshAndSolution(StreamState &ss, VisualizationScene* vs);
-
-   /// Updates the given VisualizationScene pointer with the new data
-   /// of this object.
-   /// @note: Use with caution when the update is compatible and the old data are available
-   /// @see SetNewMeshAndSolution()
-   void ResetMeshAndSolution(VisualizationScene* vs) { ResetMeshAndSolution(*this, vs); }
 };
 
 #endif // GLVIS_STREAM_READER_HPP

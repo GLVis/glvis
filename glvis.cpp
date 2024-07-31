@@ -1995,8 +1995,6 @@ void SwitchQuadSolution()
 {
    int iqs = ((int)stream_state.GetQuadSolution()+1)
              % ((int)StreamState::QuadSolution::MAX);
-   stream_state.SetQuadSolution((StreamState::QuadSolution)iqs);
-   stream_state.Extrude1DMeshAndSolution();
-   stream_state.ResetMeshAndSolution(vs);
+   stream_state.SwitchQuadSolution((StreamState::QuadSolution)iqs, vs);
    SendExposeEvent();
 }

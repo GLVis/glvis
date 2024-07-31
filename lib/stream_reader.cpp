@@ -324,6 +324,20 @@ void StreamState::SetQuadSolution(QuadSolution type)
    quad_sol = type;
 }
 
+void StreamState::SwitchQuadSolution(QuadSolution type, VisualizationScene *vs)
+{
+   unique_ptr<Mesh> old_mesh;
+   //we must backup the refined mesh to prevent its deleting
+   if (mesh_quad.get())
+   {
+      internal.mesh.swap(internal.mesh_quad);
+      internal.mesh_quad.swap(old_mesh);
+   }
+   SetQuadSolution(type);
+   Extrude1DMeshAndSolution();
+   ResetMeshAndSolution(*this, vs);
+}
+
 // Read the content of an input stream (e.g. from socket/file)
 StreamState::FieldType StreamState::ReadStream(istream &is,
                                                const string &data_type)
