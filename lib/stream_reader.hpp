@@ -110,7 +110,7 @@ public:
    ProjectVectorFEGridFunction(std::unique_ptr<mfem::GridFunction> gf);
 
    void ProjectVectorFEGridFunction()
-   { internal.grid_f = std::move(ProjectVectorFEGridFunction(std::move(internal.grid_f))); }
+   { internal.grid_f = ProjectVectorFEGridFunction(std::move(internal.grid_f)); }
 
    /// Sets a new mesh and solution from another StreamState object, and
    /// updates the given VisualizationScene pointer with the new data.
