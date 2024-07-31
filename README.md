@@ -345,5 +345,5 @@ summarized as follows:
 
 Note that, for highly-varying data or large meshes, this auto-selected
 subdivision factor may not be sufficient for accurate representation. In such
-cases the sudivision can be manually adjusted using the keys <kbd>o</kbd> /
+cases the subdivision can be manually adjusted using the keys <kbd>o</kbd> /
 <kbd>O</kbd>, described above.
