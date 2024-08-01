@@ -327,7 +327,7 @@ void StreamState::SetQuadSolution(QuadSolution type)
 void StreamState::SwitchQuadSolution(QuadSolution type, VisualizationScene *vs)
 {
    unique_ptr<Mesh> old_mesh;
-   //we must backup the refined mesh to prevent its deleting
+   // we must backup the refined mesh to prevent its deleting
    if (mesh_quad.get())
    {
       internal.mesh.swap(internal.mesh_quad);
