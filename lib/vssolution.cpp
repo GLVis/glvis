@@ -589,10 +589,15 @@ void VisualizationSceneSolution::ToggleDrawElems()
 void VisualizationSceneSolution::NewMeshAndSolution(
    Mesh *new_m, Mesh *new_mc, Vector *new_sol, GridFunction *new_u)
 {
+   Mesh *old_m = mesh;
+   mesh = new_m;
+   mesh_coarse = new_mc;
+   sol = new_sol;
+   rsol = new_u;
+
    // If the number of elements changes, recompute the refinement factor
-   if (mesh->GetNE() != new_m->GetNE())
+   if (mesh->GetNE() != old_m->GetNE())
    {
-      mesh = new_m;
       int ref = GetAutoRefineFactor();
       if (TimesToRefine != ref || EdgeRefineFactor != 1)
       {
@@ -601,10 +606,6 @@ void VisualizationSceneSolution::NewMeshAndSolution(
          cout << "Subdivision factors = " << TimesToRefine << ", 1" << endl;
       }
    }
-   mesh = new_m;
-   mesh_coarse = new_mc;
-   sol = new_sol;
-   rsol = new_u;
 
    have_sol_range = false;
    DoAutoscale(false);
@@ -881,7 +882,7 @@ void VisualizationSceneSolution::ToggleShading()
 {
    if (rsol)
    {
-      VisualizationSceneScalarData::ToogleShading();
+      VisualizationSceneScalarData::ToggleShading();
    }
    else
    {
@@ -988,16 +989,11 @@ void VisualizationSceneSolution::SetRefineFactors(int tot, int bdr)
    }
 }
 
-int VisualizationSceneSolution::GetAutoRefineFactor()
+int VisualizationSceneSolution::GetFunctionAutoRefineFactor()
 {
-   int ne = mesh->GetNE(), ref = 1;
+   if (!rsol) { return 1; }
 
-   while (ref < auto_ref_max && ne*(ref+1)*(ref+1) <= auto_ref_max_surf_elem)
-   {
-      ref++;
-   }
-
-   return ref;
+   return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(*rsol);
 }
 
 void VisualizationSceneSolution::AutoRefine()

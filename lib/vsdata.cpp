@@ -47,6 +47,60 @@ void VisualizationSceneScalarData::FixValueRange()
    }
 }
 
+int VisualizationSceneScalarData::GetFunctionAutoRefineFactor(GridFunction &gf)
+{
+   Mesh *mesh = gf.FESpace()->GetMesh();
+   const int order = gf.FESpace()->GetMaxElementOrder();
+
+   // check for integral elements
+   const int dim = mesh->Dimension();
+   const FiniteElementCollection *fec = gf.FESpace()->FEColl();
+   if (fec && fec->GetMapType(dim) == FiniteElement::INTEGRAL)
+   {
+      cout << "Warning: integral elements are non-polynomial in the physical space,\n"
+           << "         consider increasing the refinement by the key 'o'."
+           << endl;
+   }
+
+   return std::max(order, 1);
+}
+
+int VisualizationSceneScalarData::GetAutoRefineFactor()
+{
+   const int dim = mesh->Dimension();
+   const int ne = (dim == 3)?(mesh->GetNBE()):(mesh->GetNE());
+
+   // determine the refinement based on the order of the mesh and grid function
+   int order_ref = GetFunctionAutoRefineFactor();
+
+   // mesh
+   const FiniteElementSpace *nfes = mesh->GetNodalFESpace();
+   if (nfes)
+   {
+      const int order = nfes->GetMaxElementOrder();
+      order_ref = std::max(order_ref, order);
+   }
+
+   // limit the total number of vertices
+   int auto_ref_surf_vert = ne * (order_ref+1) * (order_ref+1);
+   auto_ref_surf_vert = std::min(std::max(auto_ref_surf_vert,
+                                          auto_ref_min_surf_vert), auto_ref_max_surf_vert);
+
+   // approach the given number of vertices
+   int ref = 1;
+   while (ref < auto_ref_max && ne*(ref+2)*(ref+2) <= auto_ref_surf_vert)
+   { ref++; }
+
+   if (ref < order_ref)
+   {
+      cout << "Warning: the automatic refinement does not resolve the data fully,\n"
+           << "         consider increasing the refinement by the key 'o'."
+           << endl;
+   }
+
+   return ref;
+}
+
 void VisualizationSceneScalarData::DoAutoscale(bool prepare)
 {
    if (autoscale == 1)
@@ -1321,7 +1375,8 @@ void VisualizationSceneScalarData::Init()
    scaling = 0;
    drawaxes = colorbar = 0;
    auto_ref_max = 16;
-   auto_ref_max_surf_elem = 20000;
+   auto_ref_min_surf_vert = 100000;
+   auto_ref_max_surf_vert = 2000000;
    minv = 0.0;
    maxv = 1.0;
    logscale = false;

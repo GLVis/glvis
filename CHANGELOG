@@ -12,6 +12,13 @@
 Version 4.2.1 (development)
 ===========================
 
+- The GLVis auto refinement algorithm now takes into account the order of the
+  data (mesh and grid function). The new refinement is chosen to be sufficient
+  for resolving the curvature of the data, but only if we can do that with less
+  than 2M vertices and 16 refinements. Otherwise, we print a warning and the
+  user may still need to press 'o' to fully resolve the data. For more details,
+  see the section Auto-refinement in README.md.
+
 - Significantly improved memory usage.
 
 - Add support to visualize solutions on 1D elements embedded in 2D and 3D.
