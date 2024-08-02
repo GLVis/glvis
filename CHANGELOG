@@ -9,8 +9,8 @@
                              https://glvis.org
 
 
-Version 4.3 released on Jul 15, 2024
-====================================
+Version 4.3 released on Aug 7, 2024
+===================================
 
 - Added visualization of quadrature data (QuadratureFunction in MFEM). Both
   loading from file, with the new command line argument '-q', or from a socket
@@ -21,6 +21,13 @@ Version 4.3 released on Jul 15, 2024
   supported only for tensor finite elements with the first two options. With the
   first option, only the mesh lines of the original mesh are visualized. This
   feature is also supported for the element-wise cutting plane in 3D (cplane=2).
+
+- The GLVis auto refinement algorithm now takes into account the order of the
+  data (mesh and grid function). The new refinement is chosen to be sufficient
+  for resolving the curvature of the data, but only if we can do that with less
+  than 2M vertices and 16 refinements. Otherwise, we print a warning and the
+  user may still need to press 'o' to fully resolve the data. For more details,
+  see the section Auto-refinement in README.md.
 
 - Added option to specify the floating point number formatting in GLVis axes and
   colorbar. Use 'Alt+a' for the axes and 'Alt+c' for the colorbar. Formatting
