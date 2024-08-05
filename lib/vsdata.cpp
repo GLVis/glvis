@@ -1436,15 +1436,15 @@ void VisualizationSceneScalarData::Init()
       wnd->setOnKeyDown(SDLK_EXCLAIM, KeyToggleTexture);
    }
 
-   //Set_Light();
+   // Set_Light();
 
-   //glEnable (GL_COLOR_MATERIAL);
-   //glShadeModel (GL_SMOOTH);
+   // glEnable (GL_COLOR_MATERIAL);
+   // glShadeModel (GL_SMOOTH);
 
-   //gl->enableLight();
-   //gl->enableDepthTest();
-   //glEnable(GL_AUTO_NORMAL);
-   //glEnable(GL_NORMALIZE);
+   // gl->enableLight();
+   // gl->enableDepthTest();
+   // glEnable(GL_AUTO_NORMAL);
+   // glEnable(GL_NORMALIZE);
 
    if (GetMultisample() > 0)
    {

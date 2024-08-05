@@ -1156,7 +1156,7 @@ inline GL2PSvertex CreatePrintVtx(gl3::FeedbackVertex v)
 
 void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
 {
-   //print lines
+   // print lines
    for (size_t i = 0; i < cbuf.lines.size(); i += 2)
    {
       GL2PSvertex lineOut[2] =
@@ -1214,7 +1214,7 @@ void KeyCtrlP()
                        // GL2PS_OCCLUSION_CULL |
                        // GL2PS_BEST_ROOT |
                        GL2PS_SILENT |
-                       //GL2PS_DRAW_BACKGROUND |
+                       // GL2PS_DRAW_BACKGROUND |
                        GL2PS_NO_BLENDING |
                        GL2PS_NO_OPENGL_CONTEXT,
                        GL_RGBA, 0, NULL, 16, 16, 16, 0, fp, "a" );

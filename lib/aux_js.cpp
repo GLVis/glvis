@@ -237,7 +237,7 @@ using StringArray = std::vector<std::string>;
 int processParallelStreams(StreamState & state, const StringArray & streams,
                            std::stringstream * commands = nullptr)
 {
-   //std::cerr << "got " << streams.size() << " streams" << std::endl;
+   // std::cerr << "got " << streams.size() << " streams" << std::endl;
    // HACK: match unique_ptr<istream> interface for ReadStreams:
    std::vector<std::stringstream> sstreams(streams.size());
    StreamCollection istreams(streams.size());
@@ -248,7 +248,7 @@ int processParallelStreams(StreamState & state, const StringArray & streams,
       std::string word;
       int nproc, rank;
       sstreams[i] >> word >> nproc >> rank;
-      //std::cerr << "packing " << rank+1 << "/" << nproc << std::endl;
+      // std::cerr << "packing " << rank+1 << "/" << nproc << std::endl;
       istreams[i] = std::unique_ptr<std::istream>(&sstreams[i]);
    }
 

@@ -336,7 +336,7 @@ void FFGLDevice::captureXfbBuffer(PaletteState& pal, CaptureBuffer& cbuf,
    if (disp_lists[hnd].layout == VertexTex::layout
        || disp_lists[hnd].layout == VertexNormTex::layout)
    {
-      //capture texture values too
+      // capture texture values too
       // [ X Y Z ] [ R G B A ] [ U V - - ]
       fbType = GL_3D_COLOR_TEXTURE;
       fbStride = 11;
