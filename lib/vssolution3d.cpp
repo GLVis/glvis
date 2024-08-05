@@ -1458,8 +1458,7 @@ void VisualizationSceneSolution3d::DrawCoarseSurfEdges(
 
    // we assume that mesh_course is used only for tensor finite elements,
    // like for representation of quadratures, so in 2D it is square
-   const int geom = (dim == 3)?(Geometry::Type::CUBE)
-                    :(Geometry::Type::SQUARE); // ref.embeddings[e1].geom; // <-- bugged!?
+   const int geom = (dim == 3)?(Geometry::Type::CUBE):(Geometry::Type::SQUARE);
    const int mat = ref.embeddings[e1].matrix;
    const DenseMatrix &emb_mat = ref.point_matrices[geom](mat);
    trans.SetPointMat(emb_mat);

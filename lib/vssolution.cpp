@@ -1727,8 +1727,7 @@ void VisualizationSceneSolution::PrepareLines()
 
          // we assume that mesh_course is used only for tensor finite elements,
          // like for representation of quadratures, so in 2D it is square
-         const int geom =
-            Geometry::Type::SQUARE; // ref.embeddings[i].geom; // <-- bugged!?
+         const int geom = Geometry::Type::SQUARE;
          const int mat = ref.embeddings[i].matrix;
          const DenseMatrix &emb_mat = ref.point_matrices[geom](mat);
          trans.SetPointMat(emb_mat);
@@ -2206,8 +2205,7 @@ void VisualizationSceneSolution::PrepareLines3()
          auto &ref = mesh->GetRefinementTransforms();
          // we assume that mesh_course is used only for tensor finite elements,
          // like for representation of quadratures, so in 2D it is square
-         const int geom =
-            Geometry::Type::SQUARE; // ref.embeddings[i].geom; // <-- bugged!?
+         const int geom = Geometry::Type::SQUARE;
          const int mat = ref.embeddings[i].matrix;
          const DenseMatrix &emb_mat = ref.point_matrices[geom](mat);
          IsoparametricTransformation trans;
