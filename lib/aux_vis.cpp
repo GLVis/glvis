@@ -232,6 +232,18 @@ void SendKeySequence(const char *seq)
             case '7': // F7
                wnd->signalKeyDown(SDLK_F7);
                break;
+            case '1': // F11 or F12
+               key++;
+               switch (*key)
+               {
+                  case '1': // F11
+                     wnd->signalKeyDown(SDLK_F11);
+                     break;
+                  case '2': // F12
+                     wnd->callKeyDown(SDLK_F12);
+                     break;
+               }
+               break;
             case '.': // Keypad ./Del
                wnd->signalKeyDown(SDLK_PERIOD);
                break;
@@ -290,6 +302,18 @@ void CallKeySequence(const char *seq)
                break;
             case '7': // F7
                wnd->callKeyDown(SDLK_F7);
+               break;
+            case '1': // F11 or F12
+               key++;
+               switch (*key)
+               {
+                  case '1': // F11
+                     wnd->callKeyDown(SDLK_F11);
+                     break;
+                  case '2': // F12
+                     wnd->callKeyDown(SDLK_F12);
+                     break;
+               }
                break;
             case '.': // Keypad ./Del
                wnd->callKeyDown(SDLK_PERIOD);
