@@ -40,6 +40,7 @@ set(stream_tests
     "mobius-strip"
     "navier"
     "quad"
+    "quadrature-lor"
     "remhos"
     "shaper"
     "shifted"
