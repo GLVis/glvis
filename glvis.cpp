@@ -1525,7 +1525,7 @@ int main (int argc, char *argv[])
       return 0;
    }
 
-   //turn off the server mode if other options are present
+   // turn off the server mode if other options are present
    if (input & ~INPUT_SERVER_MODE) { input &= ~INPUT_SERVER_MODE; }
 
    // print help for wrong input

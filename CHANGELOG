@@ -9,34 +9,8 @@
                              https://glvis.org
 
 
-Version 4.2.1 (development)
-===========================
-
-- The GLVis auto refinement algorithm now takes into account the order of the
-  data (mesh and grid function). The new refinement is chosen to be sufficient
-  for resolving the curvature of the data, but only if we can do that with less
-  than 2M vertices and 16 refinements. Otherwise, we print a warning and the
-  user may still need to press 'o' to fully resolve the data. For more details,
-  see the section Auto-refinement in README.md.
-
-- Significantly improved memory usage.
-
-- Add support to visualize solutions on 1D elements embedded in 2D and 3D.
-
-- Added support for scalar integral finite elements, where calculation of the
-  surface normals was not implemented and was crashing GLVis. The normals are
-  approximately calculated from the point-wise projected value-based elements.
-
-- Added two new modes for visualization of vector fields in 2D, placing the
-  arrows above the plotted surface and using a single color.
-
-- Added a compilation parameter for the default font size.
-
-- Added option to specify the floating point number formatting in GLVis axes and
-  colorbar. Use 'Alt+a' for the axes and 'Alt+c' for the colorbar. Formatting
-  can also be specified in socket stream or glvis script with axis_numberformat
-  or colorbar_numberformat, followed by a C-like formatting string, for example
-  "colorbar_numberformat '%+06.1f'".
+Version 4.3 released on Aug 7, 2024
+===================================
 
 - Added visualization of quadrature data (QuadratureFunction in MFEM). Both
   loading from file, with the new command line argument '-q', or from a socket
@@ -46,7 +20,35 @@ Version 4.2.1 (development)
   (L2 projection). Use 'Q' to switch between them. High-order quadrature data is
   supported only for tensor finite elements with the first two options. With the
   first option, only the mesh lines of the original mesh are visualized. This
-  feature is also supported for the element-wise cutting plane (cplane=2).
+  feature is also supported for the element-wise cutting plane in 3D (cplane=2).
+
+- The GLVis auto refinement algorithm now takes into account the order of the
+  data (mesh and grid function). The new refinement is chosen to be sufficient
+  for resolving the curvature of the data, but only if we can do that with less
+  than 2M vertices and 16 refinements. Otherwise, we print a warning and the
+  user may still need to press 'o' to fully resolve the data. For more details,
+  see the section Auto-refinement in README.md.
+
+- Added option to specify the floating point number formatting in GLVis axes and
+  colorbar. Use 'Alt+a' for the axes and 'Alt+c' for the colorbar. Formatting
+  can also be specified in socket stream or glvis script with axis_numberformat
+  or colorbar_numberformat, followed by a C-like formatting string, for example
+  "colorbar_numberformat '%+06.1f'".
+
+- Added a building option for setting the default font size.
+
+- Added support for scalar integral finite elements, where calculation of the
+  surface normals was not implemented and was crashing GLVis. The normals are
+  approximately calculated from the point-wise projected value-based elements.
+
+- Added two new modes for visualization of vector fields in 2D, placing the
+  arrows above the plotted surface and using a single color.
+
+- Added support to visualize solutions on 1D elements embedded in 2D and 3D.
+
+- Significantly improved memory usage.
+
+- Various other bugfixes and improvements.
 
 
 Version 4.2 released on May 23, 2022
