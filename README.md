@@ -8,7 +8,7 @@
 
                              https://glvis.org
 
-<a href="https://github.com/GLVis/glvis/releases/latest"><img alt="Release" src="https://img.shields.io/badge/release-v4.2-success.svg"></a>
+<a href="https://github.com/GLVis/glvis/releases/latest"><img alt="Release" src="https://img.shields.io/badge/release-v4.3-success.svg"></a>
 <a href="https://github.com/GLVis/glvis/actions/workflows/builds.yml"><img alt="Build" src="https://github.com/GLVis/glvis/actions/workflows/builds.yml/badge.svg"></a>
 <a href="https://github.com/glvis/glvis/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-BSD-success.svg"></a>
 <a href="https://glvis.github.io/doxygen/html/index.html"><img alt="Doxygen" src="https://img.shields.io/badge/code-documented-success.svg"></a>
@@ -165,7 +165,7 @@ Key commands
     functions and curvilinear elements (use <kbd>o</kbd> / <kbd>O</kbd> to control subdivisions)
 - <kbd>\\</kbd> – Set light source position (see <kbd>Right</kbd> + <kbd>Shift</kbd>)
 - <kbd>*</kbd> / <kbd>/</kbd> – Zoom in/out
-- <kbd>+</kbd> / <kbd>-</kbd> – Stretch/compree in `z`-direction
+- <kbd>+</kbd> / <kbd>-</kbd> – Stretch/compress in `z`-direction
 - <kbd>[</kbd> / <kbd>]</kbd> – Shrink/enlarge the bounding box (relative to the colorbar)
 - <kbd>(</kbd> / <kbd>)</kbd> – Shrink/enlarge the visualization window
 - <kbd>.</kbd> – Start/stop `z`-spinning (speed/direction can be controlled with <kbd>0</kbd> / <kbd>Enter</kbd>)

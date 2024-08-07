@@ -757,7 +757,7 @@ int VisualizationSceneSolution::GetRefinedValuesAndNormals(
             {
                const IntegrationPoint &ip = nodes.IntPoint(n);
                Trans->SetIntPoint(&ip);
-               lval(n) /= Trans->Weight();//value = dof / |J|
+               lval(n) /= Trans->Weight(); // value = dof / |J|
             }
 
             // Gradient calculation
@@ -1725,10 +1725,9 @@ void VisualizationSceneSolution::PrepareLines()
 
          MFEM_ASSERT(pointmat.Size() == 4, "Not a quadrilateral!");
 
-         //we assume that mesh_course is used only for tensor finite elements,
-         //like for representation of quadratures, so in 2D it is square
-         const int geom =
-            Geometry::Type::SQUARE; //ref.embeddings[i].geom; //<---- bugged!?
+         // we assume that mesh_course is used only for tensor finite elements,
+         // like for representation of quadratures, so in 2D it is square
+         const int geom = Geometry::Type::SQUARE;
          const int mat = ref.embeddings[i].matrix;
          const DenseMatrix &emb_mat = ref.point_matrices[geom](mat);
          trans.SetPointMat(emb_mat);
@@ -1741,7 +1740,7 @@ void VisualizationSceneSolution::PrepareLines()
             emb_pointmat.GetColumnReference(j, emb_ip1);
             emb_pointmat.GetColumnReference(jp1, emb_ip2);
 
-            //check if we are on the parent edge
+            // check if we are on the parent edge
             if (!((   emb_ip1(0) == 0. && emb_ip2(0) == 0.)
                   || (emb_ip1(0) == 1. && emb_ip2(0) == 1.)
                   || (emb_ip1(1) == 0. && emb_ip2(1) == 0.)
@@ -1925,8 +1924,8 @@ void VisualizationSceneSolution::PrepareVertexNumbering1()
    DenseMatrix pointmat;
    Array<int> vertices;
 
-   // Draw the vertices for each element.  This is redundant, except
-   // when the elements or domains are shrunk.
+   // Draw the vertices for each element. This is redundant, except when the
+   // elements or domains are shrunk.
 
    const int ne = mesh->GetNE();
    for (int k = 0; k < ne; k++)
@@ -2204,10 +2203,9 @@ void VisualizationSceneSolution::PrepareLines3()
       if (mesh_coarse)
       {
          auto &ref = mesh->GetRefinementTransforms();
-         //we assume that mesh_course is used only for tensor finite elements,
-         //like for representation of quadratures, so in 2D it is square
-         const int geom =
-            Geometry::Type::SQUARE; //ref.embeddings[i].geom; //<---- bugged!?
+         // we assume that mesh_course is used only for tensor finite elements,
+         // like for representation of quadratures, so in 2D it is square
+         const int geom = Geometry::Type::SQUARE;
          const int mat = ref.embeddings[i].matrix;
          const DenseMatrix &emb_mat = ref.point_matrices[geom](mat);
          IsoparametricTransformation trans;
@@ -2220,7 +2218,7 @@ void VisualizationSceneSolution::PrepareLines3()
             trans.Transform(RefG->RefPts[RE[2*k]], emb_ip1);
             trans.Transform(RefG->RefPts[RE[2*k+1]], emb_ip2);
 
-            //check if we are on the parent edge
+            // check if we are on the parent edge
             if (!((   emb_ip1(0) == 0. && emb_ip2(0) == 0.)
                   || (emb_ip1(0) == 1. && emb_ip2(0) == 1.)
                   || (emb_ip1(1) == 0. && emb_ip2(1) == 0.)

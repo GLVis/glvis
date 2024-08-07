@@ -94,7 +94,7 @@ public:
    /// Set the quadrature function representation producing a proxy grid function
    void SetQuadSolution(QuadSolution type = QuadSolution::LOR_ClosedGL);
 
-   /// Switch the quadrature function represenation and update the visualization
+   /// Switch the quadrature function representation and update the visualization
    void SwitchQuadSolution(QuadSolution type, VisualizationScene* vs);
 
    /// Get the current representation of quadrature solution

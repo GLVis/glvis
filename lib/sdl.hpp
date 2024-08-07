@@ -122,7 +122,7 @@ private:
 
    bool update_before_expose{false};
 
-   //bool requiresExpose;
+   // bool requiresExpose;
    bool takeScreenshot{false};
    std::string screenshot_file;
    bool screenshot_convert;

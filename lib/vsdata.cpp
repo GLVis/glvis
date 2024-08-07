@@ -681,11 +681,9 @@ void Key_Mod_a_Pressed(GLenum state)
 
       int precision = prompt<int>("Enter precision (4): ",
       &default_precision, [](int p) { return p>=0; });
-
       char format =
          prompt<char>("Enter format [(d)efault, (f)ixed, (s)cientific] (d): ",
       &default_format, [](char c) { return c=='d' || c=='f' || c=='s'; });
-
       bool showsign = prompt<bool>("Show sign? [(1)true, (0)false] (0): ",
                                    &default_showsign);
       vsdata->SetAxisNumberFormat(precision, format, showsign);
@@ -1438,15 +1436,15 @@ void VisualizationSceneScalarData::Init()
       wnd->setOnKeyDown(SDLK_EXCLAIM, KeyToggleTexture);
    }
 
-   //Set_Light();
+   // Set_Light();
 
-   //glEnable (GL_COLOR_MATERIAL);
-   //glShadeModel (GL_SMOOTH);
+   // glEnable (GL_COLOR_MATERIAL);
+   // glShadeModel (GL_SMOOTH);
 
-   //gl->enableLight();
-   //gl->enableDepthTest();
-   //glEnable(GL_AUTO_NORMAL);
-   //glEnable(GL_NORMALIZE);
+   // gl->enableLight();
+   // gl->enableDepthTest();
+   // glEnable(GL_AUTO_NORMAL);
+   // glEnable(GL_NORMALIZE);
 
    if (GetMultisample() > 0)
    {

@@ -140,9 +140,9 @@ void StreamState::Extrude1DMeshAndSolution()
 void StreamState::CollectQuadratures(QuadratureFunction *qf_array[],
                                      int npieces)
 {
-   //assume the same vdim
+   // assume the same vdim
    const int vdim = qf_array[0]->GetVDim();
-   //assume the same quadrature rule
+   // assume the same quadrature rule
    QuadratureSpace *qspace = new QuadratureSpace(*mesh,
                                                  qf_array[0]->GetIntRule(0));
    SetQuadFunction(new QuadratureFunction(qspace, vdim));
@@ -213,16 +213,16 @@ void StreamState::SetMeshSolution()
 
 void StreamState::SetQuadSolution(QuadSolution type)
 {
-   //assume identical order
-   const int order = quad_f->GetIntRule(0).GetOrder()/2;//<---Gauss-Legendre
-   //use the original mesh when available
+   // assume identical order
+   const int order = quad_f->GetIntRule(0).GetOrder()/2; // <-- Gauss-Legendre
+   // use the original mesh when available
    if (mesh_quad.get())
    {
       internal.mesh.swap(internal.mesh_quad);
       internal.mesh_quad.reset();
    }
 
-   //check for tensor-product basis
+   // check for tensor-product basis
    if (order > 0 && type != QuadSolution::HO_L2_projected)
    {
       Array<Geometry::Type> geoms;
@@ -245,7 +245,7 @@ void StreamState::SetQuadSolution(QuadSolution type)
          const int ref_factor = order + 1;
          if (ref_factor <= 1)
          {
-            SetQuadSolution(QuadSolution::HO_L2_collocated);//low-order
+            SetQuadSolution(QuadSolution::HO_L2_collocated); // low-order
             return;
          }
          Mesh *mesh_lor = new Mesh(Mesh::MakeRefined(*mesh, ref_factor,
@@ -767,7 +767,7 @@ void StreamState::ResetMeshAndSolution(StreamState &ss, VisualizationScene* vs)
 QuadratureFunction *Extrude1DQuadFunction(Mesh *mesh, Mesh *mesh2d,
                                           QuadratureFunction *qf, int ny)
 {
-   //assume identical orders
+   // assume identical orders
    const int order = qf->GetIntRule(0).GetOrder();
    const int vdim = qf->GetVDim();
    QuadratureSpace *qspace2d = new QuadratureSpace(mesh2d, order);

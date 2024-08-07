@@ -1456,10 +1456,9 @@ void VisualizationSceneSolution3d::DrawCoarseSurfEdges(
    trans.SetFE(&fe);
    DenseMatrix emb_pointmat;
 
-   //we assume that mesh_course is used only for tensor finite elements,
-   //like for representation of quadratures, so in 2D it is square
-   const int geom = (dim == 3)?(Geometry::Type::CUBE)
-                    :(Geometry::Type::SQUARE); //ref.embeddings[e1].geom; //<---- bugged!?
+   // we assume that mesh_course is used only for tensor finite elements,
+   // like for representation of quadratures, so in 2D it is square
+   const int geom = (dim == 3)?(Geometry::Type::CUBE):(Geometry::Type::SQUARE);
    const int mat = ref.embeddings[e1].matrix;
    const DenseMatrix &emb_mat = ref.point_matrices[geom](mat);
    trans.SetPointMat(emb_mat);
@@ -1511,7 +1510,7 @@ void VisualizationSceneSolution3d::DrawCoarseSurfEdges(
          emb_pointmat.GetColumnReference(jp1, emb_ip2);
       }
 
-      //check if we are on the outer edge
+      // check if we are on the outer edge
       int inter = 0;
       for (int d = 0; d < 3; d++)
          if ((emb_ip1(d) != 0. && emb_ip1(d) != 1.)
@@ -4116,7 +4115,7 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
             {
                const IntegrationPoint &ip = nodes.IntPoint(n);
                Trans->SetIntPoint(&ip);
-               lval(n) /= Trans->Weight();//value = dof / |J|
+               lval(n) /= Trans->Weight(); // value = dof / |J|
             }
 
             // Gradient calculation
