@@ -12,41 +12,21 @@
 import argparse
 import sys
 import os
-from skimage.io import imread
+import numpy as np
+from base64 import b64encode
+from skimage.io import imread, imsave
 from skimage.metrics import structural_similarity
+from skimage.color import rgb2gray, gray2rgb
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
-# Below are key commands that are passed to the -keys command-line argument for
-# glvis in order to perform testing on raw mesh/grid function data (i.e. non-
-# streams).
-#
-# Currently not in use.
-test_cases = {
-    "magnify": "*****",
-    "axes1": "a",
-    "axes2": "aa",
-    "mesh1": "m",
-    "mesh2": "mm",
-    "cut_plane": "i",
-    "cut_plane_rotate": "iyyyy",
-    "cut_plane_rotate_back": "iyyyyYYYY",
-    "cut_plane_transl": "izzzz",
-    "cut_plane_transl_back": "izzzzZZZZ",
-    "orient2d_1": "R",
-    "orient2d_2": "RR",
-    "orient2d_3": "RRR",
-    "orient2d_4": "RRRR",
-    "orient2d_5": "RRRRR",
-    "orient2d_6": "RRRRRR",
-    "orient3d": "Rr",
-    "perspective": "j",
-}
+def compare_images(
+    baseline_file: str,
+    output_file: str,
+    expect_fail: bool = False,
+    CUTOFF_SSIM: float = 0.999
+) -> bool:
 
-screenshot_keys = "Sq"
-screenshot_file = "GLVis_s01.png"
-
-cutoff_ssim = 0.999
-
-def compare_images(baseline_file, output_file, expect_fail=False):
     # Try to open output image
     output_img = imread(output_file)
     if output_img is None:
@@ -62,7 +42,7 @@ def compare_images(baseline_file, output_file, expect_fail=False):
     # Compare images with SSIM metrics. For two exactly-equal images, SSIM=1.0.
     # We set a cutoff of 0.999 to account for possible differences in rendering.
     ssim = structural_similarity(baseline_img, output_img, channel_axis=2)
-    if ssim < cutoff_ssim:
+    if ssim < CUTOFF_SSIM:
         if expect_fail:
             print("[PASS] Differences were detected in the control case.")
         else:
@@ -72,91 +52,119 @@ def compare_images(baseline_file, output_file, expect_fail=False):
             print("[FAIL] Differences were not detected in the control case.")
         else:
             print("[PASS] Images match.")
-    print("       actual ssim = {}, cutoff = {}".format(ssim, cutoff_ssim))
-    return ssim >= cutoff_ssim if not expect_fail else ssim < cutoff_ssim
+    print(f"       actual ssim = {ssim}, cutoff = {CUTOFF_SSIM}")
+    return ssim >= CUTOFF_SSIM if not expect_fail else ssim < CUTOFF_SSIM
 
-# Function to test a given glvis command with a variety of key-based commands.
-# Not currently in use.
-def test_case(exec_path, exec_args, baseline, t_group, t_name, cmd):
-    print("Testing {0}:{1}...".format(t_group, t_name))
-    full_screenshot_cmd = cmd + screenshot_keys
-    cmd = "{0} {1} -k \"{2}\"".format(exec_path, exec_args, full_screenshot_cmd)
-    print("Exec: {}".format(cmd))
-    ret = os.system(cmd + " > /dev/null 2>&1")
-    if ret != 0:
-        print("[FAIL] GLVis exited with error code {}.".format(ret))
-        return False
-    if not os.path.exists(t_group):
-        os.mkdir(t_group)
-    output_name = "{0}/{1}.png".format(t_group, t_name)
+def color_distance(I1: np.array, I2: np.array) -> dict[str, np.array]:
+    """
+    L2-norm in rgb space. There are better ways but this is probably good enough.
+    """
+    NORM_CONSTANT = (3*(255**2))**0.5 # max distance
+    l2norm = lambda x: np.linalg.norm(x, ord=2, axis=2)
+    delta = l2norm(I2.astype(int)-I1.astype(int)) / NORM_CONSTANT # output is NxM [0,1]
+    # now we scale to [0,255] and cast as uint8 so it is a "proper" image
+    Idiff_abs = (delta * 255).astype(np.uint8)
+    # get relative version
+    Idiff_rel = (Idiff_abs / Idiff_abs.max() * 255).astype(np.uint8)
+    return {'abs': Idiff_abs,
+            'rel': Idiff_rel,}
 
-    ret = os.system("mv {0} {1}".format(screenshot_file, output_name))
-    if ret != 0:
-        print("[FAIL] Could not move output image: exit code {}.".format(ret))
-        return False
+def generate_image_diffs(
+    image1_filename: str,
+    image2_filename: str,
+    absdiff_filename: str,
+    reldiff_filename: str,
+) -> None:
+    # Images are read as NxMx3 [uint8] arrays from [0,255]
+    I1 = imread(image1_filename)
+    I2 = imread(image2_filename)
+    # Get the image diffs (abs and rel)
+    Idiffs = color_distance(I1, I2) # output is NxM [0,1]
+    # Save 3-channel image to file
+    imsave(absdiff_filename, gray2rgb(Idiffs['abs']))
+    imsave(reldiff_filename, gray2rgb(Idiffs['rel']))
 
-    if baseline:
-        baseline_name = "{0}/test.{1}.png".format(baseline, test_name)
-        return compare_images(baseline_name, output_name)
-    else:
-        print("[IGNORE] No baseline exists to compare against.")
-        return True
+# For the source= argument in plotly
+def _get_image_src(filename):
+    with open(filename, "rb") as f:
+        image_bytes = b64encode(f.read()).decode()
+        return f"data:image/png;base64,{image_bytes}"
 
-def test_stream(exec_path, exec_args, save_file, baseline):
+def image_comparison_plot(
+    image_filenames: list[str],
+    image_names: list[str],  # for subtitles
+    output_filename: str,
+):
+    """
+    Illustrate results as an interactive plotly figure (html)
+    """
+    assert len(image_filenames) == len(image_names)
+    n = len(image_filenames)
+    fig = make_subplots(rows=1, cols=n,
+                        shared_xaxes=True,
+                        shared_yaxes=True,
+                        subplot_titles=image_names)
+    for idx, filename in enumerate(image_filenames):
+        fig.add_trace(go.Image(source=_get_image_src(filename)), 1, idx+1)
+    fig.update_xaxes(matches='x', showticklabels=False, showgrid=False, zeroline=False)
+    fig.update_yaxes(matches='y', showticklabels=False, showgrid=False, zeroline=False)
+    fig.write_html(output_filename, include_plotlyjs='cdn')
+
+def test_stream(
+    exec_path: str,
+    exec_args: str,
+    save_file: str,
+    baseline: str
+) -> bool:
+
     if exec_args is None:
         exec_args = ""
-    test_name = os.path.basename(save_file)
-    print("Testing {}...".format(save_file))
+    print(f"Testing {save_file}...")
+    test_name = os.path.basename(save_file).replace(".saved", "") # e.g. "ex3"
+    output_dir = f"outputs/{test_name}"
+    os.makedirs(output_dir, exist_ok=True)
 
     # Create new stream file with command to screenshot and close
     stream_data = None
     with open(save_file) as in_f:
         stream_data = in_f.read()
 
-    output_name = "test.{}.png".format(test_name)
-    output_name_fail = "test.fail.{}.png".format(test_name)
+    output_name = f"{output_dir}/test.nominal.{test_name}.png"
+    output_name_fail = f"{output_dir}/test.zoom.{test_name}.png"
+    absdiff_name = f"{output_dir}/test.nominal.absdiff.{test_name}.png"
+    reldiff_name = f"{output_dir}/test.nominal.reldiff.{test_name}.png"
     tmp_file = "test.saved"
     with open(tmp_file, 'w') as out_f:
         out_f.write(stream_data)
         out_f.write("\nwindow_size 800 600")
-        out_f.write("\nscreenshot {}".format(output_name))
+        out_f.write(f"\nscreenshot {output_name}")
         # Zooming in should create some difference in the images
         out_f.write("\nkeys *")
-        out_f.write("\nscreenshot {}".format(output_name_fail))
+        out_f.write(f"\nscreenshot {output_name_fail}")
         out_f.write("\nkeys q")
 
     # Run GLVis with modified stream file
-    cmd = "{0} {1} -saved {2}".format(exec_path, exec_args, tmp_file)
-    print("Exec: {}".format(cmd))
+    cmd = f"{exec_path} {exec_args} -saved {tmp_file}"
+    print(f"Exec: {cmd}")
     ret = os.system(cmd)
     if ret != 0:
-        print("[FAIL] GLVis exited with error code {}.".format(ret))
+        print(f"[FAIL] GLVis exited with error code {ret}.")
         return False
 
     if baseline:
-        baseline_name = "{0}/test.{1}.png".format(baseline, test_name)
+        baseline_name = f"{baseline}/test.{test_name}.saved.png"
         test_baseline = compare_images(baseline_name, output_name)
-        test_control = compare_images(baseline_name, output_name_fail,
-                                      expect_fail=True)
+        generate_image_diffs(baseline_name, output_name, absdiff_name, reldiff_name)
+        # Generate an interactive html plot, only if the test fails
+        # if not test_baseline:
+        image_comparison_plot([baseline_name, output_name, reldiff_name],
+                                ["Baseline", "Test Output", "Normalized Diff"],
+                                reldiff_name.replace(".png", ".html"))
+        test_control = compare_images(baseline_name, output_name_fail, expect_fail=True)
         return (test_baseline and test_control)
     else:
         print("[IGNORE] No baseline exists to compare against.")
         return True
-
-def test_cmd(exec_path, exec_args, tgroup, baseline):
-    try:
-        os.remove(screenshot_file)
-    except OSError:
-        pass
-    all_tests_passed = True
-    for testname, cmds in test_cases.items():
-        result = test_case(exec_path, exec_args, baseline, tgroup, testname, cmds)
-        all_tests_passed = all_tests_passed and result
-
-    if all_tests_passed:
-        print("All tests passed.")
-    else:
-        sys.exit(1)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -166,9 +174,13 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--group_name", help="Name of the test group.")
     parser.add_argument("-b", "--baseline", help="Path to test baseline.")
     args = parser.parse_args()
+
+    # Make a directory for storing test outputs
+    os.makedirs("outputs", exist_ok=True)
+    # Run tests
     if args.save_stream is not None:
         result = test_stream(args.exec_cmd, args.exec_args, args.save_stream, args.baseline)
         if not result:
             sys.exit(1)
     else:
-        test_cmd(args.exec_cmd, args.exec_args, args.group_name, args.baseline)
+        raise Exception("--save_stream must be specified. test_cmd() is unused. Import from `test_cmd.py`")
