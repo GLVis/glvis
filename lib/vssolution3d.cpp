@@ -829,12 +829,18 @@ void VisualizationSceneSolution3d::NewMeshAndSolution(
       delete [] node_pos;
       node_pos = new double[new_m->GetNV()];
    }
+
+   Mesh *old_m = mesh;
+   mesh = new_m;
+   mesh_coarse = new_mc;
+   sol = new_sol;
+   GridF = new_u;
+
    // If the number of surface elements changes, recompute the refinement factor
-   if (mesh->Dimension() != new_m->Dimension() ||
-       (mesh->Dimension() == 2 && mesh->GetNE() != new_m->GetNE()) ||
-       (mesh->Dimension() == 3 && mesh->GetNBE() != new_m->GetNBE()))
+   if (mesh->Dimension() != old_m->Dimension() ||
+       (mesh->Dimension() == 2 && mesh->GetNE() != old_m->GetNE()) ||
+       (mesh->Dimension() == 3 && mesh->GetNBE() != old_m->GetNBE()))
    {
-      mesh = new_m;
       int ref = GetAutoRefineFactor();
       if (TimesToRefine != ref)
       {
@@ -842,10 +848,6 @@ void VisualizationSceneSolution3d::NewMeshAndSolution(
          cout << "Subdivision factor = " << TimesToRefine << endl;
       }
    }
-   mesh = new_m;
-   mesh_coarse = new_mc;
-   sol = new_sol;
-   GridF = new_u;
    FindNodePos();
 
    DoAutoscale(false);
@@ -892,7 +894,7 @@ void VisualizationSceneSolution3d::ToggleShading()
 {
    if (GridF)
    {
-      VisualizationSceneScalarData::ToogleShading();
+      VisualizationSceneScalarData::ToggleShading();
    }
    else
    {
@@ -919,20 +921,11 @@ void VisualizationSceneSolution3d::SetRefineFactors(int f, int ignored)
    }
 }
 
-int VisualizationSceneSolution3d::GetAutoRefineFactor()
+int VisualizationSceneSolution3d::GetFunctionAutoRefineFactor()
 {
-   int ne = mesh->GetNBE(), ref = 1;
-   if (mesh->Dimension() == 2)
-   {
-      ne = mesh->GetNE();
-   }
+   if (!GridF) { return 1; }
 
-   while (ref < auto_ref_max && ne*(ref+1)*(ref+1) <= auto_ref_max_surf_elem)
-   {
-      ref++;
-   }
-
-   return ref;
+   return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(*GridF);
 }
 
 void VisualizationSceneSolution3d::AutoRefine()
@@ -1463,10 +1456,9 @@ void VisualizationSceneSolution3d::DrawCoarseSurfEdges(
    trans.SetFE(&fe);
    DenseMatrix emb_pointmat;
 
-   //we assume that mesh_course is used only for tensor finite elements,
-   //like for representation of quadratures, so in 2D it is square
-   const int geom = (dim == 3)?(Geometry::Type::CUBE)
-                    :(Geometry::Type::SQUARE); //ref.embeddings[e1].geom; //<---- bugged!?
+   // we assume that mesh_course is used only for tensor finite elements,
+   // like for representation of quadratures, so in 2D it is square
+   const int geom = (dim == 3)?(Geometry::Type::CUBE):(Geometry::Type::SQUARE);
    const int mat = ref.embeddings[e1].matrix;
    const DenseMatrix &emb_mat = ref.point_matrices[geom](mat);
    trans.SetPointMat(emb_mat);
@@ -1518,7 +1510,7 @@ void VisualizationSceneSolution3d::DrawCoarseSurfEdges(
          emb_pointmat.GetColumnReference(jp1, emb_ip2);
       }
 
-      //check if we are on the outer edge
+      // check if we are on the outer edge
       int inter = 0;
       for (int d = 0; d < 3; d++)
          if ((emb_ip1(d) != 0. && emb_ip1(d) != 1.)
@@ -4123,7 +4115,7 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
             {
                const IntegrationPoint &ip = nodes.IntPoint(n);
                Trans->SetIntPoint(&ip);
-               lval(n) /= Trans->Weight();//value = dof / |J|
+               lval(n) /= Trans->Weight(); // value = dof / |J|
             }
 
             // Gradient calculation

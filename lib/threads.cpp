@@ -835,7 +835,7 @@ void communication_thread::execute()
       }
 
       if (ident == "mesh" || ident == "solution" ||
-          ident == "parallel")
+          ident == "quadrature" || ident == "parallel")
       {
          bool fix_elem_orient = glvis_command->FixElementOrientations();
          StreamState tmp;
@@ -861,71 +861,7 @@ void communication_thread::execute()
                break;
             }
          }
-         else if (ident == "parallel")
-         {
-            Array<Mesh *> mesh_array;
-            Array<GridFunction *> gf_array;
-            int proc, nproc, np = 0;
-            bool keep_attr = glvis_command->KeepAttrib();
-            do
-            {
-               istream &isock = *is[np];
-               isock >> nproc >> proc >> ws;
-#ifdef GLVIS_DEBUG
-               cout << "connection[" << np << "]: parallel " << nproc << ' '
-                    << proc << endl;
-#endif
-               isock >> ident >> ws; // "solution"
-               mesh_array.SetSize(nproc);
-               gf_array.SetSize(nproc);
-               mesh_array[proc] = new Mesh(isock, 1, 0, fix_elem_orient);
-               if (!keep_attr)
-               {
-                  // set element and boundary attributes to proc+1
-                  for (int i = 0; i < mesh_array[proc]->GetNE(); i++)
-                  {
-                     mesh_array[proc]->GetElement(i)->SetAttribute(proc+1);
-                  }
-                  for (int i = 0; i < mesh_array[proc]->GetNBE(); i++)
-                  {
-                     mesh_array[proc]->GetBdrElement(i)->SetAttribute(proc+1);
-                  }
-               }
-               gf_array[proc] = new GridFunction(mesh_array[proc], isock);
-               np++;
-               if (np == nproc)
-               {
-                  break;
-               }
-               *is[np] >> ident >> ws; // "parallel"
-            }
-            while (1);
-            tmp.SetMesh(new Mesh(mesh_array, nproc));
-            tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), gf_array, nproc));
-
-            for (int p = 0; p < nproc; p++)
-            {
-               delete gf_array[nproc-1-p];
-               delete mesh_array[nproc-1-p];
-            }
-            gf_array.DeleteAll();
-            mesh_array.DeleteAll();
-         }
-
-         // cout << "Stream: new solution" << endl;
-
-         tmp.Extrude1DMeshAndSolution();
-
-         if (glvis_command->NewMeshAndSolution(std::move(tmp)))
-         {
-            goto comm_terminate;
-         }
-      }
-      else if (ident == "quadrature" || ident == "pquadrature")
-      {
-         bool fix_elem_orient = glvis_command->FixElementOrientations();
-         StreamState tmp;
-         if (ident == "quadrature")
+         else if (ident == "quadrature")
          {
             tmp.SetMesh(new Mesh(*is[0], 1, 0, fix_elem_orient));
             if (!(*is[0]))
@@ -938,9 +874,10 @@ void communication_thread::execute()
                break;
             }
          }
-         else if (ident == "pquadrature")
+         else if (ident == "parallel")
          {
             Array<Mesh *> mesh_array;
+            Array<GridFunction *> gf_array;
             Array<QuadratureFunction *> qf_array;
             int proc, nproc, np = 0;
             bool keep_attr = glvis_command->KeepAttrib();
@@ -949,12 +886,11 @@ void communication_thread::execute()
                istream &isock = *is[np];
                isock >> nproc >> proc >> ws;
 #ifdef GLVIS_DEBUG
-               cout << "connection[" << np << "]: pquadrature " << nproc << ' '
+               cout << "connection[" << np << "]: parallel " << nproc << ' '
                     << proc << endl;
 #endif
-               isock >> ident >> ws; // "quadrature"
+               isock >> ident >> ws;
                mesh_array.SetSize(nproc);
-               qf_array.SetSize(nproc);
                mesh_array[proc] = new Mesh(isock, 1, 0, fix_elem_orient);
                if (!keep_attr)
                {
@@ -968,23 +904,52 @@ void communication_thread::execute()
                      mesh_array[proc]->GetBdrElement(i)->SetAttribute(proc+1);
                   }
                }
-               qf_array[proc] = new QuadratureFunction(mesh_array[proc], isock);
+               if (ident == "solution")
+               {
+                  gf_array.SetSize(nproc);
+                  gf_array[proc] = new GridFunction(mesh_array[proc], isock);
+               }
+               else if (ident == "quadrature")
+               {
+                  qf_array.SetSize(nproc);
+                  qf_array[proc] = new QuadratureFunction(mesh_array[proc], isock);
+               }
+               else
+               {
+                  cout << "Stream: unknown command: " << ident << endl;
+               }
                np++;
                if (np == nproc)
                {
                   break;
                }
-               *is[np] >> ident >> ws; // "pquadrature"
+               *is[np] >> ident >> ws; // "parallel"
             }
             while (1);
+
             tmp.SetMesh(new Mesh(mesh_array, nproc));
-            tmp.CollectQuadratures(qf_array, nproc);
+            if (gf_array.Size() > 0)
+            {
+               tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), gf_array, nproc));
+            }
+            else if (qf_array.Size() > 0)
+            {
+               tmp.CollectQuadratures(qf_array, nproc);
+            }
 
             for (int p = 0; p < nproc; p++)
             {
-               delete qf_array[nproc-1-p];
+               if (gf_array.Size() > 0)
+               {
+                  delete gf_array[nproc-1-p];
+               }
+               if (qf_array.Size() > 0)
+               {
+                  delete qf_array[nproc-1-p];
+               }
                delete mesh_array[nproc-1-p];
             }
+            gf_array.DeleteAll();
             qf_array.DeleteAll();
             mesh_array.DeleteAll();
          }
@@ -1075,7 +1040,8 @@ void communication_thread::execute()
          char c;
          string title;
 
-         *is[0] >> ws >> c; // read the opening char
+         // read the opening char
+         *is[0] >> ws >> c;
          // use the opening char as termination as well
          getline(*is[0], title, c);
 
@@ -1097,7 +1063,8 @@ void communication_thread::execute()
          char c;
          string caption;
 
-         *is[0] >> ws >> c; // read the opening char
+         // read the opening char
+         *is[0] >> ws >> c;
          // use the opening char as termination as well
          getline(*is[0], caption, c);
 
@@ -1119,7 +1086,8 @@ void communication_thread::execute()
          char c;
          string label_x, label_y, label_z;
 
-         *is[0] >> ws >> c; // read the opening char
+         // read the opening char
+         *is[0] >> ws >> c;
          // use the opening char as termination as well
          getline(*is[0], label_x, c);
          *is[0] >> ws >> c;
@@ -1255,8 +1223,10 @@ void communication_thread::execute()
          char c;
          string formatting;
 
-         *is[0] >> ws >> c; // read the opening char
-         getline(*is[0], formatting, c); // read formatting string & use c for termination
+         // read the opening char
+         *is[0] >> ws >> c;
+         // read formatting string & use c for termination
+         getline(*is[0], formatting, c);
 
          // all processors sent the command
          for (size_t i = 1; i < is.size(); i++)
@@ -1276,8 +1246,10 @@ void communication_thread::execute()
          char c;
          string formatting;
 
-         *is[0] >> ws >> c; // read the opening char
-         getline(*is[0], formatting, c); // read formatting string & use c for termination
+         // read the opening char
+         *is[0] >> ws >> c;
+         // read formatting string & use c for termination
+         getline(*is[0], formatting, c);
 
          // all processors sent the command
          for (size_t i = 1; i < is.size(); i++)

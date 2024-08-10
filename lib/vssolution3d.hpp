@@ -101,7 +101,7 @@ protected:
                                 const int nh, const int face_splits,
                                 const DenseMatrix *grad = NULL);
 
-   int GetAutoRefineFactor();
+   int GetFunctionAutoRefineFactor() override;
 
    bool CheckPositions(Array<int> &vertices) const
    {
@@ -129,22 +129,22 @@ public:
 
    virtual ~VisualizationSceneSolution3d();
 
-   virtual std::string GetHelpString() const;
+   std::string GetHelpString() const override;
 
-   virtual void FindNewBox(bool prepare);
-   virtual void FindNewValueRange(bool prepare);
+   void FindNewBox(bool prepare) override;
+   void FindNewValueRange(bool prepare) override;
 
-   virtual void PrepareRuler()
+   void PrepareRuler() override
    { VisualizationSceneScalarData::PrepareRuler(false); }
    virtual void PrepareFlat();
-   virtual void PrepareLines();
-   virtual void Prepare();
+   void PrepareLines() override;
+   void Prepare() override;
    virtual void PrepareOrderingCurve();
    virtual void PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows,
                                       bool color);
-   virtual gl3::SceneInfo GetSceneObjs();
+   gl3::SceneInfo GetSceneObjs() override;
 
-   virtual void glTF_Export();
+   void glTF_Export() override;
 
    void ToggleDrawElems()
    { drawelems = !drawelems; Prepare(); }
@@ -155,11 +155,11 @@ public:
    //           3 - no arrows (black), 4 - with arrows (black)
    void ToggleDrawOrdering() { draworder = (draworder+1)%5; }
 
-   virtual void SetShading(Shading, bool);
-   virtual void ToggleShading();
-   virtual void SetRefineFactors(int, int);
-   virtual void AutoRefine();
-   virtual void ToggleAttributes(Array<int> &attr_list);
+   void SetShading(Shading, bool) override;
+   void ToggleShading() override;
+   void SetRefineFactors(int, int) override;
+   void AutoRefine() override;
+   void ToggleAttributes(Array<int> &attr_list) override;
 
    void FindNodePos();
 
@@ -188,10 +188,10 @@ public:
    void ToggleCPAlgorithm();
    void MoveLevelSurf(int);
    void NumberOfLevelSurf(int);
-   virtual void EventUpdateColors();
-   virtual void UpdateLevelLines()
+   void EventUpdateColors() override;
+   void UpdateLevelLines() override
    { PrepareLines(); PrepareCuttingPlaneLines(); }
-   virtual void UpdateValueRange(bool prepare);
+   void UpdateValueRange(bool prepare) override;
 
    virtual void SetDrawMesh(int i)
    {

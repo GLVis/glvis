@@ -199,7 +199,7 @@ jobs:
     - name: package binary (Windows)
       if: matrix.os == 'windows-latest'
       env:
-        GLVIS_EXPORT_NAME: glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
+        GLVIS_EXPORT_NAME: glvis-${{ github.ref_name }}-${{ runner.os }}-${{ runner.arch }}
       run: |
         cd glvis/build
         Copy-Item -Path "Release" -Destination "${Env:GLVIS_EXPORT_NAME}" -Recurse
@@ -207,7 +207,7 @@ jobs:
     - name: package binary (Mac)
       if: matrix.os == 'macos-latest'
       env:
-        GLVIS_EXPORT_NAME: glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
+        GLVIS_EXPORT_NAME: glvis-${{ github.ref_name }}-${{ runner.os }}-${{ runner.arch }}
       run: |
         cd glvis/build
         make app
@@ -222,12 +222,14 @@ jobs:
         mkdir dmg_tmp
         cp -a ../install-${{ matrix.os }}/GLVis.app dmg_tmp/GLVis.app
         # Create DMG since actions/upload-artifact will clobber Unix permissions
-        hdiutil create -volname "GLVis macOS x86_64" -srcfolder dmg_tmp -ov -format UDZO GLVis.dmg
+        hdiutil create -volname "GLVis macOS arm64" -srcfolder dmg_tmp -ov -format UDZO GLVis.dmg
         mkdir ${GLVIS_EXPORT_NAME}
         cp GLVis.dmg ${GLVIS_EXPORT_NAME}
 
     - name: upload binary
       uses: actions/upload-artifact@v4
+      env:
+        GLVIS_EXPORT_NAME: glvis-${{ github.ref_name }}-${{ runner.os }}-${{ runner.arch }}
       with:
-        name: glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
-        path: glvis/build/glvis-${{ github.ref_name }}-${{ runner.os }}-amd64
+        name: ${{ env.GLVIS_EXPORT_NAME }}
+        path: glvis/build/${{ env.GLVIS_EXPORT_NAME }}

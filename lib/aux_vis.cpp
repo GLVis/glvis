@@ -232,6 +232,18 @@ void SendKeySequence(const char *seq)
             case '7': // F7
                wnd->signalKeyDown(SDLK_F7);
                break;
+            case '1': // F11 or F12
+               key++;
+               switch (*key)
+               {
+                  case '1': // F11
+                     wnd->signalKeyDown(SDLK_F11);
+                     break;
+                  case '2': // F12
+                     wnd->callKeyDown(SDLK_F12);
+                     break;
+               }
+               break;
             case '.': // Keypad ./Del
                wnd->signalKeyDown(SDLK_PERIOD);
                break;
@@ -290,6 +302,18 @@ void CallKeySequence(const char *seq)
                break;
             case '7': // F7
                wnd->callKeyDown(SDLK_F7);
+               break;
+            case '1': // F11 or F12
+               key++;
+               switch (*key)
+               {
+                  case '1': // F11
+                     wnd->callKeyDown(SDLK_F11);
+                     break;
+                  case '2': // F12
+                     wnd->callKeyDown(SDLK_F12);
+                     break;
+               }
                break;
             case '.': // Keypad ./Del
                wnd->callKeyDown(SDLK_PERIOD);
@@ -1156,7 +1180,7 @@ inline GL2PSvertex CreatePrintVtx(gl3::FeedbackVertex v)
 
 void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
 {
-   //print lines
+   // print lines
    for (size_t i = 0; i < cbuf.lines.size(); i += 2)
    {
       GL2PSvertex lineOut[2] =
@@ -1214,7 +1238,7 @@ void KeyCtrlP()
                        // GL2PS_OCCLUSION_CULL |
                        // GL2PS_BEST_ROOT |
                        GL2PS_SILENT |
-                       //GL2PS_DRAW_BACKGROUND |
+                       // GL2PS_DRAW_BACKGROUND |
                        GL2PS_NO_BLENDING |
                        GL2PS_NO_OPENGL_CONTEXT,
                        GL_RGBA, 0, NULL, 16, 16, 16, 0, fp, "a" );
@@ -1785,24 +1809,26 @@ void SetFont(const std::string& fn)
 #endif
 }
 
-function<string(double)> NumberFormatter(int precision, char format, bool showsign)
+function<string(double)> NumberFormatter(int precision, char format,
+                                         bool showsign)
 {
    return [precision, format, showsign](double x) -> string
    {
       ostringstream oss;
-      switch (format) {
+      switch (format)
+      {
          case 'f':
-               oss << fixed;
-               break;
+            oss << fixed;
+            break;
          case 's':
-               oss << scientific;
-               break;
+            oss << scientific;
+            break;
          case 'd':
-               oss << defaultfloat;
-               break;
+            oss << defaultfloat;
+            break;
          default:
             MFEM_WARNING("Unknown formatting type. Using default. "
-            << "Valid options include: ['f', 's', 'd']" << endl);
+                         << "Valid options include: ['f', 's', 'd']" << endl);
             oss << defaultfloat;
             break;
       };

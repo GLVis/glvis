@@ -442,6 +442,13 @@ void VisualizationSceneVector3d::Init()
    }
 }
 
+int VisualizationSceneVector3d::GetFunctionAutoRefineFactor()
+{
+   if (!VecGridF) { return 1; }
+
+   return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(*VecGridF);
+}
+
 VisualizationSceneVector3d::~VisualizationSceneVector3d()
 {
    delete sol;
@@ -474,12 +481,16 @@ void VisualizationSceneVector3d::NewMeshAndSolution(
       node_pos = new double[new_m->GetNV()];
    }
 
+   Mesh *old_m = mesh;
+   VecGridF = new_v;
+   mesh = new_m;
+   mesh_coarse = new_mc;
+
    // If the number of surface elements changes, recompute the refinement factor
-   if (mesh->Dimension() != new_m->Dimension() ||
-       (mesh->Dimension() == 2 && mesh->GetNE() != new_m->GetNE()) ||
-       (mesh->Dimension() == 3 && mesh->GetNBE() != new_m->GetNBE()))
+   if (mesh->Dimension() != old_m->Dimension() ||
+       (mesh->Dimension() == 2 && mesh->GetNE() != old_m->GetNE()) ||
+       (mesh->Dimension() == 3 && mesh->GetNBE() != old_m->GetNBE()))
    {
-      mesh = new_m;
       int ref = GetAutoRefineFactor();
       if (TimesToRefine != ref)
       {
@@ -490,9 +501,6 @@ void VisualizationSceneVector3d::NewMeshAndSolution(
 
    FiniteElementSpace *new_fes = new_v->FESpace();
 
-   VecGridF = new_v;
-   mesh = new_m;
-   mesh_coarse = new_mc;
    FindNodePos();
 
    sfes = new FiniteElementSpace(mesh, new_fes->FEColl(), 1,

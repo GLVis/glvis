@@ -1525,7 +1525,7 @@ int main (int argc, char *argv[])
       return 0;
    }
 
-   //turn off the server mode if other options are present
+   // turn off the server mode if other options are present
    if (input & ~INPUT_SERVER_MODE) { input &= ~INPUT_SERVER_MODE; }
 
    // print help for wrong input
@@ -1995,8 +1995,6 @@ void SwitchQuadSolution()
 {
    int iqs = ((int)stream_state.GetQuadSolution()+1)
              % ((int)StreamState::QuadSolution::MAX);
-   stream_state.SetQuadSolution((StreamState::QuadSolution)iqs);
-   stream_state.Extrude1DMeshAndSolution();
-   stream_state.ResetMeshAndSolution(vs);
+   stream_state.SwitchQuadSolution((StreamState::QuadSolution)iqs, vs);
    SendExposeEvent();
 }

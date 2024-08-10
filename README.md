@@ -8,7 +8,7 @@
 
                              https://glvis.org
 
-<a href="https://github.com/GLVis/glvis/releases/latest"><img alt="Release" src="https://img.shields.io/badge/release-v4.2-success.svg"></a>
+<a href="https://github.com/GLVis/glvis/releases/latest"><img alt="Release" src="https://img.shields.io/badge/release-v4.3-success.svg"></a>
 <a href="https://github.com/GLVis/glvis/actions/workflows/builds.yml"><img alt="Build" src="https://github.com/GLVis/glvis/actions/workflows/builds.yml/badge.svg"></a>
 <a href="https://github.com/glvis/glvis/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-BSD-success.svg"></a>
 <a href="https://glvis.github.io/doxygen/html/index.html"><img alt="Doxygen" src="https://img.shields.io/badge/code-documented-success.svg"></a>
@@ -68,6 +68,12 @@ is a partial list of the available functionality. Some of these keys can also be
 provided as input, using the `-k` command-line option and the `keys` script
 command.
 
+For high-order meshes and/or solution data, GLVis performs element subdivision
+to try to represent the data more accurately. However, for highly-varying data
+or large meshes, the auto-selected subdivision factor (see the
+[Auto-refinement](#auto-refinement) section below) may not be sufficient -- use
+the keys <kbd>o</kbd> / <kbd>O</kbd>, described below, to manually adjust the
+subdivision factor.
 
 SPDX-License-Identifier: BSD-3-Clause <br>
 LLNL Release Number: LLNL-CODE-443271 <br>
@@ -159,7 +165,7 @@ Key commands
     functions and curvilinear elements (use <kbd>o</kbd> / <kbd>O</kbd> to control subdivisions)
 - <kbd>\\</kbd> – Set light source position (see <kbd>Right</kbd> + <kbd>Shift</kbd>)
 - <kbd>*</kbd> / <kbd>/</kbd> – Zoom in/out
-- <kbd>+</kbd> / <kbd>-</kbd> – Stretch/compree in `z`-direction
+- <kbd>+</kbd> / <kbd>-</kbd> – Stretch/compress in `z`-direction
 - <kbd>[</kbd> / <kbd>]</kbd> – Shrink/enlarge the bounding box (relative to the colorbar)
 - <kbd>(</kbd> / <kbd>)</kbd> – Shrink/enlarge the visualization window
 - <kbd>.</kbd> – Start/stop `z`-spinning (speed/direction can be controlled with <kbd>0</kbd> / <kbd>Enter</kbd>)
@@ -298,3 +304,46 @@ Key commands
   - `x`-component: `v_x`
   - `y`-component: `v_y`
   - `z`-component: `v_z`
+
+## Auto-refinement
+
+The GLVis auto-refinement algorithm selects a subdivision factor trying to
+achieve an accurate representation of high-order meshes and solution data while
+keeping the initial time to visualize the data reasonable. The algorithm can be
+summarized as follows:
+- GLVis draws surface elements; the number of drawn elements, `ne`, is either:
+  - the number of elements in the mesh for 2D meshes (including surface meshes,
+    i.e. 2D meshes embedded in 3D space), or
+  - the number of boundary mesh elements described by the mesh in 3D.
+- A tentative upper limit on the number of vertices to be drawn is defined based
+  on the maximum order of the mesh and the solution, `max_order`:
+  ```
+  max_vert = ne * (max_order + 1) * (max_order + 1)
+  ```
+- To allow more accurate representation for small meshes, this number is
+  potentially increased:
+  ```
+  max_vert = max(max_vert, 100 000)
+  ```
+- To keep the time to initially visualize the data reasonable, this number is
+  potentially reduced:
+  ```
+  max_vert = min(max_vert, 2 000 000)
+  ```
+- Finally, the subdivision factor `ref` is chosen to be the largest number such
+  that:
+  - the number of vertices needed to draw the `ne` surface elements with `ref`
+    subdivisions does not exceed `max_vert`:
+    ```
+    ne * (ref + 1) * (ref + 1) <= max_vert
+    ```
+  - for large meshes where the above limit cannot be satisfied, set `ref = 1`
+  - for small meshes, avoid excessive refinements:
+    ```
+    ref <= 16
+    ```
+
+Note that, for highly-varying data or large meshes, this auto-selected
+subdivision factor may not be sufficient for accurate representation. In such
+cases the subdivision can be manually adjusted using the keys <kbd>o</kbd> /
+<kbd>O</kbd>, described above.

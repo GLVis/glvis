@@ -274,7 +274,7 @@ void SdlWindow::keyDownEvent(SDL_Keysym& ks)
    // to be processed there.
    // Note: the same condition has to be used in signalKeyDown().
    if ((ks.sym >= 32 && ks.sym < 127) &&
-       (ks.mod & ~(KMOD_SHIFT | KMOD_CAPS)) == 0)
+       (ks.mod & (KMOD_CTRL | KMOD_ALT | KMOD_GUI)) == 0)
    {
       lastKeyDownProcessed = false;
       return;
@@ -382,8 +382,8 @@ void SdlWindow::mainIter()
                keep_going = true;
                break;
             case SDL_KEYDOWN:
-// For debugging: uncomment the next line to track key events.
-// #define TRACK_KEY_EVENTS
+               // For debugging: uncomment the next line to track key events.
+               // #define TRACK_KEY_EVENTS
 #ifdef TRACK_KEY_EVENTS
                cout << "Event: SDL_KEYDOWN sym=" << e.key.keysym.sym
                     << " mod=" << e.key.keysym.mod << endl;
@@ -630,7 +630,7 @@ void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
    queueEvents({ event });
 
    // The same condition as in keyDownEvent().
-   if ((k >= 32 && k < 127) && (m & ~(KMOD_SHIFT | KMOD_CAPS)) == 0)
+   if ((k >= 32 && k < 127) && (m & (KMOD_CTRL | KMOD_ALT | KMOD_GUI)) == 0)
    {
       event.type = SDL_TEXTINPUT;
       event.text.windowID = window_id;

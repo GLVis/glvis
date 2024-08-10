@@ -140,9 +140,9 @@ void StreamState::Extrude1DMeshAndSolution()
 void StreamState::CollectQuadratures(QuadratureFunction *qf_array[],
                                      int npieces)
 {
-   //assume the same vdim
+   // assume the same vdim
    const int vdim = qf_array[0]->GetVDim();
-   //assume the same quadrature rule
+   // assume the same quadrature rule
    QuadratureSpace *qspace = new QuadratureSpace(*mesh,
                                                  qf_array[0]->GetIntRule(0));
    SetQuadFunction(new QuadratureFunction(qspace, vdim));
@@ -213,16 +213,16 @@ void StreamState::SetMeshSolution()
 
 void StreamState::SetQuadSolution(QuadSolution type)
 {
-   //assume identical order
-   const int order = quad_f->GetIntRule(0).GetOrder()/2;//<---Gauss-Legendre
-   //use the original mesh when available
+   // assume identical order
+   const int order = quad_f->GetIntRule(0).GetOrder()/2; // <-- Gauss-Legendre
+   // use the original mesh when available
    if (mesh_quad.get())
    {
       internal.mesh.swap(internal.mesh_quad);
       internal.mesh_quad.reset();
    }
 
-   //check for tensor-product basis
+   // check for tensor-product basis
    if (order > 0 && type != QuadSolution::HO_L2_projected)
    {
       Array<Geometry::Type> geoms;
@@ -245,7 +245,7 @@ void StreamState::SetQuadSolution(QuadSolution type)
          const int ref_factor = order + 1;
          if (ref_factor <= 1)
          {
-            SetQuadSolution(QuadSolution::HO_L2_collocated);//low-order
+            SetQuadSolution(QuadSolution::HO_L2_collocated); // low-order
             return;
          }
          Mesh *mesh_lor = new Mesh(Mesh::MakeRefined(*mesh, ref_factor,
@@ -322,6 +322,20 @@ void StreamState::SetQuadSolution(QuadSolution type)
    }
 
    quad_sol = type;
+}
+
+void StreamState::SwitchQuadSolution(QuadSolution type, VisualizationScene *vs)
+{
+   unique_ptr<Mesh> old_mesh;
+   // we must backup the refined mesh to prevent its deleting
+   if (mesh_quad.get())
+   {
+      internal.mesh.swap(internal.mesh_quad);
+      internal.mesh_quad.swap(old_mesh);
+   }
+   SetQuadSolution(type);
+   Extrude1DMeshAndSolution();
+   ResetMeshAndSolution(*this, vs);
 }
 
 // Read the content of an input stream (e.g. from socket/file)
@@ -695,12 +709,12 @@ bool StreamState::SetNewMeshAndSolution(StreamState new_state,
    if (new_state.mesh->SpaceDimension() == mesh->SpaceDimension() &&
        new_state.grid_f->VectorDim() == grid_f->VectorDim())
    {
+      ResetMeshAndSolution(new_state, vs);
+
       internal.grid_f = std::move(new_state.internal.grid_f);
       internal.mesh = std::move(new_state.internal.mesh);
       internal.quad_f = std::move(new_state.internal.quad_f);
       internal.mesh_quad = std::move(new_state.internal.mesh_quad);
-
-      ResetMeshAndSolution(vs);
 
       return true;
    }
@@ -710,40 +724,42 @@ bool StreamState::SetNewMeshAndSolution(StreamState new_state,
    }
 }
 
-void StreamState::ResetMeshAndSolution(VisualizationScene* vs)
+void StreamState::ResetMeshAndSolution(StreamState &ss, VisualizationScene* vs)
 {
-   if (mesh->SpaceDimension() == 2)
+   if (ss.mesh->SpaceDimension() == 2)
    {
-      if (grid_f->VectorDim() == 1)
+      if (ss.grid_f->VectorDim() == 1)
       {
          VisualizationSceneSolution *vss =
             dynamic_cast<VisualizationSceneSolution *>(vs);
-         grid_f->GetNodalValues(sol);
-         vss->NewMeshAndSolution(mesh.get(), mesh_quad.get(), &sol, grid_f.get());
+         ss.grid_f->GetNodalValues(ss.sol);
+         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
+                                 ss.grid_f.get());
       }
       else
       {
          VisualizationSceneVector *vsv =
             dynamic_cast<VisualizationSceneVector *>(vs);
-         vsv->NewMeshAndSolution(*grid_f, mesh_quad.get());
+         vsv->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
       }
    }
    else
    {
-      if (grid_f->VectorDim() == 1)
+      if (ss.grid_f->VectorDim() == 1)
       {
          VisualizationSceneSolution3d *vss =
             dynamic_cast<VisualizationSceneSolution3d *>(vs);
-         grid_f->GetNodalValues(sol);
-         vss->NewMeshAndSolution(mesh.get(), mesh_quad.get(), &sol, grid_f.get());
+         ss.grid_f->GetNodalValues(ss.sol);
+         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
+                                 ss.grid_f.get());
       }
       else
       {
-         ProjectVectorFEGridFunction();
+         ss.ProjectVectorFEGridFunction();
 
          VisualizationSceneVector3d *vss =
             dynamic_cast<VisualizationSceneVector3d *>(vs);
-         vss->NewMeshAndSolution(mesh.get(), mesh_quad.get(), grid_f.get());
+         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.grid_f.get());
       }
    }
 }
@@ -751,7 +767,7 @@ void StreamState::ResetMeshAndSolution(VisualizationScene* vs)
 QuadratureFunction *Extrude1DQuadFunction(Mesh *mesh, Mesh *mesh2d,
                                           QuadratureFunction *qf, int ny)
 {
-   //assume identical orders
+   // assume identical orders
    const int order = qf->GetIntRule(0).GetOrder();
    const int vdim = qf->GetVDim();
    QuadratureSpace *qspace2d = new QuadratureSpace(mesh2d, order);

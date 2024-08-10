@@ -345,6 +345,14 @@ if(NOT EMSCRIPTEN)
     install(CODE [[
       include (BundleUtilities)
       fixup_bundle("${CMAKE_INSTALL_PREFIX}/GLVis.app" "" "")
+      file(GLOB LIBS_TO_SIGN
+          "${CMAKE_INSTALL_PREFIX}/GLVis.app/Contents/Frameworks/*.dylib")
+      foreach(LIB ${LIBS_TO_SIGN})
+        if (NOT IS_SYMLINK ${LIB})
+          execute_process(COMMAND codesign --force --sign - ${LIB})
+        endif()
+      endforeach()
+      execute_process(COMMAND codesign --force --sign - ${CMAKE_INSTALL_PREFIX}/GLVis.app)
     ]] COMPONENT RUNTIME)
   endif(APPLE)
 
