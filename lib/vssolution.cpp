@@ -1707,7 +1707,7 @@ void VisualizationSceneSolution::PrepareLines()
    line_buf.clear();
    gl3::GlBuilder lb = line_buf.createBuilder();
 
-   if (mesh_coarse)
+   if (mesh_coarse && mesh_coarse->Dimension() > 1)
    {
       auto &ref = mesh->GetRefinementTransforms();
       IsoparametricTransformation trans;
@@ -2200,7 +2200,7 @@ void VisualizationSceneSolution::PrepareLines3()
       Array<int> &RE = RefG->RefEdges;
 
       lb.glBegin (GL_LINES);
-      if (mesh_coarse)
+      if (mesh_coarse && mesh_coarse->Dimension() > 1)
       {
          auto &ref = mesh->GetRefinementTransforms();
          // we assume that mesh_course is used only for tensor finite elements,
