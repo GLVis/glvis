@@ -14,6 +14,10 @@ Version 4.3.1 (development)
 
 - Fix the Mac binary build in GitHub CI.
 
+- Miscellaneous CI improvements including: generating image diffs for tests,
+  set `fail-fast: false` so that tests always run, rename artifacts to help
+  avoid confusion, code-cleanup/light refactoring.
+
 
 Version 4.3 released on Aug 7, 2024
 ===================================
