@@ -274,6 +274,8 @@ void SdlWindow::keyDownEvent(SDL_Keysym& ks)
    // to be processed there.
    // Note: the same condition has to be used in signalKeyDown().
    const char *scan_name = SDL_GetScancodeName(ks.scancode);
+   cout << scan_name << endl;
+   cout << (char)ks.sym << endl;
    if ((scan_name[0] >= 32 && scan_name[0] < 127) && scan_name[1] == '\0'
        && (ks.mod & (KMOD_CTRL | KMOD_ALT | KMOD_GUI)) == 0)
    {
@@ -627,6 +629,7 @@ void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
    event.type = SDL_KEYDOWN;
    event.key.windowID = window_id;
    event.key.keysym.sym = k;
+   event.key.keysym.scancode = SDL_GetScancodeFromKey(k);
    event.key.keysym.mod = m;
    queueEvents({ event });
 
