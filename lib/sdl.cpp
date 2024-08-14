@@ -273,8 +273,9 @@ void SdlWindow::keyDownEvent(SDL_Keysym& ks)
    // handle key translation due to Shift or CapsLock, so we leave such events
    // to be processed there.
    // Note: the same condition has to be used in signalKeyDown().
-   if ((ks.sym >= 32 && ks.sym < 127) &&
-       (ks.mod & (KMOD_CTRL | KMOD_ALT | KMOD_GUI)) == 0)
+   const char *scan_name = SDL_GetScancodeName(ks.scancode);
+   if ((scan_name[0] >= 32 && scan_name[0] < 127) && scan_name[1] == '\0'
+       && (ks.mod & (KMOD_CTRL | KMOD_ALT | KMOD_GUI)) == 0)
    {
       lastKeyDownProcessed = false;
       return;
