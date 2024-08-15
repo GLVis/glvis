@@ -208,11 +208,11 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
       }
       if (stream_state.mesh->SpaceDimension() == 2 && field_type == 2)
       {
-         SetVisualizationScene(vs, 2, stream_state.keys.c_str());
+         SetVisualizationScene(vs, 2);
       }
       else
       {
-         SetVisualizationScene(vs, 3, stream_state.keys.c_str());
+         SetVisualizationScene(vs, 3);
       }
    }
 
