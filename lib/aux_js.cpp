@@ -48,7 +48,9 @@ using namespace mfem;
 // display a new stream
 // field_type: 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
 //
-int display(const int field_type, std::stringstream & commands, const int w,
+StreamState::FieldType display(const StreamState::FieldType field_type,
+            std::stringstream & commands,
+            const int w,
             const int h)
 {
    // reset antialiasing
@@ -180,8 +182,7 @@ int display(const int field_type, std::stringstream & commands, const int w,
       {
          if (stream_state.grid_f)
          {
-            stream_state.grid_f
-               = ProjectVectorFEGridFunction(std::move(stream_state.grid_f));
+            stream_state.ProjectVectorFEGridFunction();
             vs = new VisualizationSceneVector3d(*stream_state.grid_f);
          }
          else
@@ -198,7 +199,7 @@ int display(const int field_type, std::stringstream & commands, const int w,
       if (stream_state.grid_f)
       {
          vs->AutoRefine();
-         vs->SetShading(2, true);
+         vs->SetShading(VisualizationSceneScalarData::Shading::Noncomforming, true);
       }
       if (mesh_range > 0.0)
       {
@@ -207,11 +208,11 @@ int display(const int field_type, std::stringstream & commands, const int w,
       }
       if (stream_state.mesh->SpaceDimension() == 2 && field_type == 2)
       {
-         SetVisualizationScene(vs, 2);
+         SetVisualizationScene(vs, 2, stream_state.keys.c_str());
       }
       else
       {
-         SetVisualizationScene(vs, 3);
+         SetVisualizationScene(vs, 3, stream_state.keys.c_str());
       }
    }
 
@@ -234,7 +235,7 @@ int display(const int field_type, std::stringstream & commands, const int w,
 // each string in streams must start with `parallel <nproc> <rank>'
 //
 using StringArray = std::vector<std::string>;
-int processParallelStreams(StreamState & state, const StringArray & streams,
+StreamState::FieldType processParallelStreams(StreamState & state, const StringArray & streams,
                            std::stringstream * commands = nullptr)
 {
    // std::cerr << "got " << streams.size() << " streams" << std::endl;
@@ -252,7 +253,7 @@ int processParallelStreams(StreamState & state, const StringArray & streams,
       istreams[i] = std::unique_ptr<std::istream>(&sstreams[i]);
    }
 
-   const int field_type = state.ReadStreams(istreams);
+   const StreamState::FieldType field_type = state.ReadStreams(istreams);
 
    if (commands)
    {
@@ -274,7 +275,7 @@ int displayParallelStreams(const StringArray & streams, const int w,
                            const int h)
 {
    std::stringstream commands(streams[0]);
-   const int field_type = processParallelStreams(stream_state, streams, &commands);
+   const StreamState::FieldType field_type = processParallelStreams(stream_state, streams, &commands);
    return display(field_type, commands, w, h);
 }
 
