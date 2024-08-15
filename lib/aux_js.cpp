@@ -76,21 +76,23 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
       }
    }
 
-   if (field_type < 0 || field_type > 2)
+   // If unknown, default to vector field_type
+   if (field_type <= StreamState::FieldType::MIN
+       || field_type >= StreamState::FieldType::MAX)
    {
-      return 1;
+      return StreamState::FieldType::VECTOR;
    }
 
    if (InitVisualization("glvis", 0, 0, w, h))
    {
-      return 1;
+      return StreamState::FieldType::VECTOR;
    }
 
    delete vs;
    vs = nullptr;
 
    double mesh_range = -1.0;
-   if (field_type == 0 || field_type == 2)
+   if (field_type == StreamState::FieldType::SCALAR || field_type == StreamState::FieldType::MESH)
    {
       if (stream_state.grid_f)
       {
@@ -112,7 +114,7 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
          {
             vss->SetGridFunction(*stream_state.grid_f);
          }
-         if (field_type == 2)
+         if (field_type == StreamState::FieldType::MESH)
          {
             vs->OrthogonalProjection = 1;
             vs->SetLight(0);
@@ -131,7 +133,7 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
          {
             vss->SetGridFunction(stream_state.grid_f.get());
          }
-         if (field_type == 2)
+         if (field_type == StreamState::FieldType::MESH)
          {
             if (stream_state.mesh->Dimension() == 3)
             {
@@ -152,7 +154,7 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
             vss->ToggleDrawMesh();
          }
       }
-      if (field_type == 2)
+      if (field_type == StreamState::FieldType::MESH)
       {
          if (stream_state.grid_f)
          {
@@ -164,7 +166,7 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
          }
       }
    }
-   else if (field_type == 1)
+   else if (field_type == StreamState::FieldType::VECTOR)
    {
       if (stream_state.mesh->SpaceDimension() == 2)
       {
@@ -206,7 +208,7 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
          vs->SetValueRange(-mesh_range, mesh_range);
          vs->SetAutoscale(0);
       }
-      if (stream_state.mesh->SpaceDimension() == 2 && field_type == 2)
+      if (stream_state.mesh->SpaceDimension() == 2 && field_type == StreamState::FieldType::MESH)
       {
          SetVisualizationScene(vs, 2);
       }
@@ -224,7 +226,7 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
    }
 
    SendExposeEvent();
-   return 0;
+   return StreamState::FieldType::SCALAR;
 }
 
 //
@@ -271,7 +273,7 @@ StreamState::FieldType processParallelStreams(StreamState & state, const StringA
    return field_type;
 }
 
-int displayParallelStreams(const StringArray & streams, const int w,
+StreamState::FieldType displayParallelStreams(const StringArray & streams, const int w,
                            const int h)
 {
    std::stringstream commands(streams[0]);
@@ -279,12 +281,12 @@ int displayParallelStreams(const StringArray & streams, const int w,
    return display(field_type, commands, w, h);
 }
 
-int displayStream(const std::string & stream, const int w, const int h)
+StreamState::FieldType displayStream(const std::string & stream, const int w, const int h)
 {
    std::stringstream ss(stream);
    std::string data_type;
    ss >> data_type;
-   const int field_type = stream_state.ReadStream(ss, data_type);
+   const StreamState::FieldType field_type = stream_state.ReadStream(ss, data_type);
 
    return display(field_type, ss, w, h);
 }
