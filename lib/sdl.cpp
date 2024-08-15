@@ -627,7 +627,7 @@ void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
    event.type = SDL_KEYDOWN;
    event.key.windowID = window_id;
    event.key.keysym.sym = k;
-   event.key.keysym.scancode = SDL_GetScancodeFromKey(k);
+   event.key.keysym.scancode = SDL_GetScancodeFromKey(tolower(k));
    event.key.keysym.mod = m;
    queueEvents({ event });
 
