@@ -49,9 +49,9 @@ using namespace mfem;
 // field_type: 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
 //
 StreamState::FieldType display(const StreamState::FieldType field_type,
-            std::stringstream & commands,
-            const int w,
-            const int h)
+                               std::stringstream & commands,
+                               const int w,
+                               const int h)
 {
    // reset antialiasing
    GetAppWindow()->getRenderer().setAntialiasing(0);
@@ -92,7 +92,8 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
    vs = nullptr;
 
    double mesh_range = -1.0;
-   if (field_type == StreamState::FieldType::SCALAR || field_type == StreamState::FieldType::MESH)
+   if (field_type == StreamState::FieldType::SCALAR ||
+       field_type == StreamState::FieldType::MESH)
    {
       if (stream_state.grid_f)
       {
@@ -208,7 +209,8 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
          vs->SetValueRange(-mesh_range, mesh_range);
          vs->SetAutoscale(0);
       }
-      if (stream_state.mesh->SpaceDimension() == 2 && field_type == StreamState::FieldType::MESH)
+      if (stream_state.mesh->SpaceDimension() == 2 &&
+          field_type == StreamState::FieldType::MESH)
       {
          SetVisualizationScene(vs, 2);
       }
@@ -237,8 +239,9 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
 // each string in streams must start with `parallel <nproc> <rank>'
 //
 using StringArray = std::vector<std::string>;
-StreamState::FieldType processParallelStreams(StreamState & state, const StringArray & streams,
-                           std::stringstream * commands = nullptr)
+StreamState::FieldType processParallelStreams(StreamState & state,
+                                              const StringArray & streams,
+                                              std::stringstream * commands = nullptr)
 {
    // std::cerr << "got " << streams.size() << " streams" << std::endl;
    // HACK: match unique_ptr<istream> interface for ReadStreams:
@@ -273,20 +276,24 @@ StreamState::FieldType processParallelStreams(StreamState & state, const StringA
    return field_type;
 }
 
-StreamState::FieldType displayParallelStreams(const StringArray & streams, const int w,
-                           const int h)
+StreamState::FieldType displayParallelStreams(const StringArray & streams,
+                                              const int w,
+                                              const int h)
 {
    std::stringstream commands(streams[0]);
-   const StreamState::FieldType field_type = processParallelStreams(stream_state, streams, &commands);
+   const StreamState::FieldType field_type = processParallelStreams(stream_state,
+                                                                    streams, &commands);
    return display(field_type, commands, w, h);
 }
 
-StreamState::FieldType displayStream(const std::string & stream, const int w, const int h)
+StreamState::FieldType displayStream(const std::string & stream, const int w,
+                                     const int h)
 {
    std::stringstream ss(stream);
    std::string data_type;
    ss >> data_type;
-   const StreamState::FieldType field_type = stream_state.ReadStream(ss, data_type);
+   const StreamState::FieldType field_type = stream_state.ReadStream(ss,
+                                                                     data_type);
 
    return display(field_type, ss, w, h);
 }
