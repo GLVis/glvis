@@ -467,7 +467,7 @@ void VisualizationSceneSolution::Init()
 
    VisualizationSceneScalarData::Init();  // Calls FindNewBox() !!!
 
-   palette.SetIndex(2); // use the 'jet-like' palette in 2D
+   palette.SetIndex(0); // use the 'PLASIMO' palette in 2D
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
    CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*bb.x[0]+(0.5+eps)*bb.x[1]);
