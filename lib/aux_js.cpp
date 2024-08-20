@@ -92,8 +92,8 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
    vs = nullptr;
 
    double mesh_range = -1.0;
-   if (field_type == StreamState::FieldType::SCALAR ||
-       field_type == StreamState::FieldType::MESH)
+   if (field_type == StreamState::FieldType::SCALAR
+       || field_type == StreamState::FieldType::MESH)
    {
       if (stream_state.grid_f)
       {
@@ -105,11 +105,12 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
          if (stream_state.normals.Size() > 0)
          {
             vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
-                                                      &stream_state.normals);
+                                                      stream_state.mesh_quad.get(), &stream_state.normals);
          }
          else
          {
-            vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol);
+            vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
+                                                      stream_state.mesh_quad.get());
          }
          if (stream_state.grid_f)
          {
@@ -129,7 +130,7 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
       {
          VisualizationSceneSolution3d * vss;
          vs = vss = new VisualizationSceneSolution3d(*stream_state.mesh,
-                                                     stream_state.sol);
+                                                     stream_state.sol, stream_state.mesh_quad.get());
          if (stream_state.grid_f)
          {
             vss->SetGridFunction(stream_state.grid_f.get());

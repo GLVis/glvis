@@ -425,12 +425,6 @@ VisualizationSceneSolution::VisualizationSceneSolution()
 }
 
 VisualizationSceneSolution::VisualizationSceneSolution(
-   Mesh &m, Vector &s, Vector *normals)
-   : VisualizationSceneSolution(m, s, NULL, normals)
-{
-}
-
-VisualizationSceneSolution::VisualizationSceneSolution(
    Mesh &m, Vector &s, Mesh *mc, Vector *normals)
 {
    mesh = &m;

@@ -87,7 +87,6 @@ public:
    Array<int> el_attr_to_show, bdr_el_attr_to_show;
 
    VisualizationSceneSolution();
-   VisualizationSceneSolution(Mesh &m, Vector &s, Vector *normals);
    VisualizationSceneSolution(Mesh &m, Vector &s, Mesh *mc = NULL,
                               Vector *normals = NULL);
 
