@@ -516,7 +516,6 @@ em::val getPNGByteArray()
 EMSCRIPTEN_BINDINGS(js_funcs)
 {
    em::enum_<StreamState::FieldType>("FieldType")
-   .value("ONE", StreamState::FieldType::ONE)
    .value("UNKNOWN", StreamState::FieldType::UNKNOWN)
    .value("MIN", StreamState::FieldType::MIN)
    .value("SCALAR", StreamState::FieldType::SCALAR)
