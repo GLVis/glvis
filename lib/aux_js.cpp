@@ -44,6 +44,9 @@ namespace js
 
 using namespace mfem;
 
+// switch representation of the quadrature function
+void SwitchQuadSolution();
+
 //
 // display a new stream
 // field_type: 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
@@ -90,6 +93,11 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
 
    delete vs;
    vs = nullptr;
+
+   if (stream_state.quad_f)
+   {
+      GetAppWindow()->setOnKeyDown('Q', SwitchQuadSolution);
+   }
 
    double mesh_range = -1.0;
    if (field_type == StreamState::FieldType::SCALAR
@@ -140,14 +148,12 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
             if (stream_state.mesh->Dimension() == 3)
             {
                // Use the 'white' palette when visualizing a 3D volume mesh only
-               // vs->palette.SetIndex(4);
                vs->palette.SetIndex(11);
                vss->SetLightMatIdx(4);
             }
             else
             {
                // Use the 'bone' palette when visualizing a surface mesh only
-               // (the same as when visualizing a 2D mesh only)
                vs->palette.SetIndex(4);
             }
             // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
@@ -179,7 +185,7 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
          else
          {
             vs = new VisualizationSceneVector(*stream_state.mesh, stream_state.solu,
-                                              stream_state.solv);
+                                              stream_state.solv, stream_state.mesh_quad.get());
          }
       }
       else if (stream_state.mesh->SpaceDimension() == 3)
@@ -187,12 +193,14 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
          if (stream_state.grid_f)
          {
             stream_state.ProjectVectorFEGridFunction();
-            vs = new VisualizationSceneVector3d(*stream_state.grid_f);
+            vs = new VisualizationSceneVector3d(*stream_state.grid_f,
+                                                stream_state.mesh_quad.get());
          }
          else
          {
             vs = new VisualizationSceneVector3d(*stream_state.mesh, stream_state.solu,
-                                                stream_state.solv, stream_state.solw);
+                                                stream_state.solv, stream_state.solw,
+                                                stream_state.mesh_quad.get());
          }
       }
    }
@@ -467,6 +475,14 @@ em::val getScreenBuffer(bool flip_y=false)
 
    return em::val(em::typed_memory_view(screen_state->size(),
                                         screen_state->data()));
+}
+
+void SwitchQuadSolution()
+{
+   int iqs = ((int)stream_state.GetQuadSolution()+1)
+             % ((int)StreamState::QuadSolution::MAX);
+   stream_state.SwitchQuadSolution((StreamState::QuadSolution)iqs, vs);
+   SendExposeEvent();
 }
 
 #ifdef GLVIS_USE_LIBPNG
