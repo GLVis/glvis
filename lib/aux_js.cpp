@@ -531,6 +531,14 @@ em::val getPNGByteArray()
 // https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html#built-in-type-conversions
 EMSCRIPTEN_BINDINGS(js_funcs)
 {
+   em::enum_<StreamState::FieldType>("FieldType")
+   .value("UNKNOWN", StreamState::FieldType::UNKNOWN)
+   .value("MIN", StreamState::FieldType::MIN)
+   .value("SCALAR", StreamState::FieldType::SCALAR)
+   .value("VECTOR", StreamState::FieldType::VECTOR)
+   .value("MESH", StreamState::FieldType::MESH)
+   .value("MAX", StreamState::FieldType::MAX)
+   ;
    em::function("displayStream", &js::displayStream);
    em::function("displayParallelStreams", &js::displayParallelStreams);
    em::function("updateStream", &js::updateStream);
