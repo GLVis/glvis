@@ -338,13 +338,6 @@ int updateStream(std::string stream)
    std::string data_type;
    ss >> data_type;
 
-   if (data_type != "solution")
-   {
-      std::cerr << "unsupported data type '" << data_type << "' for stream update" <<
-                std::endl;
-      return 1;
-   }
-
    StreamState new_state;
    new_state.ReadStream(ss, data_type);
 
