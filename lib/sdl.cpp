@@ -274,10 +274,10 @@ void SdlWindow::keyDownEvent(SDL_Keysym& ks)
    // to be processed there.
    // Note: the same condition has to be used in signalKeyDown().
    const char *scan_name = SDL_GetScancodeName(ks.scancode);
-   if ((scan_name[0] >= 32 && scan_name[0] < 127) && scan_name[1] == '\0'
-       && (ks.mod & (KMOD_CTRL | KMOD_ALT | KMOD_GUI)) == 0)
+   if ((scan_name[0] >= 32 && scan_name[0] < 127) && scan_name[1] == '\0')
    {
       lastKeyDownProcessed = false;
+      lastKeyDownMods = ks.mod;
       return;
    }
    // If any 'mod' key other than KMOD_SHIFT or KMOD_CAPS is pressed, or the key
@@ -313,13 +313,22 @@ void SdlWindow::textInputEvent(const SDL_TextInputEvent &tie)
    const char c = tie.text[0];
    if (onKeyDown[c])
    {
-      // Keys with 'mods' (other than Shift and CapsLock) are processed in
-      // keyDownEvent().
-      const int mods = 0;
-      onKeyDown[c](mods);
+      onKeyDown[c](lastKeyDownMods & ~(KMOD_CAPS | KMOD_LSHIFT | KMOD_RSHIFT));
 
       // Record the key in 'saved_keys':
+      bool isAlt = lastKeyDownMods & (KMOD_ALT);
+      bool isCtrl = lastKeyDownMods & (KMOD_CTRL);
+      if (isAlt || isCtrl)
+      {
+         saved_keys += "[";
+      }
+      if (isCtrl) { saved_keys += "C-"; }
+      if (isAlt) { saved_keys += "Alt-"; }
       saved_keys += c;
+      if (isAlt || isCtrl)
+      {
+         saved_keys += "]";
+      }
    }
 }
 

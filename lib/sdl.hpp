@@ -127,6 +127,7 @@ private:
    std::string screenshot_file;
    bool screenshot_convert;
    bool lastKeyDownProcessed;
+   Uint16 lastKeyDownMods;
 
    // internal event handlers
    void windowEvent(SDL_WindowEvent& ew);
