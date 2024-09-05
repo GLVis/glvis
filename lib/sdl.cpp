@@ -641,7 +641,7 @@ void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
    queueEvents({ event });
 
    // The same condition as in keyDownEvent().
-   if ((k >= 32 && k < 127) && (m & (KMOD_CTRL | KMOD_ALT | KMOD_GUI)) == 0)
+   if (k >= 32 && k < 127)
    {
       event.type = SDL_TEXTINPUT;
       event.text.windowID = window_id;
