@@ -270,8 +270,8 @@ void SdlWindow::mouseEventUp(SDL_MouseButtonEvent& eb)
 void SdlWindow::keyDownEvent(SDL_Keysym& ks)
 {
    // Some keyDown events will be followed by a textInput event which will
-   // handle key translation due to Shift or CapsLock, so we leave such events
-   // to be processed there.
+   // handle key translation due to Shift, CapsLock or AltGr, so we leave such
+   // events to be processed there.
    // Note: the same condition has to be used in signalKeyDown().
    const char *scan_name = SDL_GetScancodeName(ks.scancode);
    if ((scan_name[0] >= 32 && scan_name[0] < 127) && scan_name[1] == '\0')
@@ -280,8 +280,7 @@ void SdlWindow::keyDownEvent(SDL_Keysym& ks)
       lastKeyDownMods = ks.mod;
       return;
    }
-   // If any 'mod' key other than KMOD_SHIFT or KMOD_CAPS is pressed, or the key
-   // is not in the range [32,127) then we processed the event here.
+   // If the key is not in the range [32,127) then we processed the event here.
    lastKeyDownProcessed = true;
    if (onKeyDown[ks.sym])
    {
