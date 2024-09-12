@@ -128,6 +128,7 @@ private:
    bool screenshot_convert;
    bool lastKeyDownProcessed;
    Uint16 lastKeyDownMods;
+   char lastKeyDownChar;
 
    // internal event handlers
    void windowEvent(SDL_WindowEvent& ew);

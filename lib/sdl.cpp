@@ -278,6 +278,7 @@ void SdlWindow::keyDownEvent(SDL_Keysym& ks)
    {
       lastKeyDownProcessed = false;
       lastKeyDownMods = ks.mod;
+      lastKeyDownChar = scan_name[0];
       return;
    }
    // If the key is not in the range [32,127) then we processed the event here.
@@ -309,7 +310,13 @@ void SdlWindow::textInputEvent(const SDL_TextInputEvent &tie)
    // This event follows a keyDown event where we've recorded if the event was
    // processed in keyDownEvent(). If it was not processed, we do it here.
    if (lastKeyDownProcessed) { return; }
-   const char c = tie.text[0];
+   char c = tie.text[0];
+   if (!onKeyDown[c])
+   {
+      // If the key was translated to something that is not handled, return to
+      // the physical key passed in the keyDown event.
+      c = lastKeyDownChar;
+   }
    if (onKeyDown[c])
    {
       onKeyDown[c](lastKeyDownMods & ~(KMOD_CAPS | KMOD_LSHIFT | KMOD_RSHIFT));
