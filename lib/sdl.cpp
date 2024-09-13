@@ -278,7 +278,7 @@ void SdlWindow::keyDownEvent(SDL_Keysym& ks)
    {
       lastKeyDownProcessed = false;
       lastKeyDownMods = ks.mod;
-      lastKeyDownChar = scan_name[0];
+      lastKeyDownChar = ks.sym;
       return;
    }
    // If the key is not in the range [32,127) then we processed the event here.
