@@ -274,14 +274,17 @@ void SdlWindow::keyDownEvent(SDL_Keysym& ks)
    // events to be processed there.
    // Note: the same condition has to be used in signalKeyDown().
    const char *scan_name = SDL_GetScancodeName(ks.scancode);
-   if ((scan_name[0] >= 32 && scan_name[0] < 127) && scan_name[1] == '\0')
+   if ((scan_name[0] >= 32 && scan_name[0] < 127) && scan_name[1] == '\0'
+       && (ks.mod & (KMOD_CTRL | KMOD_LALT | KMOD_GUI)) == 0)
    {
       lastKeyDownProcessed = false;
       lastKeyDownMods = ks.mod;
       lastKeyDownChar = ks.sym;
       return;
    }
-   // If the key is not in the range [32,127) then we processed the event here.
+   // If any 'mod' key other than KMOD_SHIFT, KMOD_CAPS or KMOD_RALT is
+   // pressed, or the key is not in the range [32,127) then we processed the
+   // event here.
    lastKeyDownProcessed = true;
    if (onKeyDown[ks.sym])
    {
@@ -647,7 +650,7 @@ void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
    queueEvents({ event });
 
    // The same condition as in keyDownEvent().
-   if (k >= 32 && k < 127)
+   if ((k >= 32 && k < 127) && (m & (KMOD_CTRL | KMOD_LALT | KMOD_GUI)) == 0)
    {
       event.type = SDL_TEXTINPUT;
       event.text.windowID = window_id;
