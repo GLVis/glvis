@@ -194,6 +194,11 @@ Key commands
 - <kbd>F6</kbd> – Palette menu (negative repeat number flips the palette)
 - <kbd>F7</kbd> – Change the minimum and maximum values
 - <kbd>Shift</kbd> + <kbd>F7</kbd> – Set the bounding box from the terminal
+- <kbd>Ctrl</kbd> + <kbd>a</kbd> – Cycle through the auto-scaling options:
+  - `off`: do not change the bounding box and the value range
+  - `on` (default): recompute both the bounding box and the value range
+  - `value`: recompute only the value range
+  - `mesh`: recompute only the bounding box
 
 ## 2D scalar data
 
