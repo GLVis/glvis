@@ -24,6 +24,9 @@ Version 4.3.2 released on Sep 27, 2024
 
 - Fixed visualization of 1D data and added a regression test.
 
+- Updated javascript bindings to fix issues in glvis-js and pyglvis, and 
+  add support for quadrature data visualization.
+
 
 Version 4.3 released on Aug 7, 2024
 ===================================
