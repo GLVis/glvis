@@ -19,6 +19,11 @@ Version 4.3.2 released on Sep 27, 2024
   set `fail-fast: false` so that tests always run, rename artifacts to help
   avoid confusion, code-cleanup/light refactoring.
 
+- Fixed handling of key press events to work with localized layouts and enable
+  key translation with 'AltGr'.
+
+- Fixed visualization of 1D data and added a regression test.
+
 
 Version 4.3 released on Aug 7, 2024
 ===================================
