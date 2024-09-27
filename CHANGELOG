@@ -15,17 +15,17 @@ Version 4.3.2 released on Sep 27, 2024
 - Fixed the Mac binary build in GitHub CI and provided a signed and notarized
   version for download from the website.
 
-- Miscellaneous CI improvements including: generating image diffs for tests,
-  set `fail-fast: false` so that tests always run, rename artifacts to help
-  avoid confusion, code-cleanup/light refactoring.
-
 - Fixed handling of key press events to work with localized layouts and enable
   key translation with 'AltGr'.
 
+- Updated JavaScript bindings to fix issues in glvis-js and pyglvis, and added
+  support for quadrature data visualization.
+
 - Fixed visualization of 1D data and added a regression test.
 
-- Updated javascript bindings to fix issues in glvis-js and pyglvis, and 
-  add support for quadrature data visualization.
+- Miscellaneous CI improvements including: generating image diffs for tests,
+  set `fail-fast: false` so that tests always run, rename artifacts to help
+  avoid confusion, code-cleanup/light refactoring.
 
 
 Version 4.3 released on Aug 7, 2024
