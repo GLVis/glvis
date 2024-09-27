@@ -12,7 +12,8 @@
 Version 4.3.2 released on Sep 27, 2024
 ======================================
 
-- Fix the Mac binary build in GitHub CI.
+- Fixed the Mac binary build in GitHub CI and provided a signed and notarized
+  version for download from the website.
 
 - Miscellaneous CI improvements including: generating image diffs for tests,
   set `fail-fast: false` so that tests always run, rename artifacts to help
