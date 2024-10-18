@@ -8,7 +8,7 @@
 
                              https://glvis.org
 
-<a href="https://github.com/GLVis/glvis/releases/latest"><img alt="Release" src="https://img.shields.io/badge/release-v4.2-success.svg"></a>
+<a href="https://github.com/GLVis/glvis/releases/latest"><img alt="Release" src="https://img.shields.io/badge/release-v4.3.2-success.svg"></a>
 <a href="https://github.com/GLVis/glvis/actions/workflows/builds.yml"><img alt="Build" src="https://github.com/GLVis/glvis/actions/workflows/builds.yml/badge.svg"></a>
 <a href="https://github.com/glvis/glvis/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-BSD-success.svg"></a>
 <a href="https://glvis.github.io/doxygen/html/index.html"><img alt="Doxygen" src="https://img.shields.io/badge/code-documented-success.svg"></a>
@@ -68,6 +68,12 @@ is a partial list of the available functionality. Some of these keys can also be
 provided as input, using the `-k` command-line option and the `keys` script
 command.
 
+For high-order meshes and/or solution data, GLVis performs element subdivision
+to try to represent the data more accurately. However, for highly-varying data
+or large meshes, the auto-selected subdivision factor (see the
+[Auto-refinement](#auto-refinement) section below) may not be sufficient -- use
+the keys <kbd>o</kbd> / <kbd>O</kbd>, described below, to manually adjust the
+subdivision factor.
 
 SPDX-License-Identifier: BSD-3-Clause <br>
 LLNL Release Number: LLNL-CODE-443271 <br>
@@ -144,6 +150,10 @@ Key commands
 - <kbd>Ctrl</kbd> + <kbd>p</kbd> – Print to a PDF file using `gl2ps`. Other
   vector formats (SVG, EPS) are also possible, but keep in mind that the
   printing takes a while and the generated files are big.
+- <kbd>Q</kbd> – Cycle between representations of the visualized *quadrature data*. The options are:
+  - piece-wise constant refined (LOR)
+  - L2 element dof collocation (interpolation)
+  - L2 element projection (L2 projection)
 - <kbd>q</kbd> – Exit
 
 ## Advanced
@@ -155,12 +165,14 @@ Key commands
     functions and curvilinear elements (use <kbd>o</kbd> / <kbd>O</kbd> to control subdivisions)
 - <kbd>\\</kbd> – Set light source position (see <kbd>Right</kbd> + <kbd>Shift</kbd>)
 - <kbd>*</kbd> / <kbd>/</kbd> – Zoom in/out
-- <kbd>+</kbd> / <kbd>-</kbd> – Stretch/compree in `z`-direction
+- <kbd>+</kbd> / <kbd>-</kbd> – Stretch/compress in `z`-direction
 - <kbd>[</kbd> / <kbd>]</kbd> – Shrink/enlarge the bounding box (relative to the colorbar)
 - <kbd>(</kbd> / <kbd>)</kbd> – Shrink/enlarge the visualization window
 - <kbd>.</kbd> – Start/stop `z`-spinning (speed/direction can be controlled with <kbd>0</kbd> / <kbd>Enter</kbd>)
 - <kbd>←</kbd>, <kbd>→</kbd>, <kbd>↑</kbd>, <kbd>↓</kbd> – Manual rotation
 - <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>, <kbd>5</kbd>, <kbd>6</kbd>, <kbd>7</kbd>, <kbd>8</kbd>, <kbd>9</kbd> – Manual rotation along coordinate axes
+- <kbd>Alt</kbd> + <kbd>a</kbd> – Set axes number format
+- <kbd>Alt</kbd> + <kbd>c</kbd> – Set colorbar number format
 - <kbd>Ctrl</kbd> + <kbd>←</kbd>, <kbd>→</kbd>, <kbd>↑</kbd>, <kbd>↓</kbd> – Translate the viewpoint
 - <kbd>Ctrl</kbd> + <kbd>o</kbd> – Toggle an element ordering curve
 - <kbd>n</kbd> / <kbd>N</kbd> – Cycle through numberings. The options are:
@@ -182,6 +194,11 @@ Key commands
 - <kbd>F6</kbd> – Palette menu (negative repeat number flips the palette)
 - <kbd>F7</kbd> – Change the minimum and maximum values
 - <kbd>Shift</kbd> + <kbd>F7</kbd> – Set the bounding box from the terminal
+- <kbd>Ctrl</kbd> + <kbd>a</kbd> – Cycle through the auto-scaling options:
+  - `off`: do not change the bounding box and the value range
+  - `on` (default): recompute both the bounding box and the value range
+  - `value`: recompute only the value range
+  - `mesh`: recompute only the bounding box
 
 ## 2D scalar data
 
@@ -292,3 +309,46 @@ Key commands
   - `x`-component: `v_x`
   - `y`-component: `v_y`
   - `z`-component: `v_z`
+
+## Auto-refinement
+
+The GLVis auto-refinement algorithm selects a subdivision factor trying to
+achieve an accurate representation of high-order meshes and solution data while
+keeping the initial time to visualize the data reasonable. The algorithm can be
+summarized as follows:
+- GLVis draws surface elements; the number of drawn elements, `ne`, is either:
+  - the number of elements in the mesh for 2D meshes (including surface meshes,
+    i.e. 2D meshes embedded in 3D space), or
+  - the number of boundary mesh elements described by the mesh in 3D.
+- A tentative upper limit on the number of vertices to be drawn is defined based
+  on the maximum order of the mesh and the solution, `max_order`:
+  ```
+  max_vert = ne * (max_order + 1) * (max_order + 1)
+  ```
+- To allow more accurate representation for small meshes, this number is
+  potentially increased:
+  ```
+  max_vert = max(max_vert, 100 000)
+  ```
+- To keep the time to initially visualize the data reasonable, this number is
+  potentially reduced:
+  ```
+  max_vert = min(max_vert, 2 000 000)
+  ```
+- Finally, the subdivision factor `ref` is chosen to be the largest number such
+  that:
+  - the number of vertices needed to draw the `ne` surface elements with `ref`
+    subdivisions does not exceed `max_vert`:
+    ```
+    ne * (ref + 1) * (ref + 1) <= max_vert
+    ```
+  - for large meshes where the above limit cannot be satisfied, set `ref = 1`
+  - for small meshes, avoid excessive refinements:
+    ```
+    ref <= 16
+    ```
+
+Note that, for highly-varying data or large meshes, this auto-selected
+subdivision factor may not be sufficient for accurate representation. In such
+cases the subdivision can be manually adjusted using the keys <kbd>o</kbd> /
+<kbd>O</kbd>, described above.

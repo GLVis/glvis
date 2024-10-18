@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -61,6 +61,7 @@ std::string VisualizationSceneVector3d::GetHelpString() const
       << "| o/O  (De)refine elem, disc shading |" << endl
       << "| p/P  Cycle through color palettes  |" << endl
       << "| q -  Quits                         |" << endl
+      << "| Q -  Cycle quadrature data mode    |" << endl
       << "| r -  Reset the plot to 3D view     |" << endl
       << "| R -  Reset the plot to 2D view     |" << endl
       << "| s -  Turn on/off unit cube scaling |" << endl
@@ -73,6 +74,8 @@ std::string VisualizationSceneVector3d::GetHelpString() const
       << "| y/Y  Rotate cutting plane (theta)  |" << endl
       << "| z/Z  Translate cutting plane       |" << endl
       << "| \\ -  Set light source position     |" << endl
+      << "| Alt+a  - Axes number format        |" << endl
+      << "| Alt+c  - Colorbar number format    |" << endl
       << "| Ctrl+p - Print to a PDF file       |" << endl
       << "+------------------------------------+" << endl
       << "| Function keys                      |" << endl
@@ -339,9 +342,10 @@ void VisualizationSceneVector3d::ToggleScalarFunction()
 }
 
 VisualizationSceneVector3d::VisualizationSceneVector3d(Mesh &m, Vector &sx,
-                                                       Vector &sy, Vector &sz)
+                                                       Vector &sy, Vector &sz, Mesh *mc)
 {
    mesh = &m;
+   mesh_coarse = mc;
    solx = &sx;
    soly = &sy;
    solz = &sz;
@@ -354,7 +358,8 @@ VisualizationSceneVector3d::VisualizationSceneVector3d(Mesh &m, Vector &sx,
    Init();
 }
 
-VisualizationSceneVector3d::VisualizationSceneVector3d(GridFunction &vgf)
+VisualizationSceneVector3d::VisualizationSceneVector3d(GridFunction &vgf,
+                                                       Mesh *mc)
 {
    FiniteElementSpace *fes = vgf.FESpace();
    if (fes == NULL || fes->GetVDim() != 3)
@@ -366,6 +371,7 @@ VisualizationSceneVector3d::VisualizationSceneVector3d(GridFunction &vgf)
    VecGridF = &vgf;
 
    mesh = fes->GetMesh();
+   mesh_coarse = mc;
 
    sfes = new FiniteElementSpace(mesh, fes->FEColl(), 1, fes->GetOrdering());
    GridF = new GridFunction(sfes);
@@ -436,6 +442,13 @@ void VisualizationSceneVector3d::Init()
    }
 }
 
+int VisualizationSceneVector3d::GetFunctionAutoRefineFactor()
+{
+   if (!VecGridF) { return 1; }
+
+   return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(*VecGridF);
+}
+
 VisualizationSceneVector3d::~VisualizationSceneVector3d()
 {
    delete sol;
@@ -451,7 +464,7 @@ VisualizationSceneVector3d::~VisualizationSceneVector3d()
 }
 
 void VisualizationSceneVector3d::NewMeshAndSolution(
-   Mesh *new_m, GridFunction *new_v)
+   Mesh *new_m, Mesh *new_mc, GridFunction *new_v)
 {
    delete sol;
    if (VecGridF)
@@ -468,12 +481,16 @@ void VisualizationSceneVector3d::NewMeshAndSolution(
       node_pos = new double[new_m->GetNV()];
    }
 
+   Mesh *old_m = mesh;
+   VecGridF = new_v;
+   mesh = new_m;
+   mesh_coarse = new_mc;
+
    // If the number of surface elements changes, recompute the refinement factor
-   if (mesh->Dimension() != new_m->Dimension() ||
-       (mesh->Dimension() == 2 && mesh->GetNE() != new_m->GetNE()) ||
-       (mesh->Dimension() == 3 && mesh->GetNBE() != new_m->GetNBE()))
+   if (mesh->Dimension() != old_m->Dimension() ||
+       (mesh->Dimension() == 2 && mesh->GetNE() != old_m->GetNE()) ||
+       (mesh->Dimension() == 3 && mesh->GetNBE() != old_m->GetNBE()))
    {
-      mesh = new_m;
       int ref = GetAutoRefineFactor();
       if (TimesToRefine != ref)
       {
@@ -484,8 +501,6 @@ void VisualizationSceneVector3d::NewMeshAndSolution(
 
    FiniteElementSpace *new_fes = new_v->FESpace();
 
-   VecGridF = new_v;
-   mesh = new_m;
    FindNodePos();
 
    sfes = new FiniteElementSpace(mesh, new_fes->FEColl(), 1,
@@ -793,10 +808,10 @@ void VisualizationSceneVector3d::Prepare()
 
    switch (shading)
    {
-      case 0:
+      case Shading::Flat:
          PrepareFlat();
          return;
-      case 2:
+      case Shading::Noncomforming:
          PrepareFlat2();
          return;
       default:
@@ -927,7 +942,7 @@ void VisualizationSceneVector3d::PrepareLines()
 {
    if (!drawmesh) { return; }
 
-   if (shading == 2)
+   if (shading == Shading::Noncomforming)
    {
       PrepareLines2();
       return;
@@ -979,15 +994,23 @@ void VisualizationSceneVector3d::PrepareLines()
       switch (drawmesh)
       {
          case 1:
-            line.glBegin(GL_LINE_LOOP);
-
-            for (j = 0; j < pointmat.Size(); j++)
+         {
+            if (mesh_coarse)
             {
-               line.glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j));
+               DrawBdrElCoarseSurfEdges(line, i, pointmat);
             }
-            line.glEnd();
-            break;
+            else
+            {
+               line.glBegin(GL_LINE_LOOP);
 
+               for (j = 0; j < pointmat.Size(); j++)
+               {
+                  line.glVertex3d (pointmat(0, j), pointmat(1, j), pointmat(2, j));
+               }
+               line.glEnd();
+            }
+            break;
+         }
          case 2:
             for (j = 0; j < pointmat.Size(); j++)
             {
@@ -1006,7 +1029,7 @@ void VisualizationSceneVector3d::PrepareLines()
 
 void VisualizationSceneVector3d::PrepareLines2()
 {
-   int i, j, k, fn, fo, di = 0;
+   int fn, fo, di = 0;
    double bbox_diam;
 
    line_buf.clear();
@@ -1025,7 +1048,7 @@ void VisualizationSceneVector3d::PrepareLines2()
                       (bb.z[1]-bb.z[0])*(bb.z[1]-bb.z[0]) );
    double sc = FaceShiftScale * bbox_diam;
 
-   for (i = 0; i < ne; i++)
+   for (int i = 0; i < ne; i++)
    {
       int attr = (dim == 3) ? mesh->GetBdrAttribute(i) : mesh->GetAttribute(i);
       if (!bdr_attr_to_show[attr-1]) { continue; }
@@ -1104,29 +1127,53 @@ void VisualizationSceneVector3d::PrepareLines2()
       if (drawmesh == 1)
       {
          Array<int> &REdges = RefG->RefEdges;
-         line.glBegin (GL_LINES);
-         for (k = 0; k < REdges.Size()/2; k++)
+         if (mesh_coarse)
          {
-            int *RE = &(REdges[2*k]);
-
             if (sc == 0.0)
             {
-               for (j = 0; j < 2; j++)
-                  line.glVertex3d (pointmat(0, RE[j]), pointmat(1, RE[j]),
-                                   pointmat(2, RE[j]));
+               DrawBdrElCoarseSurfEdges(line, i, pointmat, &RefG->RefPts, &REdges);
             }
             else
             {
-               for (j = 0; j < 2; j++)
+               DenseMatrix pointmat_shift = pointmat;
+               for (int j = 0; j < REdges.Size(); j++)
                {
-                  double val = sc * (values(RE[j]) - minv) / (maxv - minv);
-                  line.glVertex3d (pointmat(0, RE[j])+val*norm[0],
-                                   pointmat(1, RE[j])+val*norm[1],
-                                   pointmat(2, RE[j])+val*norm[2]);
+                  double val = sc * (values(REdges[j]) - minv) / (maxv - minv);
+                  for (int d = 0; d < 3; d++)
+                  {
+                     pointmat_shift(d, REdges[j]) += val*norm[d];
+                  }
                }
+               DrawBdrElCoarseSurfEdges(line, i, pointmat_shift, &RefG->RefPts, &REdges);
             }
          }
-         line.glEnd();
+         else
+         {
+            line.glBegin (GL_LINES);
+            for (int k = 0; k < REdges.Size()/2; k++)
+            {
+               int *RE = &(REdges[2*k]);
+
+               if (sc == 0.0)
+               {
+                  for (int j = 0; j < 2; j++)
+                     line.glVertex3d (pointmat(0, RE[j]),
+                                      pointmat(1, RE[j]),
+                                      pointmat(2, RE[j]));
+               }
+               else
+               {
+                  for (int j = 0; j < 2; j++)
+                  {
+                     double val = sc * (values(RE[j]) - minv) / (maxv - minv);
+                     line.glVertex3d (pointmat(0, RE[j])+val*norm[0],
+                                      pointmat(1, RE[j])+val*norm[1],
+                                      pointmat(2, RE[j])+val*norm[2]);
+                  }
+               }
+            }
+            line.glEnd();
+         }
       }
       else if (drawmesh == 2)
       {
@@ -1144,13 +1191,13 @@ void VisualizationSceneVector3d::PrepareLines2()
                sides = 4;
                break;
          }
-         for (k = 0; k < RefG->RefGeoms.Size()/sides; k++)
+         for (int k = 0; k < RefG->RefGeoms.Size()/sides; k++)
          {
             RG = &(RefG->RefGeoms[k*sides]);
 
             if (sc == 0.0)
             {
-               for (j = 0; j < sides; j++)
+               for (int j = 0; j < sides; j++)
                {
                   for (int ii = 0; ii < 3; ii++)
                   {
@@ -1161,7 +1208,7 @@ void VisualizationSceneVector3d::PrepareLines2()
             }
             else
             {
-               for (j = 0; j < sides; j++)
+               for (int j = 0; j < sides; j++)
                {
                   double val = (values(RG[j]) - minv) / (maxv - minv);
                   val *= sc;

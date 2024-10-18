@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -267,51 +267,38 @@ void SdlWindow::mouseEventUp(SDL_MouseButtonEvent& eb)
    }
 }
 
-void SdlWindow::keyEvent(SDL_Keysym& ks)
+void SdlWindow::keyDownEvent(SDL_Keysym& ks)
 {
-   bool handled = false;
-   if (ks.sym >= 128 || ks.sym < 32)
+   // Some keyDown events will be followed by a textInput event which will
+   // handle key translation due to Shift, CapsLock or AltGr, so we leave such
+   // events to be processed there.
+   // Note: the same condition has to be used in signalKeyDown().
+   const char *scan_name = SDL_GetScancodeName(ks.scancode);
+   if ((scan_name[0] >= 32 && scan_name[0] < 127) && scan_name[1] == '\0'
+       && (ks.mod & (KMOD_CTRL | KMOD_LALT | KMOD_GUI)) == 0)
    {
-      if (onKeyDown[ks.sym])
-      {
-         onKeyDown[ks.sym](ks.mod);
-         handled = true;
-      }
+      lastKeyDownProcessed = false;
+      lastKeyDownMods = ks.mod;
+      lastKeyDownChar = ks.sym;
+      return;
    }
-   else if (ks.sym < 256 && std::isdigit(ks.sym))
+   // If any 'mod' key other than KMOD_SHIFT, KMOD_CAPS or KMOD_RALT is
+   // pressed, or the key is not in the range [32,127) then we processed the
+   // event here.
+   lastKeyDownProcessed = true;
+   if (onKeyDown[ks.sym])
    {
-      if (!(SDL_GetModState() & KMOD_SHIFT))
-      {
-         // handle number key event here
-         onKeyDown[ks.sym](ks.mod);
-         handled = true;
-      }
-   }
-   else if (ctrlDown)
-   {
-      if (onKeyDown[ks.sym])
-      {
-         onKeyDown[ks.sym](ks.mod);
-         handled = true;
-      }
-   }
-   if (ks.sym == SDLK_RCTRL || ks.sym == SDLK_LCTRL)
-   {
-      ctrlDown = true;
-   }
-   if (handled)
-   {
+      onKeyDown[ks.sym](ks.mod);
+
+      // Record the key in 'saved_keys':
       bool isAlt = ks.mod & (KMOD_ALT);
       bool isCtrl = ks.mod & (KMOD_CTRL);
       saved_keys += "[";
       if (isCtrl) { saved_keys += "C-"; }
       if (isAlt) { saved_keys += "Alt-"; }
-      if (ks.sym < 256 && std::isalpha(ks.sym))
+      if (ks.sym >= 32 && ks.sym < 127)
       {
-         // key with corresponding text output
-         char c = ks.sym;
-         if (!(ks.mod & KMOD_SHIFT)) { c = std::tolower(c); }
-         saved_keys += c;
+         saved_keys += (char)(ks.sym);
       }
       else
       {
@@ -321,20 +308,31 @@ void SdlWindow::keyEvent(SDL_Keysym& ks)
    }
 }
 
-void SdlWindow::keyEvent(char c)
+void SdlWindow::textInputEvent(const SDL_TextInputEvent &tie)
 {
-   if (!std::isdigit(c) && onKeyDown[c])
+   // This event follows a keyDown event where we've recorded if the event was
+   // processed in keyDownEvent(). If it was not processed, we do it here.
+   if (lastKeyDownProcessed) { return; }
+   char c = tie.text[0];
+   if (!onKeyDown[c])
    {
-      SDL_Keymod mods = SDL_GetModState();
-      bool isAlt = mods & (KMOD_ALT);
-      bool isCtrl = mods & (KMOD_CTRL);
-      onKeyDown[c](mods);
+      // If the key was translated to something that is not handled, return to
+      // the physical key passed in the keyDown event.
+      c = lastKeyDownChar;
+   }
+   if (onKeyDown[c])
+   {
+      onKeyDown[c](lastKeyDownMods & ~(KMOD_CAPS | KMOD_LSHIFT | KMOD_RSHIFT));
+
+      // Record the key in 'saved_keys':
+      bool isAlt = lastKeyDownMods & (KMOD_ALT);
+      bool isCtrl = lastKeyDownMods & (KMOD_CTRL);
       if (isAlt || isCtrl)
       {
          saved_keys += "[";
-         if (isCtrl) { saved_keys += "C-"; }
-         if (isAlt) { saved_keys += "Alt-"; }
       }
+      if (isCtrl) { saved_keys += "C-"; }
+      if (isAlt) { saved_keys += "Alt-"; }
       saved_keys += c;
       if (isAlt || isCtrl)
       {
@@ -403,17 +401,30 @@ void SdlWindow::mainIter()
                keep_going = true;
                break;
             case SDL_KEYDOWN:
-               keyEvent(e.key.keysym);
+               // For debugging: uncomment the next line to track key events.
+               // #define TRACK_KEY_EVENTS
+#ifdef TRACK_KEY_EVENTS
+               cout << "Event: SDL_KEYDOWN sym=" << e.key.keysym.sym
+                    << " mod=" << e.key.keysym.mod << endl;
+#endif
+               keyDownEvent(e.key.keysym);
                break;
             case SDL_KEYUP:
-               if (e.key.keysym.sym == SDLK_LCTRL
-                   || e.key.keysym.sym == SDLK_RCTRL)
-               {
-                  ctrlDown = false;
-               }
+#ifdef TRACK_KEY_EVENTS
+               cout << "Event: SDL_KEYUP sym=" << e.key.keysym.sym
+                    << " mod=" << e.key.keysym.mod << endl;
+#endif
                break;
             case SDL_TEXTINPUT:
-               keyEvent(e.text.text[0]);
+#ifdef TRACK_KEY_EVENTS
+               cout << "Event: SDL_TEXTINPUT text[0..3]="
+                    << (int)(unsigned char)(e.text.text[0])
+                    << ' ' << (int)(unsigned char)(e.text.text[1])
+                    << ' ' << (int)(unsigned char)(e.text.text[2])
+                    << ' ' << (int)(unsigned char)(e.text.text[3])
+                    << " (as codes 0-255)" << endl;
+#endif
+               textInputEvent(e.text);
                break;
             case SDL_MOUSEMOTION:
                motionEvent(e.motion);
@@ -630,20 +641,22 @@ void SdlWindow::setWindowPos(int x, int y)
 void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
 {
    SDL_Event event;
-   if (k >= 32 && k < 128)
+
+   event.type = SDL_KEYDOWN;
+   event.key.windowID = window_id;
+   event.key.keysym.sym = k;
+   event.key.keysym.scancode = SDL_GetScancodeFromKey(tolower(k));
+   event.key.keysym.mod = m;
+   queueEvents({ event });
+
+   // The same condition as in keyDownEvent().
+   if ((k >= 32 && k < 127) && (m & (KMOD_CTRL | KMOD_LALT | KMOD_GUI)) == 0)
    {
       event.type = SDL_TEXTINPUT;
       event.text.windowID = window_id;
       event.text.text[0] = k;
+      queueEvents({ event });
    }
-   else
-   {
-      event.type = SDL_KEYDOWN;
-      event.key.windowID = window_id;
-      event.key.keysym.sym = k;
-      event.key.keysym.mod = m;
-   }
-   queueEvents({ event });
 }
 
 void SdlWindow::swapBuffer()

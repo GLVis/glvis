@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -14,6 +14,7 @@
 #include <fstream>
 #include <cmath>
 #include <chrono>
+#include <regex>
 
 #include "mfem.hpp"
 #include "sdl.hpp"
@@ -231,6 +232,18 @@ void SendKeySequence(const char *seq)
             case '7': // F7
                wnd->signalKeyDown(SDLK_F7);
                break;
+            case '1': // F11 or F12
+               key++;
+               switch (*key)
+               {
+                  case '1': // F11
+                     wnd->signalKeyDown(SDLK_F11);
+                     break;
+                  case '2': // F12
+                     wnd->callKeyDown(SDLK_F12);
+                     break;
+               }
+               break;
             case '.': // Keypad ./Del
                wnd->signalKeyDown(SDLK_PERIOD);
                break;
@@ -289,6 +302,18 @@ void CallKeySequence(const char *seq)
                break;
             case '7': // F7
                wnd->callKeyDown(SDLK_F7);
+               break;
+            case '1': // F11 or F12
+               key++;
+               switch (*key)
+               {
+                  case '1': // F11
+                     wnd->callKeyDown(SDLK_F11);
+                     break;
+                  case '2': // F12
+                     wnd->callKeyDown(SDLK_F12);
+                     break;
+               }
                break;
             case '.': // Keypad ./Del
                wnd->callKeyDown(SDLK_PERIOD);
@@ -1155,7 +1180,7 @@ inline GL2PSvertex CreatePrintVtx(gl3::FeedbackVertex v)
 
 void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
 {
-   //print lines
+   // print lines
    for (size_t i = 0; i < cbuf.lines.size(); i += 2)
    {
       GL2PSvertex lineOut[2] =
@@ -1213,7 +1238,7 @@ void KeyCtrlP()
                        // GL2PS_OCCLUSION_CULL |
                        // GL2PS_BEST_ROOT |
                        GL2PS_SILENT |
-                       //GL2PS_DRAW_BACKGROUND |
+                       // GL2PS_DRAW_BACKGROUND |
                        GL2PS_NO_BLENDING |
                        GL2PS_NO_OPENGL_CONTEXT,
                        GL_RGBA, 0, NULL, 16, 16, 16, 0, fp, "a" );
@@ -1782,4 +1807,60 @@ void SetFont(const std::string& fn)
         << (priority_font.empty() ? "(default)" : priority_font)
         << "', height = " << font_size << endl;
 #endif
+}
+
+function<string(double)> NumberFormatter(int precision, char format,
+                                         bool showsign)
+{
+   return [precision, format, showsign](double x) -> string
+   {
+      ostringstream oss;
+      switch (format)
+      {
+         case 'f':
+            oss << fixed;
+            break;
+         case 's':
+            oss << scientific;
+            break;
+         case 'd':
+            oss << defaultfloat;
+            break;
+         default:
+            MFEM_WARNING("Unknown formatting type. Using default. "
+                         << "Valid options include: ['f', 's', 'd']" << endl);
+            oss << defaultfloat;
+            break;
+      };
+      if (showsign)
+      {
+         oss << showpos;
+      }
+      oss << setprecision(precision) << x;
+      return oss.str();
+   };
+}
+
+function<string(double)> NumberFormatter(string formatting)
+{
+   if (!isValidNumberFormatting(formatting))
+   {
+      MFEM_WARNING("Invalid formatting string. Using default. " << endl);
+      return NumberFormatter();
+   }
+   else
+   {
+      return [formatting](double x) -> string
+      {
+         char buf[64];
+         snprintf(buf, sizeof(buf), formatting.c_str(), x);
+         return string(buf);
+      };
+   }
+}
+
+bool isValidNumberFormatting(const string& formatting)
+{
+   regex rgx = regex(R"(%[\-+#0\s]?[0-9]{0,3}\.?[0-9]{0,3}[FfEeGg])");
+   return regex_match(formatting, rgx);
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -16,6 +16,7 @@
 
 #include "mfem.hpp"
 #include "openglvis.hpp"
+#include "aux_vis.hpp"
 
 using namespace mfem;
 
@@ -54,16 +55,34 @@ public:
 
 class VisualizationSceneScalarData : public VisualizationScene
 {
+public:
+   enum class Shading
+   {
+      Invalid = -1,
+      Min = -1,
+      //---------
+      Flat,
+      Smooth,
+      Noncomforming,
+      //---------
+      Max
+   };
+
 protected:
-   Mesh   *mesh;
-   Vector *sol;
+   Mesh   *mesh{}, *mesh_coarse{};
+   Vector *sol{};
 
    double minv, maxv;
 
    std::string a_label_x, a_label_y, a_label_z;
 
    int scaling, colorbar, drawaxes;
-   int auto_ref_max, auto_ref_max_surf_elem;
+   Shading shading;
+   int auto_ref_max, auto_ref_min_surf_vert, auto_ref_max_surf_vert;
+
+   // Formatter for axes & colorbar numbers. Set defaults.
+   function<string(double)> axis_formatter = NumberFormatter(4, 'd', false);
+   function<string(double)> colorbar_formatter = NumberFormatter(4, 'd', false);
 
    vector<gl3::GlDrawable*> updated_bufs;
    gl3::GlDrawable axes_buf;
@@ -124,6 +143,10 @@ protected:
 
    void FixValueRange();
 
+   static int GetFunctionAutoRefineFactor(GridFunction &gf);
+   virtual int GetFunctionAutoRefineFactor() = 0;
+   virtual int GetAutoRefineFactor();
+
    void Cone(gl3::GlDrawable& buf, glm::mat4 transform, double cval);
 
 public:
@@ -137,7 +160,7 @@ public:
 
    VisualizationSceneScalarData()
       : a_label_x("x"), a_label_y("y"), a_label_z("z") {}
-   VisualizationSceneScalarData (Mesh & m, Vector & s);
+   VisualizationSceneScalarData (Mesh & m, Vector & s, Mesh *mc = NULL);
 
    virtual ~VisualizationSceneScalarData();
 
@@ -182,12 +205,14 @@ public:
    virtual void UpdateValueRange(bool prepare) = 0;
    void SetValueRange(double, double);
 
-   virtual void SetShading(int, bool) = 0;
+   virtual void SetShading(Shading, bool) = 0;
+   virtual void ToggleShading() { SetShading((Shading)(((int)shading + 1) % (int)Shading::Max), true); }
+   virtual Shading GetShading() { return shading; }
    virtual void SetRefineFactors(int, int) = 0;
-   void SetAutoRefineLimits(int max_ref, int max_surf_elem)
+   void SetAutoRefineLimits(int max_ref, int max_surf_vert)
    {
       auto_ref_max = max_ref;
-      auto_ref_max_surf_elem = max_surf_elem;
+      auto_ref_max_surf_vert = max_surf_vert;
    }
    virtual void AutoRefine() = 0;
    virtual void ToggleAttributes(Array<int> &attr_list) = 0;
@@ -253,11 +278,17 @@ public:
    // Turn on or off the caption
    void PrepareCaption();
 
+   void SetColorbarNumberFormat(int precision, char format, bool showsign);
+   void SetColorbarNumberFormat(string formatting);
+
    void PrepareColorBar(double minval, double maxval,
                         Array<double> * level = NULL,
                         Array<double> * levels = NULL);
 
    void SetAxisLabels(const char * a_x, const char * a_y, const char * a_z);
+
+   void SetAxisNumberFormat(int precision, char format, bool showsign);
+   void SetAxisNumberFormat(string formatting);
 
    void PrepareAxes();
    void ToggleDrawAxes()

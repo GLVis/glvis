@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -44,12 +44,17 @@ namespace js
 
 using namespace mfem;
 
+// switch representation of the quadrature function
+void SwitchQuadSolution();
+
 //
 // display a new stream
 // field_type: 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
 //
-int display(const int field_type, std::stringstream & commands, const int w,
-            const int h)
+StreamState::FieldType display(const StreamState::FieldType field_type,
+                               std::stringstream & commands,
+                               const int w,
+                               const int h)
 {
    // reset antialiasing
    GetAppWindow()->getRenderer().setAntialiasing(0);
@@ -74,21 +79,29 @@ int display(const int field_type, std::stringstream & commands, const int w,
       }
    }
 
-   if (field_type < 0 || field_type > 2)
+   // If unknown, default to vector field_type
+   if (field_type <= StreamState::FieldType::MIN
+       || field_type >= StreamState::FieldType::MAX)
    {
-      return 1;
+      return StreamState::FieldType::VECTOR;
    }
 
    if (InitVisualization("glvis", 0, 0, w, h))
    {
-      return 1;
+      return StreamState::FieldType::VECTOR;
    }
 
    delete vs;
    vs = nullptr;
 
+   if (stream_state.quad_f)
+   {
+      GetAppWindow()->setOnKeyDown('Q', SwitchQuadSolution);
+   }
+
    double mesh_range = -1.0;
-   if (field_type == 0 || field_type == 2)
+   if (field_type == StreamState::FieldType::SCALAR
+       || field_type == StreamState::FieldType::MESH)
    {
       if (stream_state.grid_f)
       {
@@ -100,17 +113,18 @@ int display(const int field_type, std::stringstream & commands, const int w,
          if (stream_state.normals.Size() > 0)
          {
             vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
-                                                      &stream_state.normals);
+                                                      stream_state.mesh_quad.get(), &stream_state.normals);
          }
          else
          {
-            vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol);
+            vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
+                                                      stream_state.mesh_quad.get());
          }
          if (stream_state.grid_f)
          {
             vss->SetGridFunction(*stream_state.grid_f);
          }
-         if (field_type == 2)
+         if (field_type == StreamState::FieldType::MESH)
          {
             vs->OrthogonalProjection = 1;
             vs->SetLight(0);
@@ -124,24 +138,22 @@ int display(const int field_type, std::stringstream & commands, const int w,
       {
          VisualizationSceneSolution3d * vss;
          vs = vss = new VisualizationSceneSolution3d(*stream_state.mesh,
-                                                     stream_state.sol);
+                                                     stream_state.sol, stream_state.mesh_quad.get());
          if (stream_state.grid_f)
          {
             vss->SetGridFunction(stream_state.grid_f.get());
          }
-         if (field_type == 2)
+         if (field_type == StreamState::FieldType::MESH)
          {
             if (stream_state.mesh->Dimension() == 3)
             {
                // Use the 'white' palette when visualizing a 3D volume mesh only
-               // vs->palette.SetIndex(4);
                vs->palette.SetIndex(11);
                vss->SetLightMatIdx(4);
             }
             else
             {
                // Use the 'bone' palette when visualizing a surface mesh only
-               // (the same as when visualizing a 2D mesh only)
                vs->palette.SetIndex(4);
             }
             // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
@@ -150,7 +162,7 @@ int display(const int field_type, std::stringstream & commands, const int w,
             vss->ToggleDrawMesh();
          }
       }
-      if (field_type == 2)
+      if (field_type == StreamState::FieldType::MESH)
       {
          if (stream_state.grid_f)
          {
@@ -162,7 +174,7 @@ int display(const int field_type, std::stringstream & commands, const int w,
          }
       }
    }
-   else if (field_type == 1)
+   else if (field_type == StreamState::FieldType::VECTOR)
    {
       if (stream_state.mesh->SpaceDimension() == 2)
       {
@@ -173,21 +185,22 @@ int display(const int field_type, std::stringstream & commands, const int w,
          else
          {
             vs = new VisualizationSceneVector(*stream_state.mesh, stream_state.solu,
-                                              stream_state.solv);
+                                              stream_state.solv, stream_state.mesh_quad.get());
          }
       }
       else if (stream_state.mesh->SpaceDimension() == 3)
       {
          if (stream_state.grid_f)
          {
-            stream_state.grid_f
-               = ProjectVectorFEGridFunction(std::move(stream_state.grid_f));
-            vs = new VisualizationSceneVector3d(*stream_state.grid_f);
+            stream_state.ProjectVectorFEGridFunction();
+            vs = new VisualizationSceneVector3d(*stream_state.grid_f,
+                                                stream_state.mesh_quad.get());
          }
          else
          {
             vs = new VisualizationSceneVector3d(*stream_state.mesh, stream_state.solu,
-                                                stream_state.solv, stream_state.solw);
+                                                stream_state.solv, stream_state.solw,
+                                                stream_state.mesh_quad.get());
          }
       }
    }
@@ -198,14 +211,15 @@ int display(const int field_type, std::stringstream & commands, const int w,
       if (stream_state.grid_f)
       {
          vs->AutoRefine();
-         vs->SetShading(2, true);
+         vs->SetShading(VisualizationSceneScalarData::Shading::Noncomforming, true);
       }
       if (mesh_range > 0.0)
       {
          vs->SetValueRange(-mesh_range, mesh_range);
          vs->SetAutoscale(0);
       }
-      if (stream_state.mesh->SpaceDimension() == 2 && field_type == 2)
+      if (stream_state.mesh->SpaceDimension() == 2 &&
+          field_type == StreamState::FieldType::MESH)
       {
          SetVisualizationScene(vs, 2);
       }
@@ -223,7 +237,7 @@ int display(const int field_type, std::stringstream & commands, const int w,
    }
 
    SendExposeEvent();
-   return 0;
+   return StreamState::FieldType::SCALAR;
 }
 
 //
@@ -234,10 +248,11 @@ int display(const int field_type, std::stringstream & commands, const int w,
 // each string in streams must start with `parallel <nproc> <rank>'
 //
 using StringArray = std::vector<std::string>;
-int processParallelStreams(StreamState & state, const StringArray & streams,
-                           std::stringstream * commands = nullptr)
+StreamState::FieldType processParallelStreams(StreamState & state,
+                                              const StringArray & streams,
+                                              std::stringstream * commands = nullptr)
 {
-   //std::cerr << "got " << streams.size() << " streams" << std::endl;
+   // std::cerr << "got " << streams.size() << " streams" << std::endl;
    // HACK: match unique_ptr<istream> interface for ReadStreams:
    std::vector<std::stringstream> sstreams(streams.size());
    StreamCollection istreams(streams.size());
@@ -248,11 +263,11 @@ int processParallelStreams(StreamState & state, const StringArray & streams,
       std::string word;
       int nproc, rank;
       sstreams[i] >> word >> nproc >> rank;
-      //std::cerr << "packing " << rank+1 << "/" << nproc << std::endl;
+      // std::cerr << "packing " << rank+1 << "/" << nproc << std::endl;
       istreams[i] = std::unique_ptr<std::istream>(&sstreams[i]);
    }
 
-   const int field_type = state.ReadStreams(istreams);
+   const StreamState::FieldType field_type = state.ReadStreams(istreams);
 
    if (commands)
    {
@@ -270,20 +285,24 @@ int processParallelStreams(StreamState & state, const StringArray & streams,
    return field_type;
 }
 
-int displayParallelStreams(const StringArray & streams, const int w,
-                           const int h)
+StreamState::FieldType displayParallelStreams(const StringArray & streams,
+                                              const int w,
+                                              const int h)
 {
    std::stringstream commands(streams[0]);
-   const int field_type = processParallelStreams(stream_state, streams, &commands);
+   const StreamState::FieldType field_type = processParallelStreams(stream_state,
+                                                                    streams, &commands);
    return display(field_type, commands, w, h);
 }
 
-int displayStream(const std::string & stream, const int w, const int h)
+StreamState::FieldType displayStream(const std::string & stream, const int w,
+                                     const int h)
 {
    std::stringstream ss(stream);
    std::string data_type;
    ss >> data_type;
-   const int field_type = stream_state.ReadStream(ss, data_type);
+   const StreamState::FieldType field_type = stream_state.ReadStream(ss,
+                                                                     data_type);
 
    return display(field_type, ss, w, h);
 }
@@ -318,13 +337,6 @@ int updateStream(std::string stream)
    std::stringstream ss(stream);
    std::string data_type;
    ss >> data_type;
-
-   if (data_type != "solution")
-   {
-      std::cerr << "unsupported data type '" << data_type << "' for stream update" <<
-                std::endl;
-      return 1;
-   }
 
    StreamState new_state;
    new_state.ReadStream(ss, data_type);
@@ -458,6 +470,14 @@ em::val getScreenBuffer(bool flip_y=false)
                                         screen_state->data()));
 }
 
+void SwitchQuadSolution()
+{
+   int iqs = ((int)stream_state.GetQuadSolution()+1)
+             % ((int)StreamState::QuadSolution::MAX);
+   stream_state.SwitchQuadSolution((StreamState::QuadSolution)iqs, vs);
+   SendExposeEvent();
+}
+
 #ifdef GLVIS_USE_LIBPNG
 em::val getPNGByteArray()
 {
@@ -504,6 +524,14 @@ em::val getPNGByteArray()
 // https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html#built-in-type-conversions
 EMSCRIPTEN_BINDINGS(js_funcs)
 {
+   em::enum_<StreamState::FieldType>("FieldType")
+   .value("UNKNOWN", StreamState::FieldType::UNKNOWN)
+   .value("MIN", StreamState::FieldType::MIN)
+   .value("SCALAR", StreamState::FieldType::SCALAR)
+   .value("VECTOR", StreamState::FieldType::VECTOR)
+   .value("MESH", StreamState::FieldType::MESH)
+   .value("MAX", StreamState::FieldType::MAX)
+   ;
    em::function("displayStream", &js::displayStream);
    em::function("displayParallelStreams", &js::displayParallelStreams);
    em::function("updateStream", &js::updateStream);

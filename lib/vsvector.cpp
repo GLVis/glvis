@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -51,6 +51,7 @@ std::string VisualizationSceneVector::GetHelpString() const
       << "| O -  Switch 'o' func. (NC shading) |" << endl
       << "| p/P  Cycle through color palettes  |" << endl
       << "| q -  Quits                         |" << endl
+      << "| Q -  Cycle quadrature data mode    |" << endl
       << "| r -  Reset the plot to 3D view     |" << endl
       << "| R -  Reset the plot to 2D view     |" << endl
       << "| s -  Turn on/off unit cube scaling |" << endl
@@ -61,6 +62,8 @@ std::string VisualizationSceneVector::GetHelpString() const
       << "| v -  Cycle through vector fields   |" << endl
       << "| V -  Change the arrows scaling     |" << endl
       << "| \\ -  Set light source position     |" << endl
+      << "| Alt+a  - Axes number format        |" << endl
+      << "| Alt+c  - Colorbar number format    |" << endl
       << "| Ctrl+p - Print to a PDF file       |" << endl
       << "+------------------------------------+" << endl
       << "| Function keys                      |" << endl
@@ -186,7 +189,8 @@ void KeyuPressed()
    {
       case 0:
       case 1:
-         if (update && vsvector->shading == 2)
+         if (update &&
+             vsvector->GetShading() == VisualizationSceneSolution::Shading::Noncomforming)
          {
             vsvector->PrepareVectorField();
             SendExposeEvent();
@@ -229,7 +233,7 @@ void VisualizationSceneVector::ToggleDrawElems()
 
    cout << "Surface elements mode : " << modes[drawelems] << endl;
 
-   if (drawelems != 0 && shading == 2)
+   if (drawelems != 0 && shading == Shading::Noncomforming)
    {
       DoAutoscaleValue(false);
       PrepareLines();
@@ -253,9 +257,10 @@ const char *Vec2ScalarNames[7] =
 };
 
 VisualizationSceneVector::VisualizationSceneVector(Mesh & m,
-                                                   Vector & sx, Vector & sy)
+                                                   Vector & sx, Vector & sy, Mesh *mc)
 {
    mesh = &m;
+   mesh_coarse = mc;
    solx = &sx;
    soly = &sy;
 
@@ -403,7 +408,7 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
    }
 }
 
-void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
+void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
 {
    delete sol;
 
@@ -413,13 +418,15 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
       delete solx;
    }
 
+   Mesh *old_m = mesh;
+   Mesh *new_mesh = vgf.FESpace()->GetMesh();
+   mesh = new_mesh;
+   mesh_coarse = mc;
    VecGridF = &vgf;
 
    // If the number of elements changes, recompute the refinement factor
-   Mesh *new_mesh = vgf.FESpace()->GetMesh();
-   if (mesh->GetNE() != new_mesh->GetNE())
+   if (mesh->GetNE() != old_m->GetNE())
    {
-      mesh = new_mesh;
       int ref = GetAutoRefineFactor();
       if (TimesToRefine != ref || EdgeRefineFactor != 1)
       {
@@ -433,7 +440,6 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
          cout << "Vector subdivision factor = 1" << endl;
       }
    }
-   mesh = new_mesh;
 
    solx = new Vector(mesh->GetNV());
    soly = new Vector(mesh->GetNV());
@@ -457,7 +463,7 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf)
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
    }
 
-   VisualizationSceneSolution::NewMeshAndSolution(mesh, sol, &vgf);
+   VisualizationSceneSolution::NewMeshAndSolution(mesh, mesh_coarse, sol, &vgf);
 
    if (autoscale)
    {
@@ -659,7 +665,7 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
    // prepare the displaced mesh
    displine_buf.clear();
    gl3::GlBuilder build = displine_buf.createBuilder();
-   if (shading != 2)
+   if (shading != Shading::Noncomforming)
    {
       for (int i = 0; i < ne; i++)
       {
@@ -879,6 +885,13 @@ void VisualizationSceneVector::DrawVector(double px, double py, double vx,
    }
 }
 
+int VisualizationSceneVector::GetFunctionAutoRefineFactor()
+{
+   if (!VecGridF) { return 1;}
+
+   return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(*VecGridF);
+}
+
 void VisualizationSceneVector::PrepareVectorField()
 {
    int rerun;
@@ -904,7 +917,7 @@ void VisualizationSceneVector::PrepareVectorField()
             DrawVector(v[0], v[1], (*solx)(i), (*soly)(i), (*sol)(i));
          }
 
-         if (shading == 2 && RefineFactor > 1)
+         if (shading == Shading::Noncomforming && RefineFactor > 1)
          {
             DenseMatrix vvals, pm;
             for (i = 0; i < mesh->GetNE(); i++)

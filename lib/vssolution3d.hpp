@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -22,7 +22,7 @@ class VisualizationSceneSolution3d : public VisualizationSceneScalarData
 {
 protected:
 
-   int drawmesh, drawelems, shading, draworder;
+   int drawmesh, drawelems, draworder;
    int cplane;
    int cp_drawmesh, cp_drawelems, drawlsurf;
    // Algorithm used to draw the cutting plane when shading is 2 and cplane is 1
@@ -59,6 +59,14 @@ protected:
    void DrawRefinedSurfEdges (int n, DenseMatrix &pointmat,
                               Vector &values, Array<int> &RefEdges,
                               int part = -1);
+   void DrawBdrElCoarseSurfEdges(gl3::GlBuilder &line, int be,
+                                 DenseMatrix &pointmat, const IntegrationRule *ir = NULL,
+                                 Array<int> *idxs = NULL);
+   void DrawFaceCoarseSurfEdges(gl3::GlBuilder &line, int f, DenseMatrix &pointmat,
+                                const IntegrationRule *ir = NULL, Array<int> *idxs = NULL);
+   void DrawCoarseSurfEdges(gl3::GlBuilder &line, int f, int e1, int e2,
+                            DenseMatrix &pointmat, const IntegrationRule *ir = NULL,
+                            Array<int> *idxs = NULL);
    void LiftRefinedSurf (int n, DenseMatrix &pointmat,
                          Vector &values, int *RG);
    void DrawTetLevelSurf(gl3::GlDrawable& target, const DenseMatrix &verts,
@@ -93,7 +101,7 @@ protected:
                                 const int nh, const int face_splits,
                                 const DenseMatrix *grad = NULL);
 
-   int GetAutoRefineFactor();
+   int GetFunctionAutoRefineFactor() override;
 
    bool CheckPositions(Array<int> &vertices) const
    {
@@ -112,31 +120,31 @@ public:
    Array<int> bdr_attr_to_show;
 
    VisualizationSceneSolution3d();
-   VisualizationSceneSolution3d(Mesh & m, Vector & s);
+   VisualizationSceneSolution3d(Mesh & m, Vector & s, Mesh *mc);
 
    void SetGridFunction (GridFunction *gf) { GridF = gf; }
 
-   void NewMeshAndSolution(Mesh *new_m, Vector *new_sol,
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
                            GridFunction *new_u = NULL);
 
    virtual ~VisualizationSceneSolution3d();
 
-   virtual std::string GetHelpString() const;
+   std::string GetHelpString() const override;
 
-   virtual void FindNewBox(bool prepare);
-   virtual void FindNewValueRange(bool prepare);
+   void FindNewBox(bool prepare) override;
+   void FindNewValueRange(bool prepare) override;
 
-   virtual void PrepareRuler()
+   void PrepareRuler() override
    { VisualizationSceneScalarData::PrepareRuler(false); }
    virtual void PrepareFlat();
-   virtual void PrepareLines();
-   virtual void Prepare();
+   void PrepareLines() override;
+   void Prepare() override;
    virtual void PrepareOrderingCurve();
    virtual void PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows,
                                       bool color);
-   virtual gl3::SceneInfo GetSceneObjs();
+   gl3::SceneInfo GetSceneObjs() override;
 
-   virtual void glTF_Export();
+   void glTF_Export() override;
 
    void ToggleDrawElems()
    { drawelems = !drawelems; Prepare(); }
@@ -147,12 +155,11 @@ public:
    //           3 - no arrows (black), 4 - with arrows (black)
    void ToggleDrawOrdering() { draworder = (draworder+1)%5; }
 
-   void ToggleShading();
-   int GetShading() { return shading; };
-   virtual void SetShading(int, bool);
-   virtual void SetRefineFactors(int, int);
-   virtual void AutoRefine();
-   virtual void ToggleAttributes(Array<int> &attr_list);
+   void SetShading(Shading, bool) override;
+   void ToggleShading() override;
+   void SetRefineFactors(int, int) override;
+   void AutoRefine() override;
+   void ToggleAttributes(Array<int> &attr_list) override;
 
    void FindNodePos();
 
@@ -181,10 +188,10 @@ public:
    void ToggleCPAlgorithm();
    void MoveLevelSurf(int);
    void NumberOfLevelSurf(int);
-   virtual void EventUpdateColors();
-   virtual void UpdateLevelLines()
+   void EventUpdateColors() override;
+   void UpdateLevelLines() override
    { PrepareLines(); PrepareCuttingPlaneLines(); }
-   virtual void UpdateValueRange(bool prepare);
+   void UpdateValueRange(bool prepare) override;
 
    virtual void SetDrawMesh(int i)
    {

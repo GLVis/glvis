@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -336,7 +336,7 @@ void FFGLDevice::captureXfbBuffer(PaletteState& pal, CaptureBuffer& cbuf,
    if (disp_lists[hnd].layout == VertexTex::layout
        || disp_lists[hnd].layout == VertexNormTex::layout)
    {
-      //capture texture values too
+      // capture texture values too
       // [ X Y Z ] [ R G B A ] [ U V - - ]
       fbType = GL_3D_COLOR_TEXTURE;
       fbStride = 11;

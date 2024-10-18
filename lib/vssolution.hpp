@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -77,51 +77,50 @@ protected:
                         Vector &values, int sides, Array<double> &lvl,
                         int flat = 0);
 
-   int GetAutoRefineFactor();
+   int GetFunctionAutoRefineFactor() override;
 
    // Used for drawing markers for element and vertex numbering
    double GetElementLengthScale(int k);
 
 public:
-   int shading;
-
    int attr_to_show, bdr_attr_to_show;
    Array<int> el_attr_to_show, bdr_el_attr_to_show;
 
    VisualizationSceneSolution();
-   VisualizationSceneSolution(Mesh &m, Vector &s, Vector *normals = NULL);
+   VisualizationSceneSolution(Mesh &m, Vector &s, Mesh *mc = NULL,
+                              Vector *normals = NULL);
 
    virtual ~VisualizationSceneSolution();
 
-   virtual std::string GetHelpString() const;
+   std::string GetHelpString() const override;
 
    void SetGridFunction(GridFunction & u) { rsol = &u; }
 
-   void NewMeshAndSolution(Mesh *new_m, Vector *new_sol,
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
                            GridFunction *new_u = NULL);
 
-   virtual void SetNewScalingFromBox();
-   virtual void FindNewBox(bool prepare);
-   virtual void FindNewValueRange(bool prepare);
-   virtual void FindNewBoxAndValueRange(bool prepare)
+   void SetNewScalingFromBox() override;
+   void FindNewBox(bool prepare) override;
+   void FindNewValueRange(bool prepare) override;
+   void FindNewBoxAndValueRange(bool prepare) override
    { FindNewBox(prepare); }
-   virtual void FindMeshBox(bool prepare);
+   void FindMeshBox(bool prepare) override;
 
-   virtual void ToggleLogscale(bool print);
-   virtual void EventUpdateBackground();
-   virtual void EventUpdateColors();
-   virtual void UpdateLevelLines() { PrepareLevelCurves(); }
-   virtual void UpdateValueRange(bool prepare);
+   void ToggleLogscale(bool print) override;
+   void EventUpdateBackground() override;
+   void EventUpdateColors() override;
+   void UpdateLevelLines()  override { PrepareLevelCurves(); }
+   void UpdateValueRange(bool prepare) override;
 
    void PrepareWithNormals();
    void PrepareFlat();
    void PrepareFlat2();
 
-   virtual void PrepareLines();
+   void PrepareLines() override;
    void PrepareLines2();
    void PrepareLines3();
 
-   virtual void Prepare();
+   void Prepare() override;
    void PrepareLevelCurves();
    void PrepareLevelCurves2();
 
@@ -141,12 +140,12 @@ public:
 
    void PrepareCP();
 
-   virtual gl3::SceneInfo GetSceneObjs();
+   gl3::SceneInfo GetSceneObjs() override;
 
    void glTF_ExportBoundary(glTF_Builder &bld,
                             glTF_Builder::buffer_id buffer,
                             glTF_Builder::material_id black_mat);
-   virtual void glTF_Export();
+   void glTF_Export() override;
 
    void ToggleDrawBdr();
 
@@ -165,20 +164,19 @@ public:
       PrepareNumbering(false);
    }
 
-   virtual void SetShading(int, bool);
-   void ToggleShading();
+   void SetShading(Shading, bool) override;
+   void ToggleShading() override;
 
    void ToggleDrawCP() { draw_cp = !draw_cp; PrepareCP(); }
 
    void ToggleRefinements();
    void ToggleRefinementFunction();
 
-   virtual void SetRefineFactors(int, int);
-   virtual void AutoRefine();
-   virtual void ToggleAttributes(Array<int> &attr_list);
+   void SetRefineFactors(int, int) override;
+   void AutoRefine() override;
+   void ToggleAttributes(Array<int> &attr_list) override;
 
    virtual void SetDrawMesh(int i) { drawmesh = i % 3; }
-   virtual int GetShading() { return shading; }
    virtual int GetDrawMesh() { return drawmesh; }
 };
 

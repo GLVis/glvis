@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -30,11 +30,11 @@ protected:
 
    void Init();
 
-   virtual void GetRefinedValues(int i, const IntegrationRule &ir,
-                                 Vector &vals, DenseMatrix &tr);
-   virtual int GetRefinedValuesAndNormals(int i, const IntegrationRule &ir,
-                                          Vector &vals, DenseMatrix &tr,
-                                          DenseMatrix &normals);
+   void GetRefinedValues(int i, const IntegrationRule &ir,
+                         Vector &vals, DenseMatrix &tr) override;
+   int GetRefinedValuesAndNormals(int i, const IntegrationRule &ir,
+                                  Vector &vals, DenseMatrix &tr,
+                                  DenseMatrix &normals) override;
 
    double (*Vec2Scalar)(double, double);
 
@@ -45,22 +45,24 @@ protected:
    Vector vc0;
    IsoparametricTransformation T0;
 
+   int GetFunctionAutoRefineFactor() override;
+
 public:
-   VisualizationSceneVector(Mesh &m, Vector &sx, Vector &sy);
+   VisualizationSceneVector(Mesh &m, Vector &sx, Vector &sy, Mesh *mc = NULL);
    VisualizationSceneVector(GridFunction &vgf);
 
-   void NewMeshAndSolution(GridFunction &vgf);
+   void NewMeshAndSolution(GridFunction &vgf, Mesh *mc = NULL);
 
    virtual ~VisualizationSceneVector();
 
-   virtual std::string GetHelpString() const;
+   std::string GetHelpString() const override;
 
    void NPressed();
    void PrepareDisplacedMesh();
-   virtual void PrepareLines()
+   void PrepareLines() override
    { VisualizationSceneSolution::PrepareLines(); PrepareDisplacedMesh(); }
 
-   virtual void ToggleDrawElems();
+   void ToggleDrawElems() override;
 
    virtual void PrepareVectorField();
    void ToggleVectorField();
@@ -74,11 +76,11 @@ public:
       }
    }
 
-   virtual gl3::SceneInfo GetSceneObjs();
+   gl3::SceneInfo GetSceneObjs() override;
 
-   virtual void glTF_Export();
+   void glTF_Export() override;
 
-   virtual void EventUpdateColors() { Prepare(); PrepareVectorField(); }
+   void EventUpdateColors() override { Prepare(); PrepareVectorField(); }
 
    // refinement factor for the vectors
    int RefineFactor;
