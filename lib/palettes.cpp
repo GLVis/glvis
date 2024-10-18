@@ -103,7 +103,6 @@ private:
 public:
    std::vector<Palette> palettes;
 
-   // Will modify palette.name if it is not unique
    void addPalette(Palette palette) {
       // palette name is unique || container is empty
       if (get_index_by_name(palette.name) == -1 || palettes.empty()) {
@@ -189,7 +188,7 @@ int PaletteState::ChoosePalette()
    char buffer[buflen];
    int pal;
    cout << "Choose a palette:\n";
-   for (pal = 0; pal < Num_RGB_Palettes; pal++)
+   for (pal = 0; pal < palettes->size(); pal++)
    {
       cout << setw(4) << pal+1 << ") " << RGB_Palettes_Names[pal];
       if ((pal+1)%5 == 0)
@@ -215,9 +214,9 @@ int PaletteState::ChoosePalette()
    {
       pal = 1;
    }
-   else if (pal > Num_RGB_Palettes)
+   else if (pal > palettes->size())
    {
-      pal = Num_RGB_Palettes;
+      pal = palettes->size();
    }
 
    return pal-1;
@@ -366,8 +365,9 @@ void PaletteState::ToTextureSmooth(double * palette, size_t plt_size,
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
-PaletteState::PaletteState()
-   : palette_tex(Num_RGB_Palettes)
+PaletteState::PaletteState(PaletteManager* palettes)
+   : palettes(palettes)
+   , palette_tex(palettes->size())
    , first_init(false)
 {
 }
@@ -386,16 +386,16 @@ void PaletteState::Init()
       MaxTextureSize = std::min(MaxTextureSize, 4096);
       {
          std::lock_guard<std::mutex> lk{init_mtx};
-         Init_Palettes();
+         // Init_Palettes();
       }
 
-      GLuint paletteTexIds[Num_RGB_Palettes][2];
+      GLuint paletteTexIds[palettes->size()][2];
       GLuint alphaTexId;
 
-      glGenTextures(Num_RGB_Palettes * 2, &(paletteTexIds[0][0]));
+      glGenTextures(palettes->size() * 2, &(paletteTexIds[0][0]));
       glGenTextures(1, &alphaTexId);
 
-      for (int ipal = 0; ipal < Num_RGB_Palettes; ipal++)
+      for (int ipal = 0; ipal < palettes->size(); ipal++)
       {
          palette_tex[ipal][0] = paletteTexIds[ipal][0];
          palette_tex[ipal][1] = paletteTexIds[ipal][1];
@@ -432,7 +432,7 @@ void PaletteState::Init()
       first_init = true;
    }
 
-   for (int i = 0; i < Num_RGB_Palettes; i++)
+   for (int i = 0; i < palettes->size(); i++)
    {
       ToTextureDiscrete(RGB_Palettes[i], RGB_Palettes_Sizes[i],
                         palette_tex[i][0]);
@@ -540,12 +540,12 @@ void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
 
 void PaletteState::NextIndex()
 {
-   SetIndex((curr_palette + 1) % Num_RGB_Palettes);
+   SetIndex((curr_palette + 1) % palettes->size());
 }
 
 void PaletteState::PrevIndex()
 {
-   SetIndex((curr_palette == 0) ? Num_RGB_Palettes - 1 :
+   SetIndex((curr_palette == 0) ? palettes->size() - 1 :
             curr_palette - 1);
 }
 

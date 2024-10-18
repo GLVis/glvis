@@ -15,10 +15,13 @@
 #include <vector>
 #include <array>
 
+
 class PaletteState
 {
 public:
-   PaletteState();
+   PaletteState(PaletteManager* palettes);
+   /// Palettes
+   PaletteManager* palettes;
    /// Initializes the palette textures.
    void Init();
    /// Binds the discrete version of the current palette texture.
