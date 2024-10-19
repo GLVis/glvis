@@ -22,121 +22,100 @@
 
 using namespace std;
 
-
-// Cast a double in range [0,1] to a uint8_t
-uint8_t as_uint8(double x) {
-   if (x >= 0 && x <= 1.0)
-   {
-      return static_cast<uint8_t>(x * 255.0f);
-   }
-   else
-   {
-      throw std::out_of_range("Value out of range [0, 1]");
-   }
-}
-uint8_t as_uint8(int x) {
-   if (x >= 0 && x <= 255)
-   {
-      return static_cast<uint8_t>(x);
-   }
-   else
-   {
-      throw std::out_of_range("Value out of range [0, 255]");
-   }
+void RGB::print() {
+   cout << setw(3) << +r << " " << setw(3) << +g << " " << setw(3) << +b << endl;
 }
 
-struct RGB {
-   uint8_t r,g,b;
+array<uint8_t,3> RGB::as_array() {
+   return array<uint8_t,3>{r,g,b};
+}
 
-   RGB(uint8_t r, uint8_t g, uint8_t b) : r(r), g(g), b(b) {}
-   RGB(int r, int g, int b) :
-      r(as_uint8(r)),
-      g(as_uint8(g)),
-      b(as_uint8(b)) {}
-   RGB(double r, double g, double b) :
-      r(as_uint8(r)),
-      g(as_uint8(g)),
-      b(as_uint8(b)) {}
+void Palette::addColor(double r, double g, double b) {
+   colors.push_back(RGB(r,g,b));
+}
 
-   void print() {
-      cout << +r << " " << +g << " " << +b << endl;
+void Palette::addColor(int r, int g, int b) {
+   colors.push_back(RGB(r,g,b));
+}
+
+void Palette::print() {
+   cout << name << " (size=" << size() << ")" << endl;;
+   for (auto color : colors) {
+      color.print();
    }
-   array<uint8_t,3> as_array() {
-      return array<uint8_t,3>{r,g,b};
+   cout << endl;
+}
+
+void Palette::reverse() {
+   std::reverse(colors.begin(), colors.end());
+}
+
+int Palette::size() {
+   return colors.size();
+}
+
+double* Palette::as_double_array() {
+   double* arr = new double[size() * 3];
+   for (int i = 0; i < size(); i++) {
+      arr[i*3 + 0] = colors[i].r / 255.;
+      arr[i*3 + 1] = colors[i].g / 255.;
+      arr[i*3 + 2] = colors[i].b / 255.;
    }
-};
+   return arr;
+}
 
 
-struct Palette {
-   string name;
-   std::vector<RGB> colors;
 
-   Palette(const string& name) : name(name) {}
-
-   void addColor(double r, double g, double b) {
-      colors.push_back(RGB(r,g,b));
+   // Will modify palette.name if it is not unique
+void PaletteManager::addPalette(Palette palette) {
+   // palette name is unique || container is empty
+   if (get_index_by_name(palette.name) == -1 || palettes.empty()) {
+      palettes.push_back(palette);
    }
-   void addColor(int r, int g, int b) {
-      colors.push_back(RGB(r,g,b));
-   }
+}
 
-   void print() {
-      cout << name << " (size=" << size() << ")" << endl;;
-      for (auto color : colors) {
-         color.print();
+void PaletteManager::addPalette(string name) {
+   if (get_index_by_name(name) == -1 || palettes.empty()) {
+      palettes.push_back(Palette(name));
+   }
+}
+
+int PaletteManager::get_index_by_name(string name) {
+   for (int i = 0; i < size(); i++) {
+      if (palettes[i].name == name) {
+         return i;
       }
+   }
+   return -1;
+}
+
+Palette* PaletteManager::get_name(string name) {
+   int idx = get_index_by_name(name);
+   if (idx != -1) {
+      return &palettes[idx];
+   }
+   return nullptr;
+}
+
+Palette* PaletteManager::get(int idx) {
+   if (idx >= 0 && idx < size()) {
+      return &palettes[idx];
+   }
+   return nullptr;
+}
+
+int PaletteManager::size() {
+   return palettes.size();
+}
+
+void PaletteManager::print() {
+   for (Palette cmap : palettes) {
+      cmap.print();
       cout << endl;
    }
+}
 
-   void reverse() {
-      std::reverse(colors.begin(), colors.end());
-   }
-
-   int size() {
-      return colors.size();
-   }
-};
-
-class PaletteManager {
-private:
-
-public:
-   std::vector<Palette> palettes;
-
-   void addPalette(Palette palette) {
-      // palette name is unique || container is empty
-      if (get_index_by_name(palette.name) == -1 || palettes.empty()) {
-         palettes.push_back(palette);
-      }
-   }
-
-   void addPalette(string name) {
-      if (get_index_by_name(name) == -1 || palettes.empty()) {
-         palettes.push_back(Palette(name));
-      }
-   }
-
-   int get_index_by_name(string name) {
-      for (int i = 0; i < size(); i++) {
-         if (palettes[i].name == name) {
-            return i;
-         }
-      }
-      return -1;
-   }
-
-   int size() {
-      return palettes.size();
-   }
-
-   void print() {
-      for (Palette cmap : palettes) {
-         cmap.print();
-         cout << endl;
-      }
-   }
-
-   void load(istream &pal) {
+void PaletteManager::load(istream &pal) {
       string word, palname, channeltype;
       int idx = -1;
 
@@ -173,7 +152,6 @@ public:
       }
       cout << "Finished loading palettes from file" << endl;
    }
-};
 
 
 // const int Num_RGB_Palettes = 71;
@@ -190,7 +168,7 @@ int PaletteState::ChoosePalette()
    cout << "Choose a palette:\n";
    for (pal = 0; pal < palettes->size(); pal++)
    {
-      cout << setw(4) << pal+1 << ") " << RGB_Palettes_Names[pal];
+      cout << setw(4) << pal+1 << ") " << "FIXME";//RGB_Palettes_Names[pal];
       if ((pal+1)%5 == 0)
       {
          cout << '\n';
@@ -434,10 +412,12 @@ void PaletteState::Init()
 
    for (int i = 0; i < palettes->size(); i++)
    {
-      ToTextureDiscrete(RGB_Palettes[i], RGB_Palettes_Sizes[i],
+      ToTextureDiscrete(palettes->get(i)->as_double_array(),
+                        palettes->get(i)->size(),
                         palette_tex[i][0]);
-      ToTextureSmooth(RGB_Palettes[i], RGB_Palettes_Sizes[i],
-                      palette_tex[i][1]);
+      ToTextureSmooth(palettes->get(i)->as_double_array(),
+                        palettes->get(i)->size(),
+                        palette_tex[i][1]);
    }
 }
 
