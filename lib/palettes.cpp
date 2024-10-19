@@ -22,9 +22,42 @@
 
 using namespace std;
 
+// Cast a double in range [0,1] to a uint8_t
+uint8_t normalized_double_to_uint8(double x) {
+   if (x >= 0 && x <= 1.0)
+   {
+      return static_cast<uint8_t>(x * 255.0f);
+   }
+   else
+   {
+      throw std::out_of_range("Value out of range [0, 1]");
+   }
+}
+uint8_t as_uint8(int x) {
+   if (x >= 0 && x <= 255)
+   {
+      return static_cast<uint8_t>(x);
+   }
+   else
+   {
+      throw std::out_of_range("Value out of range [0, 255]");
+   }
+}
+
 void RGB::print() {
    cout << setw(3) << +r << " " << setw(3) << +g << " " << setw(3) << +b << endl;
 }
+
+
+RGB::RGB(uint8_t r, uint8_t g, uint8_t b) : r(r), g(g), b(b) {}
+RGB::RGB(int r, int g, int b) :
+   r(as_uint8(r)),
+   g(as_uint8(g)),
+   b(as_uint8(b)) {};
+RGB::RGB(double r, double g, double b) :
+   r(normalized_double_to_uint8(r)),
+   g(normalized_double_to_uint8(g)),
+   b(normalized_double_to_uint8(b)) {};
 
 array<uint8_t,3> RGB::as_array() {
    return array<uint8_t,3>{r,g,b};
@@ -343,11 +376,16 @@ void PaletteState::ToTextureSmooth(double * palette, size_t plt_size,
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
-PaletteState::PaletteState(PaletteManager* palettes)
-   : palettes(palettes)
-   , palette_tex(palettes->size())
-   , first_init(false)
+PaletteState::PaletteState()
+//PaletteManager* palettes)
+   // : palettes(palettes)
+   // , palette_tex(palettes->size())
+   : first_init(false)
+{}
+
+void PaletteState::SetPaletteManager(PaletteManager* palettes)
 {
+   this->palettes = palettes;
 }
 
 static std::mutex init_mtx;
@@ -412,12 +450,12 @@ void PaletteState::Init()
 
    for (int i = 0; i < palettes->size(); i++)
    {
-      ToTextureDiscrete(palettes->get(i)->as_double_array(),
-                        palettes->get(i)->size(),
+      ToTextureDiscrete(GetData(i),
+                        GetSize(i),
                         palette_tex[i][0]);
-      ToTextureSmooth(palettes->get(i)->as_double_array(),
-                        palettes->get(i)->size(),
-                        palette_tex[i][1]);
+      ToTextureSmooth(GetData(i),
+                      GetSize(i),
+                      palette_tex[i][1]);
    }
 }
 
@@ -447,8 +485,8 @@ double PaletteState::GetColorCoord(double val, double min, double max)
 
 void PaletteState::GetColorFromVal(double val, float * rgba)
 {
-   int palSize = RGB_Palettes_Sizes[curr_palette];
-   const double* palData = RGB_Palettes[curr_palette];
+   int palSize = GetSize();
+   const double* palData = GetData();
    val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
    int i = (int) floor( val );
    double t = val - i;
@@ -470,18 +508,14 @@ void PaletteState::GetColorFromVal(double val, float * rgba)
    rgba[3] = 1.f;
 }
 
-const double * PaletteState::GetData() const
+double * PaletteState::GetData(int pidx)
 {
-   return RGB_Palettes[curr_palette];
-}
-
-int PaletteState::GetSize(int pal) const
-{
-   if (pal == -1)
+   // return RGB_Palettes[curr_palette];
+   if (pidx == -1)
    {
-      return RGB_Palettes_Sizes[curr_palette];
+      return palettes->get(curr_palette)->as_double_array();
    }
-   return RGB_Palettes_Sizes[pal];
+   return palettes->get(pidx)->as_double_array();
 }
 
 void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
@@ -537,3 +571,23 @@ int PaletteState::SelectNewRGBPalette()
 
    return pal;
 }
+
+int PaletteState::NumPalettes() {
+   return palettes->size();
+}
+
+int PaletteState::GetSize(int pidx) const {
+   if (pidx == -1) {
+      return palettes->get(curr_palette)->size();
+   }
+   return palettes->get(pidx)->size();
+}
+
+// int PaletteState::GetSize(int pal) const
+// {
+//    if (pal == -1)
+//    {
+//       return RGB_Palettes_Sizes[curr_palette];
+//    }
+//    return RGB_Palettes_Sizes[pal];
+// }

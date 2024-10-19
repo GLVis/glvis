@@ -16,39 +16,15 @@
 #include <array>
 
 // Cast a double in range [0,1] to a uint8_t
-uint8_t as_uint8(double x) {
-   if (x >= 0 && x <= 1.0)
-   {
-      return static_cast<uint8_t>(x * 255.0f);
-   }
-   else
-   {
-      throw std::out_of_range("Value out of range [0, 1]");
-   }
-}
-uint8_t as_uint8(int x) {
-   if (x >= 0 && x <= 255)
-   {
-      return static_cast<uint8_t>(x);
-   }
-   else
-   {
-      throw std::out_of_range("Value out of range [0, 255]");
-   }
-}
+uint8_t normalized_double_to_uint8(double x);
+uint8_t as_uint8(int x);
 struct RGB
 {
    uint8_t r,g,b;
 
-   RGB(uint8_t r, uint8_t g, uint8_t b) : r(r), g(g), b(b) {}
-   RGB(int r, int g, int b) :
-      r(as_uint8(r)),
-      g(as_uint8(g)),
-      b(as_uint8(b)) {};
-   RGB(double r, double g, double b) :
-      r(as_uint8(r)),
-      g(as_uint8(g)),
-      b(as_uint8(b)) {};
+   RGB(uint8_t r, uint8_t g, uint8_t b);
+   RGB(int r, int g, int b);
+   RGB(double r, double g, double b);
 
    void print();
    array<uint8_t,3> as_array();
@@ -86,9 +62,10 @@ private:
 class PaletteState
 {
 public:
-   PaletteState(PaletteManager* palettes);
+   // PaletteState(PaletteManager* palettes);
+   PaletteState();
    /// Palettes
-   PaletteManager* palettes;
+   void SetPaletteManager(PaletteManager* palettes);
    /// Initializes the palette textures.
    void Init();
    /// Binds the discrete version of the current palette texture.
@@ -105,9 +82,9 @@ public:
    int ChoosePalette();
    int SelectNewRGBPalette();
    /// Gets the data in the palette color array.
-   const double* GetData() const;
+   double* GetData(int pidx = -1);
    /// Gets the total number of colors in the current palette color array.
-   int GetSize(int pal = -1) const;
+   // int GetSize(int pal = -1) const;
    /// Gets the number of colors used in the current palette color array.
    int GetNumColors(int pal = -1) const
    { return PaletteNumColors ? PaletteNumColors : GetSize(pal); }
@@ -125,7 +102,12 @@ public:
    { return palette_tex[curr_palette][use_smooth]; }
    GLuint GetAlphaTexture() const { return alpha_tex; }
    void GenerateAlphaTexture(float matAlpha, float matAlphaCenter);
+
+   int NumPalettes();
+   int GetSize(int pidx = -1) const;
 private:
+
+   PaletteManager* palettes;
    void ToTextureDiscrete(double * palette, size_t plt_size, GLuint tex);
    void ToTextureSmooth(double * palette, size_t plt_size, GLuint tex);
    using TexHandle = gl3::resource::TextureHandle;
