@@ -63,6 +63,20 @@ array<uint8_t,3> RGB::as_array() {
    return array<uint8_t,3>{r,g,b};
 }
 
+Palette::Palette(const string& name) : name(name) {};
+Palette::Palette(const string& name, double* arr, int size) :
+   name(name),
+   colors(size)
+   {
+   Palette::add_from_double_array(arr, size);
+}
+
+void Palette::add_from_double_array(double* arr, int size) {
+   for (int i = 0; i < size; i++) {
+      addColor(arr[i*3 + 0], arr[i*3 + 1], arr[i*3 + 2]);
+   }
+}
+
 void Palette::addColor(double r, double g, double b) {
    colors.push_back(RGB(r,g,b));
 }
@@ -98,8 +112,6 @@ double* Palette::as_double_array() {
 }
 
 
-
-   // Will modify palette.name if it is not unique
 void PaletteManager::addPalette(Palette palette) {
    // palette name is unique || container is empty
    if (get_index_by_name(palette.name) == -1 || palettes.empty()) {
@@ -148,43 +160,57 @@ void PaletteManager::print() {
    }
 }
 
-void PaletteManager::load(istream &pal) {
-      string word, palname, channeltype;
-      int idx = -1;
+void PaletteManager::load(string palette_file) {
 
-      // read initializing commands
-      while (1) {
-         pal >> ws;
-         if (!pal.good()) {
-            // cout << "Error in palette" << endl;
-            break;
-         }
-         if (pal.peek() == '#') {
-            getline(pal, word);
-            continue;
-         }
-         pal >> word;
-         if (word == "palette") {
-            pal >> palname >> channeltype;
-            addPalette(palname);
-            idx = get_index_by_name(palname);
-            cout << "Reading palette: (" << idx << ") " << palname << endl;
-         }
-         else if (channeltype == "float" && idx != -1) {
-            float r, g, b;
-            r = stof(word);
-            pal >> g >> b;
-            palettes[idx].addColor(r,g,b);
-         }
-         else if (channeltype == "int" && idx != -1) {
-            int r, g, b;
-            r = stoi(word);
-            pal >> g >> b;
-            palettes[idx].addColor(r,g,b);
-         }
-      }
-      cout << "Finished loading palettes from file" << endl;
+   ifstream pal(palette_file);
+   if (!pal)
+   {
+      cout << "Can not open palette: " << palette_file << endl;
+      return;
    }
+   string word, palname, channeltype;
+   int idx = -1;
+
+   // read initializing commands
+   while (1) {
+      pal >> ws;
+      if (!pal.good()) {
+         // cout << "Error in palette" << endl;
+         break;
+      }
+      if (pal.peek() == '#') {
+         getline(pal, word);
+         continue;
+      }
+      pal >> word;
+      if (word == "palette") {
+         pal >> palname >> channeltype;
+         addPalette(palname);
+         idx = get_index_by_name(palname);
+         cout << "Reading palette: (" << idx << ") " << palname << endl;
+      }
+      else if (channeltype == "float" && idx != -1) {
+         float r, g, b;
+         r = stof(word);
+         pal >> g >> b;
+         palettes[idx].addColor(r,g,b);
+      }
+      else if (channeltype == "int" && idx != -1) {
+         int r, g, b;
+         r = stoi(word);
+         pal >> g >> b;
+         palettes[idx].addColor(r,g,b);
+      }
+   }
+   cout << "Finished loading palettes from file" << endl;
+}
+
+
+// These palettes are compiled ahead of time
+PaletteManager CorePalettes;
+string core_palette_file = "palettes.txt";
+CorePalettes.load(core_palette_file);
+
 
 
 // const int Num_RGB_Palettes = 71;

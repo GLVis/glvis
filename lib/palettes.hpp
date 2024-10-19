@@ -34,8 +34,9 @@ struct Palette
 {
    string name;
    std::vector<RGB> colors;
-   Palette(const string& name) : name(name) {};
-
+   Palette(const string& name);
+   Palette(const string& name, double* arr, int size);
+   void add_from_double_array(double* arr, int size);
    void addColor(double r, double g, double b);
    void addColor(int r, int g, int b);
    void print();
@@ -55,7 +56,7 @@ public:
    Palette* get(int idx);
    int size();
    void print();
-   void load(istream &pal);
+   void load(string palette_file);
 private:
 };
 

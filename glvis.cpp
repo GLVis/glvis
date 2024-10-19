@@ -72,6 +72,7 @@ enum InputOptions
    //...
    INPUT_PARALLEL = 256,
 };
+PaletteManager palettes;
 int input = INPUT_SERVER_MODE;
 thread_local StreamState stream_state;
 thread_local VisualizationSceneScalarData *vs = NULL;
@@ -1325,6 +1326,7 @@ int main (int argc, char *argv[])
    bool        save_stream   = false;
    const char *stream_file   = string_none;
    const char *script_file   = string_none;
+   // const char *palette_file  = string_none;
    const char *font_name     = string_default;
    int         portnum       = 19916;
    int         multisample   = GetMultisample();
@@ -1486,6 +1488,12 @@ int main (int argc, char *argv[])
       SetLegacyGLOnly(legacy_gl_ctx);
    }
    SetUseHiDPI(enable_hidpi);
+
+   // FIXME: make this a cli option
+   const char *palette_file   = "palettes.txt";
+   // string palette_file = "palettes.txt";
+   // palettes.load(pal);
+
 
    GLVisGeometryRefiner.SetType(geom_ref_type);
 
