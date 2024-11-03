@@ -206,7 +206,7 @@ OPENGL_LIBS = $(if $(NOTMAC),-lGL,-framework OpenGL -framework Cocoa)
 
 GL_OPTS ?= $(if $(FREETYPE_DIR),-I$(FREETYPE_DIR)/include/freetype2) \
  $(if $(SDL_DIR),-I$(SDL_DIR)/include) \
- $(if $(GLEW_DIR),-I$(GLEW_DIR)/include) \
+ $(if $(GLEW_DIR),-I$(GLEW_DIR)/include) -DGLEW_NO_GLU \
  $(if $(GLM_DIR),-I$(GLM_DIR)) \
  $(if $(OPENGL_DIR),-I$(OPENGL_DIR)/include)
 
