@@ -204,6 +204,7 @@ OPENGL_LIB_DIR = $(if $(NOTMAC),$(call dir2lib,$(OPENGL_DIR),GL))
 OPENGL_LIBS = $(if $(NOTMAC),-lGL,-framework OpenGL -framework Cocoa)
 
 
+# Regarding -DGLEW_NO_GLU, see https://github.com/nigels-com/glew/issues/192
 GL_OPTS ?= $(if $(FREETYPE_DIR),-I$(FREETYPE_DIR)/include/freetype2) \
  $(if $(SDL_DIR),-I$(SDL_DIR)/include) \
  $(if $(GLEW_DIR),-I$(GLEW_DIR)/include) -DGLEW_NO_GLU \

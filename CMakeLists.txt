@@ -167,6 +167,8 @@ if (NOT EMSCRIPTEN)
   list(APPEND CMAKE_PREFIX_PATH "../glew")
   find_package(GLEW REQUIRED)
   list(APPEND _glvis_libraries GLEW::GLEW)
+  # See https://github.com/nigels-com/glew/issues/192
+  list(APPEND _glvis_compile_defs "GLEW_NO_GLU")
 
   # Find 'glm' which is not part of the CMake standard modules
   list(APPEND GLM_DIR "../glm")
