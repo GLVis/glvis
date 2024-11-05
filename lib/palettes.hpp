@@ -12,6 +12,7 @@
 #ifndef GLVIS_PALETTES_HPP
 #define GLVIS_PALETTES_HPP
 #include "gl/types.hpp"
+#include "base_palettes.hpp"
 #include <vector>
 #include <array>
 
@@ -35,9 +36,9 @@ public:
    int ChoosePalette();
    int SelectNewRGBPalette();
    /// Gets the data in the palette color array.
-   const double* GetData() const;
+   double* GetData(int pidx = -1);
    /// Gets the total number of colors in the current palette color array.
-   int GetSize(int pal = -1) const;
+   int GetSize(int pidx = -1) const;
    /// Gets the number of colors used in the current palette color array.
    int GetNumColors(int pal = -1) const
    { return PaletteNumColors ? PaletteNumColors : GetSize(pal); }
@@ -55,7 +56,11 @@ public:
    { return palette_tex[curr_palette][use_smooth]; }
    GLuint GetAlphaTexture() const { return alpha_tex; }
    void GenerateAlphaTexture(float matAlpha, float matAlphaCenter);
+
+   int NumPalettes();
 private:
+   bool first_init;
+   PaletteRegistry* Palettes;
    void ToTextureDiscrete(double * palette, size_t plt_size, GLuint tex);
    void ToTextureSmooth(double * palette, size_t plt_size, GLuint tex);
    using TexHandle = gl3::resource::TextureHandle;
@@ -70,7 +75,6 @@ private:
 
    bool use_logscale = false;
 
-   bool first_init;
    int MaxTextureSize;
    GLenum alpha_channel;
    GLenum rgba_internal;
