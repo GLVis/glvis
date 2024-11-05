@@ -48,9 +48,9 @@ int PaletteState::ChoosePalette()
    {
       pal = 1;
    }
-   else if (pal > Palettes->NumPalettes())
+   else if (pal > (int)Palettes->NumPalettes())
    {
-      pal = Palettes->NumPalettes();
+      pal = (int)Palettes->NumPalettes();
    }
 
    return pal-1;
@@ -200,12 +200,12 @@ void PaletteState::ToTextureSmooth(double * palette, size_t plt_size,
 }
 
 PaletteState::PaletteState()
-//PaletteManager* palettes)
 // : palettes(palettes)
 // , palette_tex(palettes->size())
    : first_init(false)
-   , Palettes(&BasePalettes)
-   , palette_tex(BasePalettes.NumPalettes())
+   ,Palettes(&BasePalettes)
+   , palette_tex(BasePalettes.NumPalettes()
+                )
 {}
 
 void PaletteState::SetPaletteRegistry(PaletteRegistry* Palettes)
@@ -230,13 +230,13 @@ void PaletteState::Init()
          std::lock_guard<std::mutex> lk{init_mtx};
       }
 
-      GLuint paletteTexIds[Palettes->NumPalettes()][2];
+      GLuint paletteTexIds[5000][2];
       GLuint alphaTexId;
 
       glGenTextures(Palettes->NumPalettes() * 2, &(paletteTexIds[0][0]));
       glGenTextures(1, &alphaTexId);
 
-      for (int ipal = 0; ipal < Palettes->NumPalettes(); ipal++)
+      for (size_t ipal = 0; ipal < Palettes->NumPalettes(); ipal++)
       {
          palette_tex[ipal][0] = paletteTexIds[ipal][0];
          palette_tex[ipal][1] = paletteTexIds[ipal][1];
@@ -273,7 +273,7 @@ void PaletteState::Init()
       first_init = true;
    }
 
-   for (int i = 0; i < Palettes->NumPalettes(); i++)
+   for (int i = 0; i < (int)Palettes->NumPalettes(); i++)
    {
       ToTextureDiscrete(GetData(i),
                         GetSize(i),

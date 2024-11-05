@@ -210,7 +210,7 @@ public:
       size_t idx = 1;
       for (const auto& palette : palettes)
       {
-         os << idx << ") "
+         os << setw(3) << idx << ") "
             << left << setw(12) << palette->name << right;
          if (idx%5 == 0)
          {

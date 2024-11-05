@@ -62,7 +62,7 @@ public:
 
    int NumPalettes();
 private:
-
+   bool first_init;
    PaletteRegistry* Palettes;
    void ToTextureDiscrete(double * palette, size_t plt_size, GLuint tex);
    void ToTextureSmooth(double * palette, size_t plt_size, GLuint tex);
@@ -78,7 +78,6 @@ private:
 
    bool use_logscale = false;
 
-   bool first_init;
    int MaxTextureSize;
    GLenum alpha_channel;
    GLenum rgba_internal;
