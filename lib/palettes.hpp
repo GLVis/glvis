@@ -41,7 +41,7 @@ public:
    /// Gets the data in the palette color array.
    double* GetData(int pidx = -1);
    /// Gets the total number of colors in the current palette color array.
-   // int GetSize(int pal = -1) const;
+   int GetSize(int pidx = -1) const;
    /// Gets the number of colors used in the current palette color array.
    int GetNumColors(int pal = -1) const
    { return PaletteNumColors ? PaletteNumColors : GetSize(pal); }
@@ -61,7 +61,6 @@ public:
    void GenerateAlphaTexture(float matAlpha, float matAlphaCenter);
 
    int NumPalettes();
-   int GetSize(int pidx = -1) const;
 private:
 
    PaletteRegistry* Palettes;
