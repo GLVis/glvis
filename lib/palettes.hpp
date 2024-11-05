@@ -19,10 +19,7 @@
 class PaletteState
 {
 public:
-   // PaletteState(PaletteManager* palettes);
    PaletteState();
-   /// Palettes
-   void SetPaletteRegistry(PaletteRegistry* Palettes);
    /// Initializes the palette textures.
    void Init();
    /// Binds the discrete version of the current palette texture.

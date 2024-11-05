@@ -200,18 +200,11 @@ void PaletteState::ToTextureSmooth(double * palette, size_t plt_size,
 }
 
 PaletteState::PaletteState()
-// : palettes(palettes)
-// , palette_tex(palettes->size())
    : first_init(false)
    ,Palettes(&BasePalettes)
    , palette_tex(BasePalettes.NumPalettes()
                 )
 {}
-
-void PaletteState::SetPaletteRegistry(PaletteRegistry* Palettes)
-{
-   this->Palettes = Palettes;
-}
 
 static std::mutex init_mtx;
 

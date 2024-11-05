@@ -33,7 +33,6 @@
 
 #include "mfem.hpp"
 #include "lib/palettes.hpp"
-// #include "lib/base_palettes.hpp"
 #include "lib/visual.hpp"
 #include "lib/stream_reader.hpp"
 
@@ -1491,6 +1490,7 @@ int main (int argc, char *argv[])
    }
    SetUseHiDPI(enable_hidpi);
 
+   // Load in palette file, if specified
    if (palette_file != string_none)
    {
       BasePalettes.load(palette_file);
