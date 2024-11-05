@@ -38,8 +38,8 @@ struct RGBAf {
 
 
 struct Palette {
-   vector<RGBAf> colors;
    const string name;
+   vector<RGBAf> colors;
 
    // --- Constructors ---
    Palette(const string& name) : name(name) {}
@@ -196,7 +196,7 @@ public:
    }
 
    int get_index_by_name(const string& name) const {
-      for (int i = 0; i < NumPalettes(); i++) {
+      for (size_t i = 0; i < NumPalettes(); i++) {
          if (palettes[i]->name == name) {
             return i;
          }
