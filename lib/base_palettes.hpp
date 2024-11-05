@@ -25,7 +25,7 @@ struct RGBAf {
            << setw(10) << r << " "
            << setw(10) << g << " "
            << setw(10) << b << " "
-           << setw(10) << a << endl;
+           << setw(10) << a;// << endl;
    }
 
    array<float, 4> as_array() const {
@@ -76,8 +76,25 @@ struct Palette {
       cout << "palette " << name << "\n";
       for (const auto& color : colors) {
          color.print();
+         cout << endl;
       }
       cout << endl;
+   }
+
+   // helper function
+   void printAsCPP(const string& filename, const string& varname) const {
+      ofstream outfile(filename, ios::app); // Open file in append mode
+      if (!outfile) {
+         cerr << "Could not open file: " << filename << endl;
+         return;
+      }
+      outfile << "const Palette " << varname << " = Palette(\"" << name << "\", {" << endl;
+      for (const auto& color : colors) {
+         outfile << "   {" << color.r << ", " << color.g << ", " << color.b << ", " << color.a << "},\n";
+      }
+      outfile << "});" << endl;
+      outfile << endl;
+      outfile.close();
    }
 
    shared_ptr<Palette> shared() const {
@@ -105,12 +122,14 @@ private:
    vector<shared_ptr<Palette>> palettes;
 
 public:
-   // PaletteRegistry() = default;
+   // empty constructor
+   PaletteRegistry() {}
+
    PaletteRegistry(const vector<Palette>& paletteRefs) {
-         for (const auto& palette : paletteRefs) {
-            palettes.push_back(palette.shared());
-         }
+      for (const auto& palette : paletteRefs) {
+         palettes.push_back(palette.shared());
       }
+   }
 
    // PaletteRegistry(const vector<shared_ptr<Palette>>& paletteRefs)
    //    : palettes(paletteRefs) {}
@@ -234,6 +253,7 @@ public:
    }
 
 };
+
 
 extern PaletteRegistry BasePalettes;
 
