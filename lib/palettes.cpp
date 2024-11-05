@@ -228,7 +228,6 @@ void PaletteState::Init()
       MaxTextureSize = std::min(MaxTextureSize, 4096);
       {
          std::lock_guard<std::mutex> lk{init_mtx};
-         // Init_Palettes();
       }
 
       GLuint paletteTexIds[Palettes->NumPalettes()][2];

@@ -20,12 +20,14 @@ struct RGBAf {
    constexpr RGBAf(float r = 0.0, float g = 0.0, float b = 0.0, float a = 1.0)
       : r(r), g(g), b(b), a(a) {}
 
-   void print() const {
-      cout << fixed << setprecision(6)
-           << setw(10) << r << " "
-           << setw(10) << g << " "
-           << setw(10) << b << " "
-           << setw(10) << a;// << endl;
+   void print(bool printalpha = false, ostream& os = cout) const {
+      os << fixed << setprecision(6)
+         << setw(10) << r << " "
+         << setw(10) << g << " "
+         << setw(10) << b;
+      if (printalpha) {
+         os << " " << setw(10) << a;
+      }
    }
 
    array<float, 4> as_array() const {
@@ -72,13 +74,13 @@ struct Palette {
    }
 
    // --- Print ---
-   void print() const {
-      cout << "palette " << name << "\n";
+   void print(ostream& os = cout) const {
+      os << "palette " << name << " RGBf" << endl;
       for (const auto& color : colors) {
-         color.print();
-         cout << endl;
+         color.print(false, os);
+         os << endl;
       }
-      cout << endl;
+      os << endl;
    }
 
    // helper function
@@ -169,23 +171,23 @@ public:
       return palettes[NumPalettes()-1];
    }
 
-   void printSummary() const {
+   void printSummary(ostream& os = cout) const {
       size_t idx = 1;
       for (const auto& palette : palettes) {
-         cout << idx << ") "
+         os << idx << ") "
               << left << setw(12) << palette->name << right;
          if (idx%5 == 0)
          {
-            cout << '\n';
+            os << endl;
          }
          idx++;
       }
-      cout << endl;
+      os << endl;
    }
 
-   void printAll() const {
+   void printAll(ostream& os = cout) const {
       for (const auto& palette : palettes) {
-         palette->print();
+         palette->print(os);
       }
    }
 
@@ -217,7 +219,6 @@ public:
       while (1) {
          pfile >> ws;
          if (!pfile.good()) {
-            // cout << "Error in palette" << endl;
             break;
          }
          if (pfile.peek() == '#') {
@@ -249,7 +250,7 @@ public:
             break;
          }
       }
-      cout << "Finished loading palettes from file." << endl;
+      cout << "Finished loading palettes from file: " << palette_filename << endl;
    }
 
 };
