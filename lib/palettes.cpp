@@ -29,14 +29,7 @@ int PaletteState::ChoosePalette()
    char buffer[buflen];
    int pal;
    cout << "Choose a palette:\n";
-   for (pal = 0; pal < Palettes->NumPalettes(); pal++)
-   {
-      cout << setw(4) << pal+1 << ") " << "FIXME";//RGB_Palettes_Names[pal];
-      if ((pal+1)%5 == 0)
-      {
-         cout << '\n';
-      }
-   }
+   Palettes->printSummary();
    cout << "\n ---> [" << curr_palette+1 << "] " << flush;
 
    cin.getline (buffer, buflen);
@@ -211,7 +204,9 @@ PaletteState::PaletteState()
    // : palettes(palettes)
    // , palette_tex(palettes->size())
    : first_init(false)
-{}
+   , Palettes(&BasePalettes)
+   , palette_tex(BasePalettes.NumPalettes())
+   {}
 
 void PaletteState::SetPaletteRegistry(PaletteRegistry* Palettes)
 {
@@ -224,6 +219,7 @@ void PaletteState::Init()
 {
    if (!first_init)
    {
+
       glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MaxTextureSize);
       if (MaxTextureSize < 4096)
       {
@@ -343,9 +339,9 @@ double * PaletteState::GetData(int pidx)
    // return RGB_Palettes[curr_palette];
    if (pidx == -1)
    {
-      return Palettes->get(curr_palette)->as_array();
+      return Palettes->get(curr_palette)->as_rgb_array();
    }
-   return Palettes->get(pidx)->as_array();
+   return Palettes->get(pidx)->as_rgb_array();
 }
 
 void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
@@ -412,12 +408,3 @@ int PaletteState::GetSize(int pidx) const {
    }
    return Palettes->get(pidx)->size();
 }
-
-// int PaletteState::GetSize(int pal) const
-// {
-//    if (pal == -1)
-//    {
-//       return RGB_Palettes_Sizes[curr_palette];
-//    }
-//    return RGB_Palettes_Sizes[pal];
-// }

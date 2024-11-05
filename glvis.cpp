@@ -33,7 +33,7 @@
 
 #include "mfem.hpp"
 #include "lib/palettes.hpp"
-#include "lib/base_palettes.hpp"
+// #include "lib/base_palettes.hpp"
 #include "lib/visual.hpp"
 #include "lib/stream_reader.hpp"
 

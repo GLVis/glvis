@@ -101,14 +101,14 @@ struct Palette {
       return make_shared<Palette>(*this);
    }
 
-   double* as_array() const {
+   double* as_rgb_array() const {
       size_t N = colors.size();
-      double* arr = new double[N * 4];
+      double* arr = new double[N * 3];
       for (size_t i = 0; i < N; ++i) {
-         arr[i * 4 + 0] = colors[i].r;
-         arr[i * 4 + 1] = colors[i].g;
-         arr[i * 4 + 2] = colors[i].b;
-         arr[i * 4 + 3] = colors[i].a;
+         arr[i * 3 + 0] = colors[i].r;
+         arr[i * 3 + 1] = colors[i].g;
+         arr[i * 3 + 2] = colors[i].b;
+         // arr[i * 4 + 3] = colors[i].a;
       }
       return arr;
    }
@@ -150,10 +150,10 @@ public:
 
    // get by index
    shared_ptr<Palette> get(size_t index) const {
-      if (1 <= index && index <= NumPalettes()) {
-         return palettes[index-1];
+      if (0 <= index && index <= NumPalettes()-1) {
+         return palettes[index];
       }
-      cout << "Palette (index = " << index << ") out of range. Available palettes:" << endl;
+      cout << "Palette (index = " << index+1 << ") out of range. Available palettes:" << endl;
       this->printSummary();
       return palettes[NumPalettes()-1];
    }
