@@ -154,6 +154,7 @@ private:
    vector<shared_ptr<Palette>> palettes;
 
 public:
+   const static size_t MAX_PALETTES = 1000;
    // empty constructor
    PaletteRegistry() {}
 
@@ -167,6 +168,11 @@ public:
 
    void addPalette(const Palette& palette)
    {
+      if (NumPalettes() >= MAX_PALETTES)
+      {
+         cout << "Maximum number of palettes reached." << endl;
+         return;
+      }
       // palette name is unique || container is empty
       if (get_index_by_name(palette.name) == -1 || palettes.empty())
       {

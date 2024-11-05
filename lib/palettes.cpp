@@ -223,7 +223,8 @@ void PaletteState::Init()
          std::lock_guard<std::mutex> lk{init_mtx};
       }
 
-      GLuint paletteTexIds[5000][2];
+      // cant be initialized dynamically so we use a max
+      GLuint paletteTexIds[Palettes->MAX_PALETTES][2];
       GLuint alphaTexId;
 
       glGenTextures(Palettes->NumPalettes() * 2, &(paletteTexIds[0][0]));
