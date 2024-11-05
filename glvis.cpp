@@ -1326,7 +1326,7 @@ int main (int argc, char *argv[])
    bool        save_stream   = false;
    const char *stream_file   = string_none;
    const char *script_file   = string_none;
-   // const char *palette_file  = string_none;
+   const char *palette_file  = string_none;
    const char *font_name     = string_default;
    int         portnum       = 19916;
    int         multisample   = GetMultisample();
@@ -1360,6 +1360,8 @@ int main (int argc, char *argv[])
                   "Number of digits used for processor ranks in file names.");
    args.AddOption(&script_file, "-run", "--run-script",
                   "Run a GLVis script file.");
+   args.AddOption(&palette_file, "-p", "--palettes",
+                  "Palette file.");
    args.AddOption(&arg_keys, "-k", "--keys",
                   "Execute key shortcut commands in the GLVis window.");
    args.AddOption(&stream_state.fix_elem_orient, "-fo", "--fix-orientations",
@@ -1489,11 +1491,10 @@ int main (int argc, char *argv[])
    }
    SetUseHiDPI(enable_hidpi);
 
-   // FIXME: make this a cli option
-   const char *palette_file   = "palettes.txt";
-   // string palette_file = "palettes.txt";
-   // palettes.load(pal);
-
+   if (palette_file != string_none)
+   {
+      BasePalettes.load(palette_file);
+   }
 
    GLVisGeometryRefiner.SetType(geom_ref_type);
 
