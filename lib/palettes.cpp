@@ -201,12 +201,12 @@ void PaletteState::ToTextureSmooth(double * palette, size_t plt_size,
 
 PaletteState::PaletteState()
 //PaletteManager* palettes)
-   // : palettes(palettes)
-   // , palette_tex(palettes->size())
+// : palettes(palettes)
+// , palette_tex(palettes->size())
    : first_init(false)
    , Palettes(&BasePalettes)
    , palette_tex(BasePalettes.NumPalettes())
-   {}
+{}
 
 void PaletteState::SetPaletteRegistry(PaletteRegistry* Palettes)
 {
@@ -397,12 +397,15 @@ int PaletteState::SelectNewRGBPalette()
    return pal;
 }
 
-int PaletteState::NumPalettes() {
+int PaletteState::NumPalettes()
+{
    return Palettes->NumPalettes();
 }
 
-int PaletteState::GetSize(int pidx) const {
-   if (pidx == -1) {
+int PaletteState::GetSize(int pidx) const
+{
+   if (pidx == -1)
+   {
       return Palettes->get(curr_palette)->size();
    }
    return Palettes->get(pidx)->size();
