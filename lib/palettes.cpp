@@ -22,202 +22,6 @@
 
 using namespace std;
 
-// Cast a double in range [0,1] to a uint8_t
-uint8_t normalized_double_to_uint8(double x) {
-   if (x >= 0 && x <= 1.0)
-   {
-      return static_cast<uint8_t>(x * 255.0f);
-   }
-   else
-   {
-      throw std::out_of_range("Value out of range [0, 1]");
-   }
-}
-uint8_t as_uint8(int x) {
-   if (x >= 0 && x <= 255)
-   {
-      return static_cast<uint8_t>(x);
-   }
-   else
-   {
-      throw std::out_of_range("Value out of range [0, 255]");
-   }
-}
-
-void RGB::print() {
-   cout << setw(3) << +r << " " << setw(3) << +g << " " << setw(3) << +b << endl;
-}
-
-
-RGB::RGB(uint8_t r, uint8_t g, uint8_t b) : r(r), g(g), b(b) {}
-RGB::RGB(int r, int g, int b) :
-   r(as_uint8(r)),
-   g(as_uint8(g)),
-   b(as_uint8(b)) {};
-RGB::RGB(double r, double g, double b) :
-   r(normalized_double_to_uint8(r)),
-   g(normalized_double_to_uint8(g)),
-   b(normalized_double_to_uint8(b)) {};
-
-array<uint8_t,3> RGB::as_array() {
-   return array<uint8_t,3>{r,g,b};
-}
-
-Palette::Palette(const string& name) : name(name) {};
-Palette::Palette(const string& name, double* arr, int size) :
-   name(name),
-   colors(size)
-   {
-   Palette::add_from_double_array(arr, size);
-}
-
-void Palette::add_from_double_array(double* arr, int size) {
-   for (int i = 0; i < size; i++) {
-      addColor(arr[i*3 + 0], arr[i*3 + 1], arr[i*3 + 2]);
-   }
-}
-
-void Palette::addColor(double r, double g, double b) {
-   colors.push_back(RGB(r,g,b));
-}
-
-void Palette::addColor(int r, int g, int b) {
-   colors.push_back(RGB(r,g,b));
-}
-
-void Palette::print() {
-   cout << name << " (size=" << size() << ")" << endl;;
-   for (auto color : colors) {
-      color.print();
-   }
-   cout << endl;
-}
-
-void Palette::reverse() {
-   std::reverse(colors.begin(), colors.end());
-}
-
-int Palette::size() {
-   return colors.size();
-}
-
-double* Palette::as_double_array() {
-   double* arr = new double[size() * 3];
-   for (int i = 0; i < size(); i++) {
-      arr[i*3 + 0] = colors[i].r / 255.;
-      arr[i*3 + 1] = colors[i].g / 255.;
-      arr[i*3 + 2] = colors[i].b / 255.;
-   }
-   return arr;
-}
-
-
-void PaletteManager::addPalette(Palette palette) {
-   // palette name is unique || container is empty
-   if (get_index_by_name(palette.name) == -1 || palettes.empty()) {
-      palettes.push_back(palette);
-   }
-}
-
-void PaletteManager::addPalette(string name) {
-   if (get_index_by_name(name) == -1 || palettes.empty()) {
-      palettes.push_back(Palette(name));
-   }
-}
-
-int PaletteManager::get_index_by_name(string name) {
-   for (int i = 0; i < size(); i++) {
-      if (palettes[i].name == name) {
-         return i;
-      }
-   }
-   return -1;
-}
-
-Palette* PaletteManager::get_name(string name) {
-   int idx = get_index_by_name(name);
-   if (idx != -1) {
-      return &palettes[idx];
-   }
-   return nullptr;
-}
-
-Palette* PaletteManager::get(int idx) {
-   if (idx >= 0 && idx < size()) {
-      return &palettes[idx];
-   }
-   return nullptr;
-}
-
-int PaletteManager::size() {
-   return palettes.size();
-}
-
-void PaletteManager::print() {
-   for (Palette cmap : palettes) {
-      cmap.print();
-      cout << endl;
-   }
-}
-
-void PaletteManager::load(string palette_file) {
-
-   ifstream pal(palette_file);
-   if (!pal)
-   {
-      cout << "Can not open palette: " << palette_file << endl;
-      return;
-   }
-   string word, palname, channeltype;
-   int idx = -1;
-
-   // read initializing commands
-   while (1) {
-      pal >> ws;
-      if (!pal.good()) {
-         // cout << "Error in palette" << endl;
-         break;
-      }
-      if (pal.peek() == '#') {
-         getline(pal, word);
-         continue;
-      }
-      pal >> word;
-      if (word == "palette") {
-         pal >> palname >> channeltype;
-         addPalette(palname);
-         idx = get_index_by_name(palname);
-         cout << "Reading palette: (" << idx << ") " << palname << endl;
-      }
-      else if (channeltype == "float" && idx != -1) {
-         float r, g, b;
-         r = stof(word);
-         pal >> g >> b;
-         palettes[idx].addColor(r,g,b);
-      }
-      else if (channeltype == "int" && idx != -1) {
-         int r, g, b;
-         r = stoi(word);
-         pal >> g >> b;
-         palettes[idx].addColor(r,g,b);
-      }
-   }
-   cout << "Finished loading palettes from file" << endl;
-}
-
-
-// These palettes are compiled ahead of time
-PaletteManager CorePalettes;
-string core_palette_file = "palettes.txt";
-CorePalettes.load(core_palette_file);
-
-
-
-// const int Num_RGB_Palettes = 71;
-// const int RGB_Palettes_Sizes[Num_RGB_Palettes] =
-// double *RGB_Palettes[Num_RGB_Palettes] =
-// const char *RGB_Palettes_Names[Num_RGB_Palettes] =
-
 
 int PaletteState::ChoosePalette()
 {
@@ -225,7 +29,7 @@ int PaletteState::ChoosePalette()
    char buffer[buflen];
    int pal;
    cout << "Choose a palette:\n";
-   for (pal = 0; pal < palettes->size(); pal++)
+   for (pal = 0; pal < Palettes->NumPalettes(); pal++)
    {
       cout << setw(4) << pal+1 << ") " << "FIXME";//RGB_Palettes_Names[pal];
       if ((pal+1)%5 == 0)
@@ -251,9 +55,9 @@ int PaletteState::ChoosePalette()
    {
       pal = 1;
    }
-   else if (pal > palettes->size())
+   else if (pal > Palettes->NumPalettes())
    {
-      pal = palettes->size();
+      pal = Palettes->NumPalettes();
    }
 
    return pal-1;
@@ -409,9 +213,9 @@ PaletteState::PaletteState()
    : first_init(false)
 {}
 
-void PaletteState::SetPaletteManager(PaletteManager* palettes)
+void PaletteState::SetPaletteRegistry(PaletteRegistry* Palettes)
 {
-   this->palettes = palettes;
+   this->Palettes = Palettes;
 }
 
 static std::mutex init_mtx;
@@ -431,13 +235,13 @@ void PaletteState::Init()
          // Init_Palettes();
       }
 
-      GLuint paletteTexIds[palettes->size()][2];
+      GLuint paletteTexIds[Palettes->NumPalettes()][2];
       GLuint alphaTexId;
 
-      glGenTextures(palettes->size() * 2, &(paletteTexIds[0][0]));
+      glGenTextures(Palettes->NumPalettes() * 2, &(paletteTexIds[0][0]));
       glGenTextures(1, &alphaTexId);
 
-      for (int ipal = 0; ipal < palettes->size(); ipal++)
+      for (int ipal = 0; ipal < Palettes->NumPalettes(); ipal++)
       {
          palette_tex[ipal][0] = paletteTexIds[ipal][0];
          palette_tex[ipal][1] = paletteTexIds[ipal][1];
@@ -474,7 +278,7 @@ void PaletteState::Init()
       first_init = true;
    }
 
-   for (int i = 0; i < palettes->size(); i++)
+   for (int i = 0; i < Palettes->NumPalettes(); i++)
    {
       ToTextureDiscrete(GetData(i),
                         GetSize(i),
@@ -539,9 +343,9 @@ double * PaletteState::GetData(int pidx)
    // return RGB_Palettes[curr_palette];
    if (pidx == -1)
    {
-      return palettes->get(curr_palette)->as_double_array();
+      return Palettes->get(curr_palette)->as_array();
    }
-   return palettes->get(pidx)->as_double_array();
+   return Palettes->get(pidx)->as_array();
 }
 
 void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
@@ -580,12 +384,12 @@ void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
 
 void PaletteState::NextIndex()
 {
-   SetIndex((curr_palette + 1) % palettes->size());
+   SetIndex((curr_palette + 1) % Palettes->NumPalettes());
 }
 
 void PaletteState::PrevIndex()
 {
-   SetIndex((curr_palette == 0) ? palettes->size() - 1 :
+   SetIndex((curr_palette == 0) ? Palettes->NumPalettes() - 1 :
             curr_palette - 1);
 }
 
@@ -599,14 +403,14 @@ int PaletteState::SelectNewRGBPalette()
 }
 
 int PaletteState::NumPalettes() {
-   return palettes->size();
+   return Palettes->NumPalettes();
 }
 
 int PaletteState::GetSize(int pidx) const {
    if (pidx == -1) {
-      return palettes->get(curr_palette)->size();
+      return Palettes->get(curr_palette)->size();
    }
-   return palettes->get(pidx)->size();
+   return Palettes->get(pidx)->size();
 }
 
 // int PaletteState::GetSize(int pal) const

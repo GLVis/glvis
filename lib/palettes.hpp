@@ -12,53 +12,9 @@
 #ifndef GLVIS_PALETTES_HPP
 #define GLVIS_PALETTES_HPP
 #include "gl/types.hpp"
+#include "base_palettes.hpp"
 #include <vector>
 #include <array>
-
-// Cast a double in range [0,1] to a uint8_t
-uint8_t normalized_double_to_uint8(double x);
-uint8_t as_uint8(int x);
-struct RGB
-{
-   uint8_t r,g,b;
-
-   RGB(uint8_t r, uint8_t g, uint8_t b);
-   RGB(int r, int g, int b);
-   RGB(double r, double g, double b);
-
-   void print();
-   array<uint8_t,3> as_array();
-};
-
-struct Palette
-{
-   string name;
-   std::vector<RGB> colors;
-   Palette(const string& name);
-   Palette(const string& name, double* arr, int size);
-   void add_from_double_array(double* arr, int size);
-   void addColor(double r, double g, double b);
-   void addColor(int r, int g, int b);
-   void print();
-   void reverse();
-   int size();
-   double* as_double_array();
-};
-
-class PaletteManager
-{
-public:
-   std::vector<Palette> palettes;
-   void addPalette(Palette palette);
-   void addPalette(string name);
-   int get_index_by_name(string name);
-   Palette* get_name(string name);
-   Palette* get(int idx);
-   int size();
-   void print();
-   void load(string palette_file);
-private:
-};
 
 class PaletteState
 {
@@ -66,7 +22,7 @@ public:
    // PaletteState(PaletteManager* palettes);
    PaletteState();
    /// Palettes
-   void SetPaletteManager(PaletteManager* palettes);
+   void SetPaletteRegistry(PaletteRegistry* Palettes);
    /// Initializes the palette textures.
    void Init();
    /// Binds the discrete version of the current palette texture.
@@ -108,7 +64,7 @@ public:
    int GetSize(int pidx = -1) const;
 private:
 
-   PaletteManager* palettes;
+   PaletteRegistry* Palettes;
    void ToTextureDiscrete(double * palette, size_t plt_size, GLuint tex);
    void ToTextureSmooth(double * palette, size_t plt_size, GLuint tex);
    using TexHandle = gl3::resource::TextureHandle;

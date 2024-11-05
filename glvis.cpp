@@ -32,7 +32,8 @@
 #endif
 
 #include "mfem.hpp"
-#include "lib/palettes.hpp"
+// #include "lib/palettes.hpp"
+// #include "lib/base_palettes.hpp"
 #include "lib/visual.hpp"
 #include "lib/stream_reader.hpp"
 
@@ -72,7 +73,6 @@ enum InputOptions
    //...
    INPUT_PARALLEL = 256,
 };
-PaletteManager palettes;
 int input = INPUT_SERVER_MODE;
 thread_local StreamState stream_state;
 thread_local VisualizationSceneScalarData *vs = NULL;
