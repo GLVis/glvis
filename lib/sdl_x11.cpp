@@ -45,7 +45,6 @@ void SdlX11Platform::RegisterWindow(SDL_Window* window)
       return;
    }
    Display *disp = sysinfo.info.x11.display;
-   Window wnd = sysinfo.info.x11.window;
 
    display_fds.emplace(window, ConnectionNumber(disp));
 
@@ -80,6 +79,7 @@ void SdlX11Platform::RegisterWindow(SDL_Window* window)
    {
       cerr << "Failed to disable XInput on the default root window!" << endl;
    }
+   Window wnd = sysinfo.info.x11.window;
    if (XISelectEvents_(disp, wnd, &event_mask, 1) != Success)
    {
       cerr << "Failed to disable XInput on the current window!" << endl;
