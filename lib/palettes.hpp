@@ -58,6 +58,7 @@ public:
    void GenerateAlphaTexture(float matAlpha, float matAlphaCenter);
 
    int NumPalettes();
+
 private:
    bool first_init;
    PaletteRegistry* Palettes;

@@ -107,7 +107,7 @@ struct Palette
    // helper function - not used in glvis.cpp
    void printAsCPP(const string& filename, const string& varname) const
    {
-      ofstream outfile(filename, ios::app); // Open file in append mode
+      ofstream outfile(filename, ios::app); // open file in append mode
       if (!outfile)
       {
          cerr << "Could not open file: " << filename << endl;
@@ -146,8 +146,8 @@ struct Palette
 };
 
 
-// PaletteRegistry with a vector of shared pointers to Palette
-// Besides holding the palettes, this should be stateless
+// PaletteRegistry with a vector of shared pointers to Palette. Besides holding
+// the palettes, this should be stateless.
 class PaletteRegistry
 {
 private:
