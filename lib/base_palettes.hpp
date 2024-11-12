@@ -64,9 +64,10 @@ struct Palette
    // Palette(const string& name, const float (&array)[N][3]) : name(name) {
    Palette(const string& name, const array<array<float,3>,N>& arr) : name(name)
    {
+      colors.reserve(N);
       for (size_t i = 0; i < N; ++i)
       {
-         colors.push_back(RGBAf(arr[i][0], arr[i][1], arr[i][2]));
+         colors[i] = RGBAf(arr[i][0], arr[i][1], arr[i][2]);
       }
    }
 
@@ -74,9 +75,10 @@ struct Palette
    template <size_t N>
    Palette(const string& name, const array<array<float,4>,N>& arr) : name(name)
    {
+      colors.reserve(N);
       for (size_t i = 0; i < N; ++i)
       {
-         colors.push_back(RGBAf(arr[i][0], arr[i][1], arr[i][2], arr[i][3]));
+         colors[i] = RGBAf(arr[i][0], arr[i][1], arr[i][2], arr[i][3]);
       }
    }
 
