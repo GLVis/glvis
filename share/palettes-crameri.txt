@@ -1,3 +1,6 @@
+# All palettes contained in this file are by Fabio Crameri; provided under an MIT license.
+# Crameri, F. (2023). Scientific colour maps (8.0.1). Zenodo. https://doi.org/10.5281/zenodo.8409685
+
 palette batlow RGBf
   0.005193   0.098238   0.349842
   0.009065   0.104487   0.350933
