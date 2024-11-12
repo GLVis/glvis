@@ -83,7 +83,7 @@ struct Palette
    }
 
    // --- Getters ---
-   size_t size() const
+   int size() const
    {
       return colors.size();
    }
@@ -134,9 +134,9 @@ struct Palette
 
    double* as_rgb_array() const
    {
-      size_t N = colors.size();
+      int N = colors.size();
       double* arr = new double[N * 3];
-      for (size_t i = 0; i < N; ++i)
+      for (int i = 0; i < N; ++i)
       {
          arr[i * 3 + 0] = colors[i].r;
          arr[i * 3 + 1] = colors[i].g;
@@ -156,7 +156,7 @@ private:
    vector<shared_ptr<Palette>> palettes;
 
 public:
-   const static size_t MAX_PALETTES = 1000;
+   const static int MAX_PALETTES = 1000;
    // empty constructor
    PaletteRegistry() {}
 
@@ -192,7 +192,7 @@ public:
    }
 
    // get by index
-   shared_ptr<Palette> get(size_t index) const
+   shared_ptr<Palette> get(int index) const
    {
       if (0 <= index && index <= NumPalettes()-1)
       {
@@ -242,14 +242,14 @@ public:
       }
    }
 
-   size_t NumPalettes() const
+   int NumPalettes() const
    {
       return palettes.size();
    }
 
    int get_index_by_name(const string& name) const
    {
-      for (size_t i = 0; i < NumPalettes(); i++)
+      for (int i = 0; i < NumPalettes(); i++)
       {
          if (palettes[i]->name == name)
          {
