@@ -201,7 +201,7 @@ void PaletteState::ToTextureSmooth(double * palette, size_t plt_size,
 
 PaletteState::PaletteState()
    : first_init(false)
-   ,Palettes(&BasePalettes)
+   , Palettes(&BasePalettes)
    , palette_tex(BasePalettes.NumPalettes())
 {}
 
@@ -330,9 +330,9 @@ double * PaletteState::GetData(int pidx)
    // return RGB_Palettes[curr_palette];
    if (pidx == -1)
    {
-      return Palettes->get(curr_palette)->as_rgb_array();
+      return Palettes->get(curr_palette).as_rgb_array();
    }
-   return Palettes->get(pidx)->as_rgb_array();
+   return Palettes->get(pidx).as_rgb_array();
 }
 
 void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
@@ -398,7 +398,7 @@ int PaletteState::GetSize(int pidx) const
 {
    if (pidx == -1)
    {
-      return Palettes->get(curr_palette)->size();
+      return Palettes->get(curr_palette).size();
    }
-   return Palettes->get(pidx)->size();
+   return Palettes->get(pidx).size();
 }

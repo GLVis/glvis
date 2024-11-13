@@ -127,11 +127,6 @@ struct Palette
       outfile.close();
    }
 
-   shared_ptr<Palette> shared() const
-   {
-      return make_shared<Palette>(*this);
-   }
-
    double* as_rgb_array() const
    {
       int N = colors.size();
@@ -148,12 +143,12 @@ struct Palette
 };
 
 
-// PaletteRegistry with a vector of shared pointers to Palette. Besides holding
+// PaletteRegistry with a vector of Palette. Besides holding
 // the palettes, this should be stateless.
 class PaletteRegistry
 {
 private:
-   vector<shared_ptr<Palette>> palettes;
+   vector<Palette> palettes;
 
 public:
    const static int MAX_PALETTES = 1000;
@@ -162,9 +157,9 @@ public:
 
    PaletteRegistry(const vector<Palette>& paletteRefs)
    {
-      for (const auto& palette : paletteRefs)
+      for (const Palette& palette : paletteRefs)
       {
-         palettes.push_back(palette.shared());
+         palettes.push_back(palette);
       }
    }
 
@@ -178,7 +173,7 @@ public:
       // palette name is unique || container is empty
       if (get_index_by_name(palette.name) == -1 || palettes.empty())
       {
-         palettes.push_back(palette.shared());
+         palettes.push_back(palette);
       }
    }
 
@@ -192,7 +187,7 @@ public:
    }
 
    // get by index
-   shared_ptr<Palette> get(int index) const
+   Palette get(int index) const
    {
       if (0 <= index && index <= NumPalettes()-1)
       {
@@ -205,7 +200,7 @@ public:
    }
 
    // get by name
-   shared_ptr<Palette> get(const string& name) const
+   Palette get(const string& name) const
    {
       int idx = get_index_by_name(name);
       if (idx != -1)
@@ -221,10 +216,10 @@ public:
    void printSummary(ostream& os = cout) const
    {
       size_t idx = 1;
-      for (const auto& palette : palettes)
+      for (const Palette& palette : palettes)
       {
          os << setw(3) << idx << ") "
-            << left << setw(12) << palette->name << right;
+            << left << setw(12) << palette.name << right;
          if (idx%5 == 0)
          {
             os << endl;
@@ -236,9 +231,9 @@ public:
 
    void printAll(ostream& os = cout) const
    {
-      for (const auto& palette : palettes)
+      for (const Palette& palette : palettes)
       {
-         palette->print(os);
+         palette.print(os);
       }
    }
 
@@ -251,7 +246,7 @@ public:
    {
       for (int i = 0; i < NumPalettes(); i++)
       {
-         if (palettes[i]->name == name)
+         if (palettes[i].name == name)
          {
             return i;
          }
@@ -307,7 +302,7 @@ public:
             float r, g, b;
             r = stof(word);
             pfile >> g >> b;
-            palettes[idx]->addColor(r,g,b);
+            palettes[idx].addColor(r,g,b);
          }
          else
          {
