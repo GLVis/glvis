@@ -49,17 +49,26 @@ struct RGBAf
 };
 
 
-struct Palette
+class Palette
 {
-   const string name;
+private:
    vector<RGBAf> colors;
+   /// cached RGB and alpha values
+   vector<float> rgb_cache;
+   vector<float> alpha_cache;
+   bool cache_updated = false;
 
-   // --- Constructors ---
+public:
+   const string name;
+
+   /// Constructors
    Palette(const string& name) : name(name) {}
+
+   /// Constructor from vector of RGBAf
    Palette(const string& name, const vector<RGBAf>& colors)
       : name(name), colors(colors) {}
 
-   // from Nx3 array
+   /// Constructor from Nx3 array
    template <size_t N>
    Palette(const string& name, const array<array<float,3>,N>& arr) : name(name)
    {
@@ -68,9 +77,10 @@ struct Palette
       {
          colors[i] = RGBAf(arr[i][0], arr[i][1], arr[i][2]);
       }
+      update_cache();
    }
 
-   // from Nx4 array
+   /// Constructor from Nx4 array
    template <size_t N>
    Palette(const string& name, const array<array<float,4>,N>& arr) : name(name)
    {
@@ -79,21 +89,19 @@ struct Palette
       {
          colors[i] = RGBAf(arr[i][0], arr[i][1], arr[i][2], arr[i][3]);
       }
+      update_cache();
    }
 
-   // --- Getters ---
-   int size() const
-   {
-      return colors.size();
-   }
+   int size() const { return colors.size(); }
 
-   // --- Add color ---
+   /// Add color to palette
    void addColor(float r, float g, float b, float a = 1.0)
    {
       colors.push_back(RGBAf(r, g, b, a));
+      cache_updated = false;
    }
 
-   // --- Print ---
+   /// Print this palette
    void print(ostream& os = cout) const
    {
       os << "palette " << name << " RGBf" << endl;
@@ -105,18 +113,33 @@ struct Palette
       os << endl;
    }
 
-   const double* as_rgb_array() const
+   void update_cache()
    {
+      if (cache_updated) { return; }
+
       int N = size();
-      double* arr = new double[N * 3];
+      rgb_cache.resize(N * 3);
+      alpha_cache.resize(N);
       for (int i = 0; i < N; ++i)
       {
-         arr[i * 3 + 0] = colors[i].r;
-         arr[i * 3 + 1] = colors[i].g;
-         arr[i * 3 + 2] = colors[i].b;
-         // arr[i * 4 + 3] = colors[i].a;
+         rgb_cache[i * 3 + 0] = colors[i].r;
+         rgb_cache[i * 3 + 1] = colors[i].g;
+         rgb_cache[i * 3 + 2] = colors[i].b;
+         alpha_cache[i] = colors[i].a;
       }
-      return arr;
+      cache_updated = true;
+   }
+
+   const float* rgb_array()
+   {
+      update_cache();
+      return rgb_cache.data();
+   }
+
+   const float* alpha()
+   {
+      update_cache();
+      return alpha_cache.data();
    }
 
 };
@@ -150,7 +173,6 @@ private:
    }
 
 public:
-   const static int MAX_PALETTES = 1000;
    // empty constructor
    PaletteRegistry() {}
 

@@ -36,7 +36,7 @@ public:
    int ChoosePalette();
    int SelectNewRGBPalette();
    /// Gets the data in the palette color array.
-   const double* GetData(int pidx = -1) const;
+   const float* GetData(int pidx = -1) const;
    /// Gets the total number of colors in the current palette color array.
    int GetSize(int pidx = -1) const;
    /// Gets the number of colors used in the current palette color array.

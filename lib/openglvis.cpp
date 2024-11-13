@@ -492,12 +492,12 @@ VisualizationScene::AddPaletteMaterial(glTF_Builder &bld)
                  gl3::GLDevice::useLegacyTextureFmts() ? GL_RGBA : GL_RGBA32F,
                  GL_FLOAT, palette_data.data());
 #else
-   const double *palette_data_raw = palette.GetData();
+   const float *palette_data_raw = palette.GetData();
    for (int i = 0; i < palette_size; ++i)
    {
       for (int j = 0; j < 3; ++j)
       {
-         palette_data[i][j] = (float) palette_data_raw[j + 3*i];
+         palette_data[i][j] = palette_data_raw[j + 3*i];
       }
       palette_data[i][3] = 1.0f;
    }

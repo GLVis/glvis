@@ -62,7 +62,7 @@ void PaletteState::ToTextureDiscrete(Palette* palette, GLuint tex)
 {
 
    int plt_size = palette->size();
-   const double * paldata = palette->as_rgb_array();
+   const float * paldata = palette->rgb_array();
    vector<array<float,4>> texture_buf(plt_size);
 
    if (RepeatPaletteTimes > 0)
@@ -71,9 +71,9 @@ void PaletteState::ToTextureDiscrete(Palette* palette, GLuint tex)
       {
          texture_buf[i] =
          {
-            (float) paldata[3*i],
-            (float) paldata[3*i+1],
-            (float) paldata[3*i+2],
+            paldata[3*i],
+            paldata[3*i+1],
+            paldata[3*i+2],
             1.0
          };
       }
@@ -84,9 +84,9 @@ void PaletteState::ToTextureDiscrete(Palette* palette, GLuint tex)
       {
          texture_buf[i] =
          {
-            (float) paldata[3*(plt_size-1-i)+0],
-            (float) paldata[3*(plt_size-1-i)+1],
-            (float) paldata[3*(plt_size-1-i)+2],
+            paldata[3*(plt_size-1-i)+0],
+            paldata[3*(plt_size-1-i)+1],
+            paldata[3*(plt_size-1-i)+2],
             1.0
          };
       }
@@ -107,9 +107,9 @@ void PaletteState::ToTextureDiscrete(Palette* palette, GLuint tex)
          }
          texture_buf[i] =
          {
-            (float) paldata[3*plt_i],
-            (float) paldata[3*plt_i+1],
-            (float) paldata[3*plt_i+2],
+            paldata[3*plt_i],
+            paldata[3*plt_i+1],
+            paldata[3*plt_i+2],
             1.0
          };
       }
@@ -136,7 +136,7 @@ void PaletteState::ToTextureDiscrete(Palette* palette, GLuint tex)
 void PaletteState::ToTextureSmooth(Palette* palette, GLuint tex)
 {
    int plt_size = palette->size();
-   const double * paldata = palette->as_rgb_array();
+   const float * paldata = palette->rgb_array();
 
    vector<array<float,4>> texture_buf(MaxTextureSize);
    glBindTexture(GL_TEXTURE_2D, tex);
@@ -154,9 +154,9 @@ void PaletteState::ToTextureSmooth(Palette* palette, GLuint tex)
             int p_i = (flip_start + rpt) % 2 == 0 ? i : plt_size - 1 - i;
             texture_buf[i + plt_size * rpt] =
             {
-               (float) paldata[3*p_i],
-               (float) paldata[3*p_i + 1],
-               (float) paldata[3*p_i + 2],
+               paldata[3*p_i],
+               paldata[3*p_i + 1],
+               paldata[3*p_i + 2],
                1.0
             };
          }
@@ -169,7 +169,7 @@ void PaletteState::ToTextureSmooth(Palette* palette, GLuint tex)
    {
       for (int i = 0; i < textureSize; i++)
       {
-         double t = double(i) / textureSize - 1;
+         float t = float(i) / textureSize - 1;
          t *= 0.999999999 * (plt_size - 1) * abs(RepeatPaletteTimes);
          int j = floor(t);
          t -= j;
@@ -186,9 +186,9 @@ void PaletteState::ToTextureSmooth(Palette* palette, GLuint tex)
          }
          texture_buf[i] =
          {
-            (float)((1.0-t) * paldata[3*p_i] + t * paldata[3*(p_i+1)]),
-            (float)((1.0-t) * paldata[3*p_i+1] + t * paldata[3*(p_i+1)+1]),
-            (float)((1.0-t) * paldata[3*p_i+2] + t * paldata[3*(p_i+1)+2]),
+            (1-t) * paldata[3*p_i] + t * paldata[3*(p_i+1)],
+            (1-t) * paldata[3*p_i+1] + t * paldata[3*(p_i+1)+1],
+            (1-t) * paldata[3*p_i+2] + t * paldata[3*(p_i+1)+2],
             1.0
          };
       }
@@ -305,12 +305,12 @@ double PaletteState::GetColorCoord(double val, double min, double max)
 void PaletteState::GetColorFromVal(double val, float * rgba)
 {
    int palSize = GetSize();
-   const double* palData = GetData();
+   const float* palData = GetData();
    val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
    int i = (int) floor( val );
-   double t = val - i;
+   float t = float(val) - i;
 
-   const double* pal;
+   const float* pal;
    if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
        ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
    {
@@ -327,14 +327,13 @@ void PaletteState::GetColorFromVal(double val, float * rgba)
    rgba[3] = 1.f;
 }
 
-const double * PaletteState::GetData(int pidx) const
+const float * PaletteState::GetData(int pidx) const
 {
-   // return RGB_Palettes[curr_palette];
    if (pidx == -1)
    {
-      return Palettes->get(curr_palette)->as_rgb_array();
+      return Palettes->get(curr_palette)->rgb_array();
    }
-   return Palettes->get(pidx)->as_rgb_array();
+   return Palettes->get(pidx)->rgb_array();
 }
 
 void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
