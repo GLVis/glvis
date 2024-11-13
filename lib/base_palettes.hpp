@@ -147,7 +147,7 @@ public:
 // Since there is no make_unique for c++11
 #if __cplusplus < 201402
 template<typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args&&... args)
+std::unique_ptr<T> as_unique(Args&&... args)
 {
    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
@@ -182,7 +182,7 @@ public:
       {
          if (check_name(palette.name))
          {
-            palettes.push_back(make_unique<Palette>(palette));
+            palettes.push_back(as_unique<Palette>(palette));
          }
       }
    }
@@ -191,7 +191,7 @@ public:
    {
       if (check_name(palette.name))
       {
-         palettes.push_back(make_unique<Palette>(palette));
+         palettes.push_back(as_unique<Palette>(palette));
       }
    }
 
@@ -199,7 +199,7 @@ public:
    {
       if (check_name(name))
       {
-         palettes.push_back(make_unique<Palette>(name));
+         palettes.push_back(as_unique<Palette>(name));
       }
    }
 
