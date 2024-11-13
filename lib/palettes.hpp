@@ -36,7 +36,7 @@ public:
    int ChoosePalette();
    int SelectNewRGBPalette();
    /// Gets the data in the palette color array.
-   double* GetData(int pidx = -1);
+   const double* GetData(int pidx = -1) const;
    /// Gets the total number of colors in the current palette color array.
    int GetSize(int pidx = -1) const;
    /// Gets the number of colors used in the current palette color array.
@@ -62,8 +62,8 @@ public:
 private:
    bool first_init;
    PaletteRegistry* Palettes;
-   void ToTextureDiscrete(double * palette, size_t plt_size, GLuint tex);
-   void ToTextureSmooth(double * palette, size_t plt_size, GLuint tex);
+   void ToTextureDiscrete(Palette palette, GLuint tex);
+   void ToTextureSmooth(Palette palette, GLuint tex);
    using TexHandle = gl3::resource::TextureHandle;
 
    std::vector<std::array<TexHandle,2>> palette_tex;

@@ -127,7 +127,7 @@ struct Palette
       outfile.close();
    }
 
-   double* as_rgb_array() const
+   const double* as_rgb_array() const
    {
       int N = colors.size();
       double* arr = new double[N * 3];
@@ -140,6 +140,7 @@ struct Palette
       }
       return arr;
    }
+
 };
 
 

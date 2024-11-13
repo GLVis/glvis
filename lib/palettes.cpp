@@ -58,9 +58,11 @@ int PaletteState::ChoosePalette()
 
 
 // Generates a discrete texture from the given palette.
-void PaletteState::ToTextureDiscrete(double * palette, size_t plt_size,
-                                     GLuint tex)
+void PaletteState::ToTextureDiscrete(Palette palette, GLuint tex)
 {
+
+   int plt_size = palette.size();
+   const double * paldata = palette.as_rgb_array();
    vector<array<float,4>> texture_buf(plt_size);
 
    if (RepeatPaletteTimes > 0)
@@ -69,9 +71,9 @@ void PaletteState::ToTextureDiscrete(double * palette, size_t plt_size,
       {
          texture_buf[i] =
          {
-            (float) palette[3*i],
-            (float) palette[3*i+1],
-            (float) palette[3*i+2],
+            (float) paldata[3*i],
+            (float) paldata[3*i+1],
+            (float) paldata[3*i+2],
             1.0
          };
       }
@@ -82,9 +84,9 @@ void PaletteState::ToTextureDiscrete(double * palette, size_t plt_size,
       {
          texture_buf[i] =
          {
-            (float) palette[3*(plt_size-1-i)+0],
-            (float) palette[3*(plt_size-1-i)+1],
-            (float) palette[3*(plt_size-1-i)+2],
+            (float) paldata[3*(plt_size-1-i)+0],
+            (float) paldata[3*(plt_size-1-i)+1],
+            (float) paldata[3*(plt_size-1-i)+2],
             1.0
          };
       }
@@ -105,9 +107,9 @@ void PaletteState::ToTextureDiscrete(double * palette, size_t plt_size,
          }
          texture_buf[i] =
          {
-            (float) palette[3*plt_i],
-            (float) palette[3*plt_i+1],
-            (float) palette[3*plt_i+2],
+            (float) paldata[3*plt_i],
+            (float) paldata[3*plt_i+1],
+            (float) paldata[3*plt_i+2],
             1.0
          };
       }
@@ -131,9 +133,11 @@ void PaletteState::ToTextureDiscrete(double * palette, size_t plt_size,
 }
 
 // Generates a smooth texture from the given palette.
-void PaletteState::ToTextureSmooth(double * palette, size_t plt_size,
-                                   GLuint tex)
+void PaletteState::ToTextureSmooth(Palette palette, GLuint tex)
 {
+   int plt_size = palette.size();
+   const double * paldata = palette.as_rgb_array();
+
    vector<array<float,4>> texture_buf(MaxTextureSize);
    glBindTexture(GL_TEXTURE_2D, tex);
 
@@ -150,9 +154,9 @@ void PaletteState::ToTextureSmooth(double * palette, size_t plt_size,
             int p_i = (flip_start + rpt) % 2 == 0 ? i : plt_size - 1 - i;
             texture_buf[i + plt_size * rpt] =
             {
-               (float) palette[3*p_i],
-               (float) palette[3*p_i + 1],
-               (float) palette[3*p_i + 2],
+               (float) paldata[3*p_i],
+               (float) paldata[3*p_i + 1],
+               (float) paldata[3*p_i + 2],
                1.0
             };
          }
@@ -182,9 +186,9 @@ void PaletteState::ToTextureSmooth(double * palette, size_t plt_size,
          }
          texture_buf[i] =
          {
-            (float)((1.0-t) * palette[3*p_i] + t * palette[3*(p_i+1)]),
-            (float)((1.0-t) * palette[3*p_i+1] + t * palette[3*(p_i+1)+1]),
-            (float)((1.0-t) * palette[3*p_i+2] + t * palette[3*(p_i+1)+2]),
+            (float)((1.0-t) * paldata[3*p_i] + t * paldata[3*(p_i+1)]),
+            (float)((1.0-t) * paldata[3*p_i+1] + t * paldata[3*(p_i+1)+1]),
+            (float)((1.0-t) * paldata[3*p_i+2] + t * paldata[3*(p_i+1)+2]),
             1.0
          };
       }
@@ -267,11 +271,9 @@ void PaletteState::Init()
 
    for (int i = 0; i < Palettes->NumPalettes(); i++)
    {
-      ToTextureDiscrete(GetData(i),
-                        GetSize(i),
+      ToTextureDiscrete(Palettes->get(i),
                         palette_tex[i][0]);
-      ToTextureSmooth(GetData(i),
-                      GetSize(i),
+      ToTextureSmooth(Palettes->get(i),
                       palette_tex[i][1]);
    }
 }
@@ -325,7 +327,7 @@ void PaletteState::GetColorFromVal(double val, float * rgba)
    rgba[3] = 1.f;
 }
 
-double * PaletteState::GetData(int pidx)
+const double * PaletteState::GetData(int pidx) const
 {
    // return RGB_Palettes[curr_palette];
    if (pidx == -1)
