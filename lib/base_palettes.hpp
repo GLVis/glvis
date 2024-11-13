@@ -107,7 +107,7 @@ struct Palette
 
    const double* as_rgb_array() const
    {
-      int N = colors.size();
+      int N = size();
       double* arr = new double[N * 3];
       for (int i = 0; i < N; ++i)
       {
@@ -122,11 +122,13 @@ struct Palette
 };
 
 // Since there is no make_unique for c++11
+#if __cplusplus < 201402
 template<typename T, typename... Args>
 std::unique_ptr<T> make_unique(Args&&... args)
 {
    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
+#endif
 
 // PaletteRegistry with a vector of unique_ptr<Palette>. Besides holding
 // the palettes, this should be stateless.
@@ -134,6 +136,18 @@ class PaletteRegistry
 {
 private:
    vector<unique_ptr<Palette>> palettes;
+
+   int get_index_by_name(const string& name) const
+   {
+      for (int i = 0; i < NumPalettes(); i++)
+      {
+         if (get(i)->name == name)
+         {
+            return i;
+         }
+      }
+      return -1;
+   }
 
 public:
    const static int MAX_PALETTES = 1000;
@@ -233,18 +247,6 @@ public:
    int NumPalettes() const
    {
       return palettes.size();
-   }
-
-   int get_index_by_name(const string& name) const
-   {
-      for (int i = 0; i < NumPalettes(); i++)
-      {
-         if (get(i)->name == name)
-         {
-            return i;
-         }
-      }
-      return -1;
    }
 
    void load(const string& palette_filename)
