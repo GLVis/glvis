@@ -67,7 +67,7 @@ void PaletteState::ToTextureDiscrete(Palette* palette, GLuint tex)
 
    if (RepeatPaletteTimes > 0)
    {
-      for (size_t i = 0; i < plt_size; i++)
+      for (int i = 0; i < plt_size; i++)
       {
          texture_buf[i] =
          {
@@ -80,7 +80,7 @@ void PaletteState::ToTextureDiscrete(Palette* palette, GLuint tex)
    }
    else
    {
-      for (size_t i = 0; i < plt_size; i++)
+      for (int i = 0; i < plt_size; i++)
       {
          texture_buf[i] =
          {
@@ -91,7 +91,7 @@ void PaletteState::ToTextureDiscrete(Palette* palette, GLuint tex)
          };
       }
    }
-   if (PaletteNumColors > 1 && (plt_size > (size_t)PaletteNumColors))
+   if (PaletteNumColors > 1 && (plt_size > PaletteNumColors))
    {
       texture_buf.resize(PaletteNumColors);
       for (int i = 0; i < PaletteNumColors; i++)
@@ -141,13 +141,13 @@ void PaletteState::ToTextureSmooth(Palette* palette, GLuint tex)
    vector<array<float,4>> texture_buf(MaxTextureSize);
    glBindTexture(GL_TEXTURE_2D, tex);
 
-   size_t textureSize = MaxTextureSize;
+   int textureSize = MaxTextureSize;
    if (plt_size * abs(RepeatPaletteTimes) <= textureSize)
    {
       int flip_start = RepeatPaletteTimes < 0;
       for (int rpt = 0; rpt < abs(RepeatPaletteTimes); rpt++)
       {
-         for (size_t i = 0; i < plt_size; i++)
+         for (int i = 0; i < plt_size; i++)
          {
             // flip = 0: p_i = i
             // flip = 1: p_i = plt_size-1-i
@@ -167,7 +167,7 @@ void PaletteState::ToTextureSmooth(Palette* palette, GLuint tex)
    }
    else
    {
-      for (size_t i = 0; i < textureSize; i++)
+      for (int i = 0; i < textureSize; i++)
       {
          double t = double(i) / textureSize - 1;
          t *= 0.999999999 * (plt_size - 1) * abs(RepeatPaletteTimes);
