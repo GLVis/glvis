@@ -226,7 +226,7 @@ void PaletteState::Init()
          std::lock_guard<std::mutex> lk{init_mtx};
       }
 
-      vector<array<GLuint, 2>> paletteTexIds(Palettes->MAX_PALETTES);
+      vector<array<GLuint, 2>> paletteTexIds(Palettes->NumPalettes());
       GLuint alphaTexId;
 
       glGenTextures(Palettes->NumPalettes() * 2, &(paletteTexIds[0][0]));
