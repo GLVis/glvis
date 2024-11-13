@@ -58,11 +58,11 @@ int PaletteState::ChoosePalette()
 
 
 // Generates a discrete texture from the given palette.
-void PaletteState::ToTextureDiscrete(Palette palette, GLuint tex)
+void PaletteState::ToTextureDiscrete(Palette* palette, GLuint tex)
 {
 
-   int plt_size = palette.size();
-   const double * paldata = palette.as_rgb_array();
+   int plt_size = palette->size();
+   const double * paldata = palette->as_rgb_array();
    vector<array<float,4>> texture_buf(plt_size);
 
    if (RepeatPaletteTimes > 0)
@@ -133,10 +133,10 @@ void PaletteState::ToTextureDiscrete(Palette palette, GLuint tex)
 }
 
 // Generates a smooth texture from the given palette.
-void PaletteState::ToTextureSmooth(Palette palette, GLuint tex)
+void PaletteState::ToTextureSmooth(Palette* palette, GLuint tex)
 {
-   int plt_size = palette.size();
-   const double * paldata = palette.as_rgb_array();
+   int plt_size = palette->size();
+   const double * paldata = palette->as_rgb_array();
 
    vector<array<float,4>> texture_buf(MaxTextureSize);
    glBindTexture(GL_TEXTURE_2D, tex);
@@ -332,9 +332,9 @@ const double * PaletteState::GetData(int pidx) const
    // return RGB_Palettes[curr_palette];
    if (pidx == -1)
    {
-      return Palettes->get(curr_palette).as_rgb_array();
+      return Palettes->get(curr_palette)->as_rgb_array();
    }
-   return Palettes->get(pidx).as_rgb_array();
+   return Palettes->get(pidx)->as_rgb_array();
 }
 
 void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
@@ -400,7 +400,7 @@ int PaletteState::GetSize(int pidx) const
 {
    if (pidx == -1)
    {
-      return Palettes->get(curr_palette).size();
+      return Palettes->get(curr_palette)->size();
    }
-   return Palettes->get(pidx).size();
+   return Palettes->get(pidx)->size();
 }

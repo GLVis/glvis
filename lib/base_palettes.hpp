@@ -61,7 +61,6 @@ struct Palette
 
    // from Nx3 array
    template <size_t N>
-   // Palette(const string& name, const float (&array)[N][3]) : name(name) {
    Palette(const string& name, const array<array<float,3>,N>& arr) : name(name)
    {
       colors.reserve(N);
@@ -106,27 +105,6 @@ struct Palette
       os << endl;
    }
 
-   // helper function - not used in glvis.cpp
-   void printAsCPP(const string& filename, const string& varname) const
-   {
-      ofstream outfile(filename, ios::app); // open file in append mode
-      if (!outfile)
-      {
-         cerr << "Could not open file: " << filename << endl;
-         return;
-      }
-      outfile << "const Palette " << varname << " = Palette(\"" << name << "\", {" <<
-              endl;
-      for (const auto& color : colors)
-      {
-         outfile << "   {" << color.r << ", " << color.g << ", " << color.b << ", " <<
-                 color.a << "},\n";
-      }
-      outfile << "});" << endl;
-      outfile << endl;
-      outfile.close();
-   }
-
    const double* as_rgb_array() const
    {
       int N = colors.size();
@@ -143,13 +121,19 @@ struct Palette
 
 };
 
+// Since there is no make_unique for c++11
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args)
+{
+   return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
 
-// PaletteRegistry with a vector of Palette. Besides holding
+// PaletteRegistry with a vector of unique_ptr<Palette>. Besides holding
 // the palettes, this should be stateless.
 class PaletteRegistry
 {
 private:
-   vector<Palette> palettes;
+   vector<unique_ptr<Palette>> palettes;
 
 public:
    const static int MAX_PALETTES = 1000;
@@ -160,81 +144,89 @@ public:
    {
       for (const Palette& palette : paletteRefs)
       {
-         palettes.push_back(palette);
+         if (check_name(palette.name))
+         {
+            palettes.push_back(make_unique<Palette>(palette));
+         }
       }
    }
 
-   void addPalette(const Palette& palette)
+   void addPalette(Palette& palette)
    {
-      if (NumPalettes() >= MAX_PALETTES)
+      if (check_name(palette.name))
       {
-         cout << "Maximum number of palettes reached." << endl;
-         return;
-      }
-      // palette name is unique || container is empty
-      if (get_index_by_name(palette.name) == -1 || palettes.empty())
-      {
-         palettes.push_back(palette);
+         palettes.push_back(make_unique<Palette>(palette));
       }
    }
 
    void addPalette(const string& name)
    {
+      if (check_name(name))
+      {
+         palettes.push_back(make_unique<Palette>(name));
+      }
+   }
+
+   bool check_name(const string& name) const
+   {
       // palette name is unique || container is empty
       if (get_index_by_name(name) == -1 || palettes.empty())
       {
-         addPalette(Palette(name));
+         return true;
+      }
+      else
+      {
+         cout << "Palette with name: '" << name << "' already exists in registry.";
+         return false;
       }
    }
 
    // get by index
-   Palette get(int index) const
+   Palette* get(int index) const
    {
       if (0 <= index && index <= NumPalettes()-1)
       {
-         return palettes[index];
+         return palettes[index].get();
       }
       cout << "Palette (index = " << index+1 << ") out of range. Available palettes:"
            << endl;
       this->printSummary();
-      return palettes[NumPalettes()-1];
+      return palettes.back().get();
    }
 
    // get by name
-   Palette get(const string& name) const
+   Palette* get(const string& name) const
    {
       int idx = get_index_by_name(name);
       if (idx != -1)
       {
-         return palettes[idx];
+         return palettes[idx].get();
       }
       cout << "Palette (name = " << name << ") not found. Available palettes:" <<
            endl;
       this->printSummary();
-      return palettes[NumPalettes()-1];
+      return palettes.back().get();
    }
 
    void printSummary(ostream& os = cout) const
    {
-      size_t idx = 1;
-      for (const Palette& palette : palettes)
+      for (int i = 0; i < NumPalettes(); i++)
       {
-         os << setw(3) << idx << ") "
-            << left << setw(12) << palette.name << right;
-         if (idx%5 == 0)
+         os << setw(3) << i+1 << ") "
+            << left << setw(12) << get(i)->name << right;
+         if ((i+1)%5 == 0)
          {
             os << endl;
          }
-         idx++;
       }
       os << endl;
    }
 
    void printAll(ostream& os = cout) const
    {
-      for (const Palette& palette : palettes)
+      for (int i = 0; i < NumPalettes(); i++)
       {
-         palette.print(os);
+         get(i)->print(os);
       }
    }
 
@@ -247,7 +239,7 @@ public:
    {
       for (int i = 0; i < NumPalettes(); i++)
       {
-         if (palettes[i].name == name)
+         if (get(i)->name == name)
          {
             return i;
          }
@@ -303,7 +295,7 @@ public:
             float r, g, b;
             r = stof(word);
             pfile >> g >> b;
-            palettes[idx].addColor(r,g,b);
+            get(idx)->addColor(r,g,b);
          }
          else
          {
