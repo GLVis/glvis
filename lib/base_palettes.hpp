@@ -409,6 +409,13 @@ public:
             pfile >> g >> b;
             get(idx)->addColor(r,g,b);
          }
+         else if (channeltype == "RGBAf" && idx != -1)
+         {
+            float r, g, b, a;
+            r = stof(word);
+            pfile >> g >> b >> a;
+            get(idx)->addColor(r,g,b,a);
+         }
          else
          {
             cout << "Error reading palette file: " << palette_filename << endl;

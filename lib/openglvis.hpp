@@ -195,7 +195,8 @@ public:
    glm::mat4 rotmat;
    glm::mat4 translmat;
 
-   float matAlpha = 1.0;
+   // Needs to be < 1.0 to allow alpha defined at palette level to show through
+   float matAlpha = 0.999999;
    float matAlphaCenter = 0.5;
 
    virtual gl3::SceneInfo GetSceneObjs() = 0;
