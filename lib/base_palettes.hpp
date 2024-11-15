@@ -198,7 +198,7 @@ struct Texture
       {
          for (int rpt = 0; rpt < Nrepeat; rpt++)
          {
-            bool reverse = (reversed + rpt) % 2 == 0;
+            bool reverse = (reversed + rpt) % 2 != 0;
             for (int i = 0; i < Ncolors; i++)
             {
                int j = 0.999999 * i * plt_size / (Ncolors - 1);
@@ -211,7 +211,7 @@ struct Texture
       {
          for (int rpt = 0; rpt < Nrepeat; rpt++)
          {
-            bool reverse = (reversed + rpt) % 2 == 0;
+            bool reverse = (reversed + rpt) % 2 != 0;
             for (int i = 0; i < Ncolors; i++)
             {
                float t = 0.999999 * i * (plt_size - 1) / (Ncolors - 1);
