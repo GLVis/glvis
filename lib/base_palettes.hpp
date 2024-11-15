@@ -12,6 +12,8 @@
 #ifndef GLVIS_BASEPALETTES_HPP
 #define GLVIS_BASEPALETTES_HPP
 
+#include "gl/types.hpp"
+
 #include <array>
 #include <string>
 #include <iostream>
@@ -51,13 +53,6 @@ struct RGBAf
 
 class Palette
 {
-private:
-   vector<RGBAf> colors;
-   /// cached RGB and alpha values
-   vector<float> rgb_cache;
-   vector<float> alpha_cache;
-   bool cache_updated = false;
-
 public:
    const string name;
 
@@ -77,7 +72,6 @@ public:
       {
          colors[i] = RGBAf(arr[i][0], arr[i][1], arr[i][2]);
       }
-      update_cache();
    }
 
    /// Constructor from Nx4 array
@@ -89,7 +83,6 @@ public:
       {
          colors[i] = RGBAf(arr[i][0], arr[i][1], arr[i][2], arr[i][3]);
       }
-      update_cache();
    }
 
    int size() const { return colors.size(); }
@@ -98,7 +91,6 @@ public:
    void addColor(float r, float g, float b, float a = 1.0)
    {
       colors.push_back(RGBAf(r, g, b, a));
-      cache_updated = false;
    }
 
    /// Print this palette
@@ -113,45 +105,141 @@ public:
       os << endl;
    }
 
-   void update_cache()
+   /// Get color at index i (optionally, use reversed order)
+   RGBAf color(int i, bool reversed = false) const
    {
-      if (cache_updated) { return; }
+      int j = reversed ? size() - 1 - i : i;
+      return colors[j];
+   }
 
-      int N = size();
-      rgb_cache.resize(N * 3);
-      alpha_cache.resize(N);
-      for (int i = 0; i < N; ++i)
+   vector<array<float,4>> data(bool reversed = false) const
+   {
+      vector<array<float,4>> rgba_data(size());
+      for (int i = 0; i < size(); ++i)
       {
-         rgb_cache[i * 3 + 0] = colors[i].r;
-         rgb_cache[i * 3 + 1] = colors[i].g;
-         rgb_cache[i * 3 + 2] = colors[i].b;
-         alpha_cache[i] = colors[i].a;
+         rgba_data[i] = color(i, reversed).as_array();
       }
-      cache_updated = true;
+      return rgba_data;
    }
 
-   const float* rgb_array()
-   {
-      update_cache();
-      return rgb_cache.data();
-   }
-
-   const float* alpha()
-   {
-      update_cache();
-      return alpha_cache.data();
-   }
-
+private:
+   vector<RGBAf> colors;
 };
 
-// Since there is no make_unique for c++11
-#if __cplusplus < 201402
+struct Texture
+{
+   /// The palette to create a texture of
+   Palette* const palette;
+   /// Repeat the palette multiple times (negative for reverse); cannot be 0
+   int Nrepeat;
+   /// Reverse the palette
+   bool reversed;
+   /// Number of colors to discretize with (0 uses the original number of colors)
+   int Ncolors;
+   /// Is texture smooth or discrete?
+   bool smooth;
+   /// Texture size
+   int size;
+   /// Max texture size
+   int MAX_TEXTURE_SIZE;
+   /// Texture data
+   vector<array<float,4>> texture;
+
+   Texture(Palette* palette, int Nrepeat = 1, int Ncolors = 0, bool smooth = false)
+      : palette(palette), Nrepeat(Nrepeat), Ncolors(Ncolors)
+   {
+      // Get the maximum texture size
+      glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MAX_TEXTURE_SIZE);
+      if (MAX_TEXTURE_SIZE < 4096)
+      {
+         cerr << "Warning: GL_MAX_TEXTURE_SIZE is less than 4096." << endl;
+      }
+      // Is limiting to 4096 necessary?
+      MAX_TEXTURE_SIZE = min(MAX_TEXTURE_SIZE, 4096);
+      // Nrepeat cannot be 0; we also extract the sign
+      reversed = Nrepeat < 0;
+      Nrepeat = Nrepeat == 0 ? 1 : abs(Nrepeat);
+
+      generate();
+   }
+
+   /// Generate the texture
+   void generate()
+   {
+      // original palette size
+      int plt_size = palette->size();
+      // Ncolors must be positive
+      Ncolors = Ncolors <= 0 ? plt_size : Ncolors;
+      // Set the texture size
+      size = Nrepeat * Ncolors;
+      if (size > MAX_TEXTURE_SIZE)
+      {
+         cerr << "Warning: Texture size "
+              << "(" << size << ")" << " exceeds maximum "
+              << "(" << MAX_TEXTURE_SIZE << ")" << endl;
+         if (Ncolors >= MAX_TEXTURE_SIZE)
+         {
+            Ncolors = MAX_TEXTURE_SIZE;
+            Nrepeat = 1;
+            size = Nrepeat * Ncolors;
+         }
+         else
+         {
+            Nrepeat = MAX_TEXTURE_SIZE / Ncolors;
+            size = Nrepeat * Ncolors;
+         }
+      }
+      texture.clear();
+      texture.resize(size);
+
+      // generate the discrete texture
+      // indices: plt_size x Nrepeat -> size
+      if (!smooth)
+      {
+         for (int rpt = 0; rpt < Nrepeat; rpt++)
+         {
+            bool reverse = (reversed + rpt) % 2 == 0;
+            for (int i = 0; i < Ncolors; i++)
+            {
+               int j = 0.999999 * i * plt_size / (Ncolors - 1);
+               texture[rpt*Ncolors + i] = palette->color(j, reverse).as_array();
+            }
+         }
+      }
+      // smooth texture interpolate colors
+      else
+      {
+         for (int rpt = 0; rpt < Nrepeat; rpt++)
+         {
+            bool reverse = (reversed + rpt) % 2 == 0;
+            for (int i = 0; i < Ncolors; i++)
+            {
+               float t = 0.999999 * i * (plt_size - 1) / (Ncolors - 1);
+               int j = floor(t);
+               t -= j;
+               array<float,4> col1 = palette->color(j, reverse).as_array();
+               array<float,4> col2 = palette->color(j+1, reverse).as_array();
+               texture[rpt*Ncolors + i] =
+               {
+                  (1-t) * col1[0] + t * col2[0],
+                  (1-t) * col1[1] + t * col2[1],
+                  (1-t) * col1[2] + t * col2[2],
+                  (1-t) * col1[3] + t * col2[3]
+               };
+            }
+         }
+
+      }
+   }
+};
+
+
+// Behaves like make_unique (only available in >= c++14)
 template<typename T, typename... Args>
 std::unique_ptr<T> as_unique(Args&&... args)
 {
    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
-#endif
 
 // PaletteRegistry with a vector of unique_ptr<Palette>. Besides holding
 // the palettes, this should be stateless.

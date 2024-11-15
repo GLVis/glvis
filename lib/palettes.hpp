@@ -11,7 +11,6 @@
 
 #ifndef GLVIS_PALETTES_HPP
 #define GLVIS_PALETTES_HPP
-#include "gl/types.hpp"
 #include "base_palettes.hpp"
 #include <vector>
 #include <array>
@@ -36,7 +35,7 @@ public:
    int ChoosePalette();
    int SelectNewRGBPalette();
    /// Gets the data in the palette color array.
-   const float* GetData(int pidx = -1) const;
+   Palette* GetPalette(int pidx = -1) const;
    /// Gets the total number of colors in the current palette color array.
    int GetSize(int pidx = -1) const;
    /// Gets the number of colors used in the current palette color array.

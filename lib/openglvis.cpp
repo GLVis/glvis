@@ -479,7 +479,7 @@ VisualizationScene::AddPaletteMaterial(glTF_Builder &bld)
          /* wrapT: */ glTF_Builder::wrap_type::CLAMP_TO_EDGE);
    // create palette image
    const int palette_size = palette.GetNumColors();
-   vector<array<float,4>> palette_data(palette_size);
+   vector<array<float,4>> palette_data = palette.GetPalette()->data();
 #if 0
    glGetTextureImage(
       palette.GetColorTexture(), 0,
@@ -491,16 +491,6 @@ VisualizationScene::AddPaletteMaterial(glTF_Builder &bld)
    glGetTexImage(GL_TEXTURE_2D, 0,
                  gl3::GLDevice::useLegacyTextureFmts() ? GL_RGBA : GL_RGBA32F,
                  GL_FLOAT, palette_data.data());
-#else
-   const float *palette_data_raw = palette.GetData();
-   for (int i = 0; i < palette_size; ++i)
-   {
-      for (int j = 0; j < 3; ++j)
-      {
-         palette_data[i][j] = palette_data_raw[j + 3*i];
-      }
-      palette_data[i][3] = 1.0f;
-   }
 #endif
    auto palette_img =
       bld.addImage(

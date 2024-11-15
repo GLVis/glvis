@@ -60,71 +60,11 @@ int PaletteState::ChoosePalette()
 // Generates a discrete texture from the given palette.
 void PaletteState::ToTextureDiscrete(Palette* palette, GLuint tex)
 {
-
-   int plt_size = palette->size();
-   const float * paldata = palette->rgb_array();
-   vector<array<float,4>> texture_buf(plt_size);
-
-   if (RepeatPaletteTimes > 0)
-   {
-      for (int i = 0; i < plt_size; i++)
-      {
-         texture_buf[i] =
-         {
-            paldata[3*i],
-            paldata[3*i+1],
-            paldata[3*i+2],
-            1.0
-         };
-      }
-   }
-   else
-   {
-      for (int i = 0; i < plt_size; i++)
-      {
-         texture_buf[i] =
-         {
-            paldata[3*(plt_size-1-i)+0],
-            paldata[3*(plt_size-1-i)+1],
-            paldata[3*(plt_size-1-i)+2],
-            1.0
-         };
-      }
-   }
-   if (PaletteNumColors > 1 && (plt_size > PaletteNumColors))
-   {
-      texture_buf.resize(PaletteNumColors);
-      for (int i = 0; i < PaletteNumColors; i++)
-      {
-         int plt_i = i * plt_size / (PaletteNumColors-1);
-         if (i >= PaletteNumColors - 1)
-         {
-            plt_i = plt_size - 1;
-         }
-         if (RepeatPaletteTimes < 0)
-         {
-            plt_i = plt_size-1-plt_i;
-         }
-         texture_buf[i] =
-         {
-            paldata[3*plt_i],
-            paldata[3*plt_i+1],
-            paldata[3*plt_i+2],
-            1.0
-         };
-      }
-      plt_size = PaletteNumColors;
-   }
+   Texture T(palette, RepeatPaletteTimes, PaletteNumColors, false);
    glBindTexture(GL_TEXTURE_2D, tex);
-   glTexImage2D(GL_TEXTURE_2D,
-                0,
-                rgba_internal,
-                plt_size,
-                1,
-                0,
-                GL_RGBA,
-                GL_FLOAT,
-                texture_buf.data());
+   glTexImage2D(GL_TEXTURE_2D, 0, rgba_internal,
+                T.size, 1,
+                0, GL_RGBA, GL_FLOAT, T.texture.data());
 
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -135,67 +75,11 @@ void PaletteState::ToTextureDiscrete(Palette* palette, GLuint tex)
 // Generates a smooth texture from the given palette.
 void PaletteState::ToTextureSmooth(Palette* palette, GLuint tex)
 {
-   int plt_size = palette->size();
-   const float * paldata = palette->rgb_array();
-
-   vector<array<float,4>> texture_buf(MaxTextureSize);
+   Texture T(palette, RepeatPaletteTimes, PaletteNumColors, true);
    glBindTexture(GL_TEXTURE_2D, tex);
-
-   int textureSize = MaxTextureSize;
-   if (plt_size * abs(RepeatPaletteTimes) <= textureSize)
-   {
-      int flip_start = RepeatPaletteTimes < 0;
-      for (int rpt = 0; rpt < abs(RepeatPaletteTimes); rpt++)
-      {
-         for (int i = 0; i < plt_size; i++)
-         {
-            // flip = 0: p_i = i
-            // flip = 1: p_i = plt_size-1-i
-            int p_i = (flip_start + rpt) % 2 == 0 ? i : plt_size - 1 - i;
-            texture_buf[i + plt_size * rpt] =
-            {
-               paldata[3*p_i],
-               paldata[3*p_i + 1],
-               paldata[3*p_i + 2],
-               1.0
-            };
-         }
-      }
-      glTexImage2D(GL_TEXTURE_2D, 0, rgba_internal,
-                   plt_size * abs(RepeatPaletteTimes), 1,
-                   0, GL_RGBA, GL_FLOAT, texture_buf.data());
-   }
-   else
-   {
-      for (int i = 0; i < textureSize; i++)
-      {
-         float t = float(i) / textureSize - 1;
-         t *= 0.999999999 * (plt_size - 1) * abs(RepeatPaletteTimes);
-         int j = floor(t);
-         t -= j;
-         int p_i;
-         if (((j / (plt_size-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
-             ((j / (plt_size-1)) % 2 == 1 && RepeatPaletteTimes < 0))
-         {
-            p_i = j % (plt_size - 1);
-         }
-         else
-         {
-            p_i = plt_size - 2 - j % (plt_size - 1);
-            t = 1.0 - t;
-         }
-         texture_buf[i] =
-         {
-            (1-t) * paldata[3*p_i] + t * paldata[3*(p_i+1)],
-            (1-t) * paldata[3*p_i+1] + t * paldata[3*(p_i+1)+1],
-            (1-t) * paldata[3*p_i+2] + t * paldata[3*(p_i+1)+2],
-            1.0
-         };
-      }
-      glTexImage2D(GL_TEXTURE_2D, 0, rgba_internal,
-                   textureSize, 1,
-                   0, GL_RGBA, GL_FLOAT, texture_buf.data());
-   }
+   glTexImage2D(GL_TEXTURE_2D, 0, rgba_internal,
+                T.size, 1,
+                0, GL_RGBA, GL_FLOAT, T.texture.data());
 
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -305,35 +189,38 @@ double PaletteState::GetColorCoord(double val, double min, double max)
 void PaletteState::GetColorFromVal(double val, float * rgba)
 {
    int palSize = GetSize();
-   const float* palData = GetData();
+   Palette* pal = GetPalette();
    val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
    int i = (int) floor( val );
    float t = float(val) - i;
+   int idx;
 
-   const float* pal;
+   // const float* pal;
    if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
        ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
    {
-      pal = palData + 3 * ( i % (palSize-1) );
+      int idx = i % (palSize-1);
    }
    else
    {
-      pal = palData + 3 * ( (palSize-2) - i % (palSize-1) );
+      int idx = (palSize-2) - i % (palSize-1);
       t = 1.0 - t;
    }
-   rgba[0] = (1.0 - t) * pal[0] + t * pal[3];
-   rgba[1] = (1.0 - t) * pal[1] + t * pal[4];
-   rgba[2] = (1.0 - t) * pal[2] + t * pal[5];
-   rgba[3] = 1.f;
+   RGBAf color1 = pal->color(idx);
+   RGBAf color2 = pal->color(idx+1);
+   rgba[0] = (1.0 - t) * color1.r + t * color2.r;
+   rgba[1] = (1.0 - t) * color1.g + t * color2.g;
+   rgba[2] = (1.0 - t) * color1.b + t * color2.b;
+   rgba[3] = (1.0 - t) * color1.a + t * color2.a;
 }
 
-const float * PaletteState::GetData(int pidx) const
+Palette* PaletteState::GetPalette(int pidx) const
 {
    if (pidx == -1)
    {
-      return Palettes->get(curr_palette)->rgb_array();
+      return Palettes->get(curr_palette);
    }
-   return Palettes->get(pidx)->rgb_array();
+   return Palettes->get(pidx);
 }
 
 void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
