@@ -1179,7 +1179,7 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
    params.num_pt_lights = 0;
    params.static_color = this->GetLineColor();
    params.use_clip_plane = false;
-   params.contains_translucent = false;
+   params.contains_translucent = true;
 
    if (colorbar)
    {
