@@ -145,8 +145,9 @@ struct Texture
    /// Texture data
    vector<array<float,4>> texture;
 
-   Texture(Palette* palette, int Nrepeat = 1, int Ncolors = 0, bool smooth = false)
-      : palette(palette), Nrepeat(Nrepeat), Ncolors(Ncolors)
+   Texture(Palette* palette, int Nrepeat_ = 1, int Ncolors_ = 0,
+           bool smooth = false)
+      : palette(palette)
    {
       // Get the maximum texture size
       glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MAX_TEXTURE_SIZE);
@@ -157,8 +158,10 @@ struct Texture
       // Is limiting to 4096 necessary?
       MAX_TEXTURE_SIZE = min(MAX_TEXTURE_SIZE, 4096);
       // Nrepeat cannot be 0; we also extract the sign
-      reversed = Nrepeat < 0;
-      Nrepeat = Nrepeat == 0 ? 1 : abs(Nrepeat);
+      reversed = Nrepeat_ < 0;
+      Nrepeat = Nrepeat_ == 0 ? 1 : abs(Nrepeat_);
+      // Ncolors must be positive
+      Ncolors = Ncolors_ <= 0 ? palette->size() : Ncolors_;
 
       generate();
    }
@@ -168,8 +171,6 @@ struct Texture
    {
       // original palette size
       int plt_size = palette->size();
-      // Ncolors must be positive
-      Ncolors = Ncolors <= 0 ? plt_size : Ncolors;
       // Set the texture size
       size = Nrepeat * Ncolors;
       if (size > MAX_TEXTURE_SIZE)
