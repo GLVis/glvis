@@ -193,17 +193,17 @@ void PaletteState::GetColorFromVal(double val, float * rgba)
    val *= 0.999999999 * ( palSize - 1 ) * abs(RepeatPaletteTimes);
    int i = (int) floor( val );
    float t = float(val) - i;
-   int idx;
+   int idx = 0;
 
    // const float* pal;
    if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
        ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
    {
-      int idx = i % (palSize-1);
+      idx = i % (palSize-1);
    }
    else
    {
-      int idx = (palSize-2) - i % (palSize-1);
+      idx = (palSize-2) - i % (palSize-1);
       t = 1.0 - t;
    }
    RGBAf color1 = pal->color(idx);

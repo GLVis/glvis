@@ -11,7 +11,7 @@
 
 #ifndef GLVIS_PALETTES_HPP
 #define GLVIS_PALETTES_HPP
-#include "base_palettes.hpp"
+#include "palettes_base.hpp"
 #include <vector>
 #include <array>
 

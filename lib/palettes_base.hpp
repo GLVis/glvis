@@ -9,8 +9,8 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifndef GLVIS_BASEPALETTES_HPP
-#define GLVIS_BASEPALETTES_HPP
+#ifndef GLVIS_PALETTESBASE_HPP
+#define GLVIS_PALETTESBASE_HPP
 
 #include "gl/types.hpp"
 

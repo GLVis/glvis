@@ -20,7 +20,7 @@ list(APPEND SOURCES
   material.cpp
   openglvis.cpp
   palettes.cpp
-  base_palettes.cpp
+  palettes_base.cpp
   sdl.cpp
   sdl_helper.cpp
   sdl_main.cpp
@@ -46,7 +46,7 @@ list(APPEND HEADERS
   material.hpp
   openglvis.hpp
   palettes.hpp
-  base_palettes.hpp
+  palettes_base.hpp
   sdl.hpp
   sdl_helper.hpp
   sdl_main.hpp
