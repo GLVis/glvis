@@ -9,6 +9,20 @@
                              https://glvis.org
 
 
+Version 4.y.z released on
+======================================
+
+- Implemented a more flexible color palette system, enabling specification
+  at both compile and run time. Run time palettes are specified with a file
+  and the command line argument '-p <palette_filename>'. Palettes can now
+  also be specified with explicit alpha channels, (see
+  'share/palettes-variable-opacity.txt').
+
+- Added 28 new color-vision deficiency friendly and perceptually-uniform
+  color palettes: 'share/palettes-crameri.txt'
+
+- Fixed a bug where discrete textures would not repeat.
+
 Version 4.3.2 released on Sep 27, 2024
 ======================================
 
