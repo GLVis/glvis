@@ -28,7 +28,7 @@ public:
    /// Gets whether the smooth texture is being used (1 = true)
    int GetSmoothSetting() { return use_smooth; }
    /// Sets the palette texture to bind.
-   void SetIndex(int num) { curr_palette = num; }
+   void SetIndex(int num);
    int GetCurrIndex() const { return curr_palette; }
    void NextIndex();
    void PrevIndex();

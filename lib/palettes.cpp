@@ -257,6 +257,12 @@ void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
    glActiveTexture(GL_TEXTURE0);
 }
 
+void PaletteState::SetIndex(int num)
+{
+   curr_palette = num;
+   cout << "Palette: " << num << ") " << Palettes->get(curr_palette)->name << endl;
+}
+
 void PaletteState::NextIndex()
 {
    SetIndex((curr_palette + 1) % Palettes->NumPalettes());
