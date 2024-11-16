@@ -63,8 +63,8 @@ void PaletteState::ToTextureDiscrete(Palette* palette, GLuint tex)
    Texture T(palette, RepeatPaletteTimes, PaletteNumColors, false);
    glBindTexture(GL_TEXTURE_2D, tex);
    glTexImage2D(GL_TEXTURE_2D, 0, rgba_internal,
-                T.size, 1,
-                0, GL_RGBA, GL_FLOAT, T.texture.data());
+                T.size(), 1,
+                0, GL_RGBA, GL_FLOAT, T.texture().data());
 
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -78,8 +78,8 @@ void PaletteState::ToTextureSmooth(Palette* palette, GLuint tex)
    Texture T(palette, RepeatPaletteTimes, PaletteNumColors, true);
    glBindTexture(GL_TEXTURE_2D, tex);
    glTexImage2D(GL_TEXTURE_2D, 0, rgba_internal,
-                T.size, 1,
-                0, GL_RGBA, GL_FLOAT, T.texture.data());
+                T.size(), 1,
+                0, GL_RGBA, GL_FLOAT, T.texture().data());
 
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);

@@ -31,22 +31,9 @@ struct RGBAf
    constexpr RGBAf(float r = 0.0, float g = 0.0, float b = 0.0, float a = 1.0)
       : r(r), g(g), b(b), a(a) {}
 
-   void print(bool printalpha = false, ostream& os = cout) const
-   {
-      os << fixed << setprecision(6)
-         << setw(10) << r << " "
-         << setw(10) << g << " "
-         << setw(10) << b;
-      if (printalpha)
-      {
-         os << " " << setw(10) << a;
-      }
-   }
+   void print(ostream& os = cout) const;
 
-   array<float, 4> as_array() const
-   {
-      return {r, g, b, a};
-   }
+   array<float, 4> as_array() const { return {r, g, b, a}; }
 
 };
 
@@ -65,367 +52,118 @@ public:
 
    /// Constructor from Nx3 array
    template <size_t N>
-   Palette(const string& name, const array<array<float,3>,N>& arr) : name(name)
-   {
-      colors.reserve(N);
-      for (size_t i = 0; i < N; ++i)
-      {
-         colors[i] = RGBAf(arr[i][0], arr[i][1], arr[i][2]);
-      }
-   }
+   Palette(const string& name, const array<array<float,3>,N>& arr);
 
    /// Constructor from Nx4 array
    template <size_t N>
-   Palette(const string& name, const array<array<float,4>,N>& arr) : name(name)
-   {
-      colors.reserve(N);
-      for (size_t i = 0; i < N; ++i)
-      {
-         colors[i] = RGBAf(arr[i][0], arr[i][1], arr[i][2], arr[i][3]);
-      }
-   }
+   Palette(const string& name, const array<array<float,4>,N>& arr);
 
+   /// Get size
    int size() const { return colors.size(); }
 
    /// Add color to palette
-   void addColor(float r, float g, float b, float a = 1.0)
-   {
-      colors.push_back(RGBAf(r, g, b, a));
-   }
+   void addColor(float r, float g, float b, float a = 1.0);
 
-   /// Print this palette
-   void print(ostream& os = cout) const
-   {
-      os << "palette " << name << " RGBf" << endl;
-      for (const auto& color : colors)
-      {
-         color.print(false, os);
-         os << endl;
-      }
-      os << endl;
-   }
+   /// Print each color of this palette to a stream
+   void print(ostream& os = cout) const;
 
    /// Get color at index i (optionally, use reversed order)
-   RGBAf color(int i, bool reversed = false) const
-   {
-      int j = reversed ? size() - 1 - i : i;
-      return colors[j];
-   }
+   RGBAf color(int i, bool reversed = false) const;
 
-   vector<array<float,4>> data(bool reversed = false) const
-   {
-      vector<array<float,4>> rgba_data(size());
-      for (int i = 0; i < size(); ++i)
-      {
-         rgba_data[i] = color(i, reversed).as_array();
-      }
-      return rgba_data;
-   }
+   /// Get all colors as a vector of float arrays
+   vector<array<float,4>> data(bool reversed = false) const;
 
 private:
    vector<RGBAf> colors;
 };
 
-struct Texture
+/// Generates the texture data for a given palette, to be used in OpenGL
+class Texture
 {
+public:
    /// The palette to create a texture of
    Palette* const palette;
    /// Repeat the palette multiple times (negative for reverse); cannot be 0
-   int Nrepeat;
-   /// Reverse the palette
-   bool reversed;
+   int Nrepeat_;
    /// Number of colors to discretize with (0 uses the original number of colors)
-   int Ncolors;
+   int Ncolors_;
    /// Is texture smooth or discrete?
    bool smooth;
-   /// Texture size
-   int size;
-   /// Max texture size
-   int MAX_TEXTURE_SIZE;
-   /// Texture data
-   vector<array<float,4>> texture;
-
+   /// Constructor - generates texture
    Texture(Palette* palette, int Nrepeat_ = 1, int Ncolors_ = 0,
-           bool smooth = false)
-      : palette(palette)
-   {
-      // Get the maximum texture size
-      glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MAX_TEXTURE_SIZE);
-      if (MAX_TEXTURE_SIZE < 4096)
-      {
-         cerr << "Warning: GL_MAX_TEXTURE_SIZE is less than 4096." << endl;
-      }
-      // Is limiting to 4096 necessary?
-      MAX_TEXTURE_SIZE = min(MAX_TEXTURE_SIZE, 4096);
-      // Nrepeat cannot be 0; we also extract the sign
-      reversed = Nrepeat_ < 0;
-      Nrepeat = Nrepeat_ == 0 ? 1 : abs(Nrepeat_);
-      // Ncolors must be positive
-      Ncolors = Ncolors_ <= 0 ? palette->size() : Ncolors_;
-
-      generate();
-   }
-
-   /// Generate the texture
-   void generate()
-   {
-      // original palette size
-      int plt_size = palette->size();
-      // Set the texture size
-      size = Nrepeat * Ncolors;
-      if (size > MAX_TEXTURE_SIZE)
-      {
-         cerr << "Warning: Texture size "
-              << "(" << size << ")" << " exceeds maximum "
-              << "(" << MAX_TEXTURE_SIZE << ")" << endl;
-         if (Ncolors >= MAX_TEXTURE_SIZE)
-         {
-            Ncolors = MAX_TEXTURE_SIZE;
-            Nrepeat = 1;
-            size = Nrepeat * Ncolors;
-         }
-         else
-         {
-            Nrepeat = MAX_TEXTURE_SIZE / Ncolors;
-            size = Nrepeat * Ncolors;
-         }
-      }
-      texture.clear();
-      texture.resize(size);
-
-      // generate the discrete texture
-      // indices: plt_size x Nrepeat -> size
-      if (!smooth)
-      {
-         for (int rpt = 0; rpt < Nrepeat; rpt++)
-         {
-            bool reverse = (reversed + rpt) % 2 != 0;
-            for (int i = 0; i < Ncolors; i++)
-            {
-               int j = 0.999999 * i * plt_size / (Ncolors - 1);
-               texture[rpt*Ncolors + i] = palette->color(j, reverse).as_array();
-            }
-         }
-      }
-      // smooth texture interpolate colors
-      else
-      {
-         for (int rpt = 0; rpt < Nrepeat; rpt++)
-         {
-            bool reverse = (reversed + rpt) % 2 != 0;
-            for (int i = 0; i < Ncolors; i++)
-            {
-               float t = 0.999999 * i * (plt_size - 1) / (Ncolors - 1);
-               int j = floor(t);
-               t -= j;
-               array<float,4> col1 = palette->color(j, reverse).as_array();
-               array<float,4> col2 = palette->color(j+1, reverse).as_array();
-               texture[rpt*Ncolors + i] =
-               {
-                  (1-t) * col1[0] + t * col2[0],
-                  (1-t) * col1[1] + t * col2[1],
-                  (1-t) * col1[2] + t * col2[2],
-                  (1-t) * col1[3] + t * col2[3]
-               };
-            }
-         }
-
-      }
-   }
+           bool smooth = false);
+   /// Texture size
+   int size() const { return texture_data.size(); }
+   /// Get texture data
+   const vector<array<float,4>>& texture() const { return texture_data; }
+   /// If true, all colors in palette are read in reverse
+   bool isReversed() const { return Nrepeat_ < 0; }
+   /// Generates the texture data
+   void generate();
+private:
+   int MAX_TEXTURE_SIZE;
+   vector<array<float,4>> texture_data;
 };
 
 
-// Behaves like make_unique (only available in >= c++14)
+/// Behaves like make_unique (only available in >= c++14)
 template<typename T, typename... Args>
 std::unique_ptr<T> as_unique(Args&&... args)
 {
    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-// PaletteRegistry with a vector of unique_ptr<Palette>. Besides holding
-// the palettes, this should be stateless.
+/// Holds a vector of unique_ptr<Palette>. Besides holding the
+/// palettes this should be stateless (put state in PaletteState)
 class PaletteRegistry
 {
 private:
    vector<unique_ptr<Palette>> palettes;
 
-   int get_index_by_name(const string& name) const
-   {
-      for (int i = 0; i < NumPalettes(); i++)
-      {
-         if (get(i)->name == name)
-         {
-            return i;
-         }
-      }
-      return -1;
-   }
+   /// Find the index of a palette by name
+   int get_index_by_name(const string& name) const;
 
 public:
-   // empty constructor
+   /// Empty constructor
    PaletteRegistry() {}
 
-   PaletteRegistry(const vector<Palette>& paletteRefs)
-   {
-      for (const Palette& palette : paletteRefs)
-      {
-         if (check_name(palette.name))
-         {
-            palettes.push_back(as_unique<Palette>(palette));
-         }
-      }
-   }
+   /// Constructor via a const vector of Palettes; if name already exists, skip
+   /// Used for loading compiled palettes (i.e. `palette_definitions.cpp`)
+   PaletteRegistry(const vector<Palette>& paletteRefs);
 
-   void addPalette(Palette& palette)
-   {
-      if (check_name(palette.name))
-      {
-         palettes.push_back(as_unique<Palette>(palette));
-      }
-   }
+   /// Adds an existing palette to the registry
+   void addPalette(Palette& palette);
 
-   void addPalette(const string& name)
-   {
-      if (check_name(name))
-      {
-         palettes.push_back(as_unique<Palette>(name));
-      }
-   }
+   /// Create a new palette with the given name and add it to the registry
+   void addPalette(const string& name);
 
-   bool check_name(const string& name) const
-   {
-      // palette name is unique || container is empty
-      if (get_index_by_name(name) == -1 || palettes.empty())
-      {
-         return true;
-      }
-      else
-      {
-         cout << "Palette with name: '" << name << "' already exists in registry.";
-         return false;
-      }
-   }
+   /// Returns true if name is unique
+   bool check_name(const string& name) const;
 
-   // get by index
-   Palette* get(int index) const
-   {
-      if (0 <= index && index <= NumPalettes()-1)
-      {
-         return palettes[index].get();
-      }
-      cout << "Palette (index = " << index+1 << ") out of range. Available palettes:"
-           << endl;
-      this->printSummary();
-      return palettes.back().get();
-   }
+   /// Get a palette pointer by index; if not found, returns last palette
+   Palette* get(int index) const;
 
-   // get by name
-   Palette* get(const string& name) const
-   {
-      int idx = get_index_by_name(name);
-      if (idx != -1)
-      {
-         return palettes[idx].get();
-      }
-      cout << "Palette (name = " << name << ") not found. Available palettes:" <<
-           endl;
-      this->printSummary();
-      return palettes.back().get();
-   }
+   /// Get a palette pointer by name; if not found, returns last palette
+   Palette* get(const string& name) const;
 
-   void printSummary(ostream& os = cout) const
-   {
-      for (int i = 0; i < NumPalettes(); i++)
-      {
-         os << setw(3) << i+1 << ") "
-            << left << setw(12) << get(i)->name << right;
-         if ((i+1)%5 == 0)
-         {
-            os << endl;
-         }
-      }
-      os << endl;
-   }
+   /// Prints a summary (index + name) of all palettes
+   void printSummary(ostream& os = cout) const;
 
-   void printAll(ostream& os = cout) const
-   {
-      for (int i = 0; i < NumPalettes(); i++)
-      {
-         get(i)->print(os);
-      }
-   }
+   /// Prints all colors for all palettes
+   void printAll(ostream& os = cout) const;
 
-   int NumPalettes() const
-   {
-      return palettes.size();
-   }
+   /// Number of palettes in the registry
+   int NumPalettes() const { return palettes.size(); }
 
-   void load(const string& palette_filename)
-   {
+   /* Loads palette(s) from a file. Format is:
 
-      ifstream pfile(palette_filename);
-      if (!pfile)
-      {
-         cout << "Could not open palette file: " << palette_filename << endl;
-         return;
-      }
-      string word, palname, channeltype;
-      int idx = -1;
+      palette <palette_name> <RGBf/RGBAf>
+      <r1> <g1> <b1> [<a1>]
+      <r2> <g2> <b2> [<a2>]
+      ...
 
-      // read initializing commands
-      while (1)
-      {
-         pfile >> ws;
-         if (!pfile.good())
-         {
-            break;
-         }
-         if (pfile.peek() == '#')
-         {
-            getline(pfile, word);
-            continue;
-         }
-         pfile >> word;
-         if (word == "palette")
-         {
-            pfile >> palname >> channeltype;
-            idx = get_index_by_name(palname);
-            if (idx == -1)
-            {
-               addPalette(palname);
-               idx = get_index_by_name(palname);
-               cout << "Reading palette: (" << idx+1 << ") " << palname << endl;
-            }
-            else
-            {
-               cout << "Error reading palette: " << palname
-                    << ". Palette with same name already exists." << endl;
-               break;
-            }
-         }
-         else if (channeltype == "RGBf" && idx != -1)
-         {
-            float r, g, b;
-            r = stof(word);
-            pfile >> g >> b;
-            get(idx)->addColor(r,g,b);
-         }
-         else if (channeltype == "RGBAf" && idx != -1)
-         {
-            float r, g, b, a;
-            r = stof(word);
-            pfile >> g >> b >> a;
-            get(idx)->addColor(r,g,b,a);
-         }
-         else
-         {
-            cout << "Error reading palette file: " << palette_filename << endl;
-            break;
-         }
-      }
-      cout << "Finished loading palettes from file: " << palette_filename << endl;
-   }
-
+      see `share/palettes-crameri.txt` for an example */
+   void load(const string& palette_filename);
 };
 
 
