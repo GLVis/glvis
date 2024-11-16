@@ -73,6 +73,9 @@ public:
    /// Get all colors as a vector of float arrays
    vector<array<float,4>> data(bool reversed = false) const;
 
+   /// Are any alpha != 1.0?
+   bool is_translucent() const;
+
 private:
    vector<RGBAf> colors;
 };

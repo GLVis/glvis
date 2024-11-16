@@ -1646,7 +1646,8 @@ gl3::SceneInfo VisualizationSceneVector3d::GetSceneObjs()
    params.use_clip_plane = cplane;
    double* cp_eqn = CuttingPlane->Equation();
    params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};
-   params.contains_translucent = matAlpha < 1.0;
+   params.contains_translucent = matAlpha < 1.0 ||
+                                 palette.GetPalette()->is_translucent();
    // draw vector field
    if (drawvector == 2 || drawvector == 3)
    {

@@ -78,6 +78,15 @@ vector<array<float,4>> Palette::data(bool reversed) const
    return rgba_data;
 }
 
+bool Palette::is_translucent() const
+{
+   for (const auto& color : colors)
+   {
+      if (color.a != 1.0) { return true; }
+   }
+   return false;
+}
+
 Texture::Texture(Palette* palette, int Nrepeat_, int Ncolors_,
                  bool smooth) : palette(palette), Nrepeat_(Nrepeat_),
    Ncolors_(Ncolors_), smooth(smooth)

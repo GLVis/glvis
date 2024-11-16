@@ -34,7 +34,7 @@ public:
    void PrevIndex();
    int ChoosePalette();
    int SelectNewRGBPalette();
-   /// Gets the data in the palette color array.
+   /// Gets a pointer to a palette (default = current palette).
    Palette* GetPalette(int pidx = -1) const;
    /// Gets the total number of colors in the current palette color array.
    int GetSize(int pidx = -1) const;
