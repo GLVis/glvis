@@ -79,7 +79,8 @@ vector<array<float,4>> Palette::data(bool reversed) const
 }
 
 Texture::Texture(Palette* palette, int Nrepeat_, int Ncolors_,
-                 bool smooth) : palette(palette)
+                 bool smooth) : palette(palette), Nrepeat_(Nrepeat_),
+   Ncolors_(Ncolors_), smooth(smooth)
 {
    // Get the maximum texture size
    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MAX_TEXTURE_SIZE);
@@ -101,7 +102,7 @@ void Texture::generate()
    // Ncolors must be positive
    int Ncolors = Ncolors_ <= 0 ? palette->size() : Ncolors_;
 
-   // Generate the texture
+   // Original palette size
    int plt_size = palette->size();
    // Set the texture size
    int tsize = Nrepeat * Ncolors;
@@ -125,7 +126,7 @@ void Texture::generate()
    texture_data.clear();
    texture_data.resize(tsize);
 
-   // generate the discrete texture data
+   // Generate the discrete texture data
    if (!smooth)
    {
       for (int rpt = 0; rpt < Nrepeat; rpt++)
@@ -138,7 +139,7 @@ void Texture::generate()
          }
       }
    }
-   // generate the smooth texture data (interpolates colors)
+   // Generate the smooth texture data (interpolates colors)
    else
    {
       for (int rpt = 0; rpt < Nrepeat; rpt++)
