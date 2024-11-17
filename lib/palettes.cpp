@@ -56,7 +56,6 @@ int PaletteState::ChoosePalette()
    return pal-1;
 }
 
-
 // Generates a discrete texture from the given palette.
 void PaletteState::ToTextureDiscrete(Palette* palette, GLuint tex)
 {
@@ -161,8 +160,6 @@ void PaletteState::Init()
                       palette_tex[i][1]);
    }
 }
-
-
 
 double PaletteState::GetColorCoord(double val, double min, double max)
 {

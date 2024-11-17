@@ -34,7 +34,6 @@ struct RGBAf
    void print(ostream& os = cout) const;
 
    array<float, 4> as_array() const { return {r, g, b, a}; }
-
 };
 
 
@@ -103,6 +102,7 @@ public:
    bool isReversed() const { return Nrepeat_ < 0; }
    /// Generates the texture data
    void generate();
+
 private:
    int MAX_TEXTURE_SIZE;
    vector<array<float,4>> texture_data;

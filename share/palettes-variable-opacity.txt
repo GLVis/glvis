@@ -1,5 +1,6 @@
-# These palettes demonstrate the use of variable opacity/alpha
+# These palettes demonstrate the use of variable opacity/alpha.
 # Note that the channeltype is 'RGBAf' rather than 'RGBf'
+
 # These variable opacity palettes (and transparent palettes in general) tend to
 # display better with a black background (g) and lighting off (l)
 
@@ -11,7 +12,6 @@ palette 5-color-alpha RGBAf
    1  0  0  1
 
 palette turbo-alpha RGBAf
-
    0.189950   0.071760   0.232170   0.300000
    0.194830   0.083390   0.261490   0.360293
    0.199560   0.094980   0.290240   0.420138
