@@ -29,7 +29,7 @@ int PaletteState::ChoosePalette()
    char buffer[buflen];
    int pal;
    cout << "Choose a palette:\n";
-   Palettes->printSummary();
+   Palettes->PrintSummary();
    cout << "\n ---> [" << curr_palette+1 << "] " << flush;
 
    cin.getline (buffer, buflen);
@@ -203,8 +203,8 @@ void PaletteState::GetColorFromVal(double val, float * rgba)
       idx = (palSize-2) - i % (palSize-1);
       t = 1.0 - t;
    }
-   RGBAf color1 = pal->color(idx);
-   RGBAf color2 = pal->color(idx+1);
+   RGBAf color1 = pal->Color(idx);
+   RGBAf color2 = pal->Color(idx+1);
    rgba[0] = (1.0 - t) * color1.r + t * color2.r;
    rgba[1] = (1.0 - t) * color1.g + t * color2.g;
    rgba[2] = (1.0 - t) * color1.b + t * color2.b;

@@ -10,10 +10,10 @@
 // CONTRIBUTING.md for details.
 
 #include "palettes_base.hpp"
-#include "palette_definitions.cpp"
+#include "palettes_default.cpp"
 
 
-void RGBAf::print(ostream& os) const
+void RGBAf::Print(ostream& os) const
 {
    os << fixed << setprecision(6)
       << setw(10) << r << " "
@@ -45,40 +45,40 @@ Palette::Palette(const string& name,
 }
 
 
-void Palette::addColor(float r, float g, float b, float a)
+void Palette::AddColor(float r, float g, float b, float a)
 {
    colors.push_back(RGBAf(r, g, b, a));
 }
 
 
-void Palette::print(ostream& os) const
+void Palette::Print(ostream& os) const
 {
    os << "palette " << name << " RGBf" << endl;
    for (const auto& color : colors)
    {
-      color.print(os);
+      color.Print(os);
       os << endl;
    }
    os << endl;
 }
 
-RGBAf Palette::color(int i, bool reversed) const
+RGBAf Palette::Color(int i, bool reversed) const
 {
    int j = reversed ? size() - 1 - i : i;
    return colors[j];
 }
 
-vector<array<float,4>> Palette::data(bool reversed) const
+vector<array<float,4>> Palette::GetData(bool reversed) const
 {
    vector<array<float,4>> rgba_data(size());
    for (int i = 0; i < size(); ++i)
    {
-      rgba_data[i] = color(i, reversed).as_array();
+      rgba_data[i] = Color(i, reversed).AsArray();
    }
    return rgba_data;
 }
 
-bool Palette::is_translucent() const
+bool Palette::IsTranslucent() const
 {
    for (const auto& color : colors)
    {
@@ -100,13 +100,13 @@ Texture::Texture(Palette* palette, int Nrepeat_, int Ncolors_,
    // Is limiting to 4096 necessary?
    MAX_TEXTURE_SIZE = min(MAX_TEXTURE_SIZE, 4096);
    // Generate the texture data
-   generate();
+   Generate();
 }
 
-void Texture::generate()
+void Texture::Generate()
 {
    // Nrepeat cannot be 0; we also extract the sign
-   bool reversed = isReversed();
+   bool reversed = IsReversed();
    int Nrepeat = Nrepeat_ == 0 ? 1 : abs(Nrepeat_);
    // Ncolors must be positive
    int Ncolors = Ncolors_ <= 0 ? palette->size() : Ncolors_;
@@ -144,7 +144,7 @@ void Texture::generate()
          for (int i = 0; i < Ncolors; i++)
          {
             int j = 0.999999 * i * plt_size / (Ncolors - 1);
-            texture_data[rpt*Ncolors + i] = palette->color(j, reverse).as_array();
+            texture_data[rpt*Ncolors + i] = palette->Color(j, reverse).AsArray();
          }
       }
    }
@@ -159,8 +159,8 @@ void Texture::generate()
             float t = 0.999999 * i * (plt_size - 1) / (Ncolors - 1);
             int j = floor(t);
             t -= j;
-            array<float,4> col1 = palette->color(j, reverse).as_array();
-            array<float,4> col2 = palette->color(j+1, reverse).as_array();
+            array<float,4> col1 = palette->Color(j, reverse).AsArray();
+            array<float,4> col2 = palette->Color(j+1, reverse).AsArray();
             texture_data[rpt*Ncolors + i] =
             {
                (1-t) * col1[0] + t * col2[0],
@@ -174,7 +174,7 @@ void Texture::generate()
    }
 }
 
-int PaletteRegistry::get_index_by_name(const string& name) const
+int PaletteRegistry::GetIndexByName(const string& name) const
 {
    for (int i = 0; i < NumPalettes(); i++)
    {
@@ -187,33 +187,33 @@ PaletteRegistry::PaletteRegistry(const vector<Palette>& paletteRefs)
 {
    for (const Palette& palette : paletteRefs)
    {
-      if (check_name(palette.name))
+      if (IsNameUnique(palette.name))
       {
          palettes.push_back(as_unique<Palette>(palette));
       }
    }
 }
 
-void PaletteRegistry::addPalette(Palette& palette)
+void PaletteRegistry::AddPalette(Palette& palette)
 {
-   if (check_name(palette.name))
+   if (IsNameUnique(palette.name))
    {
       palettes.push_back(as_unique<Palette>(palette));
    }
 }
 
-void PaletteRegistry::addPalette(const string& name)
+void PaletteRegistry::AddPalette(const string& name)
 {
-   if (check_name(name))
+   if (IsNameUnique(name))
    {
       palettes.push_back(as_unique<Palette>(name));
    }
 }
 
-bool PaletteRegistry::check_name(const string& name) const
+bool PaletteRegistry::IsNameUnique(const string& name) const
 {
    // palette name is unique || container is empty
-   if (get_index_by_name(name) == -1 || palettes.empty())
+   if (GetIndexByName(name) == -1 || palettes.empty())
    {
       return true;
    }
@@ -232,24 +232,24 @@ Palette* PaletteRegistry::get(int index) const
    }
    cout << "Palette (index = " << index+1 << ") out of range. Available palettes:"
         << endl;
-   this->printSummary();
+   this->PrintSummary();
    return palettes.back().get();
 }
 
 Palette* PaletteRegistry::get(const string& name) const
 {
-   int idx = get_index_by_name(name);
+   int idx = GetIndexByName(name);
    if (idx != -1)
    {
       return palettes[idx].get();
    }
    cout << "Palette (name = " << name << ") not found. Available palettes:" <<
         endl;
-   this->printSummary();
+   this->PrintSummary();
    return palettes.back().get();
 }
 
-void PaletteRegistry::printSummary(ostream& os) const
+void PaletteRegistry::PrintSummary(ostream& os) const
 {
    for (int i = 0; i < NumPalettes(); i++)
    {
@@ -263,15 +263,15 @@ void PaletteRegistry::printSummary(ostream& os) const
    os << endl;
 }
 
-void PaletteRegistry::printAll(ostream& os) const
+void PaletteRegistry::PrintAll(ostream& os) const
 {
    for (int i = 0; i < NumPalettes(); i++)
    {
-      get(i)->print(os);
+      get(i)->Print(os);
    }
 }
 
-void PaletteRegistry::load(const string& palette_filename)
+void PaletteRegistry::Load(const string& palette_filename)
 {
    ifstream pfile(palette_filename);
    if (!pfile)
@@ -299,11 +299,11 @@ void PaletteRegistry::load(const string& palette_filename)
       if (word == "palette")
       {
          pfile >> palname >> channeltype;
-         idx = get_index_by_name(palname);
+         idx = GetIndexByName(palname);
          if (idx == -1)
          {
-            addPalette(palname);
-            idx = get_index_by_name(palname);
+            AddPalette(palname);
+            idx = GetIndexByName(palname);
             cout << "Reading palette: (" << idx+1 << ") " << palname << endl;
          }
          else
@@ -318,14 +318,14 @@ void PaletteRegistry::load(const string& palette_filename)
          float r, g, b;
          r = stof(word);
          pfile >> g >> b;
-         get(idx)->addColor(r,g,b);
+         get(idx)->AddColor(r,g,b);
       }
       else if (channeltype == "RGBAf" && idx != -1)
       {
          float r, g, b, a;
          r = stof(word);
          pfile >> g >> b >> a;
-         get(idx)->addColor(r,g,b,a);
+         get(idx)->AddColor(r,g,b,a);
       }
       else
       {

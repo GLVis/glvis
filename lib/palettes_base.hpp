@@ -31,9 +31,9 @@ struct RGBAf
    constexpr RGBAf(float r = 0.0, float g = 0.0, float b = 0.0, float a = 1.0)
       : r(r), g(g), b(b), a(a) {}
 
-   void print(ostream& os = cout) const;
+   void Print(ostream& os = cout) const;
 
-   array<float, 4> as_array() const { return {r, g, b, a}; }
+   array<float, 4> AsArray() const { return {r, g, b, a}; }
 };
 
 
@@ -61,19 +61,19 @@ public:
    int size() const { return colors.size(); }
 
    /// Add color to palette
-   void addColor(float r, float g, float b, float a = 1.0);
+   void AddColor(float r, float g, float b, float a = 1.0);
 
    /// Print each color of this palette to a stream
-   void print(ostream& os = cout) const;
+   void Print(ostream& os = cout) const;
 
    /// Get color at index i (optionally, use reversed order)
-   RGBAf color(int i, bool reversed = false) const;
+   RGBAf Color(int i, bool reversed = false) const;
 
    /// Get all colors as a vector of float arrays
-   vector<array<float,4>> data(bool reversed = false) const;
+   vector<array<float,4>> GetData(bool reversed = false) const;
 
    /// Are any alpha != 1.0?
-   bool is_translucent() const;
+   bool IsTranslucent() const;
 
 private:
    vector<RGBAf> colors;
@@ -99,9 +99,9 @@ public:
    /// Get texture data
    const vector<array<float,4>>& texture() const { return texture_data; }
    /// If true, all colors in palette are read in reverse
-   bool isReversed() const { return Nrepeat_ < 0; }
+   bool IsReversed() const { return Nrepeat_ < 0; }
    /// Generates the texture data
-   void generate();
+   void Generate();
 
 private:
    int MAX_TEXTURE_SIZE;
@@ -124,24 +124,24 @@ private:
    vector<unique_ptr<Palette>> palettes;
 
    /// Find the index of a palette by name
-   int get_index_by_name(const string& name) const;
+   int GetIndexByName(const string& name) const;
 
 public:
    /// Empty constructor
    PaletteRegistry() {}
 
    /// Constructor via a const vector of Palettes; if name already exists, skip
-   /// Used for loading compiled palettes (i.e. `palette_definitions.cpp`)
+   /// Used for loading compiled palettes (i.e. `palettes_default.cpp`)
    PaletteRegistry(const vector<Palette>& paletteRefs);
 
    /// Adds an existing palette to the registry
-   void addPalette(Palette& palette);
+   void AddPalette(Palette& palette);
 
    /// Create a new palette with the given name and add it to the registry
-   void addPalette(const string& name);
+   void AddPalette(const string& name);
 
    /// Returns true if name is unique
-   bool check_name(const string& name) const;
+   bool IsNameUnique(const string& name) const;
 
    /// Get a palette pointer by index; if not found, returns last palette
    Palette* get(int index) const;
@@ -150,10 +150,10 @@ public:
    Palette* get(const string& name) const;
 
    /// Prints a summary (index + name) of all palettes
-   void printSummary(ostream& os = cout) const;
+   void PrintSummary(ostream& os = cout) const;
 
    /// Prints all colors for all palettes
-   void printAll(ostream& os = cout) const;
+   void PrintAll(ostream& os = cout) const;
 
    /// Number of palettes in the registry
    int NumPalettes() const { return palettes.size(); }
@@ -166,7 +166,7 @@ public:
       ...
 
       see `share/palettes-crameri.txt` for an example */
-   void load(const string& palette_filename);
+   void Load(const string& palette_filename);
 };
 
 

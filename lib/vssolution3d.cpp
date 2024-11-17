@@ -4195,7 +4195,7 @@ gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
    double* cp_eqn = CuttingPlane->Equation();
    params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};
    params.contains_translucent = matAlpha < 1.0 ||
-                                 palette.GetPalette()->is_translucent();
+                                 palette.GetPalette()->IsTranslucent();
 
    if (drawlsurf)
    {

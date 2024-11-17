@@ -986,7 +986,7 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
       scene.queue.emplace_back(params, &vector_buf);
    }
    params.contains_translucent = matAlpha < 1.0 ||
-                                 palette.GetPalette()->is_translucent();
+                                 palette.GetPalette()->IsTranslucent();
    if (drawelems)
    {
       scene.queue.emplace_back(params, &disp_buf);

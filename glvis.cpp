@@ -1493,7 +1493,7 @@ int main (int argc, char *argv[])
    // Load in palette file, if specified
    if (palette_file != string_none)
    {
-      BasePalettes.load(palette_file);
+      BasePalettes.Load(palette_file);
    }
 
    GLVisGeometryRefiner.SetType(geom_ref_type);
