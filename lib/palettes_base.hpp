@@ -97,7 +97,7 @@ public:
    /// Texture size
    int size() const { return texture_data.size(); }
    /// Get texture data
-   const vector<array<float,4>>& texture() const { return texture_data; }
+   const vector<array<float,4>>& GetData() const { return texture_data; }
    /// If true, all colors in palette are read in reverse
    bool IsReversed() const { return Nrepeat_ < 0; }
    /// Generates the texture data

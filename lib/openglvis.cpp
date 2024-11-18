@@ -479,7 +479,7 @@ VisualizationScene::AddPaletteMaterial(glTF_Builder &bld)
          /* wrapT: */ glTF_Builder::wrap_type::CLAMP_TO_EDGE);
    // create palette image
    const int palette_size = palette.GetNumColors();
-   vector<array<float,4>> palette_data = palette.GetPalette()->data();
+   vector<array<float,4>> palette_data = palette.GetPalette()->GetData();
 #if 0
    glGetTextureImage(
       palette.GetColorTexture(), 0,
