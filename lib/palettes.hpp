@@ -61,8 +61,8 @@ public:
 private:
    bool first_init;
    PaletteRegistry* Palettes;
-   void ToTextureDiscrete(Palette* palette, GLuint tex);
-   void ToTextureSmooth(Palette* palette, GLuint tex);
+   void ToTextureDiscrete(const Palette* palette, GLuint tex);
+   void ToTextureSmooth(const Palette* palette, GLuint tex);
    using TexHandle = gl3::resource::TextureHandle;
 
    std::vector<std::array<TexHandle,2>> palette_tex;
