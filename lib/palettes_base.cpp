@@ -143,7 +143,7 @@ void Texture::Generate()
          bool reverse = (reversed + rpt) % 2 != 0;
          for (int i = 0; i < Ncolors; i++)
          {
-            int j = 0.999999 * i * plt_size / (Ncolors - 1);
+            int j = std::min(i * plt_size / (Ncolors - 1), plt_size - 1);
             texture_data[rpt*Ncolors + i] = palette->Color(j, reverse).AsArray();
          }
       }
