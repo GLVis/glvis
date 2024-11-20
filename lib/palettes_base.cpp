@@ -26,7 +26,7 @@ template <size_t N>
 Palette::Palette(const string& name,
                  const array<array<float,3>,N>& arr) : name(name)
 {
-   colors.reserve(N);
+   colors.resize(N);
    for (size_t i = 0; i < N; ++i)
    {
       colors[i] = RGBAf(arr[i][0], arr[i][1], arr[i][2]);
@@ -37,7 +37,7 @@ template <size_t N>
 Palette::Palette(const string& name,
                  const array<array<float,4>,N>& arr) : name(name)
 {
-   colors.reserve(N);
+   colors.resize(N);
    for (size_t i = 0; i < N; ++i)
    {
       colors[i] = RGBAf(arr[i][0], arr[i][1], arr[i][2], arr[i][3]);
