@@ -84,7 +84,7 @@ class Texture
 {
 public:
    /// The palette to create a texture of
-   Palette* const palette;
+   const Palette* palette;
    /// Repeat the palette multiple times (negative for reverse); cannot be 0
    int Nrepeat_;
    /// Number of colors to discretize with (0 uses the original number of colors)
@@ -92,7 +92,7 @@ public:
    /// Is texture smooth or discrete?
    bool smooth;
    /// Constructor - generates texture
-   Texture(Palette* palette, int Nrepeat_ = 1, int Ncolors_ = 0,
+   Texture(const Palette* palette, int Nrepeat_ = 1, int Ncolors_ = 0,
            bool smooth = false);
    /// Texture size
    int size() const { return texture_data.size(); }

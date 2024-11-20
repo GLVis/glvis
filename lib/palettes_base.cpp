@@ -87,7 +87,7 @@ bool Palette::IsTranslucent() const
    return false;
 }
 
-Texture::Texture(Palette* palette, int Nrepeat_, int Ncolors_,
+Texture::Texture(const Palette* palette, int Nrepeat_, int Ncolors_,
                  bool smooth) : palette(palette), Nrepeat_(Nrepeat_),
    Ncolors_(Ncolors_), smooth(smooth)
 {

@@ -57,7 +57,7 @@ int PaletteState::ChoosePalette()
 }
 
 // Generates a discrete texture from the given palette.
-void PaletteState::ToTextureDiscrete(Palette* palette, GLuint tex)
+void PaletteState::ToTextureDiscrete(const Palette* palette, GLuint tex)
 {
    Texture T(palette, RepeatPaletteTimes, PaletteNumColors, false);
    glBindTexture(GL_TEXTURE_2D, tex);
@@ -72,7 +72,7 @@ void PaletteState::ToTextureDiscrete(Palette* palette, GLuint tex)
 }
 
 // Generates a smooth texture from the given palette.
-void PaletteState::ToTextureSmooth(Palette* palette, GLuint tex)
+void PaletteState::ToTextureSmooth(const Palette* palette, GLuint tex)
 {
    Texture T(palette, RepeatPaletteTimes, PaletteNumColors, true);
    glBindTexture(GL_TEXTURE_2D, tex);
@@ -154,9 +154,9 @@ void PaletteState::Init()
 
    for (int i = 0; i < Palettes->NumPalettes(); i++)
    {
-      ToTextureDiscrete(Palettes->get(i),
+      ToTextureDiscrete(static_cast<const Palette*>(Palettes->get(i)),
                         palette_tex[i][0]);
-      ToTextureSmooth(Palettes->get(i),
+      ToTextureSmooth(static_cast<const Palette*>(Palettes->get(i)),
                       palette_tex[i][1]);
    }
 }
