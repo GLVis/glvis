@@ -91,20 +91,25 @@ public:
    int Ncolors_;
    /// Is texture smooth or discrete?
    bool smooth;
+
    /// Constructor - generates texture
    Texture(const Palette* palette, int Nrepeat_ = 1, int Ncolors_ = 0,
            bool smooth = false);
+
    /// Texture size
-   int size() const { return texture_data.size(); }
+   int Size() const { return texture_data.size(); }
+
    /// Get texture data
    const vector<array<float,4>>& GetData() const { return texture_data; }
+
    /// If true, all colors in palette are read in reverse
    bool IsReversed() const { return Nrepeat_ < 0; }
+
    /// Generates the texture data
    void Generate();
 
 private:
-   int MAX_TEXTURE_SIZE;
+   static int max_texture_size;
    vector<array<float,4>> texture_data;
 };
 
@@ -144,10 +149,10 @@ public:
    bool IsNameUnique(const string& name) const;
 
    /// Get a palette pointer by index; if not found, returns last palette
-   Palette* get(int index) const;
+   Palette* Get(int index) const;
 
    /// Get a palette pointer by name; if not found, returns last palette
-   Palette* get(const string& name) const;
+   Palette* Get(const string& name) const;
 
    /// Prints a summary (index + name) of all palettes
    void PrintSummary(ostream& os = cout) const;
@@ -158,8 +163,8 @@ public:
    /// Number of palettes in the registry
    int NumPalettes() const { return palettes.size(); }
 
-   /* Loads palette(s) from a file. Format is:
-
+   /// Loads palette(s) from a file.
+   /**  Format is:
       palette <palette_name> <RGBf/RGBAf>
       <r1> <g1> <b1> [<a1>]
       <r2> <g2> <b2> [<a2>]

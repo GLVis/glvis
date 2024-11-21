@@ -87,18 +87,17 @@ bool Palette::IsTranslucent() const
    return false;
 }
 
+// Initialize
+int Texture::max_texture_size = 4096;
+
 Texture::Texture(const Palette* palette, int Nrepeat_, int Ncolors_,
                  bool smooth) : palette(palette), Nrepeat_(Nrepeat_),
    Ncolors_(Ncolors_), smooth(smooth)
 {
-   // Get the maximum texture size
-   glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MAX_TEXTURE_SIZE);
-   if (MAX_TEXTURE_SIZE < 4096)
+   if (Texture::max_texture_size == 0)
    {
-      cerr << "Warning: GL_MAX_TEXTURE_SIZE is less than 4096." << endl;
+      glGetIntegerv(GL_max_texture_size, &Texture::max_texture_size);
    }
-   // Is limiting to 4096 necessary?
-   MAX_TEXTURE_SIZE = min(MAX_TEXTURE_SIZE, 4096);
    // Generate the texture data
    Generate();
 }
@@ -115,20 +114,20 @@ void Texture::Generate()
    int plt_size = palette->size();
    // Set the texture size
    int tsize = Nrepeat * Ncolors;
-   if (tsize > MAX_TEXTURE_SIZE)
+   if (tsize > Texture::max_texture_size)
    {
       cerr << "Warning: Texture size "
            << "(" << tsize << ")" << " exceeds maximum "
-           << "(" << MAX_TEXTURE_SIZE << ")" << endl;
-      if (Ncolors >= MAX_TEXTURE_SIZE)
+           << "(" << Texture::max_texture_size << ")" << endl;
+      if (Ncolors >= Texture::max_texture_size)
       {
-         Ncolors = MAX_TEXTURE_SIZE;
+         Ncolors = Texture::max_texture_size;
          Nrepeat = 1;
          tsize = Nrepeat * Ncolors;
       }
       else
       {
-         Nrepeat = MAX_TEXTURE_SIZE / Ncolors;
+         Nrepeat = Texture::max_texture_size / Ncolors;
          tsize = Nrepeat * Ncolors;
       }
    }
@@ -178,7 +177,7 @@ int PaletteRegistry::GetIndexByName(const string& name) const
 {
    for (int i = 0; i < NumPalettes(); i++)
    {
-      if (get(i)->name == name) { return i; }
+      if (Get(i)->name == name) { return i; }
    }
    return -1;
 }
@@ -224,7 +223,7 @@ bool PaletteRegistry::IsNameUnique(const string& name) const
    }
 }
 
-Palette* PaletteRegistry::get(int index) const
+Palette* PaletteRegistry::Get(int index) const
 {
    if (0 <= index && index <= NumPalettes()-1)
    {
@@ -236,7 +235,7 @@ Palette* PaletteRegistry::get(int index) const
    return palettes.back().get();
 }
 
-Palette* PaletteRegistry::get(const string& name) const
+Palette* PaletteRegistry::Get(const string& name) const
 {
    int idx = GetIndexByName(name);
    if (idx != -1)
@@ -254,7 +253,7 @@ void PaletteRegistry::PrintSummary(ostream& os) const
    for (int i = 0; i < NumPalettes(); i++)
    {
       os << setw(3) << i+1 << ") "
-         << left << setw(12) << get(i)->name << right;
+         << left << setw(12) << Get(i)->name << right;
       if ((i+1)%5 == 0)
       {
          os << endl;
@@ -267,7 +266,7 @@ void PaletteRegistry::PrintAll(ostream& os) const
 {
    for (int i = 0; i < NumPalettes(); i++)
    {
-      get(i)->Print(os);
+      Get(i)->Print(os);
    }
 }
 
@@ -318,14 +317,14 @@ void PaletteRegistry::Load(const string& palette_filename)
          float r, g, b;
          r = stof(word);
          pfile >> g >> b;
-         get(idx)->AddColor(r,g,b);
+         Get(idx)->AddColor(r,g,b);
       }
       else if (channeltype == "RGBAf" && idx != -1)
       {
          float r, g, b, a;
          r = stof(word);
          pfile >> g >> b >> a;
-         get(idx)->AddColor(r,g,b,a);
+         Get(idx)->AddColor(r,g,b,a);
       }
       else
       {

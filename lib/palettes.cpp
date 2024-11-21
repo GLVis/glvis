@@ -62,7 +62,7 @@ void PaletteState::ToTextureDiscrete(const Palette* palette, GLuint tex)
    Texture T(palette, RepeatPaletteTimes, PaletteNumColors, false);
    glBindTexture(GL_TEXTURE_2D, tex);
    glTexImage2D(GL_TEXTURE_2D, 0, rgba_internal,
-                T.size(), 1,
+                T.Size(), 1,
                 0, GL_RGBA, GL_FLOAT, T.GetData().data());
 
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -77,7 +77,7 @@ void PaletteState::ToTextureSmooth(const Palette* palette, GLuint tex)
    Texture T(palette, RepeatPaletteTimes, PaletteNumColors, true);
    glBindTexture(GL_TEXTURE_2D, tex);
    glTexImage2D(GL_TEXTURE_2D, 0, rgba_internal,
-                T.size(), 1,
+                T.Size(), 1,
                 0, GL_RGBA, GL_FLOAT, T.GetData().data());
 
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -100,11 +100,6 @@ void PaletteState::Init()
    {
 
       glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MaxTextureSize);
-      if (MaxTextureSize < 4096)
-      {
-         cerr << "Warning: GL_MAX_TEXTURE_SIZE is less than 4096." << endl;
-      }
-      MaxTextureSize = std::min(MaxTextureSize, 4096);
       {
          std::lock_guard<std::mutex> lk{init_mtx};
       }
@@ -154,9 +149,9 @@ void PaletteState::Init()
 
    for (int i = 0; i < Palettes->NumPalettes(); i++)
    {
-      ToTextureDiscrete(static_cast<const Palette*>(Palettes->get(i)),
+      ToTextureDiscrete(static_cast<const Palette*>(Palettes->Get(i)),
                         palette_tex[i][0]);
-      ToTextureSmooth(static_cast<const Palette*>(Palettes->get(i)),
+      ToTextureSmooth(static_cast<const Palette*>(Palettes->Get(i)),
                       palette_tex[i][1]);
    }
 }
@@ -215,9 +210,9 @@ Palette* PaletteState::GetPalette(int pidx) const
 {
    if (pidx == -1)
    {
-      return Palettes->get(curr_palette);
+      return Palettes->Get(curr_palette);
    }
-   return Palettes->get(pidx);
+   return Palettes->Get(pidx);
 }
 
 void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
@@ -257,7 +252,7 @@ void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
 void PaletteState::SetIndex(int num)
 {
    curr_palette = num;
-   cout << "Palette: " << num << ") " << Palettes->get(curr_palette)->name << endl;
+   cout << "Palette: " << num << ") " << Palettes->Get(curr_palette)->name << endl;
 }
 
 void PaletteState::NextIndex()
@@ -289,7 +284,7 @@ int PaletteState::GetSize(int pidx) const
 {
    if (pidx == -1)
    {
-      return Palettes->get(curr_palette)->size();
+      return Palettes->Get(curr_palette)->size();
    }
-   return Palettes->get(pidx)->size();
+   return Palettes->Get(pidx)->size();
 }
