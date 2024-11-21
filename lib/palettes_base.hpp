@@ -58,7 +58,7 @@ public:
    Palette(const string& name, const array<array<float,4>,N>& arr);
 
    /// Get size
-   int size() const { return colors.size(); }
+   int Size() const { return colors.size(); }
 
    /// Add color to palette
    void AddColor(float r, float g, float b, float a = 1.0);

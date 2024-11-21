@@ -18,7 +18,6 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include <mutex>
 
 using namespace std;
 
@@ -98,11 +97,7 @@ void PaletteState::Init()
 {
    if (!first_init)
    {
-
       glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MaxTextureSize);
-      {
-         std::lock_guard<std::mutex> lk{init_mtx};
-      }
 
       vector<array<GLuint, 2>> paletteTexIds(Palettes->NumPalettes());
       GLuint alphaTexId;
@@ -284,7 +279,7 @@ int PaletteState::GetSize(int pidx) const
 {
    if (pidx == -1)
    {
-      return Palettes->Get(curr_palette)->size();
+      return Palettes->Get(curr_palette)->Size();
    }
-   return Palettes->Get(pidx)->size();
+   return Palettes->Get(pidx)->Size();
 }

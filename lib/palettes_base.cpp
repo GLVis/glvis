@@ -64,14 +64,14 @@ void Palette::Print(ostream& os) const
 
 RGBAf Palette::Color(int i, bool reversed) const
 {
-   int j = reversed ? size() - 1 - i : i;
+   int j = reversed ? Size() - 1 - i : i;
    return colors[j];
 }
 
 vector<array<float,4>> Palette::GetData(bool reversed) const
 {
-   vector<array<float,4>> rgba_data(size());
-   for (int i = 0; i < size(); ++i)
+   vector<array<float,4>> rgba_data(Size());
+   for (int i = 0; i < Size(); ++i)
    {
       rgba_data[i] = Color(i, reversed).AsArray();
    }
@@ -96,7 +96,7 @@ Texture::Texture(const Palette* palette, int Nrepeat_, int Ncolors_,
 {
    if (Texture::max_texture_size == 0)
    {
-      glGetIntegerv(GL_max_texture_size, &Texture::max_texture_size);
+      glGetIntegerv(GL_MAX_TEXTURE_SIZE, &Texture::max_texture_size);
    }
    // Generate the texture data
    Generate();
@@ -108,10 +108,10 @@ void Texture::Generate()
    bool reversed = IsReversed();
    int Nrepeat = Nrepeat_ == 0 ? 1 : abs(Nrepeat_);
    // Ncolors must be positive
-   int Ncolors = Ncolors_ <= 0 ? palette->size() : Ncolors_;
+   int Ncolors = Ncolors_ <= 0 ? palette->Size() : Ncolors_;
 
    // Original palette size
-   int plt_size = palette->size();
+   int plt_size = palette->Size();
    // Set the texture size
    int tsize = Nrepeat * Ncolors;
    if (tsize > Texture::max_texture_size)
