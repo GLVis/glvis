@@ -88,7 +88,7 @@ bool Palette::IsTranslucent() const
 }
 
 // Initialize
-int Texture::max_texture_size = 4096;
+int Texture::max_texture_size = -1;
 
 Texture::Texture(const Palette* palette, int Nrepeat_, int Ncolors_,
                  bool smooth) : palette(palette), Nrepeat_(Nrepeat_),

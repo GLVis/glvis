@@ -91,8 +91,6 @@ PaletteState::PaletteState()
    , palette_tex(BasePalettes.NumPalettes())
 {}
 
-static std::mutex init_mtx;
-
 void PaletteState::Init()
 {
    if (!first_init)
