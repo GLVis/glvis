@@ -94,7 +94,7 @@ Texture::Texture(const Palette* palette, int Nrepeat_, int Ncolors_,
                  bool smooth) : palette(palette), Nrepeat_(Nrepeat_),
    Ncolors_(Ncolors_), smooth(smooth)
 {
-   if (Texture::max_texture_size == 0)
+   if (Texture::max_texture_size < 0)
    {
       glGetIntegerv(GL_MAX_TEXTURE_SIZE, &Texture::max_texture_size);
    }
