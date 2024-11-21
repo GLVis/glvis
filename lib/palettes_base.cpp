@@ -156,8 +156,8 @@ void Texture::Generate()
          bool reverse = (reversed + rpt) % 2 != 0;
          for (int i = 0; i < Ncolors; i++)
          {
-            float t = 0.999999 * i * (plt_size - 1) / (Ncolors - 1);
-            int j = floor(t);
+            float t = i * (plt_size - 1) / (Ncolors - 1);
+            int j = std::min((int)t, plt_size - 2);
             t -= j;
             array<float,4> col1 = palette->Color(j, reverse).AsArray();
             array<float,4> col2 = palette->Color(j+1, reverse).AsArray();
