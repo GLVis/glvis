@@ -79,38 +79,60 @@ private:
    vector<RGBAf> colors;
 };
 
+using TexHandle = gl3::resource::TextureHandle;
 /// Generates the texture data for a given palette, to be used in OpenGL
 class Texture
 {
 public:
-   /// The palette to create a texture of
-   const Palette* palette;
-   /// Repeat the palette multiple times (negative for reverse); cannot be 0
-   int Nrepeat_;
-   /// Number of colors to discretize with (0 uses the original number of colors)
-   int Ncolors_;
-   /// Is texture smooth or discrete?
-   bool smooth;
+   /// GL static parameters
+   static GLenum alpha_internal;
+   static GLenum alpha_channel;
+   static GLenum rgba_internal;
+   static int max_texture_size;
+
+   /// Empty constructor
+   Texture() {}
 
    /// Constructor - generates texture
-   Texture(const Palette* palette, int Nrepeat_ = 1, int Ncolors_ = 0,
+   Texture(const Palette* palette, GLuint texid, int cycles = 1, int colors = 0,
            bool smooth = false);
 
-   /// Texture size
-   int Size() const { return texture_data.size(); }
+   /// Get texture size.
+   int Size() { UpdateTextureSize(); return tsize; }
 
-   /// Get texture data
-   const vector<array<float,4>>& GetData() const { return texture_data; }
+   /// Get the GL texture
+   GLuint Get() const { return texture; }
 
-   /// If true, all colors in palette are read in reverse
-   bool IsReversed() const { return Nrepeat_ < 0; }
+   /// Generate the texture data
+   vector<array<float,4>> GenerateTextureData();
 
-   /// Generates the texture data
-   void Generate();
+   /// Set the number of cycles
+   void SetCycles(int cycles);
+
+   /// Set the number of colors
+   void SetColors(int colors);
+
+   /// Generate the GL texture and binds it to `texture`
+   void GenerateGLTexture(int cycles, int colors);
 
 private:
-   static int max_texture_size;
-   vector<array<float,4>> texture_data;
+   /// The palette to create a texture of
+   const Palette* palette;
+   /// Number of colors to discretize with (0 uses the original number of colors)
+   int ncolors;
+   /// Is texture smooth or discrete?
+   bool smooth;
+   /// Repeat the palette multiple times (negative for reverse); cannot be 0
+   int nrepeat;
+   /// Is the texture reversed?
+   bool reversed;
+   /// Texture size
+   int tsize;
+   /// The GL texture
+   TexHandle texture;
+
+   /// Update the texture size (may change ncolors and/or cycles if too large)
+   void UpdateTextureSize();
 };
 
 

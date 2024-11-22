@@ -135,7 +135,7 @@ VisualizationScene::VisualizationScene()
    light_mat_idx = 3;
    use_light = true;
 
-   palette.Init();
+   palette.GenerateTextures();
 }
 
 VisualizationScene::~VisualizationScene() {}

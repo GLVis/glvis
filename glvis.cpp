@@ -821,7 +821,7 @@ void ExecuteScriptCommand()
          scr >> rpt_times;
          cout << "Script: palette_repeat: " << rpt_times << endl;
          vs->palette.SetRepeatTimes(rpt_times);
-         vs->palette.Init();
+         vs->palette.GenerateTextures();
          MyExpose();
       }
       else if (word == "toggle_attributes")

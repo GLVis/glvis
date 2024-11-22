@@ -19,8 +19,8 @@ class PaletteState
 {
 public:
    PaletteState();
-   /// Initializes the palette textures.
-   void Init();
+   /// Initializes the palette textures (and defines texture ids).
+   void InitTextures();
    /// Binds the discrete version of the current palette texture.
    void UseDiscrete() { use_smooth = 0; }
    /// Binds the smooth version of the current palette texture.
@@ -52,8 +52,10 @@ public:
    void GetColorFromVal(double val, float* rgba);
 
    GLuint GetColorTexture() const
-   { return palette_tex[curr_palette][use_smooth]; }
+   { return textures[curr_palette][use_smooth].Get(); }
    GLuint GetAlphaTexture() const { return alpha_tex; }
+   /// Generates new textures with the same ids, using current settings
+   void GenerateTextures();
    void GenerateAlphaTexture(float matAlpha, float matAlphaCenter);
 
    int NumPalettes();
@@ -61,11 +63,9 @@ public:
 private:
    bool first_init;
    PaletteRegistry* Palettes;
-   void ToTextureDiscrete(const Palette* palette, GLuint tex);
-   void ToTextureSmooth(const Palette* palette, GLuint tex);
    using TexHandle = gl3::resource::TextureHandle;
 
-   std::vector<std::array<TexHandle,2>> palette_tex;
+   std::vector<std::array<Texture,2>> textures;
    TexHandle alpha_tex;
 
    int curr_palette = 2;
@@ -75,9 +75,6 @@ private:
 
    bool use_logscale = false;
 
-   int MaxTextureSize;
-   GLenum alpha_channel;
-   GLenum rgba_internal;
 };
 
 #endif

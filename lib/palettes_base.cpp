@@ -11,6 +11,7 @@
 
 #include "palettes_base.hpp"
 #include "palettes_default.cpp"
+#include "gl/renderer.hpp"
 
 
 void RGBAf::Print(ostream& os) const
@@ -87,80 +88,76 @@ bool Palette::IsTranslucent() const
    return false;
 }
 
-// Initialize
+// Initialize GL parameters
 int Texture::max_texture_size = -1;
+// WebGL 2 requires sized internal format for float texture
+GLenum Texture::alpha_internal = GL_R32F;
+GLenum Texture::alpha_channel = GL_RED;
+GLenum Texture::rgba_internal = GL_RGBA32F;
 
-Texture::Texture(const Palette* palette, int Nrepeat_, int Ncolors_,
-                 bool smooth) : palette(palette), Nrepeat_(Nrepeat_),
-   Ncolors_(Ncolors_), smooth(smooth)
+Texture::Texture(const Palette* palette, GLuint texid, int cycles, int colors,
+                 bool smooth)
+   : palette(palette), texture(texid), ncolors(colors), smooth(smooth)
 {
+   // Initialize static GL parameters
    if (Texture::max_texture_size < 0)
    {
       glGetIntegerv(GL_MAX_TEXTURE_SIZE, &Texture::max_texture_size);
+
+      if (gl3::GLDevice::useLegacyTextureFmts())
+      {
+         Texture::alpha_internal = GL_ALPHA;
+         Texture::alpha_channel = GL_ALPHA;
+         Texture::rgba_internal = GL_RGBA;
+      }
    }
-   // Generate the texture data
-   Generate();
+
+   // Input sanitization/init
+   SetCycles(cycles);
+   SetColors(colors);
+   // Update the texture size (may change ncolors and/or cycles if too large)
+   UpdateTextureSize();
 }
 
-void Texture::Generate()
+vector<array<float,4>> Texture::GenerateTextureData()
 {
-   // Nrepeat cannot be 0; we also extract the sign
-   bool reversed = IsReversed();
-   int Nrepeat = Nrepeat_ == 0 ? 1 : abs(Nrepeat_);
-   // Ncolors must be positive
-   int Ncolors = Ncolors_ <= 0 ? palette->Size() : Ncolors_;
-
+   // Make sure the texture size is up to date
+   UpdateTextureSize();
    // Original palette size
    int plt_size = palette->Size();
-   // Set the texture size
-   int tsize = Nrepeat * Ncolors;
-   if (tsize > Texture::max_texture_size)
-   {
-      cerr << "Warning: Texture size "
-           << "(" << tsize << ")" << " exceeds maximum "
-           << "(" << Texture::max_texture_size << ")" << endl;
-      if (Ncolors >= Texture::max_texture_size)
-      {
-         Ncolors = Texture::max_texture_size;
-         Nrepeat = 1;
-         tsize = Nrepeat * Ncolors;
-      }
-      else
-      {
-         Nrepeat = Texture::max_texture_size / Ncolors;
-         tsize = Nrepeat * Ncolors;
-      }
-   }
-   texture_data.clear();
-   texture_data.resize(tsize);
 
-   // Generate the discrete texture data
+   // Initialize the texture data
+   vector<array<float,4>> texture_data(tsize);
+
+   // Discrete texture
    if (!smooth)
    {
-      for (int rpt = 0; rpt < Nrepeat; rpt++)
+      // Generate the texture data
+      for (int rpt = 0; rpt < nrepeat; rpt++)
       {
          bool reverse = (reversed + rpt) % 2 != 0;
-         for (int i = 0; i < Ncolors; i++)
+         for (int i = 0; i < ncolors; i++)
          {
-            int j = std::min(i * plt_size / (Ncolors - 1), plt_size - 1);
-            texture_data[rpt*Ncolors + i] = palette->Color(j, reverse).AsArray();
+            int j = std::min(i * plt_size / (ncolors - 1), plt_size - 1);
+            texture_data[rpt*ncolors + i] = palette->Color(j, reverse).AsArray();
          }
       }
    }
-   // Generate the smooth texture data (interpolates colors)
+   // Smooth texture (interpolates colors)
    else
    {
-      for (int rpt = 0; rpt < Nrepeat; rpt++)
+      // Generate the texture data
+      for (int rpt = 0; rpt < nrepeat; rpt++)
       {
          bool reverse = (reversed + rpt) % 2 != 0;
-         for (int i = 0; i < Ncolors; i++)
+         for (int i = 0; i < ncolors; i++)
          {
-            float t = i * (plt_size - 1) / (Ncolors - 1);
+            float t = i * (plt_size - 1) / (ncolors - 1);
             int j = std::min((int)t, plt_size - 2);
             t -= j;
             array<float,4> col1 = palette->Color(j, reverse).AsArray();
             array<float,4> col2 = palette->Color(j+1, reverse).AsArray();
-            texture_data[rpt*Ncolors + i] =
+            texture_data[rpt*ncolors + i] =
             {
                (1-t) * col1[0] + t * col2[0],
                (1-t) * col1[1] + t * col2[1],
@@ -169,7 +166,70 @@ void Texture::Generate()
             };
          }
       }
+   }
+   return texture_data;
+}
 
+void Texture::SetCycles(int cycles)
+{
+   if (cycles == 0)
+   {
+      cycles = 1;
+   }
+   reversed = cycles < 0;
+   nrepeat = abs(cycles);
+}
+
+void Texture::SetColors(int colors)
+{
+   ncolors = colors <= 0 ? palette->Size() : colors;
+}
+
+void Texture::UpdateTextureSize()
+{
+   tsize = nrepeat * ncolors;
+   if (tsize > Texture::max_texture_size)
+   {
+      cerr << "Warning: Texture size "
+           << "(" << tsize << ")" << " exceeds maximum "
+           << "(" << Texture::max_texture_size << ")" << endl;
+      if (ncolors >= Texture::max_texture_size)
+      {
+         ncolors = Texture::max_texture_size;
+         nrepeat = 1;
+      }
+      else
+      {
+         nrepeat = Texture::max_texture_size / ncolors;
+      }
+      tsize = nrepeat * ncolors;
+   }
+}
+
+void Texture::GenerateGLTexture(int cycles, int colors)
+{
+   SetCycles(cycles);
+   SetColors(colors);
+
+   vector<array<float,4>> texture_data = GenerateTextureData();
+
+   glBindTexture(GL_TEXTURE_2D, texture);
+   glTexImage2D(GL_TEXTURE_2D, 0, Texture::rgba_internal,
+                tsize, 1,
+                0, GL_RGBA, GL_FLOAT, texture_data.data());
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+   // Discrete
+   if (!smooth)
+   {
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+   }
+   // Smooth
+   else
+   {
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
    }
 }
 
