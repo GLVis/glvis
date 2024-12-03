@@ -118,6 +118,8 @@ public:
 private:
    /// The palette to create a texture of
    const Palette* palette;
+   /// The GL texture
+   TexHandle texture;
    /// Number of colors to discretize with (0 uses the original number of colors)
    int ncolors;
    /// Is texture smooth or discrete?
@@ -128,8 +130,6 @@ private:
    bool reversed;
    /// Texture size
    int tsize;
-   /// The GL texture
-   TexHandle texture;
 
    /// Update the texture size (may change ncolors and/or cycles if too large)
    void UpdateTextureSize();
