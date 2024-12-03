@@ -55,11 +55,10 @@ int PaletteState::ChoosePalette()
 }
 
 PaletteState::PaletteState()
-   : first_init(false)
-   , Palettes(&BasePalettes)
+   : Palettes(&BasePalettes)
    , textures(Palettes->NumPalettes())
 {
-   // Init the palette textures (creates the texture ids)
+   // Init the palette textures (will creates new texture ids)
    InitTextures();
    // Generate the textures
    GenerateTextures();
@@ -69,17 +68,13 @@ void PaletteState::InitTextures()
 {
    int N = Palettes->NumPalettes();
 
-   // Create new texture ids
-   // vector<array<GLuint, 2>> paletteTexIds(N);
-   // glGenTextures(N * 2, &(paletteTexIds[0][0]));
-
-
-   // Initialize both discrete [0] and smooth [1] textures; assign texture ids
+   // Initialize both discrete [0] and smooth [1] textures
+   // Texture constructor will assign texture ids
    for (int i = 0; i < N; i++)
    {
       const Palette* pal = static_cast<const Palette*>(Palettes->Get(i));
-      textures[i][0] = Texture(pal, PaletteNumColors, false, RepeatPaletteTimes);
-      textures[i][0] = Texture(pal, PaletteNumColors, true, RepeatPaletteTimes);
+      textures[i][0] = Texture(pal, RepeatPaletteTimes, PaletteNumColors, false);
+      textures[i][1] = Texture(pal, RepeatPaletteTimes, PaletteNumColors, true);
    }
 
    // Init the alpha texture (TODO: simplify this using Texture class)

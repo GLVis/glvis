@@ -95,12 +95,9 @@ GLenum Texture::alpha_internal = GL_R32F;
 GLenum Texture::alpha_channel = GL_RED;
 GLenum Texture::rgba_internal = GL_RGBA32F;
 
-Texture::Texture(const Palette* palette, int colors, bool smooth, int cycles)
-   : palette(palette), ncolors(colors), smooth(smooth)
+Texture::Texture(const Palette* palette, int cycles, int colors, bool smooth)
+   : palette(palette)
 {
-   // Generate the texture id
-   glGenTextures(1, &texture);
-
    // Initialize static GL parameters
    if (Texture::max_texture_size < 0)
    {
@@ -115,16 +112,16 @@ Texture::Texture(const Palette* palette, int colors, bool smooth, int cycles)
    }
 
    // Input sanitization/init
-   SetCycles(cycles);
-   SetColors(colors);
-   // Update the texture size (may change ncolors and/or cycles if too large)
-   UpdateTextureSize();
+   UpdateParameters(cycles, colors, smooth);
+
+   // Generate the texture id
+   GLuint texid;
+   glGenTextures(1, &texid);
+   texture = texid;
 }
 
 vector<array<float,4>> Texture::GenerateTextureData()
 {
-   // Make sure the texture size is up to date
-   UpdateTextureSize();
    // Original palette size
    int plt_size = palette->Size();
 
@@ -208,10 +205,17 @@ void Texture::UpdateTextureSize()
    }
 }
 
-void Texture::GenerateGLTexture(int cycles, int colors)
+void Texture::UpdateParameters(int cycles, int colors, bool smooth)
 {
    SetCycles(cycles);
    SetColors(colors);
+   smooth = smooth;
+   UpdateTextureSize();
+}
+
+void Texture::GenerateGLTexture(int cycles, int colors)
+{
+   UpdateParameters(cycles, colors, smooth);
 
    vector<array<float,4>> texture_data = GenerateTextureData();
 

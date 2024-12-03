@@ -94,11 +94,11 @@ public:
    Texture() {}
 
    /// Constructor - generates texture
-   Texture(const Palette* palette, int colors = 0, bool smooth = false,
-           int cycles = 1);
+   Texture(const Palette* palette, int cycles = 1, int colors = 0,
+           bool smooth = false);
 
    /// Get texture size.
-   int Size() { UpdateTextureSize(); return tsize; }
+   int Size() { return tsize; }
 
    /// Get the GL texture
    GLuint Get() const { return texture; }
@@ -106,30 +106,33 @@ public:
    /// Generate the texture data
    vector<array<float,4>> GenerateTextureData();
 
-   /// Set the number of cycles
-   void SetCycles(int cycles);
-
-   /// Set the number of colors
-   void SetColors(int colors);
-
    /// Generate the GL texture and binds it to `texture`
    void GenerateGLTexture(int cycles, int colors);
+
+   /// Update parameters
+   void UpdateParameters(int cycles, int colors, bool smooth);
 
 private:
    /// The palette to create a texture of
    const Palette* palette;
+   /// Repeat the palette multiple times (negative for reverse); cannot be 0
+   int nrepeat;
    /// Number of colors to discretize with (0 uses the original number of colors)
    int ncolors;
    /// Is texture smooth or discrete?
    bool smooth;
-   /// Repeat the palette multiple times (negative for reverse); cannot be 0
-   int nrepeat;
    /// Is the texture reversed?
    bool reversed;
    /// Texture size
    int tsize;
    /// The GL texture
-   GLuint texture;
+   TexHandle texture;
+
+   /// Set the number of cycles
+   void SetCycles(int cycles);
+
+   /// Set the number of colors
+   void SetColors(int colors);
 
    /// Update the texture size (may change ncolors and/or cycles if too large)
    void UpdateTextureSize();

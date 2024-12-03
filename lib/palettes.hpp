@@ -61,7 +61,6 @@ public:
    int NumPalettes();
 
 private:
-   bool first_init;
    PaletteRegistry* Palettes;
    using TexHandle = gl3::resource::TextureHandle;
 

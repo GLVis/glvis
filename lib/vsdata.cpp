@@ -799,7 +799,7 @@ void KeyF6Pressed()
    if (colors_used == 1) { colors_used = 0; }
    vsdata->palette.SetNumColors(colors_used);
 
-   vsdata->palette.InitTextures();
+   vsdata->palette.GenerateTextures();
    vsdata->palette.SetIndex(pal);
 
    colors_used = vsdata->palette.GetNumColors();
