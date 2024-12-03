@@ -95,10 +95,12 @@ GLenum Texture::alpha_internal = GL_R32F;
 GLenum Texture::alpha_channel = GL_RED;
 GLenum Texture::rgba_internal = GL_RGBA32F;
 
-Texture::Texture(const Palette* palette, GLuint texid, int cycles, int colors,
-                 bool smooth)
-   : palette(palette), texture(texid), ncolors(colors), smooth(smooth)
+Texture::Texture(const Palette* palette, int colors, bool smooth, int cycles)
+   : palette(palette), ncolors(colors), smooth(smooth)
 {
+   // Generate the texture id
+   glGenTextures(1, &texture);
+
    // Initialize static GL parameters
    if (Texture::max_texture_size < 0)
    {

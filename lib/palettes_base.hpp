@@ -94,8 +94,8 @@ public:
    Texture() {}
 
    /// Constructor - generates texture
-   Texture(const Palette* palette, GLuint texid, int cycles = 1, int colors = 0,
-           bool smooth = false);
+   Texture(const Palette* palette, int colors = 0, bool smooth = false,
+           int cycles = 1);
 
    /// Get texture size.
    int Size() { UpdateTextureSize(); return tsize; }
@@ -118,8 +118,6 @@ public:
 private:
    /// The palette to create a texture of
    const Palette* palette;
-   /// The GL texture
-   TexHandle texture;
    /// Number of colors to discretize with (0 uses the original number of colors)
    int ncolors;
    /// Is texture smooth or discrete?
@@ -130,6 +128,8 @@ private:
    bool reversed;
    /// Texture size
    int tsize;
+   /// The GL texture
+   GLuint texture;
 
    /// Update the texture size (may change ncolors and/or cycles if too large)
    void UpdateTextureSize();
