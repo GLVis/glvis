@@ -95,7 +95,8 @@ GLenum Texture::alpha_internal = GL_R32F;
 GLenum Texture::alpha_channel = GL_RED;
 GLenum Texture::rgba_internal = GL_RGBA32F;
 
-Texture::Texture(const Palette* palette, int cycles, int colors, bool smooth)
+Texture::Texture(const Palette* palette, int cycles, int colors,
+                 TextureType type)
    : palette(palette)
 {
    // Initialize static GL parameters
@@ -112,7 +113,7 @@ Texture::Texture(const Palette* palette, int cycles, int colors, bool smooth)
    }
 
    // Input sanitization/init
-   UpdateParameters(cycles, colors, smooth);
+   UpdateParameters(cycles, colors, type);
 
    // Generate the texture id
    GLuint texid;
@@ -129,7 +130,7 @@ vector<array<float,4>> Texture::GenerateTextureData()
    vector<array<float,4>> texture_data(tsize);
 
    // Discrete texture
-   if (!smooth)
+   if ( type == TextureType::DISCRETE )
    {
       // Generate the texture data
       for (int rpt = 0; rpt < nrepeat; rpt++)
@@ -143,7 +144,7 @@ vector<array<float,4>> Texture::GenerateTextureData()
       }
    }
    // Smooth texture (interpolates colors)
-   else
+   else if ( type == TextureType::SMOOTH || type == TextureType::ALPHAMAP )
    {
       // Generate the texture data
       for (int rpt = 0; rpt < nrepeat; rpt++)
@@ -205,34 +206,44 @@ void Texture::UpdateTextureSize()
    }
 }
 
-void Texture::UpdateParameters(int cycles, int colors, bool smooth)
+void Texture::UpdateParameters(int cycles, int colors, TextureType type)
 {
    SetCycles(cycles);
    SetColors(colors);
-   smooth = smooth;
+   type = type;
    UpdateTextureSize();
 }
 
 void Texture::GenerateGLTexture(int cycles, int colors)
 {
-   UpdateParameters(cycles, colors, smooth);
+   UpdateParameters(cycles, colors, type);
 
    vector<array<float,4>> texture_data = GenerateTextureData();
 
    glBindTexture(GL_TEXTURE_2D, texture);
-   glTexImage2D(GL_TEXTURE_2D, 0, Texture::rgba_internal,
-                tsize, 1,
-                0, GL_RGBA, GL_FLOAT, texture_data.data());
+   if ( type == TextureType::DISCRETE || type == TextureType::SMOOTH )
+   {
+      glTexImage2D(GL_TEXTURE_2D, 0, Texture::rgba_internal,
+                   tsize, 1, 0,
+                   GL_RGBA, GL_FLOAT, texture_data.data());
+   }
+   else if ( type == TextureType::ALPHAMAP )
+   {
+      glTexImage2D(GL_TEXTURE_2D, 0, Texture::alpha_internal,
+                   Texture::max_texture_size, 1, 0,
+                   Texture::alpha_channel, GL_FLOAT, texture_data.data());
+   }
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-   // Discrete
-   if (!smooth)
+
+   // Discrete or alpha
+   if ( type == TextureType::DISCRETE || type == TextureType::ALPHAMAP )
    {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
    }
    // Smooth
-   else
+   else if ( type == TextureType::SMOOTH )
    {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
