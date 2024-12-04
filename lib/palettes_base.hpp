@@ -84,13 +84,6 @@ using TexHandle = gl3::resource::TextureHandle;
 class Texture
 {
 public:
-   /// GL static parameters
-   static GLenum alpha_internal;
-   static GLenum alpha_channel;
-   static GLenum rgba_internal;
-   static GLenum rgba_channel;
-   static int max_texture_size;
-
    // What type of texture is this (discrete, smooth, alphamap)
    enum class TextureType
    {
@@ -131,6 +124,14 @@ private:
    const Palette* palette;
    // What type of texture is this (discrete, smooth, alphamap)
    TextureType textype;
+
+   /// GL static parameters
+   static GLenum alpha_internal;
+   static GLenum alpha_channel;
+   static GLenum rgba_internal;
+   static GLenum rgba_channel;
+   static int max_texture_size;
+
    /// Repeat the palette multiple times (negative for reverse); cannot be 0
    int nrepeat;
    /// Number of colors to discretize with (0 uses the original number of colors)
