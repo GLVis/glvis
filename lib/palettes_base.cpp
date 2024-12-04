@@ -95,9 +95,10 @@ GLenum Texture::alpha_internal = GL_R32F;
 GLenum Texture::alpha_channel = GL_RED;
 GLenum Texture::rgba_internal = GL_RGBA32F;
 
-Texture::Texture(const Palette* palette, int cycles, int colors,
-                 TextureType type)
-   : palette(palette)
+Texture::Texture(const Palette* palette,
+                 TextureType textype,
+                 int cycles, int colors)
+   : palette(palette), textype(textype)
 {
    // Initialize static GL parameters
    if (Texture::max_texture_size < 0)
@@ -113,7 +114,7 @@ Texture::Texture(const Palette* palette, int cycles, int colors,
    }
 
    // Input sanitization/init
-   UpdateParameters(cycles, colors, type);
+   UpdateParameters(cycles, colors);
 
    // Generate the texture id
    GLuint texid;
@@ -130,7 +131,7 @@ vector<array<float,4>> Texture::GenerateTextureData()
    vector<array<float,4>> texture_data(tsize);
 
    // Discrete texture
-   if ( type == TextureType::DISCRETE )
+   if ( textype == TextureType::DISCRETE )
    {
       // Generate the texture data
       for (int rpt = 0; rpt < nrepeat; rpt++)
@@ -144,7 +145,7 @@ vector<array<float,4>> Texture::GenerateTextureData()
       }
    }
    // Smooth texture (interpolates colors)
-   else if ( type == TextureType::SMOOTH || type == TextureType::ALPHAMAP )
+   else if ( textype == TextureType::SMOOTH || textype == TextureType::ALPHAMAP )
    {
       // Generate the texture data
       for (int rpt = 0; rpt < nrepeat; rpt++)
@@ -206,28 +207,27 @@ void Texture::UpdateTextureSize()
    }
 }
 
-void Texture::UpdateParameters(int cycles, int colors, TextureType type)
+void Texture::UpdateParameters(int cycles, int colors)
 {
    SetCycles(cycles);
    SetColors(colors);
-   type = type;
    UpdateTextureSize();
 }
 
 void Texture::GenerateGLTexture(int cycles, int colors)
 {
-   UpdateParameters(cycles, colors, type);
+   UpdateParameters(cycles, colors);
 
    vector<array<float,4>> texture_data = GenerateTextureData();
 
    glBindTexture(GL_TEXTURE_2D, texture);
-   if ( type == TextureType::DISCRETE || type == TextureType::SMOOTH )
+   if ( textype == TextureType::DISCRETE || textype == TextureType::SMOOTH )
    {
       glTexImage2D(GL_TEXTURE_2D, 0, Texture::rgba_internal,
                    tsize, 1, 0,
                    GL_RGBA, GL_FLOAT, texture_data.data());
    }
-   else if ( type == TextureType::ALPHAMAP )
+   else if ( textype == TextureType::ALPHAMAP )
    {
       glTexImage2D(GL_TEXTURE_2D, 0, Texture::alpha_internal,
                    Texture::max_texture_size, 1, 0,
@@ -237,13 +237,13 @@ void Texture::GenerateGLTexture(int cycles, int colors)
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
    // Discrete or alpha
-   if ( type == TextureType::DISCRETE || type == TextureType::ALPHAMAP )
+   if ( textype == TextureType::DISCRETE || textype == TextureType::ALPHAMAP )
    {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
    }
    // Smooth
-   else if ( type == TextureType::SMOOTH )
+   else if ( textype == TextureType::SMOOTH )
    {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

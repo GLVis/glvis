@@ -90,20 +90,21 @@ public:
    static GLenum rgba_internal;
    static int max_texture_size;
 
-   // What type of texture is this?
+   // What type of texture is this (discrete, smooth, alphamap)
    enum class TextureType
    {
-      DISCRETE,
-      SMOOTH,
-      ALPHAMAP
+      DISCRETE = 0,
+      SMOOTH = 1,
+      ALPHAMAP = 2,
    };
 
    /// Empty constructor
    Texture() {}
 
    /// Constructor - generates texture
-   Texture(const Palette* palette, int cycles = 1, int colors = 0,
-           TextureType type = TextureType::DISCRETE);
+   Texture(const Palette* palette,
+           TextureType textype = TextureType::DISCRETE,
+           int cycles = 1, int colors = 0);
 
    /// Get texture size.
    int Size() { return tsize; }
@@ -118,18 +119,17 @@ public:
    void GenerateGLTexture(int cycles, int colors);
 
    /// Update parameters
-   void UpdateParameters(int cycles, int colors, TextureType type);
+   void UpdateParameters(int cycles, int colors);
 
 private:
    /// The palette to create a texture of
    const Palette* palette;
+   // What type of texture is this (discrete, smooth, alphamap)
+   TextureType textype;
    /// Repeat the palette multiple times (negative for reverse); cannot be 0
    int nrepeat;
    /// Number of colors to discretize with (0 uses the original number of colors)
    int ncolors;
-   /// Is texture smooth or discrete?
-   // bool smooth;
-   TextureType type;
    /// Is the texture reversed?
    bool reversed;
    /// Texture size

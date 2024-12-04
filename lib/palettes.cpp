@@ -73,10 +73,10 @@ void PaletteState::InitTextures()
    for (int i = 0; i < N; i++)
    {
       const Palette* pal = static_cast<const Palette*>(Palettes->Get(i));
-      textures[i][0] = Texture(pal, RepeatPaletteTimes, PaletteNumColors,
-                               Texture::TextureType::DISCRETE);
-      textures[i][1] = Texture(pal, RepeatPaletteTimes, PaletteNumColors,
-                               Texture::TextureType::SMOOTH);
+      textures[i][0] = Texture(pal, Texture::TextureType::DISCRETE,
+                               RepeatPaletteTimes, PaletteNumColors);
+      textures[i][1] = Texture(pal, Texture::TextureType::SMOOTH,
+                               RepeatPaletteTimes, PaletteNumColors);
    }
 
    // Init the alpha texture (TODO: simplify this using Texture class)
