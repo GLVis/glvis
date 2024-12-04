@@ -88,6 +88,7 @@ public:
    static GLenum alpha_internal;
    static GLenum alpha_channel;
    static GLenum rgba_internal;
+   static GLenum rgba_channel;
    static int max_texture_size;
 
    // What type of texture is this (discrete, smooth, alphamap)
@@ -106,19 +107,23 @@ public:
            TextureType textype = TextureType::DISCRETE,
            int cycles = 1, int colors = 0);
 
+   /// Constructor for alphamap
+   Texture(float matAlpha, float matAlphaCenter);
+
+   /// Initialize Static GL parameters
+   void InitStaticGL();
+
    /// Get texture size.
    int Size() { return tsize; }
 
    /// Get the GL texture
    GLuint Get() const { return texture; }
 
-   /// Generate the texture data
-   vector<array<float,4>> GenerateTextureData();
-
    /// Generate the GL texture and binds it to `texture`
-   void GenerateGLTexture(int cycles, int colors);
+   void GenerateGLTexture();
 
-   /// Update parameters
+   /// Update alpha/regular texture parameters
+   void UpdateAlphaParameters(float matAlpha, float matAlphaCenter);
    void UpdateParameters(int cycles, int colors);
 
 private:
@@ -136,6 +141,13 @@ private:
    int tsize;
    /// The GL texture
    TexHandle texture;
+   /// Only used for alphamap
+   float alpha;
+   float alpha_center;
+
+   /// Generate alpha/regular texture data
+   vector<float> GenerateAlphaTextureData();
+   vector<array<float,4>> GenerateTextureData();
 
    /// Set the number of cycles
    void SetCycles(int cycles);

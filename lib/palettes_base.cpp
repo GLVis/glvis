@@ -94,6 +94,7 @@ int Texture::max_texture_size = -1;
 GLenum Texture::alpha_internal = GL_R32F;
 GLenum Texture::alpha_channel = GL_RED;
 GLenum Texture::rgba_internal = GL_RGBA32F;
+GLenum Texture::rgba_channel = GL_RGBA;
 
 Texture::Texture(const Palette* palette,
                  TextureType textype,
@@ -101,6 +102,49 @@ Texture::Texture(const Palette* palette,
    : palette(palette), textype(textype)
 {
    // Initialize static GL parameters
+   InitStaticGL();
+
+   // Input sanitization/init
+   UpdateParameters(cycles, colors);
+
+   // Generate the texture id
+   GLuint texid;
+   glGenTextures(1, &texid);
+   texture = texid;
+}
+
+Texture::Texture(float matAlpha, float matAlphaCenter)
+   : palette(nullptr), textype(TextureType::ALPHAMAP)
+{
+   // Initialize static GL parameters
+   InitStaticGL();
+
+   // Input sanitization/init
+   UpdateAlphaParameters(matAlpha, matAlphaCenter);
+
+   // Generate the texture id
+   GLuint texid;
+   glGenTextures(1, &texid);
+   texture = texid;
+
+   // set alpha texture to 1.0
+   std::vector<float> texture_data(Texture::max_texture_size);
+   std::fill(texture_data.begin(), texture_data.end(), 1.0f);
+   glActiveTexture(GL_TEXTURE1);
+   glBindTexture(GL_TEXTURE_2D, texture);
+   glTexImage2D(GL_TEXTURE_2D, 0, Texture::alpha_internal,
+                Texture::max_texture_size, 1, 0,
+                Texture::alpha_channel, GL_FLOAT, texture_data.data());
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+   glActiveTexture(GL_TEXTURE0);
+}
+
+void Texture::InitStaticGL()
+{
    if (Texture::max_texture_size < 0)
    {
       glGetIntegerv(GL_MAX_TEXTURE_SIZE, &Texture::max_texture_size);
@@ -112,14 +156,25 @@ Texture::Texture(const Palette* palette,
          Texture::rgba_internal = GL_RGBA;
       }
    }
+}
 
-   // Input sanitization/init
-   UpdateParameters(cycles, colors);
-
-   // Generate the texture id
-   GLuint texid;
-   glGenTextures(1, &texid);
-   texture = texid;
+vector<float> Texture::GenerateAlphaTextureData()
+{
+   vector<float> texture_data(Texture::max_texture_size);
+   if (alpha >= 1.0)
+   {
+      // transparency off
+      std::fill(texture_data.begin(), texture_data.end(), 1.0f);
+   }
+   else
+   {
+      for (int i = 0; i < Texture::max_texture_size; i++)
+      {
+         double val = double(2*i + 1)/(2*Texture::max_texture_size); // midpoint of texel
+         texture_data[i] = alpha * std::exp(-std::abs(val - alpha_center));
+      }
+   }
+   return texture_data;
 }
 
 vector<array<float,4>> Texture::GenerateTextureData()
@@ -207,6 +262,13 @@ void Texture::UpdateTextureSize()
    }
 }
 
+void Texture::UpdateAlphaParameters(float matAlpha, float matAlphaCenter)
+{
+   alpha = std::max(0.0f, std::min(1.0f, matAlpha));
+   alpha_center = std::max(0.0f, std::min(1.0f, matAlphaCenter));
+   tsize = Texture::max_texture_size;
+}
+
 void Texture::UpdateParameters(int cycles, int colors)
 {
    SetCycles(cycles);
@@ -214,37 +276,43 @@ void Texture::UpdateParameters(int cycles, int colors)
    UpdateTextureSize();
 }
 
-void Texture::GenerateGLTexture(int cycles, int colors)
+void Texture::GenerateGLTexture()
 {
-   UpdateParameters(cycles, colors);
-
-   vector<array<float,4>> texture_data = GenerateTextureData();
-
-   glBindTexture(GL_TEXTURE_2D, texture);
-   if ( textype == TextureType::DISCRETE || textype == TextureType::SMOOTH )
+   // Get texture data and formats (different for alpha textures)
+   // Define the texture image
+   const void * texture_data;
+   if ( textype == TextureType::ALPHAMAP )
    {
+      texture_data = GenerateAlphaTextureData().data();
+      glActiveTexture(GL_TEXTURE1);
+      glBindTexture(GL_TEXTURE_2D, texture);
+      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+                      tsize, 1,
+                      Texture::alpha_channel, GL_FLOAT, texture_data);
+      glActiveTexture(GL_TEXTURE0);
+   }
+   else
+   {
+      texture_data = GenerateTextureData().data();
+      glBindTexture(GL_TEXTURE_2D, texture);
       glTexImage2D(GL_TEXTURE_2D, 0, Texture::rgba_internal,
                    tsize, 1, 0,
-                   GL_RGBA, GL_FLOAT, texture_data.data());
+                   Texture::rgba_channel, GL_FLOAT, texture_data);
    }
-   else if ( textype == TextureType::ALPHAMAP )
-   {
-      glTexImage2D(GL_TEXTURE_2D, 0, Texture::alpha_internal,
-                   Texture::max_texture_size, 1, 0,
-                   Texture::alpha_channel, GL_FLOAT, texture_data.data());
-   }
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-   // Discrete or alpha
-   if ( textype == TextureType::DISCRETE || textype == TextureType::ALPHAMAP )
+   // Discrete
+   if ( textype == TextureType::DISCRETE)
    {
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
    }
    // Smooth
    else if ( textype == TextureType::SMOOTH )
    {
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
    }

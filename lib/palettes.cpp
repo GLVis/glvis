@@ -58,7 +58,7 @@ PaletteState::PaletteState()
    : Palettes(&BasePalettes)
    , textures(Palettes->NumPalettes())
 {
-   // Init the palette textures (will creates new texture ids)
+   // Init the palette textures (will create new texture ids)
    InitTextures();
    // Generate the textures
    GenerateTextures();
@@ -79,35 +79,18 @@ void PaletteState::InitTextures()
                                RepeatPaletteTimes, PaletteNumColors);
    }
 
-   // Init the alpha texture (TODO: simplify this using Texture class)
-   // Generate the texture id
-   GLuint alphaTexId;
-   glGenTextures(1, &alphaTexId);
-   alpha_tex = alphaTexId;
-
-   // set alpha texture to 1.0
-   std::vector<float> alphaTexData(Texture::max_texture_size);
-   std::fill(alphaTexData.begin(), alphaTexData.end(), 1.0f);
-   glActiveTexture(GL_TEXTURE1);
-   glBindTexture(GL_TEXTURE_2D, alpha_tex);
-   glTexImage2D(GL_TEXTURE_2D, 0, Texture::alpha_internal,
-                Texture::max_texture_size, 1, 0,
-                Texture::alpha_channel, GL_FLOAT, alphaTexData.data());
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-   glActiveTexture(GL_TEXTURE0);
-
+   // Initialize the global alpha texture
+   alpha_tex = Texture(1.0, 0.5);
 }
 
 void PaletteState::GenerateTextures()
 {
    for (int i = 0; i < Palettes->NumPalettes(); i++)
    {
-      textures[i][0].GenerateGLTexture(RepeatPaletteTimes, PaletteNumColors);
-      textures[i][1].GenerateGLTexture(RepeatPaletteTimes, PaletteNumColors);
+      textures[i][0].UpdateParameters(RepeatPaletteTimes, PaletteNumColors);
+      textures[i][0].GenerateGLTexture();
+      textures[i][1].UpdateParameters(RepeatPaletteTimes, PaletteNumColors);
+      textures[i][1].GenerateGLTexture();
    }
 }
 
@@ -172,37 +155,8 @@ Palette* PaletteState::GetPalette(int pidx) const
 
 void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
 {
-   std::vector<float> alphaTexData(Texture::max_texture_size);
-   if (matAlpha >= 1.0)
-   {
-      // transparency off
-      std::fill(alphaTexData.begin(), alphaTexData.end(), 1.0f);
-   }
-   else
-   {
-      for (int i = 0; i < Texture::max_texture_size; i++)
-      {
-         double val = double(2*i + 1)/(2*Texture::max_texture_size); // midpoint of texel
-         if (matAlphaCenter > 1.0)
-         {
-            alphaTexData[i] = matAlpha * std::exp(-(matAlphaCenter)*std::abs(val - 1.0));
-         }
-         else if (matAlphaCenter < 0.0)
-         {
-            alphaTexData[i] = matAlpha * std::exp((matAlphaCenter - 1.0)*std::abs(val));
-         }
-         else
-         {
-            alphaTexData[i] = matAlpha * std::exp(-std::abs(val - matAlphaCenter));
-         }
-      }
-   }
-   glActiveTexture(GL_TEXTURE1);
-   glBindTexture(GL_TEXTURE_2D, alpha_tex);
-   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Texture::max_texture_size, 1,
-                   Texture::alpha_channel,
-                   GL_FLOAT, alphaTexData.data());
-   glActiveTexture(GL_TEXTURE0);
+   alpha_tex.UpdateAlphaParameters(matAlpha, matAlphaCenter);
+   alpha_tex.GenerateGLTexture();
 }
 
 void PaletteState::SetIndex(int num)

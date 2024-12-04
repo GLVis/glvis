@@ -53,7 +53,7 @@ public:
 
    GLuint GetColorTexture() const
    { return textures[curr_palette][use_smooth].Get(); }
-   GLuint GetAlphaTexture() const { return alpha_tex; }
+   GLuint GetAlphaTexture() const { return alpha_tex.Get(); }
    /// Generates new textures with the same ids, using current settings
    void GenerateTextures();
    void GenerateAlphaTexture(float matAlpha, float matAlphaCenter);
@@ -62,10 +62,11 @@ public:
 
 private:
    PaletteRegistry* Palettes;
-   using TexHandle = gl3::resource::TextureHandle;
 
+   // Regular (rgba) textures
    std::vector<std::array<Texture,2>> textures;
-   TexHandle alpha_tex;
+   // Global alpha texture - blended with other textures
+   Texture alpha_tex;
 
    int curr_palette = 2;
    int use_smooth = 0;
