@@ -58,15 +58,18 @@ PaletteState::PaletteState()
    : Palettes(&BasePalettes)
    , textures(Palettes->NumPalettes())
 {
-   // Init the palette textures (will create new texture ids)
+   // Initialize the palette textures (will create new texture ids)
    InitTextures();
-   // Generate the textures
-   GenerateTextures();
 }
 
 void PaletteState::InitTextures()
 {
+   // Resize (only needed if used outside of constructor)
    int N = Palettes->NumPalettes();
+   if (textures.size() != N)
+   {
+      textures.resize(N);
+   }
 
    // Initialize both discrete [0] and smooth [1] textures
    // Texture constructor will assign texture ids

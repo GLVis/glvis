@@ -200,7 +200,7 @@ vector<array<float,4>> Texture::GenerateTextureData()
       }
    }
    // Smooth texture (interpolates colors)
-   else if ( textype == TextureType::SMOOTH || textype == TextureType::ALPHAMAP )
+   else if ( textype == TextureType::SMOOTH )
    {
       // Generate the texture data
       for (int rpt = 0; rpt < nrepeat; rpt++)
