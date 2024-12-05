@@ -1359,7 +1359,7 @@ int main (int argc, char *argv[])
                   "Number of digits used for processor ranks in file names.");
    args.AddOption(&script_file, "-run", "--run-script",
                   "Run a GLVis script file.");
-   args.AddOption(&palette_file, "-p", "--palettes",
+   args.AddOption(&palette_file, "-pal", "--palettes",
                   "Palette file.");
    args.AddOption(&arg_keys, "-k", "--keys",
                   "Execute key shortcut commands in the GLVis window.");

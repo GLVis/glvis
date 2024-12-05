@@ -27,3 +27,4 @@ license files. These software products and their licenses are as follows:
 
 * GL2PS (linalg/gl2ps.{h,c}) -- Custom 1-clause license
 * Additional color palettes (share/palettes-crameri.txt) -- MIT license
+* Additional color palettes (share/palettes-cet.txt) -- CC BY 4.0 license

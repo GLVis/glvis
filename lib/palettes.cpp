@@ -66,7 +66,7 @@ void PaletteState::InitTextures()
 {
    // Resize (only needed if used outside of constructor)
    int N = Palettes->NumPalettes();
-   if (textures.size() != N)
+   if ((int)(textures.size()) != N)
    {
       textures.resize(N);
    }

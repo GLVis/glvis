@@ -12,15 +12,16 @@
 Version 4.3.3 (development)
 ===========================
 
-- Added a more flexible color palette system, enabling specification at both
-  compile and run time. Run time palettes are specified with a file and the
-  command line argument -p <palette_filename>.
+- Added more flexible representations for color palette and textures, enabling
+  specification at both compile and run time. Run time palettes are specified
+  with a file and the command line argument -pal <palette_filename>.
 
-- Added 28 new optional color-vision deficiency friendly and perceptually
-  uniform color palettes. See file share/palettes-crameri.txt.
+- Added 78 new optional color-vision deficiency friendly and perceptually
+  uniform color palettes. See the files share/palettes-crameri.txt and
+  share/palettes-cet.txt.
 
-- Palettes can now also be specified with explicit alpha channels. See file
-  share/palettes-variable-opacity.txt.
+- Palettes can now also be specified with explicit alpha channels. See the
+  example file share/palettes-variable-opacity.txt.
 
 - Fixed a bug where discrete textures would not repeat.
 
