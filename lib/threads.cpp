@@ -708,7 +708,7 @@ int GLVisCommand::Execute()
       {
          cout << "Command: palette_repeat: " << palette_repeat << endl;
          (*vs)->palette.SetRepeatTimes(palette_repeat);
-         (*vs)->palette.Init();
+         (*vs)->palette.GenerateTextures();
 
          if (!GetUseTexture())
          {

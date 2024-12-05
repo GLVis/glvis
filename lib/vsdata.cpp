@@ -799,7 +799,7 @@ void KeyF6Pressed()
    if (colors_used == 1) { colors_used = 0; }
    vsdata->palette.SetNumColors(colors_used);
 
-   vsdata->palette.Init();
+   vsdata->palette.GenerateTextures();
    vsdata->palette.SetIndex(pal);
 
    colors_used = vsdata->palette.GetNumColors();
@@ -1179,7 +1179,7 @@ gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
    params.num_pt_lights = 0;
    params.static_color = this->GetLineColor();
    params.use_clip_plane = false;
-   params.contains_translucent = false;
+   params.contains_translucent = true;
 
    if (colorbar)
    {
