@@ -60,6 +60,8 @@ PaletteState::PaletteState()
 {
    // Initialize the palette textures (will create new texture ids)
    InitTextures();
+   // Generate the textures
+   GenerateTextures();
 }
 
 void PaletteState::InitTextures()
