@@ -61,7 +61,7 @@ PaletteState::PaletteState()
    // Initialize the palette textures (will create new texture ids)
    InitTextures();
    // Generate the textures
-   GenerateTextures();
+   // GenerateTextures();
 }
 
 void PaletteState::InitTextures()
@@ -90,6 +90,12 @@ void PaletteState::InitTextures()
 
 void PaletteState::GenerateTextures()
 {
+   if (textures.size() != Palettes->NumPalettes())
+   {
+      cout << "Reinitializing textures." << endl;
+      InitTextures();
+   }
+
    for (int i = 0; i < Palettes->NumPalettes(); i++)
    {
       textures[i][0].UpdateParameters(RepeatPaletteTimes, PaletteNumColors);

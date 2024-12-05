@@ -280,24 +280,23 @@ void Texture::GenerateGLTexture()
 {
    // Get texture data and formats (different for alpha textures)
    // Define the texture image
-   const void * texture_data;
    if ( textype == TextureType::ALPHAMAP )
    {
-      texture_data = GenerateAlphaTextureData().data();
+      vector<float> texture_data = GenerateAlphaTextureData();
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D, texture);
       glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
                       tsize, 1,
-                      Texture::alpha_channel, GL_FLOAT, texture_data);
+                      Texture::alpha_channel, GL_FLOAT, texture_data.data());
       glActiveTexture(GL_TEXTURE0);
    }
    else
    {
-      texture_data = GenerateTextureData().data();
+      vector<array<float,4>> texture_data = GenerateTextureData();
       glBindTexture(GL_TEXTURE_2D, texture);
       glTexImage2D(GL_TEXTURE_2D, 0, Texture::rgba_internal,
                    tsize, 1, 0,
-                   Texture::rgba_channel, GL_FLOAT, texture_data);
+                   Texture::rgba_channel, GL_FLOAT, texture_data.data());
    }
 
    // Discrete
