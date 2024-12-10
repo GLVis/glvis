@@ -443,18 +443,16 @@ void PaletteRegistry::Load(const string& palette_filename)
       {
          pfile >> palname >> channeltype;
          idx = GetIndexByName(palname);
-         if (idx == -1)
+         if (idx != -1)
          {
-            AddPalette(palname);
-            idx = GetIndexByName(palname);
-            cout << "Reading palette: (" << idx+1 << ") " << palname << endl;
+            cout << "Warning: palette name <" << palname
+                 << "> already exists. Overriding..." << endl;
+            palettes.erase(palettes.begin() + idx);
          }
-         else
-         {
-            cout << "Error reading palette: " << palname
-                 << ". Palette with same name already exists." << endl;
-            break;
-         }
+         // Add new palette
+         AddPalette(palname);
+         idx = GetIndexByName(palname);
+         cout << "Reading palette: (" << idx+1 << ") " << palname << endl;
       }
       else if (channeltype == "RGBf" && idx != -1)
       {

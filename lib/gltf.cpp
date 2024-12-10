@@ -567,7 +567,7 @@ int glTF_Builder::writeFile()
    gltf << " ],\n\n";
 
    // https://www.khronos.org/registry/glTF/specs/2.0/glTF-2.0.html#reference-sampler
-   // see also: Texture::GenerateGLTexture()
+   // see also: Texture::Generate()
    gltf << "  \"samplers\" : [";
    for (size_t i = 0; i != samplers.size(); ++i)
    {
