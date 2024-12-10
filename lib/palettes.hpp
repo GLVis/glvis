@@ -55,12 +55,13 @@ public:
    { return textures[curr_palette][use_smooth].Get(); }
    GLuint GetAlphaTexture() const { return alpha_tex.Get(); }
    /// Generates new textures with the same ids, using current settings
-   void GenerateTextures();
+   void GenerateTextures(bool reinitialize = false);
    void GenerateAlphaTexture(float matAlpha, float matAlphaCenter);
 
    int NumPalettes();
 
 private:
+   bool initialized;
    PaletteRegistry* Palettes;
 
    // Regular (rgba) textures

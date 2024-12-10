@@ -55,21 +55,17 @@ int PaletteState::ChoosePalette()
 }
 
 PaletteState::PaletteState()
-   : Palettes(&BasePalettes)
+   : initialized(false)
+   , Palettes(&BasePalettes)
    , textures(Palettes->NumPalettes())
 {
-   // Initialize the palette textures (will create new texture ids)
-   InitTextures();
 }
 
 void PaletteState::InitTextures()
 {
-   // Resize (only needed if used outside of constructor)
+   cout << "Initializing textures." << endl;
    int N = Palettes->NumPalettes();
-   if ((int)(textures.size()) != N)
-   {
-      textures.resize(N);
-   }
+   textures.resize(N);
 
    // Initialize both discrete [0] and smooth [1] textures
    // Texture constructor will assign texture ids
@@ -84,22 +80,24 @@ void PaletteState::InitTextures()
 
    // Initialize the global alpha texture
    alpha_tex = Texture(1.0, 0.5);
+
+   // Set flag
+   initialized = true;
 }
 
-void PaletteState::GenerateTextures()
+void PaletteState::GenerateTextures(bool reinitialize)
 {
-   if ((int)(textures.size()) != Palettes->NumPalettes())
+   if (!initialized || reinitialize)
    {
-      cout << "Reinitializing textures." << endl;
       InitTextures();
    }
 
    for (int i = 0; i < Palettes->NumPalettes(); i++)
    {
       textures[i][0].UpdateParameters(RepeatPaletteTimes, PaletteNumColors);
-      textures[i][0].GenerateGLTexture();
+      textures[i][0].Generate();
       textures[i][1].UpdateParameters(RepeatPaletteTimes, PaletteNumColors);
-      textures[i][1].GenerateGLTexture();
+      textures[i][1].Generate();
    }
 }
 
@@ -134,7 +132,6 @@ void PaletteState::GetColorFromVal(double val, float * rgba)
    float t = float(val) - i;
    int idx = 0;
 
-   // const float* pal;
    if (((i / (palSize-1)) % 2 == 0 && RepeatPaletteTimes > 0) ||
        ((i / (palSize-1)) % 2 == 1 && RepeatPaletteTimes < 0))
    {
@@ -165,7 +162,7 @@ Palette* PaletteState::GetPalette(int pidx) const
 void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
 {
    alpha_tex.UpdateAlphaParameters(matAlpha, matAlphaCenter);
-   alpha_tex.GenerateGLTexture();
+   alpha_tex.Generate();
 }
 
 void PaletteState::SetIndex(int num)

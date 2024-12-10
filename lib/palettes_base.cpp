@@ -170,7 +170,7 @@ vector<float> Texture::GenerateAlphaTextureData()
    {
       for (int i = 0; i < Texture::max_texture_size; i++)
       {
-         double val = double(2*i + 1)/(2*Texture::max_texture_size); // midpoint of texel
+         float val = float(2*i + 1)/(2*Texture::max_texture_size); // midpoint of texel
          texture_data[i] = alpha * std::exp(-std::abs(val - alpha_center));
       }
    }
@@ -276,7 +276,7 @@ void Texture::UpdateParameters(int cycles, int colors)
    UpdateTextureSize();
 }
 
-void Texture::GenerateGLTexture()
+void Texture::Generate()
 {
    // Get texture data and formats (different for alpha textures)
    // Define the texture image

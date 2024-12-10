@@ -103,9 +103,6 @@ public:
    /// Constructor for alphamap
    Texture(float matAlpha, float matAlphaCenter);
 
-   /// Initialize Static GL parameters
-   void InitStaticGL();
-
    /// Get texture size.
    int Size() { return tsize; }
 
@@ -113,7 +110,7 @@ public:
    GLuint Get() const { return texture; }
 
    /// Generate the GL texture and binds it to `texture`
-   void GenerateGLTexture();
+   void Generate();
 
    /// Update alpha/regular texture parameters
    void UpdateAlphaParameters(float matAlpha, float matAlphaCenter);
@@ -145,6 +142,9 @@ private:
    /// Only used for alphamap
    float alpha;
    float alpha_center;
+
+   /// Initialize Static GL parameters
+   static void InitStaticGL();
 
    /// Generate alpha/regular texture data
    vector<float> GenerateAlphaTextureData();
