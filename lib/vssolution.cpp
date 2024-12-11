@@ -2505,7 +2505,8 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    params.use_clip_plane = draw_cp;
    double* cp_eqn = CuttingPlane->Equation();
    params.clip_plane_eqn = {cp_eqn[0], cp_eqn[1], cp_eqn[2], cp_eqn[3]};
-   params.contains_translucent = matAlpha < 1.0;
+   params.contains_translucent = matAlpha < 1.0 ||
+                                 palette.GetPalette()->IsTranslucent();
    if (drawelems)
    {
       // draw elements
@@ -2521,7 +2522,8 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &order_buf);
    }
-   params.contains_translucent = matAlpha < 1.0;
+   params.contains_translucent = matAlpha < 1.0 ||
+                                 palette.GetPalette()->IsTranslucent();
    params.mesh_material = VisualizationScene::BLK_MAT;
    // everything below will be drawn in "black"
    params.static_color = GetLineColor();

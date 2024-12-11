@@ -821,7 +821,7 @@ void ExecuteScriptCommand()
          scr >> rpt_times;
          cout << "Script: palette_repeat: " << rpt_times << endl;
          vs->palette.SetRepeatTimes(rpt_times);
-         vs->palette.Init();
+         vs->palette.GenerateTextures();
          MyExpose();
       }
       else if (word == "toggle_attributes")
@@ -1325,6 +1325,7 @@ int main (int argc, char *argv[])
    bool        save_stream   = false;
    const char *stream_file   = string_none;
    const char *script_file   = string_none;
+   const char *palette_file  = string_none;
    const char *font_name     = string_default;
    int         portnum       = 19916;
    int         multisample   = GetMultisample();
@@ -1358,6 +1359,8 @@ int main (int argc, char *argv[])
                   "Number of digits used for processor ranks in file names.");
    args.AddOption(&script_file, "-run", "--run-script",
                   "Run a GLVis script file.");
+   args.AddOption(&palette_file, "-pal", "--palettes",
+                  "Palette file.");
    args.AddOption(&arg_keys, "-k", "--keys",
                   "Execute key shortcut commands in the GLVis window.");
    args.AddOption(&stream_state.fix_elem_orient, "-fo", "--fix-orientations",
@@ -1486,6 +1489,12 @@ int main (int argc, char *argv[])
       SetLegacyGLOnly(legacy_gl_ctx);
    }
    SetUseHiDPI(enable_hidpi);
+
+   // Load in palette file, if specified
+   if (palette_file != string_none)
+   {
+      BasePalettes.Load(palette_file);
+   }
 
    GLVisGeometryRefiner.SetType(geom_ref_type);
 
