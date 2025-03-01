@@ -91,6 +91,12 @@ void StreamState::SetQuadFunction(std::unique_ptr<mfem::QuadratureFunction>
    internal.quad_f = std::move(pqf);
 }
 
+void StreamState::ExtrudeMeshAndSolution()
+{
+   Extrude1DMeshAndSolution();
+   Extrude2D3VMeshAndSolution();
+}
+
 void StreamState::Extrude1DMeshAndSolution()
 {
    if (mesh->Dimension() != 1 || mesh->SpaceDimension() != 1)
@@ -135,6 +141,36 @@ void StreamState::Extrude1DMeshAndSolution()
 
    if (!mesh_quad) { internal.mesh.swap(internal.mesh_quad); }
    internal.mesh.reset(mesh2d);
+}
+
+void StreamState::Extrude2D3VMeshAndSolution()
+{
+   if (mesh->SpaceDimension() == 3 || !grid_f || grid_f->VectorDim() < 3) { return; }
+
+   Mesh *mesh3d = new Mesh(*mesh);
+   const FiniteElementSpace *fesx = mesh->GetNodalFESpace();
+   const FiniteElementCollection *fecx = (fesx)?(fesx->FEColl()):(NULL);
+   if (fecx)
+   {
+      mesh3d->SetCurvature(fecx->GetOrder(),
+                           fecx->GetContType() == FiniteElementCollection::DISCONTINUOUS,
+                           3);
+   }
+   else
+   {
+      mesh3d->SetCurvature(1, false, 3);
+   }
+
+   FiniteElementSpace *fes2d = grid_f->FESpace();
+   FiniteElementSpace *fes3d = new FiniteElementSpace(*fes2d, mesh3d);
+   GridFunction *gf3d = new GridFunction(fes3d);
+   *gf3d = *grid_f;
+   grid_f->MakeOwner(NULL);
+   gf3d->MakeOwner(const_cast<FiniteElementCollection*>(fes2d->FEColl()));
+
+   SetGridFunction(gf3d);
+   delete fes2d;
+   SetMesh(mesh3d);
 }
 
 void StreamState::CollectQuadratures(QuadratureFunction *qf_array[],
@@ -334,7 +370,7 @@ void StreamState::SwitchQuadSolution(QuadSolution type, VisualizationScene *vs)
       internal.mesh_quad.swap(old_mesh);
    }
    SetQuadSolution(type);
-   Extrude1DMeshAndSolution();
+   ExtrudeMeshAndSolution();
    ResetMeshAndSolution(*this, vs);
 }
 
@@ -558,7 +594,7 @@ StreamState::FieldType StreamState::ReadStream(istream &is,
 
    if (field_type > FieldType::MIN && field_type < FieldType::MAX)
    {
-      Extrude1DMeshAndSolution();
+      ExtrudeMeshAndSolution();
    }
 
    return field_type;
@@ -648,7 +684,7 @@ StreamState::FieldType StreamState::ReadStreams(const StreamCollection&
       delete gf_array[nproc-1-p];
    }
 
-   Extrude1DMeshAndSolution();
+   ExtrudeMeshAndSolution();
 
    return field_type;
 }

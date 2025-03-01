@@ -472,7 +472,7 @@ int GLVisCommand::Execute()
                {
                   new_state.SetQuadSolution();
                }
-               new_state.Extrude1DMeshAndSolution();
+               new_state.ExtrudeMeshAndSolution();
             }
          }
          if (curr_state.SetNewMeshAndSolution(std::move(new_state), *vs))
@@ -956,7 +956,7 @@ void communication_thread::execute()
 
          // cout << "Stream: new solution" << endl;
 
-         tmp.Extrude1DMeshAndSolution();
+         tmp.ExtrudeMeshAndSolution();
 
          if (glvis_command->NewMeshAndSolution(std::move(tmp)))
          {
