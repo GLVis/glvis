@@ -147,6 +147,10 @@ void StreamState::Extrude2D3VMeshAndSolution()
 {
    if (mesh->SpaceDimension() == 3 || !grid_f || grid_f->VectorDim() < 3) { return; }
 
+   // not all vector elements can be embedded in 3D, so conversion to L2 elements
+   // is performed already here
+   ProjectVectorFEGridFunction();
+
    Mesh *mesh3d = new Mesh(*mesh);
    const FiniteElementSpace *fesx = mesh->GetNodalFESpace();
    const FiniteElementCollection *fecx = (fesx)?(fesx->FEColl()):(NULL);
