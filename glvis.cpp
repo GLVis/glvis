@@ -223,7 +223,8 @@ bool GLVisInitVis(StreamState::FieldType field_type,
    }
    else if (field_type == StreamState::FieldType::VECTOR)
    {
-      if (stream_state.mesh->SpaceDimension() == 2)
+      if (stream_state.mesh->SpaceDimension() == 2 && (!stream_state.grid_f ||
+                                                       stream_state.grid_f->VectorDim() == 2))
       {
          if (stream_state.grid_f)
          {
@@ -235,11 +236,38 @@ bool GLVisInitVis(StreamState::FieldType field_type,
                                               stream_state.solv, stream_state.mesh_quad.get());
          }
       }
-      else if (stream_state.mesh->SpaceDimension() == 3)
+      else if (stream_state.mesh->SpaceDimension() == 3 || (stream_state.grid_f &&
+                                                            stream_state.grid_f->VectorDim() == 3))
       {
          if (stream_state.grid_f)
          {
             stream_state.ProjectVectorFEGridFunction();
+            // Extrude 2D3V grid functions to 3D
+            if (stream_state.mesh->SpaceDimension() < 3)
+            {
+               Mesh *mesh3d = new Mesh(*stream_state.mesh);
+               const FiniteElementSpace *fesx = stream_state.mesh->GetNodalFESpace();
+               const FiniteElementCollection *fecx = (fesx)?(fesx->FEColl()):(NULL);
+               if (fecx)
+               {
+                  mesh3d->SetCurvature(fecx->GetOrder(),
+                                       fecx->GetContType() == FiniteElementCollection::DISCONTINUOUS,
+                                       3);
+               }
+               else
+               {
+                  mesh3d->SetCurvature(1, false, 3);
+               }
+               FiniteElementSpace *fes2d = stream_state.grid_f->FESpace();
+               FiniteElementSpace *fes3d = new FiniteElementSpace(*fes2d, mesh3d);
+               GridFunction *gf3d = new GridFunction(fes3d);
+               *gf3d = *stream_state.grid_f;
+               stream_state.grid_f->MakeOwner(NULL);
+               gf3d->MakeOwner(const_cast<FiniteElementCollection*>(fes2d->FEColl()));
+               stream_state.SetGridFunction(gf3d);
+               delete fes2d;
+               stream_state.SetMesh(mesh3d);
+            }
             vs = new VisualizationSceneVector3d(*stream_state.grid_f,
                                                 stream_state.mesh_quad.get());
          }
