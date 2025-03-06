@@ -1333,7 +1333,8 @@ void VisualizationSceneVector3d::DrawVector(gl3::GlDrawable& buf,
                                             double sz, double s)
 {
    static int nv = mesh -> GetNV();
-   static double volume = (bb.x[1]-bb.x[0])*(bb.y[1]-bb.y[0])*(bb.z[1]-bb.z[0]);
+   static double volume = (bb.x[1]-bb.x[0])  *(bb.y[1]-bb.y[0])
+                          * ((bb.z[1] > bb.z[0])?(bb.z[1]-bb.z[0]):(1.));
    static double h      = pow(volume/nv, 0.333);
    static double hh     = pow(volume, 0.333) / 10;
 
