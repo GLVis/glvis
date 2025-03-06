@@ -22,7 +22,7 @@ protected:
 
    Vector *solx, *soly, *solz;
    int drawvector, scal_func;
-   double volume;
+   double mesh_volume;
    gl3::GlDrawable vector_buf;
    gl3::GlDrawable displine_buf;
 
