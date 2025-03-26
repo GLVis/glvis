@@ -327,7 +327,7 @@ int ScriptReadSolution(istream &scr, StreamState& state)
       state.SetGridFunction(new GridFunction(state.mesh.get(), isol));
    }
 
-   state.Extrude1DMeshAndSolution();
+   state.ExtrudeMeshAndSolution();
 
    return 0;
 }
@@ -368,7 +368,7 @@ int ScriptReadQuadrature(istream &scr, StreamState& state)
    }
 
    state.SetQuadSolution();
-   state.Extrude1DMeshAndSolution();
+   state.ExtrudeMeshAndSolution();
 
    return 0;
 }
@@ -402,7 +402,7 @@ int ScriptReadParSolution(istream &scr, StreamState& state)
                                          sol_prefix.c_str(), state);
    if (!err_read)
    {
-      state.Extrude1DMeshAndSolution();
+      state.ExtrudeMeshAndSolution();
    }
    return err_read;
 }
@@ -437,7 +437,7 @@ int ScriptReadParQuadrature(istream &scr, StreamState& state)
    if (!err_read)
    {
       state.SetQuadSolution();
-      state.Extrude1DMeshAndSolution();
+      state.ExtrudeMeshAndSolution();
    }
    return err_read;
 }
@@ -459,7 +459,7 @@ int ScriptReadDisplMesh(istream &scr, StreamState& state)
       cout << word << endl;
       meshstate.SetMesh(new Mesh(imesh, 1, 0, state.fix_elem_orient));
    }
-   meshstate.Extrude1DMeshAndSolution();
+   meshstate.ExtrudeMeshAndSolution();
    Mesh* const m = meshstate.mesh.get();
    if (init_nodes == NULL)
    {
@@ -1710,7 +1710,7 @@ void ReadSerial(StreamState& state)
       state.SetMeshSolution();
    }
 
-   state.Extrude1DMeshAndSolution();
+   state.ExtrudeMeshAndSolution();
 }
 
 
@@ -1815,7 +1815,7 @@ void ReadParallel(int np, StreamState& state)
       exit(1);
    }
 
-   state.Extrude1DMeshAndSolution();
+   state.ExtrudeMeshAndSolution();
 }
 
 int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
