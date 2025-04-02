@@ -139,19 +139,19 @@ void StreamState::Extrude1DMeshAndSolution()
 
    if (grid_f)
    {
-      GridFunction *grid_f_2d = NULL;
-
       if (grid_f->VectorDim() > 1)
       {
          ProjectVectorFEGridFunction();
       }
 
-      grid_f_2d = Extrude1DGridFunction(mesh.get(), mesh2d, grid_f.get(), 1);
+      GridFunction *grid_f_2d = Extrude1DGridFunction(mesh.get(), mesh2d,
+                                                      grid_f.get(), 1);
 
       if (grid_f_2d->VectorDim() < grid_f->VectorDim())
       {
          // workaround for older MFEM where Extrude1DGridFunction()
          // does not work for vector grid functions
+         delete grid_f_2d;
          FiniteElementCollection *fec2d = new L2_FECollection(
             grid_f->FESpace()->FEColl()->GetOrder(), 2);
          FiniteElementSpace *fes2d = new FiniteElementSpace(mesh2d, fec2d,
