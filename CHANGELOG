@@ -26,8 +26,10 @@ Version 4.3.3 (development)
 - Fixed a bug where discrete textures would not repeat.
 
 - Added support for 2D data (mesh and grid function) using scalar finite
-  elements with 3 vector dimensions or vector finite elements with 3 range
-  dimensions (requires MFEM v4.8).
+  elements with 3 vector dimensions
+
+- Added support for 1D/2D vector finite elements with 3 range dimensions
+  (requires MFEM v4.8).
 
 
 Version 4.3.2 released on Sep 27, 2024
