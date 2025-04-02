@@ -144,7 +144,12 @@ void StreamState::Extrude1DMeshAndSolution()
       if (grid_f->VectorDim() > 1)
       {
          ProjectVectorFEGridFunction();
+      }
 
+      grid_f_2d = Extrude1DGridFunction(mesh.get(), mesh2d, grid_f.get(), 1);
+
+      if (grid_f_2d->VectorDim() < grid_f->VectorDim())
+      {
          // workaround for older MFEM where Extrude1DGridFunction()
          // does not work for vector grid functions
          FiniteElementCollection *fec2d = new L2_FECollection(
@@ -157,11 +162,7 @@ void StreamState::Extrude1DMeshAndSolution()
          ::VectorExtrudeCoefficient vc2d(mesh.get(), vcsol, 1);
          grid_f_2d->ProjectCoefficient(vc2d);
       }
-      else
-      {
-         grid_f_2d =
-            Extrude1DGridFunction(mesh.get(), mesh2d, grid_f.get(), 1);
-      }
+
       internal.grid_f.reset(grid_f_2d);
    }
    else if (sol.Size() == mesh->GetNV())
