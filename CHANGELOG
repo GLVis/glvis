@@ -9,8 +9,9 @@
                              https://glvis.org
 
 
-Version 4.3.3 (development)
-===========================
+
+Version 4.4 released on May XX, 2025
+====================================
 
 - Added more flexible representations for color palette and textures, enabling
   specification at both compile and run time. Run time palettes are specified
