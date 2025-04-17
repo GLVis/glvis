@@ -1718,7 +1718,7 @@ void SetGridFunction(StreamState& state)
 {
    if (gf_component != -1)
    {
-      if (gf_component < 0 || gf_component >= state.grid_f->VectorDim())
+      if (gf_component < 0 || gf_component >= state.grid_f->FESpace()->GetVDim())
       {
          cerr << "Invalid component " << gf_component << '.' << endl;
          exit(1);
