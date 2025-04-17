@@ -1027,9 +1027,15 @@ struct Session
       , reader(state)
    { }
 
+   Session(Session &&s)
+      : input_streams(std::move(s.input_streams))
+      , state(std::move(s.state))
+      , reader(state) //no move constructor
+      , handler(std::move(s.handler))
+   { }
+
    ~Session() = default;
 
-   Session(Session&& from) = default;
    Session& operator= (Session&& from) = default;
 
    void StartSession()
