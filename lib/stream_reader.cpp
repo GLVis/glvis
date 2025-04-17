@@ -89,6 +89,28 @@ void StreamState::SetQuadFunction(std::unique_ptr<mfem::QuadratureFunction>
    internal.quad_f = std::move(pqf);
 }
 
+void StreamState::SetQuadFunction(
+   const std::vector<QuadratureFunction*> &qf_array)
+{
+   // assume the same vdim
+   const int vdim = qf_array[0]->GetVDim();
+   // assume the same quadrature rule
+   QuadratureSpace *qspace = new QuadratureSpace(*mesh,
+                                                 qf_array[0]->GetIntRule(0));
+   SetQuadFunction(new QuadratureFunction(qspace, vdim));
+   quad_f->SetOwnsSpace(true);
+   real_t *g_data = quad_f->GetData();
+   for (const QuadratureFunction *qf_piece : qf_array)
+   {
+      const real_t *l_data = qf_piece->GetData();
+      const int l_size = qf_piece->Size();
+      MFEM_ASSERT(g_data + l_size <= quad_f->GetData() + quad_f->Size(),
+                  "Local parts do not fit to the global quadrature function!");
+      memcpy(g_data, l_data, l_size * sizeof(real_t));
+      g_data += l_size;
+   }
+}
+
 void StreamState::ExtrudeMeshAndSolution()
 {
    Extrude1DMeshAndSolution();
@@ -173,28 +195,6 @@ void StreamState::Extrude2D3VMeshAndSolution()
    SetGridFunction(gf3d);
    delete fes2d;
    SetMesh(mesh3d);
-}
-
-void StreamState::CollectQuadratures(QuadratureFunction *qf_array[],
-                                     int npieces)
-{
-   // assume the same vdim
-   const int vdim = qf_array[0]->GetVDim();
-   // assume the same quadrature rule
-   QuadratureSpace *qspace = new QuadratureSpace(*mesh,
-                                                 qf_array[0]->GetIntRule(0));
-   SetQuadFunction(new QuadratureFunction(qspace, vdim));
-   quad_f->SetOwnsSpace(true);
-   real_t *g_data = quad_f->GetData();
-   for (int p = 0; p < npieces; p++)
-   {
-      const real_t *l_data = qf_array[p]->GetData();
-      const int l_size = qf_array[p]->Size();
-      MFEM_ASSERT(g_data + l_size <= quad_f->GetData() + quad_f->Size(),
-                  "Local parts do not fit to the global quadrature function!");
-      memcpy(g_data, l_data, l_size * sizeof(real_t));
-      g_data += l_size;
-   }
 }
 
 void StreamState::SetMeshSolution()
@@ -605,9 +605,9 @@ StreamState::FieldType StreamState::ReadStreams(const StreamCollection&
                                                 input_streams)
 {
    const int nproc = input_streams.size();
-   Array<Mesh *> mesh_array(nproc);
-   Array<GridFunction *> gf_array(nproc);
-   Array<QuadratureFunction *> qf_array(nproc);
+   std::vector<Mesh*> mesh_array(nproc);
+   std::vector<GridFunction*> gf_array(nproc);
+   std::vector<QuadratureFunction*> qf_array(nproc);
 
    std::string data_type;
 
@@ -661,15 +661,15 @@ StreamState::FieldType StreamState::ReadStreams(const StreamCollection&
       mfem_error("Input streams contain a mixture of data types!");
    }
 
-   SetMesh(new Mesh(mesh_array, nproc));
+   SetMesh(new Mesh(mesh_array.data(), nproc));
    if (gf_count > 0)
    {
-      SetGridFunction(new GridFunction(mesh.get(), gf_array, nproc));
+      SetGridFunction(new GridFunction(mesh.get(), gf_array.data(), nproc));
       field_type = (grid_f->VectorDim() == 1) ? FieldType::SCALAR : FieldType::VECTOR;
    }
    else if (qf_count > 0)
    {
-      CollectQuadratures(qf_array, nproc);
+      SetQuadFunction(qf_array);
       SetQuadSolution();
       field_type = (quad_f->GetVDim() == 1) ? FieldType::SCALAR : FieldType::VECTOR;
    }

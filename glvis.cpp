@@ -1923,10 +1923,8 @@ int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,
       state.SetGridFunction(NULL);
    }
 
-   Array<Mesh *> mesh_array(np);
-   Array<QuadratureFunction *> qf_array(np);
-   mesh_array = NULL;
-   qf_array = NULL;
+   std::vector<Mesh*> mesh_array(np);
+   std::vector<QuadratureFunction*> qf_array(np);
 
    int read_err = 0;
    for (int p = 0; p < np; p++)
@@ -1984,10 +1982,10 @@ int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,
    if (!read_err)
    {
       // create the combined mesh and gf
-      state.SetMesh(new Mesh(mesh_array, np));
+      state.SetMesh(new Mesh(mesh_array.data(), np));
       if (sol_prefix)
       {
-         state.CollectQuadratures(qf_array, np);
+         state.SetQuadFunction(qf_array);
       }
    }
 

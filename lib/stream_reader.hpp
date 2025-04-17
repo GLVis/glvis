@@ -79,6 +79,7 @@ public:
 
    void SetQuadFunction(mfem::QuadratureFunction *qf);
    void SetQuadFunction(std::unique_ptr<mfem::QuadratureFunction> &&pqf);
+   void SetQuadFunction(const std::vector<mfem::QuadratureFunction*> &qf_array);
 
    /// Helper function for visualizing 1D or 2D3V data
    void ExtrudeMeshAndSolution();
@@ -88,9 +89,6 @@ public:
 
    /// Helper function for visualization of 2D3V data
    void Extrude2D3VMeshAndSolution();
-
-   /// Helper function to build the quadrature function from pieces
-   void CollectQuadratures(mfem::QuadratureFunction *qf_array[], int npieces);
 
    /// Set a (checkerboard) solution when only the mesh is given
    void SetMeshSolution();

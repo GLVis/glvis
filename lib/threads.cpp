@@ -11,6 +11,7 @@
 
 #include "visual.hpp"
 #include "palettes.hpp"
+#include <vector>
 
 using namespace std;
 
@@ -875,9 +876,9 @@ void communication_thread::execute()
          }
          else if (ident == "parallel")
          {
-            Array<Mesh *> mesh_array;
-            Array<GridFunction *> gf_array;
-            Array<QuadratureFunction *> qf_array;
+            std::vector<Mesh*> mesh_array;
+            std::vector<GridFunction*> gf_array;
+            std::vector<QuadratureFunction*> qf_array;
             int proc, nproc, np = 0;
             bool keep_attr = glvis_command->KeepAttrib();
             do
@@ -889,7 +890,7 @@ void communication_thread::execute()
                     << proc << endl;
 #endif
                isock >> ident >> ws;
-               mesh_array.SetSize(nproc);
+               mesh_array.resize(nproc);
                mesh_array[proc] = new Mesh(isock, 1, 0, fix_elem_orient);
                if (!keep_attr)
                {
@@ -905,12 +906,12 @@ void communication_thread::execute()
                }
                if (ident == "solution")
                {
-                  gf_array.SetSize(nproc);
+                  gf_array.resize(nproc);
                   gf_array[proc] = new GridFunction(mesh_array[proc], isock);
                }
                else if (ident == "quadrature")
                {
-                  qf_array.SetSize(nproc);
+                  qf_array.resize(nproc);
                   qf_array[proc] = new QuadratureFunction(mesh_array[proc], isock);
                }
                else
@@ -926,31 +927,31 @@ void communication_thread::execute()
             }
             while (1);
 
-            tmp.SetMesh(new Mesh(mesh_array, nproc));
-            if (gf_array.Size() > 0)
+            tmp.SetMesh(new Mesh(mesh_array.data(), nproc));
+            if (gf_array.size() > 0)
             {
-               tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), gf_array, nproc));
+               tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), gf_array.data(), nproc));
             }
-            else if (qf_array.Size() > 0)
+            else if (qf_array.size() > 0)
             {
-               tmp.CollectQuadratures(qf_array, nproc);
+               tmp.SetQuadFunction(qf_array);
             }
 
             for (int p = 0; p < nproc; p++)
             {
-               if (gf_array.Size() > 0)
+               if (gf_array.size() > 0)
                {
                   delete gf_array[nproc-1-p];
                }
-               if (qf_array.Size() > 0)
+               if (qf_array.size() > 0)
                {
                   delete qf_array[nproc-1-p];
                }
                delete mesh_array[nproc-1-p];
             }
-            gf_array.DeleteAll();
-            qf_array.DeleteAll();
-            mesh_array.DeleteAll();
+            gf_array.clear();
+            qf_array.clear();
+            mesh_array.clear();
          }
 
          // cout << "Stream: new solution" << endl;
