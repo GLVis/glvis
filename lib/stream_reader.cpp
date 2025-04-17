@@ -32,8 +32,6 @@ StreamState &StreamState::operator=(StreamState &&ss)
    normals = std::move(ss.normals);
    keys = std::move(ss.keys);
 
-   is_gf = ss.is_gf;
-   is_qf = ss.is_qf;
    fix_elem_orient = ss.fix_elem_orient;
    save_coloring = ss.save_coloring;
    keep_attr = ss.keep_attr;
@@ -234,7 +232,6 @@ void StreamState::SetMeshSolution()
          cout << "Number of colors: " << grid_f->Max() + 1 << endl;
       }
       grid_f->GetNodalValues(sol);
-      is_gf = 1;
       if (save_coloring)
       {
          const char col_fname[] = "GLVis_coloring.gf";

@@ -39,8 +39,6 @@ public:
    const std::unique_ptr<mfem::Mesh> &mesh_quad{internal.mesh_quad};
    const std::unique_ptr<mfem::GridFunction> &grid_f{internal.grid_f};
    const std::unique_ptr<mfem::QuadratureFunction> &quad_f{internal.quad_f};
-   int is_gf{0};
-   int is_qf{0};
    bool fix_elem_orient{false};
    bool save_coloring{false};
    bool keep_attr{false};

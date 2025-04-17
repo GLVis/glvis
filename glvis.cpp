@@ -69,6 +69,8 @@ enum InputOptions
    INPUT_MESH = 2,
    INPUT_SCALAR_SOL = 4,
    INPUT_VECTOR_SOL = 8,
+   INPUT_GRID_FUNC = 16,
+   INPUT_QUAD_FUNC = 32,
    //...
    INPUT_PARALLEL = 256,
 };
@@ -1449,12 +1451,12 @@ int main (int argc, char *argv[])
    if (gfunc_file != string_none)
    {
       sol_file = gfunc_file;
-      stream_state.is_gf = 255;
+      input |= INPUT_GRID_FUNC;
    }
    if (qfunc_file != string_none)
    {
       sol_file = qfunc_file;
-      stream_state.is_qf = 255;
+      input |= INPUT_QUAD_FUNC;
    }
    if (np > 0)
    {
@@ -1543,12 +1545,10 @@ int main (int argc, char *argv[])
          || input == (INPUT_MESH | INPUT_SCALAR_SOL)
          || input == (INPUT_MESH | INPUT_VECTOR_SOL)
          || input == (INPUT_MESH | INPUT_PARALLEL)
-         || (stream_state.is_gf
-             && (input == (INPUT_MESH)
-                 || input == (INPUT_MESH | INPUT_PARALLEL)))
-         || (stream_state.is_qf
-             && (input == (INPUT_MESH)
-                 || input == (INPUT_MESH | INPUT_PARALLEL)))))
+         || input == (INPUT_MESH | INPUT_GRID_FUNC)
+         || input == (INPUT_MESH | INPUT_GRID_FUNC | INPUT_PARALLEL)
+         || input == (INPUT_MESH | INPUT_QUAD_FUNC)
+         || input == (INPUT_MESH | INPUT_QUAD_FUNC | INPUT_PARALLEL)))
    {
       cout << "Invalid combination of mesh/solution options!\n\n";
       PrintSampleUsage(cout);
@@ -1653,8 +1653,8 @@ void ReadSerial(StreamState& state)
 
    state.SetMesh(new Mesh(meshin, 1, 0, state.fix_elem_orient));
 
-   if (state.is_gf || state.is_qf || (input & INPUT_SCALAR_SOL) ||
-       (input & INPUT_VECTOR_SOL))
+   if ((input & INPUT_GRID_FUNC) || (input & INPUT_QUAD_FUNC) ||
+       (input & INPUT_SCALAR_SOL) || (input & INPUT_VECTOR_SOL))
    {
       // get the solution from file
       bool freesolin = false;
@@ -1674,12 +1674,12 @@ void ReadSerial(StreamState& state)
          }
       }
 
-      if (state.is_gf)
+      if (input & INPUT_GRID_FUNC)
       {
          state.SetGridFunction(new GridFunction(state.mesh.get(), *solin));
          SetGridFunction(state);
       }
-      else if (state.is_qf)
+      else if (input & INPUT_QUAD_FUNC)
       {
          state.SetQuadFunction(new QuadratureFunction(state.mesh.get(), *solin));
          SetQuadFunction(state);
@@ -1782,7 +1782,7 @@ void ReadParallel(int np, StreamState& state)
 {
    int read_err;
 
-   if (state.is_gf)
+   if (input & INPUT_GRID_FUNC)
    {
       read_err = ReadParMeshAndGridFunction(np, mesh_file, sol_file,
                                             state);
@@ -1791,7 +1791,7 @@ void ReadParallel(int np, StreamState& state)
          SetGridFunction(state);
       }
    }
-   else if (state.is_qf)
+   else if (input & INPUT_QUAD_FUNC)
    {
       read_err = ReadParMeshAndQuadFunction(np, mesh_file, sol_file, state);
 
