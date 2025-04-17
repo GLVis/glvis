@@ -25,7 +25,6 @@ private:
    // Pointers to global GLVis data
    VisualizationSceneScalarData **vs;
    StreamState&         curr_state;
-   bool                 *keep_attr;
    SdlWindow            *thread_wnd;
 
    std::mutex glvis_mutex;
@@ -103,10 +102,10 @@ private:
 public:
    // called by the main execution thread
    GLVisCommand(VisualizationSceneScalarData **_vs,
-                StreamState& thread_state, bool *_keep_attr);
+                StreamState& thread_state);
 
    // to be used by worker threads
-   bool KeepAttrib() { return *keep_attr; } // may need to sync this
+   bool KeepAttrib() { return curr_state.keep_attr; } // may need to sync this
    bool FixElementOrientations() { return curr_state.fix_elem_orient; }
 
    // called by worker threads

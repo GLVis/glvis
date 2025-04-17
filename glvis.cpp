@@ -138,7 +138,7 @@ bool GLVisInitVis(StreamState::FieldType field_type,
    if (input_streams.size() > 0)
    {
       GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
-      glvis_command = new GLVisCommand(&vs, stream_state, &stream_state.keep_attr);
+      glvis_command = new GLVisCommand(&vs, stream_state);
       comm_thread = new communication_thread(std::move(input_streams), glvis_command);
    }
 

@@ -18,11 +18,10 @@ extern const char *strings_off_on[]; // defined in vsdata.cpp
 
 
 GLVisCommand::GLVisCommand(
-   VisualizationSceneScalarData **_vs, StreamState& state, bool *_keep_attr)
+   VisualizationSceneScalarData **_vs, StreamState& state)
    : curr_state(state)
 {
    vs        = _vs;
-   keep_attr = _keep_attr;
    // should be set in this thread by a call to InitVisualization()
    thread_wnd = GetAppWindow();
 
