@@ -19,7 +19,7 @@ extern const char *strings_off_on[]; // defined in vsdata.cpp
 
 
 GLVisCommand::GLVisCommand(
-   VisualizationSceneScalarData **_vs, StreamState& state)
+   VisualizationSceneScalarData **_vs, DataState& state)
    : curr_state(state)
 {
    vs        = _vs;
@@ -79,7 +79,7 @@ void GLVisCommand::unlock()
    }
 }
 
-int GLVisCommand::NewMeshAndSolution(StreamState &&ss)
+int GLVisCommand::NewMeshAndSolution(DataState &&ss)
 {
    if (lock() < 0)
    {
@@ -464,7 +464,7 @@ int GLVisCommand::Execute()
             else
             {
                auto qs = curr_state.GetQuadSolution();
-               if (qs != StreamState::QuadSolution::NONE)
+               if (qs != DataState::QuadSolution::NONE)
                {
                   new_state.SetQuadSolution(qs);
                }
@@ -838,7 +838,7 @@ void communication_thread::execute()
           ident == "quadrature" || ident == "parallel")
       {
          bool fix_elem_orient = glvis_command->FixElementOrientations();
-         StreamState tmp;
+         DataState tmp;
          if (ident == "mesh")
          {
             tmp.SetMesh(new Mesh(*is[0], 1, 0, fix_elem_orient));

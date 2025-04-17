@@ -13,7 +13,7 @@
 #define GLVIS_THREADS_HPP
 
 #include "vsdata.hpp"
-#include "stream_reader.hpp"
+#include "data_state.hpp"
 #include <mfem.hpp>
 #include <thread>
 #include <atomic>
@@ -24,7 +24,7 @@ class GLVisCommand
 private:
    // Pointers to global GLVis data
    VisualizationSceneScalarData **vs;
-   StreamState&         curr_state;
+   DataState&           curr_state;
    SdlWindow            *thread_wnd;
 
    std::mutex glvis_mutex;
@@ -67,7 +67,7 @@ private:
    int command;
 
    // command arguments
-   StreamState   new_state;
+   DataState     new_state;
    std::string   screenshot_filename;
    std::string   key_commands;
    int           window_x, window_y;
@@ -102,14 +102,14 @@ private:
 public:
    // called by the main execution thread
    GLVisCommand(VisualizationSceneScalarData **_vs,
-                StreamState& thread_state);
+                DataState& thread_state);
 
    // to be used by worker threads
    bool KeepAttrib() { return curr_state.keep_attr; } // may need to sync this
    bool FixElementOrientations() { return curr_state.fix_elem_orient; }
 
    // called by worker threads
-   int NewMeshAndSolution(StreamState &&ss);
+   int NewMeshAndSolution(DataState &&ss);
    int Screenshot(const char *filename);
    int KeyCommands(const char *keys);
    int WindowSize(int w, int h);

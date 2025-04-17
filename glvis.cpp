@@ -35,6 +35,7 @@
 #include "lib/palettes.hpp"
 #include "lib/visual.hpp"
 #include "lib/stream_reader.hpp"
+#include "lib/file_reader.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -75,16 +76,16 @@ enum InputOptions
    INPUT_PARALLEL = 256,
 };
 int input = INPUT_SERVER_MODE;
-thread_local StreamState stream_state;
+thread_local DataState stream_state;
 thread_local VisualizationSceneScalarData *vs = NULL;
 extern thread_local GLVisCommand* glvis_command;
 thread_local communication_thread *comm_thread = NULL;
 
 thread_local GeometryRefiner GLVisGeometryRefiner;
 
-const char *window_titles[] = { "GLVis [scalar data]",
+const char *window_titles[] = { "GLVis [mesh]",
+                                "GLVis [scalar data]",
                                 "GLVis [vector data]",
-                                "GLVis [mesh]"
                               };
 istream *script = NULL;
 int scr_running = 0;
@@ -97,33 +98,16 @@ extern char **environ;
 
 void PrintSampleUsage(ostream &out);
 
-// read the mesh and the solution from a file
-void ReadSerial(StreamState& state);
-
-// choose grid function component and set the input flag
-void SetGridFunction(StreamState& state);
-
-// choose quadrature function component and set the input flag
-void SetQuadFunction(StreamState& state);
-
-// read the mesh and the solution from multiple files
-void ReadParallel(int np, StreamState& state);
-
-int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
-                               const char *sol_prefix, StreamState& state);
-
-int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,
-                               const char *sol_prefix, StreamState& state);
-
 // switch representation of the quadrature function
 void SwitchQuadSolution();
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
-bool GLVisInitVis(StreamState::FieldType field_type,
-                  StreamCollection input_streams)
+bool GLVisInitVis(StreamCollection input_streams)
 {
-   if (field_type <= StreamState::FieldType::MIN
-       || field_type >= StreamState::FieldType::MAX)
+   DataState::FieldType field_type = stream_state.GetType();
+
+   if (field_type <= DataState::FieldType::MIN
+       || field_type >= DataState::FieldType::MAX)
    {
       return false;
    }
@@ -150,8 +134,8 @@ bool GLVisInitVis(StreamState::FieldType field_type,
    }
 
    double mesh_range = -1.0;
-   if (field_type == StreamState::FieldType::SCALAR
-       || field_type == StreamState::FieldType::MESH)
+   if (field_type == DataState::FieldType::SCALAR
+       || field_type == DataState::FieldType::MESH)
    {
       if (stream_state.grid_f)
       {
@@ -174,7 +158,7 @@ bool GLVisInitVis(StreamState::FieldType field_type,
          {
             vss->SetGridFunction(*stream_state.grid_f);
          }
-         if (field_type == StreamState::FieldType::MESH)
+         if (field_type == DataState::FieldType::MESH)
          {
             vs->OrthogonalProjection = 1;
             vs->SetLight(false);
@@ -193,7 +177,7 @@ bool GLVisInitVis(StreamState::FieldType field_type,
          {
             vss->SetGridFunction(stream_state.grid_f.get());
          }
-         if (field_type == StreamState::FieldType::MESH)
+         if (field_type == DataState::FieldType::MESH)
          {
             if (stream_state.mesh->Dimension() == 3)
             {
@@ -211,7 +195,7 @@ bool GLVisInitVis(StreamState::FieldType field_type,
             vss->ToggleDrawMesh();
          }
       }
-      if (field_type == StreamState::FieldType::MESH)
+      if (field_type == DataState::FieldType::MESH)
       {
          if (stream_state.grid_f)
          {
@@ -223,7 +207,7 @@ bool GLVisInitVis(StreamState::FieldType field_type,
          }
       }
    }
-   else if (field_type == StreamState::FieldType::VECTOR)
+   else if (field_type == DataState::FieldType::VECTOR)
    {
       if (stream_state.mesh->SpaceDimension() == 2)
       {
@@ -268,7 +252,7 @@ bool GLVisInitVis(StreamState::FieldType field_type,
          vs->SetAutoscale(0);
       }
       if (stream_state.mesh->SpaceDimension() == 2
-          && field_type == StreamState::FieldType::MESH)
+          && field_type == DataState::FieldType::MESH)
       {
          SetVisualizationScene(vs, 2, stream_state.keys.c_str());
       }
@@ -294,8 +278,9 @@ void GLVisStartVis()
    cout << "GLVis window closed." << endl;
 }
 
-int ScriptReadSolution(istream &scr, StreamState& state)
+int ScriptReadSolution(istream &scr, DataState& state)
 {
+   int err_read;
    string mword,sword;
 
    cout << "Script: solution: " << flush;
@@ -312,30 +297,18 @@ int ScriptReadSolution(istream &scr, StreamState& state)
 
    // read the solution (GridFunction)
    scr >> ws >> sword;
-   if (sword == mword) // mesh and solution in the same file
-   {
-      cout << "solution: " << mword << endl;
-      state.SetGridFunction(new GridFunction(state.mesh.get(), imesh));
-   }
-   else
-   {
-      cout << "solution: " << sword << endl;
-      ifgzstream isol(sword.c_str());
-      if (!isol)
-      {
-         cout << "Can not open solution file: " << sword << endl;
-         return 2;
-      }
-      state.SetGridFunction(new GridFunction(state.mesh.get(), isol));
-   }
+   cout << "solution: " << sword << endl;
 
-   state.ExtrudeMeshAndSolution();
+   FileReader reader(state);
+   err_read = reader.ReadSerial(FileReader::FileType::GRID_FUNC, mword.c_str(),
+                                sword.c_str());
 
-   return 0;
+   return err_read;
 }
 
-int ScriptReadQuadrature(istream &scr, StreamState& state)
+int ScriptReadQuadrature(istream &scr, DataState& state)
 {
+   int err_read;
    string mword,sword;
 
    cout << "Script: quadrature: " << flush;
@@ -352,30 +325,16 @@ int ScriptReadQuadrature(istream &scr, StreamState& state)
 
    // read the quadrature (QuadratureFunction)
    scr >> ws >> sword;
-   if (sword == mword) // mesh and quadrature in the same file
-   {
-      cout << "quadrature: " << mword << endl;
-      state.SetQuadFunction(new QuadratureFunction(state.mesh.get(), imesh));
-   }
-   else
-   {
-      cout << "quadrature: " << sword << endl;
-      ifgzstream isol(sword.c_str());
-      if (!isol)
-      {
-         cout << "Can not open quadrature file: " << sword << endl;
-         return 2;
-      }
-      state.SetQuadFunction(new QuadratureFunction(state.mesh.get(), isol));
-   }
+   cout << "quadrature: " << sword << endl;
 
-   state.SetQuadSolution();
-   state.ExtrudeMeshAndSolution();
+   FileReader reader(state);
+   err_read = reader.ReadSerial(FileReader::FileType::QUAD_FUNC, mword.c_str(),
+                                sword.c_str());
 
-   return 0;
+   return err_read;
 }
 
-int ScriptReadParSolution(istream &scr, StreamState& state)
+int ScriptReadParSolution(istream &scr, DataState& state)
 {
    int np, scr_keep_attr, err_read;
    string mesh_prefix, sol_prefix;
@@ -400,16 +359,13 @@ int ScriptReadParSolution(istream &scr, StreamState& state)
    scr >> ws >> sol_prefix;
    cout << "solution prefix: " << sol_prefix << endl;
 
-   err_read = ReadParMeshAndGridFunction(np, mesh_prefix.c_str(),
-                                         sol_prefix.c_str(), state);
-   if (!err_read)
-   {
-      state.ExtrudeMeshAndSolution();
-   }
+   FileReader reader(state);
+   err_read = reader.ReadParallel(np, FileReader::FileType::GRID_FUNC,
+                                  mesh_prefix.c_str(), sol_prefix.c_str());
    return err_read;
 }
 
-int ScriptReadParQuadrature(istream &scr, StreamState& state)
+int ScriptReadParQuadrature(istream &scr, DataState& state)
 {
    int np, scr_keep_attr, err_read;
    string mesh_prefix, quad_prefix;
@@ -434,19 +390,15 @@ int ScriptReadParQuadrature(istream &scr, StreamState& state)
    scr >> ws >> quad_prefix;
    cout << "quadrature prefix: " << quad_prefix << endl;
 
-   err_read = ReadParMeshAndQuadFunction(np, mesh_prefix.c_str(),
-                                         quad_prefix.c_str(), state);
-   if (!err_read)
-   {
-      state.SetQuadSolution();
-      state.ExtrudeMeshAndSolution();
-   }
+   FileReader reader(state);
+   err_read = reader.ReadParallel(np, FileReader::FileType::QUAD_FUNC,
+                                  mesh_prefix.c_str(), quad_prefix.c_str());
    return err_read;
 }
 
-int ScriptReadDisplMesh(istream &scr, StreamState& state)
+int ScriptReadDisplMesh(istream &scr, DataState& state)
 {
-   StreamState meshstate;
+   DataState meshstate;
    string word;
 
    cout << "Script: mesh: " << flush;
@@ -545,7 +497,7 @@ void ExecuteScriptCommand()
       else if (word == "solution" || word == "mesh" || word == "psolution"
                || word == "quadrature" || word == "pquadrature")
       {
-         StreamState new_state;
+         DataState new_state;
 
          if (word == "solution")
          {
@@ -1027,17 +979,15 @@ void PlayScript(istream &scr)
 
    std::thread worker_thread
    {
-      [&](StreamState local_state)
+      [&](DataState local_state)
       {
-         // set the thread-local StreamState
+         // set the thread-local DataState
          stream_state = std::move(local_state);
          if (c_plot_caption != string_none)
          {
             plot_caption = c_plot_caption;
          }
-         if (GLVisInitVis((stream_state.grid_f->VectorDim() == 1) ?
-                          StreamState::FieldType::SCALAR : StreamState::FieldType::VECTOR,
-                          {}))
+         if (GLVisInitVis({}))
          {
             GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
             GLVisStartVis();
@@ -1060,20 +1010,21 @@ void PlayScript(istream &scr)
 struct Session
 {
    StreamCollection input_streams;
-   StreamState state;
-   StreamState::FieldType ft = StreamState::FieldType::UNKNOWN;
+   DataState state;
+   StreamReader reader;
    std::thread handler;
 
    Session(bool fix_elem_orient,
            bool save_coloring)
+      : reader(state)
    {
       state.fix_elem_orient = fix_elem_orient;
       state.save_coloring = save_coloring;
    }
 
-   Session(StreamState::FieldType other_ft, StreamState other_state)
+   Session(DataState other_state)
       : state(std::move(other_state))
-      , ft(other_ft)
+      , reader(state)
    { }
 
    ~Session() = default;
@@ -1083,8 +1034,7 @@ struct Session
 
    void StartSession()
    {
-      auto funcThread =
-         [](StreamState thread_state, StreamState::FieldType ftype, StreamCollection is)
+      auto funcThread = [](DataState thread_state, StreamCollection is)
       {
          // Set thread-local stream state
          stream_state = std::move(thread_state);
@@ -1093,13 +1043,13 @@ struct Session
             plot_caption = c_plot_caption;
          }
 
-         if (GLVisInitVis(ftype, std::move(is)))
+         if (GLVisInitVis(std::move(is)))
          {
             GLVisStartVis();
          }
       };
       handler = std::thread {funcThread,
-                             std::move(state), ft, std::move(input_streams)};
+                             std::move(state), std::move(input_streams)};
       handler.detach();
    }
 
@@ -1113,7 +1063,7 @@ struct Session
       }
       string data_type;
       *ifs >> data_type >> ws;
-      ft = state.ReadStream(*ifs, data_type);
+      reader.ReadStream(*ifs, data_type);
       input_streams.emplace_back(std::move(ifs));
 
       StartSession();
@@ -1288,8 +1238,8 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          }
          else
          {
-            new_session.state.ReadStreams(input_streams);
-            new_session.state.WriteStream(ofs);
+            new_session.reader.ReadStreams(input_streams);
+            new_session.reader.WriteStream(ofs);
          }
          ofs.close();
          cout << "Data saved in " << tmp_file << endl;
@@ -1300,12 +1250,12 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
       {
          if (!par_data)
          {
-            new_session.ft = new_session.state.ReadStream(*isock, data_type);
+            new_session.reader.ReadStream(*isock, data_type);
             input_streams.emplace_back(std::move(isock));
          }
          else
          {
-            new_session.ft = new_session.state.ReadStreams(input_streams);
+            new_session.reader.ReadStreams(input_streams);
          }
          // Pass ownership of input streams into session object
          new_session.input_streams = std::move(input_streams);
@@ -1584,33 +1534,54 @@ int main (int argc, char *argv[])
    }
    else  // input != 1, non-server mode
    {
-      if (input & INPUT_PARALLEL)
+      FileReader reader(stream_state, pad_digits);
+
+      FileReader::FileType file_type;
+      int component = -1;
+      if (input & INPUT_SCALAR_SOL)
       {
-         ReadParallel(np, stream_state);
+         file_type = FileReader::FileType::SCALAR_SOL;
+      }
+      else if (input & INPUT_VECTOR_SOL)
+      {
+         file_type = FileReader::FileType::VECTOR_SOL;
+      }
+      else if (input & INPUT_GRID_FUNC)
+      {
+         file_type = FileReader::FileType::GRID_FUNC;
+         component = gf_component;
+      }
+      else if (input & INPUT_QUAD_FUNC)
+      {
+         file_type = FileReader::FileType::QUAD_FUNC;
+         component = qf_component;
+      }
+      else if (input & INPUT_MESH)
+      {
+         file_type = FileReader::FileType::MESH;
       }
       else
       {
-         ReadSerial(stream_state);
+         cerr << "Unknown input type" << endl;
+         return 1;
       }
 
-      bool use_vector_soln = (input & INPUT_VECTOR_SOL);
-      bool use_soln = (input & INPUT_SCALAR_SOL);
-      StreamState::FieldType field_type;
-      if (use_vector_soln)
+      int ierr;
+      if (input & INPUT_PARALLEL)
       {
-         field_type = StreamState::FieldType::VECTOR;
+         ierr = reader.ReadParallel(np, file_type, mesh_file, sol_file, component);
       }
       else
       {
-         field_type = (use_soln) ? StreamState::FieldType::SCALAR
-                      : StreamState::FieldType::MESH;
+         ierr = reader.ReadSerial(file_type, mesh_file, sol_file, component);
       }
+      if (ierr) { exit(ierr); }
 
       // Make sure the singleton object returned by GetMainThread() is
       // initialized from the main thread.
       GetMainThread();
 
-      Session single_session(field_type, std::move(stream_state));
+      Session single_session(std::move(stream_state));
       single_session.StartSession();
 
       SDLMainLoop();
@@ -1640,368 +1611,10 @@ void PrintSampleUsage(ostream &os)
       "All Options:\n";
 }
 
-
-void ReadSerial(StreamState& state)
-{
-   // get the mesh from a file
-   named_ifgzstream meshin(mesh_file);
-   if (!meshin)
-   {
-      cerr << "Can not open mesh file " << mesh_file << ". Exit.\n";
-      exit(1);
-   }
-
-   state.SetMesh(new Mesh(meshin, 1, 0, state.fix_elem_orient));
-
-   if ((input & INPUT_GRID_FUNC) || (input & INPUT_QUAD_FUNC) ||
-       (input & INPUT_SCALAR_SOL) || (input & INPUT_VECTOR_SOL))
-   {
-      // get the solution from file
-      bool freesolin = false;
-      ifgzstream *solin = NULL;
-      if (!strcmp(mesh_file,sol_file))
-      {
-         solin = &meshin;
-      }
-      else
-      {
-         solin = new ifgzstream(sol_file);
-         freesolin = true;
-         if (!(*solin))
-         {
-            cerr << "Can not open solution file " << sol_file << ". Exit.\n";
-            exit(1);
-         }
-      }
-
-      if (input & INPUT_GRID_FUNC)
-      {
-         state.SetGridFunction(new GridFunction(state.mesh.get(), *solin));
-         SetGridFunction(state);
-      }
-      else if (input & INPUT_QUAD_FUNC)
-      {
-         state.SetQuadFunction(new QuadratureFunction(state.mesh.get(), *solin));
-         SetQuadFunction(state);
-      }
-      else if (input & INPUT_SCALAR_SOL)
-      {
-         // get rid of NetGen's info line
-         char buff[128];
-         solin->getline(buff,128);
-         state.sol.Load(*solin, state.mesh->GetNV());
-      }
-      else if (input & INPUT_VECTOR_SOL)
-      {
-         state.solu.Load(*solin, state.mesh->GetNV());
-         state.solv.Load(*solin, state.mesh->GetNV());
-         if (state.mesh->SpaceDimension() == 3)
-         {
-            state.solw.Load(*solin, state.mesh->GetNV());
-         }
-      }
-      if (freesolin)
-      {
-         delete solin;
-      }
-   }
-   else
-   {
-      state.SetMeshSolution();
-   }
-
-   state.ExtrudeMeshAndSolution();
-}
-
-
-void SetGridFunction(StreamState& state)
-{
-   if (gf_component != -1)
-   {
-      if (gf_component < 0 || gf_component >= state.grid_f->FESpace()->GetVDim())
-      {
-         cerr << "Invalid component " << gf_component << '.' << endl;
-         exit(1);
-      }
-      FiniteElementSpace *ofes = state.grid_f->FESpace();
-      FiniteElementCollection *fec =
-         FiniteElementCollection::New(ofes->FEColl()->Name());
-      FiniteElementSpace *fes = new FiniteElementSpace(state.mesh.get(), fec);
-      GridFunction *new_gf = new GridFunction(fes);
-      new_gf->MakeOwner(fec);
-      for (int i = 0; i < new_gf->Size(); i++)
-      {
-         (*new_gf)(i) = (*state.grid_f)(ofes->DofToVDof(i, gf_component));
-      }
-      state.SetGridFunction(new_gf);
-   }
-   if (state.grid_f->VectorDim() == 1)
-   {
-      state.grid_f->GetNodalValues(state.sol);
-      input |= INPUT_SCALAR_SOL;
-   }
-   else
-   {
-      input |= INPUT_VECTOR_SOL;
-   }
-}
-
-void SetQuadFunction(StreamState& state)
-{
-   const int vdim = state.quad_f->GetVDim();
-   if (qf_component != -1)
-   {
-      if (qf_component < 0 || qf_component >= vdim)
-      {
-         cerr << "Invalid component " << qf_component << '.' << endl;
-         exit(1);
-      }
-      QuadratureSpaceBase *qspace = state.quad_f->GetSpace();
-      QuadratureFunction *new_qf = new QuadratureFunction(qspace);
-      for (int i = 0; i < new_qf->Size(); i++)
-      {
-         (*new_qf)(i) = (*state.quad_f)(i * vdim + qf_component);
-      }
-      state.quad_f->SetOwnsSpace(false);
-      new_qf->SetOwnsSpace(true);
-      state.SetQuadFunction(new_qf);
-   }
-   if (vdim == 1)
-   {
-      input |= INPUT_SCALAR_SOL;
-   }
-   else
-   {
-      input |= INPUT_VECTOR_SOL;
-   }
-
-   state.SetQuadSolution();
-}
-
-void ReadParallel(int np, StreamState& state)
-{
-   int read_err;
-
-   if (input & INPUT_GRID_FUNC)
-   {
-      read_err = ReadParMeshAndGridFunction(np, mesh_file, sol_file,
-                                            state);
-      if (!read_err)
-      {
-         SetGridFunction(state);
-      }
-   }
-   else if (input & INPUT_QUAD_FUNC)
-   {
-      read_err = ReadParMeshAndQuadFunction(np, mesh_file, sol_file, state);
-
-      if (!read_err)
-      {
-         SetQuadFunction(state);
-      }
-   }
-   else
-   {
-      read_err = ReadParMeshAndGridFunction(np, mesh_file, NULL,
-                                            state);
-      if (!read_err)
-      {
-         state.SetMeshSolution();
-      }
-   }
-
-   if (read_err)
-   {
-      exit(1);
-   }
-
-   state.ExtrudeMeshAndSolution();
-}
-
-int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
-                               const char *sol_prefix,
-                               StreamState& state)
-{
-   state.SetMesh(NULL);
-
-   // are the solutions bundled together with the mesh files?
-   bool same_file = false;
-   if (sol_prefix)
-   {
-      same_file = !strcmp(sol_prefix, mesh_prefix);
-      state.SetGridFunction(NULL);
-   }
-
-   Array<Mesh *> mesh_array(np);
-   Array<GridFunction *> gf_array(np);
-   mesh_array = NULL;
-   gf_array = NULL;
-
-   int read_err = 0;
-   for (int p = 0; p < np; p++)
-   {
-      ostringstream fname;
-      fname << mesh_prefix << '.' << setfill('0') << setw(pad_digits) << p;
-      named_ifgzstream meshfile(fname.str().c_str());
-      if (!meshfile)
-      {
-         cerr << "Could not open mesh file: " << fname.str() << '!' << endl;
-         read_err = 1;
-         break;
-      }
-
-      mesh_array[p] = new Mesh(meshfile, 1, 0, state.fix_elem_orient);
-
-      if (!state.keep_attr)
-      {
-         // set element and boundary attributes to be the processor number + 1
-         for (int i = 0; i < mesh_array[p]->GetNE(); i++)
-         {
-            mesh_array[p]->GetElement(i)->SetAttribute(p+1);
-         }
-         for (int i = 0; i < mesh_array[p]->GetNBE(); i++)
-         {
-            mesh_array[p]->GetBdrElement(i)->SetAttribute(p+1);
-         }
-      }
-
-      // read the solution
-      if (sol_prefix)
-      {
-         if (!same_file)
-         {
-            ostringstream sol_fname;
-            sol_fname << sol_prefix << '.' << setfill('0') << setw(pad_digits) << p;
-            ifgzstream solfile(sol_fname.str().c_str());
-            if (!solfile)
-            {
-               cerr << "Could not open solution file "
-                    << sol_fname.str() << '!' << endl;
-               read_err = 2;
-               break;
-            }
-
-            gf_array[p] = new GridFunction(mesh_array[p], solfile);
-         }
-         else  // mesh and solution in the same file
-         {
-            gf_array[p] = new GridFunction(mesh_array[p], meshfile);
-         }
-      }
-   }
-
-   if (!read_err)
-   {
-      // create the combined mesh and gf
-      state.SetMesh(new Mesh(mesh_array, np));
-      if (sol_prefix)
-      {
-         state.SetGridFunction(new GridFunction(state.mesh.get(), gf_array, np));
-      }
-   }
-
-   for (int p = 0; p < np; p++)
-   {
-      delete gf_array[np-1-p];
-      delete mesh_array[np-1-p];
-   }
-
-   return read_err;
-}
-
-int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,
-                               const char *sol_prefix,
-                               StreamState& state)
-{
-   state.SetMesh(NULL);
-
-   // are the solutions bundled together with the mesh files?
-   bool same_file = false;
-   if (sol_prefix)
-   {
-      same_file = !strcmp(sol_prefix, mesh_prefix);
-      state.SetGridFunction(NULL);
-   }
-
-   std::vector<Mesh*> mesh_array(np);
-   std::vector<QuadratureFunction*> qf_array(np);
-
-   int read_err = 0;
-   for (int p = 0; p < np; p++)
-   {
-      ostringstream fname;
-      fname << mesh_prefix << '.' << setfill('0') << setw(pad_digits) << p;
-      named_ifgzstream meshfile(fname.str().c_str());
-      if (!meshfile)
-      {
-         cerr << "Could not open mesh file: " << fname.str() << '!' << endl;
-         read_err = 1;
-         break;
-      }
-
-      mesh_array[p] = new Mesh(meshfile, 1, 0, state.fix_elem_orient);
-
-      if (!state.keep_attr)
-      {
-         // set element and boundary attributes to be the processor number + 1
-         for (int i = 0; i < mesh_array[p]->GetNE(); i++)
-         {
-            mesh_array[p]->GetElement(i)->SetAttribute(p+1);
-         }
-         for (int i = 0; i < mesh_array[p]->GetNBE(); i++)
-         {
-            mesh_array[p]->GetBdrElement(i)->SetAttribute(p+1);
-         }
-      }
-
-      // read the solution
-      if (sol_prefix)
-      {
-         if (!same_file)
-         {
-            ostringstream sol_fname;
-            sol_fname << sol_prefix << '.' << setfill('0') << setw(pad_digits) << p;
-            ifgzstream solfile(sol_fname.str().c_str());
-            if (!solfile)
-            {
-               cerr << "Could not open solution file "
-                    << sol_fname.str() << '!' << endl;
-               read_err = 2;
-               break;
-            }
-
-            qf_array[p] = new QuadratureFunction(mesh_array[p], solfile);
-         }
-         else  // mesh and solution in the same file
-         {
-            qf_array[p] = new QuadratureFunction(mesh_array[p], meshfile);
-         }
-      }
-   }
-
-   if (!read_err)
-   {
-      // create the combined mesh and gf
-      state.SetMesh(new Mesh(mesh_array.data(), np));
-      if (sol_prefix)
-      {
-         state.SetQuadFunction(qf_array);
-      }
-   }
-
-   for (int p = 0; p < np; p++)
-   {
-      delete qf_array[np-1-p];
-      delete mesh_array[np-1-p];
-   }
-
-   return read_err;
-}
-
 void SwitchQuadSolution()
 {
    int iqs = ((int)stream_state.GetQuadSolution()+1)
-             % ((int)StreamState::QuadSolution::MAX);
-   stream_state.SwitchQuadSolution((StreamState::QuadSolution)iqs, vs);
+             % ((int)DataState::QuadSolution::MAX);
+   stream_state.SwitchQuadSolution((DataState::QuadSolution)iqs, vs);
    SendExposeEvent();
 }
