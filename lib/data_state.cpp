@@ -335,7 +335,7 @@ void DataState::SetQuadFunctionSolution(int qf_component)
    SetQuadSolution();
 }
 
-void DataState::SetQuadSolution(QuadSolution type)
+void DataState::SetQuadSolution(QuadSolution quad_type)
 {
    // assume identical order
    const int order = quad_f->GetIntRule(0).GetOrder()/2; // <-- Gauss-Legendre
@@ -347,7 +347,7 @@ void DataState::SetQuadSolution(QuadSolution type)
    }
 
    // check for tensor-product basis
-   if (order > 0 && type != QuadSolution::HO_L2_projected)
+   if (order > 0 && quad_type != QuadSolution::HO_L2_projected)
    {
       Array<Geometry::Type> geoms;
       mesh->GetGeometries(mesh->Dimension(), geoms);
@@ -362,7 +362,7 @@ void DataState::SetQuadSolution(QuadSolution type)
          }
    }
 
-   switch (type)
+   switch (quad_type)
    {
       case QuadSolution::LOR_ClosedGL:
       {
@@ -445,10 +445,10 @@ void DataState::SetQuadSolution(QuadSolution type)
          return;
    }
 
-   quad_sol = type;
+   quad_sol = quad_type;
 }
 
-void DataState::SwitchQuadSolution(QuadSolution type, VisualizationScene *vs)
+void DataState::SwitchQuadSolution(QuadSolution quad_type, VisualizationScene *vs)
 {
    unique_ptr<Mesh> old_mesh;
    // we must backup the refined mesh to prevent its deleting
@@ -457,7 +457,7 @@ void DataState::SwitchQuadSolution(QuadSolution type, VisualizationScene *vs)
       internal.mesh.swap(internal.mesh_quad);
       internal.mesh_quad.swap(old_mesh);
    }
-   SetQuadSolution(type);
+   SetQuadSolution(quad_type);
    ExtrudeMeshAndSolution();
    ResetMeshAndSolution(*this, vs);
 }
