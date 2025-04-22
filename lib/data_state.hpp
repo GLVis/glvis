@@ -53,6 +53,7 @@ private:
       std::unique_ptr<mfem::Mesh> mesh_quad;
       std::unique_ptr<mfem::GridFunction> grid_f;
       std::unique_ptr<mfem::QuadratureFunction> quad_f;
+      std::unique_ptr<mfem::DataCollection> data_coll;
    } internal;
 
    FieldType type {FieldType::UNKNOWN};
@@ -67,6 +68,7 @@ public:
    const std::unique_ptr<mfem::Mesh> &mesh_quad{internal.mesh_quad};
    const std::unique_ptr<mfem::GridFunction> &grid_f{internal.grid_f};
    const std::unique_ptr<mfem::QuadratureFunction> &quad_f{internal.quad_f};
+   const std::unique_ptr<mfem::DataCollection> &data_coll{internal.data_coll};
 
    std::string keys;
    bool fix_elem_orient{false};
@@ -91,6 +93,9 @@ public:
                         int component = -1);
    void SetQuadFunction(const std::vector<mfem::QuadratureFunction*> &qf_array,
                         int component = -1);
+
+   void SetDataCollectionField(mfem::DataCollection *dc, int ti,
+                               const char *field = NULL, bool quad = false, int component = -1);
 
    /// Helper function for visualizing 1D or 2D3V data
    void ExtrudeMeshAndSolution();

@@ -117,6 +117,44 @@ void DataState::SetQuadFunction(
    SetQuadFunction(qf, component);
 }
 
+void DataState::SetDataCollectionField(mfem::DataCollection *dc, int ti,
+                                       const char *field, bool quad, int component)
+{
+   internal.data_coll.reset(dc);
+   data_coll->Load(ti);
+   Mesh *mesh = data_coll->GetMesh();
+   SetMesh(new Mesh(*mesh, false));
+   if (field)
+   {
+      if (!quad)
+      {
+         GridFunction *gf = data_coll->GetField(field);
+         if (!gf)
+         {
+            std::cerr << "Field " << field << " not found in the collection!" << std::endl;
+            return;
+         }
+         SetGridFunction(new GridFunction(gf->FESpace(), *gf), component);
+      }
+      else
+      {
+         QuadratureFunction *qf = data_coll->GetQField(field);
+         if (!qf)
+         {
+            std::cerr << "Quadrature field " << field << " not found in the collection!" <<
+                      std::endl;
+            return;
+         }
+         SetQuadFunction(new QuadratureFunction(qf->GetSpace(), qf->GetData(),
+                                                qf->GetVDim()), component);
+      }
+   }
+   else
+   {
+      SetMeshSolution();
+   }
+}
+
 void DataState::ExtrudeMeshAndSolution()
 {
    Extrude1DMeshAndSolution();
@@ -448,7 +486,8 @@ void DataState::SetQuadSolution(QuadSolution quad_type)
    quad_sol = quad_type;
 }
 
-void DataState::SwitchQuadSolution(QuadSolution quad_type, VisualizationScene *vs)
+void DataState::SwitchQuadSolution(QuadSolution quad_type,
+                                   VisualizationScene *vs)
 {
    unique_ptr<Mesh> old_mesh;
    // we must backup the refined mesh to prevent its deleting

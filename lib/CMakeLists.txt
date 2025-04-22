@@ -15,6 +15,7 @@ list(APPEND SOURCES
   gl/shader.cpp
   gl/types.cpp
   aux_vis.cpp
+  coll_reader.cpp
   data_state.cpp
   file_reader.cpp
   font.cpp
@@ -41,6 +42,7 @@ list(APPEND HEADERS
   gl/shader.hpp
   gl/types.hpp
   aux_vis.hpp
+  coll_reader.hpp
   data_state.hpp
   file_reader.hpp
   font.hpp

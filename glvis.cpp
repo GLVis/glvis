@@ -36,6 +36,7 @@
 #include "lib/visual.hpp"
 #include "lib/stream_reader.hpp"
 #include "lib/file_reader.hpp"
+#include "lib/coll_reader.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -66,14 +67,15 @@ bool        secure          = socketstream::secure_default;
 // Global variables
 enum InputOptions
 {
-   INPUT_SERVER_MODE = 1,
-   INPUT_MESH = 2,
-   INPUT_SCALAR_SOL = 4,
-   INPUT_VECTOR_SOL = 8,
-   INPUT_GRID_FUNC = 16,
-   INPUT_QUAD_FUNC = 32,
+   INPUT_SERVER_MODE = 1 << 0,
+   INPUT_MESH        = 1 << 1,
+   INPUT_SCALAR_SOL  = 1 << 2,
+   INPUT_VECTOR_SOL  = 1 << 3,
+   INPUT_GRID_FUNC   = 1 << 4,
+   INPUT_QUAD_FUNC   = 1 << 5,
+   INPUT_DATA_COLL   = 1 << 6,
    //...
-   INPUT_PARALLEL = 256,
+   INPUT_PARALLEL    = 1 << 8,
 };
 int input = INPUT_SERVER_MODE;
 thread_local DataState stream_state;
@@ -1296,6 +1298,14 @@ int main (int argc, char *argv[])
    SDL_SetMainReady();
 #endif
    // variables for command line arguments
+   const char *visit_coll    = string_none;
+   //const char *paraview_coll = string_none; // reader not implemented
+   const char *sidre_coll    = string_none;
+   const char *fms_coll      = string_none;
+   const char *conduit_coll  = string_none;
+   //const char *adios2_coll   = string_none; // reader not implemented
+   const char *dc_protocol   = string_default;
+   int         dc_cycle      = 0;
    int         np            = 0;
    bool        save_stream   = false;
    const char *stream_file   = string_none;
@@ -1328,6 +1338,30 @@ int main (int argc, char *argv[])
                   "Scalar solution (vertex values) file to visualize.");
    args.AddOption(&vec_sol_file, "-v", "--vector-solution",
                   "Vector solution (vertex values) file to visualize.");
+   args.AddOption(&visit_coll, "-visit", "--visit-datafiles",
+                  "VisIt collection to load");
+   //args.AddOption(&paraview_coll, "-paraview", "--paraview-datafiles",
+   //               "ParaView collection to load");
+#ifdef MFEM_USE_SIDRE
+   args.AddOption(&sidre_coll, "-sidre", "--sidre-datafiles",
+                  "Sidre collection to load");
+#endif // MFEM_USE_SIDRE
+#ifdef MFEM_USE_FMS
+   args.AddOption(&fms_coll, "-fms", "--fms-datafiles",
+                  "FMS collection to load");
+#endif // MFEM_USE_FMS
+#ifdef MFEM_USE_CONDUIT
+   args.AddOption(&conduit_coll, "-conduit", "--conduit-datafiles",
+                  "Conduit collection to load");
+#endif // MFEM_USE_CONDUIT
+#ifdef MFEM_USE_ADIOS2
+   //args.AddOption(&adios2_coll, "-adios2", "--adios2-datafiles",
+   //               "ADIOS2 collection to load");
+#endif // MFEM_USE_ADIOS2
+   args.AddOption(&dc_protocol, "-dc-prot", "--data-collection-protocol",
+                  "Protocol of the data collection to load");
+   args.AddOption(&dc_cycle, "-dc-cycle", "--data-collection-cycle",
+                  "Cycle of the data collection to load");
    args.AddOption(&np, "-np", "--num-proc",
                   "Load mesh/solution from multiple processors.");
    args.AddOption(&pad_digits, "-d", "--pad-digits",
@@ -1431,6 +1465,38 @@ int main (int argc, char *argv[])
       sol_file = qfunc_file;
       input |= INPUT_QUAD_FUNC;
    }
+
+   if (visit_coll != string_none)
+   {
+      mesh_file = visit_coll;
+      input |= INPUT_DATA_COLL;
+   }
+   /*else if (paraview_coll != string_none)
+   {
+      mesh_file = paraview_coll;
+      input |= INPUT_DATA_COLL;
+   }*/
+   else if (sidre_coll != string_none)
+   {
+      mesh_file = sidre_coll;
+      input |= INPUT_DATA_COLL;
+   }
+   else if (fms_coll != string_none)
+   {
+      mesh_file = fms_coll;
+      input |= INPUT_DATA_COLL;
+   }
+   else if (conduit_coll != string_none)
+   {
+      mesh_file = conduit_coll;
+      input |= INPUT_DATA_COLL;
+   }
+   /*else if (adios2_coll != string_none)
+   {
+      mesh_file = adios2_coll;
+      input |= INPUT_DATA_COLL;
+   }*/
+
    if (np > 0)
    {
       input |= INPUT_PARALLEL;
@@ -1515,13 +1581,16 @@ int main (int argc, char *argv[])
    // print help for wrong input
    if (!(input == INPUT_SERVER_MODE
          || input == (INPUT_MESH)
+         || input == (INPUT_DATA_COLL)
          || input == (INPUT_MESH | INPUT_SCALAR_SOL)
          || input == (INPUT_MESH | INPUT_VECTOR_SOL)
          || input == (INPUT_MESH | INPUT_PARALLEL)
          || input == (INPUT_MESH | INPUT_GRID_FUNC)
          || input == (INPUT_MESH | INPUT_GRID_FUNC | INPUT_PARALLEL)
+         || input == (INPUT_DATA_COLL | INPUT_GRID_FUNC)
          || input == (INPUT_MESH | INPUT_QUAD_FUNC)
-         || input == (INPUT_MESH | INPUT_QUAD_FUNC | INPUT_PARALLEL)))
+         || input == (INPUT_MESH | INPUT_QUAD_FUNC | INPUT_PARALLEL)
+         || input == (INPUT_DATA_COLL | INPUT_QUAD_FUNC)))
    {
       cout << "Invalid combination of mesh/solution options!\n\n";
       PrintSampleUsage(cout);
@@ -1557,48 +1626,113 @@ int main (int argc, char *argv[])
    }
    else  // input != 1, non-server mode
    {
-      FileReader reader(stream_state, pad_digits);
+      if (!(input & INPUT_DATA_COLL))
+      {
+         FileReader::FileType file_type;
+         int component = -1;
+         if (input & INPUT_SCALAR_SOL)
+         {
+            file_type = FileReader::FileType::SCALAR_SOL;
+         }
+         else if (input & INPUT_VECTOR_SOL)
+         {
+            file_type = FileReader::FileType::VECTOR_SOL;
+         }
+         else if (input & INPUT_GRID_FUNC)
+         {
+            file_type = FileReader::FileType::GRID_FUNC;
+            component = gf_component;
+         }
+         else if (input & INPUT_QUAD_FUNC)
+         {
+            file_type = FileReader::FileType::QUAD_FUNC;
+            component = qf_component;
+         }
+         else if (input & INPUT_MESH)
+         {
+            file_type = FileReader::FileType::MESH;
+         }
+         else
+         {
+            cerr << "Unknown input type" << endl;
+            return 1;
+         }
 
-      FileReader::FileType file_type;
-      int component = -1;
-      if (input & INPUT_SCALAR_SOL)
-      {
-         file_type = FileReader::FileType::SCALAR_SOL;
-      }
-      else if (input & INPUT_VECTOR_SOL)
-      {
-         file_type = FileReader::FileType::VECTOR_SOL;
-      }
-      else if (input & INPUT_GRID_FUNC)
-      {
-         file_type = FileReader::FileType::GRID_FUNC;
-         component = gf_component;
-      }
-      else if (input & INPUT_QUAD_FUNC)
-      {
-         file_type = FileReader::FileType::QUAD_FUNC;
-         component = qf_component;
-      }
-      else if (input & INPUT_MESH)
-      {
-         file_type = FileReader::FileType::MESH;
+         FileReader reader(stream_state, pad_digits);
+         int ierr;
+         if (input & INPUT_PARALLEL)
+         {
+            ierr = reader.ReadParallel(np, file_type, mesh_file, sol_file, component);
+         }
+         else
+         {
+            ierr = reader.ReadSerial(file_type, mesh_file, sol_file, component);
+         }
+         if (ierr) { exit(ierr); }
       }
       else
       {
-         cerr << "Unknown input type" << endl;
-         return 1;
-      }
+         DataCollectionReader::CollType coll_type;
+         int component;
+         bool quad_func, mesh_only = false;
+         if (visit_coll != string_none)
+         {
+            coll_type = DataCollectionReader::CollType::VISIT;
+         }
+         /*else if (paraview_coll != string_none)
+         {
+            coll_type = DataCollectionReader::CollType::PARAVIEW;
+         }*/
+         else if (sidre_coll != string_none)
+         {
+            coll_type = DataCollectionReader::CollType::SIDRE;
+         }
+         else if (fms_coll != string_none)
+         {
+            coll_type = DataCollectionReader::CollType::FMS;
+         }
+         else if (conduit_coll != string_none)
+         {
+            coll_type = DataCollectionReader::CollType::CONDUIT;
+         }
+         /*else if (adios2_coll != string_none)
+         {
+            coll_type = DataCollectionReader::CollType::ADIOS2;
+         }*/
 
-      int ierr;
-      if (input & INPUT_PARALLEL)
-      {
-         ierr = reader.ReadParallel(np, file_type, mesh_file, sol_file, component);
+         if (input & INPUT_GRID_FUNC)
+         {
+            quad_func = false;
+            component = gf_component;
+         }
+         else if (input & INPUT_QUAD_FUNC)
+         {
+            quad_func = true;
+            component = qf_component;
+         }
+         else
+         {
+            mesh_only = true;
+         }
+
+         DataCollectionReader reader(stream_state);
+         if (dc_protocol != string_default)
+         {
+            reader.SetProtocol(dc_protocol);
+         }
+
+         int ierr;
+         if (mesh_only)
+         {
+            ierr = reader.ReadSerial(coll_type, mesh_file, dc_cycle);
+         }
+         else
+         {
+            ierr = reader.ReadSerial(coll_type, mesh_file, dc_cycle, sol_file,
+                                     quad_func, component);
+         }
+         if (ierr) { exit(ierr); }
       }
-      else
-      {
-         ierr = reader.ReadSerial(file_type, mesh_file, sol_file, component);
-      }
-      if (ierr) { exit(ierr); }
 
       // Make sure the singleton object returned by GetMainThread() is
       // initialized from the main thread.
