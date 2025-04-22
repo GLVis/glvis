@@ -122,8 +122,9 @@ void DataState::SetDataCollectionField(mfem::DataCollection *dc, int ti,
 {
    internal.data_coll.reset(dc);
    data_coll->Load(ti);
-   Mesh *mesh = data_coll->GetMesh();
-   SetMesh(new Mesh(*mesh, false));
+   Mesh *dc_mesh = data_coll->GetMesh();
+   SetMesh(new Mesh(*dc_mesh, false));
+
    if (field)
    {
       if (!quad)
