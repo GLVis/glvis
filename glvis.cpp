@@ -1079,7 +1079,6 @@ public:
       int ierr = reader.ReadStream(*stream, data_type);
       if (ierr) { return ierr; }
       input_streams.emplace_back(std::move(stream));
-      input_streams = std::move(input_streams);
 
       StartSession();
       return 0;
@@ -1088,9 +1087,9 @@ public:
    int StartStreamSession(StreamCollection &&streams)
    {
       StreamReader reader(state);
-      int ierr = reader.ReadStreams(input_streams);
+      int ierr = reader.ReadStreams(streams);
       if (ierr) { return ierr; }
-      input_streams = streams;
+      input_streams = std::move(streams);
 
       StartSession();
       return 0;
