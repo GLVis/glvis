@@ -1007,16 +1007,15 @@ void PlayScript(istream &scr)
    script = NULL;
 }
 
-struct Session
+class Session
 {
    StreamCollection input_streams;
    DataState state;
-   StreamReader reader;
    std::thread handler;
 
+public:
    Session(bool fix_elem_orient,
            bool save_coloring)
-      : reader(state)
    {
       state.fix_elem_orient = fix_elem_orient;
       state.save_coloring = save_coloring;
@@ -1024,19 +1023,15 @@ struct Session
 
    Session(DataState other_state)
       : state(std::move(other_state))
-      , reader(state)
-   { }
-
-   Session(Session &&s)
-      : input_streams(std::move(s.input_streams))
-      , state(std::move(s.state))
-      , reader(state) //no move constructor
-      , handler(std::move(s.handler))
    { }
 
    ~Session() = default;
 
+   Session(Session&& from) = default;
    Session& operator= (Session&& from) = default;
+
+   inline DataState& GetState() { return state; }
+   inline const DataState& GetState() const { return state; }
 
    void StartSession()
    {
@@ -1069,12 +1064,38 @@ struct Session
       }
       string data_type;
       *ifs >> data_type >> ws;
+      StreamReader reader(state);
       reader.ReadStream(*ifs, data_type);
       input_streams.emplace_back(std::move(ifs));
 
       StartSession();
       return true;
    }
+
+   int StartStreamSession(std::unique_ptr<mfem::socketstream> &&stream,
+                          const std::string &data_type)
+   {
+      StreamReader reader(state);
+      int ierr = reader.ReadStream(*stream, data_type);
+      if (!ierr) { return ierr; }
+      input_streams.emplace_back(std::move(stream));
+      input_streams = std::move(input_streams);
+
+      StartSession();
+      return 0;
+   }
+
+   int StartStreamSession(StreamCollection &&streams)
+   {
+      StreamReader reader(state);
+      int ierr = reader.ReadStreams(input_streams);
+      if (!ierr) { return ierr; }
+      input_streams = streams;
+
+      StartSession();
+      return 0;
+   }
+
 };
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
@@ -1244,8 +1265,9 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          }
          else
          {
-            new_session.reader.ReadStreams(input_streams);
-            new_session.reader.WriteStream(ofs);
+            StreamReader reader(new_session.GetState());
+            reader.ReadStreams(input_streams);
+            reader.WriteStream(ofs);
          }
          ofs.close();
          cout << "Data saved in " << tmp_file << endl;
@@ -1256,16 +1278,12 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
       {
          if (!par_data)
          {
-            new_session.reader.ReadStream(*isock, data_type);
-            input_streams.emplace_back(std::move(isock));
+            new_session.StartStreamSession(std::move(isock), data_type);
          }
          else
          {
-            new_session.reader.ReadStreams(input_streams);
+            new_session.StartStreamSession(std::move(input_streams));
          }
-         // Pass ownership of input streams into session object
-         new_session.input_streams = std::move(input_streams);
-         new_session.StartSession();
       }
       current_sessions.emplace_back(std::move(new_session));
    }
