@@ -36,16 +36,14 @@ int FileReader::ReadSerial(FileReader::FileType ft, const char *mesh_file,
    else
    {
       // get the solution from file
-      bool freesolin = false;
-      ifgzstream *solin = NULL;
+      shared_ptr<ifgzstream> solin;
       if (!strcmp(mesh_file, sol_file))
       {
-         solin = &meshin;
+         solin.reset(&meshin, [](ifgzstream*) {}); // no op deleter
       }
       else
       {
-         solin = new ifgzstream(sol_file);
-         freesolin = true;
+         solin.reset(new ifgzstream(sol_file));
          if (!(*solin))
          {
             cerr << "Can not open solution file " << sol_file << ". Exit.\n";
@@ -83,11 +81,6 @@ int FileReader::ReadSerial(FileReader::FileType ft, const char *mesh_file,
          default:
             cerr << "Unknown file type. Exit" << endl;
             exit(1);
-      }
-
-      if (freesolin)
-      {
-         delete solin;
       }
    }
 
