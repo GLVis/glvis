@@ -17,6 +17,21 @@
 using namespace std;
 using namespace mfem;
 
+/// Class used for extruding vector GridFunctions
+class VectorExtrudeCoefficient : public VectorCoefficient
+{
+private:
+   int n;
+   Mesh *mesh_in;
+   VectorCoefficient &sol_in;
+public:
+   VectorExtrudeCoefficient(Mesh *m, VectorCoefficient &s, int n_)
+      : VectorCoefficient(s.GetVDim()), n(n_), mesh_in(m), sol_in(s) { }
+   void Eval(Vector &v, ElementTransformation &T,
+             const IntegrationPoint &ip) override;
+   virtual ~VectorExtrudeCoefficient() { }
+};
+
 /// Helper function for extrusion of 1D quadrature functions to 2D
 QuadratureFunction* Extrude1DQuadFunction(Mesh *mesh, Mesh *mesh2d,
                                           QuadratureFunction *qf, int ny);
@@ -189,8 +204,29 @@ void DataState::Extrude1DMeshAndSolution()
 
    if (grid_f)
    {
-      GridFunction *grid_f_2d =
-         Extrude1DGridFunction(mesh.get(), mesh2d, grid_f.get(), 1);
+      if (grid_f->VectorDim() > 1)
+      {
+         ProjectVectorFEGridFunction();
+      }
+
+      GridFunction *grid_f_2d = Extrude1DGridFunction(mesh.get(), mesh2d,
+                                                      grid_f.get(), 1);
+
+      if (grid_f_2d->VectorDim() < grid_f->VectorDim())
+      {
+         // workaround for older MFEM where Extrude1DGridFunction()
+         // does not work for vector grid functions
+         delete grid_f_2d;
+         FiniteElementCollection *fec2d = new L2_FECollection(
+            grid_f->FESpace()->FEColl()->GetOrder(), 2);
+         FiniteElementSpace *fes2d = new FiniteElementSpace(mesh2d, fec2d,
+                                                            grid_f->FESpace()->GetVDim());
+         grid_f_2d = new GridFunction(fes2d);
+         grid_f_2d->MakeOwner(fec2d);
+         VectorGridFunctionCoefficient vcsol(grid_f.get());
+         ::VectorExtrudeCoefficient vc2d(mesh.get(), vcsol, 1);
+         grid_f_2d->ProjectCoefficient(vc2d);
+      }
 
       internal.grid_f.reset(grid_f_2d);
    }
@@ -587,6 +623,15 @@ void DataState::ResetMeshAndSolution(DataState &ss, VisualizationScene* vs)
          vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.grid_f.get());
       }
    }
+}
+
+void ::VectorExtrudeCoefficient::Eval(Vector &v, ElementTransformation &T,
+                                      const IntegrationPoint &ip)
+{
+   ElementTransformation *T_in =
+      mesh_in->GetElementTransformation(T.ElementNo / n);
+   T_in->SetIntPoint(&ip);
+   sol_in.Eval(v, *T_in, ip);
 }
 
 QuadratureFunction *Extrude1DQuadFunction(Mesh *mesh, Mesh *mesh2d,
