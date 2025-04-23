@@ -50,6 +50,8 @@ const char *sol_file        = string_none;
 const char *vec_sol_file    = string_none;
 const char *gfunc_file      = string_none;
 const char *qfunc_file      = string_none;
+string      dc_protocol     = string_default;
+int         dc_cycle        = 0;
 const char *arg_keys        = string_none;
 int         pad_digits      = 6;
 int         gf_component    = -1;
@@ -458,6 +460,41 @@ int ScriptReadDisplMesh(istream &scr, DataState& state)
    return 0;
 }
 
+int ScriptReadDataColl(istream &scr, DataState &state, bool mesh_only = true,
+                       bool quad = false)
+{
+   int err_read;
+   int type;
+   string cword, fword;
+
+   cout << "Script: data_collection: " << flush;
+   // read the collection
+   scr >> ws >> type; // collection type
+   cout << "type: " << type << "; " << flush;
+   scr >> ws >> cword; // collection filename (can't contain spaces)
+   cout << "collection: " << cword << "; " << flush;
+
+   if (!mesh_only)
+   {
+      // read the field
+      scr >> ws >> fword;
+      cout << "field: " << fword << endl;
+   }
+
+   DataCollectionReader reader(state);
+   if (dc_protocol != string_default)
+      reader.SetProtocol(dc_protocol.c_str());
+
+   if (mesh_only)
+      err_read = reader.ReadSerial((DataCollectionReader::CollType)type,
+                                   cword.c_str(), dc_cycle);
+   else
+      err_read = reader.ReadSerial((DataCollectionReader::CollType)type,
+                                   cword.c_str(), dc_cycle, fword.c_str(), quad);
+
+   return err_read;
+}
+
 void ExecuteScriptCommand()
 {
    if (!script)
@@ -496,8 +533,17 @@ void ExecuteScriptCommand()
             scr_level = 0;
          }
       }
+      else if (word == "data_coll_cycle")
+      {
+         scr >> dc_cycle;
+      }
+      else if (word == "data_coll_protocol")
+      {
+         scr >> dc_protocol;
+      }
       else if (word == "solution" || word == "mesh" || word == "psolution"
-               || word == "quadrature" || word == "pquadrature")
+               || word == "quadrature" || word == "pquadrature" || word == "data_coll_mesh"
+               || word == "data_coll_field" || word == "data_coll_quad")
       {
          DataState new_state;
 
@@ -542,6 +588,30 @@ void ExecuteScriptCommand()
          else if (word == "pquadrature")
          {
             if (ScriptReadParQuadrature(scr, new_state))
+            {
+               done_one_command = 1;
+               continue;
+            }
+         }
+         else if (word == "data_coll_mesh")
+         {
+            if (ScriptReadDataColl(scr, new_state))
+            {
+               done_one_command = 1;
+               continue;
+            }
+         }
+         else if (word == "data_coll_field")
+         {
+            if (ScriptReadDataColl(scr, new_state, false))
+            {
+               done_one_command = 1;
+               continue;
+            }
+         }
+         else if (word == "data_coll_quad")
+         {
+            if (ScriptReadDataColl(scr, new_state, false, true))
             {
                done_one_command = 1;
                continue;
@@ -914,6 +984,14 @@ void PlayScript(istream &scr)
       {
          scr >> window_x >> window_y >> window_w >> window_h;
       }
+      else if (word == "data_coll_cycle")
+      {
+         scr >> dc_cycle;
+      }
+      else if (word == "data_coll_protocol")
+      {
+         scr >> dc_protocol;
+      }
       else if (word == "solution")
       {
          if (ScriptReadSolution(scr, stream_state))
@@ -964,6 +1042,36 @@ void PlayScript(istream &scr)
          {
             break;
          }
+      }
+      else if (word == "data_coll_mesh")
+      {
+         if (ScriptReadDataColl(scr, stream_state))
+         {
+            return;
+         }
+
+         // start the visualization
+         break;
+      }
+      else if (word == "data_coll_field")
+      {
+         if (ScriptReadDataColl(scr, stream_state, false))
+         {
+            return;
+         }
+
+         // start the visualization
+         break;
+      }
+      else if (word == "data_coll_quad")
+      {
+         if (ScriptReadDataColl(scr, stream_state, false, true))
+         {
+            return;
+         }
+
+         // start the visualization
+         break;
       }
       else
       {
@@ -1304,8 +1412,6 @@ int main (int argc, char *argv[])
    const char *fms_coll      = string_none;
    const char *conduit_coll  = string_none;
    //const char *adios2_coll   = string_none; // reader not implemented
-   const char *dc_protocol   = string_default;
-   int         dc_cycle      = 0;
    int         np            = 0;
    bool        save_stream   = false;
    const char *stream_file   = string_none;
@@ -1718,7 +1824,7 @@ int main (int argc, char *argv[])
          DataCollectionReader reader(stream_state);
          if (dc_protocol != string_default)
          {
-            reader.SetProtocol(dc_protocol);
+            reader.SetProtocol(dc_protocol.c_str());
          }
 
          int ierr;
