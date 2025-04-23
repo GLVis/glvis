@@ -483,7 +483,9 @@ int ScriptReadDataColl(istream &scr, DataState &state, bool mesh_only = true,
 
    DataCollectionReader reader(state);
    if (dc_protocol != string_default)
+   {
       reader.SetProtocol(dc_protocol.c_str());
+   }
 
    if (mesh_only)
       err_read = reader.ReadSerial((DataCollectionReader::CollType)type,
