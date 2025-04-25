@@ -22,23 +22,30 @@ int DataCollectionReader::ReadSerial(CollType ct, const char *coll_file,
    switch (ct)
    {
       case CollType::VISIT:
-         data.SetDataCollectionField(new VisItDataCollection(coll_file), ti, field,
-                                     quad, component);
-         break;
+      {
+         auto dc = new VisItDataCollection(coll_file);
+         dc->SetPadDigits(pad_digits);
+         data.SetDataCollectionField(dc, ti, field, quad, component);
+      }
+      break;
          //case CollType::PARAVIEW: // reader not implemented
          //   data.SetDataCollectionField(new ParaViewDataCollection(coll_file), ti, field,
          //                               quad, component);
          //   break;
 #ifdef MFEM_USE_SIDRE
       case CollType::SIDRE:
-         data.SetDataCollectionField(new SidreDataCollection(coll_file), ti, field,
-                                     quad, component);
-         break;
+      {
+         auto dc = new SidreDataCollection(coll_file);
+         dc->SetPadDigits(pad_digits);
+         data.SetDataCollectionField(dc, ti, field, quad, component);
+      }
+      break;
 #endif // MFEM_USE_SIDRE
 #ifdef MFEM_USE_FMS
       case CollType::FMS:
       {
          auto dc = new FMSDataCollection(coll_file);
+         dc->SetPadDigits(pad_digits);
          dc->SetProtocol(protocol);
          data.SetDataCollectionField(dc, ti, field, quad, component);
       }
@@ -48,6 +55,7 @@ int DataCollectionReader::ReadSerial(CollType ct, const char *coll_file,
       case CollType::CONDUIT:
       {
          auto dc = new ConduitDataCollection(coll_file);
+         dc->SetPadDigits(pad_digits);
          dc->SetProtocol(protocol);
          data.SetDataCollectionField(dc, ti, field, quad, component);
       }

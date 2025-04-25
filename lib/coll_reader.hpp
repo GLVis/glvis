@@ -19,6 +19,7 @@
 class DataCollectionReader
 {
    DataState &data;
+   int pad_digits;
    std::string protocol;
 
 public:
@@ -33,6 +34,9 @@ public:
    };
 
    DataCollectionReader(DataState &data_) : data(data_) { }
+
+   /// Set the padding digits
+   void SetPadDigits(int digits) { pad_digits = digits; }
 
    /// Set the I/O protocol to for loading of collections
    void SetProtocol(const char *protocol_) { protocol = protocol_; }

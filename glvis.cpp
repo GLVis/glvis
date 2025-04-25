@@ -1824,6 +1824,7 @@ int main (int argc, char *argv[])
          }
 
          DataCollectionReader reader(stream_state);
+         reader.SetPadDigits(pad_digits);
          if (dc_protocol != string_default)
          {
             reader.SetProtocol(dc_protocol.c_str());
