@@ -79,21 +79,53 @@ public:
    DataState(DataState &&ss) { *this = std::move(ss); }
    DataState& operator=(DataState &&ss);
 
+   /// Get type of the contained data
    inline FieldType GetType() const { return type; }
 
+   /// Set a mesh (plain pointer version)
+   /** Note that ownership is passed from the caller.
+       @see SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh) */
    void SetMesh(mfem::Mesh *mesh);
+
+   /// Set a mesh (unqiue pointer version)
+   /** Sets the mesh and resets grid/quadrature functions if they do not use
+       the same one. */
    void SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh);
 
+   /// Set a grid function (plain pointer version)
+   /** Note that ownership is passed from the caller.
+       @see SetGridFunction(std::unique_ptr<mfem::GridFunction> &&, int ) */
    void SetGridFunction(mfem::GridFunction *gf, int component = -1);
+
+   /// Set a grid function (unique pointer version)
+   /** Sets the grid function or its component (-1 means all components). */
    void SetGridFunction(std::unique_ptr<mfem::GridFunction> &&pgf,
                         int component = -1);
 
+   /// Set a quadrature function (plain pointer version)
+   /** Note that ownership is passed from the caller.
+       @see SetQuadFunction(std::unique_ptr<mfem::QuadFunction> &&, int ) */
    void SetQuadFunction(mfem::QuadratureFunction *qf, int component = -1);
+
+   /// Set a quadrature function (unique pointer version)
+   /** Sets the quadrature function or its component (-1 means all components). */
    void SetQuadFunction(std::unique_ptr<mfem::QuadratureFunction> &&pqf,
                         int component = -1);
+
+   /// Set a quadrature function from pieces
+   /** Serializes the pieces of a quadrature function and sets it or its
+       component (-1 means all components) */
    void SetQuadFunction(const std::vector<mfem::QuadratureFunction*> &qf_array,
                         int component = -1);
 
+   /// Set a data collection field
+   /** Sets the mesh and optionally a grid or quadrature function from the
+       provided data collection.
+       @param dc        data collection
+       @param ti        cycle to load
+       @param field     name of the (Q-)field to load (NULL for mesh only)
+       @param quad      if true, Q-field is loaded, otherwise a regular field
+       @param component component of the field (-1 means all components) */
    void SetDataCollectionField(mfem::DataCollection *dc, int ti,
                                const char *field = NULL, bool quad = false, int component = -1);
 
@@ -105,8 +137,6 @@ public:
 
    /// Helper function for visualization of 2D3V data
    void Extrude2D3VMeshAndSolution();
-
-   /// Helper function to build the quadrature function from pieces
 
    /// Set a (checkerboard) solution when only the mesh is given
    void SetMeshSolution();

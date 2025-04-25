@@ -37,8 +37,16 @@ public:
    /// Set the I/O protocol to for loading of collections
    void SetProtocol(const char *protocol_) { protocol = protocol_; }
 
-   /// Read the mesh from a file and solution from a collection
-   int ReadSerial(CollType ct, const char *collection, int ti,
+   /// Load the mesh and solution from a collection
+   /** Loads the mesh and optionally a grid or quadrature function from the
+       provided data collection.
+       @param ct        collection type
+       @param dc        data collection
+       @param ti        cycle to load
+       @param field     name of the (Q-)field to load (NULL for mesh only)
+       @param quad      if true, Q-field is loaded, otherwise a regular field
+       @param component component of the field (-1 means all components) */
+   int ReadSerial(CollType ct, const char *dc, int ti,
                   const char *field = NULL, bool quad = false, int component = -1);
 };
 
