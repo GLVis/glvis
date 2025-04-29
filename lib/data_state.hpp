@@ -87,7 +87,7 @@ public:
        @see SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh) */
    void SetMesh(mfem::Mesh *mesh);
 
-   /// Set a mesh (unqiue pointer version)
+   /// Set a mesh (unique pointer version)
    /** Sets the mesh and resets grid/quadrature functions if they do not use
        the same one. */
    void SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh);

@@ -26,11 +26,11 @@ public:
    enum class CollType
    {
       VISIT,
-      PARAVIEW,
+      PARAVIEW, // not currently implemented
       SIDRE,
       FMS,
       CONDUIT,
-      ADIOS2,
+      ADIOS2, // not currently implemented
    };
 
    DataCollectionReader(DataState &data_) : data(data_) { }
