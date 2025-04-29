@@ -23,6 +23,13 @@ Version 4.3.3 (development)
 - Palettes can now also be specified with explicit alpha channels. See the
   example file share/palettes-variable-opacity.txt.
 
+- Added loading of data collections (VisIt, Sidre, FMS and Conduit) through
+  parameters '-visit', '-sidre', '-fms' and '-conduit' respectively. The name
+  of the field can be specified through '-g' or '-q' for a quadrature field.
+  Optionally, the cycle and protocol can be provided through 'dc-cycle' and
+  'dc-prot' parameters respectively. Note GLVis must be compiled with MFEM
+  configured with the associated libraries.
+
 - Fixed a bug where discrete textures would not repeat.
 
 - Added support for 1D/2D data (mesh and grid function) using scalar finite
@@ -30,13 +37,6 @@ Version 4.3.3 (development)
 
 - Added support for 1D/2D vector finite elements with 3 range dimensions
   (requires MFEM v4.8).
-
-- Added loading of data collections (VisIt, Sidre, FMS and Conduit) through
-  parameters '-visit', '-sidre', '-fms' and '-conduit' respectively. The name
-  of the field can be specified through '-g' or '-q' for a quadrature field.
-  Optionally, the cycle and protocol can be provided through 'dc-cycle' and
-  'dc-prot' parameters respectively. Note GLVis must be compiled with MFEM
-  configured with the associated libraries.
 
 
 Version 4.3.2 released on Sep 27, 2024
