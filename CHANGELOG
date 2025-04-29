@@ -27,7 +27,7 @@ Version 4.4 released on May X, 2025
   command line arguments '-visit', '-sidre', '-fms' and '-conduit' respectively.
   The field to plot can be specified using '-g' or '-q' for a quadrature field.
   Optionally, the cycle and protocol can be provided through the 'dc-cycle' and
-  'dc-prot' parameters. Note that GLVis must be build using MFEM configured with
+  'dc-prot' parameters. Note that GLVis must be built using MFEM configured with
   the associated libraries.
 
 - Added support for 1D/2D data (mesh and grid function) using scalar finite
