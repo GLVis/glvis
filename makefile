@@ -273,7 +273,7 @@ HEADER_FILES = \
  lib/gl/attr_traits.hpp lib/gl/platform_gl.hpp lib/gl/renderer.hpp		\
  lib/gl/shader.hpp lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp		\
  lib/gl/types.hpp lib/aux_vis.hpp lib/coll_reader.hpp					\
- lib/data_state.hpplib/file_reader.hpp lib/font.hpp lib/geom_utils.hpp	\
+ lib/data_state.hpp lib/file_reader.hpp lib/font.hpp lib/geom_utils.hpp	\
  lib/gl2ps.h lib/gltf.hpp lib/logo.hpp lib/material.hpp					\
  lib/openglvis.hpp lib/palettes.hpp lib/palettes_base.hpp lib/sdl.hpp	\
  lib/sdl_helper.hpp	lib/sdl_mac.hpp lib/sdl_main.hpp					\
