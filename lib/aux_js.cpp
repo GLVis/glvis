@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2025, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -33,7 +33,7 @@ static VisualizationSceneScalarData * vs = nullptr;
 // either bitmap data or png bytes
 std::vector<unsigned char> * screen_state = nullptr;
 
-StreamState stream_state;
+DataState stream_state;
 
 int last_stream_nproc = 1;
 
@@ -44,17 +44,11 @@ namespace js
 
 using namespace mfem;
 
-// switch representation of the quadrature function
+/// Switch representation of the quadrature function
 void SwitchQuadSolution();
 
-//
-// display a new stream
-// field_type: 0 - scalar data, 1 - vector data, 2 - mesh only, (-1) - unknown
-//
-StreamState::FieldType display(const StreamState::FieldType field_type,
-                               std::stringstream & commands,
-                               const int w,
-                               const int h)
+/// Display a new stream
+void display(std::stringstream & commands, const int w, const int h)
 {
    // reset antialiasing
    GetAppWindow()->getRenderer().setAntialiasing(0);
@@ -79,16 +73,17 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
       }
    }
 
-   // If unknown, default to vector field_type
-   if (field_type <= StreamState::FieldType::MIN
-       || field_type >= StreamState::FieldType::MAX)
+   DataState::FieldType field_type = stream_state.GetType();
+
+   if (field_type <= DataState::FieldType::MIN
+       || field_type >= DataState::FieldType::MAX)
    {
-      return StreamState::FieldType::VECTOR;
+      return;
    }
 
    if (InitVisualization("glvis", 0, 0, w, h))
    {
-      return StreamState::FieldType::VECTOR;
+      return;
    }
 
    delete vs;
@@ -100,8 +95,8 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
    }
 
    double mesh_range = -1.0;
-   if (field_type == StreamState::FieldType::SCALAR
-       || field_type == StreamState::FieldType::MESH)
+   if (field_type == DataState::FieldType::SCALAR
+       || field_type == DataState::FieldType::MESH)
    {
       if (stream_state.grid_f)
       {
@@ -124,7 +119,7 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
          {
             vss->SetGridFunction(*stream_state.grid_f);
          }
-         if (field_type == StreamState::FieldType::MESH)
+         if (field_type == DataState::FieldType::MESH)
          {
             vs->OrthogonalProjection = 1;
             vs->SetLight(0);
@@ -143,7 +138,7 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
          {
             vss->SetGridFunction(stream_state.grid_f.get());
          }
-         if (field_type == StreamState::FieldType::MESH)
+         if (field_type == DataState::FieldType::MESH)
          {
             if (stream_state.mesh->Dimension() == 3)
             {
@@ -162,7 +157,7 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
             vss->ToggleDrawMesh();
          }
       }
-      if (field_type == StreamState::FieldType::MESH)
+      if (field_type == DataState::FieldType::MESH)
       {
          if (stream_state.grid_f)
          {
@@ -174,7 +169,7 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
          }
       }
    }
-   else if (field_type == StreamState::FieldType::VECTOR)
+   else if (field_type == DataState::FieldType::VECTOR)
    {
       if (stream_state.mesh->SpaceDimension() == 2)
       {
@@ -219,7 +214,7 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
          vs->SetAutoscale(0);
       }
       if (stream_state.mesh->SpaceDimension() == 2 &&
-          field_type == StreamState::FieldType::MESH)
+          field_type == DataState::FieldType::MESH)
       {
          SetVisualizationScene(vs, 2);
       }
@@ -237,20 +232,19 @@ StreamState::FieldType display(const StreamState::FieldType field_type,
    }
 
    SendExposeEvent();
-   return StreamState::FieldType::SCALAR;
 }
 
 //
-// StreamState::ReadStream requires a list of unique_ptr to istream and since
+// StreamReader::ReadStream requires a list of unique_ptr to istream and since
 // we cannot directly pass a list of string we need to repack the strings into
 // a new list.
 //
 // each string in streams must start with `parallel <nproc> <rank>'
 //
 using StringArray = std::vector<std::string>;
-StreamState::FieldType processParallelStreams(StreamState & state,
-                                              const StringArray & streams,
-                                              std::stringstream * commands = nullptr)
+void processParallelStreams(DataState & state,
+                            const StringArray & streams,
+                            std::stringstream * commands = nullptr)
 {
    // std::cerr << "got " << streams.size() << " streams" << std::endl;
    // HACK: match unique_ptr<istream> interface for ReadStreams:
@@ -267,7 +261,8 @@ StreamState::FieldType processParallelStreams(StreamState & state,
       istreams[i] = std::unique_ptr<std::istream>(&sstreams[i]);
    }
 
-   const StreamState::FieldType field_type = state.ReadStreams(istreams);
+   StreamReader reader(state);
+   reader.ReadStreams(istreams);
 
    if (commands)
    {
@@ -281,36 +276,33 @@ StreamState::FieldType processParallelStreams(StreamState & state,
    }
 
    last_stream_nproc = streams.size();
-
-   return field_type;
 }
 
-StreamState::FieldType displayParallelStreams(const StringArray & streams,
-                                              const int w,
-                                              const int h)
+void displayParallelStreams(const StringArray & streams, const int w,
+                            const int h)
 {
    std::stringstream commands(streams[0]);
-   const StreamState::FieldType field_type = processParallelStreams(stream_state,
-                                                                    streams, &commands);
-   return display(field_type, commands, w, h);
+   processParallelStreams(stream_state, streams, &commands);
+
+   display(commands, w, h);
 }
 
-StreamState::FieldType displayStream(const std::string & stream, const int w,
-                                     const int h)
+void displayStream(const std::string & stream, const int w, const int h)
 {
    std::stringstream ss(stream);
    std::string data_type;
    ss >> data_type;
-   const StreamState::FieldType field_type = stream_state.ReadStream(ss,
-                                                                     data_type);
 
-   return display(field_type, ss, w, h);
+   StreamReader reader(stream_state);
+   reader.ReadStream(ss, data_type);
+
+   display(ss, w, h);
 }
 
 //
 // update the existing stream
 //
-int update(StreamState & new_state)
+int update(DataState & new_state)
 {
    double mesh_range = -1.0;
 
@@ -338,8 +330,9 @@ int updateStream(std::string stream)
    std::string data_type;
    ss >> data_type;
 
-   StreamState new_state;
-   new_state.ReadStream(ss, data_type);
+   DataState new_state;
+   StreamReader reader(new_state);
+   reader.ReadStream(ss, data_type);
 
    return update(new_state);
 }
@@ -353,7 +346,7 @@ int updateParallelStreams(const StringArray & streams)
                 streams.size() << " != " << last_stream_nproc << std::endl;
       return 1;
    }
-   StreamState new_state;
+   DataState new_state;
    processParallelStreams(new_state, streams);
 
    return update(new_state);
@@ -473,8 +466,8 @@ em::val getScreenBuffer(bool flip_y=false)
 void SwitchQuadSolution()
 {
    int iqs = ((int)stream_state.GetQuadSolution()+1)
-             % ((int)StreamState::QuadSolution::MAX);
-   stream_state.SwitchQuadSolution((StreamState::QuadSolution)iqs, vs);
+             % ((int)DataState::QuadSolution::MAX);
+   stream_state.SwitchQuadSolution((DataState::QuadSolution)iqs, vs);
    SendExposeEvent();
 }
 
@@ -524,13 +517,13 @@ em::val getPNGByteArray()
 // https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html#built-in-type-conversions
 EMSCRIPTEN_BINDINGS(js_funcs)
 {
-   em::enum_<StreamState::FieldType>("FieldType")
-   .value("UNKNOWN", StreamState::FieldType::UNKNOWN)
-   .value("MIN", StreamState::FieldType::MIN)
-   .value("SCALAR", StreamState::FieldType::SCALAR)
-   .value("VECTOR", StreamState::FieldType::VECTOR)
-   .value("MESH", StreamState::FieldType::MESH)
-   .value("MAX", StreamState::FieldType::MAX)
+   em::enum_<DataState::FieldType>("FieldType")
+   .value("UNKNOWN", DataState::FieldType::UNKNOWN)
+   .value("MIN", DataState::FieldType::MIN)
+   .value("MESH", DataState::FieldType::MESH)
+   .value("SCALAR", DataState::FieldType::SCALAR)
+   .value("VECTOR", DataState::FieldType::VECTOR)
+   .value("MAX", DataState::FieldType::MAX)
    ;
    em::function("displayStream", &js::displayStream);
    em::function("displayParallelStreams", &js::displayParallelStreams);

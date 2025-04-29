@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
+# Copyright (c) 2010-2025, Lawrence Livermore National Security, LLC. Produced
 # at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 # LICENSE and NOTICE for details. LLNL-CODE-443271.
 #
@@ -15,6 +15,9 @@ list(APPEND SOURCES
   gl/shader.cpp
   gl/types.cpp
   aux_vis.cpp
+  coll_reader.cpp
+  data_state.cpp
+  file_reader.cpp
   font.cpp
   gltf.cpp
   material.cpp
@@ -39,6 +42,9 @@ list(APPEND HEADERS
   gl/shader.hpp
   gl/types.hpp
   aux_vis.hpp
+  coll_reader.hpp
+  data_state.hpp
+  file_reader.hpp
   font.hpp
   geom_utils.hpp
   gltf.hpp

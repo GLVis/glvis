@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2024, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2025, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-443271.
 //
@@ -11,6 +11,7 @@
 
 #include "visual.hpp"
 #include "palettes.hpp"
+#include <vector>
 
 using namespace std;
 
@@ -18,11 +19,10 @@ extern const char *strings_off_on[]; // defined in vsdata.cpp
 
 
 GLVisCommand::GLVisCommand(
-   VisualizationSceneScalarData **_vs, StreamState& state, bool *_keep_attr)
+   VisualizationSceneScalarData **_vs, DataState& state)
    : curr_state(state)
 {
    vs        = _vs;
-   keep_attr = _keep_attr;
    // should be set in this thread by a call to InitVisualization()
    thread_wnd = GetAppWindow();
 
@@ -79,7 +79,7 @@ void GLVisCommand::unlock()
    }
 }
 
-int GLVisCommand::NewMeshAndSolution(StreamState &&ss)
+int GLVisCommand::NewMeshAndSolution(DataState &&ss)
 {
    if (lock() < 0)
    {
@@ -464,7 +464,7 @@ int GLVisCommand::Execute()
             else
             {
                auto qs = curr_state.GetQuadSolution();
-               if (qs != StreamState::QuadSolution::NONE)
+               if (qs != DataState::QuadSolution::NONE)
                {
                   new_state.SetQuadSolution(qs);
                }
@@ -838,7 +838,7 @@ void communication_thread::execute()
           ident == "quadrature" || ident == "parallel")
       {
          bool fix_elem_orient = glvis_command->FixElementOrientations();
-         StreamState tmp;
+         DataState tmp;
          if (ident == "mesh")
          {
             tmp.SetMesh(new Mesh(*is[0], 1, 0, fix_elem_orient));
@@ -876,9 +876,9 @@ void communication_thread::execute()
          }
          else if (ident == "parallel")
          {
-            Array<Mesh *> mesh_array;
-            Array<GridFunction *> gf_array;
-            Array<QuadratureFunction *> qf_array;
+            std::vector<Mesh*> mesh_array;
+            std::vector<GridFunction*> gf_array;
+            std::vector<QuadratureFunction*> qf_array;
             int proc, nproc, np = 0;
             bool keep_attr = glvis_command->KeepAttrib();
             do
@@ -890,7 +890,7 @@ void communication_thread::execute()
                     << proc << endl;
 #endif
                isock >> ident >> ws;
-               mesh_array.SetSize(nproc);
+               mesh_array.resize(nproc);
                mesh_array[proc] = new Mesh(isock, 1, 0, fix_elem_orient);
                if (!keep_attr)
                {
@@ -906,12 +906,12 @@ void communication_thread::execute()
                }
                if (ident == "solution")
                {
-                  gf_array.SetSize(nproc);
+                  gf_array.resize(nproc);
                   gf_array[proc] = new GridFunction(mesh_array[proc], isock);
                }
                else if (ident == "quadrature")
                {
-                  qf_array.SetSize(nproc);
+                  qf_array.resize(nproc);
                   qf_array[proc] = new QuadratureFunction(mesh_array[proc], isock);
                }
                else
@@ -927,31 +927,31 @@ void communication_thread::execute()
             }
             while (1);
 
-            tmp.SetMesh(new Mesh(mesh_array, nproc));
-            if (gf_array.Size() > 0)
+            tmp.SetMesh(new Mesh(mesh_array.data(), nproc));
+            if (gf_array.size() > 0)
             {
-               tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), gf_array, nproc));
+               tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), gf_array.data(), nproc));
             }
-            else if (qf_array.Size() > 0)
+            else if (qf_array.size() > 0)
             {
-               tmp.CollectQuadratures(qf_array, nproc);
+               tmp.SetQuadFunction(qf_array);
             }
 
             for (int p = 0; p < nproc; p++)
             {
-               if (gf_array.Size() > 0)
+               if (gf_array.size() > 0)
                {
                   delete gf_array[nproc-1-p];
                }
-               if (qf_array.Size() > 0)
+               if (qf_array.size() > 0)
                {
                   delete qf_array[nproc-1-p];
                }
                delete mesh_array[nproc-1-p];
             }
-            gf_array.DeleteAll();
-            qf_array.DeleteAll();
-            mesh_array.DeleteAll();
+            gf_array.clear();
+            qf_array.clear();
+            mesh_array.clear();
          }
 
          // cout << "Stream: new solution" << endl;
