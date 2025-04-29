@@ -121,7 +121,6 @@ void CallKeySequence(const char *seq);
 
 void SetUseTexture(int ut);
 int GetUseTexture();
-void Set_Texture_Image();
 int GetMultisample();
 void SetMultisample(int m);
 
