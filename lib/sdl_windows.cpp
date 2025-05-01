@@ -25,7 +25,7 @@ struct SdlWindowsPlatform::Impl
 };
 
 SdlWindowsPlatform::SdlWindowsPlatform()
-    : m_impl(new Impl)
+   : m_impl(new Impl)
 {
    m_impl->signal_evt = CreateEventA(nullptr, false, false, "");
    if (m_impl->signal_evt == NULL)

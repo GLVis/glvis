@@ -1409,11 +1409,9 @@ int main (int argc, char *argv[])
 #endif
    // variables for command line arguments
    const char *visit_coll    = string_none;
-   //const char *paraview_coll = string_none; // reader not implemented
    const char *sidre_coll    = string_none;
    const char *fms_coll      = string_none;
    const char *conduit_coll  = string_none;
-   //const char *adios2_coll   = string_none; // reader not implemented
    int         np            = 0;
    bool        save_stream   = false;
    const char *stream_file   = string_none;
@@ -1448,8 +1446,6 @@ int main (int argc, char *argv[])
                   "Vector solution (vertex values) file to visualize.");
    args.AddOption(&visit_coll, "-visit", "--visit-datafiles",
                   "VisIt collection to load");
-   //args.AddOption(&paraview_coll, "-paraview", "--paraview-datafiles",
-   //               "ParaView collection to load");
 #ifdef MFEM_USE_SIDRE
    args.AddOption(&sidre_coll, "-sidre", "--sidre-datafiles",
                   "Sidre collection to load");
@@ -1462,10 +1458,6 @@ int main (int argc, char *argv[])
    args.AddOption(&conduit_coll, "-conduit", "--conduit-datafiles",
                   "Conduit collection to load");
 #endif // MFEM_USE_CONDUIT
-#ifdef MFEM_USE_ADIOS2
-   //args.AddOption(&adios2_coll, "-adios2", "--adios2-datafiles",
-   //               "ADIOS2 collection to load");
-#endif // MFEM_USE_ADIOS2
    args.AddOption(&dc_protocol, "-dc-prot", "--data-collection-protocol",
                   "Protocol of the data collection to load");
    args.AddOption(&dc_cycle, "-dc-cycle", "--data-collection-cycle",
@@ -1579,11 +1571,6 @@ int main (int argc, char *argv[])
       mesh_file = visit_coll;
       input |= INPUT_DATA_COLL;
    }
-   /*else if (paraview_coll != string_none)
-   {
-      mesh_file = paraview_coll;
-      input |= INPUT_DATA_COLL;
-   }*/
    else if (sidre_coll != string_none)
    {
       mesh_file = sidre_coll;
@@ -1599,11 +1586,6 @@ int main (int argc, char *argv[])
       mesh_file = conduit_coll;
       input |= INPUT_DATA_COLL;
    }
-   /*else if (adios2_coll != string_none)
-   {
-      mesh_file = adios2_coll;
-      input |= INPUT_DATA_COLL;
-   }*/
 
    if (np > 0)
    {
@@ -1787,10 +1769,6 @@ int main (int argc, char *argv[])
          {
             coll_type = DataCollectionReader::CollType::VISIT;
          }
-         /*else if (paraview_coll != string_none)
-         {
-            coll_type = DataCollectionReader::CollType::PARAVIEW;
-         }*/
          else if (sidre_coll != string_none)
          {
             coll_type = DataCollectionReader::CollType::SIDRE;
@@ -1803,10 +1781,6 @@ int main (int argc, char *argv[])
          {
             coll_type = DataCollectionReader::CollType::CONDUIT;
          }
-         /*else if (adios2_coll != string_none)
-         {
-            coll_type = DataCollectionReader::CollType::ADIOS2;
-         }*/
 
          if (input & INPUT_GRID_FUNC)
          {

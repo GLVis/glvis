@@ -28,10 +28,6 @@ int DataCollectionReader::ReadSerial(CollType ct, const char *coll_file,
          data.SetDataCollectionField(dc, ti, field, quad, component);
       }
       break;
-         //case CollType::PARAVIEW: // reader not implemented
-         //   data.SetDataCollectionField(new ParaViewDataCollection(coll_file), ti, field,
-         //                               quad, component);
-         //   break;
 #ifdef MFEM_USE_SIDRE
       case CollType::SIDRE:
       {
@@ -61,12 +57,6 @@ int DataCollectionReader::ReadSerial(CollType ct, const char *coll_file,
       }
       break;
 #endif // MFEM_USE_CONDUIT
-#ifdef MFEM_USE_ADIOS2
-         //case CollType::ADIOS2: // reader not implemented
-         //   data.SetDataCollectionField(new ADIOS2DataCollection(coll_file), ti, field,
-         //                               quad, component);
-         //   break;
-#endif // MFEM_USE_ADIOS2
       default:
          cerr << "Unknown collection type. Exit" << endl;
          exit(1);
