@@ -255,10 +255,10 @@ ALL_SOURCE_FILES = \
  lib/coll_reader.cpp lib/data_state.cpp lib/file_reader.cpp             \
  lib/font.cpp lib/gl2ps.c lib/gltf.cpp lib/material.cpp                 \
  lib/openglvis.cpp lib/palettes_base.cpp lib/palettes.cpp lib/sdl.cpp   \
- lib/sdl_helper.cpp lib/sdl_main.cpp lib/sdl_windows.cpp                \
- lib/sdl_x11.cpp lib/stream_reader.cpp lib/threads.cpp lib/vsdata.cpp   \
- lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp               \
- lib/vsvector3d.cpp
+ lib/script_controller.cpp lib/sdl_helper.cpp lib/sdl_main.cpp          \
+ lib/sdl_windows.cpp lib/sdl_x11.cpp lib/stream_reader.cpp              \
+ lib/threads.cpp lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp \
+ lib/vsvector.cpp lib/vsvector3d.cpp
 OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl_mac.mm)
 DESKTOP_ONLY_SOURCE_FILES = \
  lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c lib/sdl_x11.cpp
@@ -276,11 +276,11 @@ HEADER_FILES = \
  lib/data_state.hpp lib/file_reader.hpp lib/font.hpp                    \
  lib/geom_utils.hpp lib/gl2ps.h lib/gltf.hpp lib/logo.hpp               \
  lib/material.hpp lib/openglvis.hpp lib/palettes_base.hpp               \
- lib/palettes.hpp lib/sdl_helper.hpp lib/sdl.hpp lib/sdl_mac.hpp        \
- lib/sdl_main.hpp lib/sdl_windows.hpp lib/sdl_x11.hpp                   \
- lib/stream_reader.hpp lib/threads.hpp lib/visual.hpp lib/vsdata.hpp    \
- lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp               \
- lib/vsvector3d.hpp
+ lib/palettes.hpp lib/script_controller.hpp lib/sdl_helper.hpp          \
+ lib/sdl.hpp lib/sdl_mac.hpp lib/sdl_main.hpp lib/sdl_windows.hpp       \
+ lib/sdl_x11.hpp lib/stream_reader.hpp lib/threads.hpp lib/visual.hpp   \
+ lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp                 \
+ lib/vsvector.hpp lib/vsvector3d.hpp
 
 DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) $(DESKTOP_ONLY_SOURCE_FILES) $(LOGO_FILE_CPP)
 WEB_SOURCE_FILES     = $(COMMON_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES)
