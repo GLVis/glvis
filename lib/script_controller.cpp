@@ -9,6 +9,7 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
+#include "window.hpp"
 #include "file_reader.hpp"
 #include "coll_reader.hpp"
 #include "stream_reader.hpp"
@@ -28,8 +29,7 @@ extern int         window_w;
 extern int         window_h;
 extern const char *c_plot_caption;
 
-extern thread_local DataState stream_state;
-extern thread_local VisualizationSceneScalarData *vs;
+extern thread_local Window win;
 
 istream *script = NULL;
 int scr_running = 0;
@@ -378,7 +378,7 @@ void ExecuteScriptCommand()
             }
          }
 
-         if (stream_state.SetNewMeshAndSolution(std::move(new_state), vs))
+         if (win.data_state.SetNewMeshAndSolution(std::move(new_state), win.vs))
          {
             MyExpose();
          }
@@ -401,20 +401,20 @@ void ExecuteScriptCommand()
          }
          cout << "-> " << word << endl;
 
-         if (scr_min_val > vs->GetMinV())
+         if (scr_min_val > win.vs->GetMinV())
          {
-            scr_min_val = vs->GetMinV();
+            scr_min_val = win.vs->GetMinV();
          }
-         if (scr_max_val < vs->GetMaxV())
+         if (scr_max_val < win.vs->GetMaxV())
          {
-            scr_max_val = vs->GetMaxV();
+            scr_max_val = win.vs->GetMaxV();
          }
       }
       else if (word == "viewcenter")
       {
-         scr >> vs->ViewCenterX >> vs->ViewCenterY;
+         scr >> win.vs->ViewCenterX >> win.vs->ViewCenterY;
          cout << "Script: viewcenter: "
-              << vs->ViewCenterX << ' ' << vs->ViewCenterY << endl;
+              << win.vs->ViewCenterX << ' ' << win.vs->ViewCenterY << endl;
          MyExpose();
       }
       else if (word ==  "perspective")
@@ -423,11 +423,11 @@ void ExecuteScriptCommand()
          cout << "Script: perspective: " << word;
          if (word == "off")
          {
-            vs->OrthogonalProjection = 1;
+            win.vs->OrthogonalProjection = 1;
          }
          else if (word == "on")
          {
-            vs->OrthogonalProjection = 0;
+            win.vs->OrthogonalProjection = 0;
          }
          else
          {
@@ -442,11 +442,11 @@ void ExecuteScriptCommand()
          cout << "Script: light: " << word;
          if (word == "off")
          {
-            vs->SetLight(false);
+            win.vs->SetLight(false);
          }
          else if (word == "on")
          {
-            vs->SetLight(true);
+            win.vs->SetLight(true);
          }
          else
          {
@@ -460,7 +460,7 @@ void ExecuteScriptCommand()
          double theta, phi;
          scr >> theta >> phi;
          cout << "Script: view: " << theta << ' ' << phi << endl;
-         vs->SetView(theta, phi);
+         win.vs->SetView(theta, phi);
          MyExpose();
       }
       else if (word == "zoom")
@@ -468,7 +468,7 @@ void ExecuteScriptCommand()
          double factor;
          scr >> factor;
          cout << "Script: zoom: " << factor << endl;
-         vs->Zoom(factor);
+         win.vs->Zoom(factor);
          MyExpose();
       }
       else if (word == "shading")
@@ -491,7 +491,7 @@ void ExecuteScriptCommand()
          }
          if (s != VisualizationSceneScalarData::Shading::Invalid)
          {
-            vs->SetShading(s, false);
+            win.vs->SetShading(s, false);
             cout << word << endl;
             MyExpose();
          }
@@ -505,7 +505,7 @@ void ExecuteScriptCommand()
          int t, b;
          scr >> t >> b;
          cout << "Script: subdivisions: " << flush;
-         vs->SetRefineFactors(t, b);
+         win.vs->SetRefineFactors(t, b);
          cout << t << ' ' << b << endl;
          MyExpose();
       }
@@ -514,7 +514,7 @@ void ExecuteScriptCommand()
          double min, max;
          scr >> min >> max;
          cout << "Script: valuerange: " << flush;
-         vs->SetValueRange(min, max);
+         win.vs->SetValueRange(min, max);
          cout << min << ' ' << max << endl;
          MyExpose();
       }
@@ -524,19 +524,19 @@ void ExecuteScriptCommand()
          cout << "Script: autoscale: " << word;
          if (word == "off")
          {
-            vs->SetAutoscale(0);
+            win.vs->SetAutoscale(0);
          }
          else if (word == "on")
          {
-            vs->SetAutoscale(1);
+            win.vs->SetAutoscale(1);
          }
          else if (word == "value")
          {
-            vs->SetAutoscale(2);
+            win.vs->SetAutoscale(2);
          }
          else if (word == "mesh")
          {
-            vs->SetAutoscale(3);
+            win.vs->SetAutoscale(3);
          }
          else
          {
@@ -550,8 +550,8 @@ void ExecuteScriptCommand()
          int num;
          scr >> min >> max >> num;
          cout << "Script: levellines: " << flush;
-         vs->SetLevelLines(min, max, num);
-         vs->UpdateLevelLines();
+         win.vs->SetLevelLines(min, max, num);
+         win.vs->UpdateLevelLines();
          cout << min << ' ' << max << ' ' << num << endl;
          MyExpose();
       }
@@ -562,7 +562,7 @@ void ExecuteScriptCommand()
          scr >> ws >> delim;
          getline(scr, axis_formatting, delim);
          cout << "Script: axis_numberformat: " << flush;
-         vs->SetAxisNumberFormat(axis_formatting);
+         win.vs->SetAxisNumberFormat(axis_formatting);
          cout << axis_formatting << endl;
          MyExpose();
       }
@@ -573,7 +573,7 @@ void ExecuteScriptCommand()
          scr >> ws >> delim;
          getline(scr, colorbar_formatting, delim);
          cout << "Script: colorbar_numberformat: " << flush;
-         vs->SetColorbarNumberFormat(colorbar_formatting);
+         win.vs->SetColorbarNumberFormat(colorbar_formatting);
          cout << colorbar_formatting << endl;
          MyExpose();
       }
@@ -587,10 +587,10 @@ void ExecuteScriptCommand()
       }
       else if (word == "keys")
       {
-         scr >> stream_state.keys;
-         cout << "Script: keys: '" << stream_state.keys << "'" << endl;
+         scr >> win.data_state.keys;
+         cout << "Script: keys: '" << win.data_state.keys << "'" << endl;
          // SendKeySequence(keys.c_str());
-         CallKeySequence(stream_state.keys.c_str());
+         CallKeySequence(win.data_state.keys.c_str());
          MyExpose();
       }
       else if (word == "palette")
@@ -598,7 +598,7 @@ void ExecuteScriptCommand()
          int pal;
          scr >> pal;
          cout << "Script: palette: " << pal << endl;
-         vs->palette.SetIndex(pal-1);
+         win.vs->palette.SetIndex(pal-1);
          MyExpose();
       }
       else if (word == "palette_repeat")
@@ -606,8 +606,8 @@ void ExecuteScriptCommand()
          int rpt_times;
          scr >> rpt_times;
          cout << "Script: palette_repeat: " << rpt_times << endl;
-         vs->palette.SetRepeatTimes(rpt_times);
-         vs->palette.GenerateTextures();
+         win.vs->palette.SetRepeatTimes(rpt_times);
+         win.vs->palette.GenerateTextures();
          MyExpose();
       }
       else if (word == "toggle_attributes")
@@ -629,7 +629,7 @@ void ExecuteScriptCommand()
          }
          scr.get(); // read the end symbol: ';'
          cout << endl;
-         vs->ToggleAttributes(attr_list);
+         win.vs->ToggleAttributes(attr_list);
          MyExpose();
       }
       else if (word == "rotmat")
@@ -637,8 +637,8 @@ void ExecuteScriptCommand()
          cout << "Script: rotmat:";
          for (int i = 0; i < 16; i++)
          {
-            scr >> vs->rotmat[i/4][i%4];
-            cout << ' ' << vs->rotmat[i/4][i%4];
+            scr >> win.vs->rotmat[i/4][i%4];
+            cout << ' ' << win.vs->rotmat[i/4][i%4];
          }
          cout << endl;
          MyExpose();
@@ -653,7 +653,7 @@ void ExecuteScriptCommand()
             cout << ' ' << cam[i];
          }
          cout << endl;
-         vs->cam.Set(cam);
+         win.vs->cam.Set(cam);
          MyExpose();
       }
       else if (word == "scale")
@@ -663,7 +663,7 @@ void ExecuteScriptCommand()
          scr >> scale;
          cout << ' ' << scale;
          cout << endl;
-         vs->Scale(scale);
+         win.vs->Scale(scale);
          MyExpose();
       }
       else if (word == "translate")
@@ -673,15 +673,15 @@ void ExecuteScriptCommand()
          scr >> x >> y >> z;
          cout << ' ' << x << ' ' << y << ' ' << z;
          cout << endl;
-         vs->Translate(x, y, z);
+         win.vs->Translate(x, y, z);
          MyExpose();
       }
       else if (word == "plot_caption")
       {
          char delim;
          scr >> ws >> delim;
-         getline(scr, plot_caption, delim);
-         vs->PrepareCaption(); // turn on or off the caption
+         getline(scr, win.plot_caption, delim);
+         win.vs->PrepareCaption(); // turn on or off the caption
          MyExpose();
       }
       else
@@ -754,7 +754,7 @@ void PlayScript(istream &scr)
       }
       else if (word == "solution")
       {
-         if (ScriptReadSolution(scr, stream_state))
+         if (ScriptReadSolution(scr, win.data_state))
          {
             return;
          }
@@ -764,7 +764,7 @@ void PlayScript(istream &scr)
       }
       else if (word == "quadrature")
       {
-         if (ScriptReadQuadrature(scr, stream_state))
+         if (ScriptReadQuadrature(scr, win.data_state))
          {
             return;
          }
@@ -774,7 +774,7 @@ void PlayScript(istream &scr)
       }
       else if (word == "psolution")
       {
-         if (ScriptReadParSolution(scr, stream_state))
+         if (ScriptReadParSolution(scr, win.data_state))
          {
             return;
          }
@@ -784,7 +784,7 @@ void PlayScript(istream &scr)
       }
       else if (word == "pquadrature")
       {
-         if (ScriptReadParQuadrature(scr, stream_state))
+         if (ScriptReadParQuadrature(scr, win.data_state))
          {
             return;
          }
@@ -794,18 +794,18 @@ void PlayScript(istream &scr)
       }
       else if (word == "mesh")
       {
-         if (ScriptReadDisplMesh(scr, stream_state))
+         if (ScriptReadDisplMesh(scr, win.data_state))
          {
             return;
          }
-         if (stream_state.mesh)
+         if (win.data_state.mesh)
          {
             break;
          }
       }
       else if (word == "data_coll_mesh")
       {
-         if (ScriptReadDataColl(scr, stream_state))
+         if (ScriptReadDataColl(scr, win.data_state))
          {
             return;
          }
@@ -815,7 +815,7 @@ void PlayScript(istream &scr)
       }
       else if (word == "data_coll_field")
       {
-         if (ScriptReadDataColl(scr, stream_state, false))
+         if (ScriptReadDataColl(scr, win.data_state, false))
          {
             return;
          }
@@ -825,7 +825,7 @@ void PlayScript(istream &scr)
       }
       else if (word == "data_coll_quad")
       {
-         if (ScriptReadDataColl(scr, stream_state, false, true))
+         if (ScriptReadDataColl(scr, win.data_state, false, true))
          {
             return;
          }
@@ -841,7 +841,7 @@ void PlayScript(istream &scr)
 
    scr_level = scr_running = 0;
    script = &scr;
-   stream_state.keys.clear();
+   win.data_state.keys.clear();
 
    // Make sure the singleton object returned by GetMainThread() is
    // initialized from the main thread.
@@ -852,10 +852,10 @@ void PlayScript(istream &scr)
       [&](DataState local_state)
       {
          // set the thread-local DataState
-         stream_state = std::move(local_state);
+         win.data_state = std::move(local_state);
          if (c_plot_caption != string_none)
          {
-            plot_caption = c_plot_caption;
+            win.plot_caption = c_plot_caption;
          }
          if (GLVisInitVis({}))
          {
@@ -863,7 +863,7 @@ void PlayScript(istream &scr)
             GLVisStartVis();
          }
       },
-      std::move(stream_state)
+      std::move(win.data_state)
    };
 
    SDLMainLoop();

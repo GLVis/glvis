@@ -17,11 +17,11 @@
 #include "mfem.hpp"
 #include "openglvis.hpp"
 #include "aux_vis.hpp"
+#include "window.hpp"
 
 using namespace mfem;
 
-extern thread_local std::string plot_caption; // defined in glvis.cpp
-extern thread_local std::string extra_caption; // defined in glvis.cpp
+extern thread_local Window win; // defined in glvis.cpp
 
 class Plane
 {
@@ -272,7 +272,7 @@ public:
       // colorbar states are: 0) no colorbar, no caption; 1) colorbar with
       // caption; 2) colorbar without caption.
       static const int next[2][3] = { { 1, 2, 0 }, { 2, 0, 0 } };
-      colorbar = next[plot_caption.empty()][colorbar];
+      colorbar = next[win.plot_caption.empty()][colorbar];
    }
 
    // Turn on or off the caption

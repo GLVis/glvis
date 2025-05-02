@@ -381,7 +381,7 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
    }
 
    Vec2Scalar = Vec2ScalarFunctions[i];
-   extra_caption = Vec2ScalarNames[i];
+   win.extra_caption = Vec2ScalarNames[i];
 
    for (i = 0; i < mesh->GetNV(); i++)
    {
@@ -488,7 +488,7 @@ void VisualizationSceneVector::Init()
    ArrowScale = 1.0;
    RefineFactor = 1;
    Vec2Scalar = VecLength;
-   extra_caption = Vec2ScalarNames[0];
+   win.extra_caption = Vec2ScalarNames[0];
 
    for (int i = 0; i < mesh->GetNV(); i++)
    {

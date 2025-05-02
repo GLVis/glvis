@@ -549,11 +549,11 @@ void VisualizationSceneSolution::ToggleDrawElems()
 
    if (drawelems < 2)
    {
-      extra_caption.clear();
+      win.extra_caption.clear();
    }
    else
    {
-      extra_caption = modes[drawelems];
+      win.extra_caption = modes[drawelems];
    }
 
    if (drawelems == 0)

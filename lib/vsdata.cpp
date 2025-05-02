@@ -596,13 +596,13 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
 // Draw a centered caption at the top (visible with the colorbar)
 void VisualizationSceneScalarData::PrepareCaption()
 {
-   bool empty = plot_caption.empty();
+   bool empty = win.plot_caption.empty();
    colorbar = (colorbar ? empty+1 : !empty);
 
-   string caption(plot_caption);
-   if (!extra_caption.empty())
+   string caption(win.plot_caption);
+   if (!win.extra_caption.empty())
    {
-      caption += " (" + extra_caption + ")";
+      caption += " (" + win.extra_caption + ")";
    }
 
    caption_buf.clear();
@@ -643,7 +643,7 @@ void KeycPressed(GLenum state)
 void KeyCPressed()
 {
    cout << "Enter new caption: " << flush;
-   std::getline(cin, plot_caption);
+   std::getline(cin, win.plot_caption);
    vsdata->PrepareCaption(); // turn on or off the caption
    SendExposeEvent();
 }

@@ -330,7 +330,7 @@ void VisualizationSceneVector3d::SetScalarFunction()
             }
          break;
    }
-   extra_caption = scal_func_name[scal_func];
+   win.extra_caption = scal_func_name[scal_func];
 }
 
 void VisualizationSceneVector3d::ToggleScalarFunction()

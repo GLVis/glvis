@@ -539,7 +539,7 @@ int GLVisCommand::Execute()
       case PLOT_CAPTION:
       {
          cout << "Command: plot_caption: " << plot_caption << endl;
-         ::plot_caption = plot_caption;
+         win.plot_caption = plot_caption;
          (*vs)->PrepareCaption(); // turn on or off the caption
          MyExpose();
          break;

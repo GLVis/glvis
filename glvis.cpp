@@ -34,6 +34,7 @@
 #include "mfem.hpp"
 #include "lib/palettes.hpp"
 #include "lib/visual.hpp"
+#include "lib/window.hpp"
 #include "lib/script_controller.hpp"
 #include "lib/stream_reader.hpp"
 #include "lib/file_reader.hpp"
@@ -63,8 +64,6 @@ int         window_w        = 400;
 int         window_h        = 350;
 const char *window_title    = string_default;
 const char *c_plot_caption  = string_none;
-thread_local string      plot_caption;
-thread_local string      extra_caption;
 bool        secure          = socketstream::secure_default;
 
 // Global variables
@@ -81,8 +80,8 @@ enum InputOptions
    INPUT_PARALLEL    = 1 << 8,
 };
 int input = INPUT_SERVER_MODE;
-thread_local DataState stream_state;
-thread_local VisualizationSceneScalarData *vs = NULL;
+
+thread_local Window win;
 extern thread_local GLVisCommand* glvis_command;
 thread_local communication_thread *comm_thread = NULL;
 
@@ -101,7 +100,7 @@ void SwitchQuadSolution();
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 bool GLVisInitVis(StreamCollection input_streams)
 {
-   DataState::FieldType field_type = stream_state.GetType();
+   DataState::FieldType field_type = win.data_state.GetType();
 
    if (field_type <= DataState::FieldType::MIN
        || field_type >= DataState::FieldType::MAX)
@@ -121,11 +120,11 @@ bool GLVisInitVis(StreamCollection input_streams)
    if (input_streams.size() > 0)
    {
       GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
-      glvis_command = new GLVisCommand(&vs, stream_state);
+      glvis_command = new GLVisCommand(&win.vs, win.data_state);
       comm_thread = new communication_thread(std::move(input_streams), glvis_command);
    }
 
-   if (stream_state.quad_f)
+   if (win.data_state.quad_f)
    {
       GetAppWindow()->setOnKeyDown('Q', SwitchQuadSolution);
    }
@@ -134,49 +133,51 @@ bool GLVisInitVis(StreamCollection input_streams)
    if (field_type == DataState::FieldType::SCALAR
        || field_type == DataState::FieldType::MESH)
    {
-      if (stream_state.grid_f)
+      if (win.data_state.grid_f)
       {
-         stream_state.grid_f->GetNodalValues(stream_state.sol);
+         win.data_state.grid_f->GetNodalValues(win.data_state.sol);
       }
-      if (stream_state.mesh->SpaceDimension() == 2)
+      if (win.data_state.mesh->SpaceDimension() == 2)
       {
          VisualizationSceneSolution * vss;
-         if (stream_state.normals.Size() > 0)
+         if (win.data_state.normals.Size() > 0)
          {
-            vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
-                                                      stream_state.mesh_quad.get(), &stream_state.normals);
+            win.vs = vss = new VisualizationSceneSolution(*win.data_state.mesh,
+                                                          win.data_state.sol,
+                                                          win.data_state.mesh_quad.get(), &win.data_state.normals);
          }
          else
          {
-            vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
-                                                      stream_state.mesh_quad.get());
+            win.vs = vss = new VisualizationSceneSolution(*win.data_state.mesh,
+                                                          win.data_state.sol,
+                                                          win.data_state.mesh_quad.get());
          }
-         if (stream_state.grid_f)
+         if (win.data_state.grid_f)
          {
-            vss->SetGridFunction(*stream_state.grid_f);
+            vss->SetGridFunction(*win.data_state.grid_f);
          }
          if (field_type == DataState::FieldType::MESH)
          {
-            vs->OrthogonalProjection = 1;
-            vs->SetLight(false);
-            vs->Zoom(1.8);
+            win.vs->OrthogonalProjection = 1;
+            win.vs->SetLight(false);
+            win.vs->Zoom(1.8);
             // Use the 'bone' palette when visualizing a 2D mesh only (otherwise
             // the 'jet-like' palette is used in 2D, see vssolution.cpp).
-            vs->palette.SetIndex(4);
+            win.vs->palette.SetIndex(4);
          }
       }
-      else if (stream_state.mesh->SpaceDimension() == 3)
+      else if (win.data_state.mesh->SpaceDimension() == 3)
       {
          VisualizationSceneSolution3d * vss;
-         vs = vss = new VisualizationSceneSolution3d(*stream_state.mesh,
-                                                     stream_state.sol, stream_state.mesh_quad.get());
-         if (stream_state.grid_f)
+         win.vs = vss = new VisualizationSceneSolution3d(*win.data_state.mesh,
+                                                         win.data_state.sol, win.data_state.mesh_quad.get());
+         if (win.data_state.grid_f)
          {
-            vss->SetGridFunction(stream_state.grid_f.get());
+            vss->SetGridFunction(win.data_state.grid_f.get());
          }
          if (field_type == DataState::FieldType::MESH)
          {
-            if (stream_state.mesh->Dimension() == 3)
+            if (win.data_state.mesh->Dimension() == 3)
             {
                // Use the 'white' palette when visualizing a 3D volume mesh only
                vss->palette.SetIndex(11);
@@ -194,68 +195,69 @@ bool GLVisInitVis(StreamCollection input_streams)
       }
       if (field_type == DataState::FieldType::MESH)
       {
-         if (stream_state.grid_f)
+         if (win.data_state.grid_f)
          {
-            mesh_range = stream_state.grid_f->Max() + 1.0;
+            mesh_range = win.data_state.grid_f->Max() + 1.0;
          }
          else
          {
-            mesh_range = stream_state.sol.Max() + 1.0;
+            mesh_range = win.data_state.sol.Max() + 1.0;
          }
       }
    }
    else if (field_type == DataState::FieldType::VECTOR)
    {
-      if (stream_state.mesh->SpaceDimension() == 2)
+      if (win.data_state.mesh->SpaceDimension() == 2)
       {
-         if (stream_state.grid_f)
+         if (win.data_state.grid_f)
          {
-            vs = new VisualizationSceneVector(*stream_state.grid_f);
+            win.vs = new VisualizationSceneVector(*win.data_state.grid_f);
          }
          else
          {
-            vs = new VisualizationSceneVector(*stream_state.mesh, stream_state.solu,
-                                              stream_state.solv, stream_state.mesh_quad.get());
+            win.vs = new VisualizationSceneVector(*win.data_state.mesh, win.data_state.solu,
+                                                  win.data_state.solv, win.data_state.mesh_quad.get());
          }
       }
-      else if (stream_state.mesh->SpaceDimension() == 3)
+      else if (win.data_state.mesh->SpaceDimension() == 3)
       {
-         if (stream_state.grid_f)
+         if (win.data_state.grid_f)
          {
-            stream_state.ProjectVectorFEGridFunction();
-            vs = new VisualizationSceneVector3d(*stream_state.grid_f,
-                                                stream_state.mesh_quad.get());
+            win.data_state.ProjectVectorFEGridFunction();
+            win.vs = new VisualizationSceneVector3d(*win.data_state.grid_f,
+                                                    win.data_state.mesh_quad.get());
          }
          else
          {
-            vs = new VisualizationSceneVector3d(*stream_state.mesh, stream_state.solu,
-                                                stream_state.solv, stream_state.solw,
-                                                stream_state.mesh_quad.get());
+            win.vs = new VisualizationSceneVector3d(*win.data_state.mesh,
+                                                    win.data_state.solu,
+                                                    win.data_state.solv, win.data_state.solw,
+                                                    win.data_state.mesh_quad.get());
          }
       }
    }
 
-   if (vs)
+   if (win.vs)
    {
       // increase the refinement factors if visualizing a GridFunction
-      if (stream_state.grid_f)
+      if (win.data_state.grid_f)
       {
-         vs->AutoRefine();
-         vs->SetShading(VisualizationSceneScalarData::Shading::Noncomforming, true);
+         win.vs->AutoRefine();
+         win.vs->SetShading(VisualizationSceneScalarData::Shading::Noncomforming, true);
       }
       if (mesh_range > 0.0)
       {
-         vs->SetValueRange(-mesh_range, mesh_range);
-         vs->SetAutoscale(0);
+         win.vs->SetValueRange(-mesh_range, mesh_range);
+         win.vs->SetAutoscale(0);
       }
-      if (stream_state.mesh->SpaceDimension() == 2
+      if (win.data_state.mesh->SpaceDimension() == 2
           && field_type == DataState::FieldType::MESH)
       {
-         SetVisualizationScene(vs, 2, stream_state.keys.c_str());
+         SetVisualizationScene(win.vs, 2, win.data_state.keys.c_str());
       }
       else
       {
-         SetVisualizationScene(vs, 3, stream_state.keys.c_str());
+         SetVisualizationScene(win.vs, 3, win.data_state.keys.c_str());
       }
    }
    return true;
@@ -263,8 +265,8 @@ bool GLVisInitVis(StreamCollection input_streams)
 
 void GLVisStartVis()
 {
-   RunVisualization(); // deletes vs
-   vs = NULL;
+   RunVisualization(); // deletes win.vs
+   win.vs = NULL;
    if (glvis_command)
    {
       glvis_command->Terminate();
@@ -306,10 +308,10 @@ public:
       auto funcThread = [](DataState thread_state, StreamCollection is)
       {
          // Set thread-local stream state
-         stream_state = std::move(thread_state);
+         win.data_state = std::move(thread_state);
          if (c_plot_caption != string_none)
          {
-            plot_caption = c_plot_caption;
+            win.plot_caption = c_plot_caption;
          }
 
          if (GLVisInitVis(std::move(is)))
@@ -628,17 +630,17 @@ int main (int argc, char *argv[])
                   "Palette file.");
    args.AddOption(&arg_keys, "-k", "--keys",
                   "Execute key shortcut commands in the GLVis window.");
-   args.AddOption(&stream_state.fix_elem_orient, "-fo", "--fix-orientations",
+   args.AddOption(&win.data_state.fix_elem_orient, "-fo", "--fix-orientations",
                   "-no-fo", "--dont-fix-orientations",
                   "Attempt to fix the orientations of inverted elements.");
-   args.AddOption(&stream_state.keep_attr, "-a", "--real-attributes",
+   args.AddOption(&win.data_state.keep_attr, "-a", "--real-attributes",
                   "-ap", "--processor-attributes",
                   "When opening a parallel mesh, use the real mesh attributes"
                   " or replace them with the processor rank.");
    args.AddOption(&geom_ref_type, "-grt", "--geometry-refiner-type",
                   "Set of points to use when refining geometry:"
                   " 3 = uniform, 1 = Gauss-Lobatto, (see mfem::Quadrature1D).");
-   args.AddOption(&stream_state.save_coloring, "-sc", "--save-coloring",
+   args.AddOption(&win.data_state.save_coloring, "-sc", "--save-coloring",
                   "-no-sc", "--dont-save-coloring",
                   "Save the mesh coloring generated when opening only a mesh.");
    args.AddOption(&portnum, "-p", "--listen-port",
@@ -749,7 +751,7 @@ int main (int argc, char *argv[])
    }
    if (arg_keys != string_none)
    {
-      stream_state.keys = arg_keys;
+      win.data_state.keys = arg_keys;
    }
    if (font_name != string_default)
    {
@@ -769,7 +771,7 @@ int main (int argc, char *argv[])
    }
    if (c_plot_caption != string_none)
    {
-      plot_caption = c_plot_caption;
+      win.plot_caption = c_plot_caption;
    }
    if (legacy_gl_ctx == true)
    {
@@ -794,8 +796,8 @@ int main (int argc, char *argv[])
       // initialized from the main thread.
       GetMainThread();
 
-      Session stream_session(stream_state.fix_elem_orient,
-                             stream_state.save_coloring);
+      Session stream_session(win.data_state.fix_elem_orient,
+                             win.data_state.save_coloring);
 
       if (!stream_session.StartSavedSession(stream_file))
       {
@@ -862,8 +864,8 @@ int main (int argc, char *argv[])
 
       // Run server in new thread
       std::thread serverThread{GLVisServer, portnum, save_stream,
-                               stream_state.fix_elem_orient,
-                               stream_state.save_coloring};
+                               win.data_state.fix_elem_orient,
+                               win.data_state.save_coloring};
 
       // Start SDL in main thread
       SDLMainLoop(true);
@@ -904,7 +906,7 @@ int main (int argc, char *argv[])
             return 1;
          }
 
-         FileReader reader(stream_state, pad_digits);
+         FileReader reader(win.data_state, pad_digits);
          int ierr;
          if (input & INPUT_PARALLEL)
          {
@@ -953,7 +955,7 @@ int main (int argc, char *argv[])
             mesh_only = true;
          }
 
-         DataCollectionReader reader(stream_state);
+         DataCollectionReader reader(win.data_state);
          reader.SetPadDigits(pad_digits);
          if (dc_protocol != string_default)
          {
@@ -977,7 +979,7 @@ int main (int argc, char *argv[])
       // initialized from the main thread.
       GetMainThread();
 
-      Session single_session(std::move(stream_state));
+      Session single_session(std::move(win.data_state));
       single_session.StartSession();
 
       SDLMainLoop();
@@ -1009,8 +1011,8 @@ void PrintSampleUsage(ostream &os)
 
 void SwitchQuadSolution()
 {
-   int iqs = ((int)stream_state.GetQuadSolution()+1)
+   int iqs = ((int)win.data_state.GetQuadSolution()+1)
              % ((int)DataState::QuadSolution::MAX);
-   stream_state.SwitchQuadSolution((DataState::QuadSolution)iqs, vs);
+   win.data_state.SwitchQuadSolution((DataState::QuadSolution)iqs, win.vs);
    SendExposeEvent();
 }

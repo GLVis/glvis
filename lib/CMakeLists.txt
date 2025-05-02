@@ -65,7 +65,8 @@ list(APPEND HEADERS
   vssolution.hpp
   vssolution3d.hpp
   vsvector.hpp
-  vsvector3d.hpp)
+  vsvector3d.hpp
+  window.hpp)
 
 if(EMSCRIPTEN)
   # Emscripten build target

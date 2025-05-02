@@ -280,7 +280,7 @@ HEADER_FILES = \
  lib/sdl.hpp lib/sdl_mac.hpp lib/sdl_main.hpp lib/sdl_windows.hpp       \
  lib/sdl_x11.hpp lib/stream_reader.hpp lib/threads.hpp lib/visual.hpp   \
  lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp                 \
- lib/vsvector.hpp lib/vsvector3d.hpp
+ lib/vsvector.hpp lib/vsvector3d.hpp lib/window.hpp
 
 DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) $(DESKTOP_ONLY_SOURCE_FILES) $(LOGO_FILE_CPP)
 WEB_SOURCE_FILES     = $(COMMON_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES)
