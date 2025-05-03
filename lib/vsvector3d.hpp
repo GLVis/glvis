@@ -26,8 +26,8 @@ protected:
    gl3::GlDrawable vector_buf;
    gl3::GlDrawable displine_buf;
 
-   GridFunction *VecGridF;
-   FiniteElementSpace *sfes;
+   GridFunction *VecGridF{};
+   FiniteElementSpace *sfes{};
 
    void Init();
 
@@ -39,9 +39,7 @@ protected:
 public:
    int ianim, ianimd, ianimmax, drawdisp;
 
-   VisualizationSceneVector3d(Mesh & m, Vector & sx, Vector & sy, Vector & sz,
-                              Mesh *mc = NULL);
-   VisualizationSceneVector3d (GridFunction &vgf, Mesh *mc = NULL);
+   VisualizationSceneVector3d(Window &win);
 
    void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, GridFunction *new_v);
 

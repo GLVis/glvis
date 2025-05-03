@@ -419,20 +419,22 @@ static void KeyF12Pressed()
    }
 }
 
-VisualizationSceneSolution::VisualizationSceneSolution()
-{
-   v_normals = NULL;
-}
-
 VisualizationSceneSolution::VisualizationSceneSolution(
-   Mesh &m, Vector &s, Mesh *mc, Vector *normals)
+   Window &win_, bool init) : VisualizationSceneScalarData(win_, false)
 {
-   mesh = &m;
-   mesh_coarse = mc;
-   sol = &s;
-   v_normals = normals;
+   if (win.data_state.normals.Size() > 0)
+   {
+      v_normals = &win.data_state.normals;
+   }
 
-   Init();
+   if (init)
+   {
+      Init();
+      if (win.data_state.grid_f)
+      {
+         SetGridFunction(*win.data_state.grid_f);
+      }
+   }
 }
 
 void VisualizationSceneSolution::Init()

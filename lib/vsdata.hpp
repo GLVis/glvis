@@ -21,8 +21,6 @@
 
 using namespace mfem;
 
-extern thread_local Window win; // defined in glvis.cpp
-
 class Plane
 {
 private:
@@ -72,9 +70,11 @@ protected:
    Mesh   *mesh{}, *mesh_coarse{};
    Vector *sol{};
 
+   Window &win;
+
    double minv, maxv;
 
-   std::string a_label_x, a_label_y, a_label_z;
+   std::string a_label_x{"x"}, a_label_y{"y"}, a_label_z{"z"};
 
    int scaling, colorbar, drawaxes;
    Shading shading;
@@ -158,9 +158,7 @@ public:
    /// Shrink factor with respect to the element (material) attributes centers
    double shrinkmat;
 
-   VisualizationSceneScalarData()
-      : a_label_x("x"), a_label_y("y"), a_label_z("z") {}
-   VisualizationSceneScalarData (Mesh & m, Vector & s, Mesh *mc = NULL);
+   VisualizationSceneScalarData(Window &win, bool init = true);
 
    virtual ~VisualizationSceneScalarData();
 

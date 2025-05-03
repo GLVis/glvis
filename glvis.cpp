@@ -120,7 +120,7 @@ bool GLVisInitVis(StreamCollection input_streams)
    if (input_streams.size() > 0)
    {
       GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
-      glvis_command = new GLVisCommand(&win.vs, win.data_state);
+      glvis_command = new GLVisCommand(win);
       comm_thread = new communication_thread(std::move(input_streams), glvis_command);
    }
 
@@ -139,23 +139,8 @@ bool GLVisInitVis(StreamCollection input_streams)
       }
       if (win.data_state.mesh->SpaceDimension() == 2)
       {
-         VisualizationSceneSolution * vss;
-         if (win.data_state.normals.Size() > 0)
-         {
-            win.vs = vss = new VisualizationSceneSolution(*win.data_state.mesh,
-                                                          win.data_state.sol,
-                                                          win.data_state.mesh_quad.get(), &win.data_state.normals);
-         }
-         else
-         {
-            win.vs = vss = new VisualizationSceneSolution(*win.data_state.mesh,
-                                                          win.data_state.sol,
-                                                          win.data_state.mesh_quad.get());
-         }
-         if (win.data_state.grid_f)
-         {
-            vss->SetGridFunction(*win.data_state.grid_f);
-         }
+         win.vs = new VisualizationSceneSolution(win);
+
          if (field_type == DataState::FieldType::MESH)
          {
             win.vs->OrthogonalProjection = 1;
@@ -168,13 +153,9 @@ bool GLVisInitVis(StreamCollection input_streams)
       }
       else if (win.data_state.mesh->SpaceDimension() == 3)
       {
-         VisualizationSceneSolution3d * vss;
-         win.vs = vss = new VisualizationSceneSolution3d(*win.data_state.mesh,
-                                                         win.data_state.sol, win.data_state.mesh_quad.get());
-         if (win.data_state.grid_f)
-         {
-            vss->SetGridFunction(win.data_state.grid_f.get());
-         }
+         VisualizationSceneSolution3d *vss;
+         win.vs = vss = new VisualizationSceneSolution3d(win);
+
          if (field_type == DataState::FieldType::MESH)
          {
             if (win.data_state.mesh->Dimension() == 3)
@@ -209,31 +190,15 @@ bool GLVisInitVis(StreamCollection input_streams)
    {
       if (win.data_state.mesh->SpaceDimension() == 2)
       {
-         if (win.data_state.grid_f)
-         {
-            win.vs = new VisualizationSceneVector(*win.data_state.grid_f);
-         }
-         else
-         {
-            win.vs = new VisualizationSceneVector(*win.data_state.mesh, win.data_state.solu,
-                                                  win.data_state.solv, win.data_state.mesh_quad.get());
-         }
+         win.vs = new VisualizationSceneVector(win);
       }
       else if (win.data_state.mesh->SpaceDimension() == 3)
       {
          if (win.data_state.grid_f)
          {
             win.data_state.ProjectVectorFEGridFunction();
-            win.vs = new VisualizationSceneVector3d(*win.data_state.grid_f,
-                                                    win.data_state.mesh_quad.get());
          }
-         else
-         {
-            win.vs = new VisualizationSceneVector3d(*win.data_state.mesh,
-                                                    win.data_state.solu,
-                                                    win.data_state.solv, win.data_state.solw,
-                                                    win.data_state.mesh_quad.get());
-         }
+         win.vs = new VisualizationSceneVector3d(win);
       }
    }
 

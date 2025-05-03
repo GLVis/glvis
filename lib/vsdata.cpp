@@ -611,7 +611,8 @@ void VisualizationSceneScalarData::PrepareCaption()
    GetFont()->getObjectSize(caption, caption_w, caption_h);
 }
 
-thread_local VisualizationSceneScalarData * vsdata;
+static thread_local VisualizationSceneScalarData * vsdata;
+static thread_local Window *window;
 extern thread_local VisualizationScene  * locscene;
 
 void KeycPressed(GLenum state)
@@ -643,7 +644,7 @@ void KeycPressed(GLenum state)
 void KeyCPressed()
 {
    cout << "Enter new caption: " << flush;
-   std::getline(cin, win.plot_caption);
+   std::getline(cin, window->plot_caption);
    vsdata->PrepareCaption(); // turn on or off the caption
    SendExposeEvent();
 }
@@ -1354,19 +1355,22 @@ void VisualizationSceneScalarData::SetAutoscale(int _autoscale)
 }
 
 VisualizationSceneScalarData::VisualizationSceneScalarData(
-   Mesh & m, Vector & s, Mesh *mc)
-   : a_label_x("x"), a_label_y("y"), a_label_z("z")
+   Window &win_, bool init) : win(win_)
 {
-   mesh = &m;
-   mesh_coarse = mc;
-   sol  = &s;
+   mesh = win.data_state.mesh.get();
+   mesh_coarse = win.data_state.mesh_quad.get();
+   sol  = &win.data_state.sol;
 
-   Init();
+   if (init)
+   {
+      Init();
+   }
 }
 
 void VisualizationSceneScalarData::Init()
 {
    vsdata = this;
+   window = &win;
    wnd = GetAppWindow();
 
    arrow_type = arrow_scaling_type = 0;

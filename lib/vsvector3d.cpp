@@ -341,48 +341,37 @@ void VisualizationSceneVector3d::ToggleScalarFunction()
    FindNewValueRange(true);
 }
 
-VisualizationSceneVector3d::VisualizationSceneVector3d(Mesh &m, Vector &sx,
-                                                       Vector &sy, Vector &sz, Mesh *mc)
+VisualizationSceneVector3d::VisualizationSceneVector3d(Window &win_)
+   : VisualizationSceneSolution3d(win_, false)
 {
-   mesh = &m;
-   mesh_coarse = mc;
-   solx = &sx;
-   soly = &sy;
-   solz = &sz;
-
-   sol = new Vector(mesh->GetNV());
-
-   sfes = NULL;
-   VecGridF = NULL;
-
-   Init();
-}
-
-VisualizationSceneVector3d::VisualizationSceneVector3d(GridFunction &vgf,
-                                                       Mesh *mc)
-{
-   FiniteElementSpace *fes = vgf.FESpace();
-   if (fes == NULL || fes->GetVDim() != 3)
+   if (win.data_state.grid_f)
    {
-      cout << "VisualizationSceneVector3d::VisualizationSceneVector3d" << endl;
-      exit(1);
+      FiniteElementSpace *fes = win.data_state.grid_f->FESpace();
+      if (fes == NULL || fes->GetVDim() != 3)
+      {
+         cout << "VisualizationSceneVector3d::VisualizationSceneVector3d" << endl;
+         exit(1);
+      }
+
+      VecGridF = win.data_state.grid_f.get();
+
+      sfes = new FiniteElementSpace(mesh, fes->FEColl(), 1, fes->GetOrdering());
+      GridF = new GridFunction(sfes);
+
+      solx = new Vector(mesh->GetNV());
+      soly = new Vector(mesh->GetNV());
+      solz = new Vector(mesh->GetNV());
+
+      VecGridF->GetNodalValues(*solx, 1);
+      VecGridF->GetNodalValues(*soly, 2);
+      VecGridF->GetNodalValues(*solz, 3);
    }
-
-   VecGridF = &vgf;
-
-   mesh = fes->GetMesh();
-   mesh_coarse = mc;
-
-   sfes = new FiniteElementSpace(mesh, fes->FEColl(), 1, fes->GetOrdering());
-   GridF = new GridFunction(sfes);
-
-   solx = new Vector(mesh->GetNV());
-   soly = new Vector(mesh->GetNV());
-   solz = new Vector(mesh->GetNV());
-
-   vgf.GetNodalValues(*solx, 1);
-   vgf.GetNodalValues(*soly, 2);
-   vgf.GetNodalValues(*solz, 3);
+   else
+   {
+      solx = &win.data_state.solu;
+      soly = &win.data_state.solv;
+      solz = &win.data_state.solw;
+   }
 
    sol = new Vector(mesh->GetNV());
 

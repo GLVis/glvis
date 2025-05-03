@@ -12,8 +12,7 @@
 #ifndef GLVIS_THREADS_HPP
 #define GLVIS_THREADS_HPP
 
-#include "vsdata.hpp"
-#include "data_state.hpp"
+#include "window.hpp"
 #include <mfem.hpp>
 #include <thread>
 #include <atomic>
@@ -23,9 +22,8 @@ class GLVisCommand
 {
 private:
    // Pointers to global GLVis data
-   VisualizationSceneScalarData **vs;
-   DataState&           curr_state;
-   SdlWindow            *thread_wnd;
+   Window      &win;
+   SdlWindow   *thread_wnd;
 
    std::mutex glvis_mutex;
    std::condition_variable glvis_cond;
@@ -101,12 +99,11 @@ private:
 
 public:
    // called by the main execution thread
-   GLVisCommand(VisualizationSceneScalarData **_vs,
-                DataState& thread_state);
+   GLVisCommand(Window &win);
 
    // to be used by worker threads
-   bool KeepAttrib() { return curr_state.keep_attr; } // may need to sync this
-   bool FixElementOrientations() { return curr_state.fix_elem_orient; }
+   bool KeepAttrib() { return win.data_state.keep_attr; } // may need to sync this
+   bool FixElementOrientations() { return win.data_state.fix_elem_orient; }
 
    // called by worker threads
    int NewMeshAndSolution(DataState &&ss);

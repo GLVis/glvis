@@ -687,18 +687,18 @@ static void KeyF10Pressed()
    SendExposeEvent();
 }
 
-VisualizationSceneSolution3d::VisualizationSceneSolution3d()
-{}
-
-VisualizationSceneSolution3d::VisualizationSceneSolution3d(Mesh &m, Vector &s,
-                                                           Mesh *mc)
+VisualizationSceneSolution3d::VisualizationSceneSolution3d(Window &win_,
+                                                           bool init)
+   : VisualizationSceneScalarData(win_, false)
 {
-   mesh = &m;
-   mesh_coarse = mc;
-   sol = &s;
-   GridF = NULL;
-
-   Init();
+   if (init)
+   {
+      Init();
+      if (win.data_state.grid_f)
+      {
+         SetGridFunction(win.data_state.grid_f.get());
+      }
+   }
 }
 
 

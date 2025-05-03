@@ -43,7 +43,7 @@ protected:
    int nlevels;
    Array<double> levels;
 
-   GridFunction *GridF;
+   GridFunction *GridF{};
 
    void Init();
 
@@ -119,8 +119,7 @@ public:
 
    Array<int> bdr_attr_to_show;
 
-   VisualizationSceneSolution3d();
-   VisualizationSceneSolution3d(Mesh & m, Vector & s, Mesh *mc);
+   VisualizationSceneSolution3d(Window &win, bool init = true);
 
    void SetGridFunction (GridFunction *gf) { GridF = gf; }
 

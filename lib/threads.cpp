@@ -18,11 +18,9 @@ using namespace std;
 extern const char *strings_off_on[]; // defined in vsdata.cpp
 
 
-GLVisCommand::GLVisCommand(
-   VisualizationSceneScalarData **_vs, DataState& state)
-   : curr_state(state)
+GLVisCommand::GLVisCommand(Window &win_)
+   : win(win_)
 {
-   vs        = _vs;
    // should be set in this thread by a call to InitVisualization()
    thread_wnd = GetAppWindow();
 
@@ -463,7 +461,7 @@ int GLVisCommand::Execute()
             }
             else
             {
-               auto qs = curr_state.GetQuadSolution();
+               auto qs = win.data_state.GetQuadSolution();
                if (qs != DataState::QuadSolution::NONE)
                {
                   new_state.SetQuadSolution(qs);
@@ -475,11 +473,11 @@ int GLVisCommand::Execute()
                new_state.ExtrudeMeshAndSolution();
             }
          }
-         if (curr_state.SetNewMeshAndSolution(std::move(new_state), *vs))
+         if (win.data_state.SetNewMeshAndSolution(std::move(new_state), win.vs))
          {
             if (mesh_range > 0.0)
             {
-               (*vs)->SetValueRange(-mesh_range, mesh_range);
+               win.vs->SetValueRange(-mesh_range, mesh_range);
             }
             MyExpose();
          }
@@ -540,7 +538,7 @@ int GLVisCommand::Execute()
       {
          cout << "Command: plot_caption: " << plot_caption << endl;
          win.plot_caption = plot_caption;
-         (*vs)->PrepareCaption(); // turn on or off the caption
+         win.vs->PrepareCaption(); // turn on or off the caption
          MyExpose();
          break;
       }
@@ -549,8 +547,8 @@ int GLVisCommand::Execute()
       {
          cout << "Command: axis_labels: '" << axis_label_x << "' '"
               << axis_label_y << "' '" << axis_label_z << "'" << endl;
-         (*vs)->SetAxisLabels(axis_label_x.c_str(), axis_label_y.c_str(),
-                              axis_label_z.c_str());
+         win.vs->SetAxisLabels(axis_label_x.c_str(), axis_label_y.c_str(),
+                               axis_label_z.c_str());
          MyExpose();
          break;
       }
@@ -559,7 +557,7 @@ int GLVisCommand::Execute()
       {
          cout << "Command: axis_numberformat: '"
               << axis_formatting << "'" << endl;
-         (*vs)->SetAxisNumberFormat(axis_formatting);
+         win.vs->SetAxisNumberFormat(axis_formatting);
          MyExpose();
          break;
       }
@@ -568,7 +566,7 @@ int GLVisCommand::Execute()
       {
          cout << "Command: colorbar_numberformat: '"
               << colorbar_formatting << "'" << endl;
-         (*vs)->SetColorbarNumberFormat(colorbar_formatting);
+         win.vs->SetColorbarNumberFormat(colorbar_formatting);
          MyExpose();
          break;
       }
@@ -584,7 +582,7 @@ int GLVisCommand::Execute()
       {
          cout << "Command: view: " << view_ang_theta << ' ' << view_ang_phi
               << endl;
-         (*vs)->SetView(view_ang_theta, view_ang_phi);
+         win.vs->SetView(view_ang_theta, view_ang_phi);
          MyExpose();
          break;
       }
@@ -592,7 +590,7 @@ int GLVisCommand::Execute()
       case ZOOM:
       {
          cout << "Command: zoom: " << zoom_factor << endl;
-         (*vs)->Zoom(zoom_factor);
+         win.vs->Zoom(zoom_factor);
          MyExpose();
          break;
       }
@@ -600,7 +598,7 @@ int GLVisCommand::Execute()
       case SUBDIVISIONS:
       {
          cout << "Command: subdivisions: " << flush;
-         (*vs)->SetRefineFactors(subdiv_tot, subdiv_bdr);
+         win.vs->SetRefineFactors(subdiv_tot, subdiv_bdr);
          cout << subdiv_tot << ' ' << subdiv_bdr << endl;
          MyExpose();
          break;
@@ -609,7 +607,7 @@ int GLVisCommand::Execute()
       case VALUE_RANGE:
       {
          cout << "Command: valuerange: " << flush;
-         (*vs)->SetValueRange(val_min, val_max);
+         win.vs->SetValueRange(val_min, val_max);
          cout << val_min << ' ' << val_max << endl;
          MyExpose();
          break;
@@ -618,8 +616,8 @@ int GLVisCommand::Execute()
       case LEVELLINES:
       {
          cout << "Command: levellines: " << flush;
-         (*vs)->SetLevelLines(lvl_min, lvl_max, lvl_num);
-         (*vs)->UpdateLevelLines();
+         win.vs->SetLevelLines(lvl_min, lvl_max, lvl_num);
+         win.vs->UpdateLevelLines();
          cout << lvl_min << ' ' << lvl_max << ' ' << lvl_num << endl;
          MyExpose();
          break;
@@ -644,7 +642,7 @@ int GLVisCommand::Execute()
          }
          if (s != VisualizationSceneScalarData::Shading::Invalid)
          {
-            (*vs)->SetShading(s, false);
+            win.vs->SetShading(s, false);
             cout << shading << endl;
             MyExpose();
          }
@@ -659,8 +657,8 @@ int GLVisCommand::Execute()
       {
          cout << "Command: viewcenter: "
               << view_center_x << ' ' << view_center_y << endl;
-         (*vs)->ViewCenterX = view_center_x;
-         (*vs)->ViewCenterY = view_center_y;
+         win.vs->ViewCenterX = view_center_x;
+         win.vs->ViewCenterY = view_center_y;
          MyExpose();
          break;
       }
@@ -670,19 +668,19 @@ int GLVisCommand::Execute()
          cout << "Command: autoscale: " << autoscale_mode;
          if (autoscale_mode == "off")
          {
-            (*vs)->SetAutoscale(0);
+            win.vs->SetAutoscale(0);
          }
          else if (autoscale_mode == "on")
          {
-            (*vs)->SetAutoscale(1);
+            win.vs->SetAutoscale(1);
          }
          else if (autoscale_mode == "value")
          {
-            (*vs)->SetAutoscale(2);
+            win.vs->SetAutoscale(2);
          }
          else if (autoscale_mode == "mesh")
          {
-            (*vs)->SetAutoscale(3);
+            win.vs->SetAutoscale(3);
          }
          else
          {
@@ -695,10 +693,10 @@ int GLVisCommand::Execute()
       case PALETTE:
       {
          cout << "Command: palette: " << palette << endl;
-         (*vs)->palette.SetIndex(palette-1);
+         win.vs->palette.SetIndex(palette-1);
          if (!GetUseTexture())
          {
-            (*vs)->EventUpdateColors();
+            win.vs->EventUpdateColors();
          }
          MyExpose();
          break;
@@ -707,12 +705,12 @@ int GLVisCommand::Execute()
       case PALETTE_REPEAT:
       {
          cout << "Command: palette_repeat: " << palette_repeat << endl;
-         (*vs)->palette.SetRepeatTimes(palette_repeat);
-         (*vs)->palette.GenerateTextures();
+         win.vs->palette.SetRepeatTimes(palette_repeat);
+         win.vs->palette.GenerateTextures();
 
          if (!GetUseTexture())
          {
-            (*vs)->EventUpdateColors();
+            win.vs->EventUpdateColors();
          }
          MyExpose();
          break;
@@ -726,7 +724,7 @@ int GLVisCommand::Execute()
             cout << ' ' << camera[i];
          }
          cout << endl;
-         (*vs)->cam.Set(camera);
+         win.vs->cam.Set(camera);
          MyExpose();
          break;
       }
