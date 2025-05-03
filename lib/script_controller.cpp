@@ -9,7 +9,7 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#include "window.hpp"
+#include "script_controller.hpp"
 #include "file_reader.hpp"
 #include "coll_reader.hpp"
 #include "stream_reader.hpp"
@@ -29,18 +29,10 @@ extern int         window_w;
 extern int         window_h;
 extern const char *c_plot_caption;
 
-extern thread_local Window win;
-
-istream *script = NULL;
-int scr_running = 0;
-int scr_level = 0;
-Vector *init_nodes = NULL;
-double scr_min_val, scr_max_val;
-
 bool GLVisInitVis(StreamCollection input_streams);
 void GLVisStartVis();
 
-int ScriptReadSolution(istream &scr, DataState& state)
+int ScriptController::ScriptReadSolution(istream &scr, DataState &state)
 {
    int err_read;
    string mword,sword;
@@ -68,7 +60,7 @@ int ScriptReadSolution(istream &scr, DataState& state)
    return err_read;
 }
 
-int ScriptReadQuadrature(istream &scr, DataState& state)
+int ScriptController::ScriptReadQuadrature(istream &scr, DataState &state)
 {
    int err_read;
    string mword,sword;
@@ -96,7 +88,7 @@ int ScriptReadQuadrature(istream &scr, DataState& state)
    return err_read;
 }
 
-int ScriptReadParSolution(istream &scr, DataState& state)
+int ScriptController::ScriptReadParSolution(istream &scr, DataState &state)
 {
    int np, scr_keep_attr, err_read;
    string mesh_prefix, sol_prefix;
@@ -127,7 +119,7 @@ int ScriptReadParSolution(istream &scr, DataState& state)
    return err_read;
 }
 
-int ScriptReadParQuadrature(istream &scr, DataState& state)
+int ScriptController::ScriptReadParQuadrature(istream &scr, DataState &state)
 {
    int np, scr_keep_attr, err_read;
    string mesh_prefix, quad_prefix;
@@ -158,7 +150,7 @@ int ScriptReadParQuadrature(istream &scr, DataState& state)
    return err_read;
 }
 
-int ScriptReadDisplMesh(istream &scr, DataState& state)
+int ScriptController::ScriptReadDisplMesh(istream &scr, DataState &state)
 {
    DataState meshstate;
    string word;
@@ -218,8 +210,8 @@ int ScriptReadDisplMesh(istream &scr, DataState& state)
    return 0;
 }
 
-int ScriptReadDataColl(istream &scr, DataState &state, bool mesh_only = true,
-                       bool quad = false)
+int ScriptController::ScriptReadDataColl(istream &scr, DataState &state,
+                                         bool mesh_only, bool quad)
 {
    int err_read;
    int type;
@@ -255,7 +247,7 @@ int ScriptReadDataColl(istream &scr, DataState &state, bool mesh_only = true,
    return err_read;
 }
 
-void ExecuteScriptCommand()
+void ScriptController::ExecuteScriptCommand()
 {
    if (!script)
    {
@@ -693,32 +685,32 @@ void ExecuteScriptCommand()
    }
 }
 
-void ScriptControl();
+thread_local ScriptController *ScriptController::script_ctrl = NULL;
 
-void ScriptIdleFunc()
+void ScriptController::ScriptIdleFunc()
 {
-   ExecuteScriptCommand();
-   if (scr_level == 0)
+   script_ctrl->ExecuteScriptCommand();
+   if (script_ctrl->scr_level == 0)
    {
       ScriptControl();
    }
 }
 
-void ScriptControl()
+void ScriptController::ScriptControl()
 {
-   if (scr_running)
+   if (script_ctrl->scr_running)
    {
-      scr_running = 0;
+      script_ctrl->scr_running = 0;
       RemoveIdleFunc(ScriptIdleFunc);
    }
    else
    {
-      scr_running = 1;
+      script_ctrl->scr_running = 1;
       AddIdleFunc(ScriptIdleFunc);
    }
 }
 
-void PlayScript(istream &scr)
+void ScriptController::PlayScript(istream &scr)
 {
    string word;
 
@@ -841,6 +833,7 @@ void PlayScript(istream &scr)
 
    scr_level = scr_running = 0;
    script = &scr;
+   script_ctrl = this;
    win.data_state.keys.clear();
 
    // Make sure the singleton object returned by GetMainThread() is

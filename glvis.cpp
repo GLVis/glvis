@@ -81,7 +81,7 @@ enum InputOptions
 };
 int input = INPUT_SERVER_MODE;
 
-thread_local Window win;
+static thread_local Window win;
 extern thread_local GLVisCommand* glvis_command;
 thread_local communication_thread *comm_thread = NULL;
 
@@ -784,7 +784,8 @@ int main (int argc, char *argv[])
       }
       cout << "Running script from file: " << script_file << endl;
       cout << "You may need to press <space> to execute the script steps." << endl;
-      PlayScript(scr);
+      ScriptController script(win);
+      script.PlayScript(scr);
       return 0;
    }
 

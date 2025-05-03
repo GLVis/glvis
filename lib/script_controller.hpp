@@ -14,6 +14,36 @@
 
 #include <iostream>
 
-void PlayScript(std::istream &scr);
+#include "window.hpp"
+
+class ScriptController
+{
+   Window &win;
+
+   istream *script = NULL;
+   int scr_running = 0;
+   int scr_level = 0;
+   mfem::Vector *init_nodes = NULL;
+   double scr_min_val, scr_max_val;
+
+   static int ScriptReadSolution(istream &scr, DataState &state);
+   static int ScriptReadQuadrature(istream &scr, DataState &state);
+   static int ScriptReadParSolution(istream &scr, DataState &state);
+   static int ScriptReadParQuadrature(istream &scr, DataState &state);
+   int ScriptReadDisplMesh(istream &scr, DataState &state);
+   int ScriptReadDataColl(istream &scr, DataState &state, bool mesh_only = true,
+                          bool quad = false);
+
+   //key handlers using thread-local singleton
+   static thread_local ScriptController *script_ctrl;
+   static void ScriptIdleFunc();
+   static void ScriptControl();
+   void ExecuteScriptCommand();
+
+public:
+   ScriptController(Window &win_) : win(win_) { }
+
+   void PlayScript(std::istream &scr);
+};
 
 #endif // GLVIS_SCRIPT_CONTROLLER_HPP
