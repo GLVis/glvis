@@ -33,7 +33,8 @@ list(APPEND SOURCES
   vssolution.cpp
   vssolution3d.cpp
   vsvector.cpp
-  vsvector3d.cpp)
+  vsvector3d.cpp
+  window.cpp)
 
 list(APPEND HEADERS
   gl/attr_traits.hpp

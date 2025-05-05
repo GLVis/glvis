@@ -16,9 +16,15 @@
 
 #include "window.hpp"
 
+extern const char *string_none;
+extern const char *string_default;
+
 class ScriptController
 {
    Window &win;
+
+   string dc_protocol = string_default;
+   int dc_cycle = 0;
 
    istream *script = NULL;
    int scr_running = 0;

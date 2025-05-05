@@ -46,26 +46,6 @@ using namespace mfem;
 const char *string_none    = "(none)";
 const char *string_default = "(default)";
 
-// Global variables for command line arguments
-const char *mesh_file       = string_none;
-const char *sol_file        = string_none;
-const char *vec_sol_file    = string_none;
-const char *gfunc_file      = string_none;
-const char *qfunc_file      = string_none;
-string      dc_protocol     = string_default;
-int         dc_cycle        = 0;
-const char *arg_keys        = string_none;
-int         pad_digits      = 6;
-int         gf_component    = -1;
-int         qf_component    = -1;
-int         window_x        = 0; // not a command line option
-int         window_y        = 0; // not a command line option
-int         window_w        = 400;
-int         window_h        = 350;
-const char *window_title    = string_default;
-const char *c_plot_caption  = string_none;
-bool        secure          = socketstream::secure_default;
-
 // Global variables
 enum InputOptions
 {
@@ -81,183 +61,28 @@ enum InputOptions
 };
 int input = INPUT_SERVER_MODE;
 
-static thread_local Window win;
-extern thread_local GLVisCommand* glvis_command;
-thread_local communication_thread *comm_thread = NULL;
-
 thread_local GeometryRefiner GLVisGeometryRefiner;
 
-const char *window_titles[] = { "GLVis [mesh]",
-                                "GLVis [scalar data]",
-                                "GLVis [vector data]",
-                              };
-
 void PrintSampleUsage(ostream &out);
-
-// switch representation of the quadrature function
-void SwitchQuadSolution();
-
-// Visualize the data in the global variables mesh, sol/grid_f, etc
-bool GLVisInitVis(StreamCollection input_streams)
-{
-   DataState::FieldType field_type = win.data_state.GetType();
-
-   if (field_type <= DataState::FieldType::MIN
-       || field_type >= DataState::FieldType::MAX)
-   {
-      return false;
-   }
-
-   const char *win_title = (window_title == string_default) ?
-                           window_titles[(int)field_type] : window_title;
-
-   if (InitVisualization(win_title, window_x, window_y, window_w, window_h))
-   {
-      cerr << "Initializing the visualization failed." << endl;
-      return false;
-   }
-
-   if (input_streams.size() > 0)
-   {
-      GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
-      glvis_command = new GLVisCommand(win);
-      comm_thread = new communication_thread(std::move(input_streams), glvis_command);
-   }
-
-   if (win.data_state.quad_f)
-   {
-      GetAppWindow()->setOnKeyDown('Q', SwitchQuadSolution);
-   }
-
-   double mesh_range = -1.0;
-   if (field_type == DataState::FieldType::SCALAR
-       || field_type == DataState::FieldType::MESH)
-   {
-      if (win.data_state.grid_f)
-      {
-         win.data_state.grid_f->GetNodalValues(win.data_state.sol);
-      }
-      if (win.data_state.mesh->SpaceDimension() == 2)
-      {
-         win.vs = new VisualizationSceneSolution(win);
-
-         if (field_type == DataState::FieldType::MESH)
-         {
-            win.vs->OrthogonalProjection = 1;
-            win.vs->SetLight(false);
-            win.vs->Zoom(1.8);
-            // Use the 'bone' palette when visualizing a 2D mesh only (otherwise
-            // the 'jet-like' palette is used in 2D, see vssolution.cpp).
-            win.vs->palette.SetIndex(4);
-         }
-      }
-      else if (win.data_state.mesh->SpaceDimension() == 3)
-      {
-         VisualizationSceneSolution3d *vss;
-         win.vs = vss = new VisualizationSceneSolution3d(win);
-
-         if (field_type == DataState::FieldType::MESH)
-         {
-            if (win.data_state.mesh->Dimension() == 3)
-            {
-               // Use the 'white' palette when visualizing a 3D volume mesh only
-               vss->palette.SetIndex(11);
-               vss->SetLightMatIdx(4);
-            }
-            else
-            {
-               // Use the 'bone' palette when visualizing a surface mesh only
-               vss->palette.SetIndex(4);
-            }
-            // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
-            vss->ToggleDrawAxes();
-            vss->ToggleDrawMesh();
-         }
-      }
-      if (field_type == DataState::FieldType::MESH)
-      {
-         if (win.data_state.grid_f)
-         {
-            mesh_range = win.data_state.grid_f->Max() + 1.0;
-         }
-         else
-         {
-            mesh_range = win.data_state.sol.Max() + 1.0;
-         }
-      }
-   }
-   else if (field_type == DataState::FieldType::VECTOR)
-   {
-      if (win.data_state.mesh->SpaceDimension() == 2)
-      {
-         win.vs = new VisualizationSceneVector(win);
-      }
-      else if (win.data_state.mesh->SpaceDimension() == 3)
-      {
-         if (win.data_state.grid_f)
-         {
-            win.data_state.ProjectVectorFEGridFunction();
-         }
-         win.vs = new VisualizationSceneVector3d(win);
-      }
-   }
-
-   if (win.vs)
-   {
-      // increase the refinement factors if visualizing a GridFunction
-      if (win.data_state.grid_f)
-      {
-         win.vs->AutoRefine();
-         win.vs->SetShading(VisualizationSceneScalarData::Shading::Noncomforming, true);
-      }
-      if (mesh_range > 0.0)
-      {
-         win.vs->SetValueRange(-mesh_range, mesh_range);
-         win.vs->SetAutoscale(0);
-      }
-      if (win.data_state.mesh->SpaceDimension() == 2
-          && field_type == DataState::FieldType::MESH)
-      {
-         SetVisualizationScene(win.vs, 2, win.data_state.keys.c_str());
-      }
-      else
-      {
-         SetVisualizationScene(win.vs, 3, win.data_state.keys.c_str());
-      }
-   }
-   return true;
-}
-
-void GLVisStartVis()
-{
-   RunVisualization(); // deletes win.vs
-   win.vs = NULL;
-   if (glvis_command)
-   {
-      glvis_command->Terminate();
-      delete comm_thread;
-      delete glvis_command;
-      glvis_command = NULL;
-   }
-   cout << "GLVis window closed." << endl;
-}
 
 class Session
 {
    StreamCollection input_streams;
-   DataState state;
+   Window win;
    std::thread handler;
 
 public:
    Session(bool fix_elem_orient,
-           bool save_coloring)
+           bool save_coloring,
+           string plot_caption)
    {
-      state.fix_elem_orient = fix_elem_orient;
-      state.save_coloring = save_coloring;
+      win.data_state.fix_elem_orient = fix_elem_orient;
+      win.data_state.save_coloring = save_coloring;
+      win.plot_caption = plot_caption;
    }
 
-   Session(DataState other_state)
-      : state(std::move(other_state))
+   Session(Window other_win)
+      : win(std::move(other_win))
    { }
 
    ~Session() = default;
@@ -265,27 +90,20 @@ public:
    Session(Session&& from) = default;
    Session& operator= (Session&& from) = default;
 
-   inline DataState& GetState() { return state; }
-   inline const DataState& GetState() const { return state; }
+   inline DataState& GetState() { return win.data_state; }
+   inline const DataState& GetState() const { return win.data_state; }
 
    void StartSession()
    {
-      auto funcThread = [](DataState thread_state, StreamCollection is)
+      auto funcThread = [](Window w, StreamCollection is)
       {
-         // Set thread-local stream state
-         win.data_state = std::move(thread_state);
-         if (c_plot_caption != string_none)
+         if (w.GLVisInitVis(std::move(is)))
          {
-            win.plot_caption = c_plot_caption;
-         }
-
-         if (GLVisInitVis(std::move(is)))
-         {
-            GLVisStartVis();
+            w.GLVisStartVis();
          }
       };
       handler = std::thread {funcThread,
-                             std::move(state), std::move(input_streams)};
+                             std::move(win), std::move(input_streams)};
       handler.detach();
    }
 
@@ -299,7 +117,7 @@ public:
       }
       string data_type;
       *ifs >> data_type >> ws;
-      StreamReader reader(state);
+      StreamReader reader(win.data_state);
       reader.ReadStream(*ifs, data_type);
       input_streams.emplace_back(std::move(ifs));
 
@@ -310,7 +128,7 @@ public:
    int StartStreamSession(std::unique_ptr<mfem::socketstream> &&stream,
                           const std::string &data_type)
    {
-      StreamReader reader(state);
+      StreamReader reader(win.data_state);
       int ierr = reader.ReadStream(*stream, data_type);
       if (ierr) { return ierr; }
       input_streams.emplace_back(std::move(stream));
@@ -321,7 +139,7 @@ public:
 
    int StartStreamSession(StreamCollection &&streams)
    {
-      StreamReader reader(state);
+      StreamReader reader(win.data_state);
       int ierr = reader.ReadStreams(streams);
       if (ierr) { return ierr; }
       input_streams = std::move(streams);
@@ -333,7 +151,7 @@ public:
 };
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
-                 bool save_coloring)
+                 bool save_coloring, string plot_caption)
 {
    std::vector<Session> current_sessions;
    string data_type;
@@ -483,7 +301,7 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          while (1);
       }
 
-      Session new_session(fix_elem_orient, save_coloring);
+      Session new_session(fix_elem_orient, save_coloring, plot_caption);
 
       constexpr int tmp_filename_size = 50;
       char tmp_file[tmp_filename_size];
@@ -530,7 +348,23 @@ int main (int argc, char *argv[])
    // SDL_main().
    SDL_SetMainReady();
 #endif
+   // main Window structure
+   Window win;
+
    // variables for command line arguments
+   const char *mesh_file       = string_none;
+   const char *sol_file        = string_none;
+   const char *vec_sol_file    = string_none;
+   const char *gfunc_file      = string_none;
+   const char *qfunc_file      = string_none;
+   string      dc_protocol     = string_default;
+   int         dc_cycle        = 0;
+   const char *arg_keys        = string_none;
+   int         pad_digits      = 6;
+   int         gf_component    = -1;
+   int         qf_component    = -1;
+   const char *c_plot_caption  = string_none;
+   bool        secure          = socketstream::secure_default;
    const char *visit_coll    = string_none;
    const char *sidre_coll    = string_none;
    const char *fms_coll      = string_none;
@@ -619,11 +453,11 @@ int main (int argc, char *argv[])
                   " visualization.");
    args.AddOption(&stream_file, "-saved", "--saved-stream",
                   "Load a GLVis stream saved to a file.");
-   args.AddOption(&window_w, "-ww", "--window-width",
+   args.AddOption(&win.window_w, "-ww", "--window-width",
                   "Set the window width.");
-   args.AddOption(&window_h, "-wh", "--window-height",
+   args.AddOption(&win.window_h, "-wh", "--window-height",
                   "Set the window height.");
-   args.AddOption(&window_title, "-wt", "--window-title",
+   args.AddOption(&win.window_title, "-wt", "--window-title",
                   "Set the window title.");
    args.AddOption(&c_plot_caption, "-c", "--plot-caption",
                   "Set the plot caption (visible when colorbar is visible).");
@@ -762,7 +596,8 @@ int main (int argc, char *argv[])
       GetMainThread();
 
       Session stream_session(win.data_state.fix_elem_orient,
-                             win.data_state.save_coloring);
+                             win.data_state.save_coloring,
+                             win.plot_caption);
 
       if (!stream_session.StartSavedSession(stream_file))
       {
@@ -831,7 +666,8 @@ int main (int argc, char *argv[])
       // Run server in new thread
       std::thread serverThread{GLVisServer, portnum, save_stream,
                                win.data_state.fix_elem_orient,
-                               win.data_state.save_coloring};
+                               win.data_state.save_coloring,
+                               win.plot_caption};
 
       // Start SDL in main thread
       SDLMainLoop(true);
@@ -945,7 +781,7 @@ int main (int argc, char *argv[])
       // initialized from the main thread.
       GetMainThread();
 
-      Session single_session(std::move(win.data_state));
+      Session single_session(std::move(win));
       single_session.StartSession();
 
       SDLMainLoop();
@@ -973,12 +809,4 @@ void PrintSampleUsage(ostream &os)
       "Visualize parallel mesh and quadrature function:\n"
       "   glvis -np <#proc> -m <mesh_prefix> [-q <quadrature_function_prefix>]\n\n"
       "All Options:\n";
-}
-
-void SwitchQuadSolution()
-{
-   int iqs = ((int)win.data_state.GetQuadSolution()+1)
-             % ((int)DataState::QuadSolution::MAX);
-   win.data_state.SwitchQuadSolution((DataState::QuadSolution)iqs, win.vs);
-   SendExposeEvent();
 }

@@ -258,7 +258,7 @@ ALL_SOURCE_FILES = \
  lib/script_controller.cpp lib/sdl_helper.cpp lib/sdl_main.cpp          \
  lib/sdl_windows.cpp lib/sdl_x11.cpp lib/stream_reader.cpp              \
  lib/threads.cpp lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp \
- lib/vsvector.cpp lib/vsvector3d.cpp
+ lib/vsvector.cpp lib/vsvector3d.cpp lib/window.cpp
 OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl_mac.mm)
 DESKTOP_ONLY_SOURCE_FILES = \
  lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c lib/sdl_x11.cpp

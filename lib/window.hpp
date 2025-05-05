@@ -15,15 +15,38 @@
 #include <string>
 
 #include "data_state.hpp"
+#include "stream_reader.hpp"
 
 class VisualizationSceneScalarData;
+class communication_thread;
+
+extern const char *string_none;
+extern const char *string_default;
 
 struct Window
 {
    DataState data_state;
    VisualizationSceneScalarData *vs = NULL;
+   communication_thread *comm_thread = NULL;
+
+   int         window_x        = 0; // not a command line option
+   int         window_y        = 0; // not a command line option
+   int         window_w        = 400;
+   int         window_h        = 350;
+   const char *window_title    = string_default;
    std::string plot_caption;
    std::string extra_caption;
+
+   /// Visualize the data in the global variables mesh, sol/grid_f, etc
+   bool GLVisInitVis(StreamCollection input_streams);
+   void GLVisStartVis();
+
+private:
+   /// Thread-local singleton for key handlers
+   static thread_local Window *locwin;
+
+   /// Switch representation of the quadrature function
+   static void SwitchQuadSolution();
 };
 
 #endif // GLVIS_WINDOW_HPP

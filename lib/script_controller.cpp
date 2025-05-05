@@ -21,17 +21,6 @@ using namespace mfem;
 extern const char *string_none;
 extern const char *string_default;
 
-extern string      dc_protocol;
-extern int         dc_cycle;
-extern int         window_x;
-extern int         window_y;
-extern int         window_w;
-extern int         window_h;
-extern const char *c_plot_caption;
-
-bool GLVisInitVis(StreamCollection input_streams);
-void GLVisStartVis();
-
 int ScriptController::ScriptReadSolution(istream &scr, DataState &state)
 {
    int err_read;
@@ -571,10 +560,10 @@ void ScriptController::ExecuteScriptCommand()
       }
       else if (word == "window")
       {
-         scr >> window_x >> window_y >> window_w >> window_h;
-         cout << "Script: window: " << window_x << ' ' << window_y
-              << ' ' << window_w << ' ' << window_h << endl;
-         MoveResizeWindow(window_x, window_y, window_w, window_h);
+         scr >> win.window_x >> win.window_y >> win.window_w >> win.window_h;
+         cout << "Script: window: " << win.window_x << ' ' << win.window_y
+              << ' ' << win.window_w << ' ' << win.window_h << endl;
+         MoveResizeWindow(win.window_x, win.window_y, win.window_w, win.window_h);
          MyExpose();
       }
       else if (word == "keys")
@@ -734,7 +723,7 @@ void ScriptController::PlayScript(istream &scr)
       scr >> word;
       if (word == "window")
       {
-         scr >> window_x >> window_y >> window_w >> window_h;
+         scr >> win.window_x >> win.window_y >> win.window_w >> win.window_h;
       }
       else if (word == "data_coll_cycle")
       {
@@ -842,21 +831,15 @@ void ScriptController::PlayScript(istream &scr)
 
    std::thread worker_thread
    {
-      [&](DataState local_state)
+      [&](Window local_win)
       {
-         // set the thread-local DataState
-         win.data_state = std::move(local_state);
-         if (c_plot_caption != string_none)
-         {
-            win.plot_caption = c_plot_caption;
-         }
-         if (GLVisInitVis({}))
+         if (local_win.GLVisInitVis({}))
          {
             GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
-            GLVisStartVis();
+            local_win.GLVisStartVis();
          }
       },
-      std::move(win.data_state)
+      std::move(win)
    };
 
    SDLMainLoop();
