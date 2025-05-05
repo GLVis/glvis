@@ -102,8 +102,7 @@ std::string VisualizationSceneVector::GetHelpString() const
    return os.str();
 }
 
-thread_local VisualizationSceneVector  * vsvector;
-extern thread_local VisualizationSceneSolution * vssol;
+static thread_local VisualizationSceneVector  * vsvector;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 thread_local int ianim = 0;

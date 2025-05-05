@@ -114,7 +114,7 @@ std::string VisualizationSceneVector3d::GetHelpString() const
    return os.str();
 }
 
-thread_local VisualizationSceneVector3d  *vsvector3d;
+static thread_local VisualizationSceneVector3d  *vsvector3d;
 static thread_local Window *window;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
 

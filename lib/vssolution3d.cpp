@@ -21,7 +21,7 @@ using namespace mfem;
 using namespace std;
 
 
-thread_local VisualizationSceneSolution3d *vssol3d;
+static thread_local VisualizationSceneSolution3d *vssol3d;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 // Reference geometries with a cut in the middle, based on subdivision of
