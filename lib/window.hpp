@@ -41,6 +41,23 @@ struct Window
    bool GLVisInitVis(StreamCollection input_streams);
    void GLVisStartVis();
 
+   /// Switch the quadrature function representation and update the visualization
+   void SwitchQuadSolution(DataState::QuadSolution type);
+
+   /// Sets a new mesh and solution from another DataState object, and
+   /// updates the VisualizationScene with the new data.
+   ///
+   /// Mesh space and grid function dimensions must both match the original
+   /// dimensions of the current DataState. If there is a mismatch in either
+   /// value, the function will return false, and the mesh/solution will not be
+   /// updated.
+   bool SetNewMeshAndSolution(DataState new_state);
+
+   /// Updates the VisualizationScene with the new data of the given DataState object.
+   /// @note: Use with caution when the update is compatible
+   /// @see SetNewMeshAndSolution()
+   void ResetMeshAndSolution(DataState &ss);
+
 private:
    /// Thread-local singleton for key handlers
    static thread_local Window *locwin;

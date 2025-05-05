@@ -166,12 +166,76 @@ void Window::GLVisStartVis()
    cout << "GLVis window closed." << endl;
 }
 
+void Window::SwitchQuadSolution(DataState::QuadSolution quad_type)
+{
+   data_state.SwitchQuadSolution(quad_type);
+   ResetMeshAndSolution(data_state);
+}
+
+bool Window::SetNewMeshAndSolution(DataState new_state)
+{
+   if (new_state.mesh->SpaceDimension() == data_state.mesh->SpaceDimension() &&
+       new_state.grid_f->VectorDim() == data_state.grid_f->VectorDim())
+   {
+      ResetMeshAndSolution(new_state);
+
+      data_state = std::move(new_state);
+
+      return true;
+   }
+   else
+   {
+      return false;
+   }
+}
+
+void Window::ResetMeshAndSolution(DataState &ss)
+{
+   if (ss.mesh->SpaceDimension() == 2)
+   {
+      if (ss.grid_f->VectorDim() == 1)
+      {
+         VisualizationSceneSolution *vss =
+            dynamic_cast<VisualizationSceneSolution *>(vs);
+         ss.grid_f->GetNodalValues(ss.sol);
+         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
+                                 ss.grid_f.get());
+      }
+      else
+      {
+         VisualizationSceneVector *vsv =
+            dynamic_cast<VisualizationSceneVector *>(vs);
+         vsv->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
+      }
+   }
+   else
+   {
+      if (ss.grid_f->VectorDim() == 1)
+      {
+         VisualizationSceneSolution3d *vss =
+            dynamic_cast<VisualizationSceneSolution3d *>(vs);
+         ss.grid_f->GetNodalValues(ss.sol);
+         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
+                                 ss.grid_f.get());
+      }
+      else
+      {
+         ss.ProjectVectorFEGridFunction();
+
+         VisualizationSceneVector3d *vss =
+            dynamic_cast<VisualizationSceneVector3d *>(vs);
+         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.grid_f.get());
+      }
+   }
+}
+
+
 thread_local Window *Window::locwin = NULL;
 
 void Window::SwitchQuadSolution()
 {
    int iqs = ((int)locwin->data_state.GetQuadSolution()+1)
              % ((int)DataState::QuadSolution::MAX);
-   locwin->data_state.SwitchQuadSolution((DataState::QuadSolution)iqs, locwin->vs);
+   locwin->SwitchQuadSolution((DataState::QuadSolution)iqs);
    SendExposeEvent();
 }

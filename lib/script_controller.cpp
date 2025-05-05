@@ -359,7 +359,7 @@ void ScriptController::ExecuteScriptCommand()
             }
          }
 
-         if (win.data_state.SetNewMeshAndSolution(std::move(new_state), win.vs))
+         if (win.SetNewMeshAndSolution(std::move(new_state)))
          {
             MyExpose();
          }

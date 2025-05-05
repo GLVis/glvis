@@ -10,7 +10,6 @@
 // CONTRIBUTING.md for details.
 
 #include "data_state.hpp"
-#include "visual.hpp"
 
 #include <cstdlib>
 
@@ -523,8 +522,7 @@ void DataState::SetQuadSolution(QuadSolution quad_type)
    quad_sol = quad_type;
 }
 
-void DataState::SwitchQuadSolution(QuadSolution quad_type,
-                                   VisualizationScene *vs)
+void DataState::SwitchQuadSolution(QuadSolution quad_type)
 {
    unique_ptr<Mesh> old_mesh;
    // we must backup the refined mesh to prevent its deleting
@@ -535,7 +533,6 @@ void DataState::SwitchQuadSolution(QuadSolution quad_type,
    }
    SetQuadSolution(quad_type);
    ExtrudeMeshAndSolution();
-   ResetMeshAndSolution(*this, vs);
 }
 
 // Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec
@@ -562,67 +559,6 @@ DataState::ProjectVectorFEGridFunction(std::unique_ptr<GridFunction> gf)
       gf.reset(d_gf);
    }
    return gf;
-}
-
-bool DataState::SetNewMeshAndSolution(DataState new_state,
-                                      VisualizationScene* vs)
-{
-   if (new_state.mesh->SpaceDimension() == mesh->SpaceDimension() &&
-       new_state.grid_f->VectorDim() == grid_f->VectorDim())
-   {
-      ResetMeshAndSolution(new_state, vs);
-
-      internal.grid_f = std::move(new_state.internal.grid_f);
-      internal.mesh = std::move(new_state.internal.mesh);
-      internal.quad_f = std::move(new_state.internal.quad_f);
-      internal.mesh_quad = std::move(new_state.internal.mesh_quad);
-
-      return true;
-   }
-   else
-   {
-      return false;
-   }
-}
-
-void DataState::ResetMeshAndSolution(DataState &ss, VisualizationScene* vs)
-{
-   if (ss.mesh->SpaceDimension() == 2)
-   {
-      if (ss.grid_f->VectorDim() == 1)
-      {
-         VisualizationSceneSolution *vss =
-            dynamic_cast<VisualizationSceneSolution *>(vs);
-         ss.grid_f->GetNodalValues(ss.sol);
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
-                                 ss.grid_f.get());
-      }
-      else
-      {
-         VisualizationSceneVector *vsv =
-            dynamic_cast<VisualizationSceneVector *>(vs);
-         vsv->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
-      }
-   }
-   else
-   {
-      if (ss.grid_f->VectorDim() == 1)
-      {
-         VisualizationSceneSolution3d *vss =
-            dynamic_cast<VisualizationSceneSolution3d *>(vs);
-         ss.grid_f->GetNodalValues(ss.sol);
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
-                                 ss.grid_f.get());
-      }
-      else
-      {
-         ss.ProjectVectorFEGridFunction();
-
-         VisualizationSceneVector3d *vss =
-            dynamic_cast<VisualizationSceneVector3d *>(vs);
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.grid_f.get());
-      }
-   }
 }
 
 void ::VectorExtrudeCoefficient::Eval(Vector &v, ElementTransformation &T,

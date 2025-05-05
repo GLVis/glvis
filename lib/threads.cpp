@@ -473,7 +473,7 @@ int GLVisCommand::Execute()
                new_state.ExtrudeMeshAndSolution();
             }
          }
-         if (win.data_state.SetNewMeshAndSolution(std::move(new_state), win.vs))
+         if (win.SetNewMeshAndSolution(std::move(new_state)))
          {
             if (mesh_range > 0.0)
             {
