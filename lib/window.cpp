@@ -14,6 +14,23 @@
 
 extern thread_local GLVisCommand* glvis_command;
 
+Window &Window::operator=(Window &&w)
+{
+   internal = std::move(w.internal);
+
+   data_state = std::move(w.data_state);
+
+   window_x = w.window_x;
+   window_y = w.window_y;
+   window_w = w.window_w;
+   window_h = w.window_h;
+   window_title = w.window_title;
+   plot_caption = std::move(w.plot_caption);
+   extra_caption = std::move(w.extra_caption);
+
+   return *this;
+}
+
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 bool Window::GLVisInitVis(StreamCollection input_streams)
 {
@@ -43,7 +60,8 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
    {
       GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
       glvis_command = new GLVisCommand(*this);
-      comm_thread = new communication_thread(std::move(input_streams), glvis_command);
+      internal.comm_thread.reset(new communication_thread(std::move(input_streams),
+                                                          glvis_command));
    }
 
    locwin = this;
@@ -63,7 +81,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
       }
       if (data_state.mesh->SpaceDimension() == 2)
       {
-         vs = new VisualizationSceneSolution(*this);
+         internal.vs.reset(new VisualizationSceneSolution(*this));
 
          if (field_type == DataState::FieldType::MESH)
          {
@@ -78,7 +96,8 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
       else if (data_state.mesh->SpaceDimension() == 3)
       {
          VisualizationSceneSolution3d *vss;
-         vs = vss = new VisualizationSceneSolution3d(*this);
+         vss = new VisualizationSceneSolution3d(*this);
+         internal.vs.reset(vss);
 
          if (field_type == DataState::FieldType::MESH)
          {
@@ -114,7 +133,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
    {
       if (data_state.mesh->SpaceDimension() == 2)
       {
-         vs = new VisualizationSceneVector(*this);
+         internal.vs.reset(new VisualizationSceneVector(*this));
       }
       else if (data_state.mesh->SpaceDimension() == 3)
       {
@@ -122,7 +141,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
          {
             data_state.ProjectVectorFEGridFunction();
          }
-         vs = new VisualizationSceneVector3d(*this);
+         internal.vs.reset(new VisualizationSceneVector3d(*this));
       }
    }
 
@@ -142,11 +161,11 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
       if (data_state.mesh->SpaceDimension() == 2
           && field_type == DataState::FieldType::MESH)
       {
-         SetVisualizationScene(vs, 2, data_state.keys.c_str());
+         SetVisualizationScene(vs.get(), 2, data_state.keys.c_str());
       }
       else
       {
-         SetVisualizationScene(vs, 3, data_state.keys.c_str());
+         SetVisualizationScene(vs.get(), 3, data_state.keys.c_str());
       }
    }
    return true;
@@ -155,11 +174,11 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
 void Window::GLVisStartVis()
 {
    RunVisualization(); // deletes vs
-   vs = NULL;
+   internal.vs.reset();
    if (glvis_command)
    {
       glvis_command->Terminate();
-      delete comm_thread;
+      internal.comm_thread.reset();
       delete glvis_command;
       glvis_command = NULL;
    }
@@ -196,7 +215,7 @@ void Window::ResetMeshAndSolution(DataState &ss)
       if (ss.grid_f->VectorDim() == 1)
       {
          VisualizationSceneSolution *vss =
-            dynamic_cast<VisualizationSceneSolution *>(vs);
+            dynamic_cast<VisualizationSceneSolution *>(internal.vs.get());
          ss.grid_f->GetNodalValues(ss.sol);
          vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
                                  ss.grid_f.get());
@@ -204,7 +223,7 @@ void Window::ResetMeshAndSolution(DataState &ss)
       else
       {
          VisualizationSceneVector *vsv =
-            dynamic_cast<VisualizationSceneVector *>(vs);
+            dynamic_cast<VisualizationSceneVector *>(internal.vs.get());
          vsv->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
       }
    }
@@ -213,7 +232,7 @@ void Window::ResetMeshAndSolution(DataState &ss)
       if (ss.grid_f->VectorDim() == 1)
       {
          VisualizationSceneSolution3d *vss =
-            dynamic_cast<VisualizationSceneSolution3d *>(vs);
+            dynamic_cast<VisualizationSceneSolution3d *>(internal.vs.get());
          ss.grid_f->GetNodalValues(ss.sol);
          vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
                                  ss.grid_f.get());
@@ -223,7 +242,7 @@ void Window::ResetMeshAndSolution(DataState &ss)
          ss.ProjectVectorFEGridFunction();
 
          VisualizationSceneVector3d *vss =
-            dynamic_cast<VisualizationSceneVector3d *>(vs);
+            dynamic_cast<VisualizationSceneVector3d *>(internal.vs.get());
          vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.grid_f.get());
       }
    }

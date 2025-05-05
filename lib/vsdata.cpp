@@ -23,6 +23,7 @@ using namespace std;
 #include "aux_vis.hpp"
 #include "material.hpp"
 #include "palettes.hpp"
+#include "threads.hpp"
 
 #include "gl2ps.h"
 

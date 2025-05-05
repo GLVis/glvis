@@ -25,9 +25,17 @@ extern const char *string_default;
 
 struct Window
 {
+private:
+   struct
+   {
+      std::unique_ptr<VisualizationSceneScalarData> vs;
+      std::unique_ptr<communication_thread> comm_thread;
+   } internal;
+
+public:
    DataState data_state;
-   VisualizationSceneScalarData *vs = NULL;
-   communication_thread *comm_thread = NULL;
+   const std::unique_ptr<VisualizationSceneScalarData> &vs{internal.vs};
+   const std::unique_ptr<communication_thread> &comm_thread{internal.comm_thread};
 
    int         window_x        = 0; // not a command line option
    int         window_y        = 0; // not a command line option
@@ -36,6 +44,10 @@ struct Window
    const char *window_title    = string_default;
    std::string plot_caption;
    std::string extra_caption;
+
+   Window() = default;
+   Window(Window &&w) { *this = std::move(w); }
+   Window& operator=(Window &&w);
 
    /// Visualize the data in the global variables mesh, sol/grid_f, etc
    bool GLVisInitVis(StreamCollection input_streams);
