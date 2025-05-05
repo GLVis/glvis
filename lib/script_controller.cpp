@@ -98,6 +98,8 @@ int ScriptController::ScriptReadParSolution(istream &scr, DataState &state)
    {
       cout << "(processor attributes); " << flush;
    }
+   state.keep_attr = scr_keep_attr;
+
    // read the solution prefix
    scr >> ws >> sol_prefix;
    cout << "solution prefix: " << sol_prefix << endl;
@@ -129,6 +131,8 @@ int ScriptController::ScriptReadParQuadrature(istream &scr, DataState &state)
    {
       cout << "(processor attributes); " << flush;
    }
+   state.keep_attr = scr_keep_attr;
+
    // read the quadrature prefix
    scr >> ws >> quad_prefix;
    cout << "quadrature prefix: " << quad_prefix << endl;
