@@ -103,7 +103,6 @@ std::string VisualizationSceneVector::GetHelpString() const
 }
 
 thread_local VisualizationSceneVector  * vsvector;
-extern thread_local VisualizationScene * locscene;
 extern thread_local VisualizationSceneSolution * vssol;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
 

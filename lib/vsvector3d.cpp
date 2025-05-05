@@ -115,7 +115,7 @@ std::string VisualizationSceneVector3d::GetHelpString() const
 }
 
 thread_local VisualizationSceneVector3d  *vsvector3d;
-extern thread_local VisualizationScene *locscene;
+static thread_local Window *window;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 static void KeyDPressed()
@@ -150,13 +150,13 @@ static void KeyBPressed()
 
 static void KeyrPressed()
 {
-   locscene -> spinning = 0;
+   window->vs -> spinning = 0;
    RemoveIdleFunc(MainLoop);
    vsvector3d -> CenterObject();
-   locscene -> ViewAngle = 45.0;
-   locscene -> ViewScale = 1.0;
-   locscene -> ViewCenterX = 0.0;
-   locscene -> ViewCenterY = 0.0;
+   window->vs -> ViewAngle = 45.0;
+   window->vs -> ViewScale = 1.0;
+   window->vs -> ViewCenterX = 0.0;
+   window->vs -> ViewCenterY = 0.0;
    vsvector3d -> ianim = vsvector3d -> ianimd = 0;
    vsvector3d -> Prepare();
    vsvector3d -> PrepareLines();
@@ -167,7 +167,7 @@ static void KeyrPressed()
 
 static void KeyRPressed()
 {
-   locscene->spinning = 0;
+   window->vs->spinning = 0;
    RemoveIdleFunc(MainLoop);
    vsvector3d -> ianim = vsvector3d -> ianimd = 0;
    vsvector3d -> Prepare();
@@ -380,6 +380,8 @@ VisualizationSceneVector3d::VisualizationSceneVector3d(Window &win_)
 
 void VisualizationSceneVector3d::Init()
 {
+   window = &win;
+
    key_r_state = 0;
 
    drawdisp = 0;

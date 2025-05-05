@@ -26,7 +26,6 @@ using namespace std;
 
 
 thread_local VisualizationSceneSolution *vssol;
-extern thread_local VisualizationScene  *locscene;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 #ifdef GLVIS_ISFINITE

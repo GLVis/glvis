@@ -36,7 +36,7 @@
 using namespace mfem;
 
 static thread_local int visualize = 0;
-thread_local VisualizationScene * locscene;
+static thread_local VisualizationScene *locscene = NULL;
 static thread_local GLVisCommand *glvis_command = NULL;
 
 #ifdef GLVIS_MULTISAMPLE

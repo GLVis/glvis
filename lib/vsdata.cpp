@@ -612,9 +612,8 @@ void VisualizationSceneScalarData::PrepareCaption()
    GetFont()->getObjectSize(caption, caption_w, caption_h);
 }
 
-static thread_local VisualizationSceneScalarData * vsdata;
+static thread_local VisualizationSceneScalarData *vsdata;
 static thread_local Window *window;
-extern thread_local VisualizationScene  * locscene;
 
 void KeycPressed(GLenum state)
 {
@@ -717,22 +716,22 @@ void KeyLPressed()
 
 void KeyrPressed()
 {
-   locscene -> spinning = 0;
+   window->vs -> spinning = 0;
    RemoveIdleFunc(MainLoop);
    vsdata -> CenterObject();
 
-   locscene -> ViewAngle = 45.0;
-   locscene -> ViewScale = 1.0;
-   locscene -> ViewCenterX = 0.0;
-   locscene -> ViewCenterY = 0.0;
-   locscene->cam.Reset();
+   window->vs -> ViewAngle = 45.0;
+   window->vs -> ViewScale = 1.0;
+   window->vs -> ViewCenterX = 0.0;
+   window->vs -> ViewCenterY = 0.0;
+   window->vs->cam.Reset();
    vsdata -> key_r_state = 0;
    SendExposeEvent();
 }
 
 void KeyRPressed()
 {
-   locscene->spinning = 0;
+   window->vs->spinning = 0;
    RemoveIdleFunc(MainLoop);
    vsdata->Toggle2DView();
    SendExposeEvent();
@@ -746,14 +745,14 @@ void KeypPressed(GLenum state)
    }
    else
    {
-      locscene->palette.NextIndex();
+      window->vs->palette.NextIndex();
       SendExposeEvent();
    }
 }
 
 void KeyPPressed()
 {
-   locscene->palette.PrevIndex();
+   window->vs->palette.PrevIndex();
    SendExposeEvent();
 }
 
@@ -912,23 +911,23 @@ void KeyF2Pressed()
 
 void KeykPressed()
 {
-   locscene->matAlpha -= 0.05;
-   if (locscene->matAlpha < 0.0)
+   window->vs->matAlpha -= 0.05;
+   if (window->vs->matAlpha < 0.0)
    {
-      locscene->matAlpha = 0.0;
+      window->vs->matAlpha = 0.0;
    }
-   locscene->GenerateAlphaTexture();
+   window->vs->GenerateAlphaTexture();
    SendExposeEvent();
 }
 
 void KeyKPressed()
 {
-   locscene->matAlpha += 0.05;
-   if (locscene->matAlpha > 1.0)
+   window->vs->matAlpha += 0.05;
+   if (window->vs->matAlpha > 1.0)
    {
-      locscene->matAlpha = 1.0;
+      window->vs->matAlpha = 1.0;
    }
-   locscene->GenerateAlphaTexture();
+   window->vs->GenerateAlphaTexture();
    SendExposeEvent();
 }
 
@@ -946,23 +945,23 @@ void KeyAPressed()
 
 void KeyCommaPressed()
 {
-   locscene->matAlphaCenter -= 0.25;
+   window->vs->matAlphaCenter -= 0.25;
    // vsdata -> EventUpdateColors();
-   locscene->GenerateAlphaTexture();
+   window->vs->GenerateAlphaTexture();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
-   cout << "MatAlphaCenter = " << locscene->matAlphaCenter << endl;
+   cout << "MatAlphaCenter = " << window->vs->matAlphaCenter << endl;
 #endif
 }
 
 void KeyLessPressed()
 {
-   locscene->matAlphaCenter += 0.25;
+   window->vs->matAlphaCenter += 0.25;
    // vsdata -> EventUpdateColors();
-   locscene->GenerateAlphaTexture();
+   window->vs->GenerateAlphaTexture();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
-   cout << "MatAlphaCenter = " << locscene->matAlphaCenter << endl;
+   cout << "MatAlphaCenter = " << window->vs->matAlphaCenter << endl;
 #endif
 }
 
@@ -1162,7 +1161,7 @@ void VisualizationSceneScalarData::Toggle2DView()
          break;
    }
 
-   // if (locscene -> view != 2) // make 'R' work the same in 2D and 3D
+   // if (window->vs -> view != 2) // make 'R' work the same in 2D and 3D
    key_r_state = (key_r_state+1)%6;
 
    rotmat = newrot.mtx;
