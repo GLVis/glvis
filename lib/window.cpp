@@ -12,8 +12,6 @@
 #include "window.hpp"
 #include "visual.hpp"
 
-extern thread_local GLVisCommand* glvis_command;
-
 Window &Window::operator=(Window &&w)
 {
    internal = std::move(w.internal);
@@ -59,9 +57,10 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
    if (input_streams.size() > 0)
    {
       GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
-      glvis_command = new GLVisCommand(*this);
+      internal.glvis_command.reset(new GLVisCommand(*this));
+      SetGLVisCommand(glvis_command.get());
       internal.comm_thread.reset(new communication_thread(std::move(input_streams),
-                                                          glvis_command));
+                                                          glvis_command.get()));
    }
 
    locwin = this;
@@ -179,8 +178,7 @@ void Window::GLVisStartVis()
    {
       glvis_command->Terminate();
       internal.comm_thread.reset();
-      delete glvis_command;
-      glvis_command = NULL;
+      internal.glvis_command.reset();
    }
    cout << "GLVis window closed." << endl;
 }

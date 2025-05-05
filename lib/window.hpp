@@ -19,6 +19,7 @@
 
 class VisualizationSceneScalarData;
 class communication_thread;
+class GLVisCommand;
 
 extern const char *string_none;
 extern const char *string_default;
@@ -30,12 +31,14 @@ private:
    {
       std::unique_ptr<VisualizationSceneScalarData> vs;
       std::unique_ptr<communication_thread> comm_thread;
+      std::unique_ptr<GLVisCommand> glvis_command;
    } internal;
 
 public:
    DataState data_state;
    const std::unique_ptr<VisualizationSceneScalarData> &vs{internal.vs};
    const std::unique_ptr<communication_thread> &comm_thread{internal.comm_thread};
+   const std::unique_ptr<GLVisCommand> &glvis_command{internal.glvis_command};
 
    int         window_x        = 0; // not a command line option
    int         window_y        = 0; // not a command line option

@@ -35,9 +35,9 @@
 
 using namespace mfem;
 
-thread_local int visualize = 0;
+static thread_local int visualize = 0;
 thread_local VisualizationScene * locscene;
-thread_local GLVisCommand *glvis_command = NULL;
+static thread_local GLVisCommand *glvis_command = NULL;
 
 #ifdef GLVIS_MULTISAMPLE
 static int glvis_multisample = GLVIS_MULTISAMPLE;
@@ -45,15 +45,21 @@ static int glvis_multisample = GLVIS_MULTISAMPLE;
 static int glvis_multisample = -1;
 #endif
 
-float line_w = 1.f;
-float line_w_aa = gl3::LINE_WIDTH_AA;
+static float line_w = 1.f;
+static float line_w_aa = gl3::LINE_WIDTH_AA;
 
-thread_local SdlWindow * wnd = nullptr;
-bool wndLegacyGl = false;
-bool wndUseHiDPI = true;
+static thread_local SdlWindow * wnd = nullptr;
+static bool wndLegacyGl = false;
+bool wndUseHiDPI = true; // shared with sdl_main.cpp
+
 void SDLMainLoop(bool server_mode)
 {
    SdlWindow::StartSDL(server_mode);
+}
+
+void SetGLVisCommand(GLVisCommand *cmd)
+{
+   glvis_command = cmd;
 }
 
 SdlWindow * GetAppWindow()
