@@ -40,9 +40,6 @@ namespace js
 
 using namespace mfem;
 
-/// Switch representation of the quadrature function
-void SwitchQuadSolution();
-
 /// Display a new stream
 void display(std::stringstream & commands, const int w, const int h)
 {
@@ -69,125 +66,13 @@ void display(std::stringstream & commands, const int w, const int h)
       }
    }
 
-   DataState::FieldType field_type = win.data_state.GetType();
+   win.window_title = "glvis";
+   win.window_x = 0.;
+   win.window_y = 0.;
+   win.window_w = w;
+   win.window_h = h;
 
-   if (field_type <= DataState::FieldType::MIN
-       || field_type >= DataState::FieldType::MAX)
-   {
-      return;
-   }
-
-   if (InitVisualization("glvis", 0, 0, w, h))
-   {
-      return;
-   }
-
-   delete win.vs;
-   win.vs = nullptr;
-
-   if (win.data_state.quad_f)
-   {
-      GetAppWindow()->setOnKeyDown('Q', SwitchQuadSolution);
-   }
-
-   double mesh_range = -1.0;
-   if (field_type == DataState::FieldType::SCALAR
-       || field_type == DataState::FieldType::MESH)
-   {
-      if (win.data_state.grid_f)
-      {
-         win.data_state.grid_f->GetNodalValues(win.data_state.sol);
-      }
-      if (win.data_state.mesh->SpaceDimension() == 2)
-      {
-         win.vs = new VisualizationSceneSolution(win);
-
-         if (field_type == DataState::FieldType::MESH)
-         {
-            win.vs->OrthogonalProjection = 1;
-            win.vs->SetLight(0);
-            win.vs->Zoom(1.8);
-            // Use the 'bone' palette when visualizing a 2D mesh only (otherwise
-            // the 'jet-like' palette is used in 2D, see vssolution.cpp).
-            win.vs->palette.SetIndex(4);
-         }
-      }
-      else if (win.data_state.mesh->SpaceDimension() == 3)
-      {
-         VisualizationSceneSolution3d * vss;
-         win.vs = vss = new VisualizationSceneSolution3d(win);
-
-         if (field_type == DataState::FieldType::MESH)
-         {
-            if (win.data_state.mesh->Dimension() == 3)
-            {
-               // Use the 'white' palette when visualizing a 3D volume mesh only
-               win.vs->palette.SetIndex(11);
-               vss->SetLightMatIdx(4);
-            }
-            else
-            {
-               // Use the 'bone' palette when visualizing a surface mesh only
-               win.vs->palette.SetIndex(4);
-            }
-            // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
-
-            vss->ToggleDrawAxes();
-            vss->ToggleDrawMesh();
-         }
-      }
-      if (field_type == DataState::FieldType::MESH)
-      {
-         if (win.data_state.grid_f)
-         {
-            mesh_range = win.data_state.grid_f->Max() + 1.0;
-         }
-         else
-         {
-            mesh_range = win.data_state.sol.Max() + 1.0;
-         }
-      }
-   }
-   else if (field_type == DataState::FieldType::VECTOR)
-   {
-      if (win.data_state.mesh->SpaceDimension() == 2)
-      {
-         win.vs = new VisualizationSceneVector(win);
-      }
-      else if (win.data_state.mesh->SpaceDimension() == 3)
-      {
-         if (win.data_state.grid_f)
-         {
-            win.data_state.ProjectVectorFEGridFunction();
-         }
-
-         win.vs = new VisualizationSceneVector3d(win);
-      }
-   }
-
-   if (win.vs)
-   {
-      // increase the refinement factors if visualizing a GridFunction
-      if (win.data_state.grid_f)
-      {
-         win.vs->AutoRefine();
-         win.vs->SetShading(VisualizationSceneScalarData::Shading::Noncomforming, true);
-      }
-      if (mesh_range > 0.0)
-      {
-         win.vs->SetValueRange(-mesh_range, mesh_range);
-         win.vs->SetAutoscale(0);
-      }
-      if (win.data_state.mesh->SpaceDimension() == 2 &&
-          field_type == DataState::FieldType::MESH)
-      {
-         SetVisualizationScene(win.vs, 2);
-      }
-      else
-      {
-         SetVisualizationScene(win.vs, 3);
-      }
-   }
+   win.GLVisInitVis({});
 
    CallKeySequence(win.data_state.keys.c_str());
 
@@ -426,14 +311,6 @@ em::val getScreenBuffer(bool flip_y=false)
 
    return em::val(em::typed_memory_view(screen_state->size(),
                                         screen_state->data()));
-}
-
-void SwitchQuadSolution()
-{
-   int iqs = ((int)win.data_state.GetQuadSolution()+1)
-             % ((int)DataState::QuadSolution::MAX);
-   win.SwitchQuadSolution((DataState::QuadSolution)iqs);
-   SendExposeEvent();
 }
 
 #ifdef GLVIS_USE_LIBPNG
