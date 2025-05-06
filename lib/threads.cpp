@@ -935,6 +935,13 @@ void communication_thread::execute()
          {
             goto comm_terminate;
          }
+         if (!tmp.keys.empty())
+         {
+            if (glvis_command->KeyCommands(tmp.keys.c_str()))
+            {
+               goto comm_terminate;
+            }
+         }
          continue;
       }
 
