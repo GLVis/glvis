@@ -939,47 +939,18 @@ void communication_thread::execute()
          case Command::Quadrature:
          case Command::Parallel:
          {
-            bool fix_elem_orient = glvis_command->FixElementOrientations();
             bool done = false;
             DataState tmp;
+            tmp.fix_elem_orient = glvis_command->FixElementOrientations();
+            tmp.keep_attr = glvis_command->KeepAttrib();
+            StreamReader reader(tmp);
             switch (cmd)
             {
                case Command::Mesh:
-               {
-                  tmp.SetMesh(new Mesh(*is[0], 1, 0, fix_elem_orient));
-                  if (!(*is[0]))
-                  {
-                     done = true;
-                     break;
-                  }
-                  tmp.SetGridFunction(NULL);
-               }
-               break;
                case Command::Solution:
-               {
-                  tmp.SetMesh(new Mesh(*is[0], 1, 0, fix_elem_orient));
-                  if (!(*is[0]))
-                  {
-                     done = true;
-                     break;
-                  }
-                  tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), *is[0]));
-                  if (!(*is[0]))
-                  {
-                     done = true;
-                     break;
-                  }
-               }
-               break;
                case Command::Quadrature:
                {
-                  tmp.SetMesh(new Mesh(*is[0], 1, 0, fix_elem_orient));
-                  if (!(*is[0]))
-                  {
-                     done = true;
-                     break;
-                  }
-                  tmp.SetQuadFunction(new QuadratureFunction(tmp.mesh.get(), *is[0]));
+                  reader.ReadStream(*is[0], ident);
                   if (!(*is[0]))
                   {
                      done = true;
@@ -989,11 +960,7 @@ void communication_thread::execute()
                break;
                case Command::Parallel:
                {
-                  std::vector<Mesh*> mesh_array;
-                  std::vector<GridFunction*> gf_array;
-                  std::vector<QuadratureFunction*> qf_array;
-                  int proc, nproc, np = 0;
-                  bool keep_attr = glvis_command->KeepAttrib();
+                  unsigned int proc, nproc, np = 0;
                   do
                   {
                      istream &isock = *is[np];
@@ -1002,34 +969,17 @@ void communication_thread::execute()
                      cout << "connection[" << np << "]: parallel " << nproc << ' '
                           << proc << endl;
 #endif
-                     isock >> ident >> ws;
-                     mesh_array.resize(nproc);
-                     mesh_array[proc] = new Mesh(isock, 1, 0, fix_elem_orient);
-                     if (!keep_attr)
+                     if (nproc != is.size())
                      {
-                        // set element and boundary attributes to proc+1
-                        for (int i = 0; i < mesh_array[proc]->GetNE(); i++)
-                        {
-                           mesh_array[proc]->GetElement(i)->SetAttribute(proc+1);
-                        }
-                        for (int i = 0; i < mesh_array[proc]->GetNBE(); i++)
-                        {
-                           mesh_array[proc]->GetBdrElement(i)->SetAttribute(proc+1);
-                        }
+                        cout << "Unexpected number of processors: " << nproc
+                             << ", expected: " << is.size() << endl;
+                        mfem_error();
                      }
-                     if (ident == "solution")
+                     if (proc >= nproc)
                      {
-                        gf_array.resize(nproc);
-                        gf_array[proc] = new GridFunction(mesh_array[proc], isock);
-                     }
-                     else if (ident == "quadrature")
-                     {
-                        qf_array.resize(nproc);
-                        qf_array[proc] = new QuadratureFunction(mesh_array[proc], isock);
-                     }
-                     else
-                     {
-                        cout << "Stream: unknown command: " << ident << endl;
+                        cout << "Invalid processor rank: " << proc
+                             << ", number of processors: " << nproc << endl;
+                        mfem_error();
                      }
                      np++;
                      if (np == nproc)
@@ -1037,34 +987,16 @@ void communication_thread::execute()
                         break;
                      }
                      *is[np] >> ident >> ws; // "parallel"
+                     if (ident != "parallel")
+                     {
+                        cout << "Expected keyword \"parallel\", got \"" << ident
+                             << '"' << endl;
+                        mfem_error();
+                     }
                   }
                   while (1);
 
-                  tmp.SetMesh(new Mesh(mesh_array.data(), nproc));
-                  if (gf_array.size() > 0)
-                  {
-                     tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), gf_array.data(), nproc));
-                  }
-                  else if (qf_array.size() > 0)
-                  {
-                     tmp.SetQuadFunction(qf_array);
-                  }
-
-                  for (int p = 0; p < nproc; p++)
-                  {
-                     if (gf_array.size() > 0)
-                     {
-                        delete gf_array[nproc-1-p];
-                     }
-                     if (qf_array.size() > 0)
-                     {
-                        delete qf_array[nproc-1-p];
-                     }
-                     delete mesh_array[nproc-1-p];
-                  }
-                  gf_array.clear();
-                  qf_array.clear();
-                  mesh_array.clear();
+                  reader.ReadStreams(is);
                }
                break;
                default:
@@ -1073,8 +1005,6 @@ void communication_thread::execute()
             if (done) { break; }
 
             // cout << "Stream: new solution" << endl;
-
-            tmp.ExtrudeMeshAndSolution();
 
             if (glvis_command->NewMeshAndSolution(std::move(tmp)))
             {
