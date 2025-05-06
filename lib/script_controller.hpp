@@ -44,10 +44,13 @@ class ScriptController
    static thread_local ScriptController *script_ctrl;
    static void ScriptIdleFunc();
    static void ScriptControl();
+
+   static void InitCommands();
+   static void PrintCommands();
    void ExecuteScriptCommand();
 
 public:
-   ScriptController(Window &win_) : win(win_) { }
+   ScriptController(Window &win_);
 
    void PlayScript(std::istream &scr);
 };
