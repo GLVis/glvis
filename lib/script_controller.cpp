@@ -318,7 +318,7 @@ void ScriptController::InitCommands()
    commands[(size_t)Command::AxisNumberFormat]     = {"axis_numberformat", "'<format>'", "Set the axis number format."};
    commands[(size_t)Command::ColorbarNumberFormat] = {"colorbar_numberformat", "'<format>'", "Set the colorbar number format."};
    commands[(size_t)Command::Window]               = {"window", "<x> <y> <w> <h>", "Set the position and size of the window."};
-   commands[(size_t)Command::Keys]                 = {"keys", "<key>", "Send the control key sequence."};
+   commands[(size_t)Command::Keys]                 = {"keys", "<keys>", "Send the control key sequence."};
    commands[(size_t)Command::Palette]              = {"palette", "<index>", "Set the palette index."};
    commands[(size_t)Command::PaletteRepeat]        = {"palette_repeat", "<times>", "Set the repetition of the palette."};
    commands[(size_t)Command::ToggleAttributes]     = {"toggle_attributes", "<1/0> [[<1/0>] ...];", "Toggle visibility of the attributes."};
