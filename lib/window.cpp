@@ -172,7 +172,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
 
 void Window::GLVisStartVis()
 {
-   RunVisualization(); // deletes vs
+   RunVisualization();
    internal.vs.reset();
    if (glvis_command)
    {

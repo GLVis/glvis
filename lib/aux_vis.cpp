@@ -369,7 +369,6 @@ void RunVisualization()
    wnd->mainLoop();
 #endif
    InitIdleFuncs();
-   delete locscene;
    delete wnd;
    wnd = nullptr;
 }
