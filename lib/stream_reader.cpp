@@ -23,13 +23,13 @@ int StreamReader::ReadStream(
    if (data_type == "fem2d_data")
    {
       data.type = DataState::FieldType::SCALAR;
-      data.SetMesh(new Mesh(is, 0, 0, data.save_coloring));
+      data.SetMesh(new Mesh(is, 0, 0, data.fix_elem_orient));
       data.sol.Load(is, data.mesh->GetNV());
    }
    else if (data_type == "vfem2d_data" || data_type == "vfem2d_data_keys")
    {
       data.type = DataState::FieldType::VECTOR;
-      data.SetMesh(new Mesh(is, 0, 0, data.save_coloring));
+      data.SetMesh(new Mesh(is, 0, 0, data.fix_elem_orient));
       data.solu.Load(is, data.mesh->GetNV());
       data.solv.Load(is, data.mesh->GetNV());
       if (data_type == "vfem2d_data_keys")
@@ -40,13 +40,13 @@ int StreamReader::ReadStream(
    else if (data_type == "fem3d_data")
    {
       data.type = DataState::FieldType::SCALAR;
-      data.SetMesh(new Mesh(is, 0, 0, data.save_coloring));
+      data.SetMesh(new Mesh(is, 0, 0, data.fix_elem_orient));
       data.sol.Load(is, data.mesh->GetNV());
    }
    else if (data_type == "vfem3d_data" || data_type == "vfem3d_data_keys")
    {
       data.type = DataState::FieldType::VECTOR;
-      data.SetMesh(new Mesh(is, 0, 0, data.save_coloring));
+      data.SetMesh(new Mesh(is, 0, 0, data.fix_elem_orient));
       data.solu.Load(is, data.mesh->GetNV());
       data.solv.Load(is, data.mesh->GetNV());
       data.solw.Load(is, data.mesh->GetNV());
@@ -57,7 +57,7 @@ int StreamReader::ReadStream(
    }
    else if (data_type == "fem2d_gf_data" || data_type == "fem2d_gf_data_keys")
    {
-      data.SetMesh(new Mesh(is, 1, 0, data.save_coloring));
+      data.SetMesh(new Mesh(is, 1, 0, data.fix_elem_orient));
       data.SetGridFunction(new GridFunction(data.mesh.get(), is));
       if (data_type == "fem2d_gf_data_keys")
       {
@@ -66,7 +66,7 @@ int StreamReader::ReadStream(
    }
    else if (data_type == "vfem2d_gf_data" || data_type == "vfem2d_gf_data_keys")
    {
-      data.SetMesh(new Mesh(is, 1, 0, data.save_coloring));
+      data.SetMesh(new Mesh(is, 1, 0, data.fix_elem_orient));
       data.SetGridFunction(new GridFunction(data.mesh.get(), is));
       if (data_type == "vfem2d_gf_data_keys")
       {
@@ -75,7 +75,7 @@ int StreamReader::ReadStream(
    }
    else if (data_type == "fem3d_gf_data" || data_type == "fem3d_gf_data_keys")
    {
-      data.SetMesh(new Mesh(is, 1, 0, data.save_coloring));
+      data.SetMesh(new Mesh(is, 1, 0, data.fix_elem_orient));
       data.SetGridFunction(new GridFunction(data.mesh.get(), is));
       if (data_type == "fem3d_gf_data_keys")
       {
@@ -84,7 +84,7 @@ int StreamReader::ReadStream(
    }
    else if (data_type == "vfem3d_gf_data" || data_type == "vfem3d_gf_data_keys")
    {
-      data.SetMesh(new Mesh(is, 1, 0, data.save_coloring));
+      data.SetMesh(new Mesh(is, 1, 0, data.fix_elem_orient));
       data.SetGridFunction(new GridFunction(data.mesh.get(), is));
       if (data_type == "vfem3d_gf_data_keys")
       {
@@ -93,18 +93,18 @@ int StreamReader::ReadStream(
    }
    else if (data_type == "solution")
    {
-      data.SetMesh(new Mesh(is, 1, 0, data.save_coloring));
+      data.SetMesh(new Mesh(is, 1, 0, data.fix_elem_orient));
       data.SetGridFunction(new GridFunction(data.mesh.get(), is));
    }
    else if (data_type == "quadrature")
    {
-      data.SetMesh(new Mesh(is, 1, 0, data.save_coloring));
+      data.SetMesh(new Mesh(is, 1, 0, data.fix_elem_orient));
       data.SetQuadFunction(new QuadratureFunction(data.mesh.get(), is));
       data.SetQuadSolution();
    }
    else if (data_type == "mesh")
    {
-      data.SetMesh(new Mesh(is, 1, 0, data.save_coloring));
+      data.SetMesh(new Mesh(is, 1, 0, data.fix_elem_orient));
       data.SetMeshSolution();
    }
    else if (data_type == "raw_scalar_2d")
@@ -200,11 +200,11 @@ int StreamReader::ReadStream(
 
       if (mesh_type == 1)
       {
-         data.mesh->FinalizeTriMesh(1, 0, data.save_coloring);
+         data.mesh->FinalizeTriMesh(1, 0, data.fix_elem_orient);
       }
       else if (mesh_type == 2)
       {
-         data.mesh->FinalizeQuadMesh(1, 0, data.save_coloring);
+         data.mesh->FinalizeQuadMesh(1, 0, data.fix_elem_orient);
       }
       else
       {
@@ -256,7 +256,7 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
 #ifdef GLVIS_DEBUG
       cout << " type " << data_type << " ... " << flush;
 #endif
-      mesh_array[p] = new Mesh(isock, 1, 0, data.save_coloring);
+      mesh_array[p] = new Mesh(isock, 1, 0, data.fix_elem_orient);
       if (!data.keep_attr)
       {
          // set element and boundary attributes to proc+1
