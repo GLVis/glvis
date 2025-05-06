@@ -25,11 +25,9 @@ class StreamReader
 {
    DataState &data;
 
-   static void InitCommands();
-
 public:
 
-   StreamReader(DataState &data_);
+   StreamReader(DataState &data_): data(data_) { }
 
    /// Prints available commands
    static void PrintCommands();

@@ -11,7 +11,7 @@
 
 #include "stream_reader.hpp"
 
-#include <vector>
+#include <array>
 #include <algorithm>
 
 using namespace std;
@@ -41,31 +41,30 @@ enum class Command
    Max
 };
 
-struct CmdItem
+class StreamCommands
 {
-   const char *keyword;
-   bool keys;
-   const char *params;
-   const char *desc;
-
-   bool operator==(const string &key) const { return key == keyword; }
-};
-
-static vector<CmdItem> commands;
-
-StreamReader::StreamReader(DataState &data_)
-   : data(data_)
-{
-   if (commands.empty())
+   struct CmdItem
    {
-      InitCommands();
-   }
-}
+      const char *keyword;
+      bool keys;
+      const char *params;
+      const char *desc;
 
-void StreamReader::InitCommands()
+      bool operator==(const string &key) const { return key == keyword; }
+   };
+   array<CmdItem,(size_t)Command::Max> commands;
+
+public:
+   StreamCommands();
+
+   array<CmdItem,(size_t)Command::Max>::const_iterator begin() const { return commands.begin(); }
+   array<CmdItem,(size_t)Command::Max>::const_iterator end() const { return commands.end(); }
+   const CmdItem& operator[](Command cmd) const { return commands[(size_t)cmd]; }
+};
+static const StreamCommands commands;
+
+StreamCommands::StreamCommands()
 {
-   commands.resize((size_t)Command::Max);
-
    commands[(size_t)Command::Mesh]                 = {"mesh", false, "<mesh>", "Visualize the mesh."};
    commands[(size_t)Command::Solution]             = {"solution", false, "<mesh> <solution>", "Visualize the solution."};
    commands[(size_t)Command::Quadrature]           = {"quadrature", false, "<mesh> <quadrature>", "Visualize the quadrature."};
@@ -90,7 +89,7 @@ void StreamReader::PrintCommands()
 {
    cout << "Available commands are:" << endl;
 
-   for (const CmdItem &ci : commands)
+   for (const auto &ci : commands)
    {
       cout << "\t" << ci.keyword << " " << ci.params << " - " << ci.desc << endl;
    }
@@ -98,11 +97,6 @@ void StreamReader::PrintCommands()
 
 bool StreamReader::SupportsDataType(const string &data_type)
 {
-   if (commands.empty())
-   {
-      InitCommands();
-   }
-
    auto it = find(commands.begin(), commands.end(), data_type);
    return it != commands.end();
 }
@@ -289,7 +283,7 @@ int StreamReader::ReadStream(
          break;
    }
 
-   if (commands[(size_t)cmd].keys)
+   if (commands[cmd].keys)
    {
       is >> data.keys;
    }

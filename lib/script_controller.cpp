@@ -15,7 +15,7 @@
 #include "stream_reader.hpp"
 #include "visual.hpp"
 
-#include <vector>
+#include <array>
 #include <algorithm>
 
 using namespace std;
@@ -60,16 +60,63 @@ enum class Command
    Max
 };
 
-struct CmdItem
+class ScriptCommands
 {
-   const char *keyword;
-   const char *params;
-   const char *desc;
+   struct CmdItem
+   {
+      const char *keyword;
+      const char *params;
+      const char *desc;
 
-   bool operator==(const string &key) const { return key == keyword; }
+      bool operator==(const string &key) const { return key == keyword; }
+   };
+   array<CmdItem,(size_t)Command::Max> commands;
+
+public:
+   ScriptCommands();
+
+   array<CmdItem,(size_t)Command::Max>::const_iterator begin() const { return commands.begin(); }
+   array<CmdItem,(size_t)Command::Max>::const_iterator end() const { return commands.end(); }
+   const CmdItem& operator[](Command cmd) const { return commands[(size_t)cmd]; }
 };
+static const ScriptCommands commands;
 
-static vector<CmdItem> commands;
+ScriptCommands::ScriptCommands()
+{
+   commands[(size_t)Command::Mesh]                 = {"mesh", "<file>", "Visualize the mesh."};
+   commands[(size_t)Command::Solution]             = {"solution", "<mesh> <solution>", "Visualize the solution."};
+   commands[(size_t)Command::ParSolution]          = {"psolution", "<np> <mesh prefix> <keep attributes> <solution prefix>", "Visualize the distributed solution."};
+   commands[(size_t)Command::Quadrature]           = {"quadrature", "<mesh> <quadrature>", "Visualize the quadrature."};
+   commands[(size_t)Command::ParQuadrature]        = {"pquadrature", "<np> <mesh prefix> <keep attributes> <quadrature prefix>", "Visualize the distributed quadrature."};
+   commands[(size_t)Command::DataCollMesh]         = {"data_coll_mesh", "<type> <data coll>", "Visualize the mesh from data collection."};
+   commands[(size_t)Command::DataCollField]        = {"data_coll_field", "<type> <data coll> <field>", "Visualize the field from data collection."};
+   commands[(size_t)Command::DataCollQuad]         = {"data_coll_quad", "<type> <data coll> <quad>", "Visualize the Q-field from data collection."};
+   commands[(size_t)Command::DataCollCycle]        = {"data_coll_cycle", "<cycle>", "Preset the cycle of the data collection."};
+   commands[(size_t)Command::DataCollProto]        = {"data_coll_protocol", "<protocol>", "Preset the protocol of the data collection."};
+   commands[(size_t)Command::Screenshot]           = {"screenshot", "<file>", "Take a screenshot, saving it to the file."};
+   commands[(size_t)Command::Viewcenter]           = {"viewcenter", "<x> <y>", "Change the viewcenter."};
+   commands[(size_t)Command::Perspective]          = {"perspective", "<on/off>", "Turn on or off perspective projection."};
+   commands[(size_t)Command::Light]                = {"light", "<on/off>", "Turn on or off light."};
+   commands[(size_t)Command::View]                 = {"view", "<theta> <phi>", "Change the solid angle of view."};
+   commands[(size_t)Command::Zoom]                 = {"zoom", "<zoom>", "Change the zoom factor."};
+   commands[(size_t)Command::Shading]              = {"shading", "<flat/smooth/cool>", "Change the shading algorithm."};
+   commands[(size_t)Command::Subdivisions]         = {"subdivisions", "<times> <dummy>", "Change the refinement level."};
+   commands[(size_t)Command::Valuerange]           = {"valuerange", "<min> <max>", "Change the value range."};
+   commands[(size_t)Command::Autoscale]            = {"autoscale", "<off/on/value/mesh>", "Change the autoscale algorithm."};
+   commands[(size_t)Command::Levellines]           = {"levellines", "<min> <max> <num>", "Set the level lines."};
+   commands[(size_t)Command::AxisNumberFormat]     = {"axis_numberformat", "'<format>'", "Set the axis number format."};
+   commands[(size_t)Command::ColorbarNumberFormat] = {"colorbar_numberformat", "'<format>'", "Set the colorbar number format."};
+   commands[(size_t)Command::Window]               = {"window", "<x> <y> <w> <h>", "Set the position and size of the window."};
+   commands[(size_t)Command::Keys]                 = {"keys", "<keys>", "Send the control key sequence."};
+   commands[(size_t)Command::Palette]              = {"palette", "<index>", "Set the palette index."};
+   commands[(size_t)Command::PaletteRepeat]        = {"palette_repeat", "<times>", "Set the repetition of the palette."};
+   commands[(size_t)Command::ToggleAttributes]     = {"toggle_attributes", "<1/0> [[<1/0>] ...];", "Toggle visibility of the attributes."};
+   commands[(size_t)Command::Rotmat]               = {"rotmat", "<[0,0]> <[1,0]> ... <[3,3]>", "Set the rotation matrix."};
+   commands[(size_t)Command::Camera]               = {"camera", "<cam[0]> ... <cam[2]> <dir[0]> ... <dir[2]> <up[0]> ... <up[2]>", "Set the camera position, direction and upward vector."};
+   commands[(size_t)Command::Scale]                = {"scale", "<scale>", "Set the scaling factor."};
+   commands[(size_t)Command::Translate]            = {"translate", "<x> <y> <z>", "Set the translation coordinates."};
+   commands[(size_t)Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
+}
 
 int ScriptController::ScriptReadSolution(istream &scr, DataState &state)
 {
@@ -290,50 +337,11 @@ int ScriptController::ScriptReadDataColl(istream &scr, DataState &state,
    return err_read;
 }
 
-void ScriptController::InitCommands()
-{
-   commands.resize((size_t)Command::Max);
-
-   commands[(size_t)Command::Mesh]                 = {"mesh", "<file>", "Visualize the mesh."};
-   commands[(size_t)Command::Solution]             = {"solution", "<mesh> <solution>", "Visualize the solution."};
-   commands[(size_t)Command::ParSolution]          = {"psolution", "<np> <mesh prefix> <keep attributes> <solution prefix>", "Visualize the distributed solution."};
-   commands[(size_t)Command::Quadrature]           = {"quadrature", "<mesh> <quadrature>", "Visualize the quadrature."};
-   commands[(size_t)Command::ParQuadrature]        = {"pquadrature", "<np> <mesh prefix> <keep attributes> <quadrature prefix>", "Visualize the distributed quadrature."};
-   commands[(size_t)Command::DataCollMesh]         = {"data_coll_mesh", "<type> <data coll>", "Visualize the mesh from data collection."};
-   commands[(size_t)Command::DataCollField]        = {"data_coll_field", "<type> <data coll> <field>", "Visualize the field from data collection."};
-   commands[(size_t)Command::DataCollQuad]         = {"data_coll_quad", "<type> <data coll> <quad>", "Visualize the Q-field from data collection."};
-   commands[(size_t)Command::DataCollCycle]        = {"data_coll_cycle", "<cycle>", "Preset the cycle of the data collection."};
-   commands[(size_t)Command::DataCollProto]        = {"data_coll_protocol", "<protocol>", "Preset the protocol of the data collection."};
-   commands[(size_t)Command::Screenshot]           = {"screenshot", "<file>", "Take a screenshot, saving it to the file."};
-   commands[(size_t)Command::Viewcenter]           = {"viewcenter", "<x> <y>", "Change the viewcenter."};
-   commands[(size_t)Command::Perspective]          = {"perspective", "<on/off>", "Turn on or off perspective projection."};
-   commands[(size_t)Command::Light]                = {"light", "<on/off>", "Turn on or off light."};
-   commands[(size_t)Command::View]                 = {"view", "<theta> <phi>", "Change the solid angle of view."};
-   commands[(size_t)Command::Zoom]                 = {"zoom", "<zoom>", "Change the zoom factor."};
-   commands[(size_t)Command::Shading]              = {"shading", "<flat/smooth/cool>", "Change the shading algorithm."};
-   commands[(size_t)Command::Subdivisions]         = {"subdivisions", "<times> <dummy>", "Change the refinement level."};
-   commands[(size_t)Command::Valuerange]           = {"valuerange", "<min> <max>", "Change the value range."};
-   commands[(size_t)Command::Autoscale]            = {"autoscale", "<off/on/value/mesh>", "Change the autoscale algorithm."};
-   commands[(size_t)Command::Levellines]           = {"levellines", "<min> <max> <num>", "Set the level lines."};
-   commands[(size_t)Command::AxisNumberFormat]     = {"axis_numberformat", "'<format>'", "Set the axis number format."};
-   commands[(size_t)Command::ColorbarNumberFormat] = {"colorbar_numberformat", "'<format>'", "Set the colorbar number format."};
-   commands[(size_t)Command::Window]               = {"window", "<x> <y> <w> <h>", "Set the position and size of the window."};
-   commands[(size_t)Command::Keys]                 = {"keys", "<keys>", "Send the control key sequence."};
-   commands[(size_t)Command::Palette]              = {"palette", "<index>", "Set the palette index."};
-   commands[(size_t)Command::PaletteRepeat]        = {"palette_repeat", "<times>", "Set the repetition of the palette."};
-   commands[(size_t)Command::ToggleAttributes]     = {"toggle_attributes", "<1/0> [[<1/0>] ...];", "Toggle visibility of the attributes."};
-   commands[(size_t)Command::Rotmat]               = {"rotmat", "<[0,0]> <[1,0]> ... <[3,3]>", "Set the rotation matrix."};
-   commands[(size_t)Command::Camera]               = {"camera", "<cam[0]> ... <cam[2]> <dir[0]> ... <dir[2]> <up[0]> ... <up[2]>", "Set the camera position, direction and upward vector."};
-   commands[(size_t)Command::Scale]                = {"scale", "<scale>", "Set the scaling factor."};
-   commands[(size_t)Command::Translate]            = {"translate", "<x> <y> <z>", "Set the translation coordinates."};
-   commands[(size_t)Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
-}
-
 void ScriptController::PrintCommands()
 {
    cout << "Available commands are:" << endl;
 
-   for (const CmdItem &ci : commands)
+   for (const auto &ci : commands)
    {
       cout << "\t" << ci.keyword << " " << ci.params << " - " << ci.desc << endl;
    }
@@ -835,15 +843,6 @@ void ScriptController::ScriptControl()
    {
       script_ctrl->scr_running = 1;
       AddIdleFunc(ScriptIdleFunc);
-   }
-}
-
-ScriptController::ScriptController(Window &win_)
-   : win(win_)
-{
-   if (commands.empty())
-   {
-      InitCommands();
    }
 }
 

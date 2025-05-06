@@ -11,7 +11,8 @@
 
 #include "visual.hpp"
 #include "palettes.hpp"
-#include <vector>
+
+#include <array>
 #include <algorithm>
 
 using namespace std;
@@ -826,48 +827,29 @@ enum class Command
    Max
 };
 
-struct CmdItem
+class ThreadCommands
 {
-   const char *keyword;
-   const char *params;
-   const char *desc;
+   struct CmdItem
+   {
+      const char *keyword;
+      const char *params;
+      const char *desc;
 
-   bool operator==(const string &key) const { return key == keyword; }
+      bool operator==(const string &key) const { return key == keyword; }
+   };
+   array<CmdItem,(size_t)Command::Max> commands;
+
+public:
+   ThreadCommands();
+
+   array<CmdItem,(size_t)Command::Max>::const_iterator begin() const { return commands.begin(); }
+   array<CmdItem,(size_t)Command::Max>::const_iterator end() const { return commands.end(); }
+   const CmdItem& operator[](Command cmd) const { return commands[(size_t)cmd]; }
 };
+static const ThreadCommands commands;
 
-static vector<CmdItem> commands;
-
-communication_thread::communication_thread(StreamCollection _is,
-                                           GLVisCommand* cmd)
-   : is(std::move(_is)), glvis_command(cmd)
+ThreadCommands::ThreadCommands()
 {
-   new_m = NULL;
-   new_g = NULL;
-
-   if (commands.empty())
-   {
-      init_commands();
-   }
-
-   if (is.size() > 0)
-   {
-      tid = std::thread(&communication_thread::execute, this);
-   }
-}
-
-communication_thread::~communication_thread()
-{
-   if (is.size() > 0)
-   {
-      terminate_thread = true;
-      tid.join();
-   }
-}
-
-void communication_thread::init_commands()
-{
-   commands.resize((size_t)Command::Max);
-
    commands[(size_t)Command::Parallel]             = {"parallel", "<num proc> <proc>", "Prefix for distributed mesh/solution/quadrature."};
    commands[(size_t)Command::Screenshot]           = {"screenshot", "<file>", "Take a screenshot, saving it to the file."};
    commands[(size_t)Command::Viewcenter]           = {"viewcenter", "<x> <y>", "Change the viewcenter."};
@@ -893,11 +875,33 @@ void communication_thread::init_commands()
    commands[(size_t)Command::Autopause]            = {"autopause", "<0/off/1/on>", "Turns off or on autopause."};
 }
 
+communication_thread::communication_thread(StreamCollection _is,
+                                           GLVisCommand* cmd)
+   : is(std::move(_is)), glvis_command(cmd)
+{
+   new_m = NULL;
+   new_g = NULL;
+
+   if (is.size() > 0)
+   {
+      tid = std::thread(&communication_thread::execute, this);
+   }
+}
+
+communication_thread::~communication_thread()
+{
+   if (is.size() > 0)
+   {
+      terminate_thread = true;
+      tid.join();
+   }
+}
+
 void communication_thread::print_commands()
 {
    StreamReader::PrintCommands();
 
-   for (const CmdItem &ci : commands)
+   for (const auto &ci : commands)
    {
       cout << "\t" << ci.keyword << " " << ci.params << " - " << ci.desc << endl;
    }

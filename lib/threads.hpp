@@ -163,7 +163,6 @@ private:
    // signal for thread cancellation
    std::atomic<bool> terminate_thread {false};
 
-   static void init_commands();
    static void print_commands();
    void execute();
 
