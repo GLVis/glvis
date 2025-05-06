@@ -96,6 +96,17 @@ void StreamReader::PrintCommands()
    }
 }
 
+bool StreamReader::SupportsDataType(const string &data_type)
+{
+   if (commands.empty())
+   {
+      InitCommands();
+   }
+
+   auto it = find(commands.begin(), commands.end(), data_type);
+   return it != commands.end();
+}
+
 int StreamReader::ReadStream(
    istream &is, const string &data_type)
 {

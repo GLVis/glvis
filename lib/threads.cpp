@@ -799,9 +799,6 @@ GLVisCommand::~GLVisCommand()
 
 enum class Command
 {
-   Mesh,
-   Solution,
-   Quadrature,
    Parallel,
    Screenshot,
    Viewcenter,
@@ -871,9 +868,6 @@ void communication_thread::init_commands()
 {
    commands.resize((size_t)Command::Max);
 
-   commands[(size_t)Command::Mesh]                 = {"mesh", "<mesh>", "Visualize the mesh."};
-   commands[(size_t)Command::Solution]             = {"solution", "<mesh> <solution>", "Visualize the solution."};
-   commands[(size_t)Command::Quadrature]           = {"quadrature", "<mesh> <quadrature>", "Visualize the quadrature."};
    commands[(size_t)Command::Parallel]             = {"parallel", "<num proc> <proc>", "Prefix for distributed mesh/solution/quadrature."};
    commands[(size_t)Command::Screenshot]           = {"screenshot", "<file>", "Take a screenshot, saving it to the file."};
    commands[(size_t)Command::Viewcenter]           = {"viewcenter", "<x> <y>", "Change the viewcenter."};
@@ -901,7 +895,7 @@ void communication_thread::init_commands()
 
 void communication_thread::print_commands()
 {
-   cout << "Available commands are:" << endl;
+   StreamReader::PrintCommands();
 
    for (const CmdItem &ci : commands)
    {
@@ -923,6 +917,27 @@ void communication_thread::execute()
          break;
       }
 
+      // new solution handled by StreamReader
+      if (StreamReader::SupportsDataType(ident))
+      {
+         DataState tmp;
+         tmp.fix_elem_orient = glvis_command->FixElementOrientations();
+         StreamReader reader(tmp);
+         reader.ReadStream(*is[0], ident);
+         if (!(*is[0]))
+         {
+            break;
+         }
+
+         // cout << "Stream: new solution" << endl;
+
+         if (glvis_command->NewMeshAndSolution(std::move(tmp)))
+         {
+            goto comm_terminate;
+         }
+         continue;
+      }
+
       auto it = find(commands.begin(), commands.end(), ident);
       if (it == commands.end())
       {
@@ -934,75 +949,49 @@ void communication_thread::execute()
       const Command cmd = (Command)(it - commands.begin());
       switch (cmd)
       {
-         case Command::Mesh:
-         case Command::Solution:
-         case Command::Quadrature:
          case Command::Parallel:
          {
-            bool done = false;
+            unsigned int proc, nproc, np = 0;
+            do
+            {
+               istream &isock = *is[np];
+               isock >> nproc >> proc >> ws;
+#ifdef GLVIS_DEBUG
+               cout << "connection[" << np << "]: parallel " << nproc << ' '
+                    << proc << endl;
+#endif
+               if (nproc != is.size())
+               {
+                  cout << "Unexpected number of processors: " << nproc
+                       << ", expected: " << is.size() << endl;
+                  mfem_error();
+               }
+               if (proc >= nproc)
+               {
+                  cout << "Invalid processor rank: " << proc
+                       << ", number of processors: " << nproc << endl;
+                  mfem_error();
+               }
+               np++;
+               if (np == nproc)
+               {
+                  break;
+               }
+               *is[np] >> ident >> ws; // "parallel"
+               if (ident != "parallel")
+               {
+                  cout << "Expected keyword \"parallel\", got \"" << ident
+                       << '"' << endl;
+                  mfem_error();
+               }
+            }
+            while (1);
+
             DataState tmp;
             tmp.fix_elem_orient = glvis_command->FixElementOrientations();
             tmp.keep_attr = glvis_command->KeepAttrib();
             StreamReader reader(tmp);
-            switch (cmd)
-            {
-               case Command::Mesh:
-               case Command::Solution:
-               case Command::Quadrature:
-               {
-                  reader.ReadStream(*is[0], ident);
-                  if (!(*is[0]))
-                  {
-                     done = true;
-                     break;
-                  }
-               }
-               break;
-               case Command::Parallel:
-               {
-                  unsigned int proc, nproc, np = 0;
-                  do
-                  {
-                     istream &isock = *is[np];
-                     isock >> nproc >> proc >> ws;
-#ifdef GLVIS_DEBUG
-                     cout << "connection[" << np << "]: parallel " << nproc << ' '
-                          << proc << endl;
-#endif
-                     if (nproc != is.size())
-                     {
-                        cout << "Unexpected number of processors: " << nproc
-                             << ", expected: " << is.size() << endl;
-                        mfem_error();
-                     }
-                     if (proc >= nproc)
-                     {
-                        cout << "Invalid processor rank: " << proc
-                             << ", number of processors: " << nproc << endl;
-                        mfem_error();
-                     }
-                     np++;
-                     if (np == nproc)
-                     {
-                        break;
-                     }
-                     *is[np] >> ident >> ws; // "parallel"
-                     if (ident != "parallel")
-                     {
-                        cout << "Expected keyword \"parallel\", got \"" << ident
-                             << '"' << endl;
-                        mfem_error();
-                     }
-                  }
-                  while (1);
-
-                  reader.ReadStreams(is);
-               }
-               break;
-               default:
-                  break;
-            }
-            if (done) { break; }
+            reader.ReadStreams(is);
 
             // cout << "Stream: new solution" << endl;
 
