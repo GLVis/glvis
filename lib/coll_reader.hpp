@@ -19,7 +19,7 @@
 class DataCollectionReader
 {
    DataState &data;
-   int pad_digits;
+   int pad_digits = 6;
    std::string protocol;
 
 public:
