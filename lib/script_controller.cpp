@@ -396,6 +396,7 @@ void ScriptController::ExecuteScriptCommand()
          case Command::ParSolution:
          case Command::Quadrature:
          case Command::ParQuadrature:
+         case Command::DataCollMesh:
          case Command::DataCollField:
          case Command::DataCollQuad:
          {
@@ -804,7 +805,7 @@ void ScriptController::ExecuteScriptCommand()
             MyExpose();
          }
          break;
-         default:
+         case Command::Max: //dummy
             break;
       }
 

@@ -1467,7 +1467,7 @@ void communication_thread::execute()
             }
          }
          break;
-         default:
+         case Command::Max: //dummy
             break;
       }
    }

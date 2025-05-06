@@ -274,7 +274,7 @@ int StreamReader::ReadStream(
          data.type = DataState::FieldType::SCALAR;
       }
       break;
-      default:
+      case Command::Max: //dummy
          break;
    }
 
