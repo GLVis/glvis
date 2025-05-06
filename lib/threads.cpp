@@ -842,8 +842,8 @@ class ThreadCommands
 public:
    ThreadCommands();
 
-   array<CmdItem,(size_t)Command::Max>::const_iterator begin() const { return commands.begin(); }
-   array<CmdItem,(size_t)Command::Max>::const_iterator end() const { return commands.end(); }
+   decltype(commands)::const_iterator begin() const { return commands.begin(); }
+   decltype(commands)::const_iterator end() const { return commands.end(); }
    const CmdItem& operator[](Command cmd) const { return commands[(size_t)cmd]; }
 };
 static const ThreadCommands commands;
