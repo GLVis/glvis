@@ -13,6 +13,7 @@
 #define GLVIS_SCRIPT_CONTROLLER_HPP
 
 #include <iostream>
+#include <memory>
 
 #include "window.hpp"
 
@@ -29,7 +30,7 @@ class ScriptController
    istream *script = NULL;
    int scr_running = 0;
    int scr_level = 0;
-   mfem::Vector *init_nodes = NULL;
+   std::unique_ptr<mfem::Vector> init_nodes;
    double scr_min_val, scr_max_val;
 
    static int ScriptReadSolution(istream &scr, DataState &state);

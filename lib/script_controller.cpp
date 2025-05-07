@@ -261,7 +261,7 @@ int ScriptController::ScriptReadDisplMesh(istream &scr, DataState &state)
    Mesh* const m = meshstate.mesh.get();
    if (init_nodes == NULL)
    {
-      init_nodes = new Vector;
+      init_nodes.reset(new Vector);
       meshstate.mesh->GetNodes(*init_nodes);
       state.SetMesh(NULL);
       state.SetGridFunction(NULL);
@@ -975,8 +975,6 @@ void ScriptController::PlayScript(istream &scr)
 
    SDLMainLoop();
    worker_thread.join();
-
-   delete init_nodes; init_nodes = NULL;
 
    cout << "Script: min_val = " << scr_min_val
         << ", max_val = " << scr_max_val << endl;
