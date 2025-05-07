@@ -307,7 +307,7 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
    for (int p = 0; p < nproc; p++)
    {
 #ifdef GLVIS_DEBUG
-      cout << "connection[" << p << "]: reading initial data ... " << flush;
+      cout << "connection[" << p << "]: reading data ... " << flush;
 #endif
       istream &isock = *input_streams[p];
       // assuming the "parallel nproc p" part of the stream has been read
