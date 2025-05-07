@@ -22,7 +22,7 @@ extern const char *string_default;
 
 class ScriptController
 {
-   Window &win;
+   Window win;
 
    string dc_protocol = string_default;
    int dc_cycle = 0;
@@ -50,9 +50,9 @@ class ScriptController
    void ExecuteScriptCommand();
 
 public:
-   ScriptController(Window &win_) : win(win_) { }
+   ScriptController(Window win_) : win(std::move(win_)) { }
 
-   void PlayScript(std::istream &scr);
+   static void PlayScript(Window win, std::istream &scr);
 };
 
 #endif // GLVIS_SCRIPT_CONTROLLER_HPP

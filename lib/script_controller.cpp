@@ -846,13 +846,15 @@ void ScriptController::ScriptControl()
    }
 }
 
-void ScriptController::PlayScript(istream &scr)
+void ScriptController::PlayScript(Window win, istream &scr)
 {
    string word;
    bool done = false;
 
-   scr_min_val = numeric_limits<double>::infinity();
-   scr_max_val = -scr_min_val;
+   ScriptController script(std::move(win));
+
+   script.scr_min_val = numeric_limits<double>::infinity();
+   script.scr_max_val = -script.scr_min_val;
 
    // read initializing commands
    while (!done)
@@ -882,65 +884,66 @@ void ScriptController::PlayScript(istream &scr)
       switch (cmd)
       {
          case Command::Window:
-            scr >> win.window_x >> win.window_y >> win.window_w >> win.window_h;
+            scr >> script.win.window_x >> script.win.window_y >> script.win.window_w >>
+                script.win.window_h;
             break;
          case Command::DataCollCycle:
-            scr >> dc_cycle;
+            scr >> script.dc_cycle;
             break;
          case Command::DataCollProto:
-            scr >> dc_protocol;
+            scr >> script.dc_protocol;
             break;
          case Command::Solution:
-            if (ScriptReadSolution(scr, win.data_state))
+            if (ScriptReadSolution(scr, script.win.data_state))
             {
                return;
             }
             done = true; // start the visualization
             break;
          case Command::Quadrature:
-            if (ScriptReadQuadrature(scr, win.data_state))
+            if (ScriptReadQuadrature(scr, script.win.data_state))
             {
                return;
             }
             done = true; // start the visualization
             break;
          case Command::ParSolution:
-            if (ScriptReadParSolution(scr, win.data_state))
+            if (ScriptReadParSolution(scr, script.win.data_state))
             {
                return;
             }
             done = true; // start the visualization
             break;
          case Command::ParQuadrature:
-            if (ScriptReadParQuadrature(scr, win.data_state))
+            if (ScriptReadParQuadrature(scr, script.win.data_state))
             {
                return;
             }
             done = true; // start the visualization
             break;
          case Command::Mesh:
-            if (ScriptReadDisplMesh(scr, win.data_state))
+            if (script.ScriptReadDisplMesh(scr, script.win.data_state))
             {
                return;
             }
-            done = win.data_state.mesh != nullptr;
+            done = script.win.data_state.mesh != nullptr;
             break;
          case Command::DataCollMesh:
-            if (ScriptReadDataColl(scr, win.data_state))
+            if (script.ScriptReadDataColl(scr, script.win.data_state))
             {
                return;
             }
             done = true; // start the visualization
             break;
          case Command::DataCollField:
-            if (ScriptReadDataColl(scr, win.data_state, false))
+            if (script.ScriptReadDataColl(scr, script.win.data_state, false))
             {
                return;
             }
             done = true; // start the visualization
             break;
          case Command::DataCollQuad:
-            if (ScriptReadDataColl(scr, win.data_state, false, true))
+            if (script.ScriptReadDataColl(scr, script.win.data_state, false, true))
             {
                return;
             }
@@ -951,10 +954,9 @@ void ScriptController::PlayScript(istream &scr)
       }
    }
 
-   scr_level = scr_running = 0;
-   script = &scr;
-   script_ctrl = this;
-   win.data_state.keys.clear();
+   script.scr_level = script.scr_running = 0;
+   script.script = &scr;
+   script.win.data_state.keys.clear();
 
    // Make sure the singleton object returned by GetMainThread() is
    // initialized from the main thread.
@@ -962,22 +964,18 @@ void ScriptController::PlayScript(istream &scr)
 
    std::thread worker_thread
    {
-      [&](Window local_win)
+      [&](ScriptController local_script)
       {
-         if (local_win.GLVisInitVis({}))
+         script_ctrl = &local_script;
+         if (local_script.win.GLVisInitVis({}))
          {
             GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
-            local_win.GLVisStartVis();
+            local_script.win.GLVisStartVis();
          }
       },
-      std::move(win)
+      std::move(script)
    };
 
    SDLMainLoop();
    worker_thread.join();
-
-   cout << "Script: min_val = " << scr_min_val
-        << ", max_val = " << scr_max_val << endl;
-
-   script = NULL;
 }

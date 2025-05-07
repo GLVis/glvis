@@ -619,8 +619,7 @@ int main (int argc, char *argv[])
       }
       cout << "Running script from file: " << script_file << endl;
       cout << "You may need to press <space> to execute the script steps." << endl;
-      ScriptController script(win);
-      script.PlayScript(scr);
+      ScriptController::PlayScript(std::move(win), scr);
       return 0;
    }
 
