@@ -77,45 +77,46 @@ public:
 
    decltype(commands)::const_iterator begin() const { return commands.begin(); }
    decltype(commands)::const_iterator end() const { return commands.end(); }
+   CmdItem& operator[](Command cmd) { return commands[(size_t)cmd]; }
    const CmdItem& operator[](Command cmd) const { return commands[(size_t)cmd]; }
 };
 static const ScriptCommands commands;
 
 ScriptCommands::ScriptCommands()
 {
-   commands[(size_t)Command::Mesh]                 = {"mesh", "<file>", "Visualize the mesh."};
-   commands[(size_t)Command::Solution]             = {"solution", "<mesh> <solution>", "Visualize the solution."};
-   commands[(size_t)Command::ParSolution]          = {"psolution", "<np> <mesh prefix> <keep attributes> <solution prefix>", "Visualize the distributed solution."};
-   commands[(size_t)Command::Quadrature]           = {"quadrature", "<mesh> <quadrature>", "Visualize the quadrature."};
-   commands[(size_t)Command::ParQuadrature]        = {"pquadrature", "<np> <mesh prefix> <keep attributes> <quadrature prefix>", "Visualize the distributed quadrature."};
-   commands[(size_t)Command::DataCollMesh]         = {"data_coll_mesh", "<type> <data coll>", "Visualize the mesh from data collection."};
-   commands[(size_t)Command::DataCollField]        = {"data_coll_field", "<type> <data coll> <field>", "Visualize the field from data collection."};
-   commands[(size_t)Command::DataCollQuad]         = {"data_coll_quad", "<type> <data coll> <quad>", "Visualize the Q-field from data collection."};
-   commands[(size_t)Command::DataCollCycle]        = {"data_coll_cycle", "<cycle>", "Preset the cycle of the data collection."};
-   commands[(size_t)Command::DataCollProto]        = {"data_coll_protocol", "<protocol>", "Preset the protocol of the data collection."};
-   commands[(size_t)Command::Screenshot]           = {"screenshot", "<file>", "Take a screenshot, saving it to the file."};
-   commands[(size_t)Command::Viewcenter]           = {"viewcenter", "<x> <y>", "Change the viewcenter."};
-   commands[(size_t)Command::Perspective]          = {"perspective", "<on/off>", "Turn on or off perspective projection."};
-   commands[(size_t)Command::Light]                = {"light", "<on/off>", "Turn on or off light."};
-   commands[(size_t)Command::View]                 = {"view", "<theta> <phi>", "Change the solid angle of view."};
-   commands[(size_t)Command::Zoom]                 = {"zoom", "<zoom>", "Change the zoom factor."};
-   commands[(size_t)Command::Shading]              = {"shading", "<flat/smooth/cool>", "Change the shading algorithm."};
-   commands[(size_t)Command::Subdivisions]         = {"subdivisions", "<times> <dummy>", "Change the refinement level."};
-   commands[(size_t)Command::Valuerange]           = {"valuerange", "<min> <max>", "Change the value range."};
-   commands[(size_t)Command::Autoscale]            = {"autoscale", "<off/on/value/mesh>", "Change the autoscale algorithm."};
-   commands[(size_t)Command::Levellines]           = {"levellines", "<min> <max> <num>", "Set the level lines."};
-   commands[(size_t)Command::AxisNumberFormat]     = {"axis_numberformat", "'<format>'", "Set the axis number format."};
-   commands[(size_t)Command::ColorbarNumberFormat] = {"colorbar_numberformat", "'<format>'", "Set the colorbar number format."};
-   commands[(size_t)Command::Window]               = {"window", "<x> <y> <w> <h>", "Set the position and size of the window."};
-   commands[(size_t)Command::Keys]                 = {"keys", "<keys>", "Send the control key sequence."};
-   commands[(size_t)Command::Palette]              = {"palette", "<index>", "Set the palette index."};
-   commands[(size_t)Command::PaletteRepeat]        = {"palette_repeat", "<times>", "Set the repetition of the palette."};
-   commands[(size_t)Command::ToggleAttributes]     = {"toggle_attributes", "<1/0> [[<1/0>] ...];", "Toggle visibility of the attributes."};
-   commands[(size_t)Command::Rotmat]               = {"rotmat", "<[0,0]> <[1,0]> ... <[3,3]>", "Set the rotation matrix."};
-   commands[(size_t)Command::Camera]               = {"camera", "<cam[0]> ... <cam[2]> <dir[0]> ... <dir[2]> <up[0]> ... <up[2]>", "Set the camera position, direction and upward vector."};
-   commands[(size_t)Command::Scale]                = {"scale", "<scale>", "Set the scaling factor."};
-   commands[(size_t)Command::Translate]            = {"translate", "<x> <y> <z>", "Set the translation coordinates."};
-   commands[(size_t)Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
+   (*this)[Command::Mesh]                 = {"mesh", "<file>", "Visualize the mesh."};
+   (*this)[Command::Solution]             = {"solution", "<mesh> <solution>", "Visualize the solution."};
+   (*this)[Command::ParSolution]          = {"psolution", "<np> <mesh prefix> <keep attributes> <solution prefix>", "Visualize the distributed solution."};
+   (*this)[Command::Quadrature]           = {"quadrature", "<mesh> <quadrature>", "Visualize the quadrature."};
+   (*this)[Command::ParQuadrature]        = {"pquadrature", "<np> <mesh prefix> <keep attributes> <quadrature prefix>", "Visualize the distributed quadrature."};
+   (*this)[Command::DataCollMesh]         = {"data_coll_mesh", "<type> <data coll>", "Visualize the mesh from data collection."};
+   (*this)[Command::DataCollField]        = {"data_coll_field", "<type> <data coll> <field>", "Visualize the field from data collection."};
+   (*this)[Command::DataCollQuad]         = {"data_coll_quad", "<type> <data coll> <quad>", "Visualize the Q-field from data collection."};
+   (*this)[Command::DataCollCycle]        = {"data_coll_cycle", "<cycle>", "Preset the cycle of the data collection."};
+   (*this)[Command::DataCollProto]        = {"data_coll_protocol", "<protocol>", "Preset the protocol of the data collection."};
+   (*this)[Command::Screenshot]           = {"screenshot", "<file>", "Take a screenshot, saving it to the file."};
+   (*this)[Command::Viewcenter]           = {"viewcenter", "<x> <y>", "Change the viewcenter."};
+   (*this)[Command::Perspective]          = {"perspective", "<on/off>", "Turn on or off perspective projection."};
+   (*this)[Command::Light]                = {"light", "<on/off>", "Turn on or off light."};
+   (*this)[Command::View]                 = {"view", "<theta> <phi>", "Change the solid angle of view."};
+   (*this)[Command::Zoom]                 = {"zoom", "<zoom>", "Change the zoom factor."};
+   (*this)[Command::Shading]              = {"shading", "<flat/smooth/cool>", "Change the shading algorithm."};
+   (*this)[Command::Subdivisions]         = {"subdivisions", "<times> <dummy>", "Change the refinement level."};
+   (*this)[Command::Valuerange]           = {"valuerange", "<min> <max>", "Change the value range."};
+   (*this)[Command::Autoscale]            = {"autoscale", "<off/on/value/mesh>", "Change the autoscale algorithm."};
+   (*this)[Command::Levellines]           = {"levellines", "<min> <max> <num>", "Set the level lines."};
+   (*this)[Command::AxisNumberFormat]     = {"axis_numberformat", "'<format>'", "Set the axis number format."};
+   (*this)[Command::ColorbarNumberFormat] = {"colorbar_numberformat", "'<format>'", "Set the colorbar number format."};
+   (*this)[Command::Window]               = {"window", "<x> <y> <w> <h>", "Set the position and size of the window."};
+   (*this)[Command::Keys]                 = {"keys", "<keys>", "Send the control key sequence."};
+   (*this)[Command::Palette]              = {"palette", "<index>", "Set the palette index."};
+   (*this)[Command::PaletteRepeat]        = {"palette_repeat", "<times>", "Set the repetition of the palette."};
+   (*this)[Command::ToggleAttributes]     = {"toggle_attributes", "<1/0> [[<1/0>] ...];", "Toggle visibility of the attributes."};
+   (*this)[Command::Rotmat]               = {"rotmat", "<[0,0]> <[1,0]> ... <[3,3]>", "Set the rotation matrix."};
+   (*this)[Command::Camera]               = {"camera", "<cam[0]> ... <cam[2]> <dir[0]> ... <dir[2]> <up[0]> ... <up[2]>", "Set the camera position, direction and upward vector."};
+   (*this)[Command::Scale]                = {"scale", "<scale>", "Set the scaling factor."};
+   (*this)[Command::Translate]            = {"translate", "<x> <y> <z>", "Set the translation coordinates."};
+   (*this)[Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
 }
 
 int ScriptController::ScriptReadSolution(istream &scr, DataState &state)

@@ -59,30 +59,31 @@ public:
 
    decltype(commands)::const_iterator begin() const { return commands.begin(); }
    decltype(commands)::const_iterator end() const { return commands.end(); }
+   CmdItem& operator[](Command cmd) { return commands[(size_t)cmd]; }
    const CmdItem& operator[](Command cmd) const { return commands[(size_t)cmd]; }
 };
 static const StreamCommands commands;
 
 StreamCommands::StreamCommands()
 {
-   commands[(size_t)Command::Mesh]                 = {"mesh", false, "<mesh>", "Visualize the mesh."};
-   commands[(size_t)Command::Solution]             = {"solution", false, "<mesh> <solution>", "Visualize the solution."};
-   commands[(size_t)Command::Quadrature]           = {"quadrature", false, "<mesh> <quadrature>", "Visualize the quadrature."};
-   commands[(size_t)Command::Fem2D]                = {"fem2d_data", false, "<mesh> <data>", "Visualize the 2D scalar data."};
-   commands[(size_t)Command::VFem2D]               = {"vfem2d_data", false, "<mesh> <data_x> <data_y>", "Visualize the 2D vector data."};
-   commands[(size_t)Command::VFem2D_keys]          = {"vfem2d_data_keys", true, "<mesh> <data_x> <data_y> <keys>", "Visualize the 2D vector data and apply control keys."};
-   commands[(size_t)Command::Fem3D]                = {"fem3d_data", false, "<mesh> <data>", "Visualize the 3D scalar data."};
-   commands[(size_t)Command::VFem3D]               = {"vfem3d_data", false, "<mesh> <data_x> <data_y> <data_z>", "Visualize the 3D vector data."};
-   commands[(size_t)Command::VFem3D_keys]          = {"vfem3d_data_keys", true, "<mesh> <data_x> <data_y> <data_z> <keys>", "Visualize the 3D vector data and apply control keys."};
-   commands[(size_t)Command::Fem2D_GF]             = {"fem2d_gf_data", false, "<mesh> <solution>", "Visualize the 2D scalar grid function."};
-   commands[(size_t)Command::Fem2D_GF_keys]        = {"fem2d_gf_data_keys", true, "<mesh> <solution> <keys>", "Visualize the 2D scalar grid function and apply control keys."};
-   commands[(size_t)Command::VFem2D_GF]            = {"vfem2d_gf_data", false, "<mesh> <solution>", "Visualize the 2D vector grid function."};
-   commands[(size_t)Command::VFem2D_GF_keys]       = {"vfem2d_gf_data_keys", true, "<mesh> <solution> <keys>", "Visualize the 2D vector grid function and apply control keys."};
-   commands[(size_t)Command::Fem3D_GF]             = {"fem3d_gf_data", false, "<mesh> <solution>", "Visualize the 3D scalar grid function."};
-   commands[(size_t)Command::Fem3D_GF_keys]        = {"fem3d_gf_data_keys", true, "<mesh> <solution> <keys>", "Visualize the 3D scalar grid function and apply control keys."};
-   commands[(size_t)Command::VFem3D_GF]            = {"vfem3d_gf_data", false, "<mesh> <solution>", "Visualize the 3D vector grid function."};
-   commands[(size_t)Command::VFem3D_GF_keys]       = {"vfem3d_gf_data_keys", true, "<mesh> <solution> <keys>", "Visualize the 3D vector grid function and apply control keys."};
-   commands[(size_t)Command::RawScalar2D]          = {"raw_scalar_2d", false, "<data>", "Visualize the 2D scalar data (see stream_reader.cpp)."};
+   (*this)[Command::Mesh]                 = {"mesh", false, "<mesh>", "Visualize the mesh."};
+   (*this)[Command::Solution]             = {"solution", false, "<mesh> <solution>", "Visualize the solution."};
+   (*this)[Command::Quadrature]           = {"quadrature", false, "<mesh> <quadrature>", "Visualize the quadrature."};
+   (*this)[Command::Fem2D]                = {"fem2d_data", false, "<mesh> <data>", "Visualize the 2D scalar data."};
+   (*this)[Command::VFem2D]               = {"vfem2d_data", false, "<mesh> <data_x> <data_y>", "Visualize the 2D vector data."};
+   (*this)[Command::VFem2D_keys]          = {"vfem2d_data_keys", true, "<mesh> <data_x> <data_y> <keys>", "Visualize the 2D vector data and apply control keys."};
+   (*this)[Command::Fem3D]                = {"fem3d_data", false, "<mesh> <data>", "Visualize the 3D scalar data."};
+   (*this)[Command::VFem3D]               = {"vfem3d_data", false, "<mesh> <data_x> <data_y> <data_z>", "Visualize the 3D vector data."};
+   (*this)[Command::VFem3D_keys]          = {"vfem3d_data_keys", true, "<mesh> <data_x> <data_y> <data_z> <keys>", "Visualize the 3D vector data and apply control keys."};
+   (*this)[Command::Fem2D_GF]             = {"fem2d_gf_data", false, "<mesh> <solution>", "Visualize the 2D scalar grid function."};
+   (*this)[Command::Fem2D_GF_keys]        = {"fem2d_gf_data_keys", true, "<mesh> <solution> <keys>", "Visualize the 2D scalar grid function and apply control keys."};
+   (*this)[Command::VFem2D_GF]            = {"vfem2d_gf_data", false, "<mesh> <solution>", "Visualize the 2D vector grid function."};
+   (*this)[Command::VFem2D_GF_keys]       = {"vfem2d_gf_data_keys", true, "<mesh> <solution> <keys>", "Visualize the 2D vector grid function and apply control keys."};
+   (*this)[Command::Fem3D_GF]             = {"fem3d_gf_data", false, "<mesh> <solution>", "Visualize the 3D scalar grid function."};
+   (*this)[Command::Fem3D_GF_keys]        = {"fem3d_gf_data_keys", true, "<mesh> <solution> <keys>", "Visualize the 3D scalar grid function and apply control keys."};
+   (*this)[Command::VFem3D_GF]            = {"vfem3d_gf_data", false, "<mesh> <solution>", "Visualize the 3D vector grid function."};
+   (*this)[Command::VFem3D_GF_keys]       = {"vfem3d_gf_data_keys", true, "<mesh> <solution> <keys>", "Visualize the 3D vector grid function and apply control keys."};
+   (*this)[Command::RawScalar2D]          = {"raw_scalar_2d", false, "<data>", "Visualize the 2D scalar data (see stream_reader.cpp)."};
 }
 
 void StreamReader::PrintCommands()

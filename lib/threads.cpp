@@ -844,35 +844,36 @@ public:
 
    decltype(commands)::const_iterator begin() const { return commands.begin(); }
    decltype(commands)::const_iterator end() const { return commands.end(); }
+   CmdItem& operator[](Command cmd) { return commands[(size_t)cmd]; }
    const CmdItem& operator[](Command cmd) const { return commands[(size_t)cmd]; }
 };
 static const ThreadCommands commands;
 
 ThreadCommands::ThreadCommands()
 {
-   commands[(size_t)Command::Parallel]             = {"parallel", "<num proc> <proc>", "Prefix for distributed mesh/solution/quadrature."};
-   commands[(size_t)Command::Screenshot]           = {"screenshot", "<file>", "Take a screenshot, saving it to the file."};
-   commands[(size_t)Command::Viewcenter]           = {"viewcenter", "<x> <y>", "Change the viewcenter."};
-   commands[(size_t)Command::View]                 = {"view", "<theta> <phi>", "Change the solid angle of view."};
-   commands[(size_t)Command::Zoom]                 = {"zoom", "<zoom>", "Change the zoom factor."};
-   commands[(size_t)Command::Shading]              = {"shading", "<flat/smooth/cool>", "Change the shading algorithm."};
-   commands[(size_t)Command::Subdivisions]         = {"subdivisions", "<times> <dummy>", "Change the refinement level."};
-   commands[(size_t)Command::Valuerange]           = {"valuerange", "<min> <max>", "Change the value range."};
-   commands[(size_t)Command::Autoscale]            = {"autoscale", "<off/on/value/mesh>", "Change the autoscale algorithm."};
-   commands[(size_t)Command::Levellines]           = {"levellines", "<min> <max> <num>", "Set the level lines."};
-   commands[(size_t)Command::AxisNumberFormat]     = {"axis_numberformat", "'<format>'", "Set the axis number format."};
-   commands[(size_t)Command::ColorbarNumberFormat] = {"colorbar_numberformat", "'<format>'", "Set the colorbar number format."};
-   commands[(size_t)Command::WindowSize]           = {"window_size", "<w> <h>", "Set the size of the window."};
-   commands[(size_t)Command::WindowGeometry]       = {"window_geometry", "<x> <y> <w> <h>", "Set the position and size of the window."};
-   commands[(size_t)Command::WindowTitle]          = {"window_title", "'<title>'", "Set title of the window."};
-   commands[(size_t)Command::Keys]                 = {"keys", "<keys>", "Send the control key sequence."};
-   commands[(size_t)Command::Palette]              = {"palette", "<index>", "Set the palette index."};
-   commands[(size_t)Command::PaletteRepeat]        = {"palette_repeat", "<times>", "Set the repetition of the palette."};
-   commands[(size_t)Command::Camera]               = {"camera", "<cam[0]> ... <cam[2]> <dir[0]> ... <dir[2]> <up[0]> ... <up[2]>", "Set the camera position, direction and upward vector."};
-   commands[(size_t)Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
-   commands[(size_t)Command::AxisLabels]           = {"axis_labels", "'<x label>' '<y label>' '<z label>'", "Set labels of the axes."};
-   commands[(size_t)Command::Pause]                = {"pause", "", "Stop the stream until space is pressed."};
-   commands[(size_t)Command::Autopause]            = {"autopause", "<0/off/1/on>", "Turns off or on autopause."};
+   (*this)[Command::Parallel]             = {"parallel", "<num proc> <proc>", "Prefix for distributed mesh/solution/quadrature."};
+   (*this)[Command::Screenshot]           = {"screenshot", "<file>", "Take a screenshot, saving it to the file."};
+   (*this)[Command::Viewcenter]           = {"viewcenter", "<x> <y>", "Change the viewcenter."};
+   (*this)[Command::View]                 = {"view", "<theta> <phi>", "Change the solid angle of view."};
+   (*this)[Command::Zoom]                 = {"zoom", "<zoom>", "Change the zoom factor."};
+   (*this)[Command::Shading]              = {"shading", "<flat/smooth/cool>", "Change the shading algorithm."};
+   (*this)[Command::Subdivisions]         = {"subdivisions", "<times> <dummy>", "Change the refinement level."};
+   (*this)[Command::Valuerange]           = {"valuerange", "<min> <max>", "Change the value range."};
+   (*this)[Command::Autoscale]            = {"autoscale", "<off/on/value/mesh>", "Change the autoscale algorithm."};
+   (*this)[Command::Levellines]           = {"levellines", "<min> <max> <num>", "Set the level lines."};
+   (*this)[Command::AxisNumberFormat]     = {"axis_numberformat", "'<format>'", "Set the axis number format."};
+   (*this)[Command::ColorbarNumberFormat] = {"colorbar_numberformat", "'<format>'", "Set the colorbar number format."};
+   (*this)[Command::WindowSize]           = {"window_size", "<w> <h>", "Set the size of the window."};
+   (*this)[Command::WindowGeometry]       = {"window_geometry", "<x> <y> <w> <h>", "Set the position and size of the window."};
+   (*this)[Command::WindowTitle]          = {"window_title", "'<title>'", "Set title of the window."};
+   (*this)[Command::Keys]                 = {"keys", "<keys>", "Send the control key sequence."};
+   (*this)[Command::Palette]              = {"palette", "<index>", "Set the palette index."};
+   (*this)[Command::PaletteRepeat]        = {"palette_repeat", "<times>", "Set the repetition of the palette."};
+   (*this)[Command::Camera]               = {"camera", "<cam[0]> ... <cam[2]> <dir[0]> ... <dir[2]> <up[0]> ... <up[2]>", "Set the camera position, direction and upward vector."};
+   (*this)[Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
+   (*this)[Command::AxisLabels]           = {"axis_labels", "'<x label>' '<y label>' '<z label>'", "Set labels of the axes."};
+   (*this)[Command::Pause]                = {"pause", "", "Stop the stream until space is pressed."};
+   (*this)[Command::Autopause]            = {"autopause", "<0/off/1/on>", "Turns off or on autopause."};
 }
 
 communication_thread::communication_thread(StreamCollection _is,
