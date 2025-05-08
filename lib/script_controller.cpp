@@ -951,6 +951,7 @@ void ScriptController::PlayScript(Window win, istream &scr)
             done = true; // start the visualization
             break;
          default:
+            cout << "Command not supported at this level: " << word << endl;
             break;
       }
    }
