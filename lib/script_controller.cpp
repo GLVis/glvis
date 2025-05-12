@@ -348,12 +348,12 @@ void ScriptController::PrintCommands()
    }
 }
 
-void ScriptController::ExecuteScriptCommand()
+bool ScriptController::ExecuteScriptCommand()
 {
    if (!script)
    {
       cout << "No script stream defined! (Bug?)" << endl;
-      return;
+      return false;
    }
 
    istream &scr = *script;
@@ -366,7 +366,7 @@ void ScriptController::ExecuteScriptCommand()
       {
          cout << "End of script." << endl;
          scr_level = 0;
-         return;
+         return false;
       }
       if (scr.peek() == '#')
       {
@@ -394,7 +394,7 @@ void ScriptController::ExecuteScriptCommand()
       {
          cout << "Unknown command in script: " << word << endl;
          PrintCommands();
-         break;
+         return false;
       }
 
       const Command cmd = (Command)(it - commands.begin());
@@ -820,6 +820,7 @@ void ScriptController::ExecuteScriptCommand()
 
       done_one_command = 1;
    }
+   return true;
 }
 
 thread_local ScriptController *ScriptController::script_ctrl = NULL;
