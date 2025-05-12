@@ -50,7 +50,8 @@ EglWindow::~EglWindow()
    eglTerminate(disp);
 }
 
-bool EglWindow::createWindow(int w, int h, bool legacyGlOnly)
+bool EglWindow::createWindow(const char *, int, int, int w, int h,
+                             bool legacyGlOnly)
 {
    // 1. Select an appropriate configuration
 
@@ -87,8 +88,6 @@ bool EglWindow::createWindow(int w, int h, bool legacyGlOnly)
          *(++it) = 0;
       }
    }
-
-   EGLConfig eglCfg;
 
    if (!eglChooseConfig(disp, configAttribs.data(), &eglCfg, 1, &numConfigs) ||
        numConfigs < 1)
@@ -190,13 +189,42 @@ bool EglWindow::createWindow(int w, int h, bool legacyGlOnly)
    return initGLEW(legacyGlOnly);
 }
 
-void EglWindow::getGLDrawSize(int& w, int& h)
+void EglWindow::getGLDrawSize(int& w, int& h) const
 {
    EGLint egl_w, egl_h;
    eglQuerySurface(disp, surf, EGL_WIDTH, &egl_w);
    eglQuerySurface(disp, surf, EGL_HEIGHT, &egl_h);
    w = egl_w;
    h = egl_h;
+}
+
+void EglWindow::setWindowSize(int w, int h)
+{
+   const EGLint pbufferAttribs[] =
+   {
+      EGL_WIDTH, w,
+      EGL_HEIGHT, h,
+      EGL_NONE
+   };
+
+   EGLSurface surf_new = eglCreatePbufferSurface(disp, eglCfg, pbufferAttribs);
+   if (surf_new == EGL_NO_SURFACE)
+   {
+      std::cerr << "Cannot create a pixel buffer, error: " << eglGetError() <<
+                std::endl;
+      return;
+   }
+
+   if (!eglMakeCurrent(disp, surf_new, surf_new, ctx))
+   {
+      std::cerr << "Cannot set the EGL context as current, error: " << eglGetError()
+                << std::endl;
+      return;
+   }
+
+   eglDestroySurface(disp, surf);
+
+   surf = surf_new;
 }
 
 void EglWindow::signalExpose()

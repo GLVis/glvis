@@ -465,7 +465,7 @@ void SdlWindow::signalLoop()
    events_available.notify_all();
 }
 
-void SdlWindow::getWindowSize(int& w, int& h)
+void SdlWindow::getWindowSize(int& w, int& h) const
 {
    w = 0;
    h = 0;
@@ -494,7 +494,7 @@ void SdlWindow::getWindowSize(int& w, int& h)
    }
 }
 
-void SdlWindow::getGLDrawSize(int& w, int& h)
+void SdlWindow::getGLDrawSize(int& w, int& h) const
 {
    SDL_GL_GetDrawableSize(handle.hwnd, &w, &h);
 }
@@ -532,7 +532,7 @@ void SdlWindow::getDpi(int& w, int& h) const
    }
 }
 
-void SdlWindow::setWindowTitle(std::string& title)
+void SdlWindow::setWindowTitle(const std::string& title)
 {
    setWindowTitle(title.c_str());
 }

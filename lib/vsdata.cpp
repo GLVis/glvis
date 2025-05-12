@@ -1170,14 +1170,7 @@ void VisualizationSceneScalarData::Toggle2DView()
 gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
 {
    int w, h;
-   if (sdl_wnd)
-   {
-      sdl_wnd->getWindowSize(w, h);
-   }
-   else
-   {
-      wnd->getGLDrawSize(w, h);
-   }
+   wnd->getWindowSize(w, h);
    gl3::SceneInfo scene {};
 
    gl3::RenderParams params {};

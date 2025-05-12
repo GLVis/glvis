@@ -92,144 +92,147 @@ void SetUseHiDPI(bool status)
 void MyExpose(GLsizei w, GLsizei h);
 void MyExpose();
 
-int InitVisualization (const char name[], int x, int y, int w, int h)
+int InitVisualization (const char name[], int x, int y, int w, int h,
+                       bool headless)
 {
-
 #ifdef GLVIS_DEBUG
-   cout << "OpenGL Visualization" << endl;
-#endif
-   if (!sdl_wnd)
+   if (!headless)
    {
-      wnd = sdl_wnd = new SdlWindow();
-      if (!sdl_wnd->createWindow(name, x, y, w, h, wndLegacyGl))
+      cout << "OpenGL Visualization" << endl;
+   }
+   else
+   {
+      cout << "OpenGL+EGL Visualization" << endl;
+   }
+#endif
+
+   if (!headless)
+   {
+      if (!sdl_wnd)
       {
-         return 1;
+         delete wnd;
+         wnd = sdl_wnd = new SdlWindow();
+         if (!sdl_wnd->createWindow(name, x, y, w, h, wndLegacyGl))
+         {
+            return 1;
+         }
+      }
+      else
+      {
+         sdl_wnd->clearEvents();
       }
    }
    else
    {
-      sdl_wnd->clearEvents();
+      if (sdl_wnd)
+      {
+         delete sdl_wnd;
+         wnd = sdl_wnd = nullptr;
+      }
+      if (!wnd)
+      {
+         wnd = new EglWindow();
+         if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
+         {
+            return 1;
+         }
+      }
    }
 
 #ifdef GLVIS_DEBUG
    cout << "Window should be up" << endl;
 #endif
    InitFont();
-   sdl_wnd->getRenderer().setLineWidth(line_w);
-   sdl_wnd->getRenderer().setLineWidthMS(line_w_aa);
+   wnd->getRenderer().setLineWidth(line_w);
+   wnd->getRenderer().setLineWidthMS(line_w_aa);
 
    // auxReshapeFunc (MyReshape); // not needed, MyExpose calls it
    // auxReshapeFunc (NULL);
    void (*exposeFunc)(void) = MyExpose;
-   sdl_wnd->setOnExpose(exposeFunc);
-
-   sdl_wnd->setOnMouseDown(SDL_BUTTON_LEFT, LeftButtonDown);
-   sdl_wnd->setOnMouseUp(SDL_BUTTON_LEFT, LeftButtonUp);
-   sdl_wnd->setOnMouseMove(SDL_BUTTON_LEFT, LeftButtonLoc);
-   sdl_wnd->setOnMouseDown(SDL_BUTTON_MIDDLE, MiddleButtonDown);
-   sdl_wnd->setOnMouseUp(SDL_BUTTON_MIDDLE, MiddleButtonUp);
-   sdl_wnd->setOnMouseMove(SDL_BUTTON_MIDDLE, MiddleButtonLoc);
-   sdl_wnd->setOnMouseDown(SDL_BUTTON_RIGHT, RightButtonDown);
-   sdl_wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
-   sdl_wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
-
-   sdl_wnd->setTouchPinchCallback(TouchPinch);
-
-   // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
-   sdl_wnd->setOnKeyDown (SDLK_s, KeyS);
-   sdl_wnd->setOnKeyDown ('S', KeyS);
-
-   sdl_wnd->setOnKeyDown (SDLK_q, KeyQPressed);
-   // sdl_wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
-
-   sdl_wnd->setOnKeyDown (SDLK_LEFT, KeyLeftPressed);
-   sdl_wnd->setOnKeyDown (SDLK_RIGHT, KeyRightPressed);
-   sdl_wnd->setOnKeyDown (SDLK_UP, KeyUpPressed);
-   sdl_wnd->setOnKeyDown (SDLK_DOWN, KeyDownPressed);
-
-   sdl_wnd->setOnKeyDown (SDLK_KP_0, Key0Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_KP_1, Key1Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_KP_2, Key2Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_KP_3, Key3Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_KP_4, Key4Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_KP_5, Key5Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_KP_6, Key6Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_KP_7, Key7Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_KP_8, Key8Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_KP_9, Key9Pressed);
-
-   sdl_wnd->setOnKeyDown (SDLK_KP_MEMSUBTRACT, KeyMinusPressed);
-   sdl_wnd->setOnKeyDown (SDLK_KP_MEMADD, KeyPlusPressed);
-
-   sdl_wnd->setOnKeyDown (SDLK_KP_DECIMAL, KeyDeletePressed);
-   sdl_wnd->setOnKeyDown (SDLK_KP_ENTER, KeyEnterPressed);
-
-   sdl_wnd->setOnKeyDown (SDLK_PERIOD, KeyDeletePressed);
-   sdl_wnd->setOnKeyDown (SDLK_RETURN, KeyEnterPressed);
-
-   sdl_wnd->setOnKeyDown (SDLK_0, Key0Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_1, Key1Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_2, Key2Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_3, Key3Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_4, Key4Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_5, Key5Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_6, Key6Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_7, Key7Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_8, Key8Pressed);
-   sdl_wnd->setOnKeyDown (SDLK_9, Key9Pressed);
-
-   sdl_wnd->setOnKeyDown (SDLK_MINUS, KeyMinusPressed);
-   sdl_wnd->setOnKeyDown (SDLK_PLUS, KeyPlusPressed);
-   sdl_wnd->setOnKeyDown (SDLK_EQUALS, KeyPlusPressed);
-
-   sdl_wnd->setOnKeyDown (SDLK_j, KeyJPressed);
-   // sdl_wnd->setOnKeyDown (AUX_J, KeyJPressed);
-
-   sdl_wnd->setOnKeyDown (SDLK_KP_MULTIPLY, ZoomIn);
-   sdl_wnd->setOnKeyDown (SDLK_KP_DIVIDE, ZoomOut);
-
-   sdl_wnd->setOnKeyDown (SDLK_ASTERISK, ZoomIn);
-   sdl_wnd->setOnKeyDown (SDLK_SLASH, ZoomOut);
-
-   sdl_wnd->setOnKeyDown (SDLK_LEFTBRACKET, ScaleDown);
-   sdl_wnd->setOnKeyDown (SDLK_RIGHTBRACKET, ScaleUp);
-   sdl_wnd->setOnKeyDown (SDLK_AT, LookAt);
-
-#ifndef __EMSCRIPTEN__
-   sdl_wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
-   sdl_wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
-
-   if (locscene)
+   if (sdl_wnd)
    {
-      delete locscene;
-   }
-#endif
-   locscene = nullptr;
+      sdl_wnd->setOnExpose(exposeFunc);
 
-   return 0;
-}
+      sdl_wnd->setOnMouseDown(SDL_BUTTON_LEFT, LeftButtonDown);
+      sdl_wnd->setOnMouseUp(SDL_BUTTON_LEFT, LeftButtonUp);
+      sdl_wnd->setOnMouseMove(SDL_BUTTON_LEFT, LeftButtonLoc);
+      sdl_wnd->setOnMouseDown(SDL_BUTTON_MIDDLE, MiddleButtonDown);
+      sdl_wnd->setOnMouseUp(SDL_BUTTON_MIDDLE, MiddleButtonUp);
+      sdl_wnd->setOnMouseMove(SDL_BUTTON_MIDDLE, MiddleButtonLoc);
+      sdl_wnd->setOnMouseDown(SDL_BUTTON_RIGHT, RightButtonDown);
+      sdl_wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
+      sdl_wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
 
-int InitHeadless(int w, int h)
-{
+      sdl_wnd->setTouchPinchCallback(TouchPinch);
 
-#ifdef GLVIS_DEBUG
-   cout << "OpenGL+EGL Visualization" << endl;
-#endif
-   if (!wnd)
-   {
-      EglWindow *egl_wnd;
-      wnd = egl_wnd = new EglWindow();
-      if (!egl_wnd->createWindow(w, h, wndLegacyGl))
-      {
-         return 1;
-      }
+      // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
+      sdl_wnd->setOnKeyDown (SDLK_s, KeyS);
+      sdl_wnd->setOnKeyDown ('S', KeyS);
+
+      sdl_wnd->setOnKeyDown (SDLK_q, KeyQPressed);
+      // sdl_wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
+
+      sdl_wnd->setOnKeyDown (SDLK_LEFT, KeyLeftPressed);
+      sdl_wnd->setOnKeyDown (SDLK_RIGHT, KeyRightPressed);
+      sdl_wnd->setOnKeyDown (SDLK_UP, KeyUpPressed);
+      sdl_wnd->setOnKeyDown (SDLK_DOWN, KeyDownPressed);
+
+      sdl_wnd->setOnKeyDown (SDLK_KP_0, Key0Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_KP_1, Key1Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_KP_2, Key2Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_KP_3, Key3Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_KP_4, Key4Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_KP_5, Key5Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_KP_6, Key6Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_KP_7, Key7Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_KP_8, Key8Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_KP_9, Key9Pressed);
+
+      sdl_wnd->setOnKeyDown (SDLK_KP_MEMSUBTRACT, KeyMinusPressed);
+      sdl_wnd->setOnKeyDown (SDLK_KP_MEMADD, KeyPlusPressed);
+
+      sdl_wnd->setOnKeyDown (SDLK_KP_DECIMAL, KeyDeletePressed);
+      sdl_wnd->setOnKeyDown (SDLK_KP_ENTER, KeyEnterPressed);
+
+      sdl_wnd->setOnKeyDown (SDLK_PERIOD, KeyDeletePressed);
+      sdl_wnd->setOnKeyDown (SDLK_RETURN, KeyEnterPressed);
+
+      sdl_wnd->setOnKeyDown (SDLK_0, Key0Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_1, Key1Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_2, Key2Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_3, Key3Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_4, Key4Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_5, Key5Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_6, Key6Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_7, Key7Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_8, Key8Pressed);
+      sdl_wnd->setOnKeyDown (SDLK_9, Key9Pressed);
+
+      sdl_wnd->setOnKeyDown (SDLK_MINUS, KeyMinusPressed);
+      sdl_wnd->setOnKeyDown (SDLK_PLUS, KeyPlusPressed);
+      sdl_wnd->setOnKeyDown (SDLK_EQUALS, KeyPlusPressed);
+
+      sdl_wnd->setOnKeyDown (SDLK_j, KeyJPressed);
+      // sdl_wnd->setOnKeyDown (AUX_J, KeyJPressed);
+
+      sdl_wnd->setOnKeyDown (SDLK_KP_MULTIPLY, ZoomIn);
+      sdl_wnd->setOnKeyDown (SDLK_KP_DIVIDE, ZoomOut);
+
+      sdl_wnd->setOnKeyDown (SDLK_ASTERISK, ZoomIn);
+      sdl_wnd->setOnKeyDown (SDLK_SLASH, ZoomOut);
+
+      sdl_wnd->setOnKeyDown (SDLK_LEFTBRACKET, ScaleDown);
+      sdl_wnd->setOnKeyDown (SDLK_RIGHTBRACKET, ScaleUp);
+      sdl_wnd->setOnKeyDown (SDLK_AT, LookAt);
    }
 
-   InitFont();
-   wnd->getRenderer().setLineWidth(line_w);
-   wnd->getRenderer().setLineWidthMS(line_w_aa);
-
 #ifndef __EMSCRIPTEN__
+   if (sdl_wnd)
+   {
+      sdl_wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
+      sdl_wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
+   }
+
    if (locscene)
    {
       delete locscene;
@@ -1595,7 +1598,7 @@ const double window_scale_factor = 1.1;
 void ShrinkWindow()
 {
    int w, h;
-   sdl_wnd->getWindowSize(w, h);
+   wnd->getWindowSize(w, h);
    w = (int)ceil(w / window_scale_factor);
    h = (int)ceil(h / window_scale_factor);
 
@@ -1607,7 +1610,7 @@ void ShrinkWindow()
 void EnlargeWindow()
 {
    int w, h;
-   sdl_wnd->getWindowSize(w, h);
+   wnd->getWindowSize(w, h);
    w = (int)ceil(w * window_scale_factor);
    h = (int)ceil(h * window_scale_factor);
 
@@ -1618,18 +1621,18 @@ void EnlargeWindow()
 
 void MoveResizeWindow(int x, int y, int w, int h)
 {
-   sdl_wnd->setWindowSize(w, h);
-   sdl_wnd->setWindowPos(x, y);
+   wnd->setWindowSize(w, h);
+   wnd->setWindowPos(x, y);
 }
 
 void ResizeWindow(int w, int h)
 {
-   sdl_wnd->setWindowSize(w, h);
+   wnd->setWindowSize(w, h);
 }
 
 void SetWindowTitle(const char *title)
 {
-   sdl_wnd->setWindowTitle(title);
+   wnd->setWindowTitle(title);
 }
 
 int GetUseTexture()

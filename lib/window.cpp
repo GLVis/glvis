@@ -48,21 +48,11 @@ bool Window::GLVisInitVis(StreamCollection input_streams, bool headless)
    const char *win_title = (window_title == string_default) ?
                            window_titles[(int)field_type] : window_title;
 
-   if (!headless)
+   if (InitVisualization(win_title, window_x, window_y, window_w, window_h,
+                         headless))
    {
-      if (InitVisualization(win_title, window_x, window_y, window_w, window_h))
-      {
-         cerr << "Initializing the visualization failed." << endl;
-         return false;
-      }
-   }
-   else
-   {
-      if (InitHeadless(window_w, window_h))
-      {
-         cerr << "Initializing the visualization failed." << endl;
-         return false;
-      }
+      cerr << "Initializing the visualization failed." << endl;
+      return false;
    }
 
    if (input_streams.size() > 0)

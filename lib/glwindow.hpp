@@ -24,17 +24,39 @@ protected:
 public:
    virtual ~GLWindow() = default;
 
+   /// Creates a new OpenGL window
+   virtual bool createWindow(const char *title, int x, int y, int w, int h,
+                             bool legacyGlOnly) = 0;
+
    /// Returns the renderer object
    inline gl3::MeshRenderer& getRenderer() { return *renderer.get(); }
 
+   /// Returns size of the window
+   virtual void getWindowSize(int& w, int& h) const { w = h = 0; }
+
    /// Returns the drawable size
-   virtual void getGLDrawSize(int& w, int& h) { w = h = 0; }
+   virtual void getGLDrawSize(int& w, int& h) const { w = h = 0; }
 
    /// Returns the resolution (DPI) of the display
    virtual void getDpi(int& wdpi, int& hdpi) const { wdpi = hdpi = 0; }
 
    /// Checks if the display has high resolution (DPI)
    virtual bool isHighDpi() const { return false; }
+
+   /// Set title of the window (string version)
+   virtual void setWindowTitle(const std::string& title) { }
+
+   /// Set title of the window (C-string version)
+   virtual void setWindowTitle(const char* title) { }
+
+   /// Set window size
+   virtual void setWindowSize(int w, int h) { }
+
+   /// Set window position
+   virtual void setWindowPos(int x, int y) { }
+
+   /// Returns true if the window has been succesfully initialized
+   virtual bool isWindowInitialized() const { return false; }
 
    /// Returns true if the OpenGL context was successfully initialized
    virtual bool isGlInitialized() const { return false; }

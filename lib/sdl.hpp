@@ -171,10 +171,10 @@ public:
    // thread only.
    static void StartSDL(bool server_mode);
 
-   /// Creates a new OpenGL window. Returns false if SDL or OpenGL initialization
-   /// fails.
+   /** @brief Creates a new OpenGL window. Returns false if SDL or OpenGL
+       initialization fails. */
    bool createWindow(const char * title, int x, int y, int w, int h,
-                     bool legacyGlOnly);
+                     bool legacyGlOnly) override;
 
    /// Runs the window loop.
    void mainLoop();
@@ -219,16 +219,16 @@ public:
       }
    }
 
-   void getWindowSize(int& w, int& h);
-   void getGLDrawSize(int& w, int& h) override;
+   void getWindowSize(int& w, int& h) const override;
+   void getGLDrawSize(int& w, int& h) const override;
    void getDpi(int& wdpi, int& hdpi) const override;
    /// This property is set by createWindow().
    bool isHighDpi() const override { return high_dpi; }
 
-   void setWindowTitle(std::string& title);
-   void setWindowTitle(const char* title);
-   void setWindowSize(int w, int h);
-   void setWindowPos(int x, int y);
+   void setWindowTitle(const std::string& title) override;
+   void setWindowTitle(const char* title) override;
+   void setWindowSize(int w, int h) override;
+   void setWindowPos(int x, int y) override;
 
    void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE);
    void signalExpose() override { wnd_state = RenderState::ExposePending; }
@@ -252,7 +252,7 @@ public:
    void swapBuffer();
 
    operator bool() { return handle.isInitialized(); }
-   bool isWindowInitialized() { return handle.isInitialized(); }
+   bool isWindowInitialized() const override { return handle.isInitialized(); }
    /// Returns true if the OpenGL context was successfully initialized.
    bool isGlInitialized() const override;
 
