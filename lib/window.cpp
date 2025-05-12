@@ -174,6 +174,7 @@ void Window::GLVisStartVis()
 {
    RunVisualization();
    internal.vs.reset();
+   EndVisualization();
    if (glvis_command)
    {
       glvis_command->Terminate();

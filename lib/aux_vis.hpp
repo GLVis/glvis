@@ -35,6 +35,9 @@ void SetVisualizationScene(VisualizationScene * scene,
 /// Start the infinite visualization loop.
 void RunVisualization();
 
+/// End the visualization and destroy the window.
+void EndVisualization();
+
 /// Send expose event. In our case MyReshape is executed and Draw after it.
 void SendExposeEvent();
 

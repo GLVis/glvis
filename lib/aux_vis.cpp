@@ -369,6 +369,11 @@ void RunVisualization()
    wnd->mainLoop();
 #endif
    InitIdleFuncs();
+}
+
+void EndVisualization()
+{
+   visualize = 0;
    delete wnd;
    wnd = nullptr;
 }
