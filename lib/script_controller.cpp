@@ -56,6 +56,7 @@ enum class Command
    Scale,
    Translate,
    PlotCaption,
+   Headless,
    //----------
    Max
 };
@@ -117,6 +118,7 @@ ScriptCommands::ScriptCommands()
    (*this)[Command::Scale]                = {"scale", "<scale>", "Set the scaling factor."};
    (*this)[Command::Translate]            = {"translate", "<x> <y> <z>", "Set the translation coordinates."};
    (*this)[Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
+   (*this)[Command::Headless]             = {"headless", "", "Change the session to headless."};
 }
 
 int ScriptController::ScriptReadSolution(istream &scr, DataState &state)
@@ -814,6 +816,9 @@ bool ScriptController::ExecuteScriptCommand()
             MyExpose();
          }
          break;
+         case Command::Headless:
+            cout << "The session cannot become headless after initialization" << endl;
+            break;
          case Command::Max: //dummy
             break;
       }
@@ -889,6 +894,9 @@ void ScriptController::PlayScript(Window win, istream &scr)
             scr >> script.win.window_x >> script.win.window_y >> script.win.window_w >>
                 script.win.window_h;
             break;
+         case Command::Headless:
+            script.headless = true;
+            break;
          case Command::DataCollCycle:
             scr >> script.dc_cycle;
             break;
@@ -961,24 +969,42 @@ void ScriptController::PlayScript(Window win, istream &scr)
    script.script = &scr;
    script.win.data_state.keys.clear();
 
+   const bool headless = script.headless;
+
    // Make sure the singleton object returned by GetMainThread() is
    // initialized from the main thread.
-   GetMainThread();
+   if (!headless)
+   {
+      GetMainThread();
+   }
+
 
    std::thread worker_thread
    {
       [&](ScriptController local_script)
       {
          script_ctrl = &local_script;
-         if (local_script.win.GLVisInitVis({}))
+         if (local_script.win.GLVisInitVis({}, local_script.headless))
          {
-            GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
+            if (!local_script.headless)
+            {
+               GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
+            }
+            else
+            {
+               // execute all commands, updating the scene every time
+               do { MyExpose(); }
+               while (local_script.ExecuteScriptCommand());
+            }
             local_script.win.GLVisStartVis();
          }
       },
       std::move(script)
    };
 
-   SDLMainLoop();
+   if (!headless)
+   {
+      SDLMainLoop();
+   }
    worker_thread.join();
 }

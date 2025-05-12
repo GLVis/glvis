@@ -24,6 +24,7 @@ class ScriptController
 {
    Window win;
 
+   bool headless = false;
    string dc_protocol = string_default;
    int dc_cycle = 0;
 
