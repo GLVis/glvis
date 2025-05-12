@@ -223,6 +223,7 @@ EMCC_OPTS += $(if $(GLM_DIR),-I$(GLM_DIR))
 
 GLVIS_FLAGS += $(GL_OPTS)
 GLVIS_LIBS  += $(GL_LIBS)
+GLVIS_LIBS  += -lEGL
 
 # Take screenshots internally with libtiff, libpng, or sdl2?
 GLVIS_USE_LIBTIFF ?= NO
@@ -253,12 +254,13 @@ ALL_SOURCE_FILES = \
  lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp    \
  lib/gl/shader.cpp lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp      \
  lib/coll_reader.cpp lib/data_state.cpp lib/file_reader.cpp             \
- lib/font.cpp lib/gl2ps.c lib/gltf.cpp lib/material.cpp                 \
- lib/openglvis.cpp lib/palettes_base.cpp lib/palettes.cpp lib/sdl.cpp   \
- lib/script_controller.cpp lib/sdl_helper.cpp lib/sdl_main.cpp          \
- lib/sdl_windows.cpp lib/sdl_x11.cpp lib/stream_reader.cpp              \
- lib/threads.cpp lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp \
- lib/vsvector.cpp lib/vsvector3d.cpp lib/window.cpp
+ lib/egl.cpp lib/font.cpp lib/gl2ps.c lib/gltf.cpp lib/glwindow.cpp     \
+ lib/material.cpp lib/openglvis.cpp lib/palettes_base.cpp               \
+ lib/palettes.cpp lib/sdl.cpp lib/script_controller.cpp                 \
+ lib/sdl_helper.cpp lib/sdl_main.cpp lib/sdl_windows.cpp                \
+ lib/sdl_x11.cpp lib/stream_reader.cpp lib/threads.cpp lib/vsdata.cpp   \
+ lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp               \
+ lib/vsvector3d.cpp lib/window.cpp
 OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl_mac.mm)
 DESKTOP_ONLY_SOURCE_FILES = \
  lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c lib/sdl_x11.cpp
@@ -273,9 +275,9 @@ HEADER_FILES = \
  lib/gl/attr_traits.hpp lib/gl/platform_gl.hpp lib/gl/renderer.hpp      \
  lib/gl/shader.hpp lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp      \
  lib/gl/types.hpp lib/aux_vis.hpp lib/coll_reader.hpp                   \
- lib/data_state.hpp lib/file_reader.hpp lib/font.hpp                    \
- lib/geom_utils.hpp lib/gl2ps.h lib/gltf.hpp lib/logo.hpp               \
- lib/material.hpp lib/openglvis.hpp lib/palettes_base.hpp               \
+ lib/data_state.hpp lib/egl.hpp lib/file_reader.hpp lib/font.hpp        \
+ lib/geom_utils.hpp lib/gl2ps.h lib/gltf.hpp lib/glwindow.hpp           \
+ lib/logo.hpp lib/material.hpp lib/openglvis.hpp lib/palettes_base.hpp  \
  lib/palettes.hpp lib/script_controller.hpp lib/sdl_helper.hpp          \
  lib/sdl.hpp lib/sdl_mac.hpp lib/sdl_main.hpp lib/sdl_windows.hpp       \
  lib/sdl_x11.hpp lib/stream_reader.hpp lib/threads.hpp lib/visual.hpp   \

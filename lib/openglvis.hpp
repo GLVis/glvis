@@ -65,7 +65,8 @@ protected:
    // How to scale the visualized object(s)
    double xscale, yscale, zscale;
 
-   SdlWindow * wnd;
+   GLWindow *wnd;
+   SdlWindow *sdl_wnd;
 
    glm::mat4 proj_mtx;
 

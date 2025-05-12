@@ -414,31 +414,32 @@ void VisualizationSceneVector3d::Init()
 
    // static int init = 0;
    // if (!init)
+   if (sdl_wnd)
    {
       // init = 1;
 
-      wnd->setOnKeyDown('d', KeyDPressed);
-      wnd->setOnKeyDown('D', KeyDPressed);
+      sdl_wnd->setOnKeyDown('d', KeyDPressed);
+      sdl_wnd->setOnKeyDown('D', KeyDPressed);
 
-      wnd->setOnKeyDown('n', KeyNPressed);
-      wnd->setOnKeyDown('N', KeyNPressed);
+      sdl_wnd->setOnKeyDown('n', KeyNPressed);
+      sdl_wnd->setOnKeyDown('N', KeyNPressed);
 
-      wnd->setOnKeyDown('b', KeyBPressed);
-      wnd->setOnKeyDown('B', KeyBPressed);
+      sdl_wnd->setOnKeyDown('b', KeyBPressed);
+      sdl_wnd->setOnKeyDown('B', KeyBPressed);
 
-      wnd->setOnKeyDown('r', KeyrPressed); // adds another function to 'r' and 'R'
-      wnd->setOnKeyDown('R', KeyRPressed); // the other function is in vsdata.cpp
+      sdl_wnd->setOnKeyDown('r', KeyrPressed); // adds another function to 'r' and 'R'
+      sdl_wnd->setOnKeyDown('R', KeyRPressed); // the other function is in vsdata.cpp
 
-      wnd->setOnKeyDown('u', KeyuPressed); // Keys u, U are also used in
-      wnd->setOnKeyDown('U', KeyUPressed); // VisualizationSceneSolution3d
+      sdl_wnd->setOnKeyDown('u', KeyuPressed); // Keys u, U are also used in
+      sdl_wnd->setOnKeyDown('U', KeyUPressed); // VisualizationSceneSolution3d
 
-      wnd->setOnKeyDown('w', KeywPressed); // Keys w, W are also used in
-      wnd->setOnKeyDown('W', KeyWPressed); // VisualizationSceneSolution3d
+      sdl_wnd->setOnKeyDown('w', KeywPressed); // Keys w, W are also used in
+      sdl_wnd->setOnKeyDown('W', KeyWPressed); // VisualizationSceneSolution3d
 
-      wnd->setOnKeyDown('v', KeyvPressed); // Keys v, V are also used in
-      wnd->setOnKeyDown('V', KeyVPressed); // VisualizationSceneSolution3d
+      sdl_wnd->setOnKeyDown('v', KeyvPressed); // Keys v, V are also used in
+      sdl_wnd->setOnKeyDown('V', KeyVPressed); // VisualizationSceneSolution3d
 
-      wnd->setOnKeyDown('F', VectorKeyFPressed);
+      sdl_wnd->setOnKeyDown('F', VectorKeyFPressed);
    }
 }
 

@@ -44,12 +44,12 @@ bool GlVisFont::LoadFont(const std::string& path, int font_index, int font_size)
    }
    face_has_kerning = FT_HAS_KERNING(face);
    int ppi_w, ppi_h;
-   GetAppWindow()->getDpi(ppi_w, ppi_h);
+   GetGLWindow()->getDpi(ppi_w, ppi_h);
    const bool use_fixed_ppi_h = true;
    if (use_fixed_ppi_h)
    {
       double ratio = double(ppi_w)/ppi_h;
-      ppi_h = GetAppWindow()->isHighDpi() ? 192 : 96;
+      ppi_h = GetGLWindow()->isHighDpi() ? 192 : 96;
       ppi_w = ratio*ppi_h + 0.5;
 #ifdef GLVIS_DEBUG
       cout << "Fonts use fixed ppi: " << ppi_w << " x " << ppi_h << endl;

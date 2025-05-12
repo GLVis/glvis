@@ -30,7 +30,7 @@ Window &Window::operator=(Window &&w)
 }
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
-bool Window::GLVisInitVis(StreamCollection input_streams)
+bool Window::GLVisInitVis(StreamCollection input_streams, bool headless)
 {
    DataState::FieldType field_type = data_state.GetType();
 
@@ -48,15 +48,29 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
    const char *win_title = (window_title == string_default) ?
                            window_titles[(int)field_type] : window_title;
 
-   if (InitVisualization(win_title, window_x, window_y, window_w, window_h))
+   if (!headless)
    {
-      cerr << "Initializing the visualization failed." << endl;
-      return false;
+      if (InitVisualization(win_title, window_x, window_y, window_w, window_h))
+      {
+         cerr << "Initializing the visualization failed." << endl;
+         return false;
+      }
+   }
+   else
+   {
+      if (InitHeadless(window_w, window_h))
+      {
+         cerr << "Initializing the visualization failed." << endl;
+         return false;
+      }
    }
 
    if (input_streams.size() > 0)
    {
-      GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
+      if (!headless)
+      {
+         GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
+      }
       internal.glvis_command.reset(new GLVisCommand(*this));
       SetGLVisCommand(glvis_command.get());
       internal.comm_thread.reset(new communication_thread(std::move(input_streams),
@@ -65,7 +79,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
 
    locwin = this;
 
-   if (data_state.quad_f)
+   if (!headless && data_state.quad_f)
    {
       GetAppWindow()->setOnKeyDown('Q', SwitchQuadSolution);
    }

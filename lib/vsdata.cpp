@@ -933,8 +933,8 @@ void KeyKPressed()
 
 void KeyAPressed()
 {
-   bool curr_aa = GetAppWindow()->getRenderer().getAntialiasing();
-   GetAppWindow()->getRenderer().setAntialiasing(!curr_aa);
+   bool curr_aa = GetGLWindow()->getRenderer().getAntialiasing();
+   GetGLWindow()->getRenderer().setAntialiasing(!curr_aa);
 
    cout << "Multisampling/Antialiasing: "
         << strings_off_on[!curr_aa ? 1 : 0] << endl;
@@ -1170,7 +1170,14 @@ void VisualizationSceneScalarData::Toggle2DView()
 gl3::SceneInfo VisualizationSceneScalarData::GetSceneObjs()
 {
    int w, h;
-   wnd->getWindowSize(w, h);
+   if (sdl_wnd)
+   {
+      sdl_wnd->getWindowSize(w, h);
+   }
+   else
+   {
+      wnd->getGLDrawSize(w, h);
+   }
    gl3::SceneInfo scene {};
 
    gl3::RenderParams params {};
@@ -1371,7 +1378,8 @@ void VisualizationSceneScalarData::Init()
 {
    vsdata = this;
    window = &win;
-   wnd = GetAppWindow();
+   wnd = GetGLWindow();
+   sdl_wnd = GetAppWindow();
 
    arrow_type = arrow_scaling_type = 0;
    scaling = 0;
@@ -1391,53 +1399,54 @@ void VisualizationSceneScalarData::Init()
 
    // static int init = 0;
    // if (!init)
+   if (sdl_wnd)
    {
       // init = 1;
 
-      wnd->setOnKeyDown('l', KeylPressed);
-      wnd->setOnKeyDown('L', KeyLPressed);
+      sdl_wnd->setOnKeyDown('l', KeylPressed);
+      sdl_wnd->setOnKeyDown('L', KeyLPressed);
 
-      wnd->setOnKeyDown('s', KeySPressed);
+      sdl_wnd->setOnKeyDown('s', KeySPressed);
 
-      // wnd->setOnKeyDown('a', KeyaPressed);
-      wnd->setOnKeyDown('a', Key_Mod_a_Pressed);
-      wnd->setOnKeyDown('A', KeyAPressed);
+      // sdl_wnd->setOnKeyDown('a', KeyaPressed);
+      sdl_wnd->setOnKeyDown('a', Key_Mod_a_Pressed);
+      sdl_wnd->setOnKeyDown('A', KeyAPressed);
 
-      wnd->setOnKeyDown('r', KeyrPressed);
-      wnd->setOnKeyDown('R', KeyRPressed);
+      sdl_wnd->setOnKeyDown('r', KeyrPressed);
+      sdl_wnd->setOnKeyDown('R', KeyRPressed);
 
-      wnd->setOnKeyDown('p', KeypPressed);
-      wnd->setOnKeyDown('P', KeyPPressed);
+      sdl_wnd->setOnKeyDown('p', KeypPressed);
+      sdl_wnd->setOnKeyDown('P', KeyPPressed);
 
-      wnd->setOnKeyDown('h', KeyHPressed);
-      wnd->setOnKeyDown('H', KeyHPressed);
+      sdl_wnd->setOnKeyDown('h', KeyHPressed);
+      sdl_wnd->setOnKeyDown('H', KeyHPressed);
 
-      wnd->setOnKeyDown(SDLK_F5, KeyF5Pressed);
-      wnd->setOnKeyDown(SDLK_F6, KeyF6Pressed);
-      wnd->setOnKeyDown(SDLK_F7, KeyF7Pressed);
+      sdl_wnd->setOnKeyDown(SDLK_F5, KeyF5Pressed);
+      sdl_wnd->setOnKeyDown(SDLK_F6, KeyF6Pressed);
+      sdl_wnd->setOnKeyDown(SDLK_F7, KeyF7Pressed);
 
-      wnd->setOnKeyDown(SDLK_BACKSLASH, KeyBackslashPressed);
-      wnd->setOnKeyDown('t', KeyTPressed);
-      wnd->setOnKeyDown('T', KeyTPressed);
+      sdl_wnd->setOnKeyDown(SDLK_BACKSLASH, KeyBackslashPressed);
+      sdl_wnd->setOnKeyDown('t', KeyTPressed);
+      sdl_wnd->setOnKeyDown('T', KeyTPressed);
 
-      wnd->setOnKeyDown('g', KeygPressed);
-      wnd->setOnKeyDown('G', KeyGPressed);
+      sdl_wnd->setOnKeyDown('g', KeygPressed);
+      sdl_wnd->setOnKeyDown('G', KeyGPressed);
 
-      wnd->setOnKeyDown('c', KeycPressed);
-      wnd->setOnKeyDown('C', KeyCPressed);
+      sdl_wnd->setOnKeyDown('c', KeycPressed);
+      sdl_wnd->setOnKeyDown('C', KeyCPressed);
 
-      wnd->setOnKeyDown('k', KeykPressed);
-      wnd->setOnKeyDown('K', KeyKPressed);
+      sdl_wnd->setOnKeyDown('k', KeykPressed);
+      sdl_wnd->setOnKeyDown('K', KeyKPressed);
 
-      wnd->setOnKeyDown(SDLK_F1, KeyF1Pressed);
-      wnd->setOnKeyDown(SDLK_F2, KeyF2Pressed);
+      sdl_wnd->setOnKeyDown(SDLK_F1, KeyF1Pressed);
+      sdl_wnd->setOnKeyDown(SDLK_F2, KeyF2Pressed);
 
-      wnd->setOnKeyDown(SDLK_COMMA, KeyCommaPressed);
-      wnd->setOnKeyDown(SDLK_LESS, KeyLessPressed);
-      wnd->setOnKeyDown('~', KeyTildePressed);
-      wnd->setOnKeyDown('`', KeyGravePressed);
+      sdl_wnd->setOnKeyDown(SDLK_COMMA, KeyCommaPressed);
+      sdl_wnd->setOnKeyDown(SDLK_LESS, KeyLessPressed);
+      sdl_wnd->setOnKeyDown('~', KeyTildePressed);
+      sdl_wnd->setOnKeyDown('`', KeyGravePressed);
 
-      wnd->setOnKeyDown(SDLK_EXCLAIM, KeyToggleTexture);
+      sdl_wnd->setOnKeyDown(SDLK_EXCLAIM, KeyToggleTexture);
    }
 
    // Set_Light();
@@ -1753,8 +1762,11 @@ void VisualizationSceneScalarData::SetLevelLines (
 
 void VisualizationSceneScalarData::PrintState()
 {
-   cout << "\nkeys: " << GetAppWindow()->getSavedKeys() << "\n"
-        << "\nlight " << strings_off_on[use_light ? 1 : 0]
+   if (sdl_wnd)
+   {
+      cout << "\nkeys: " << sdl_wnd->getSavedKeys() << "\n";
+   }
+   cout << "\nlight " << strings_off_on[use_light ? 1 : 0]
         << "\nperspective " << strings_off_on[OrthogonalProjection ? 0 : 1]
         << "\nviewcenter " << ViewCenterX << ' ' << ViewCenterY
         << "\nzoom " << (OrthogonalProjection ? ViewScale :

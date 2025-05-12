@@ -44,7 +44,7 @@ using namespace mfem;
 void display(std::stringstream & commands, const int w, const int h)
 {
    // reset antialiasing
-   GetAppWindow()->getRenderer().setAntialiasing(0);
+   GetGLWindow()->getRenderer().setAntialiasing(0);
 
    std::string word;
    double minv = 0.0, maxv = 0.0;
@@ -274,7 +274,7 @@ std::string getHelpString()
 em::val getScreenBuffer(bool flip_y=false)
 {
    MyExpose();
-   auto * wnd = GetAppWindow();
+   auto * wnd = GetGLWindow();
    int w, h;
    wnd->getGLDrawSize(w, h);
 
@@ -317,7 +317,7 @@ em::val getScreenBuffer(bool flip_y=false)
 em::val getPNGByteArray()
 {
    constexpr const char * filename = "im.png";
-   auto * wnd = GetAppWindow();
+   auto * wnd = GetGLWindow();
    int w, h;
    wnd->getGLDrawSize(w, h);
 

@@ -19,7 +19,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <deque>
-#include "gl/renderer.hpp"
+#include "glwindow.hpp"
 #include "sdl_helper.hpp"
 
 struct EventInfo
@@ -39,7 +39,7 @@ typedef bool (*IdleDelegate)();
 class SdlMainThread;
 SdlMainThread& GetMainThread();
 
-class SdlWindow
+class SdlWindow : public GLWindow
 {
 private:
    friend class SdlMainThread;
@@ -77,7 +77,7 @@ private:
 
    int window_id = -1;
    Handle handle;
-   std::unique_ptr<gl3::MeshRenderer> renderer;
+
    static const int high_dpi_threshold = 144;
    // The display is high-dpi when:
    // - SDL's "screen coordinates" sizes are different from the pixel sizes, or
@@ -220,27 +220,26 @@ public:
    }
 
    void getWindowSize(int& w, int& h);
-   void getGLDrawSize(int& w, int& h);
-   void getDpi(int& wdpi, int& hdpi);
+   void getGLDrawSize(int& w, int& h) override;
+   void getDpi(int& wdpi, int& hdpi) const override;
    /// This property is set by createWindow().
-   bool isHighDpi() const { return high_dpi; }
+   bool isHighDpi() const override { return high_dpi; }
 
-   gl3::MeshRenderer& getRenderer() { return *renderer.get(); }
    void setWindowTitle(std::string& title);
    void setWindowTitle(const char* title);
    void setWindowSize(int w, int h);
    void setWindowPos(int x, int y);
 
    void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE);
-   void signalExpose() { wnd_state = RenderState::ExposePending; }
-   void signalSwap() { wnd_state = RenderState::SwapPending; }
+   void signalExpose() override { wnd_state = RenderState::ExposePending; }
+   void signalSwap() override { wnd_state = RenderState::SwapPending; }
    void signalQuit() { running = false; }
 
    /// Returns the keyboard events that have been logged by the window.
    std::string getSavedKeys() const { return saved_keys; }
 
    /// Queues a screenshot to be taken.
-   void screenshot(std::string filename, bool convert = false)
+   void screenshot(std::string filename, bool convert = false) override
    {
       takeScreenshot = true;
       screenshot_file = filename;
@@ -255,10 +254,10 @@ public:
    operator bool() { return handle.isInitialized(); }
    bool isWindowInitialized() { return handle.isInitialized(); }
    /// Returns true if the OpenGL context was successfully initialized.
-   bool isGlInitialized();
+   bool isGlInitialized() const override;
 
-   bool isSwapPending() { return wnd_state == RenderState::SwapPending; }
-   bool isExposePending() { return wnd_state == RenderState::ExposePending; }
+   bool isSwapPending() const override { return wnd_state == RenderState::SwapPending; }
+   bool isExposePending() const override { return wnd_state == RenderState::ExposePending; }
 
 #ifdef __EMSCRIPTEN__
    std::string getCanvasId() const { return canvas_id_; }

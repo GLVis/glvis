@@ -18,6 +18,7 @@
 
 #include "mfem.hpp"
 #include "sdl.hpp"
+#include "egl.hpp"
 #include "palettes.hpp"
 #include "visual.hpp"
 #include "gl2ps.h"
@@ -48,7 +49,8 @@ static int glvis_multisample = -1;
 static float line_w = 1.f;
 static float line_w_aa = gl3::LINE_WIDTH_AA;
 
-static thread_local SdlWindow * wnd = nullptr;
+static thread_local GLWindow *wnd = nullptr;
+static thread_local SdlWindow *sdl_wnd = nullptr;
 static bool wndLegacyGl = false;
 bool wndUseHiDPI = true; // shared with sdl_main.cpp
 
@@ -63,6 +65,11 @@ void SetGLVisCommand(GLVisCommand *cmd)
 }
 
 SdlWindow * GetAppWindow()
+{
+   return sdl_wnd;
+}
+
+GLWindow *GetGLWindow()
 {
    return wnd;
 }
@@ -91,107 +98,138 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 #ifdef GLVIS_DEBUG
    cout << "OpenGL Visualization" << endl;
 #endif
-   if (!wnd)
+   if (!sdl_wnd)
    {
-      wnd = new SdlWindow();
-      if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
+      wnd = sdl_wnd = new SdlWindow();
+      if (!sdl_wnd->createWindow(name, x, y, w, h, wndLegacyGl))
       {
          return 1;
       }
    }
    else
    {
-      wnd->clearEvents();
+      sdl_wnd->clearEvents();
    }
 
 #ifdef GLVIS_DEBUG
    cout << "Window should be up" << endl;
 #endif
    InitFont();
-   wnd->getRenderer().setLineWidth(line_w);
-   wnd->getRenderer().setLineWidthMS(line_w_aa);
+   sdl_wnd->getRenderer().setLineWidth(line_w);
+   sdl_wnd->getRenderer().setLineWidthMS(line_w_aa);
 
    // auxReshapeFunc (MyReshape); // not needed, MyExpose calls it
    // auxReshapeFunc (NULL);
    void (*exposeFunc)(void) = MyExpose;
-   wnd->setOnExpose(exposeFunc);
+   sdl_wnd->setOnExpose(exposeFunc);
 
-   wnd->setOnMouseDown(SDL_BUTTON_LEFT, LeftButtonDown);
-   wnd->setOnMouseUp(SDL_BUTTON_LEFT, LeftButtonUp);
-   wnd->setOnMouseMove(SDL_BUTTON_LEFT, LeftButtonLoc);
-   wnd->setOnMouseDown(SDL_BUTTON_MIDDLE, MiddleButtonDown);
-   wnd->setOnMouseUp(SDL_BUTTON_MIDDLE, MiddleButtonUp);
-   wnd->setOnMouseMove(SDL_BUTTON_MIDDLE, MiddleButtonLoc);
-   wnd->setOnMouseDown(SDL_BUTTON_RIGHT, RightButtonDown);
-   wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
-   wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
+   sdl_wnd->setOnMouseDown(SDL_BUTTON_LEFT, LeftButtonDown);
+   sdl_wnd->setOnMouseUp(SDL_BUTTON_LEFT, LeftButtonUp);
+   sdl_wnd->setOnMouseMove(SDL_BUTTON_LEFT, LeftButtonLoc);
+   sdl_wnd->setOnMouseDown(SDL_BUTTON_MIDDLE, MiddleButtonDown);
+   sdl_wnd->setOnMouseUp(SDL_BUTTON_MIDDLE, MiddleButtonUp);
+   sdl_wnd->setOnMouseMove(SDL_BUTTON_MIDDLE, MiddleButtonLoc);
+   sdl_wnd->setOnMouseDown(SDL_BUTTON_RIGHT, RightButtonDown);
+   sdl_wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
+   sdl_wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
 
-   wnd->setTouchPinchCallback(TouchPinch);
+   sdl_wnd->setTouchPinchCallback(TouchPinch);
 
    // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
-   wnd->setOnKeyDown (SDLK_s, KeyS);
-   wnd->setOnKeyDown ('S', KeyS);
+   sdl_wnd->setOnKeyDown (SDLK_s, KeyS);
+   sdl_wnd->setOnKeyDown ('S', KeyS);
 
-   wnd->setOnKeyDown (SDLK_q, KeyQPressed);
-   // wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
+   sdl_wnd->setOnKeyDown (SDLK_q, KeyQPressed);
+   // sdl_wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
 
-   wnd->setOnKeyDown (SDLK_LEFT, KeyLeftPressed);
-   wnd->setOnKeyDown (SDLK_RIGHT, KeyRightPressed);
-   wnd->setOnKeyDown (SDLK_UP, KeyUpPressed);
-   wnd->setOnKeyDown (SDLK_DOWN, KeyDownPressed);
+   sdl_wnd->setOnKeyDown (SDLK_LEFT, KeyLeftPressed);
+   sdl_wnd->setOnKeyDown (SDLK_RIGHT, KeyRightPressed);
+   sdl_wnd->setOnKeyDown (SDLK_UP, KeyUpPressed);
+   sdl_wnd->setOnKeyDown (SDLK_DOWN, KeyDownPressed);
 
-   wnd->setOnKeyDown (SDLK_KP_0, Key0Pressed);
-   wnd->setOnKeyDown (SDLK_KP_1, Key1Pressed);
-   wnd->setOnKeyDown (SDLK_KP_2, Key2Pressed);
-   wnd->setOnKeyDown (SDLK_KP_3, Key3Pressed);
-   wnd->setOnKeyDown (SDLK_KP_4, Key4Pressed);
-   wnd->setOnKeyDown (SDLK_KP_5, Key5Pressed);
-   wnd->setOnKeyDown (SDLK_KP_6, Key6Pressed);
-   wnd->setOnKeyDown (SDLK_KP_7, Key7Pressed);
-   wnd->setOnKeyDown (SDLK_KP_8, Key8Pressed);
-   wnd->setOnKeyDown (SDLK_KP_9, Key9Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_KP_0, Key0Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_KP_1, Key1Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_KP_2, Key2Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_KP_3, Key3Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_KP_4, Key4Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_KP_5, Key5Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_KP_6, Key6Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_KP_7, Key7Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_KP_8, Key8Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_KP_9, Key9Pressed);
 
-   wnd->setOnKeyDown (SDLK_KP_MEMSUBTRACT, KeyMinusPressed);
-   wnd->setOnKeyDown (SDLK_KP_MEMADD, KeyPlusPressed);
+   sdl_wnd->setOnKeyDown (SDLK_KP_MEMSUBTRACT, KeyMinusPressed);
+   sdl_wnd->setOnKeyDown (SDLK_KP_MEMADD, KeyPlusPressed);
 
-   wnd->setOnKeyDown (SDLK_KP_DECIMAL, KeyDeletePressed);
-   wnd->setOnKeyDown (SDLK_KP_ENTER, KeyEnterPressed);
+   sdl_wnd->setOnKeyDown (SDLK_KP_DECIMAL, KeyDeletePressed);
+   sdl_wnd->setOnKeyDown (SDLK_KP_ENTER, KeyEnterPressed);
 
-   wnd->setOnKeyDown (SDLK_PERIOD, KeyDeletePressed);
-   wnd->setOnKeyDown (SDLK_RETURN, KeyEnterPressed);
+   sdl_wnd->setOnKeyDown (SDLK_PERIOD, KeyDeletePressed);
+   sdl_wnd->setOnKeyDown (SDLK_RETURN, KeyEnterPressed);
 
-   wnd->setOnKeyDown (SDLK_0, Key0Pressed);
-   wnd->setOnKeyDown (SDLK_1, Key1Pressed);
-   wnd->setOnKeyDown (SDLK_2, Key2Pressed);
-   wnd->setOnKeyDown (SDLK_3, Key3Pressed);
-   wnd->setOnKeyDown (SDLK_4, Key4Pressed);
-   wnd->setOnKeyDown (SDLK_5, Key5Pressed);
-   wnd->setOnKeyDown (SDLK_6, Key6Pressed);
-   wnd->setOnKeyDown (SDLK_7, Key7Pressed);
-   wnd->setOnKeyDown (SDLK_8, Key8Pressed);
-   wnd->setOnKeyDown (SDLK_9, Key9Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_0, Key0Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_1, Key1Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_2, Key2Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_3, Key3Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_4, Key4Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_5, Key5Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_6, Key6Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_7, Key7Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_8, Key8Pressed);
+   sdl_wnd->setOnKeyDown (SDLK_9, Key9Pressed);
 
-   wnd->setOnKeyDown (SDLK_MINUS, KeyMinusPressed);
-   wnd->setOnKeyDown (SDLK_PLUS, KeyPlusPressed);
-   wnd->setOnKeyDown (SDLK_EQUALS, KeyPlusPressed);
+   sdl_wnd->setOnKeyDown (SDLK_MINUS, KeyMinusPressed);
+   sdl_wnd->setOnKeyDown (SDLK_PLUS, KeyPlusPressed);
+   sdl_wnd->setOnKeyDown (SDLK_EQUALS, KeyPlusPressed);
 
-   wnd->setOnKeyDown (SDLK_j, KeyJPressed);
-   // wnd->setOnKeyDown (AUX_J, KeyJPressed);
+   sdl_wnd->setOnKeyDown (SDLK_j, KeyJPressed);
+   // sdl_wnd->setOnKeyDown (AUX_J, KeyJPressed);
 
-   wnd->setOnKeyDown (SDLK_KP_MULTIPLY, ZoomIn);
-   wnd->setOnKeyDown (SDLK_KP_DIVIDE, ZoomOut);
+   sdl_wnd->setOnKeyDown (SDLK_KP_MULTIPLY, ZoomIn);
+   sdl_wnd->setOnKeyDown (SDLK_KP_DIVIDE, ZoomOut);
 
-   wnd->setOnKeyDown (SDLK_ASTERISK, ZoomIn);
-   wnd->setOnKeyDown (SDLK_SLASH, ZoomOut);
+   sdl_wnd->setOnKeyDown (SDLK_ASTERISK, ZoomIn);
+   sdl_wnd->setOnKeyDown (SDLK_SLASH, ZoomOut);
 
-   wnd->setOnKeyDown (SDLK_LEFTBRACKET, ScaleDown);
-   wnd->setOnKeyDown (SDLK_RIGHTBRACKET, ScaleUp);
-   wnd->setOnKeyDown (SDLK_AT, LookAt);
+   sdl_wnd->setOnKeyDown (SDLK_LEFTBRACKET, ScaleDown);
+   sdl_wnd->setOnKeyDown (SDLK_RIGHTBRACKET, ScaleUp);
+   sdl_wnd->setOnKeyDown (SDLK_AT, LookAt);
 
 #ifndef __EMSCRIPTEN__
-   wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
-   wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
+   sdl_wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
+   sdl_wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
 
+   if (locscene)
+   {
+      delete locscene;
+   }
+#endif
+   locscene = nullptr;
+
+   return 0;
+}
+
+int InitHeadless(int w, int h)
+{
+
+#ifdef GLVIS_DEBUG
+   cout << "OpenGL+EGL Visualization" << endl;
+#endif
+   if (!wnd)
+   {
+      EglWindow *egl_wnd;
+      wnd = egl_wnd = new EglWindow();
+      if (!egl_wnd->createWindow(w, h, wndLegacyGl))
+      {
+         return 1;
+      }
+   }
+
+   InitFont();
+   wnd->getRenderer().setLineWidth(line_w);
+   wnd->getRenderer().setLineWidthMS(line_w_aa);
+
+#ifndef __EMSCRIPTEN__
    if (locscene)
    {
       delete locscene;
@@ -215,53 +253,53 @@ void SendKeySequence(const char *seq)
                SendExposeEvent();
                break;
             case 'l': // left arrow
-               wnd->signalKeyDown(SDLK_LEFT);
+               sdl_wnd->signalKeyDown(SDLK_LEFT);
                break;
             case 'r': // right arrow
-               wnd->signalKeyDown(SDLK_RIGHT);
+               sdl_wnd->signalKeyDown(SDLK_RIGHT);
                break;
             case 'u': // up arrow
-               wnd->signalKeyDown(SDLK_UP);
+               sdl_wnd->signalKeyDown(SDLK_UP);
                break;
             case 'd': // down arrow
-               wnd->signalKeyDown(SDLK_DOWN);
+               sdl_wnd->signalKeyDown(SDLK_DOWN);
                break;
             case '3': // F3
-               wnd->signalKeyDown(SDLK_F3);
+               sdl_wnd->signalKeyDown(SDLK_F3);
                break;
             case '5': // F5
-               wnd->signalKeyDown(SDLK_F5);
+               sdl_wnd->signalKeyDown(SDLK_F5);
                break;
             case '6': // F6
-               wnd->signalKeyDown(SDLK_F6);
+               sdl_wnd->signalKeyDown(SDLK_F6);
                break;
             case '7': // F7
-               wnd->signalKeyDown(SDLK_F7);
+               sdl_wnd->signalKeyDown(SDLK_F7);
                break;
             case '1': // F11 or F12
                key++;
                switch (*key)
                {
                   case '1': // F11
-                     wnd->signalKeyDown(SDLK_F11);
+                     sdl_wnd->signalKeyDown(SDLK_F11);
                      break;
                   case '2': // F12
-                     wnd->callKeyDown(SDLK_F12);
+                     sdl_wnd->callKeyDown(SDLK_F12);
                      break;
                }
                break;
             case '.': // Keypad ./Del
-               wnd->signalKeyDown(SDLK_PERIOD);
+               sdl_wnd->signalKeyDown(SDLK_PERIOD);
                break;
             case 'E': // Keypad Enter
-               wnd->signalKeyDown(SDLK_RETURN);
+               sdl_wnd->signalKeyDown(SDLK_RETURN);
                break;
          }
          continue;
       }
       else
       {
-         wnd->signalKeyDown(*key);
+         sdl_wnd->signalKeyDown(*key);
       }
    }
 }
@@ -278,7 +316,7 @@ void CallKeySequence(const char *seq)
    {
       if (*key != '~')
       {
-         wnd->callKeyDown(*key);
+         sdl_wnd->callKeyDown(*key);
       }
       else
       {
@@ -286,46 +324,46 @@ void CallKeySequence(const char *seq)
          switch (*key)
          {
             case 'l': // left arrow
-               wnd->callKeyDown(SDLK_LEFT);
+               sdl_wnd->callKeyDown(SDLK_LEFT);
                break;
             case 'r': // right arrow
-               wnd->callKeyDown(SDLK_RIGHT);
+               sdl_wnd->callKeyDown(SDLK_RIGHT);
                break;
             case 'u': // up arrow
-               wnd->callKeyDown(SDLK_UP);
+               sdl_wnd->callKeyDown(SDLK_UP);
                break;
             case 'd': // down arrow
-               wnd->callKeyDown(SDLK_DOWN);
+               sdl_wnd->callKeyDown(SDLK_DOWN);
                break;
             case '3': // F3
-               wnd->callKeyDown(SDLK_F3);
+               sdl_wnd->callKeyDown(SDLK_F3);
                break;
             case '5': // F5
-               wnd->callKeyDown(SDLK_F5);
+               sdl_wnd->callKeyDown(SDLK_F5);
                break;
             case '6': // F6
-               wnd->callKeyDown(SDLK_F6);
+               sdl_wnd->callKeyDown(SDLK_F6);
                break;
             case '7': // F7
-               wnd->callKeyDown(SDLK_F7);
+               sdl_wnd->callKeyDown(SDLK_F7);
                break;
             case '1': // F11 or F12
                key++;
                switch (*key)
                {
                   case '1': // F11
-                     wnd->callKeyDown(SDLK_F11);
+                     sdl_wnd->callKeyDown(SDLK_F11);
                      break;
                   case '2': // F12
-                     wnd->callKeyDown(SDLK_F12);
+                     sdl_wnd->callKeyDown(SDLK_F12);
                      break;
                }
                break;
             case '.': // Keypad ./Del
-               wnd->callKeyDown(SDLK_PERIOD);
+               sdl_wnd->callKeyDown(SDLK_PERIOD);
                break;
             case 'E': // Keypad Enter
-               wnd->callKeyDown(SDLK_RETURN);
+               sdl_wnd->callKeyDown(SDLK_RETURN);
                break;
          }
       }
@@ -366,16 +404,22 @@ void RunVisualization()
 {
    visualize = 1;
 #ifndef __EMSCRIPTEN__
-   wnd->mainLoop();
+   if (sdl_wnd)
+   {
+      sdl_wnd->mainLoop();
+   }
 #endif
-   InitIdleFuncs();
+   if (sdl_wnd)
+   {
+      InitIdleFuncs();
+   }
 }
 
 void EndVisualization()
 {
    visualize = 0;
    delete wnd;
-   wnd = nullptr;
+   wnd = sdl_wnd = nullptr;
 }
 
 void SendExposeEvent()
@@ -457,7 +501,7 @@ void InitIdleFuncs()
    LastIdleFunc = 0;
    if (glvis_command)
    {
-      wnd->setOnIdle(MainIdleFunc);
+      sdl_wnd->setOnIdle(MainIdleFunc);
    }
 }
 
@@ -467,7 +511,7 @@ bool CommunicationIdleFunc()
    if (status < 0)
    {
       cout << "GLVisCommand signalled exit" << endl;
-      wnd->signalQuit();
+      sdl_wnd->signalQuit();
    }
    else if (status == 1)
    {
@@ -526,7 +570,7 @@ bool MainIdleFunc()
 void AddIdleFunc(void (*Func)(void))
 {
    IdleFuncs.Union(Func);
-   wnd->setOnIdle(MainIdleFunc);
+   sdl_wnd->setOnIdle(MainIdleFunc);
 }
 
 void RemoveIdleFunc(void (*Func)(void))
@@ -534,7 +578,7 @@ void RemoveIdleFunc(void (*Func)(void))
    IdleFuncs.DeleteFirst(Func);
    if (IdleFuncs.Size() == 0 && glvis_command == nullptr)
    {
-      wnd->setOnIdle(NULL);
+      sdl_wnd->setOnIdle(NULL);
    }
 }
 
@@ -1265,7 +1309,7 @@ void KeyCtrlP()
 
 void KeyQPressed()
 {
-   wnd->signalQuit();
+   sdl_wnd->signalQuit();
    visualize = 0;
 }
 
@@ -1551,7 +1595,7 @@ const double window_scale_factor = 1.1;
 void ShrinkWindow()
 {
    int w, h;
-   wnd->getWindowSize(w, h);
+   sdl_wnd->getWindowSize(w, h);
    w = (int)ceil(w / window_scale_factor);
    h = (int)ceil(h / window_scale_factor);
 
@@ -1563,7 +1607,7 @@ void ShrinkWindow()
 void EnlargeWindow()
 {
    int w, h;
-   wnd->getWindowSize(w, h);
+   sdl_wnd->getWindowSize(w, h);
    w = (int)ceil(w * window_scale_factor);
    h = (int)ceil(h * window_scale_factor);
 
@@ -1574,18 +1618,18 @@ void EnlargeWindow()
 
 void MoveResizeWindow(int x, int y, int w, int h)
 {
-   wnd->setWindowSize(w, h);
-   wnd->setWindowPos(x, y);
+   sdl_wnd->setWindowSize(w, h);
+   sdl_wnd->setWindowPos(x, y);
 }
 
 void ResizeWindow(int w, int h)
 {
-   wnd->setWindowSize(w, h);
+   sdl_wnd->setWindowSize(w, h);
 }
 
 void SetWindowTitle(const char *title)
 {
-   wnd->setWindowTitle(title);
+   sdl_wnd->setWindowTitle(title);
 }
 
 int GetUseTexture()

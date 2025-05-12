@@ -500,7 +500,7 @@ int GLVisCommand::Execute()
          cout << "Command: screenshot -> " << screenshot_filename << endl;
          // Allow SdlWindow to handle the expose and screenshot action, in case
          // any actions need to be taken before MyExpose().
-         GetAppWindow()->screenshot(screenshot_filename, true);
+         GetGLWindow()->screenshot(screenshot_filename, true);
          break;
       }
 

@@ -762,52 +762,53 @@ void VisualizationSceneSolution3d::Init()
 
    // static int init = 0;
    // if (!init)
+   if (sdl_wnd)
    {
       // init = 1;
 
-      wnd->setOnKeyDown('m', KeymPressed);
-      wnd->setOnKeyDown('M', KeyMPressed);
+      sdl_wnd->setOnKeyDown('m', KeymPressed);
+      sdl_wnd->setOnKeyDown('M', KeyMPressed);
 
-      wnd->setOnKeyDown('e', KeyePressed);
-      wnd->setOnKeyDown('E', KeyEPressed);
+      sdl_wnd->setOnKeyDown('e', KeyePressed);
+      sdl_wnd->setOnKeyDown('E', KeyEPressed);
 
-      wnd->setOnKeyDown('f', KeyFPressed);
-      // wnd->setOnKeyDown('F', KeyFPressed);
+      sdl_wnd->setOnKeyDown('f', KeyFPressed);
+      // sdl_wnd->setOnKeyDown('F', KeyFPressed);
 
-      wnd->setOnKeyDown('i', KeyiPressed);
-      wnd->setOnKeyDown('I', KeyIPressed);
+      sdl_wnd->setOnKeyDown('i', KeyiPressed);
+      sdl_wnd->setOnKeyDown('I', KeyIPressed);
 
-      wnd->setOnKeyDown('o', KeyoPressed);
-      wnd->setOnKeyDown('O', KeyOPressed);
+      sdl_wnd->setOnKeyDown('o', KeyoPressed);
+      sdl_wnd->setOnKeyDown('O', KeyOPressed);
 
-      wnd->setOnKeyDown('w', KeywPressed);
-      wnd->setOnKeyDown('W', KeyWPressed);
+      sdl_wnd->setOnKeyDown('w', KeywPressed);
+      sdl_wnd->setOnKeyDown('W', KeyWPressed);
 
-      wnd->setOnKeyDown('x', KeyxPressed);
-      wnd->setOnKeyDown('X', KeyXPressed);
+      sdl_wnd->setOnKeyDown('x', KeyxPressed);
+      sdl_wnd->setOnKeyDown('X', KeyXPressed);
 
-      wnd->setOnKeyDown('y', KeyyPressed);
-      wnd->setOnKeyDown('Y', KeyYPressed);
+      sdl_wnd->setOnKeyDown('y', KeyyPressed);
+      sdl_wnd->setOnKeyDown('Y', KeyYPressed);
 
-      wnd->setOnKeyDown('z', KeyzPressed);
-      wnd->setOnKeyDown('Z', KeyZPressed);
+      sdl_wnd->setOnKeyDown('z', KeyzPressed);
+      sdl_wnd->setOnKeyDown('Z', KeyZPressed);
 
-      wnd->setOnKeyDown('u', KeyuPressed);
-      wnd->setOnKeyDown('U', KeyUPressed);
+      sdl_wnd->setOnKeyDown('u', KeyuPressed);
+      sdl_wnd->setOnKeyDown('U', KeyUPressed);
 
-      wnd->setOnKeyDown('v', KeyvPressed);
-      wnd->setOnKeyDown('V', KeyVPressed);
+      sdl_wnd->setOnKeyDown('v', KeyvPressed);
+      sdl_wnd->setOnKeyDown('V', KeyVPressed);
 
-      wnd->setOnKeyDown(SDLK_F3, KeyF3Pressed);
-      wnd->setOnKeyDown(SDLK_F4, KeyF4Pressed);
-      wnd->setOnKeyDown(SDLK_NUMLOCKCLEAR, ToggleMagicKey);
+      sdl_wnd->setOnKeyDown(SDLK_F3, KeyF3Pressed);
+      sdl_wnd->setOnKeyDown(SDLK_F4, KeyF4Pressed);
+      sdl_wnd->setOnKeyDown(SDLK_NUMLOCKCLEAR, ToggleMagicKey);
 
-      wnd->setOnKeyDown(SDLK_F8, KeyF8Pressed);
-      wnd->setOnKeyDown(SDLK_F9, KeyF9Pressed);
-      wnd->setOnKeyDown(SDLK_F10, KeyF10Pressed);
+      sdl_wnd->setOnKeyDown(SDLK_F8, KeyF8Pressed);
+      sdl_wnd->setOnKeyDown(SDLK_F9, KeyF9Pressed);
+      sdl_wnd->setOnKeyDown(SDLK_F10, KeyF10Pressed);
 
-      wnd->setOnKeyDown(SDLK_F11, KeyF11Pressed);
-      wnd->setOnKeyDown(SDLK_F12, KeyF12Pressed);
+      sdl_wnd->setOnKeyDown(SDLK_F11, KeyF11Pressed);
+      sdl_wnd->setOnKeyDown(SDLK_F12, KeyF12Pressed);
    }
    Prepare();
    PrepareLines();

@@ -17,9 +17,11 @@ list(APPEND SOURCES
   aux_vis.cpp
   coll_reader.cpp
   data_state.cpp
+  egl.cpp
   file_reader.cpp
   font.cpp
   gltf.cpp
+  glwindow.cpp
   material.cpp
   openglvis.cpp
   palettes.cpp
@@ -46,10 +48,12 @@ list(APPEND HEADERS
   aux_vis.hpp
   coll_reader.hpp
   data_state.hpp
+  egl.hpp
   file_reader.hpp
   font.hpp
   geom_utils.hpp
   gltf.hpp
+  glwindow.hpp
   logo.hpp
   material.hpp
   openglvis.hpp

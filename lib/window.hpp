@@ -53,7 +53,7 @@ public:
    Window& operator=(Window &&w);
 
    /// Visualize the data in the global variables mesh, sol/grid_f, etc
-   bool GLVisInitVis(StreamCollection input_streams);
+   bool GLVisInitVis(StreamCollection input_streams, bool headless = false);
    void GLVisStartVis();
 
    /// Switch the quadrature function representation and update the visualization

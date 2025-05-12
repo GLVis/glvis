@@ -11,8 +11,6 @@
 
 #include <iostream>
 #include "aux_vis.hpp"
-#include "gl/renderer_core.hpp"
-#include "gl/renderer_ff.hpp"
 #include "sdl.hpp"
 #include "sdl_main.hpp"
 #ifdef __EMSCRIPTEN__
@@ -73,7 +71,7 @@ SdlMainThread& GetMainThread()
    return inst;
 }
 
-bool SdlWindow::isGlInitialized()
+bool SdlWindow::isGlInitialized() const
 {
    return (handle.gl_ctx != 0);
 }
@@ -104,82 +102,7 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
 
    window_id = SDL_GetWindowID(handle.hwnd);
 
-   GLenum err = glewInit();
-#ifdef GLEW_ERROR_NO_GLX_DISPLAY
-   // NOTE: Hacky workaround for Wayland initialization failure
-   // See https://github.com/nigels-com/glew/issues/172
-   if (err == GLEW_ERROR_NO_GLX_DISPLAY)
-   {
-      cerr << "GLEW: No GLX display found. If you are using Wayland this can "
-           << "be ignored." << endl;
-      err = GLEW_OK;
-   }
-#endif
-   if (err != GLEW_OK)
-   {
-      cerr << "FATAL: Failed to initialize GLEW: "
-           << glewGetErrorString(err) << endl;
-      return false;
-   }
-
-   // print versions
-   PRINT_DEBUG("Using GLEW " << glewGetString(GLEW_VERSION) << std::endl);
-   PRINT_DEBUG("Using GL " << glGetString(GL_VERSION) << std::endl);
-
-   renderer.reset(new gl3::MeshRenderer);
-   renderer->setSamplesMSAA(GetMultisample());
-#ifndef __EMSCRIPTEN__
-   if (!GLEW_VERSION_1_1)
-   {
-      cerr << "FATAL: Minimum of OpenGL 1.1 is required." << endl;
-      return false;
-   }
-   if (!GLEW_VERSION_1_3)
-   {
-      // Multitexturing was introduced into the core OpenGL specification in
-      // version 1.3; for versions before, we need to load the functions from
-      // the ARB_multitexture extension.
-      if (GLEW_ARB_multitexture)
-      {
-         glActiveTexture = glActiveTextureARB;
-         glClientActiveTexture = glClientActiveTextureARB;
-         glMultiTexCoord2f = glMultiTexCoord2fARB;
-      }
-      else
-      {
-         cerr << "FATAL: Missing OpenGL multitexture support." << endl;
-         return false;
-      }
-   }
-   if (!GLEW_VERSION_3_0 && GLEW_EXT_transform_feedback)
-   {
-      glBindBufferBase            = glBindBufferBaseEXT;
-      // Use an explicit typecast to suppress an error from inconsistent types
-      // that are present in older versions of GLEW.
-      glTransformFeedbackVaryings =
-         (PFNGLTRANSFORMFEEDBACKVARYINGSPROC)glTransformFeedbackVaryingsEXT;
-      glBeginTransformFeedback    = glBeginTransformFeedbackEXT;
-      glEndTransformFeedback      = glEndTransformFeedbackEXT;
-   }
-   if (!legacyGlOnly && (GLEW_VERSION_3_0
-                         || (GLEW_VERSION_2_0 && GLEW_EXT_transform_feedback)))
-   {
-      // We require both shaders and transform feedback EXT_transform_feedback
-      // was made core in OpenGL 3.0
-      PRINT_DEBUG("Loading CoreGLDevice..." << endl);
-      renderer->setDevice<gl3::CoreGLDevice>();
-   }
-   else
-   {
-      PRINT_DEBUG("Shader support missing, loading FFGLDevice..." << endl);
-      renderer->setDevice<gl3::FFGLDevice>();
-   }
-
-#else
-   renderer->setDevice<gl3::CoreGLDevice>();
-#endif
-
-   return true;
+   return initGLEW(legacyGlOnly);
 }
 
 SdlWindow::~SdlWindow()
@@ -576,7 +499,7 @@ void SdlWindow::getGLDrawSize(int& w, int& h)
    SDL_GL_GetDrawableSize(handle.hwnd, &w, &h);
 }
 
-void SdlWindow::getDpi(int& w, int& h)
+void SdlWindow::getDpi(int& w, int& h) const
 {
    w = default_dpi;
    h = default_dpi;
