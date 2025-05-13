@@ -93,7 +93,7 @@ public:
    inline DataState& GetState() { return win.data_state; }
    inline const DataState& GetState() const { return win.data_state; }
 
-   void StartSession()
+   void StartSession(bool detached = true)
    {
       auto funcThread = [](Window w, StreamCollection is)
       {
@@ -104,10 +104,13 @@ public:
       };
       handler = std::thread {funcThread,
                              std::move(win), std::move(input_streams)};
-      handler.detach();
+      if (detached)
+      {
+         handler.detach();
+      }
    }
 
-   bool StartSavedSession(std::string stream_file)
+   bool StartSavedSession(std::string stream_file, bool detached = true)
    {
       unique_ptr<ifstream> ifs(new ifstream(stream_file));
       if (!(*ifs))
@@ -121,7 +124,7 @@ public:
       reader.ReadStream(*ifs, data_type);
       input_streams.emplace_back(std::move(ifs));
 
-      StartSession();
+      StartSession(detached);
       return true;
    }
 
@@ -148,6 +151,10 @@ public:
       return 0;
    }
 
+   void WaitForSession()
+   {
+      handler.join();
+   }
 };
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
@@ -459,6 +466,9 @@ int main (int argc, char *argv[])
                   "Set the window height.");
    args.AddOption(&win.window_title, "-wt", "--window-title",
                   "Set the window title.");
+   args.AddOption(&win.headless, "-hl", "--headless",
+                  "-no-hl", "--no-headless",
+                  "Start headless (no GUI) visualization.");
    args.AddOption(&c_plot_caption, "-c", "--plot-caption",
                   "Set the plot caption (visible when colorbar is visible).");
    args.AddOption(&font_name, "-fn", "--font",
@@ -591,20 +601,31 @@ int main (int argc, char *argv[])
    // check for saved stream file
    if (stream_file != string_none)
    {
-      // Make sure the singleton object returned by GetMainThread() is
-      // initialized from the main thread.
-      GetMainThread();
+      // backup the headless flag as the window is moved
+      const bool headless = win.headless;
 
-      Session stream_session(win.data_state.fix_elem_orient,
-                             win.data_state.save_coloring,
-                             win.plot_caption);
+      if (!headless)
+      {
+         // Make sure the singleton object returned by GetMainThread() is
+         // initialized from the main thread.
+         GetMainThread();
+      }
 
-      if (!stream_session.StartSavedSession(stream_file))
+      Session stream_session(std::move(win));
+
+      if (!stream_session.StartSavedSession(stream_file, !headless))
       {
          return 1;
       }
 
-      SDLMainLoop();
+      if (!headless)
+      {
+         SDLMainLoop();
+      }
+      else
+      {
+         stream_session.WaitForSession();
+      }
       return 0;
    }
 

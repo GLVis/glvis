@@ -23,6 +23,7 @@ Window &Window::operator=(Window &&w)
    window_w = w.window_w;
    window_h = w.window_h;
    window_title = w.window_title;
+   headless = w.headless;
    plot_caption = std::move(w.plot_caption);
    extra_caption = std::move(w.extra_caption);
 
@@ -30,7 +31,7 @@ Window &Window::operator=(Window &&w)
 }
 
 // Visualize the data in the global variables mesh, sol/grid_f, etc
-bool Window::GLVisInitVis(StreamCollection input_streams, bool headless)
+bool Window::GLVisInitVis(StreamCollection input_streams)
 {
    DataState::FieldType field_type = data_state.GetType();
 

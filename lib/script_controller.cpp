@@ -368,7 +368,7 @@ bool ScriptController::ExecuteScriptCommand()
       {
          cout << "End of script." << endl;
          scr_level = 0;
-         if (headless)
+         if (win.headless)
          {
             GetAppWindow()->signalQuit();
          }
@@ -832,7 +832,7 @@ thread_local ScriptController *ScriptController::script_ctrl = NULL;
 void ScriptController::ScriptIdleFunc()
 {
    script_ctrl->ExecuteScriptCommand();
-   if (script_ctrl->scr_level == 0 && !script_ctrl->headless)
+   if (script_ctrl->scr_level == 0 && !script_ctrl->win.headless)
    {
       ScriptControl();
    }
@@ -894,7 +894,7 @@ void ScriptController::PlayScript(Window win, istream &scr)
                 script.win.window_h;
             break;
          case Command::Headless:
-            script.headless = true;
+            script.win.headless = true;
             break;
          case Command::DataCollCycle:
             scr >> script.dc_cycle;
@@ -968,12 +968,13 @@ void ScriptController::PlayScript(Window win, istream &scr)
    script.script = &scr;
    script.win.data_state.keys.clear();
 
-   const bool headless = script.headless;
+   // backup the headless flag as the window is moved
+   const bool headless = script.win.headless;
 
-   // Make sure the singleton object returned by GetMainThread() is
-   // initialized from the main thread.
    if (!headless)
    {
+      // Make sure the singleton object returned by GetMainThread() is
+      // initialized from the main thread.
       GetMainThread();
    }
 
@@ -983,9 +984,9 @@ void ScriptController::PlayScript(Window win, istream &scr)
       [&](ScriptController local_script)
       {
          script_ctrl = &local_script;
-         if (local_script.win.GLVisInitVis({}, local_script.headless))
+         if (local_script.win.GLVisInitVis({}))
          {
-            if (!local_script.headless)
+            if (!local_script.win.headless)
             {
                GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
             }

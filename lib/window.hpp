@@ -45,6 +45,7 @@ public:
    int         window_w        = 400;
    int         window_h        = 350;
    const char *window_title    = string_default;
+   bool        headless        = false;
    std::string plot_caption;
    std::string extra_caption;
 
@@ -53,7 +54,7 @@ public:
    Window& operator=(Window &&w);
 
    /// Visualize the data in the global variables mesh, sol/grid_f, etc
-   bool GLVisInitVis(StreamCollection input_streams, bool headless = false);
+   bool GLVisInitVis(StreamCollection input_streams);
    void GLVisStartVis();
 
    /// Switch the quadrature function representation and update the visualization
