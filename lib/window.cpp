@@ -65,7 +65,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
       internal.glvis_command.reset(new GLVisCommand(*this));
       SetGLVisCommand(glvis_command.get());
       internal.comm_thread.reset(new communication_thread(std::move(input_streams),
-                                                          glvis_command.get()));
+                                                          glvis_command.get(), headless));
    }
 
    locwin = this;

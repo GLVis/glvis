@@ -56,7 +56,8 @@ private:
       PALETTE_REPEAT = 20,
       LEVELLINES = 21,
       AXIS_NUMBERFORMAT = 22,
-      COLORBAR_NUMBERFORMAT = 23
+      COLORBAR_NUMBERFORMAT = 23,
+      QUIT = 24,
    };
 
    std::atomic<bool> command_ready{false};
@@ -129,6 +130,7 @@ public:
    int ColorbarNumberFormat(string formatting);
    int Camera(const double cam[]);
    int Autopause(const char *mode);
+   int Quit();
 
    // called by the main execution thread
    int Execute();
@@ -163,11 +165,15 @@ private:
    // signal for thread cancellation
    std::atomic<bool> terminate_thread {false};
 
+   // flag for closing the window at the end of stream
+   bool end_quit;
+
    static void print_commands();
    void execute();
 
 public:
-   communication_thread(StreamCollection _is, GLVisCommand* cmd);
+   communication_thread(StreamCollection _is, GLVisCommand* cmd,
+                        bool end_quit = false);
 
    ~communication_thread();
 };
