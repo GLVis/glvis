@@ -98,7 +98,6 @@ public:
    // as there is no swap, switch to updated state right away
    void signalSwap() override { wnd_state = RenderState::Updated; }
 
-   bool isExposePending() const override { return false; }
    // used in Screenshot, as there is no swapping, the single buffer is always
    // up to date and can be read directly
    bool isSwapPending() const override { return true; }

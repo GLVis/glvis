@@ -797,14 +797,27 @@ int main (int argc, char *argv[])
          if (ierr) { exit(ierr); }
       }
 
-      // Make sure the singleton object returned by GetMainThread() is
-      // initialized from the main thread.
-      GetMainThread();
+      // backup the headless flag as the window is moved
+      const bool headless = win.headless;
+
+      if (!headless)
+      {
+         // Make sure the singleton object returned by GetMainThread() is
+         // initialized from the main thread.
+         GetMainThread();
+      }
 
       Session single_session(std::move(win));
-      single_session.StartSession();
+      single_session.StartSession(!headless);
 
-      SDLMainLoop();
+      if (!headless)
+      {
+         SDLMainLoop();
+      }
+      else
+      {
+         single_session.WaitForSession();
+      }
    }
 
    cout << "Thank you for using GLVis." << endl;

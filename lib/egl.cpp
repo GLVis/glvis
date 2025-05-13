@@ -238,6 +238,11 @@ void EglWindow::mainIter()
                }
                break;
             case EventType::Screenshot:
+               if (isExposePending())
+               {
+                  onExpose();
+                  wnd_state = RenderState::Updated;
+               }
                Screenshot(screenshot_filename.c_str(), e.event.screenshot.convert);
                break;
             case EventType::Quit:
@@ -257,7 +262,7 @@ void EglWindow::mainIter()
       sleep = true;
    }
 
-   if (wnd_state == RenderState::ExposePending)
+   if (isExposePending())
    {
       onExpose();
       wnd_state = RenderState::Updated;
