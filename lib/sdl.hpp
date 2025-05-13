@@ -13,25 +13,13 @@
 #define GLVIS_SDL_HPP
 
 #include <string>
-#include <memory>
-#include <functional>
-#include <map>
 #include <mutex>
 #include <condition_variable>
 #include <deque>
 #include "glwindow.hpp"
 #include "sdl_helper.hpp"
 
-struct EventInfo
-{
-   GLint mouse_x;
-   GLint mouse_y;
-   SDL_Keymod keymod;
-};
-
 typedef void (*TouchDelegate)(SDL_MultiGestureEvent&);
-typedef void (*MouseDelegate)(EventInfo*);
-typedef std::function<void(GLenum)> KeyDelegate;
 typedef void (*WindowDelegate)(int, int);
 
 class SdlMainThread;
@@ -94,10 +82,6 @@ private:
 
 
    WindowDelegate onReshape{nullptr};
-   std::map<int, KeyDelegate> onKeyDown;
-   std::map<int, MouseDelegate> onMouseDown;
-   std::map<int, MouseDelegate> onMouseUp;
-   std::map<int, MouseDelegate> onMouseMove;
    TouchDelegate onTouchPinch{nullptr};
    TouchDelegate onTouchRotate{nullptr};
 
@@ -112,7 +96,7 @@ private:
    std::string screenshot_file;
    bool screenshot_convert;
    bool lastKeyDownProcessed;
-   Uint16 lastKeyDownMods;
+   SDL_Keymod lastKeyDownMods;
    char lastKeyDownChar;
 
    // internal event handlers
@@ -142,8 +126,6 @@ private:
       }
    }
 
-   std::string saved_keys;
-
    std::condition_variable events_available;
    std::mutex event_mutex;
    // The window-specific events collected by the main event thread.
@@ -169,17 +151,6 @@ public:
    void signalLoop() override;
 
    void setOnReshape(WindowDelegate func) { onReshape = func; }
-
-   void setOnKeyDown(int key, Delegate func)
-   {
-      onKeyDown[key] = [func](GLenum) { func(); };
-   }
-   void setOnKeyDown(int key, KeyDelegate func) { onKeyDown[key] = func; }
-
-   void setOnMouseDown(int btn, MouseDelegate func) { onMouseDown[btn] = func; }
-   void setOnMouseUp(int btn, MouseDelegate func) { onMouseUp[btn] = func; }
-   void setOnMouseMove(int btn, MouseDelegate func) { onMouseMove[btn] = func; }
-
    void setTouchPinchCallback(TouchDelegate cb) { onTouchPinch = cb; }
    void setTouchRotateCallback(TouchDelegate cb) { onTouchRotate = cb; }
 
@@ -187,18 +158,6 @@ public:
    {
       GLWindow::clearEvents();
       onReshape = nullptr;
-      onKeyDown.clear();
-      onMouseUp.clear();
-      onMouseDown.clear();
-      onMouseMove.clear();
-   }
-
-   void callKeyDown(SDL_Keycode k, Uint16 mod=0)
-   {
-      if (onKeyDown[k])
-      {
-         onKeyDown[k](mod);
-      }
    }
 
    void getWindowSize(int& w, int& h) const override;
@@ -212,11 +171,8 @@ public:
    void setWindowSize(int w, int h) override;
    void setWindowPos(int x, int y) override;
 
-   void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE);
+   void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE) override;
    void signalQuit() override { running = false; }
-
-   /// Returns the keyboard events that have been logged by the window.
-   std::string getSavedKeys() const { return saved_keys; }
 
    /// Queues a screenshot to be taken.
    void screenshot(std::string filename, bool convert = false) override

@@ -476,43 +476,42 @@ void VisualizationSceneSolution::Init()
 
    // static int init = 0;
    // if (!init)
-   if (sdl_wnd)
    {
       // init = 1;
 
-      sdl_wnd->setOnKeyDown('b', KeyBPressed);
-      sdl_wnd->setOnKeyDown('B', KeyBPressed);
+      wnd->setOnKeyDown('b', KeyBPressed);
+      wnd->setOnKeyDown('B', KeyBPressed);
 
-      sdl_wnd->setOnKeyDown('m', KeyMPressed);
-      sdl_wnd->setOnKeyDown('M', KeyMPressed);
+      wnd->setOnKeyDown('m', KeyMPressed);
+      wnd->setOnKeyDown('M', KeyMPressed);
 
-      sdl_wnd->setOnKeyDown('n', KeyNPressed);
-      sdl_wnd->setOnKeyDown('N', KeyNPressed);
+      wnd->setOnKeyDown('n', KeyNPressed);
+      wnd->setOnKeyDown('N', KeyNPressed);
 
-      sdl_wnd->setOnKeyDown('o', KeyoPressed);
-      sdl_wnd->setOnKeyDown('O', KeyOPressed);
+      wnd->setOnKeyDown('o', KeyoPressed);
+      wnd->setOnKeyDown('O', KeyOPressed);
 
-      sdl_wnd->setOnKeyDown('e', KeyEPressed);
-      sdl_wnd->setOnKeyDown('E', KeyEPressed);
+      wnd->setOnKeyDown('e', KeyEPressed);
+      wnd->setOnKeyDown('E', KeyEPressed);
 
-      sdl_wnd->setOnKeyDown('f', KeyFPressed);
-      sdl_wnd->setOnKeyDown('F', KeyFPressed);
+      wnd->setOnKeyDown('f', KeyFPressed);
+      wnd->setOnKeyDown('F', KeyFPressed);
 
-      sdl_wnd->setOnKeyDown('i', KeyiPressed);
-      sdl_wnd->setOnKeyDown('I', KeyIPressed);
+      wnd->setOnKeyDown('i', KeyiPressed);
+      wnd->setOnKeyDown('I', KeyIPressed);
 
-      sdl_wnd->setOnKeyDown('y', KeyyPressed);
-      sdl_wnd->setOnKeyDown('Y', KeyYPressed);
-      sdl_wnd->setOnKeyDown('z', KeyzPressed);
-      sdl_wnd->setOnKeyDown('Z', KeyZPressed);
+      wnd->setOnKeyDown('y', KeyyPressed);
+      wnd->setOnKeyDown('Y', KeyYPressed);
+      wnd->setOnKeyDown('z', KeyzPressed);
+      wnd->setOnKeyDown('Z', KeyZPressed);
 
-      sdl_wnd->setOnKeyDown(SDLK_F3, KeyF3Pressed);
-      sdl_wnd->setOnKeyDown(SDLK_F4, KeyF4Pressed);
-      sdl_wnd->setOnKeyDown(SDLK_F8, KeyF8Pressed);
-      sdl_wnd->setOnKeyDown(SDLK_F9,  KeyF9Pressed);
-      sdl_wnd->setOnKeyDown(SDLK_F10, KeyF10Pressed);
-      sdl_wnd->setOnKeyDown(SDLK_F11, KeyF11Pressed);
-      sdl_wnd->setOnKeyDown(SDLK_F12, KeyF12Pressed);
+      wnd->setOnKeyDown(SDLK_F3, KeyF3Pressed);
+      wnd->setOnKeyDown(SDLK_F4, KeyF4Pressed);
+      wnd->setOnKeyDown(SDLK_F8, KeyF8Pressed);
+      wnd->setOnKeyDown(SDLK_F9,  KeyF9Pressed);
+      wnd->setOnKeyDown(SDLK_F10, KeyF10Pressed);
+      wnd->setOnKeyDown(SDLK_F11, KeyF11Pressed);
+      wnd->setOnKeyDown(SDLK_F12, KeyF12Pressed);
    }
 
    Prepare();

@@ -55,15 +55,15 @@ void SetLegacyGLOnly(bool status);
 void AddIdleFunc(void (*Func)(void));
 void RemoveIdleFunc(void (*Func)(void));
 
-void LeftButtonDown  (EventInfo *event);
-void LeftButtonLoc   (EventInfo *event);
-void LeftButtonUp    (EventInfo *event);
-void MiddleButtonDown(EventInfo *event);
-void MiddleButtonLoc (EventInfo *event);
-void MiddleButtonUp  (EventInfo *event);
-void RightButtonDown (EventInfo *event);
-void RightButtonLoc  (EventInfo *event);
-void RightButtonUp   (EventInfo *event);
+void LeftButtonDown  (GLWindow::MouseEventInfo *event);
+void LeftButtonLoc   (GLWindow::MouseEventInfo *event);
+void LeftButtonUp    (GLWindow::MouseEventInfo *event);
+void MiddleButtonDown(GLWindow::MouseEventInfo *event);
+void MiddleButtonLoc (GLWindow::MouseEventInfo *event);
+void MiddleButtonUp  (GLWindow::MouseEventInfo *event);
+void RightButtonDown (GLWindow::MouseEventInfo *event);
+void RightButtonLoc  (GLWindow::MouseEventInfo *event);
+void RightButtonUp   (GLWindow::MouseEventInfo *event);
 
 void TouchPinch(SDL_MultiGestureEvent & e);
 

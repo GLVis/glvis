@@ -155,87 +155,84 @@ int InitVisualization (const char name[], int x, int y, int w, int h,
    void (*exposeFunc)(void) = MyExpose;
    wnd->setOnExpose(exposeFunc);
 
+   wnd->setOnMouseDown(SDL_BUTTON_LEFT, LeftButtonDown);
+   wnd->setOnMouseUp(SDL_BUTTON_LEFT, LeftButtonUp);
+   wnd->setOnMouseMove(SDL_BUTTON_LEFT, LeftButtonLoc);
+   wnd->setOnMouseDown(SDL_BUTTON_MIDDLE, MiddleButtonDown);
+   wnd->setOnMouseUp(SDL_BUTTON_MIDDLE, MiddleButtonUp);
+   wnd->setOnMouseMove(SDL_BUTTON_MIDDLE, MiddleButtonLoc);
+   wnd->setOnMouseDown(SDL_BUTTON_RIGHT, RightButtonDown);
+   wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
+   wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
+
    if (sdl_wnd)
    {
-      sdl_wnd->setOnMouseDown(SDL_BUTTON_LEFT, LeftButtonDown);
-      sdl_wnd->setOnMouseUp(SDL_BUTTON_LEFT, LeftButtonUp);
-      sdl_wnd->setOnMouseMove(SDL_BUTTON_LEFT, LeftButtonLoc);
-      sdl_wnd->setOnMouseDown(SDL_BUTTON_MIDDLE, MiddleButtonDown);
-      sdl_wnd->setOnMouseUp(SDL_BUTTON_MIDDLE, MiddleButtonUp);
-      sdl_wnd->setOnMouseMove(SDL_BUTTON_MIDDLE, MiddleButtonLoc);
-      sdl_wnd->setOnMouseDown(SDL_BUTTON_RIGHT, RightButtonDown);
-      sdl_wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
-      sdl_wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
-
       sdl_wnd->setTouchPinchCallback(TouchPinch);
-
-      // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
-      sdl_wnd->setOnKeyDown (SDLK_s, KeyS);
-      sdl_wnd->setOnKeyDown ('S', KeyS);
-
-      sdl_wnd->setOnKeyDown (SDLK_q, KeyQPressed);
-      // sdl_wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
-
-      sdl_wnd->setOnKeyDown (SDLK_LEFT, KeyLeftPressed);
-      sdl_wnd->setOnKeyDown (SDLK_RIGHT, KeyRightPressed);
-      sdl_wnd->setOnKeyDown (SDLK_UP, KeyUpPressed);
-      sdl_wnd->setOnKeyDown (SDLK_DOWN, KeyDownPressed);
-
-      sdl_wnd->setOnKeyDown (SDLK_KP_0, Key0Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_KP_1, Key1Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_KP_2, Key2Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_KP_3, Key3Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_KP_4, Key4Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_KP_5, Key5Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_KP_6, Key6Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_KP_7, Key7Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_KP_8, Key8Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_KP_9, Key9Pressed);
-
-      sdl_wnd->setOnKeyDown (SDLK_KP_MEMSUBTRACT, KeyMinusPressed);
-      sdl_wnd->setOnKeyDown (SDLK_KP_MEMADD, KeyPlusPressed);
-
-      sdl_wnd->setOnKeyDown (SDLK_KP_DECIMAL, KeyDeletePressed);
-      sdl_wnd->setOnKeyDown (SDLK_KP_ENTER, KeyEnterPressed);
-
-      sdl_wnd->setOnKeyDown (SDLK_PERIOD, KeyDeletePressed);
-      sdl_wnd->setOnKeyDown (SDLK_RETURN, KeyEnterPressed);
-
-      sdl_wnd->setOnKeyDown (SDLK_0, Key0Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_1, Key1Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_2, Key2Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_3, Key3Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_4, Key4Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_5, Key5Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_6, Key6Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_7, Key7Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_8, Key8Pressed);
-      sdl_wnd->setOnKeyDown (SDLK_9, Key9Pressed);
-
-      sdl_wnd->setOnKeyDown (SDLK_MINUS, KeyMinusPressed);
-      sdl_wnd->setOnKeyDown (SDLK_PLUS, KeyPlusPressed);
-      sdl_wnd->setOnKeyDown (SDLK_EQUALS, KeyPlusPressed);
-
-      sdl_wnd->setOnKeyDown (SDLK_j, KeyJPressed);
-      // sdl_wnd->setOnKeyDown (AUX_J, KeyJPressed);
-
-      sdl_wnd->setOnKeyDown (SDLK_KP_MULTIPLY, ZoomIn);
-      sdl_wnd->setOnKeyDown (SDLK_KP_DIVIDE, ZoomOut);
-
-      sdl_wnd->setOnKeyDown (SDLK_ASTERISK, ZoomIn);
-      sdl_wnd->setOnKeyDown (SDLK_SLASH, ZoomOut);
-
-      sdl_wnd->setOnKeyDown (SDLK_LEFTBRACKET, ScaleDown);
-      sdl_wnd->setOnKeyDown (SDLK_RIGHTBRACKET, ScaleUp);
-      sdl_wnd->setOnKeyDown (SDLK_AT, LookAt);
    }
+
+   // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
+   wnd->setOnKeyDown (SDLK_s, KeyS);
+   wnd->setOnKeyDown ('S', KeyS);
+
+   wnd->setOnKeyDown (SDLK_q, KeyQPressed);
+   // wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
+
+   wnd->setOnKeyDown (SDLK_LEFT, KeyLeftPressed);
+   wnd->setOnKeyDown (SDLK_RIGHT, KeyRightPressed);
+   wnd->setOnKeyDown (SDLK_UP, KeyUpPressed);
+   wnd->setOnKeyDown (SDLK_DOWN, KeyDownPressed);
+
+   wnd->setOnKeyDown (SDLK_KP_0, Key0Pressed);
+   wnd->setOnKeyDown (SDLK_KP_1, Key1Pressed);
+   wnd->setOnKeyDown (SDLK_KP_2, Key2Pressed);
+   wnd->setOnKeyDown (SDLK_KP_3, Key3Pressed);
+   wnd->setOnKeyDown (SDLK_KP_4, Key4Pressed);
+   wnd->setOnKeyDown (SDLK_KP_5, Key5Pressed);
+   wnd->setOnKeyDown (SDLK_KP_6, Key6Pressed);
+   wnd->setOnKeyDown (SDLK_KP_7, Key7Pressed);
+   wnd->setOnKeyDown (SDLK_KP_8, Key8Pressed);
+   wnd->setOnKeyDown (SDLK_KP_9, Key9Pressed);
+
+   wnd->setOnKeyDown (SDLK_KP_MEMSUBTRACT, KeyMinusPressed);
+   wnd->setOnKeyDown (SDLK_KP_MEMADD, KeyPlusPressed);
+
+   wnd->setOnKeyDown (SDLK_KP_DECIMAL, KeyDeletePressed);
+   wnd->setOnKeyDown (SDLK_KP_ENTER, KeyEnterPressed);
+
+   wnd->setOnKeyDown (SDLK_PERIOD, KeyDeletePressed);
+   wnd->setOnKeyDown (SDLK_RETURN, KeyEnterPressed);
+
+   wnd->setOnKeyDown (SDLK_0, Key0Pressed);
+   wnd->setOnKeyDown (SDLK_1, Key1Pressed);
+   wnd->setOnKeyDown (SDLK_2, Key2Pressed);
+   wnd->setOnKeyDown (SDLK_3, Key3Pressed);
+   wnd->setOnKeyDown (SDLK_4, Key4Pressed);
+   wnd->setOnKeyDown (SDLK_5, Key5Pressed);
+   wnd->setOnKeyDown (SDLK_6, Key6Pressed);
+   wnd->setOnKeyDown (SDLK_7, Key7Pressed);
+   wnd->setOnKeyDown (SDLK_8, Key8Pressed);
+   wnd->setOnKeyDown (SDLK_9, Key9Pressed);
+
+   wnd->setOnKeyDown (SDLK_MINUS, KeyMinusPressed);
+   wnd->setOnKeyDown (SDLK_PLUS, KeyPlusPressed);
+   wnd->setOnKeyDown (SDLK_EQUALS, KeyPlusPressed);
+
+   wnd->setOnKeyDown (SDLK_j, KeyJPressed);
+   // wnd->setOnKeyDown (AUX_J, KeyJPressed);
+
+   wnd->setOnKeyDown (SDLK_KP_MULTIPLY, ZoomIn);
+   wnd->setOnKeyDown (SDLK_KP_DIVIDE, ZoomOut);
+
+   wnd->setOnKeyDown (SDLK_ASTERISK, ZoomIn);
+   wnd->setOnKeyDown (SDLK_SLASH, ZoomOut);
+
+   wnd->setOnKeyDown (SDLK_LEFTBRACKET, ScaleDown);
+   wnd->setOnKeyDown (SDLK_RIGHTBRACKET, ScaleUp);
+   wnd->setOnKeyDown (SDLK_AT, LookAt);
 
 #ifndef __EMSCRIPTEN__
-   if (sdl_wnd)
-   {
-      sdl_wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
-      sdl_wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
-   }
+   wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
+   wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
 
    if (locscene)
    {
@@ -260,53 +257,53 @@ void SendKeySequence(const char *seq)
                SendExposeEvent();
                break;
             case 'l': // left arrow
-               sdl_wnd->signalKeyDown(SDLK_LEFT);
+               wnd->signalKeyDown(SDLK_LEFT);
                break;
             case 'r': // right arrow
-               sdl_wnd->signalKeyDown(SDLK_RIGHT);
+               wnd->signalKeyDown(SDLK_RIGHT);
                break;
             case 'u': // up arrow
-               sdl_wnd->signalKeyDown(SDLK_UP);
+               wnd->signalKeyDown(SDLK_UP);
                break;
             case 'd': // down arrow
-               sdl_wnd->signalKeyDown(SDLK_DOWN);
+               wnd->signalKeyDown(SDLK_DOWN);
                break;
             case '3': // F3
-               sdl_wnd->signalKeyDown(SDLK_F3);
+               wnd->signalKeyDown(SDLK_F3);
                break;
             case '5': // F5
-               sdl_wnd->signalKeyDown(SDLK_F5);
+               wnd->signalKeyDown(SDLK_F5);
                break;
             case '6': // F6
-               sdl_wnd->signalKeyDown(SDLK_F6);
+               wnd->signalKeyDown(SDLK_F6);
                break;
             case '7': // F7
-               sdl_wnd->signalKeyDown(SDLK_F7);
+               wnd->signalKeyDown(SDLK_F7);
                break;
             case '1': // F11 or F12
                key++;
                switch (*key)
                {
                   case '1': // F11
-                     sdl_wnd->signalKeyDown(SDLK_F11);
+                     wnd->signalKeyDown(SDLK_F11);
                      break;
                   case '2': // F12
-                     sdl_wnd->callKeyDown(SDLK_F12);
+                     wnd->callKeyDown(SDLK_F12);
                      break;
                }
                break;
             case '.': // Keypad ./Del
-               sdl_wnd->signalKeyDown(SDLK_PERIOD);
+               wnd->signalKeyDown(SDLK_PERIOD);
                break;
             case 'E': // Keypad Enter
-               sdl_wnd->signalKeyDown(SDLK_RETURN);
+               wnd->signalKeyDown(SDLK_RETURN);
                break;
          }
          continue;
       }
       else
       {
-         sdl_wnd->signalKeyDown(*key);
+         wnd->signalKeyDown(*key);
       }
    }
 }
@@ -323,7 +320,7 @@ void CallKeySequence(const char *seq)
    {
       if (*key != '~')
       {
-         sdl_wnd->callKeyDown(*key);
+         wnd->callKeyDown(*key);
       }
       else
       {
@@ -331,46 +328,46 @@ void CallKeySequence(const char *seq)
          switch (*key)
          {
             case 'l': // left arrow
-               sdl_wnd->callKeyDown(SDLK_LEFT);
+               wnd->callKeyDown(SDLK_LEFT);
                break;
             case 'r': // right arrow
-               sdl_wnd->callKeyDown(SDLK_RIGHT);
+               wnd->callKeyDown(SDLK_RIGHT);
                break;
             case 'u': // up arrow
-               sdl_wnd->callKeyDown(SDLK_UP);
+               wnd->callKeyDown(SDLK_UP);
                break;
             case 'd': // down arrow
-               sdl_wnd->callKeyDown(SDLK_DOWN);
+               wnd->callKeyDown(SDLK_DOWN);
                break;
             case '3': // F3
-               sdl_wnd->callKeyDown(SDLK_F3);
+               wnd->callKeyDown(SDLK_F3);
                break;
             case '5': // F5
-               sdl_wnd->callKeyDown(SDLK_F5);
+               wnd->callKeyDown(SDLK_F5);
                break;
             case '6': // F6
-               sdl_wnd->callKeyDown(SDLK_F6);
+               wnd->callKeyDown(SDLK_F6);
                break;
             case '7': // F7
-               sdl_wnd->callKeyDown(SDLK_F7);
+               wnd->callKeyDown(SDLK_F7);
                break;
             case '1': // F11 or F12
                key++;
                switch (*key)
                {
                   case '1': // F11
-                     sdl_wnd->callKeyDown(SDLK_F11);
+                     wnd->callKeyDown(SDLK_F11);
                      break;
                   case '2': // F12
-                     sdl_wnd->callKeyDown(SDLK_F12);
+                     wnd->callKeyDown(SDLK_F12);
                      break;
                }
                break;
             case '.': // Keypad ./Del
-               sdl_wnd->callKeyDown(SDLK_PERIOD);
+               wnd->callKeyDown(SDLK_PERIOD);
                break;
             case 'E': // Keypad Enter
-               sdl_wnd->callKeyDown(SDLK_RETURN);
+               wnd->callKeyDown(SDLK_RETURN);
                break;
          }
       }
@@ -647,7 +644,7 @@ inline void ComputeSphereAngles(int &newx, int &newy,
    new_sph_t = atan2(y, x);
 }
 
-void LeftButtonDown (EventInfo *event)
+void LeftButtonDown(GLWindow::MouseEventInfo *event)
 {
    locscene -> spinning = 0;
    RemoveIdleFunc(MainLoop);
@@ -665,7 +662,7 @@ void LeftButtonDown (EventInfo *event)
    starty = oldy;
 }
 
-void LeftButtonLoc (EventInfo *event)
+void LeftButtonLoc(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -723,7 +720,7 @@ void LeftButtonLoc (EventInfo *event)
    }
 }
 
-void LeftButtonUp (EventInfo *event)
+void LeftButtonUp(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -749,13 +746,13 @@ void LeftButtonUp (EventInfo *event)
    }
 }
 
-void MiddleButtonDown (EventInfo *event)
+void MiddleButtonDown(GLWindow::MouseEventInfo *event)
 {
    startx = oldx = event->mouse_x;
    starty = oldy = event->mouse_y;
 }
 
-void MiddleButtonLoc (EventInfo *event)
+void MiddleButtonLoc(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -823,16 +820,16 @@ void MiddleButtonLoc (EventInfo *event)
    oldy = newy;
 }
 
-void MiddleButtonUp (EventInfo*)
+void MiddleButtonUp(GLWindow::MouseEventInfo*)
 {}
 
-void RightButtonDown (EventInfo *event)
+void RightButtonDown(GLWindow::MouseEventInfo *event)
 {
    startx = oldx = event->mouse_x;
    starty = oldy = event->mouse_y;
 }
 
-void RightButtonLoc (EventInfo *event)
+void RightButtonLoc(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -880,7 +877,7 @@ void RightButtonLoc (EventInfo *event)
    oldy = newy;
 }
 
-void RightButtonUp (EventInfo*)
+void RightButtonUp(GLWindow::MouseEventInfo*)
 {}
 
 void TouchPinch(SDL_MultiGestureEvent & e)

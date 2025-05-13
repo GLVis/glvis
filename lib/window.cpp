@@ -69,9 +69,9 @@ bool Window::GLVisInitVis(StreamCollection input_streams, bool headless)
 
    locwin = this;
 
-   if (!headless && data_state.quad_f)
+   if (data_state.quad_f)
    {
-      GetAppWindow()->setOnKeyDown('Q', SwitchQuadSolution);
+      GetGLWindow()->setOnKeyDown('Q', SwitchQuadSolution);
    }
 
    double mesh_range = -1.0;

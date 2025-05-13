@@ -136,7 +136,7 @@ void SdlWindow::windowEvent(SDL_WindowEvent& ew)
 
 void SdlWindow::motionEvent(SDL_MouseMotionEvent& em)
 {
-   EventInfo info =
+   MouseEventInfo info =
    {
       em.x, em.y,
       SDL_GetModState()
@@ -168,7 +168,7 @@ void SdlWindow::mouseEventDown(SDL_MouseButtonEvent& eb)
 {
    if (onMouseDown[eb.button])
    {
-      EventInfo info =
+      MouseEventInfo info =
       {
          eb.x, eb.y,
          SDL_GetModState()
@@ -181,7 +181,7 @@ void SdlWindow::mouseEventUp(SDL_MouseButtonEvent& eb)
 {
    if (onMouseUp[eb.button])
    {
-      EventInfo info =
+      MouseEventInfo info =
       {
          eb.x, eb.y,
          SDL_GetModState()
@@ -201,7 +201,7 @@ void SdlWindow::keyDownEvent(SDL_Keysym& ks)
        && (ks.mod & (KMOD_CTRL | KMOD_LALT | KMOD_GUI)) == 0)
    {
       lastKeyDownProcessed = false;
-      lastKeyDownMods = ks.mod;
+      lastKeyDownMods = (SDL_Keymod)ks.mod;
       lastKeyDownChar = ks.sym;
       return;
    }
@@ -211,23 +211,9 @@ void SdlWindow::keyDownEvent(SDL_Keysym& ks)
    lastKeyDownProcessed = true;
    if (onKeyDown[ks.sym])
    {
-      onKeyDown[ks.sym](ks.mod);
+      onKeyDown[ks.sym]((SDL_Keymod)ks.mod);
 
-      // Record the key in 'saved_keys':
-      bool isAlt = ks.mod & (KMOD_ALT);
-      bool isCtrl = ks.mod & (KMOD_CTRL);
-      saved_keys += "[";
-      if (isCtrl) { saved_keys += "C-"; }
-      if (isAlt) { saved_keys += "Alt-"; }
-      if (ks.sym >= 32 && ks.sym < 127)
-      {
-         saved_keys += (char)(ks.sym);
-      }
-      else
-      {
-         saved_keys += SDL_GetKeyName(ks.sym);
-      }
-      saved_keys += "]";
+      recordKey(ks.sym, (SDL_Keymod)ks.mod);
    }
 }
 
@@ -245,22 +231,10 @@ void SdlWindow::textInputEvent(const SDL_TextInputEvent &tie)
    }
    if (onKeyDown[c])
    {
-      onKeyDown[c](lastKeyDownMods & ~(KMOD_CAPS | KMOD_LSHIFT | KMOD_RSHIFT));
+      onKeyDown[c]((SDL_Keymod)(lastKeyDownMods & ~(KMOD_CAPS | KMOD_LSHIFT |
+                                                    KMOD_RSHIFT)));
 
-      // Record the key in 'saved_keys':
-      bool isAlt = lastKeyDownMods & (KMOD_ALT);
-      bool isCtrl = lastKeyDownMods & (KMOD_CTRL);
-      if (isAlt || isCtrl)
-      {
-         saved_keys += "[";
-      }
-      if (isCtrl) { saved_keys += "C-"; }
-      if (isAlt) { saved_keys += "Alt-"; }
-      saved_keys += c;
-      if (isAlt || isCtrl)
-      {
-         saved_keys += "]";
-      }
+      recordKey(c, lastKeyDownMods);
    }
 }
 

@@ -99,3 +99,28 @@ bool GLWindow::initGLEW(bool legacyGlOnly)
 
    return true;
 }
+
+void GLWindow::recordKey(SDL_Keycode sym, SDL_Keymod mod)
+{
+   // Record the key in 'saved_keys':
+   bool isAlt = mod & (KMOD_ALT);
+   bool isCtrl = mod & (KMOD_CTRL);
+   if (isAlt || isCtrl)
+   {
+      saved_keys += "[";
+   }
+   if (isCtrl) { saved_keys += "C-"; }
+   if (isAlt) { saved_keys += "Alt-"; }
+   if (sym >= 32 && sym < 127)
+   {
+      saved_keys += (char)(sym);
+   }
+   else
+   {
+      saved_keys += SDL_GetKeyName(sym);
+   }
+   if (isAlt || isCtrl)
+   {
+      saved_keys += "]";
+   }
+}

@@ -14,12 +14,25 @@
 
 #include "gl/renderer.hpp"
 #include <memory>
+#include <map>
+#include <functional>
+#include <string>
 
 class GLWindow
 {
 public:
+   typedef Uint8 SDL_Mousebutton;
+   struct MouseEventInfo
+   {
+      Sint32 mouse_x;
+      Sint32 mouse_y;
+      SDL_Keymod keymod;
+   };
+
    typedef bool (*IdleDelegate)();
    typedef void (*Delegate)();
+   typedef std::function<void(SDL_Keymod)> KeyDelegate;
+   typedef void (*MouseDelegate)(MouseEventInfo*);
 
 protected:
    enum class RenderState
@@ -37,8 +50,16 @@ protected:
 
    IdleDelegate onIdle{};
    Delegate onExpose{};
+   std::map<SDL_Keycode, KeyDelegate> onKeyDown;
+   std::map<SDL_Mousebutton, MouseDelegate> onMouseDown;
+   std::map<SDL_Mousebutton, MouseDelegate> onMouseUp;
+   std::map<SDL_Mousebutton, MouseDelegate> onMouseMove;
+
+   std::string saved_keys;
 
    bool initGLEW(bool legacyGlOnly);
+   void recordKey(SDL_Keycode k, SDL_Keymod m);
+
 public:
    virtual ~GLWindow() = default;
 
@@ -59,10 +80,32 @@ public:
    void setOnIdle(IdleDelegate func) { onIdle = func; }
    void setOnExpose(Delegate func) { onExpose = func; }
 
+   void setOnKeyDown(SDL_Keycode key, Delegate func)
+   {
+      onKeyDown[key] = [func](SDL_Keymod) { func(); };
+   }
+   void setOnKeyDown(SDL_Keycode key, KeyDelegate func) { onKeyDown[key] = func; }
+
+   void setOnMouseDown(SDL_Mousebutton btn, MouseDelegate func) { onMouseDown[btn] = func; }
+   void setOnMouseUp(SDL_Mousebutton btn, MouseDelegate func) { onMouseUp[btn] = func; }
+   void setOnMouseMove(SDL_Mousebutton btn, MouseDelegate func) { onMouseMove[btn] = func; }
+
    virtual void clearEvents()
    {
       onIdle = nullptr;
       onExpose = nullptr;
+      onKeyDown.clear();
+      onMouseUp.clear();
+      onMouseDown.clear();
+      onMouseMove.clear();
+   }
+
+   void callKeyDown(SDL_Keycode k, SDL_Keymod mod = KMOD_NONE)
+   {
+      if (onKeyDown[k])
+      {
+         onKeyDown[k](mod);
+      }
    }
 
    /// Returns size of the window
@@ -95,6 +138,9 @@ public:
    /// Returns true if the OpenGL context was successfully initialized
    virtual bool isGlInitialized() const { return false; }
 
+   /// Signals key down event
+   virtual void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE) { }
+
    /// Signals quit event
    virtual void signalQuit() { }
 
@@ -109,6 +155,9 @@ public:
 
    /// Checks if the swap event is pending
    virtual bool isSwapPending() const { return wnd_state == RenderState::SwapPending; }
+
+   /// Returns the keyboard events that have been logged by the window.
+   std::string getSavedKeys() const { return saved_keys; }
 
    /// Saves a screenshot ot the file, performing conversion optionally
    virtual void screenshot(std::string filename, bool convert = false) { }

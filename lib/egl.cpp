@@ -233,6 +233,13 @@ void EglWindow::mainIter()
 
          switch (e.type)
          {
+            case EventType::Keydown:
+               if (onKeyDown[e.event.keydown.k])
+               {
+                  onKeyDown[e.event.keydown.k](e.event.keydown.m);
+                  recordKey(e.event.keydown.k, e.event.keydown.m);
+               }
+               break;
             case EventType::Screenshot:
                Screenshot(screenshot_filename.c_str(), e.event.screenshot.convert);
                break;
@@ -317,6 +324,13 @@ void EglWindow::setWindowSize(int w, int h)
    surf = surf_new;
 }
 
+void EglWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
+{
+   Event::Events e;
+   e.keydown = {k, m};
+   queueEvents({{EventType::Keydown, e}});
+}
+
 void EglWindow::signalQuit()
 {
    queueEvents({{EventType::Quit}});
@@ -325,6 +339,9 @@ void EglWindow::signalQuit()
 void EglWindow::screenshot(std::string filename, bool convert)
 {
    screenshot_filename = filename;
-   queueEvents({{EventType::Screenshot, Event::Events::Screenshot{convert}}});
+   Event::Events e;
+   e.screenshot = {convert};
+   queueEvents({{EventType::Screenshot, e}});
+   // Queue up an expose, so Screenshot() can pull image from updated buffer
    signalExpose();
 }

@@ -34,6 +34,7 @@ class EglWindow : public GLWindow
 
    enum class EventType
    {
+      Keydown,
       Screenshot,
       Quit,
    };
@@ -42,6 +43,12 @@ class EglWindow : public GLWindow
       EventType type;
       union Events
       {
+         struct Keydown
+         {
+            SDL_Keycode k;
+            SDL_Keymod m;
+         } keydown;
+
          struct Screenshot
          {
             bool convert;
@@ -86,6 +93,7 @@ public:
    bool isWindowInitialized() const override { return surf != EGL_NO_SURFACE; }
    bool isGlInitialized() const override { return ctx != EGL_NO_CONTEXT; }
 
+   void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE) override;
    void signalQuit() override;
    // as there is no swap, switch to updated state right away
    void signalSwap() override { wnd_state = RenderState::Updated; }
