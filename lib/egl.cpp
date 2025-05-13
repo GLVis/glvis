@@ -189,6 +189,96 @@ bool EglWindow::createWindow(const char *, int, int, int w, int h,
    return initGLEW(legacyGlOnly);
 }
 
+void EglWindow::queueEvents(std::vector<Event> events)
+{
+   {
+      std::lock_guard<std::mutex> evt_guard{event_mutex};
+      waiting_events.insert(waiting_events.end(), events.begin(), events.end());
+   }
+   if (is_multithreaded)
+   {
+      events_available.notify_all();
+   }
+}
+
+void EglWindow::mainLoop()
+{
+   running = true;
+   while (running)
+   {
+      mainIter();
+   }
+}
+
+void EglWindow::mainIter()
+{
+   bool sleep = false;
+   bool events_pending = false;
+   {
+      lock_guard<mutex> evt_guard{event_mutex};
+      events_pending = !waiting_events.empty();
+   }
+   if (events_pending)
+   {
+      do
+      {
+         Event e;
+         // Fetch next event from the queue
+         {
+            lock_guard<mutex> evt_guard{event_mutex};
+            e = waiting_events.front();
+            waiting_events.pop_front();
+            events_pending = !waiting_events.empty();
+         }
+
+         switch (e.type)
+         {
+            case EventType::Screenshot:
+               Screenshot(screenshot_filename.c_str(), e.event.screenshot.convert);
+               break;
+            case EventType::Quit:
+               running = false;
+               break;
+         }
+      }
+      while (events_pending);
+   }
+   else if (onIdle)
+   {
+      sleep = onIdle();
+   }
+   else
+   {
+      // No actions performed this iteration.
+      sleep = true;
+   }
+
+   if (wnd_state == RenderState::ExposePending)
+   {
+      onExpose();
+      wnd_state = RenderState::Updated;
+   }
+   else if (sleep)
+   {
+      unique_lock<mutex> event_lock{event_mutex};
+      events_available.wait(event_lock, [this]()
+      {
+         // Sleep until events from WM or glvis_command can be handled
+         return !waiting_events.empty() || call_idle_func;
+      });
+   }
+}
+
+void EglWindow::signalLoop()
+{
+   // Note: not executed from the main thread
+   {
+      lock_guard<mutex> evt_guard{event_mutex};
+      call_idle_func = true;
+   }
+   events_available.notify_all();
+}
+
 void EglWindow::getGLDrawSize(int& w, int& h) const
 {
    EGLint egl_w, egl_h;
@@ -227,12 +317,14 @@ void EglWindow::setWindowSize(int w, int h)
    surf = surf_new;
 }
 
-void EglWindow::signalExpose()
+void EglWindow::signalQuit()
 {
-   MyExpose();
+   queueEvents({{EventType::Quit}});
 }
 
 void EglWindow::screenshot(std::string filename, bool convert)
 {
-   Screenshot(filename.c_str(), convert);
+   screenshot_filename = filename;
+   queueEvents({{EventType::Screenshot, Event::Events::Screenshot{convert}}});
+   signalExpose();
 }

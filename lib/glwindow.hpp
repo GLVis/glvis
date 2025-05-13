@@ -17,8 +17,26 @@
 
 class GLWindow
 {
+public:
+   typedef bool (*IdleDelegate)();
+   typedef void (*Delegate)();
+
 protected:
+   enum class RenderState
+   {
+      // window displayed is fully current (no events or backbuffer updates pending)
+      Updated,
+      // events issued which may require a call to MyExpose
+      ExposePending,
+      // back buffer updated by MyExpose, now awaiting swap to be displayed on window
+      SwapPending
+   };
+   RenderState wnd_state{RenderState::Updated};
+
    std::unique_ptr<gl3::MeshRenderer> renderer;
+
+   IdleDelegate onIdle{};
+   Delegate onExpose{};
 
    bool initGLEW(bool legacyGlOnly);
 public:
@@ -30,6 +48,22 @@ public:
 
    /// Returns the renderer object
    inline gl3::MeshRenderer& getRenderer() { return *renderer.get(); }
+
+   /// Runs the window loop.
+   virtual void mainLoop() = 0;
+   virtual void mainIter() = 0;
+
+   /// Signals addition of a new event
+   virtual void signalLoop() = 0;
+
+   void setOnIdle(IdleDelegate func) { onIdle = func; }
+   void setOnExpose(Delegate func) { onExpose = func; }
+
+   virtual void clearEvents()
+   {
+      onIdle = nullptr;
+      onExpose = nullptr;
+   }
 
    /// Returns size of the window
    virtual void getWindowSize(int& w, int& h) const { w = h = 0; }
@@ -61,17 +95,20 @@ public:
    /// Returns true if the OpenGL context was successfully initialized
    virtual bool isGlInitialized() const { return false; }
 
+   /// Signals quit event
+   virtual void signalQuit() { }
+
    /// Signals expose event when objects have been updated
-   virtual void signalExpose() = 0;
+   virtual void signalExpose() { wnd_state = RenderState::ExposePending; }
 
    /// Signals swap event when the back buffer is ready for swapping
-   virtual void signalSwap() = 0;
-
-   /// Checks if the swap event is pending
-   virtual bool isSwapPending() const { return false; }
+   virtual void signalSwap() { wnd_state = RenderState::SwapPending; }
 
    /// Checks if the expose event is pending
-   virtual bool isExposePending() const { return false; }
+   virtual bool isExposePending() const { return wnd_state == RenderState::ExposePending; }
+
+   /// Checks if the swap event is pending
+   virtual bool isSwapPending() const { return wnd_state == RenderState::SwapPending; }
 
    /// Saves a screenshot ot the file, performing conversion optionally
    virtual void screenshot(std::string filename, bool convert = false) { }

@@ -16,12 +16,48 @@
 
 #include <EGL/egl.h>
 
+#include <condition_variable>
+#include <mutex>
+#include <deque>
+
 class EglWindow : public GLWindow
 {
    EGLDisplay disp{EGL_NO_DISPLAY};
    EGLSurface surf{EGL_NO_SURFACE};
    EGLContext ctx{EGL_NO_CONTEXT};
    EGLConfig eglCfg{};
+
+   bool running{false};
+
+   bool is_multithreaded{true};
+   bool call_idle_func{false};
+
+   enum class EventType
+   {
+      Screenshot,
+      Quit,
+   };
+   struct Event
+   {
+      EventType type;
+      union Events
+      {
+         struct Screenshot
+         {
+            bool convert;
+         } screenshot;
+
+         struct Quit { } quit;
+      } event;
+   };
+
+   std::string screenshot_filename;
+
+   std::condition_variable events_available;
+   std::mutex event_mutex;
+   std::deque<Event> waiting_events;
+
+   void queueEvents(std::vector<Event> events);
 
 public:
    EglWindow();
@@ -31,6 +67,12 @@ public:
        initialization fails. */
    bool createWindow(const char *title, int x, int y, int w, int h,
                      bool legacyGlOnly) override;
+
+   /// Runs the window loop.
+   void mainLoop() override;
+   void mainIter() override;
+
+   void signalLoop() override;
 
    void getWindowSize(int& w, int& h) const override { getGLDrawSize(w, h); }
    void getGLDrawSize(int& w, int& h) const override;
@@ -44,8 +86,9 @@ public:
    bool isWindowInitialized() const override { return surf != EGL_NO_SURFACE; }
    bool isGlInitialized() const override { return ctx != EGL_NO_CONTEXT; }
 
-   void signalExpose() override;
-   void signalSwap() override { }
+   void signalQuit() override;
+   // as there is no swap, switch to updated state right away
+   void signalSwap() override { wnd_state = RenderState::Updated; }
 
    bool isExposePending() const override { return false; }
    // used in Screenshot, as there is no swapping, the single buffer is always

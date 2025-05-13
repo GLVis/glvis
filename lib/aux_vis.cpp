@@ -137,6 +137,10 @@ int InitVisualization (const char name[], int x, int y, int w, int h,
             return 1;
          }
       }
+      else
+      {
+         wnd->clearEvents();
+      }
    }
 
 #ifdef GLVIS_DEBUG
@@ -149,10 +153,10 @@ int InitVisualization (const char name[], int x, int y, int w, int h,
    // auxReshapeFunc (MyReshape); // not needed, MyExpose calls it
    // auxReshapeFunc (NULL);
    void (*exposeFunc)(void) = MyExpose;
+   wnd->setOnExpose(exposeFunc);
+
    if (sdl_wnd)
    {
-      sdl_wnd->setOnExpose(exposeFunc);
-
       sdl_wnd->setOnMouseDown(SDL_BUTTON_LEFT, LeftButtonDown);
       sdl_wnd->setOnMouseUp(SDL_BUTTON_LEFT, LeftButtonUp);
       sdl_wnd->setOnMouseMove(SDL_BUTTON_LEFT, LeftButtonLoc);
@@ -407,15 +411,9 @@ void RunVisualization()
 {
    visualize = 1;
 #ifndef __EMSCRIPTEN__
-   if (sdl_wnd)
-   {
-      sdl_wnd->mainLoop();
-   }
+   wnd->mainLoop();
 #endif
-   if (sdl_wnd)
-   {
-      InitIdleFuncs();
-   }
+   InitIdleFuncs();
 }
 
 void EndVisualization()
@@ -504,7 +502,7 @@ void InitIdleFuncs()
    LastIdleFunc = 0;
    if (glvis_command)
    {
-      sdl_wnd->setOnIdle(MainIdleFunc);
+      wnd->setOnIdle(MainIdleFunc);
    }
 }
 
@@ -514,7 +512,7 @@ bool CommunicationIdleFunc()
    if (status < 0)
    {
       cout << "GLVisCommand signalled exit" << endl;
-      sdl_wnd->signalQuit();
+      wnd->signalQuit();
    }
    else if (status == 1)
    {
@@ -573,7 +571,7 @@ bool MainIdleFunc()
 void AddIdleFunc(void (*Func)(void))
 {
    IdleFuncs.Union(Func);
-   sdl_wnd->setOnIdle(MainIdleFunc);
+   wnd->setOnIdle(MainIdleFunc);
 }
 
 void RemoveIdleFunc(void (*Func)(void))
@@ -581,7 +579,7 @@ void RemoveIdleFunc(void (*Func)(void))
    IdleFuncs.DeleteFirst(Func);
    if (IdleFuncs.Size() == 0 && glvis_command == nullptr)
    {
-      sdl_wnd->setOnIdle(NULL);
+      wnd->setOnIdle(NULL);
    }
 }
 
@@ -1312,7 +1310,7 @@ void KeyCtrlP()
 
 void KeyQPressed()
 {
-   sdl_wnd->signalQuit();
+   wnd->signalQuit();
    visualize = 0;
 }
 

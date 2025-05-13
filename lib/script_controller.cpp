@@ -368,6 +368,10 @@ bool ScriptController::ExecuteScriptCommand()
       {
          cout << "End of script." << endl;
          scr_level = 0;
+         if (headless)
+         {
+            GetGLWindow()->signalQuit();
+         }
          return false;
       }
       if (scr.peek() == '#')
@@ -833,7 +837,7 @@ thread_local ScriptController *ScriptController::script_ctrl = NULL;
 void ScriptController::ScriptIdleFunc()
 {
    script_ctrl->ExecuteScriptCommand();
-   if (script_ctrl->scr_level == 0)
+   if (script_ctrl->scr_level == 0 && !script_ctrl->headless)
    {
       ScriptControl();
    }
@@ -993,8 +997,7 @@ void ScriptController::PlayScript(Window win, istream &scr)
             else
             {
                // execute all commands, updating the scene every time
-               do { MyExpose(); }
-               while (local_script.ExecuteScriptCommand());
+               ScriptControl();
             }
             local_script.win.GLVisStartVis();
          }

@@ -33,8 +33,6 @@ typedef void (*TouchDelegate)(SDL_MultiGestureEvent&);
 typedef void (*MouseDelegate)(EventInfo*);
 typedef std::function<void(GLenum)> KeyDelegate;
 typedef void (*WindowDelegate)(int, int);
-typedef void (*Delegate)();
-typedef bool (*IdleDelegate)();
 
 class SdlMainThread;
 SdlMainThread& GetMainThread();
@@ -94,8 +92,7 @@ private:
 
    bool running;
 
-   IdleDelegate onIdle{nullptr};
-   Delegate onExpose{nullptr};
+
    WindowDelegate onReshape{nullptr};
    std::map<int, KeyDelegate> onKeyDown;
    std::map<int, MouseDelegate> onMouseDown;
@@ -107,18 +104,6 @@ private:
 #ifdef __EMSCRIPTEN__
    std::string canvas_id_;
 #endif
-
-   enum class RenderState
-   {
-      // window displayed is fully current (no events or backbuffer updates pending)
-      Updated,
-      // events issued which may require a call to MyExpose
-      ExposePending,
-      // back buffer updated by MyExpose, now awaiting swap to be displayed on window
-      SwapPending
-   };
-
-   RenderState wnd_state{RenderState::Updated};
 
    bool update_before_expose{false};
 
@@ -177,14 +162,12 @@ public:
                      bool legacyGlOnly) override;
 
    /// Runs the window loop.
-   void mainLoop();
-   void mainIter();
+   void mainLoop() override;
+   void mainIter() override;
 
    // Called by worker threads in GLVisCommand::signal()
-   void signalLoop();
+   void signalLoop() override;
 
-   void setOnIdle(IdleDelegate func) { onIdle = func; }
-   void setOnExpose(Delegate func) { onExpose = func; }
    void setOnReshape(WindowDelegate func) { onReshape = func; }
 
    void setOnKeyDown(int key, Delegate func)
@@ -200,10 +183,9 @@ public:
    void setTouchPinchCallback(TouchDelegate cb) { onTouchPinch = cb; }
    void setTouchRotateCallback(TouchDelegate cb) { onTouchRotate = cb; }
 
-   void clearEvents()
+   void clearEvents() override
    {
-      onIdle = nullptr;
-      onExpose = nullptr;
+      GLWindow::clearEvents();
       onReshape = nullptr;
       onKeyDown.clear();
       onMouseUp.clear();
@@ -231,9 +213,7 @@ public:
    void setWindowPos(int x, int y) override;
 
    void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE);
-   void signalExpose() override { wnd_state = RenderState::ExposePending; }
-   void signalSwap() override { wnd_state = RenderState::SwapPending; }
-   void signalQuit() { running = false; }
+   void signalQuit() override { running = false; }
 
    /// Returns the keyboard events that have been logged by the window.
    std::string getSavedKeys() const { return saved_keys; }
@@ -255,9 +235,6 @@ public:
    bool isWindowInitialized() const override { return handle.isInitialized(); }
    /// Returns true if the OpenGL context was successfully initialized.
    bool isGlInitialized() const override;
-
-   bool isSwapPending() const override { return wnd_state == RenderState::SwapPending; }
-   bool isExposePending() const override { return wnd_state == RenderState::ExposePending; }
 
 #ifdef __EMSCRIPTEN__
    std::string getCanvasId() const { return canvas_id_; }

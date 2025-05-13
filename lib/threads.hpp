@@ -23,7 +23,7 @@ class GLVisCommand
 private:
    // Pointers to global GLVis data
    Window      &win;
-   SdlWindow   *thread_wnd;
+   GLWindow    *thread_wnd;
 
    std::mutex glvis_mutex;
    std::condition_variable glvis_cond;

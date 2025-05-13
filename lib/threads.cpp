@@ -24,7 +24,7 @@ GLVisCommand::GLVisCommand(Window &win_)
    : win(win_)
 {
    // should be set in this thread by a call to InitVisualization()
-   thread_wnd = GetAppWindow();
+   thread_wnd = GetGLWindow();
 
    num_waiting = 0;
    terminating = false;
