@@ -507,6 +507,8 @@ bool ScriptController::ExecuteScriptCommand()
 
             cout << "Script: screenshot: " << flush;
 
+            //perform expose before screenshot to read from the back buffer
+            MyExpose();
             if (Screenshot(word.c_str(), true))
             {
                cout << "Screenshot(" << word << ") failed." << endl;
