@@ -13,7 +13,6 @@
 #include "aux_vis.hpp"
 #include <iostream>
 #include <vector>
-#include <algorithm>
 
 #ifdef GLVIS_DEBUG
 #define PRINT_DEBUG(s) std::cerr << s
@@ -57,8 +56,10 @@ bool EglWindow::createWindow(const char *, int, int, int w, int h,
 
    const int multisamples = GetMultisample();
 
-   std::vector<EGLint> configAttribs =
+   EGLint configAttribs[] =
    {
+      EGL_SAMPLE_BUFFERS, (multisamples > 0)?(1):(0), // must be first
+      EGL_SAMPLES, multisamples,
       EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
       EGL_COLOR_BUFFER_TYPE, EGL_RGB_BUFFER,
       EGL_BLUE_SIZE, 8,
@@ -68,8 +69,6 @@ bool EglWindow::createWindow(const char *, int, int, int w, int h,
       EGL_DEPTH_SIZE, 24,
       EGL_CONFORMANT, EGL_OPENGL_BIT,
       EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
-      EGL_SAMPLE_BUFFERS, (multisamples > 0)?(1):(0),
-      EGL_SAMPLES, multisamples,
       EGL_NONE
    };
 
@@ -77,19 +76,17 @@ bool EglWindow::createWindow(const char *, int, int, int w, int h,
 
    if (multisamples > 0)
    {
-      if (!eglChooseConfig(disp, configAttribs.data(), NULL, 0, &numConfigs) ||
+      if (!eglChooseConfig(disp, configAttribs, NULL, 0, &numConfigs) ||
           numConfigs < 1)
       {
          std::cerr << "EGL with multisampling is not supported, turning it off" <<
                    std::endl;
          // turn off multisampling
-         auto it = std::find(configAttribs.begin(), configAttribs.end(),
-                             EGL_SAMPLE_BUFFERS);
-         *(++it) = 0;
+         configAttribs[1] = 0;
       }
    }
 
-   if (!eglChooseConfig(disp, configAttribs.data(), &eglCfg, 1, &numConfigs) ||
+   if (!eglChooseConfig(disp, configAttribs, &eglCfg, 1, &numConfigs) ||
        numConfigs < 1)
    {
       std::cerr << "Cannot find working EGL configuration!" << std::endl;
@@ -134,7 +131,7 @@ bool EglWindow::createWindow(const char *, int, int, int w, int h,
       if (ctx == EGL_NO_CONTEXT)
       {
          PRINT_DEBUG("failed." << std::endl);
-         PRINT_DEBUG("Opening OpenGL core profile context..." << std::flush);
+         PRINT_DEBUG("Opening OpenGL compatibility profile context..." << std::flush);
          const EGLint attrListCompat[] =
          {
             EGL_CONTEXT_OPENGL_PROFILE_MASK, EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT,
