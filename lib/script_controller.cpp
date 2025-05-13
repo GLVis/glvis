@@ -505,17 +505,10 @@ bool ScriptController::ExecuteScriptCommand()
          {
             scr >> ws >> word;
 
-            cout << "Script: screenshot: " << flush;
-
-            //perform expose before screenshot to read from the back buffer
-            MyExpose();
-            if (Screenshot(word.c_str(), true))
-            {
-               cout << "Screenshot(" << word << ") failed." << endl;
-               done_one_command = 1;
-               continue;
-            }
-            cout << "-> " << word << endl;
+            cout << "Script: screenshot: -> " << word << endl;
+            // Allow GlWindow to handle the expose and screenshot action, in case
+            // any actions need to be taken before MyExpose().
+            GetAppWindow()->screenshot(word, true);
 
             if (scr_min_val > win.vs->GetMinV())
             {
