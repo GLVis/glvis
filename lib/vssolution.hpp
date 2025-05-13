@@ -15,7 +15,6 @@
 #include "mfem.hpp"
 using namespace mfem;
 
-#include "sdl.hpp"
 #include "gl/types.hpp"
 #include "vsdata.hpp"
 

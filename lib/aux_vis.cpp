@@ -64,12 +64,12 @@ void SetGLVisCommand(GLVisCommand *cmd)
    glvis_command = cmd;
 }
 
-SdlWindow * GetAppWindow()
+SdlWindow * GetSdlWindow()
 {
    return sdl_wnd;
 }
 
-GLWindow *GetGLWindow()
+GLWindow *GetAppWindow()
 {
    return wnd;
 }

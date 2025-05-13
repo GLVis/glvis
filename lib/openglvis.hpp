@@ -18,7 +18,7 @@
 #include "palettes.hpp"
 #include "mfem.hpp"
 #include "geom_utils.hpp"
-#include "sdl.hpp"
+#include "glwindow.hpp"
 #include "gltf.hpp"
 
 // Visualization header file
@@ -66,7 +66,6 @@ protected:
    double xscale, yscale, zscale;
 
    GLWindow *wnd;
-   SdlWindow *sdl_wnd;
 
    glm::mat4 proj_mtx;
 

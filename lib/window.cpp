@@ -71,7 +71,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams, bool headless)
 
    if (data_state.quad_f)
    {
-      GetGLWindow()->setOnKeyDown('Q', SwitchQuadSolution);
+      GetAppWindow()->setOnKeyDown('Q', SwitchQuadSolution);
    }
 
    double mesh_range = -1.0;

@@ -85,10 +85,6 @@ private:
    TouchDelegate onTouchPinch{nullptr};
    TouchDelegate onTouchRotate{nullptr};
 
-#ifdef __EMSCRIPTEN__
-   std::string canvas_id_;
-#endif
-
    bool update_before_expose{false};
 
    // bool requiresExpose;
@@ -191,11 +187,6 @@ public:
    bool isWindowInitialized() const override { return handle.isInitialized(); }
    /// Returns true if the OpenGL context was successfully initialized.
    bool isGlInitialized() const override;
-
-#ifdef __EMSCRIPTEN__
-   std::string getCanvasId() const { return canvas_id_; }
-   void setCanvasId(std::string canvas_id) { canvas_id_ = canvas_id; }
-#endif
 };
 
 #endif

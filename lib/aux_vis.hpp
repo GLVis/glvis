@@ -46,8 +46,8 @@ void MyExpose();
 
 void MainLoop();
 
-SdlWindow* GetAppWindow();
-GLWindow* GetGLWindow();
+SdlWindow* GetSdlWindow();
+GLWindow* GetAppWindow();
 VisualizationScene * GetVisualizationScene();
 
 void SetLegacyGLOnly(bool status);

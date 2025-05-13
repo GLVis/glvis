@@ -55,6 +55,9 @@ protected:
    std::map<SDL_Mousebutton, MouseDelegate> onMouseUp;
    std::map<SDL_Mousebutton, MouseDelegate> onMouseMove;
 
+#ifdef __EMSCRIPTEN__
+   std::string canvas_id;
+#endif
    std::string saved_keys;
 
    bool initGLEW(bool legacyGlOnly);
@@ -161,6 +164,11 @@ public:
 
    /// Saves a screenshot ot the file, performing conversion optionally
    virtual void screenshot(std::string filename, bool convert = false) { }
+
+#ifdef __EMSCRIPTEN__
+   std::string getCanvasId() const { return canvas_id; }
+   void setCanvasId(std::string canvas_id_) { canvas_id = canvas_id_; }
+#endif
 };
 
 #endif //GLVIS_GLWINDOW_HPP

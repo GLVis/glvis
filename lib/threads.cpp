@@ -24,7 +24,7 @@ GLVisCommand::GLVisCommand(Window &win_)
    : win(win_)
 {
    // should be set in this thread by a call to InitVisualization()
-   thread_wnd = GetGLWindow();
+   thread_wnd = GetAppWindow();
 
    num_waiting = 0;
    terminating = false;
@@ -500,7 +500,7 @@ int GLVisCommand::Execute()
          cout << "Command: screenshot -> " << screenshot_filename << endl;
          // Allow SdlWindow to handle the expose and screenshot action, in case
          // any actions need to be taken before MyExpose().
-         GetGLWindow()->screenshot(screenshot_filename, true);
+         GetAppWindow()->screenshot(screenshot_filename, true);
          break;
       }
 

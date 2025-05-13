@@ -933,8 +933,8 @@ void KeyKPressed()
 
 void KeyAPressed()
 {
-   bool curr_aa = GetGLWindow()->getRenderer().getAntialiasing();
-   GetGLWindow()->getRenderer().setAntialiasing(!curr_aa);
+   bool curr_aa = GetAppWindow()->getRenderer().getAntialiasing();
+   GetAppWindow()->getRenderer().setAntialiasing(!curr_aa);
 
    cout << "Multisampling/Antialiasing: "
         << strings_off_on[!curr_aa ? 1 : 0] << endl;
@@ -1371,8 +1371,7 @@ void VisualizationSceneScalarData::Init()
 {
    vsdata = this;
    window = &win;
-   wnd = GetGLWindow();
-   sdl_wnd = GetAppWindow();
+   wnd = GetAppWindow();
 
    arrow_type = arrow_scaling_type = 0;
    scaling = 0;

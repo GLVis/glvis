@@ -370,7 +370,7 @@ bool ScriptController::ExecuteScriptCommand()
          scr_level = 0;
          if (headless)
          {
-            GetGLWindow()->signalQuit();
+            GetAppWindow()->signalQuit();
          }
          return false;
       }
