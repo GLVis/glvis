@@ -49,6 +49,12 @@ set(stream_tests
 
 add_custom_target(rebaseline)
 
+set(TEST_ARGS "-lw 1 -mslw 1 -nohidpi")
+
+if(${GLVIS_USE_EGL})
+  set(TEST_ARGS "${TEST_ARGS} -hl")
+endif()
+
 foreach(test_name IN LISTS stream_tests)
 
   add_test(NAME stream_${test_name}
@@ -56,7 +62,7 @@ foreach(test_name IN LISTS stream_tests)
            -e ${CMAKE_CURRENT_BINARY_DIR}/../glvis
            -s ${CMAKE_CURRENT_SOURCE_DIR}/data/streams/${test_name}.saved
            -b ${CMAKE_CURRENT_SOURCE_DIR}/data/baselines/${GLVIS_BASELINE_SYS}
-           -a "-lw 1 -mslw 1 -nohidpi")
+           -a ${TEST_ARGS})
 
   add_custom_target(_rebaseline_stream_${test_name}
       COMMAND ${CMAKE_COMMAND} -E make_directory
