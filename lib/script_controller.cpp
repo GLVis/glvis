@@ -370,7 +370,7 @@ bool ScriptController::ExecuteScriptCommand()
          scr_level = 0;
          if (win.headless)
          {
-            GetAppWindow()->signalQuit();
+            win.wnd->signalQuit();
          }
          return false;
       }
@@ -508,7 +508,7 @@ bool ScriptController::ExecuteScriptCommand()
             cout << "Script: screenshot: -> " << word << endl;
             // Allow GlWindow to handle the expose and screenshot action, in case
             // any actions need to be taken before MyExpose().
-            GetAppWindow()->screenshot(word, true);
+            win.wnd->screenshot(word, true);
 
             if (scr_min_val > win.vs->GetMinV())
             {

@@ -171,7 +171,7 @@ protected:
                 const gl3::GlDrawable &gl_drawable);
 
 public:
-   VisualizationScene(SdlWindow &wnd);
+   VisualizationScene(GLWindow &wnd);
    virtual ~VisualizationScene();
 
    int spinning, OrthogonalProjection, print, movie;

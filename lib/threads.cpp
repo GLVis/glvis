@@ -769,7 +769,7 @@ int GLVisCommand::Execute()
 
       case QUIT:
       {
-         GetAppWindow()->signalQuit();
+         thread_wnd->signalQuit();
          break;
       }
    }

@@ -97,7 +97,8 @@ bool GetUseHiDPI()
 void MyExpose(GLsizei w, GLsizei h);
 void MyExpose();
 
-SdlWindow* InitVisualization(const char name[], int x, int y, int w, int h, bool headless)
+GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
+                            bool headless)
 {
 #ifdef GLVIS_DEBUG
    if (!headless)

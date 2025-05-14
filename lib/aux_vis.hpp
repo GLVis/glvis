@@ -27,7 +27,8 @@ class GLVisCommand;
 void SetGLVisCommand(GLVisCommand *cmd);
 
 /// Initializes the visualization and some keys.
-SdlWindow* InitVisualization(const char name[], int x, int y, int w, int h, bool headless = false);
+GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
+                            bool headless = false);
 
 void SetVisualizationScene(VisualizationScene * scene,
                            int view = 3, const char *keys = NULL);
