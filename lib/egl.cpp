@@ -297,6 +297,11 @@ void EglWindow::getGLDrawSize(int& w, int& h) const
    h = egl_h;
 }
 
+bool EglWindow::isHighDpi() const
+{
+   return GetUseHiDPI();
+}
+
 void EglWindow::setWindowSize(int w, int h)
 {
    const EGLint pbufferAttribs[] =

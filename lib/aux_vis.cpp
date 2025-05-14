@@ -52,7 +52,7 @@ static float line_w_aa = gl3::LINE_WIDTH_AA;
 static thread_local GLWindow *wnd = nullptr;
 static thread_local SdlWindow *sdl_wnd = nullptr;
 static bool wndLegacyGl = false;
-bool wndUseHiDPI = true; // shared with sdl_main.cpp
+static bool wndUseHiDPI = true;
 
 void SDLMainLoop(bool server_mode)
 {
@@ -87,6 +87,11 @@ void SetLegacyGLOnly(bool status)
 void SetUseHiDPI(bool status)
 {
    wndUseHiDPI = status;
+}
+
+bool GetUseHiDPI()
+{
+   return wndUseHiDPI;
 }
 
 void MyExpose(GLsizei w, GLsizei h);

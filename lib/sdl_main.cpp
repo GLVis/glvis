@@ -28,7 +28,7 @@
 #endif
 
 extern int GetMultisample();
-extern bool wndUseHiDPI;
+extern bool GetUseHiDPI();
 
 struct SdlMainThread::CreateWindowCmd
 {
@@ -616,7 +616,7 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
 #ifndef __EMSCRIPTEN__
    win_flags |= SDL_WINDOW_RESIZABLE;
 #endif
-   if (wndUseHiDPI)
+   if (GetUseHiDPI())
    {
       win_flags |= SDL_WINDOW_ALLOW_HIGHDPI;
    }

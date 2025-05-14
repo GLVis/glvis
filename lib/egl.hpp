@@ -86,7 +86,7 @@ public:
 
    // use the default values of SdlWindow, LoadFont() ignores them anyway
    void getDpi(int& wdpi, int& hdpi) const override { wdpi = hdpi = 72; }
-   bool isHighDpi() const override { return true; }
+   bool isHighDpi() const override;
 
    void setWindowSize(int w, int h) override;
 

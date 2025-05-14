@@ -143,6 +143,8 @@ bool SetFont(const vector<std::string>& patterns, int height);
 void SetFont(const std::string& fn);
 
 void SetUseHiDPI(bool status);
+bool GetUseHiDPI();
+
 function<string(double)> NumberFormatter(int precision=4, char format='d',
                                          bool showsign=false);
 function<string(double)> NumberFormatter(string formatting);
