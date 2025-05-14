@@ -69,7 +69,7 @@ jobs:
             mpi: par
             build-system: make
             backend: sdl
-    name: ${{ matrix.os }}-${{ matrix.build-system }}-${{ matrix.target }}-${{ matrix.mpi }}
+    name: ${{ matrix.os }}-${{ matrix.build-system }}-${{ matrix.backend}}-${{ matrix.target }}-${{ matrix.mpi }}
 
     runs-on: ${{ matrix.os }}
 
