@@ -37,23 +37,38 @@ jobs:
         target: [dbg, opt]
         mpi: [seq]
         build-system: [cmake]
+        backend: [sdl]
         include:
           - os: ubuntu-latest
             target: opt
             mpi: seq
             build-system: make
+            backend: sdl
+          - os: ubuntu-latest
+            target: dbg
+            mpi: seq
+            build-system: make
+            backend: egl
+          - os: ubuntu-latest
+            target: opt
+            mpi: seq
+            build-system: cmake
+            backend: egl
           - os: ubuntu-latest
             target: dbg
             mpi: par
             build-system: make
+            backend: sdl
           - os: macos-latest
             target: opt
             mpi: seq
             build-system: make
+            backend: sdl
           - os: macos-latest
             target: dbg
             mpi: par
             build-system: make
+            backend: sdl
     name: ${{ matrix.os }}-${{ matrix.build-system }}-${{ matrix.target }}-${{ matrix.mpi }}
 
     runs-on: ${{ matrix.os }}
@@ -199,7 +214,9 @@ jobs:
       run: |
         glvis_target="opt"
         [[ ${{ matrix.target }} == "dbg" ]] && glvis_target="debug";
-        cd glvis && make ${glvis_target} -j3 -E GLVIS_USE_EGL=YES
+        use_egl="NO"
+        [[ ${{ matrix.backend }} == "egl" ]] && use_egl="YES"
+        cd glvis && make ${glvis_target} -j3 GLVIS_USE_EGL=${use_egl}
 
     - name: build GLVis (cmake)
       if: matrix.build-system == 'cmake'
@@ -210,12 +227,14 @@ jobs:
         [[ ${{ matrix.target }} == "dbg" ]] && build_type="Debug";
         [[ ${{ matrix.os }} == "windows-latest" ]] \
           && toolchain_file="${VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
+        use_egl="OFF"
+        [[ ${{ matrix.backend }} == "egl" ]] && use_egl="ON"
         cd glvis && mkdir build && cd build
         cmake \
           -D CMAKE_TOOLCHAIN_FILE:STRING=${toolchain_file} \
           -D CMAKE_BUILD_TYPE:STRING=${build_type} \
           -D ENABLE_TESTS:BOOL=TRUE \
-          -D GLVIS_USE_EGL:BOOL=ON \
+          -D GLVIS_USE_EGL:BOOL=${use_egl} \
           -D mfem_DIR:PATH=${GITHUB_WORKSPACE}/${MFEM_TOP_DIR}/build \
           -D GLVIS_BASELINE_SYS=${{ matrix.os }} \
           ..
