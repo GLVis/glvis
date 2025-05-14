@@ -44,7 +44,7 @@ using namespace mfem;
 void display(std::stringstream & commands, const int w, const int h)
 {
    // reset antialiasing
-   GetAppWindow()->getRenderer().setAntialiasing(0);
+   win.wnd->getRenderer().setAntialiasing(0);
 
    std::string word;
    double minv = 0.0, maxv = 0.0;
@@ -207,13 +207,13 @@ int updateParallelStreams(const StringArray & streams)
 //
 void iterVisualization()
 {
-   GetAppWindow()->mainIter();
+   win.wnd->mainIter();
 }
 
 void setCanvasId(const std::string & id)
 {
    std::cout << "glvis: setting canvas id to " << id << std::endl;
-   GetAppWindow()->setCanvasId(id);
+   win.wnd->setCanvasId(id);
 }
 
 void disableKeyHandling()
@@ -244,7 +244,7 @@ void processKey(int sym, bool ctrl=false, bool shift=false, bool alt=false)
    mod |= ctrl ? KMOD_CTRL : 0;
    mod |= shift ? KMOD_SHIFT : 0;
    mod |= alt ? KMOD_ALT : 0;
-   GetAppWindow()->callKeyDown(sym, mod);
+   win.wnd->callKeyDown(sym, mod);
 }
 
 void setupResizeEventCallback(const std::string & id)
@@ -274,7 +274,7 @@ std::string getHelpString()
 em::val getScreenBuffer(bool flip_y=false)
 {
    MyExpose();
-   auto * wnd = GetAppWindow();
+   auto * wnd = win.wnd;
    int w, h;
    wnd->getGLDrawSize(w, h);
 
@@ -317,7 +317,7 @@ em::val getScreenBuffer(bool flip_y=false)
 em::val getPNGByteArray()
 {
    constexpr const char * filename = "im.png";
-   auto * wnd = GetAppWindow();
+   auto * wnd = win.wnd;
    int w, h;
    wnd->getGLDrawSize(w, h);
 

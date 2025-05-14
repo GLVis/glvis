@@ -988,7 +988,7 @@ void ScriptController::PlayScript(Window win, istream &scr)
          {
             if (!local_script.win.headless)
             {
-               GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
+               local_script.win.wnd->setOnKeyDown(SDLK_SPACE, ScriptControl);
             }
             else
             {
