@@ -17,8 +17,8 @@
 #include <regex>
 
 #include "mfem.hpp"
-#include "sdl.hpp"
-#include "egl.hpp"
+#include "sdl/sdl.hpp"
+#include "egl/egl.hpp"
 #include "palettes.hpp"
 #include "visual.hpp"
 #include "gl2ps.h"

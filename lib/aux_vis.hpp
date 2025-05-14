@@ -16,7 +16,7 @@
 #include "gl/types.hpp"
 
 #include "openglvis.hpp"
-#include "sdl.hpp"
+#include "glwindow.hpp"
 #include "font.hpp"
 
 #include <functional>
@@ -43,6 +43,7 @@ void MyExpose();
 
 void MainLoop();
 
+class SdlWindow;
 SdlWindow* GetSdlWindow();
 GLWindow* GetAppWindow();
 VisualizationScene * GetVisualizationScene();

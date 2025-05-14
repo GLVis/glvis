@@ -12,7 +12,7 @@
 #ifndef GLVIS_SDL_HELPER_HPP
 #define GLVIS_SDL_HELPER_HPP
 
-#include "gl/platform_gl.hpp"
+#include "../gl/platform_gl.hpp"
 #include <memory>
 
 class SdlNativePlatform

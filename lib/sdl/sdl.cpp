@@ -10,7 +10,7 @@
 // CONTRIBUTING.md for details.
 
 #include <iostream>
-#include "aux_vis.hpp"
+#include "../aux_vis.hpp"
 #include "sdl.hpp"
 #include "sdl_main.hpp"
 #ifdef __EMSCRIPTEN__

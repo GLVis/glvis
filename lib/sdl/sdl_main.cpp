@@ -15,7 +15,7 @@
 
 #include "sdl_main.hpp"
 #include "sdl_helper.hpp"
-#include "logo.hpp"
+#include "../logo.hpp"
 
 #ifdef SDL_VIDEO_DRIVER_COCOA
 #include "sdl_mac.hpp"

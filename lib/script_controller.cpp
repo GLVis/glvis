@@ -14,6 +14,7 @@
 #include "coll_reader.hpp"
 #include "stream_reader.hpp"
 #include "visual.hpp"
+#include "sdl/sdl.hpp"
 
 #include <array>
 #include <algorithm>

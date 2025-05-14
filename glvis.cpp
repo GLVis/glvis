@@ -39,6 +39,7 @@
 #include "lib/stream_reader.hpp"
 #include "lib/file_reader.hpp"
 #include "lib/coll_reader.hpp"
+#include "lib/sdl/sdl.hpp"
 
 using namespace std;
 using namespace mfem;

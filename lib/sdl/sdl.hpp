@@ -16,7 +16,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <deque>
-#include "glwindow.hpp"
+#include "../glwindow.hpp"
 #include "sdl_helper.hpp"
 
 typedef void (*TouchDelegate)(SDL_MultiGestureEvent&);

@@ -11,7 +11,7 @@
 
 #ifdef GLVIS_USE_EGL
 #include "egl.hpp"
-#include "aux_vis.hpp"
+#include "../aux_vis.hpp"
 #include <iostream>
 #include <vector>
 

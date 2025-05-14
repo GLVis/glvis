@@ -13,7 +13,7 @@
 #define GLVIS_EGL_HPP
 #ifdef GLVIS_USE_EGL
 
-#include "glwindow.hpp"
+#include "../glwindow.hpp"
 
 #include <EGL/egl.h>
 
