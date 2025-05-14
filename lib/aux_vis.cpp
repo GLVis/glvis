@@ -96,6 +96,8 @@ SdlWindow* InitVisualization(const char name[], int x, int y, int w, int h)
       wnd = new SdlWindow();
       if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
       {
+         delete wnd;
+         wnd = nullptr;
          return NULL;
       }
    }
