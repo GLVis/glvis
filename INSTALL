@@ -38,6 +38,9 @@ Besides a C++ compiler, GLVis depends on the following external packages:
 - the XQuartz app (on Mac OS X, if running GLVis remotely through ssh)
   https://www.xquartz.org
 
+- the EGL library; used for headless rendering (optional)
+  https://www.khronos.org/egl
+
 There are two build systems, one based on GNU make and one based on CMake, as
 described below. Choose the one that matches the build system you used to
 build MFEM.
@@ -87,6 +90,7 @@ cmake \
     \
     -D GLVIS_USE_LIBTIFF=OFF \
     -D GLVIS_USE_LIBPNG=ON \
+    -D GLVIS_USE_EGL=OFF \
     \
     -D MFEM_DIR=/path/to/directory/with/MFEMConfig.cmake \
     \
@@ -110,6 +114,8 @@ Some important variables for CMake are:
 - GLVIS_USE_LIBPNG: Use libpng for creating screenshots. Default is "ON".
 
 - GLVIS_USE_LIBTIFF: Use libtiff for creating screenshots. Default is "OFF".
+
+- GLVIS_USE_EGL: Use EGL for headless rendering. Default is "OFF".
 
 - GLVIS_MULTISAMPLE and GLVIS_MS_LINEWIDTH: See building considerations below
      for more information on these variables.

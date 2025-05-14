@@ -9,6 +9,16 @@
                              https://glvis.org
 
 
+Version 4.4.1 (development)
+===================================
+
+- Added headless (no GUI) visualization, relying on EGL standard. It is
+  available through '-hl' command-line option for non-server visualization or
+  'headless' script command (before the visualization commands). End of the
+  loaded stream or script file end the visualization in this mode. Note GLVis
+  must be compiled with with EGL (see INSTALL).
+
+
 Version 4.4 released on May 1, 2025
 ===================================
 
