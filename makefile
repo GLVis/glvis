@@ -270,7 +270,7 @@ ALL_SOURCE_FILES = \
  lib/stream_reader.cpp lib/threads.cpp lib/vsdata.cpp                   \
  lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp               \
  lib/vsvector3d.cpp lib/window.cpp
-OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl_mac.mm)
+OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl/sdl_mac.mm)
 DESKTOP_ONLY_SOURCE_FILES = \
  lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c lib/sdl/sdl_x11.cpp
 WEB_ONLY_SOURCE_FILES = lib/aux_js.cpp
