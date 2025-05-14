@@ -199,7 +199,7 @@ jobs:
       run: |
         glvis_target="opt"
         [[ ${{ matrix.target }} == "dbg" ]] && glvis_target="debug";
-        cd glvis && make ${glvis_target} -j3
+        cd glvis && make ${glvis_target} -j3 -E GLVIS_USE_EGL=YES
 
     - name: build GLVis (cmake)
       if: matrix.build-system == 'cmake'
@@ -215,6 +215,7 @@ jobs:
           -D CMAKE_TOOLCHAIN_FILE:STRING=${toolchain_file} \
           -D CMAKE_BUILD_TYPE:STRING=${build_type} \
           -D ENABLE_TESTS:BOOL=TRUE \
+          -D GLVIS_USE_EGL:BOOL=ON \
           -D mfem_DIR:PATH=${GITHUB_WORKSPACE}/${MFEM_TOP_DIR}/build \
           -D GLVIS_BASELINE_SYS=${{ matrix.os }} \
           ..
