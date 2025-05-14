@@ -144,8 +144,8 @@ public:
    /// Set the quadrature function representation producing a proxy grid function
    void SetQuadSolution(QuadSolution type = QuadSolution::LOR_ClosedGL);
 
-   /// Switch the quadrature function representation and update the visualization
-   void SwitchQuadSolution(QuadSolution type, VisualizationScene* vs);
+   /// Switch the quadrature function representation
+   void SwitchQuadSolution(QuadSolution type);
 
    /// Get the current representation of quadrature solution
    inline QuadSolution GetQuadSolution() const { return quad_sol; }
@@ -158,22 +158,6 @@ public:
 
    void ProjectVectorFEGridFunction()
    { internal.grid_f = ProjectVectorFEGridFunction(std::move(internal.grid_f)); }
-
-   /// Sets a new mesh and solution from another DataState object, and
-   /// updates the given VisualizationScene pointer with the new data.
-   ///
-   /// Mesh space and grid function dimensions must both match the original
-   /// dimensions of the current DataState. If there is a mismatch in either
-   /// value, the function will return false, and the mesh/solution will not be
-   /// updated.
-   bool SetNewMeshAndSolution(DataState new_state,
-                              VisualizationScene* vs);
-
-   /// Updates the given VisualizationScene pointer with the new data
-   /// of the given DataState object.
-   /// @note: Use with caution when the update is compatible
-   /// @see SetNewMeshAndSolution()
-   static void ResetMeshAndSolution(DataState &ss, VisualizationScene* vs);
 };
 
 #endif // GLVIS_DATA_STATE_HPP
