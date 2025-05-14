@@ -9,6 +9,7 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
+#ifdef GLVIS_USE_EGL
 #include "egl.hpp"
 #include "aux_vis.hpp"
 #include <iostream>
@@ -352,3 +353,5 @@ void EglWindow::screenshot(std::string filename, bool convert)
    // Queue up an expose, so Screenshot() can pull image from updated buffer
    signalExpose();
 }
+
+#endif //GLVIS_USE_EGL

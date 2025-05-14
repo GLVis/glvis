@@ -11,6 +11,7 @@
 
 #ifndef GLVIS_EGL_HPP
 #define GLVIS_EGL_HPP
+#ifdef GLVIS_USE_EGL
 
 #include "glwindow.hpp"
 
@@ -105,4 +106,5 @@ public:
    void screenshot(std::string filename, bool convert = false) override;
 };
 
+#endif //GLVIS_USE_EGL
 #endif //GLVIS_EGL_HPP

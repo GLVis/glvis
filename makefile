@@ -223,7 +223,6 @@ EMCC_OPTS += $(if $(GLM_DIR),-I$(GLM_DIR))
 
 GLVIS_FLAGS += $(GL_OPTS)
 GLVIS_LIBS  += $(GL_LIBS)
-GLVIS_LIBS  += -lEGL
 
 # Take screenshots internally with libtiff, libpng, or sdl2?
 GLVIS_USE_LIBTIFF ?= NO
@@ -240,6 +239,15 @@ else ifeq ($(GLVIS_USE_LIBPNG),YES)
    GLVIS_LIBS  += $(PNG_LIBS)
 else
    # no flag --> SDL screenshots
+endif
+
+# EGL headless rendering
+GLVIS_USE_EGL ?= NO
+EGL_OPTS = -DGLVIS_USE_EGL
+EGL_LIBS = -lEGL
+ifeq ($(GLVIS_USE_EGL),YES)
+	GLVIS_FLAGS += $(EGL_OPTS)
+	GLVIS_LIBS  += $(EGL_LIBS)
 endif
 
 PTHREAD_LIB = -lpthread
