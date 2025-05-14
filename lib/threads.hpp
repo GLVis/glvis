@@ -12,8 +12,7 @@
 #ifndef GLVIS_THREADS_HPP
 #define GLVIS_THREADS_HPP
 
-#include "vsdata.hpp"
-#include "data_state.hpp"
+#include "window.hpp"
 #include <mfem.hpp>
 #include <thread>
 #include <atomic>
@@ -23,9 +22,8 @@ class GLVisCommand
 {
 private:
    // Pointers to global GLVis data
-   VisualizationSceneScalarData **vs;
-   DataState&           curr_state;
-   SdlWindow            *thread_wnd;
+   Window      &win;
+   GLWindow    *thread_wnd;
 
    std::mutex glvis_mutex;
    std::condition_variable glvis_cond;
@@ -58,7 +56,8 @@ private:
       PALETTE_REPEAT = 20,
       LEVELLINES = 21,
       AXIS_NUMBERFORMAT = 22,
-      COLORBAR_NUMBERFORMAT = 23
+      COLORBAR_NUMBERFORMAT = 23,
+      QUIT = 24,
    };
 
    std::atomic<bool> command_ready{false};
@@ -101,12 +100,11 @@ private:
 
 public:
    // called by the main execution thread
-   GLVisCommand(VisualizationSceneScalarData **_vs,
-                DataState& thread_state);
+   GLVisCommand(Window &win);
 
    // to be used by worker threads
-   bool KeepAttrib() { return curr_state.keep_attr; } // may need to sync this
-   bool FixElementOrientations() { return curr_state.fix_elem_orient; }
+   bool KeepAttrib() { return win.data_state.keep_attr; } // may need to sync this
+   bool FixElementOrientations() { return win.data_state.fix_elem_orient; }
 
    // called by worker threads
    int NewMeshAndSolution(DataState &&ss);
@@ -132,6 +130,7 @@ public:
    int ColorbarNumberFormat(string formatting);
    int Camera(const double cam[]);
    int Autopause(const char *mode);
+   int Quit();
 
    // called by the main execution thread
    int Execute();
@@ -166,10 +165,15 @@ private:
    // signal for thread cancellation
    std::atomic<bool> terminate_thread {false};
 
+   // flag for closing the window at the end of stream
+   bool end_quit;
+
+   static void print_commands();
    void execute();
 
 public:
-   communication_thread(StreamCollection _is, GLVisCommand* cmd);
+   communication_thread(StreamCollection _is, GLVisCommand* cmd,
+                        bool end_quit = false);
 
    ~communication_thread();
 };

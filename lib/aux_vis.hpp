@@ -16,15 +16,19 @@
 #include "gl/types.hpp"
 
 #include "openglvis.hpp"
-#include "sdl.hpp"
+#include "glwindow.hpp"
 #include "font.hpp"
 
 #include <functional>
 
 void SDLMainLoop(bool server_mode = false);
 
+class GLVisCommand;
+void SetGLVisCommand(GLVisCommand *cmd);
+
 /// Initializes the visualization and some keys.
-int InitVisualization(const char name[], int x, int y, int w, int h);
+GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
+                            bool headless = false);
 
 void SetVisualizationScene(VisualizationScene * scene,
                            int view = 3, const char *keys = NULL);
@@ -39,7 +43,9 @@ void MyExpose();
 
 void MainLoop();
 
-SdlWindow * GetAppWindow();
+class SdlWindow;
+SdlWindow* GetSdlWindow();
+GLWindow* GetAppWindow();
 VisualizationScene * GetVisualizationScene();
 
 void SetLegacyGLOnly(bool status);
@@ -47,15 +53,15 @@ void SetLegacyGLOnly(bool status);
 void AddIdleFunc(void (*Func)(void));
 void RemoveIdleFunc(void (*Func)(void));
 
-void LeftButtonDown  (EventInfo *event);
-void LeftButtonLoc   (EventInfo *event);
-void LeftButtonUp    (EventInfo *event);
-void MiddleButtonDown(EventInfo *event);
-void MiddleButtonLoc (EventInfo *event);
-void MiddleButtonUp  (EventInfo *event);
-void RightButtonDown (EventInfo *event);
-void RightButtonLoc  (EventInfo *event);
-void RightButtonUp   (EventInfo *event);
+void LeftButtonDown  (GLWindow::MouseEventInfo *event);
+void LeftButtonLoc   (GLWindow::MouseEventInfo *event);
+void LeftButtonUp    (GLWindow::MouseEventInfo *event);
+void MiddleButtonDown(GLWindow::MouseEventInfo *event);
+void MiddleButtonLoc (GLWindow::MouseEventInfo *event);
+void MiddleButtonUp  (GLWindow::MouseEventInfo *event);
+void RightButtonDown (GLWindow::MouseEventInfo *event);
+void RightButtonLoc  (GLWindow::MouseEventInfo *event);
+void RightButtonUp   (GLWindow::MouseEventInfo *event);
 
 void TouchPinch(SDL_MultiGestureEvent & e);
 
@@ -135,6 +141,8 @@ bool SetFont(const vector<std::string>& patterns, int height);
 void SetFont(const std::string& fn);
 
 void SetUseHiDPI(bool status);
+bool GetUseHiDPI();
+
 function<string(double)> NumberFormatter(int precision=4, char format='d',
                                          bool showsign=false);
 function<string(double)> NumberFormatter(string formatting);
