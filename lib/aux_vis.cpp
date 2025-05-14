@@ -85,7 +85,7 @@ void SetUseHiDPI(bool status)
 void MyExpose(GLsizei w, GLsizei h);
 void MyExpose();
 
-int InitVisualization (const char name[], int x, int y, int w, int h)
+SdlWindow* InitVisualization(const char name[], int x, int y, int w, int h)
 {
 
 #ifdef GLVIS_DEBUG
@@ -96,7 +96,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
       wnd = new SdlWindow();
       if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
       {
-         return 1;
+         return NULL;
       }
    }
    else
@@ -199,7 +199,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 #endif
    locscene = nullptr;
 
-   return 0;
+   return wnd;
 }
 
 void SendKeySequence(const char *seq)
@@ -369,12 +369,7 @@ void RunVisualization()
    wnd->mainLoop();
 #endif
    InitIdleFuncs();
-}
-
-void EndVisualization()
-{
    visualize = 0;
-   delete wnd;
    wnd = nullptr;
 }
 

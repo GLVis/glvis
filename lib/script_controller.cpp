@@ -971,7 +971,7 @@ void ScriptController::PlayScript(Window win, istream &scr)
          script_ctrl = &local_script;
          if (local_script.win.GLVisInitVis({}))
          {
-            GetAppWindow()->setOnKeyDown(SDLK_SPACE, ScriptControl);
+            local_script.win.wnd->setOnKeyDown(SDLK_SPACE, ScriptControl);
             local_script.win.GLVisStartVis();
          }
       },

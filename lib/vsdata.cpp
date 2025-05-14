@@ -933,8 +933,8 @@ void KeyKPressed()
 
 void KeyAPressed()
 {
-   bool curr_aa = GetAppWindow()->getRenderer().getAntialiasing();
-   GetAppWindow()->getRenderer().setAntialiasing(!curr_aa);
+   bool curr_aa = window->wnd->getRenderer().getAntialiasing();
+   window->wnd->getRenderer().setAntialiasing(!curr_aa);
 
    cout << "Multisampling/Antialiasing: "
         << strings_off_on[!curr_aa ? 1 : 0] << endl;
@@ -1371,7 +1371,7 @@ void VisualizationSceneScalarData::Init()
 {
    vsdata = this;
    window = &win;
-   wnd = GetAppWindow();
+   wnd = win.wnd.get();
 
    arrow_type = arrow_scaling_type = 0;
    scaling = 0;
@@ -1753,7 +1753,7 @@ void VisualizationSceneScalarData::SetLevelLines (
 
 void VisualizationSceneScalarData::PrintState()
 {
-   cout << "\nkeys: " << GetAppWindow()->getSavedKeys() << "\n"
+   cout << "\nkeys: " << wnd->getSavedKeys() << "\n"
         << "\nlight " << strings_off_on[use_light ? 1 : 0]
         << "\nperspective " << strings_off_on[OrthogonalProjection ? 0 : 1]
         << "\nviewcenter " << ViewCenterX << ' ' << ViewCenterY

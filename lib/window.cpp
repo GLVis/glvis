@@ -48,7 +48,9 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
    const char *win_title = (window_title == string_default) ?
                            window_titles[(int)field_type] : window_title;
 
-   if (InitVisualization(win_title, window_x, window_y, window_w, window_h))
+   internal.wnd.reset(InitVisualization(win_title, window_x, window_y, window_w,
+                                        window_h));
+   if (!wnd)
    {
       cerr << "Initializing the visualization failed." << endl;
       return false;
@@ -56,7 +58,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
 
    if (input_streams.size() > 0)
    {
-      GetAppWindow()->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
+      wnd->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
       internal.glvis_command.reset(new GLVisCommand(*this));
       SetGLVisCommand(glvis_command.get());
       internal.comm_thread.reset(new communication_thread(std::move(input_streams),
@@ -67,7 +69,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
 
    if (data_state.quad_f)
    {
-      GetAppWindow()->setOnKeyDown('Q', SwitchQuadSolution);
+      wnd->setOnKeyDown('Q', SwitchQuadSolution);
    }
 
    double mesh_range = -1.0;
@@ -174,7 +176,7 @@ void Window::GLVisStartVis()
 {
    RunVisualization();
    internal.vs.reset();
-   EndVisualization();
+   internal.wnd.reset();
    if (glvis_command)
    {
       glvis_command->Terminate();
