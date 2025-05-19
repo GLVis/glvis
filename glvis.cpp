@@ -75,11 +75,13 @@ class Session
 public:
    Session(bool fix_elem_orient,
            bool save_coloring,
-           string plot_caption)
+           string plot_caption,
+           bool headless)
    {
       win.data_state.fix_elem_orient = fix_elem_orient;
       win.data_state.save_coloring = save_coloring;
       win.plot_caption = plot_caption;
+      win.headless = headless;
    }
 
    Session(Window other_win)
@@ -159,7 +161,7 @@ public:
 };
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
-                 bool save_coloring, string plot_caption)
+                 bool save_coloring, string plot_caption, bool headless = false)
 {
    std::vector<Session> current_sessions;
    string data_type;
@@ -309,7 +311,7 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          while (1);
       }
 
-      Session new_session(fix_elem_orient, save_coloring, plot_caption);
+      Session new_session(fix_elem_orient, save_coloring, plot_caption, headless);
 
       constexpr int tmp_filename_size = 50;
       char tmp_file[tmp_filename_size];
@@ -680,20 +682,29 @@ int main (int argc, char *argv[])
    // server mode, read the mesh and the solution from a socket
    if (input == INPUT_SERVER_MODE)
    {
-      // Make sure the singleton object returned by GetMainThread() is
-      // initialized from the main thread.
-      GetMainThread();
+      if (!win.headless)
+      {
+         // Make sure the singleton object returned by GetMainThread() is
+         // initialized from the main thread.
+         GetMainThread();
+      }
 
       // Run server in new thread
       std::thread serverThread{GLVisServer, portnum, save_stream,
                                win.data_state.fix_elem_orient,
                                win.data_state.save_coloring,
-                               win.plot_caption};
+                               win.plot_caption, win.headless};
 
-      // Start SDL in main thread
-      SDLMainLoop(true);
-
-      serverThread.detach();
+      if (!win.headless)
+      {
+         // Start SDL in main thread
+         SDLMainLoop(true);
+         serverThread.detach();
+      }
+      else
+      {
+         serverThread.join();
+      }
    }
    else  // input != 1, non-server mode
    {
