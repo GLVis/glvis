@@ -18,6 +18,16 @@
 #include <functional>
 #include <string>
 
+class MainThread
+{
+public:
+   virtual ~MainThread() { }
+
+   // Handles all operations that are expected to be handled on the main
+   // thread (i.e. events and window creation)
+   virtual void MainLoop(bool server_mode) = 0;
+};
+
 class GLWindow
 {
 public:

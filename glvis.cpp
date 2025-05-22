@@ -602,14 +602,7 @@ int main (int argc, char *argv[])
 
       // Make sure the returned singleton object is
       // initialized from the main thread.
-      if (!headless)
-      {
-         GetMainThread();
-      }
-      else
-      {
-         EglMainThread::Get();
-      }
+      GetMainThread(headless);
 
       Session stream_session(std::move(win));
 
@@ -618,14 +611,8 @@ int main (int argc, char *argv[])
          return 1;
       }
 
-      if (!headless)
-      {
-         SDLMainLoop();
-      }
-      else
-      {
-         EglMainThread::Get().MainLoop();
-      }
+      MainThreadLoop(headless);
+
       return 0;
    }
 
@@ -681,14 +668,7 @@ int main (int argc, char *argv[])
    {
       // Make sure the returned singleton object is
       // initialized from the main thread.
-      if (!win.headless)
-      {
-         GetMainThread();
-      }
-      else
-      {
-         EglMainThread::Get();
-      }
+      GetMainThread(win.headless);
 
       // Run server in new thread
       std::thread serverThread{GLVisServer, portnum, save_stream,
@@ -696,15 +676,8 @@ int main (int argc, char *argv[])
                                win.data_state.save_coloring,
                                win.plot_caption, win.headless};
 
-      if (!win.headless)
-      {
-         // Start SDL in main thread
-         SDLMainLoop(true);
-      }
-      else
-      {
-         EglMainThread::Get().MainLoop(true);
-      }
+      // Start message loop in main thread
+      MainThreadLoop(win.headless, true);
       serverThread.detach();
    }
    else  // input != 1, non-server mode
@@ -815,26 +788,12 @@ int main (int argc, char *argv[])
 
       // Make sure the returned singleton object is
       // initialized from the main thread.
-      if (!headless)
-      {
-         GetMainThread();
-      }
-      else
-      {
-         EglMainThread::Get();
-      }
+      GetMainThread(headless);
 
       Session single_session(std::move(win));
       single_session.StartSession();
 
-      if (!headless)
-      {
-         SDLMainLoop();
-      }
-      else
-      {
-         EglMainThread::Get().MainLoop();
-      }
+      MainThreadLoop(headless);
    }
 
    cout << "Thank you for using GLVis." << endl;

@@ -18,6 +18,7 @@
 
 #include "mfem.hpp"
 #include "sdl/sdl.hpp"
+#include "sdl/sdl_main.hpp"
 #include "egl/egl.hpp"
 #include "palettes.hpp"
 #include "visual.hpp"
@@ -54,9 +55,19 @@ static thread_local SdlWindow *sdl_wnd = nullptr;
 static bool wndLegacyGl = false;
 static bool wndUseHiDPI = true;
 
-void SDLMainLoop(bool server_mode)
+MainThread& GetMainThread(bool headless)
 {
-   SdlWindow::StartSDL(server_mode);
+   if (headless)
+   {
+      return EglMainThread::Get();
+   }
+
+   return GetSdlMainThread();
+}
+
+void MainThreadLoop(bool headless, bool server_mode)
+{
+   GetMainThread(headless).MainLoop(server_mode);
 }
 
 void SetGLVisCommand(GLVisCommand *cmd)

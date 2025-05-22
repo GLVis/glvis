@@ -23,7 +23,7 @@ typedef void (*TouchDelegate)(SDL_MultiGestureEvent&);
 typedef void (*WindowDelegate)(int, int);
 
 class SdlMainThread;
-SdlMainThread& GetMainThread();
+SdlMainThread& GetSdlMainThread();
 
 class SdlWindow : public GLWindow
 {

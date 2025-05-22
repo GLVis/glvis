@@ -21,7 +21,8 @@
 
 #include <functional>
 
-void SDLMainLoop(bool server_mode = false);
+MainThread& GetMainThread(bool headless = false);
+void MainThreadLoop(bool headless = false, bool server_mode = false);
 
 class GLVisCommand;
 void SetGLVisCommand(GLVisCommand *cmd);

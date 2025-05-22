@@ -975,15 +975,7 @@ void ScriptController::PlayScript(Window win, istream &scr)
 
    // Make sure the returned singleton object is
    // initialized from the main thread.
-   if (!headless)
-   {
-      GetMainThread();
-   }
-   else
-   {
-      EglMainThread::Get();
-   }
-
+   GetMainThread(headless);
 
    std::thread worker_thread
    {
@@ -1007,13 +999,6 @@ void ScriptController::PlayScript(Window win, istream &scr)
       std::move(script)
    };
 
-   if (!headless)
-   {
-      SDLMainLoop();
-   }
-   else
-   {
-      EglMainThread::Get().MainLoop();
-   }
+   MainThreadLoop(headless);
    worker_thread.join();
 }

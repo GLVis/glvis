@@ -17,7 +17,7 @@
 
 #include "sdl.hpp"
 
-class SdlMainThread
+class SdlMainThread : public MainThread
 {
 private:
    using Handle = SdlWindow::Handle;
@@ -33,7 +33,7 @@ public:
 
    // Handles all SDL operations that are expected to be handled on the main
    // SDL thread (i.e. events and window creation)
-   void MainLoop(bool server_mode);
+   void MainLoop(bool server_mode) override;
 
    // Dequeues all incoming events from SDL, and queues them up to their
    // matching windows. Intended to be called only in single-threaded mode.

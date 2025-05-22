@@ -23,7 +23,7 @@
 #include <list>
 
 class EglWindow;
-class EglMainThread
+class EglMainThread : public MainThread
 {
    EGLDisplay disp{EGL_NO_DISPLAY};
 
@@ -76,7 +76,7 @@ public:
    void ResizeWindow(Handle &hnd, int w, int h);
    void DeleteWindow(EglWindow *caller, Handle &hnd);
 
-   void MainLoop(bool server = false);
+   void MainLoop(bool server = false) override;
 };
 
 class EglWindow : public GLWindow

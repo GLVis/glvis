@@ -65,7 +65,7 @@ SdlWindow::Handle::~Handle()
    }
 }
 
-SdlMainThread& GetMainThread()
+SdlMainThread& GetSdlMainThread()
 {
    static SdlMainThread inst;
    return inst;
@@ -80,7 +80,7 @@ SdlWindow::SdlWindow() {}
 
 void SdlWindow::StartSDL(bool server_mode)
 {
-   GetMainThread().MainLoop(server_mode);
+   GetSdlMainThread().MainLoop(server_mode);
 }
 
 const int default_dpi = 72;
@@ -92,7 +92,7 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
    is_multithreaded = false;
 #endif
    // create a new SDL window
-   handle = GetMainThread().GetHandle(this, title, x, y, w, h, legacyGlOnly);
+   handle = GetSdlMainThread().GetHandle(this, title, x, y, w, h, legacyGlOnly);
 
    // at this point, window should be up
    if (!handle.isInitialized())
@@ -108,7 +108,7 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
 SdlWindow::~SdlWindow()
 {
    // Let the main SDL thread delete the handles
-   GetMainThread().DeleteHandle(std::move(handle));
+   GetSdlMainThread().DeleteHandle(std::move(handle));
 }
 
 void SdlWindow::windowEvent(SDL_WindowEvent& ew)
@@ -258,8 +258,8 @@ void SdlWindow::mainIter()
 {
    if (!is_multithreaded)
    {
-      // Pull events from GetMainThread() object
-      GetMainThread().DispatchSDLEvents();
+      // Pull events from GetSdlMainThread() object
+      GetSdlMainThread().DispatchSDLEvents();
    }
    bool events_pending = false;
    bool sleep = false;
@@ -365,7 +365,7 @@ void SdlWindow::mainIter()
          // To avoid this issue, we just call [NSOpenGLContext update]
          // immediately before the expose event.
          SdlCocoaPlatform* platform =
-            dynamic_cast<SdlCocoaPlatform*>(GetMainThread().GetPlatform());
+            dynamic_cast<SdlCocoaPlatform*>(GetSdlMainThread().GetPlatform());
          if (platform)
          {
             platform->ContextUpdate();
@@ -411,7 +411,7 @@ void SdlWindow::mainLoop()
          // TODO: Temporary workaround - after merge, everyone should update to
          // latest SDL
          SdlCocoaPlatform* mac_platform
-            = dynamic_cast<SdlCocoaPlatform*>(GetMainThread().GetPlatform());
+            = dynamic_cast<SdlCocoaPlatform*>(GetSdlMainThread().GetPlatform());
          if (mac_platform && mac_platform->UseThreadWorkaround())
          {
             mac_platform->SwapWindow();
@@ -513,12 +513,12 @@ void SdlWindow::setWindowTitle(const std::string& title)
 
 void SdlWindow::setWindowTitle(const char * title)
 {
-   GetMainThread().SetWindowTitle(handle, title);
+   GetSdlMainThread().SetWindowTitle(handle, title);
 }
 
 void SdlWindow::setWindowSize(int w, int h)
 {
-   GetMainThread().SetWindowSize(handle, pixel_scale_x*w, pixel_scale_y*h);
+   GetSdlMainThread().SetWindowSize(handle, pixel_scale_x*w, pixel_scale_y*h);
    update_before_expose = true;
 
 }
@@ -529,9 +529,9 @@ void SdlWindow::setWindowPos(int x, int y)
                SDL_WINDOWPOS_ISCENTERED(x);
    bool uc_y = SDL_WINDOWPOS_ISUNDEFINED(y) ||
                SDL_WINDOWPOS_ISCENTERED(y);
-   GetMainThread().SetWindowPosition(handle,
-                                     uc_x ? x : pixel_scale_x*x,
-                                     uc_y ? y : pixel_scale_y*y);
+   GetSdlMainThread().SetWindowPosition(handle,
+                                        uc_x ? x : pixel_scale_x*x,
+                                        uc_y ? y : pixel_scale_y*y);
    update_before_expose = true;
 }
 
