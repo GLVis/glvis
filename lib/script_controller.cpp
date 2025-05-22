@@ -15,6 +15,7 @@
 #include "stream_reader.hpp"
 #include "visual.hpp"
 #include "sdl/sdl.hpp"
+#include "egl/egl.hpp"
 
 #include <array>
 #include <algorithm>
@@ -972,11 +973,15 @@ void ScriptController::PlayScript(Window win, istream &scr)
    // backup the headless flag as the window is moved
    const bool headless = script.win.headless;
 
+   // Make sure the returned singleton object is
+   // initialized from the main thread.
    if (!headless)
    {
-      // Make sure the singleton object returned by GetMainThread() is
-      // initialized from the main thread.
       GetMainThread();
+   }
+   else
+   {
+      EglMainThread::Get();
    }
 
 
@@ -1005,6 +1010,10 @@ void ScriptController::PlayScript(Window win, istream &scr)
    if (!headless)
    {
       SDLMainLoop();
+   }
+   else
+   {
+      EglMainThread::Get().MainLoop();
    }
    worker_thread.join();
 }

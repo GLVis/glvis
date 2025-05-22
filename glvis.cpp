@@ -40,6 +40,7 @@
 #include "lib/file_reader.hpp"
 #include "lib/coll_reader.hpp"
 #include "lib/sdl/sdl.hpp"
+#include "lib/egl/egl.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -96,7 +97,7 @@ public:
    inline DataState& GetState() { return win.data_state; }
    inline const DataState& GetState() const { return win.data_state; }
 
-   void StartSession(bool detached = true)
+   void StartSession()
    {
       auto funcThread = [](Window w, StreamCollection is)
       {
@@ -107,13 +108,10 @@ public:
       };
       handler = std::thread {funcThread,
                              std::move(win), std::move(input_streams)};
-      if (detached)
-      {
-         handler.detach();
-      }
+      handler.detach();
    }
 
-   bool StartSavedSession(std::string stream_file, bool detached = true)
+   bool StartSavedSession(std::string stream_file)
    {
       unique_ptr<ifstream> ifs(new ifstream(stream_file));
       if (!(*ifs))
@@ -127,7 +125,7 @@ public:
       reader.ReadStream(*ifs, data_type);
       input_streams.emplace_back(std::move(ifs));
 
-      StartSession(detached);
+      StartSession();
       return true;
    }
 
@@ -152,11 +150,6 @@ public:
 
       StartSession();
       return 0;
-   }
-
-   void WaitForSession()
-   {
-      handler.join();
    }
 };
 
@@ -607,16 +600,20 @@ int main (int argc, char *argv[])
       // backup the headless flag as the window is moved
       const bool headless = win.headless;
 
+      // Make sure the returned singleton object is
+      // initialized from the main thread.
       if (!headless)
       {
-         // Make sure the singleton object returned by GetMainThread() is
-         // initialized from the main thread.
          GetMainThread();
+      }
+      else
+      {
+         EglMainThread::Get();
       }
 
       Session stream_session(std::move(win));
 
-      if (!stream_session.StartSavedSession(stream_file, !headless))
+      if (!stream_session.StartSavedSession(stream_file))
       {
          return 1;
       }
@@ -627,7 +624,7 @@ int main (int argc, char *argv[])
       }
       else
       {
-         stream_session.WaitForSession();
+         EglMainThread::Get().MainLoop();
       }
       return 0;
    }
@@ -682,11 +679,15 @@ int main (int argc, char *argv[])
    // server mode, read the mesh and the solution from a socket
    if (input == INPUT_SERVER_MODE)
    {
+      // Make sure the returned singleton object is
+      // initialized from the main thread.
       if (!win.headless)
       {
-         // Make sure the singleton object returned by GetMainThread() is
-         // initialized from the main thread.
          GetMainThread();
+      }
+      else
+      {
+         EglMainThread::Get();
       }
 
       // Run server in new thread
@@ -699,12 +700,12 @@ int main (int argc, char *argv[])
       {
          // Start SDL in main thread
          SDLMainLoop(true);
-         serverThread.detach();
       }
       else
       {
-         serverThread.join();
+         EglMainThread::Get().MainLoop(true);
       }
+      serverThread.detach();
    }
    else  // input != 1, non-server mode
    {
@@ -812,15 +813,19 @@ int main (int argc, char *argv[])
       // backup the headless flag as the window is moved
       const bool headless = win.headless;
 
+      // Make sure the returned singleton object is
+      // initialized from the main thread.
       if (!headless)
       {
-         // Make sure the singleton object returned by GetMainThread() is
-         // initialized from the main thread.
          GetMainThread();
+      }
+      else
+      {
+         EglMainThread::Get();
       }
 
       Session single_session(std::move(win));
-      single_session.StartSession(!headless);
+      single_session.StartSession();
 
       if (!headless)
       {
@@ -828,7 +833,7 @@ int main (int argc, char *argv[])
       }
       else
       {
-         single_session.WaitForSession();
+         EglMainThread::Get().MainLoop();
       }
    }
 

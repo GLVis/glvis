@@ -20,13 +20,68 @@
 #include <condition_variable>
 #include <mutex>
 #include <deque>
+#include <list>
+
+class EglWindow;
+class EglMainThread
+{
+   EGLDisplay disp{EGL_NO_DISPLAY};
+
+   bool server_mode{false};
+
+   std::list<EglWindow*> windows;
+
+   struct CreateWndCmd;
+   struct ResizeWndCmd;
+   struct DeleteWndCmd;
+
+   enum class CtrlCmdType
+   {
+      Create,
+      Resize,
+      Delete,
+   };
+
+   struct CtrlCmd;
+
+   std::condition_variable events_available;
+   std::mutex window_cmd_mtx;
+   std::deque<CtrlCmd> window_cmds;
+
+   bool CreateWndImpl(CreateWndCmd &cmd);
+   bool ResizeWndImpl(ResizeWndCmd &cmd);
+   bool DeleteWndImpl(DeleteWndCmd &cmd);
+   void QueueWndCmd(CtrlCmd cmd, bool sync);
+
+public:
+   struct Handle
+   {
+      EGLSurface surf{EGL_NO_SURFACE};
+      EGLContext ctx{EGL_NO_CONTEXT};
+      EGLConfig eglCfg{};
+
+      bool isInitialized()
+      {
+         return surf != EGL_NO_SURFACE && ctx != EGL_NO_CONTEXT;
+      }
+   };
+
+   EglMainThread();
+   ~EglMainThread();
+
+   static EglMainThread& Get();
+   EGLDisplay GetDisplay() const { return disp; }
+
+   Handle CreateWindow(EglWindow *caller, int w, int h, bool legacy_gl);
+   void ResizeWindow(Handle &hnd, int w, int h);
+   void DeleteWindow(EglWindow *caller, Handle &hnd);
+
+   void MainLoop(bool server = false);
+};
 
 class EglWindow : public GLWindow
 {
-   EGLDisplay disp{EGL_NO_DISPLAY};
-   EGLSurface surf{EGL_NO_SURFACE};
-   EGLContext ctx{EGL_NO_CONTEXT};
-   EGLConfig eglCfg{};
+   EglMainThread::Handle handle;
 
    bool running{false};
 
@@ -91,8 +146,8 @@ public:
 
    void setWindowSize(int w, int h) override;
 
-   bool isWindowInitialized() const override { return surf != EGL_NO_SURFACE; }
-   bool isGlInitialized() const override { return ctx != EGL_NO_CONTEXT; }
+   bool isWindowInitialized() const override { return handle.surf != EGL_NO_SURFACE; }
+   bool isGlInitialized() const override { return handle.ctx != EGL_NO_CONTEXT; }
 
    void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE) override;
    void signalQuit() override;
