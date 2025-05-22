@@ -20,6 +20,7 @@
 #include "sdl/sdl.hpp"
 #include "sdl/sdl_main.hpp"
 #include "egl/egl.hpp"
+#include "egl/egl_main.hpp"
 #include "palettes.hpp"
 #include "visual.hpp"
 #include "gl2ps.h"

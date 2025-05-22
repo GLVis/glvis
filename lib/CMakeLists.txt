@@ -11,6 +11,7 @@
 
 list(APPEND SOURCES
   egl/egl.cpp
+  egl/egl_main.cpp
   gl/renderer.cpp
   gl/renderer_core.cpp
   gl/shader.cpp
@@ -40,6 +41,7 @@ list(APPEND SOURCES
 
 list(APPEND HEADERS
   egl/egl.hpp
+  egl/egl_main.hpp
   gl/attr_traits.hpp
   gl/platform_gl.hpp
   gl/renderer.hpp

@@ -22,37 +22,8 @@
 #include <deque>
 #include <list>
 
-class EglWindow;
-class EglMainThread : public MainThread
+class EglWindow : public GLWindow
 {
-   EGLDisplay disp{EGL_NO_DISPLAY};
-
-   bool server_mode{false};
-
-   std::list<EglWindow*> windows;
-
-   struct CreateWndCmd;
-   struct ResizeWndCmd;
-   struct DeleteWndCmd;
-
-   enum class CtrlCmdType
-   {
-      Create,
-      Resize,
-      Delete,
-   };
-
-   struct CtrlCmd;
-
-   std::condition_variable events_available;
-   std::mutex window_cmd_mtx;
-   std::deque<CtrlCmd> window_cmds;
-
-   bool CreateWndImpl(CreateWndCmd &cmd);
-   bool ResizeWndImpl(ResizeWndCmd &cmd);
-   bool DeleteWndImpl(DeleteWndCmd &cmd);
-   void QueueWndCmd(CtrlCmd cmd, bool sync);
-
 public:
    struct Handle
    {
@@ -66,22 +37,8 @@ public:
       }
    };
 
-   EglMainThread();
-   ~EglMainThread();
-
-   static EglMainThread& Get();
-   EGLDisplay GetDisplay() const { return disp; }
-
-   Handle CreateWindow(EglWindow *caller, int w, int h, bool legacy_gl);
-   void ResizeWindow(Handle &hnd, int w, int h);
-   void DeleteWindow(EglWindow *caller, Handle &hnd);
-
-   void MainLoop(bool server = false) override;
-};
-
-class EglWindow : public GLWindow
-{
-   EglMainThread::Handle handle;
+private:
+   Handle handle;
 
    bool running{false};
 

@@ -259,11 +259,11 @@ Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
 # generated with 'echo lib/egl/*.c* lib/gl/*.c* lib/sdl/*.c* lib/*.c*', does not include lib/*.m (Obj-C)
 ALL_SOURCE_FILES = \
- lib/egl/egl.cpp lib/gl/renderer_core.cpp lib/gl/renderer.cpp           \
- lib/gl/renderer_ff.cpp lib/gl/shader.cpp lib/gl/types.cpp              \
- lib/sdl/sdl.cpp lib/sdl/sdl_helper.cpp lib/sdl/sdl_main.cpp            \
- lib/sdl/sdl_windows.cpp lib/sdl/sdl_x11.cpp lib/aux_js.cpp             \
- lib/aux_vis.cpp lib/coll_reader.cpp lib/data_state.cpp                 \
+ lib/egl/egl.cpp lib/egl/egl_main.cpp lib/gl/renderer_core.cpp          \
+ lib/gl/renderer.cpp lib/gl/renderer_ff.cpp lib/gl/shader.cpp           \
+ lib/gl/types.cpp lib/sdl/sdl.cpp lib/sdl/sdl_helper.cpp                \
+ lib/sdl/sdl_main.cpp lib/sdl/sdl_windows.cpp lib/sdl/sdl_x11.cpp       \
+ lib/aux_js.cpp lib/aux_vis.cpp lib/coll_reader.cpp lib/data_state.cpp  \
  lib/file_reader.cpp lib/font.cpp lib/gl2ps.c lib/gltf.cpp              \
  lib/glwindow.cpp lib/material.cpp lib/openglvis.cpp                    \
  lib/palettes_base.cpp lib/palettes.cpp lib/script_controller.cpp       \
@@ -281,18 +281,18 @@ COMMON_SOURCE_FILES = $(filter-out \
 
 # generated with 'echo lib/egl/*.h* lib/gl/*.h* lib/sdl/*.h* lib/*.h*'
 HEADER_FILES = \
- lib/egl/egl.hpp lib/gl/attr_traits.hpp lib/gl/platform_gl.hpp          \
- lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp lib/gl/renderer.hpp    \
- lib/gl/shader.hpp lib/gl/types.hpp lib/sdl/sdl_helper.hpp              \
- lib/sdl/sdl.hpp lib/sdl/sdl_mac.hpp lib/sdl/sdl_main.hpp               \
- lib/sdl/sdl_windows.hpp lib/sdl/sdl_x11.hpp lib/aux_vis.hpp            \
- lib/coll_reader.hpp lib/data_state.hpp lib/file_reader.hpp             \
- lib/font.hpp lib/geom_utils.hpp lib/gl2ps.h lib/gltf.hpp               \
- lib/glwindow.hpp lib/logo.hpp lib/material.hpp lib/openglvis.hpp       \
- lib/palettes_base.hpp lib/palettes.hpp lib/script_controller.hpp       \
- lib/stream_reader.hpp lib/threads.hpp lib/visual.hpp lib/vsdata.hpp    \
- lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp               \
- lib/vsvector3d.hpp lib/window.hpp
+ lib/egl/egl.hpp lib/egl/egl_main.hpp lib/gl/attr_traits.hpp            \
+ lib/gl/platform_gl.hpp lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp \
+ lib/gl/renderer.hpp lib/gl/shader.hpp lib/gl/types.hpp                 \
+ lib/sdl/sdl_helper.hpp lib/sdl/sdl.hpp lib/sdl/sdl_mac.hpp             \
+ lib/sdl/sdl_main.hpp lib/sdl/sdl_windows.hpp lib/sdl/sdl_x11.hpp       \
+ lib/aux_vis.hpp lib/coll_reader.hpp lib/data_state.hpp                 \
+ lib/file_reader.hpp lib/font.hpp lib/geom_utils.hpp lib/gl2ps.h        \
+ lib/gltf.hpp lib/glwindow.hpp lib/logo.hpp lib/material.hpp            \
+ lib/openglvis.hpp lib/palettes_base.hpp lib/palettes.hpp               \
+ lib/script_controller.hpp lib/stream_reader.hpp lib/threads.hpp        \
+ lib/visual.hpp lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp  \
+ lib/vsvector.hpp lib/vsvector3d.hpp lib/window.hpp
 
 DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) $(DESKTOP_ONLY_SOURCE_FILES) $(LOGO_FILE_CPP)
 WEB_SOURCE_FILES     = $(COMMON_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES)
