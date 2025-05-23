@@ -116,6 +116,14 @@ bool EglMainThread::CreateWndImpl(CreateWndCmd &cmd)
    }
 
    windows.push_back(cmd.wnd);
+   if (num_windows < 0)
+   {
+      num_windows = 1;
+   }
+   else
+   {
+      num_windows++;
+   }
    cmd.out_handle.set_value(std::move(new_handle));
 
    return true;
@@ -173,6 +181,7 @@ bool EglMainThread::DeleteWndImpl(DeleteWndCmd &cmd)
    }
 
    windows.remove(cmd.wnd);
+   num_windows--;
 
    return true;
 }
@@ -431,7 +440,7 @@ void EglMainThread::MainLoop(bool server)
          while (events_pending);
       }
 
-      if (windows.size() == 0)
+      if (num_windows == 0)
       {
          if (!server_mode || terminating)
          {

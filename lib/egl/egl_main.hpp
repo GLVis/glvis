@@ -23,6 +23,7 @@ class EglMainThread : public MainThread
    bool server_mode{false};
 
    std::list<EglWindow*> windows;
+   int num_windows{-1};
 
    struct CreateWndCmd;
    struct ResizeWndCmd;
