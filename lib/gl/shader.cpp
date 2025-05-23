@@ -269,7 +269,7 @@ bool ShaderProgram::linkShaders(const std::vector<GLuint>& shaders)
    glGetProgramiv(program_id, GL_LINK_STATUS, &stat);
    if (stat == GL_FALSE)
    {
-      cerr << "fatal: Shader linking failed" << endl;
+      std::cerr << "fatal: Shader linking failed" << std::endl;
    }
    return (stat == GL_TRUE);
 }
@@ -283,7 +283,7 @@ void ShaderProgram::mapShaderUniforms()
 
    for (int i = 0; i < num_unifs; i++)
    {
-      vector<char> unif_buf(max_unif_len+1);
+      std::vector<char> unif_buf(max_unif_len+1);
       GLsizei name_length;
       GLint gl_size;
       GLenum gl_type;

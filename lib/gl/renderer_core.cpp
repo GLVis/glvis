@@ -40,6 +40,8 @@ const std::string PRINTING_FS =
 namespace gl3
 {
 
+using namespace std;
+
 const std::vector<std::string> CoreGLDevice::unif_list =
 {
    "useClipPlane",

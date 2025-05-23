@@ -15,6 +15,7 @@
 #include "aux_vis.hpp"
 
 using namespace mfem;
+using std::cout;
 
 const int NUM_MATERIALS = 5;
 extern Material materials[5];
@@ -481,7 +482,7 @@ VisualizationScene::AddPaletteMaterial(glTF_Builder &bld)
          /* wrapT: */ glTF_Builder::wrap_type::CLAMP_TO_EDGE);
    // create palette image
    const int palette_size = palette.GetNumColors();
-   vector<array<float,4>> palette_data = palette.GetPalette()->GetData();
+   std::vector<std::array<float,4>> palette_data = palette.GetPalette()->GetData();
 #if 0
    glGetTextureImage(
       palette.GetColorTexture(), 0,
@@ -565,7 +566,7 @@ VisualizationScene::AddPaletteLinesMaterial(
 }
 
 glTF_Builder::node_id
-VisualizationScene::AddModelNode(glTF_Builder &bld, const string &nodeName)
+VisualizationScene::AddModelNode(glTF_Builder &bld, const std::string &nodeName)
 {
    auto new_node = bld.addNode(nodeName);
    // Coordinate system switch: (x,y,z) -> (x,z,-y).
@@ -584,12 +585,12 @@ VisualizationScene::AddModelNode(glTF_Builder &bld, const string &nodeName)
 
 // Used in VisualizationScene::AddTriangles() below.
 void minmax(const float *data, size_t components, size_t stride, size_t count,
-            vector<float> &mins, vector<float> &maxs)
+            std::vector<float> &mins, std::vector<float> &maxs)
 {
    if (count == 0)
    {
-      mins.assign(components, +numeric_limits<float>::infinity());
-      maxs.assign(components, -numeric_limits<float>::infinity());
+      mins.assign(components, +std::numeric_limits<float>::infinity());
+      maxs.assign(components, -std::numeric_limits<float>::infinity());
       return;
    }
    mins.resize(components);
@@ -654,7 +655,7 @@ int VisualizationScene::AddTriangles(glTF_Builder &bld,
    }
    const gl3::IVertexBuffer *surf_buf = nullptr;
    const gl3::IIndexedBuffer *surf_ibuf = nullptr;
-   const vector<int> *surf_indices = nullptr;
+   const std::vector<int> *surf_indices = nullptr;
    if (num_ibuf)
    {
       surf_buf = surf_ibuf = gl_drawable.indexed_buffers[ibuf_layout][1].get();
@@ -669,7 +670,7 @@ int VisualizationScene::AddTriangles(glTF_Builder &bld,
    const size_t surf_vertices_stride = surf_buf->getStride(); // in bytes
    const float *surf_vertices_data =
       reinterpret_cast<const float *>(surf_buf->getData());
-   vector<float> vmins, vmaxs;
+   std::vector<float> vmins, vmaxs;
    int components = surf_vertices_stride/sizeof(float);
    switch (buf_layout)
    {
@@ -884,7 +885,7 @@ int VisualizationScene::AddLines(glTF_Builder &bld,
    const size_t lines_vertices_stride = lines_buf->getStride(); // in bytes
    const float *lines_vertices_data =
       reinterpret_cast<const float *>(lines_buf->getData());
-   vector<float> vmins, vmaxs;
+   std::vector<float> vmins, vmaxs;
    int components = lines_vertices_stride/sizeof(float);
    switch (buf_layout)
    {
