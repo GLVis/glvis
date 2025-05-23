@@ -58,10 +58,12 @@ static bool wndUseHiDPI = true;
 
 MainThread& GetMainThread(bool headless)
 {
+#ifdef GLVIS_USE_EGL
    if (headless)
    {
       return EglMainThread::Get();
    }
+#endif
 
    return GetSdlMainThread();
 }
