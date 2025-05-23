@@ -24,8 +24,7 @@
 #include "sdl_mac.hpp"
 #endif
 
-using std::cerr;
-using std::endl;
+using namespace std;
 
 #ifdef GLVIS_DEBUG
 #define PRINT_DEBUG(s) std::cerr << s
