@@ -21,6 +21,7 @@ class EglMainThread : public MainThread
    EGLDisplay disp{EGL_NO_DISPLAY};
 
    bool server_mode{false};
+   bool terminating{false};
 
    std::list<EglWindow*> windows;
    int num_windows{-1};
@@ -34,6 +35,7 @@ class EglMainThread : public MainThread
       Create,
       Resize,
       Delete,
+      Terminate,
    };
 
    struct CtrlCmd;
@@ -47,6 +49,8 @@ class EglMainThread : public MainThread
    bool DeleteWndImpl(DeleteWndCmd &cmd);
    void QueueWndCmd(CtrlCmd cmd, bool sync);
 
+   static void InterruptHandler(int param);
+
 public:
 
    EglMainThread();
@@ -58,6 +62,7 @@ public:
    Handle CreateWindow(EglWindow *caller, int w, int h, bool legacy_gl);
    void ResizeWindow(Handle &hnd, int w, int h);
    void DeleteWindow(EglWindow *caller, Handle &hnd);
+   void Terminate();
 
    void MainLoop(bool server = false) override;
 };

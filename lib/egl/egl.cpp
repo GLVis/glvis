@@ -25,8 +25,6 @@
 
 using namespace std;
 
-using namespace std;
-
 EglWindow::EglWindow()
 {
 }

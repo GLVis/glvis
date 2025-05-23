@@ -14,6 +14,7 @@
 #include "../aux_vis.hpp"
 #include <iostream>
 #include <future>
+#include <csignal>
 
 #ifdef GLVIS_DEBUG
 #define PRINT_DEBUG(s) std::cerr << s
@@ -206,6 +207,11 @@ void EglMainThread::QueueWndCmd(CtrlCmd cmd, bool sync)
    if (sync) { wait_complete.get(); }
 }
 
+void EglMainThread::InterruptHandler(int param)
+{
+   EglMainThread::Get().Terminate();
+}
+
 EglMainThread::EglMainThread()
 {
    if (disp != EGL_NO_DISPLAY)
@@ -384,10 +390,27 @@ void EglMainThread::DeleteWindow(EglWindow *caller, Handle &handle)
    QueueWndCmd(std::move(cmd), true);
 }
 
+void EglMainThread::Terminate()
+{
+   CtrlCmd cmd;
+   cmd.type = CtrlCmdType::Terminate;
+
+   // queue to the front to get priority
+   {
+      lock_guard<mutex> req_lock{window_cmd_mtx};
+      window_cmds.emplace_front(std::move(cmd));
+   }
+   // wake up the main thread to handle our event
+   events_available.notify_all();
+}
+
 void EglMainThread::MainLoop(bool server)
 {
    server_mode = server;
    bool terminating = false;
+
+   // set up interrupt handler for graceful closing
+   signal(SIGINT, InterruptHandler);
 
    while (true)
    {
@@ -433,6 +456,11 @@ void EglMainThread::MainLoop(bool server)
                   {
                      terminating = true;
                   }
+                  break;
+               case CtrlCmdType::Terminate:
+                  // do not wait for windows to open
+                  if (num_windows < 0) { num_windows = 0; }
+                  terminating = true;
                   break;
             }
 
