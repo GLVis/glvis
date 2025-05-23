@@ -33,8 +33,6 @@
 
 #include "platform_gl.hpp"
 
-using namespace std;
-
 class VisualizationScene;
 
 namespace gl3

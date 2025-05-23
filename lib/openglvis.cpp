@@ -15,6 +15,7 @@
 #include "aux_vis.hpp"
 
 using namespace mfem;
+using std::cout;
 
 const int NUM_MATERIALS = 5;
 extern Material materials[5];
@@ -112,8 +113,10 @@ void Camera::Print()
              << std::endl;
 }
 
-VisualizationScene::VisualizationScene()
+VisualizationScene::VisualizationScene(GLWindow &wnd_)
 {
+   wnd = &wnd_;
+
    translmat = glm::mat4(1.0);
    rotmat = glm::mat4(1.0);
    rotmat = glm::rotate(rotmat, glm::radians(-60.f), glm::vec3(1.f, 0.f, 0.f));
@@ -130,7 +133,7 @@ VisualizationScene::VisualizationScene()
    cut_updated = false;
 
    background = BG_WHITE;
-   GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
+   wnd->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
    _use_cust_l0_pos = false;
    light_mat_idx = 3;
    use_light = true;
@@ -479,7 +482,7 @@ VisualizationScene::AddPaletteMaterial(glTF_Builder &bld)
          /* wrapT: */ glTF_Builder::wrap_type::CLAMP_TO_EDGE);
    // create palette image
    const int palette_size = palette.GetNumColors();
-   vector<array<float,4>> palette_data = palette.GetPalette()->GetData();
+   std::vector<std::array<float,4>> palette_data = palette.GetPalette()->GetData();
 #if 0
    glGetTextureImage(
       palette.GetColorTexture(), 0,
@@ -563,7 +566,7 @@ VisualizationScene::AddPaletteLinesMaterial(
 }
 
 glTF_Builder::node_id
-VisualizationScene::AddModelNode(glTF_Builder &bld, const string &nodeName)
+VisualizationScene::AddModelNode(glTF_Builder &bld, const std::string &nodeName)
 {
    auto new_node = bld.addNode(nodeName);
    // Coordinate system switch: (x,y,z) -> (x,z,-y).
@@ -582,12 +585,12 @@ VisualizationScene::AddModelNode(glTF_Builder &bld, const string &nodeName)
 
 // Used in VisualizationScene::AddTriangles() below.
 void minmax(const float *data, size_t components, size_t stride, size_t count,
-            vector<float> &mins, vector<float> &maxs)
+            std::vector<float> &mins, std::vector<float> &maxs)
 {
    if (count == 0)
    {
-      mins.assign(components, +numeric_limits<float>::infinity());
-      maxs.assign(components, -numeric_limits<float>::infinity());
+      mins.assign(components, +std::numeric_limits<float>::infinity());
+      maxs.assign(components, -std::numeric_limits<float>::infinity());
       return;
    }
    mins.resize(components);
@@ -652,7 +655,7 @@ int VisualizationScene::AddTriangles(glTF_Builder &bld,
    }
    const gl3::IVertexBuffer *surf_buf = nullptr;
    const gl3::IIndexedBuffer *surf_ibuf = nullptr;
-   const vector<int> *surf_indices = nullptr;
+   const std::vector<int> *surf_indices = nullptr;
    if (num_ibuf)
    {
       surf_buf = surf_ibuf = gl_drawable.indexed_buffers[ibuf_layout][1].get();
@@ -667,7 +670,7 @@ int VisualizationScene::AddTriangles(glTF_Builder &bld,
    const size_t surf_vertices_stride = surf_buf->getStride(); // in bytes
    const float *surf_vertices_data =
       reinterpret_cast<const float *>(surf_buf->getData());
-   vector<float> vmins, vmaxs;
+   std::vector<float> vmins, vmaxs;
    int components = surf_vertices_stride/sizeof(float);
    switch (buf_layout)
    {
@@ -882,7 +885,7 @@ int VisualizationScene::AddLines(glTF_Builder &bld,
    const size_t lines_vertices_stride = lines_buf->getStride(); // in bytes
    const float *lines_vertices_data =
       reinterpret_cast<const float *>(lines_buf->getData());
-   vector<float> vmins, vmaxs;
+   std::vector<float> vmins, vmaxs;
    int components = lines_vertices_stride/sizeof(float);
    switch (buf_layout)
    {
@@ -1068,12 +1071,12 @@ void VisualizationScene::ToggleBackground()
    if (background == BG_BLK)
    {
       background = BG_WHITE;
-      GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
+      wnd->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
    }
    else
    {
       background = BG_BLK;
-      GetAppWindow()->getRenderer().setClearColor(0.f, 0.f, 0.f, 1.f);
+      wnd->getRenderer().setClearColor(0.f, 0.f, 0.f, 1.f);
    }
 }
 

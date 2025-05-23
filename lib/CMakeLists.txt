@@ -10,37 +10,48 @@
 # CONTRIBUTING.md for details.
 
 list(APPEND SOURCES
+  egl/egl.cpp
+  egl/egl_main.cpp
   gl/renderer.cpp
   gl/renderer_core.cpp
   gl/shader.cpp
   gl/types.cpp
+  sdl/sdl.cpp
+  sdl/sdl_helper.cpp
+  sdl/sdl_main.cpp
   aux_vis.cpp
   coll_reader.cpp
   data_state.cpp
   file_reader.cpp
   font.cpp
   gltf.cpp
+  glwindow.cpp
   material.cpp
   openglvis.cpp
   palettes.cpp
   palettes_base.cpp
-  sdl.cpp
-  sdl_helper.cpp
-  sdl_main.cpp
+  script_controller.cpp
   stream_reader.cpp
   vsdata.cpp
   vssolution.cpp
   vssolution3d.cpp
   vsvector.cpp
-  vsvector3d.cpp)
+  vsvector3d.cpp
+  window.cpp)
 
 list(APPEND HEADERS
+  egl/egl.hpp
+  egl/egl_main.hpp
   gl/attr_traits.hpp
   gl/platform_gl.hpp
   gl/renderer.hpp
   gl/renderer_core.hpp
   gl/shader.hpp
   gl/types.hpp
+  sdl/sdl.hpp
+  sdl/sdl_helper.hpp
+  sdl/sdl_main.hpp
+  sdl/sdl_mac.hpp
   aux_vis.hpp
   coll_reader.hpp
   data_state.hpp
@@ -48,22 +59,21 @@ list(APPEND HEADERS
   font.hpp
   geom_utils.hpp
   gltf.hpp
+  glwindow.hpp
   logo.hpp
   material.hpp
   openglvis.hpp
   palettes.hpp
   palettes_base.hpp
-  sdl.hpp
-  sdl_helper.hpp
-  sdl_main.hpp
-  sdl_mac.hpp
+  script_controller.hpp
   stream_reader.hpp
   visual.hpp
   vsdata.hpp
   vssolution.hpp
   vssolution3d.hpp
   vsvector.hpp
-  vsvector3d.hpp)
+  vsvector3d.hpp
+  window.hpp)
 
 if(EMSCRIPTEN)
   # Emscripten build target
@@ -84,15 +94,15 @@ if(EMSCRIPTEN)
   target_link_libraries(libglvis PUBLIC "${_glvis_libraries}")
 else()
   # Desktop build target
-  list(APPEND SOURCES gl/renderer_ff.cpp threads.cpp gl2ps.c sdl_x11.cpp)
-  list(APPEND HEADERS gl/renderer_ff.hpp threads.hpp gl2ps.h sdl_x11.hpp)
+  list(APPEND SOURCES gl/renderer_ff.cpp threads.cpp gl2ps.c sdl/sdl_x11.cpp)
+  list(APPEND HEADERS gl/renderer_ff.hpp threads.hpp gl2ps.h sdl/sdl_x11.hpp)
   if (APPLE)
-    list(APPEND SOURCES sdl_mac.mm)
-    list(APPEND HEADERS sdl_mac.hpp)
+    list(APPEND SOURCES sdl/sdl_mac.mm)
+    list(APPEND HEADERS sdl/sdl_mac.hpp)
   endif()
   if (WIN32)
-    list(APPEND SOURCES sdl_windows.cpp)
-    list(APPEND HEADERS sdl_windows.hpp)
+    list(APPEND SOURCES sdl/sdl_windows.cpp)
+    list(APPEND HEADERS sdl/sdl_windows.hpp)
   endif()
   add_library(glvis ${SOURCES} ${HEADERS})
   target_compile_definitions(glvis PUBLIC "${_glvis_compile_defs}")

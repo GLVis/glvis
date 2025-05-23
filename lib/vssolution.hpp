@@ -15,7 +15,6 @@
 #include "mfem.hpp"
 using namespace mfem;
 
-#include "sdl.hpp"
 #include "gl/types.hpp"
 #include "vsdata.hpp"
 
@@ -26,7 +25,7 @@ using namespace mfem;
 class VisualizationSceneSolution : public VisualizationSceneScalarData
 {
 protected:
-   Vector *v_normals;
+   Vector *v_normals{};
    GridFunction *rsol;
 
    int drawmesh, drawelems, drawnums, draworder;
@@ -86,9 +85,7 @@ public:
    int attr_to_show, bdr_attr_to_show;
    Array<int> el_attr_to_show, bdr_el_attr_to_show;
 
-   VisualizationSceneSolution();
-   VisualizationSceneSolution(Mesh &m, Vector &s, Mesh *mc = NULL,
-                              Vector *normals = NULL);
+   VisualizationSceneSolution(Window &win, bool init = true);
 
    virtual ~VisualizationSceneSolution();
 

@@ -15,7 +15,7 @@
 
 #include "sdl_main.hpp"
 #include "sdl_helper.hpp"
-#include "logo.hpp"
+#include "../logo.hpp"
 
 #ifdef SDL_VIDEO_DRIVER_COCOA
 #include "sdl_mac.hpp"
@@ -28,7 +28,9 @@
 #endif
 
 extern int GetMultisample();
-extern bool wndUseHiDPI;
+extern bool GetUseHiDPI();
+
+using namespace std;
 
 struct SdlMainThread::CreateWindowCmd
 {
@@ -616,7 +618,7 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
 #ifndef __EMSCRIPTEN__
    win_flags |= SDL_WINDOW_RESIZABLE;
 #endif
-   if (wndUseHiDPI)
+   if (GetUseHiDPI())
    {
       win_flags |= SDL_WINDOW_ALLOW_HIGHDPI;
    }

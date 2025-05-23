@@ -17,7 +17,10 @@
 #include <regex>
 
 #include "mfem.hpp"
-#include "sdl.hpp"
+#include "sdl/sdl.hpp"
+#include "sdl/sdl_main.hpp"
+#include "egl/egl.hpp"
+#include "egl/egl_main.hpp"
 #include "palettes.hpp"
 #include "visual.hpp"
 #include "gl2ps.h"
@@ -34,10 +37,11 @@
 #endif
 
 using namespace mfem;
+using namespace std;
 
-thread_local int visualize = 0;
-thread_local VisualizationScene * locscene;
-thread_local GLVisCommand *glvis_command = NULL;
+static thread_local int visualize = 0;
+static thread_local VisualizationScene *locscene = NULL;
+static thread_local GLVisCommand *glvis_command = NULL;
 
 #ifdef GLVIS_MULTISAMPLE
 static int glvis_multisample = GLVIS_MULTISAMPLE;
@@ -45,18 +49,42 @@ static int glvis_multisample = GLVIS_MULTISAMPLE;
 static int glvis_multisample = -1;
 #endif
 
-float line_w = 1.f;
-float line_w_aa = gl3::LINE_WIDTH_AA;
+static float line_w = 1.f;
+static float line_w_aa = gl3::LINE_WIDTH_AA;
 
-thread_local SdlWindow * wnd = nullptr;
-bool wndLegacyGl = false;
-bool wndUseHiDPI = true;
-void SDLMainLoop(bool server_mode)
+static thread_local GLWindow *wnd = nullptr;
+static thread_local SdlWindow *sdl_wnd = nullptr;
+static bool wndLegacyGl = false;
+static bool wndUseHiDPI = true;
+
+MainThread& GetMainThread(bool headless)
 {
-   SdlWindow::StartSDL(server_mode);
+#ifdef GLVIS_USE_EGL
+   if (headless)
+   {
+      return EglMainThread::Get();
+   }
+#endif
+
+   return GetSdlMainThread();
 }
 
-SdlWindow * GetAppWindow()
+void MainThreadLoop(bool headless, bool server_mode)
+{
+   GetMainThread(headless).MainLoop(server_mode);
+}
+
+void SetGLVisCommand(GLVisCommand *cmd)
+{
+   glvis_command = cmd;
+}
+
+SdlWindow * GetSdlWindow()
+{
+   return sdl_wnd;
+}
+
+GLWindow *GetAppWindow()
 {
    return wnd;
 }
@@ -76,26 +104,67 @@ void SetUseHiDPI(bool status)
    wndUseHiDPI = status;
 }
 
+bool GetUseHiDPI()
+{
+   return wndUseHiDPI;
+}
+
 void MyExpose(GLsizei w, GLsizei h);
 void MyExpose();
 
-int InitVisualization (const char name[], int x, int y, int w, int h)
+GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
+                            bool headless)
 {
-
 #ifdef GLVIS_DEBUG
-   cout << "OpenGL Visualization" << endl;
-#endif
-   if (!wnd)
+   if (!headless)
    {
-      wnd = new SdlWindow();
-      if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
+      cout << "OpenGL Visualization" << endl;
+   }
+   else
+   {
+      cout << "OpenGL+EGL Visualization" << endl;
+   }
+#endif
+
+   if (!headless)
+   {
+      if (!sdl_wnd)
       {
-         return 1;
+         wnd = sdl_wnd = new SdlWindow();
+         if (!sdl_wnd->createWindow(name, x, y, w, h, wndLegacyGl))
+         {
+            delete wnd;
+            wnd = sdl_wnd = nullptr;
+            return NULL;
+         }
+      }
+      else
+      {
+         sdl_wnd->clearEvents();
       }
    }
    else
    {
-      wnd->clearEvents();
+#ifdef GLVIS_USE_EGL
+      sdl_wnd = nullptr;
+      if (!wnd)
+      {
+         wnd = new EglWindow();
+         if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
+         {
+            delete wnd;
+            wnd = nullptr;
+            return NULL;
+         }
+      }
+      else
+      {
+         wnd->clearEvents();
+      }
+#else //GLVIS_USE_EGL
+      cerr << "EGL is required for headless rendering!" << endl;
+      return NULL;
+#endif //GLVIS_USE_EGL
    }
 
 #ifdef GLVIS_DEBUG
@@ -120,7 +189,10 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
    wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
 
-   wnd->setTouchPinchCallback(TouchPinch);
+   if (sdl_wnd)
+   {
+      sdl_wnd->setTouchPinchCallback(TouchPinch);
+   }
 
    // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
    wnd->setOnKeyDown (SDLK_s, KeyS);
@@ -193,7 +265,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 #endif
    locscene = nullptr;
 
-   return 0;
+   return wnd;
 }
 
 void SendKeySequence(const char *seq)
@@ -363,9 +435,8 @@ void RunVisualization()
    wnd->mainLoop();
 #endif
    InitIdleFuncs();
-   delete locscene;
-   delete wnd;
-   wnd = nullptr;
+   visualize = 0;
+   wnd = sdl_wnd = nullptr;
 }
 
 void SendExposeEvent()
@@ -592,7 +663,7 @@ inline void ComputeSphereAngles(int &newx, int &newy,
    new_sph_t = atan2(y, x);
 }
 
-void LeftButtonDown (EventInfo *event)
+void LeftButtonDown(GLWindow::MouseEventInfo *event)
 {
    locscene -> spinning = 0;
    RemoveIdleFunc(MainLoop);
@@ -610,7 +681,7 @@ void LeftButtonDown (EventInfo *event)
    starty = oldy;
 }
 
-void LeftButtonLoc (EventInfo *event)
+void LeftButtonLoc(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -668,7 +739,7 @@ void LeftButtonLoc (EventInfo *event)
    }
 }
 
-void LeftButtonUp (EventInfo *event)
+void LeftButtonUp(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -694,13 +765,13 @@ void LeftButtonUp (EventInfo *event)
    }
 }
 
-void MiddleButtonDown (EventInfo *event)
+void MiddleButtonDown(GLWindow::MouseEventInfo *event)
 {
    startx = oldx = event->mouse_x;
    starty = oldy = event->mouse_y;
 }
 
-void MiddleButtonLoc (EventInfo *event)
+void MiddleButtonLoc(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -768,16 +839,16 @@ void MiddleButtonLoc (EventInfo *event)
    oldy = newy;
 }
 
-void MiddleButtonUp (EventInfo*)
+void MiddleButtonUp(GLWindow::MouseEventInfo*)
 {}
 
-void RightButtonDown (EventInfo *event)
+void RightButtonDown(GLWindow::MouseEventInfo *event)
 {
    startx = oldx = event->mouse_x;
    starty = oldy = event->mouse_y;
 }
 
-void RightButtonLoc (EventInfo *event)
+void RightButtonLoc(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -825,7 +896,7 @@ void RightButtonLoc (EventInfo *event)
    oldy = newy;
 }
 
-void RightButtonUp (EventInfo*)
+void RightButtonUp(GLWindow::MouseEventInfo*)
 {}
 
 void TouchPinch(SDL_MultiGestureEvent & e)
