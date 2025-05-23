@@ -151,6 +151,7 @@ public:
       StartSession();
       return 0;
    }
+
 };
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
@@ -600,7 +601,7 @@ int main (int argc, char *argv[])
       // backup the headless flag as the window is moved
       const bool headless = win.headless;
 
-      // Make sure the returned singleton object is
+      // Make sure the singleton object returned by GetMainThread() is
       // initialized from the main thread.
       GetMainThread(headless);
 
@@ -612,7 +613,6 @@ int main (int argc, char *argv[])
       }
 
       MainThreadLoop(headless);
-
       return 0;
    }
 
@@ -666,7 +666,7 @@ int main (int argc, char *argv[])
    // server mode, read the mesh and the solution from a socket
    if (input == INPUT_SERVER_MODE)
    {
-      // Make sure the returned singleton object is
+      // Make sure the singleton object returned by GetMainThread() is
       // initialized from the main thread.
       GetMainThread(win.headless);
 
@@ -786,7 +786,7 @@ int main (int argc, char *argv[])
       // backup the headless flag as the window is moved
       const bool headless = win.headless;
 
-      // Make sure the returned singleton object is
+      // Make sure the singleton object returned by GetMainThread() is
       // initialized from the main thread.
       GetMainThread(headless);
 
