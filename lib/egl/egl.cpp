@@ -23,6 +23,10 @@
 #define PRINT_DEBUG(s) {}
 #endif
 
+using namespace std;
+
+using namespace std;
+
 EglWindow::EglWindow()
 {
 }
@@ -45,15 +49,15 @@ bool EglWindow::createWindow(const char *, int, int, int w, int h,
    glEnable(GL_DEBUG_OUTPUT);
 #endif
 
-   PRINT_DEBUG("EGL context is ready" << std::endl);
+   PRINT_DEBUG("EGL context is ready" << endl);
 
    return initGLEW(legacyGlOnly);
 }
 
-void EglWindow::queueEvents(std::vector<Event> events)
+void EglWindow::queueEvents(vector<Event> events)
 {
    {
-      std::lock_guard<std::mutex> evt_guard{event_mutex};
+      lock_guard<mutex> evt_guard{event_mutex};
       waiting_events.insert(waiting_events.end(), events.begin(), events.end());
    }
    if (is_multithreaded)
@@ -185,7 +189,7 @@ void EglWindow::signalQuit()
    queueEvents({{EventType::Quit}});
 }
 
-void EglWindow::screenshot(std::string filename, bool convert)
+void EglWindow::screenshot(string filename, bool convert)
 {
    screenshot_filename = filename;
    Event::Events e;

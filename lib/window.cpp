@@ -53,7 +53,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
                                         window_h, headless));
    if (!wnd)
    {
-      cerr << "Initializing the visualization failed." << endl;
+      std::cerr << "Initializing the visualization failed." << std::endl;
       return false;
    }
 
@@ -187,7 +187,7 @@ void Window::GLVisStartVis()
       internal.comm_thread.reset();
       internal.glvis_command.reset();
    }
-   cout << "GLVis window closed." << endl;
+   std::cout << "GLVis window closed." << std::endl;
 }
 
 void Window::SwitchQuadSolution(DataState::QuadSolution quad_type)

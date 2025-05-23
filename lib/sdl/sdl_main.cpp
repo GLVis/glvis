@@ -30,6 +30,8 @@
 extern int GetMultisample();
 extern bool GetUseHiDPI();
 
+using namespace std;
+
 struct SdlMainThread::CreateWindowCmd
 {
    SdlWindow* wnd;

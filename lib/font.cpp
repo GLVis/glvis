@@ -14,6 +14,9 @@
 #include "font.hpp"
 #include "aux_vis.hpp"
 
+using std::cout;
+using std::endl;
+
 struct vert_tex2d
 {
    float x, y;

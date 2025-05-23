@@ -21,6 +21,8 @@
 #define PRINT_DEBUG(s) {}
 #endif
 
+using namespace std;
+
 struct EglMainThread::CreateWndCmd
 {
    EglWindow *wnd;

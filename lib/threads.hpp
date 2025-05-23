@@ -126,8 +126,8 @@ public:
    int Palette(int pal);
    int PaletteRepeat(int n);
    int Levellines(double minv, double maxv, int number);
-   int AxisNumberFormat(string formatting);
-   int ColorbarNumberFormat(string formatting);
+   int AxisNumberFormat(std::string formatting);
+   int ColorbarNumberFormat(std::string formatting);
    int Camera(const double cam[]);
    int Autopause(const char *mode);
    int Quit();

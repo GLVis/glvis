@@ -37,6 +37,7 @@
 #endif
 
 using namespace mfem;
+using namespace std;
 
 static thread_local int visualize = 0;
 static thread_local VisualizationScene *locscene = NULL;

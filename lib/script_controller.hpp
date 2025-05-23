@@ -24,22 +24,22 @@ class ScriptController
 {
    Window win;
 
-   string dc_protocol = string_default;
+   std::string dc_protocol = string_default;
    int dc_cycle = 0;
 
-   istream *script = NULL;
+   std::istream *script = NULL;
    int scr_running = 0;
    int scr_level = 0;
    std::unique_ptr<mfem::Vector> init_nodes;
    double scr_min_val, scr_max_val;
 
-   static int ScriptReadSolution(istream &scr, DataState &state);
-   static int ScriptReadQuadrature(istream &scr, DataState &state);
-   static int ScriptReadParSolution(istream &scr, DataState &state);
-   static int ScriptReadParQuadrature(istream &scr, DataState &state);
-   int ScriptReadDisplMesh(istream &scr, DataState &state);
-   int ScriptReadDataColl(istream &scr, DataState &state, bool mesh_only = true,
-                          bool quad = false);
+   static int ScriptReadSolution(std::istream &scr, DataState &state);
+   static int ScriptReadQuadrature(std::istream &scr, DataState &state);
+   static int ScriptReadParSolution(std::istream &scr, DataState &state);
+   static int ScriptReadParQuadrature(std::istream &scr, DataState &state);
+   int ScriptReadDisplMesh(std::istream &scr, DataState &state);
+   int ScriptReadDataColl(std::istream &scr, DataState &state,
+                          bool mesh_only = true, bool quad = false);
 
    //key handlers using thread-local singleton
    static thread_local ScriptController *script_ctrl;
