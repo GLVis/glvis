@@ -9,22 +9,18 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#include <cstdlib>
 #include <cmath>
-
+#include <cstdlib>
 #include <unordered_set>
-
-#include <iomanip>
 #include <sstream>
 #include <limits>
-using namespace std;
 
 #include "vsdata.hpp"
 #include "aux_vis.hpp"
 #include "material.hpp"
 #include "palettes.hpp"
 
-#include "gl2ps.h"
+using namespace mfem;
 
 const char *strings_off_on[] = { "off", "on" };
 
@@ -37,7 +33,7 @@ void VisualizationSceneScalarData::FixValueRange()
    {
       // Shading quality may be bad since OpenGL uses single precision. We
       // should probably pre-scale the solution before feeding it to OpenGL
-      int old_prec = cout.precision(12);
+      auto old_prec = std::cout.precision(12);
       cout << "[minv,maxv] = " << "[" << minv << "," << maxv
            << "] (maxv-minv = " << maxv-minv << ")\n --> ";
       minv -= 0.49999e-5*am;

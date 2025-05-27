@@ -1020,13 +1020,30 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
    }
 
    // draw numberings
-   if (drawnums == 1)
+   if (drawnums == GLVIS_DRAW::ELEM)
    {
+      std::cerr << "GLVIS_DRAW::ELEM " << std::endl;
       scene.queue.emplace_back(params, &e_nums_buf);
    }
-   else if (drawnums == 2)
+   else if (drawnums == GLVIS_DRAW::EDGE)
    {
+      std::cerr << "GLVIS_DRAW::EDGE " << std::endl;
       scene.queue.emplace_back(params, &v_nums_buf);
+   }
+   else if (drawnums == GLVIS_DRAW::VERTEX)
+   {
+      std::cerr << "GLVIS_DRAW::VERTEX " << std::endl;
+      assert(false);
+   }
+   else if (drawnums == GLVIS_DRAW::DOF)
+   {
+      std::cerr << "GLVIS_DRAW::DOF " << std::endl;
+      assert(false);
+   }
+   else
+   {
+      std::cerr << "GLVIS_DRAW::NONE " << std::endl;
+      assert(drawnums == GLVIS_DRAW::NONE);
    }
 
    if (drawvector == 1 || drawvector > 3)

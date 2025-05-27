@@ -11,12 +11,10 @@
 
 #include <iostream>
 #include <sstream>
-#include <fstream>
 #include <cmath>
 #include <chrono>
 #include <regex>
 
-#include "mfem.hpp"
 #include "sdl.hpp"
 #include "palettes.hpp"
 #include "visual.hpp"
@@ -33,7 +31,7 @@
 #include <fontconfig/fontconfig.h>
 #endif
 
-using namespace mfem;
+// using namespace mfem;
 
 thread_local int visualize = 0;
 thread_local VisualizationScene * locscene;
