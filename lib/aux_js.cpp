@@ -275,9 +275,8 @@ std::string getHelpString()
 em::val getScreenBuffer(bool flip_y=false)
 {
    MyExpose();
-   auto * wnd = win.wnd;
    int w, h;
-   wnd->getGLDrawSize(w, h);
+   win.wnd->getGLDrawSize(w, h);
 
    // 4 bytes for rgba
    const size_t buffer_size = w*h*4;
@@ -318,13 +317,12 @@ em::val getScreenBuffer(bool flip_y=false)
 em::val getPNGByteArray()
 {
    constexpr const char * filename = "im.png";
-   auto * wnd = win.wnd;
    int w, h;
-   wnd->getGLDrawSize(w, h);
+   win.wnd->getGLDrawSize(w, h);
 
    MyExpose();
    // save to in-memory file
-   int status = SaveAsPNG(filename, w, h, wnd->isHighDpi(), true);
+   int status = SaveAsPNG(filename, w, h, win.wnd->isHighDpi(), true);
    if (status != 0)
    {
       fprintf(stderr, "unable to generate png\n");
