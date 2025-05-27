@@ -549,13 +549,13 @@ void SdlWindow::getWindowSize(int& w, int& h)
    if (handle.isInitialized())
    {
 #ifdef __EMSCRIPTEN__
-      if (canvas_id_.empty())
+      if (canvas_id.empty())
       {
-         std::cerr << "error: id is undefined: " << canvas_id_ << std::endl;
+         std::cerr << "error: id is undefined: " << canvas_id << std::endl;
          return;
       }
       double dw, dh;
-      auto err = emscripten_get_element_css_size(canvas_id_.c_str(), &dw, &dh);
+      auto err = emscripten_get_element_css_size(canvas_id.c_str(), &dw, &dh);
       w = int(dw);
       h = int(dh);
       if (err != EMSCRIPTEN_RESULT_SUCCESS)
