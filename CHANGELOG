@@ -18,6 +18,9 @@ Version 4.4.1 (development)
   end the visualization in this mode. Note GLVis must be compiled with with EGL
   (see INSTALL).
 
+- Added non-persistent mode of the server, when the server terminates after all
+  visualization windows are closed.
+
 
 Version 4.4 released on May 1, 2025
 ===================================
