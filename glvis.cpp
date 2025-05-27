@@ -380,6 +380,7 @@ int main (int argc, char *argv[])
    const char *palette_file  = string_none;
    const char *font_name     = string_default;
    int         portnum       = 19916;
+   bool        persistent    = true;
    int         multisample   = GetMultisample();
    double      line_width    = GetLineWidth();
    double      ms_line_width = GetLineWidthMS();
@@ -448,6 +449,9 @@ int main (int argc, char *argv[])
                   "Save the mesh coloring generated when opening only a mesh.");
    args.AddOption(&portnum, "-p", "--listen-port",
                   "Specify the port number on which to accept connections.");
+   args.AddOption(&persistent, "-pr", "--persistent",
+                  "-no-pr", "--no-persistent",
+                  "Keep server running after all windows are closed.");
    args.AddOption(&secure, "-sec", "--secure-sockets",
                   "-no-sec", "--standard-sockets",
                   "Enable or disable GnuTLS secure sockets.");
@@ -677,7 +681,7 @@ int main (int argc, char *argv[])
                                win.plot_caption, win.headless};
 
       // Start message loop in main thread
-      MainThreadLoop(win.headless, true);
+      MainThreadLoop(win.headless, persistent);
       serverThread.detach();
    }
    else  // input != 1, non-server mode
