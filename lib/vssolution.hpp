@@ -140,8 +140,6 @@ public:
    void PrepareVertexNumbering2();
    void PrepareEdgeNumbering();
    void PrepareDofNumbering();
-   void PrepareDofNumbering1();
-   void PrepareDofNumbering2();
 
    void PrepareCP();
 

@@ -2043,111 +2043,47 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
 
 void VisualizationSceneSolution::PrepareDofNumbering()
 {
-   std::cerr << "[PrepareDofNumbering]" << std::endl;
-   if (shading == Shading::Noncomforming)
-   {
-      PrepareDofNumbering2();
-   }
-   else
-   {
-      PrepareDofNumbering1();
-   }
-}
-
-void VisualizationSceneSolution::PrepareDofNumbering1()
-{
-   std::cerr << "[PrepareDofNumbering1]" << std::endl;
-   d_nums_buf.clear();
-
-   DenseMatrix pointmat;
-   Array<int> vertices;
-
-   // Draw the vertices for each element. This is redundant, except when the
-   // elements or domains are shrunk.
-
-   const int ne = mesh->GetNE();
-   for (int k = 0; k < ne; k++)
-   {
-      mesh->GetPointMatrix (k, pointmat);
-      mesh->GetElementVertices (k, vertices);
-      int nv = vertices.Size();
-
-      ShrinkPoints(pointmat, k, 0, 0);
-
-      double ds = GetElementLengthScale(k);
-      double xs = 0.05*ds;
-
-      for (int j = 0; j < nv; j++)
-      {
-         double x = pointmat(0,j);
-         double y = pointmat(1,j);
-         double u = LogVal((*sol)(vertices[j]));
-
-         double xx[3] = {x,y,u};
-         DrawNumberedMarker(d_nums_buf,xx,xs,vertices[j]);
-      }
-   }
-
-   updated_bufs.emplace_back(&d_nums_buf);
-}
-
-void VisualizationSceneSolution::PrepareDofNumbering2()
-{
    dbg();
-   Vector values;
-   DenseMatrix pointmat;
-
+   MFEM_VERIFY(rsol, "Solution is not set!");
    d_nums_buf.clear();
 
-   const FiniteElementSpace *sol_fes = rsol->FESpace();
-   Mesh *sol_mesh = sol_fes->GetMesh();
-
-   const auto typical_fe = sol_fes->GetTypicalFE();
+   const auto *fes = rsol->FESpace();
+   const auto typical_fe = fes->GetTypicalFE();
    const auto *fe = dynamic_cast<const NodalFiniteElement*>(typical_fe);
    MFEM_VERIFY(fe, "Expected a NodalFiniteElement!");
 
-   // sol_mesh->EnsureNodes();
-   const int ne = sol_mesh->GetNE();
-   const int sdim = sol_mesh->SpaceDimension();
-   const auto &ir = sol_fes->GetTypicalFE()->GetNodes();
+   Mesh *mesh = fes->GetMesh();
+   const int ne = mesh->GetNE(), sdim = mesh->SpaceDimension();
+   const IntegrationRule &ir = fes->GetTypicalFE()->GetNodes();
    const int nq = ir.GetNPoints();
-   dbg("ne:{} sdim:{} nq:{} = {}", ne, sdim, nq, nq * sdim * ne);
 
-   const auto *sol_fec = sol_fes->FEColl();
-   FiniteElementSpace dof_fes(sol_mesh, sol_fec, sdim);
+   const auto *fec = fes->FEColl();
+   FiniteElementSpace dof_fes(mesh, fec, sdim);
+   const int ndofs = dof_fes.GetNDofs();
+
    GridFunction dofs_gf(&dof_fes);
-   sol_mesh->GetNodes(dofs_gf);
+   mesh->GetNodes(dofs_gf);
+   MFEM_VERIFY(ndofs == dofs_gf.Size() / sdim, "NDofs error!");
 
-   const int NDofs = dof_fes.GetNDofs();
-   assert(NDofs == dofs_gf.Size() / sdim);
-   const auto Y = dofs_gf.HostRead();
-
-   const Array<int> &lex = fe->GetLexicographicOrdering();
-   const int ndof = lex.Size();
-   assert(ndof == nq);
+   Vector vals;
+   DenseMatrix tr;
    Array<int> dofs;
-
-   std::map<int,bool> done;
+   Array<bool> done(ndofs);
+   done = false;
 
    for (int e = 0; e < ne; e++)
    {
-      if (!el_attr_to_show[sol_mesh->GetAttribute(e) - 1]) { continue; }
-
+      if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
       const double ds = GetElementLengthScale(e), dx = 0.05 * ds;
-
-      GetRefinedValues(e, ir, values, pointmat);
+      GetRefinedValues(e, ir, vals, tr);
       dof_fes.GetElementDofs(e, dofs);
-
       for (int q = 0; q < nq; q++)
       {
-         const int dof = dofs[lex[q]];
-         // const int dof = dofs[q];
-         if (done.find(dof) != done.end()) { continue; }
-         done[dof] = true;
-         const real_t x[3] = { Y[dof + NDofs*0], Y[dof + NDofs *1], values[lex[q]]};
-         // const real_t x[3] = { Y[dof + NDofs*0], Y[dof + NDofs *1], values[q]};
-         DrawNumberedMarker(d_nums_buf, x, dx, dof);
-         // dbg("\x1b[32m{}", dof);
+         const int n = dofs[q];
+         if (done[n]) { continue; }
+         const real_t x[3] = { tr(0,q), tr(1,q), vals[q]};
+         DrawNumberedMarker(d_nums_buf, x, dx, n);
+         done[n] = true;
       }
    }
    updated_bufs.emplace_back(&d_nums_buf);
