@@ -13,7 +13,6 @@
 #include "egl_main.hpp"
 #include "../aux_vis.hpp"
 #include <iostream>
-#include <future>
 #include <csignal>
 
 #ifdef GLVIS_DEBUG
@@ -42,19 +41,6 @@ struct EglMainThread::DeleteWndCmd
 {
    EglWindow *wnd;
    Handle *handle;
-};
-
-struct EglMainThread::CtrlCmd
-{
-   CtrlCmdType type;
-   union
-   {
-      CreateWndCmd *create_cmd;
-      ResizeWndCmd *resize_cmd;
-      DeleteWndCmd *delete_cmd;
-   };
-
-   promise<void> finished;
 };
 
 bool EglMainThread::CreateWndImpl(CreateWndCmd &cmd)

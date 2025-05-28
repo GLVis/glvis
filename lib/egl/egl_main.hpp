@@ -14,6 +14,7 @@
 #if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
 
 #include "egl.hpp"
+#include <future>
 
 class EglMainThread : public MainThread
 {
@@ -39,7 +40,18 @@ class EglMainThread : public MainThread
       Terminate,
    };
 
-   struct CtrlCmd;
+   struct CtrlCmd
+   {
+      CtrlCmdType type;
+      union
+      {
+         CreateWndCmd *create_cmd;
+         ResizeWndCmd *resize_cmd;
+         DeleteWndCmd *delete_cmd;
+      };
+
+      std::promise<void> finished;
+   };
 
    std::condition_variable events_available;
    std::mutex window_cmd_mtx;
