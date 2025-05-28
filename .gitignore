@@ -27,4 +27,8 @@ compile_commands.json
 *.dSYM
 .DS_Store
 
+# Typical build directory
 /build/
+
+# Visual Studio Code
+/.vscode/
