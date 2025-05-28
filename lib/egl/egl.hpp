@@ -20,6 +20,7 @@
 #endif
 
 #ifdef GLVIS_USE_CGL
+#define GL_SILENCE_DEPRECATION // CGL has been deprecated since MacOS 10.14
 #include <OpenGL/CGLTypes.h>
 #include <OpenGL/CGLCurrent.h>
 #include <OpenGL/OpenGL.h>
