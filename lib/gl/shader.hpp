@@ -12,11 +12,11 @@
 #ifndef GLVIS_SHADER_HPP
 #define GLVIS_SHADER_HPP
 
+#include <iostream>
+#include <unordered_map>
+
 #include "platform_gl.hpp"
 #include "types.hpp"
-
-#include <unordered_map>
-#include <iostream>
 
 namespace gl3
 {

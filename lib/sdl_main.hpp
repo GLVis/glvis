@@ -12,8 +12,13 @@
 #ifndef GLVIS_SDL_MAIN_HPP
 #define GLVIS_SDL_MAIN_HPP
 
-#include <set>
 #include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <string>
+#include <vector>
+#include <unordered_map>
 
 #include "sdl.hpp"
 #include "sdl_helper.hpp"
@@ -114,14 +119,14 @@ private:
 
    // A flag indicating whether the main loop will *begin* terminating
    bool terminating {false};
-   unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> bg_wnd{nullptr, SDL_DestroyWindow};
+   std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> bg_wnd{nullptr, SDL_DestroyWindow};
 
    // -------------------------------------------------------------------------
    // Objects for handling passing of window control commands to the main event
    // loop.
 
    mutex window_cmd_mtx;
-   vector<SdlCtrlCommand> window_cmds;
+   std::vector<SdlCtrlCommand> window_cmds;
 
    int num_windows {-1}; // -1: waiting for window to be created
 
@@ -129,17 +134,17 @@ private:
    // Objects for handling dispatching events from the main event loop to
    // worker threads.
 
-   unordered_map<int, SdlWindow*> hwnd_to_window;
-   unordered_map<int, vector<SDL_Event>> wnd_events;
+   std::unordered_map<int, SdlWindow*> hwnd_to_window;
+   std::unordered_map<int, vector<SDL_Event>> wnd_events;
    std::set<SDL_FingerID> fingers;
    bool disable_mouse {false};
 
-   mutex gl_ctx_mtx;
+   std::mutex gl_ctx_mtx;
 
-   mutex event_mtx;
+   std::mutex event_mtx;
    condition_variable event_cv;
    bool try_create_platform{false};
-   unique_ptr<SdlNativePlatform> platform;
+   std::unique_ptr<SdlNativePlatform> platform;
 
    int title_height_offset {0};
 };

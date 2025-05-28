@@ -11,6 +11,9 @@
 
 #ifndef GLVIS_RENDERER_CORE_HPP
 #define GLVIS_RENDERER_CORE_HPP
+
+#include <unordered_map>
+
 #include "renderer.hpp"
 #include "shader.hpp"
 
