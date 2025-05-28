@@ -12,6 +12,10 @@
 #ifndef GLVIS_RENDERER_FF_HPP
 #define GLVIS_RENDERER_FF_HPP
 
+#include <array>
+#include <vector>
+#include <cstddef>
+
 #include "renderer.hpp"
 
 namespace gl3

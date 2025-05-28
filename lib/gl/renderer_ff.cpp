@@ -9,6 +9,10 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
+#include <array>
+#include <vector>
+#include <iostream>
+
 #include "renderer_ff.hpp"
 #include "attr_traits.hpp"
 #include "../aux_vis.hpp"
@@ -370,7 +374,7 @@ void FFGLDevice::captureXfbBuffer(PaletteState& pal, CaptureBuffer& cbuf,
       return;
    }
    // allocate feedback buffer
-   vector<float> xfb_buf;
+   std::vector<float> xfb_buf;
    xfb_buf.resize(sizebuf);
    glFeedbackBuffer(sizebuf, fbType, xfb_buf.data());
    // draw with feedback capture
