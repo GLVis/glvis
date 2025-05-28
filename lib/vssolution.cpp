@@ -2048,42 +2048,25 @@ void VisualizationSceneSolution::PrepareDofNumbering()
    d_nums_buf.clear();
 
    const auto *fes = rsol->FESpace();
-   const auto typical_fe = fes->GetTypicalFE();
-   const auto *fe = dynamic_cast<const NodalFiniteElement*>(typical_fe);
-   MFEM_VERIFY(fe, "Expected a NodalFiniteElement!");
-
-   Mesh *mesh = fes->GetMesh();
    const int ne = mesh->GetNE(), sdim = mesh->SpaceDimension();
    const IntegrationRule &ir = fes->GetTypicalFE()->GetNodes();
+   FiniteElementSpace dof_fes(mesh, fes->FEColl(), sdim);
    const int nq = ir.GetNPoints();
-
-   const auto *fec = fes->FEColl();
-   FiniteElementSpace dof_fes(mesh, fec, sdim);
-   const int ndofs = dof_fes.GetNDofs();
-
-   GridFunction dofs_gf(&dof_fes);
-   mesh->GetNodes(dofs_gf);
-   MFEM_VERIFY(ndofs == dofs_gf.Size() / sdim, "NDofs error!");
 
    Vector vals;
    DenseMatrix tr;
    Array<int> dofs;
-   Array<bool> done(ndofs);
-   done = false;
 
    for (int e = 0; e < ne; e++)
    {
       if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
-      const double ds = GetElementLengthScale(e), dx = 0.05 * ds;
+      const auto dx = 0.05 * GetElementLengthScale(e);
       GetRefinedValues(e, ir, vals, tr);
       dof_fes.GetElementDofs(e, dofs);
       for (int q = 0; q < nq; q++)
       {
-         const int n = dofs[q];
-         if (done[n]) { continue; }
          const real_t x[3] = { tr(0,q), tr(1,q), vals[q]};
-         DrawNumberedMarker(d_nums_buf, x, dx, n);
-         done[n] = true;
+         DrawNumberedMarker(d_nums_buf, x, dx, dofs[q]);
       }
    }
    updated_bufs.emplace_back(&d_nums_buf);
