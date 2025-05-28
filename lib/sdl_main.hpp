@@ -16,6 +16,7 @@
 #include <condition_variable>
 
 #include "sdl.hpp"
+#include "sdl_helper.hpp"
 
 class SdlMainThread
 {
@@ -143,4 +144,4 @@ private:
    int title_height_offset {0};
 };
 
-#endif
+#endif // GLVIS_SDL_MAIN_HPP

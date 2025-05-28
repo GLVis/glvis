@@ -12,10 +12,16 @@
 #ifndef GLVIS_VSVECTOR_HPP
 #define GLVIS_VSVECTOR_HPP
 
-#include "mfem.hpp"
+#include <mfem.hpp>
+using mfem::Vector;
+using mfem::Mesh;
+using mfem::GridFunction;
+using mfem::IntegrationRule;
+using mfem::DenseMatrix;
+using mfem::IsoparametricTransformation;
+
 #include "gl/types.hpp"
 #include "vssolution.hpp"
-using namespace mfem;
 
 class VisualizationSceneVector : public VisualizationSceneSolution
 {

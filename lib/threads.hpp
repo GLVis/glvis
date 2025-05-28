@@ -12,12 +12,13 @@
 #ifndef GLVIS_THREADS_HPP
 #define GLVIS_THREADS_HPP
 
-#include "vsdata.hpp"
-#include "data_state.hpp"
 #include <mfem.hpp>
 #include <thread>
 #include <atomic>
 #include <condition_variable>
+
+#include "vsdata.hpp"
+#include "data_state.hpp"
 
 class GLVisCommand
 {

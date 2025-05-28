@@ -16,12 +16,11 @@
 #include <cmath>
 #include <vector>
 
-#include <mfem.hpp>
-using namespace mfem;
-
 #include "vssolution.hpp"
 #include "palettes.hpp"
 #include "gltf.hpp"
+
+using namespace mfem;
 
 thread_local VisualizationSceneSolution *vssol;
 extern thread_local VisualizationScene  *locscene;

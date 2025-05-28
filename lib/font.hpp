@@ -21,8 +21,6 @@
 
 #include "gl/platform_gl.hpp"
 
-using namespace std;
-
 class GlVisFont
 {
 public:
@@ -66,7 +64,7 @@ public:
    {
       if (FT_Init_FreeType(&library))
       {
-         cout << "GLVis: Can not initialize FreeType library!" << endl;
+         std::cout << "GLVis: Can not initialize FreeType library!" << std::endl;
       }
       init = true;
    }
@@ -109,4 +107,4 @@ public:
    void setAlphaChannel(GLenum alpha) { alpha_channel = alpha; }
 };
 
-#endif /* GLVIS_FONT_HPP */
+#endif // GLVIS_FONT_HPP

@@ -23,7 +23,7 @@ class FFGLDevice : public GLDevice
 {
    struct DispListData_
    {
-      DispListHandle list;
+      resource::DispListHandle list;
       GLenum shape;
       size_t count;
       array_layout layout;

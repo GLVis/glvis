@@ -16,6 +16,9 @@
 
 namespace gl3
 {
+
+using namespace resource;
+
 // Renderer for OpenGL versions with access to the programmable pipeline
 class CoreGLDevice : public GLDevice
 {

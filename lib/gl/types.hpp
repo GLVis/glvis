@@ -14,7 +14,6 @@
 
 #include <vector>
 #include <array>
-#include <iostream>
 #include <memory>
 #include <iterator>
 #include <algorithm>

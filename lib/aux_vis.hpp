@@ -184,4 +184,4 @@ function<bool(T)> validator = [](T) { return true; })
    return input;
 }
 
-#endif
+#endif // GLVIS_AUX_VIS_HPP

@@ -13,10 +13,6 @@
 #include "renderer_core.hpp"
 #include "../aux_vis.hpp"
 
-#include <regex>
-#include <type_traits>
-#include <unordered_set>
-
 // weird but loads them inline
 
 const std::string BLINN_PHONG_FS =

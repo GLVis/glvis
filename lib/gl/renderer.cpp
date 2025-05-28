@@ -14,6 +14,8 @@
 namespace gl3
 {
 
+using namespace resource;
+
 // Beginning in OpenGL 3.0, there were two changes in texture format support:
 // - The older single-channel internal format GL_ALPHA was deprecated in favor
 //   of GL_RED

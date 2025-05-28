@@ -10,6 +10,7 @@
 // CONTRIBUTING.md for details.
 
 #include "shader.hpp"
+#include "renderer.hpp"
 #include <regex>
 
 namespace gl3

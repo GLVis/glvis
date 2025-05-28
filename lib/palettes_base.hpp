@@ -220,4 +220,4 @@ public:
 
 extern PaletteRegistry BasePalettes;
 
-#endif
+#endif // GLVIS_PALETTESBASE_HPP

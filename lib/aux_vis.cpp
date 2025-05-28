@@ -31,8 +31,6 @@
 #include <fontconfig/fontconfig.h>
 #endif
 
-// using namespace mfem;
-
 thread_local int visualize = 0;
 thread_local VisualizationScene * locscene;
 thread_local GLVisCommand *glvis_command = NULL;
@@ -433,7 +431,7 @@ void MyExpose()
 }
 
 
-thread_local Array<void (*)()> IdleFuncs;
+thread_local mfem::Array<void (*)()> IdleFuncs;
 thread_local int LastIdleFunc;
 thread_local bool use_idle = false;
 

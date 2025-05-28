@@ -226,4 +226,4 @@ public:
    int view;
 };
 
-#endif
+#endif // GLVIS_OPENGLVIS_HPP

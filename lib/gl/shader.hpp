@@ -12,9 +12,11 @@
 #ifndef GLVIS_SHADER_HPP
 #define GLVIS_SHADER_HPP
 
-#include "renderer.hpp"
+#include "platform_gl.hpp"
+#include "types.hpp"
 
 #include <unordered_map>
+#include <iostream>
 
 namespace gl3
 {
@@ -69,9 +71,9 @@ private:
    std::unordered_map<int, std::string> attrib_idx;
    int num_outputs = 0;
 
-   ShaderPrgmHandle program_id = 0;
-   ShaderHandle vertex_shader = 0;
-   ShaderHandle fragment_shader = 0;
+   resource::ShaderPrgmHandle program_id = 0;
+   resource::ShaderHandle vertex_shader = 0;
+   resource::ShaderHandle fragment_shader = 0;
    bool is_compiled = false;
    std::unordered_map<std::string, GLuint> uniform_idx;
 };

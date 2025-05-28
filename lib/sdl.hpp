@@ -20,7 +20,6 @@
 #include <condition_variable>
 #include <deque>
 #include "gl/renderer.hpp"
-#include "sdl_helper.hpp"
 
 struct EventInfo
 {

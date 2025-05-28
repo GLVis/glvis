@@ -14,12 +14,13 @@
 #include <cmath>
 #include <limits>
 
-#include "mfem.hpp"
-#include "visual.hpp"
-#include "palettes.hpp"
-using namespace mfem;
-using namespace std;
+#include <mfem.hpp>
 
+#include "palettes.hpp"
+#include "vssolution3d.hpp"
+
+using namespace std;
+using namespace mfem;
 
 thread_local VisualizationSceneSolution3d *vssol3d;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
