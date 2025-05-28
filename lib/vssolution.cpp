@@ -23,14 +23,6 @@ using namespace mfem;
 #include "palettes.hpp"
 #include "gltf.hpp"
 
-#if defined(__has_include) && __has_include("../nvtx.hpp") && !defined(_WIN32)
-#undef NVTX_COLOR
-#define NVTX_COLOR ::nvtx::kCyan
-#include "../nvtx.hpp"
-#else
-#define dbg(...)
-#endif
-
 thread_local VisualizationSceneSolution *vssol;
 extern thread_local VisualizationScene  *locscene;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
@@ -450,7 +442,7 @@ void VisualizationSceneSolution::Init()
    shading = Shading::Smooth;
    drawmesh  = 0;
    draworder = 0;
-   drawnums  = GLVIS_DRAW::NONE;
+   drawnums  = GLVIS_DRAW_NUM::NONE;
 
    refine_func = 0;
    have_sol_range = false;
@@ -1925,7 +1917,6 @@ void VisualizationSceneSolution::PrepareVertexNumbering()
 
 void VisualizationSceneSolution::PrepareVertexNumbering1()
 {
-   std::cerr << "[PrepareVertexNumbering1]" << std::endl;
    v_nums_buf.clear();
 
    DenseMatrix pointmat;
@@ -1962,7 +1953,6 @@ void VisualizationSceneSolution::PrepareVertexNumbering1()
 
 void VisualizationSceneSolution::PrepareVertexNumbering2()
 {
-   std::cerr << "[PrepareVertexNumbering2]" << std::endl;
    DenseMatrix pointmat;
    Vector values;
    Array<int> vertices;
@@ -2043,15 +2033,12 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
 
 void VisualizationSceneSolution::PrepareDofNumbering()
 {
-   dbg();
    MFEM_VERIFY(rsol, "Solution is not set!");
    d_nums_buf.clear();
 
    const auto *fes = rsol->FESpace();
    const int ne = mesh->GetNE(), sdim = mesh->SpaceDimension();
-   const IntegrationRule &ir = fes->GetTypicalFE()->GetNodes();
    FiniteElementSpace dof_fes(mesh, fes->FEColl(), sdim);
-   const int nq = ir.GetNPoints();
 
    Vector vals;
    DenseMatrix tr;
@@ -2061,11 +2048,12 @@ void VisualizationSceneSolution::PrepareDofNumbering()
    {
       if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
       const auto dx = 0.05 * GetElementLengthScale(e);
+      const IntegrationRule &ir = fes->GetFE(e)->GetNodes();
       GetRefinedValues(e, ir, vals, tr);
       dof_fes.GetElementDofs(e, dofs);
-      for (int q = 0; q < nq; q++)
+      for (int q = 0; q < ir.GetNPoints(); q++)
       {
-         const real_t x[3] = { tr(0,q), tr(1,q), vals[q]};
+         const real_t x[3] = {tr(0,q), tr(1,q), vals[q]};
          DrawNumberedMarker(d_nums_buf, x, dx, dofs[q]);
       }
    }
@@ -2170,27 +2158,23 @@ void VisualizationSceneSolution::PrepareNumbering(bool invalidate)
       f_nums_buf_ready = false;
       d_nums_buf_ready = false;
    }
-   if (drawnums == GLVIS_DRAW::ELEM && !e_nums_buf_ready)
+   if (drawnums == GLVIS_DRAW_NUM::ELEM && !e_nums_buf_ready)
    {
-      std::cerr << "[PrepareNumbering] GLVIS_DRAW::ELEM " << std::endl;
       PrepareElementNumbering();
       e_nums_buf_ready = true;
    }
-   if (drawnums == GLVIS_DRAW::EDGE && !f_nums_buf_ready)
+   if (drawnums == GLVIS_DRAW_NUM::EDGE && !f_nums_buf_ready)
    {
-      std::cerr << "[PrepareNumbering] GLVIS_DRAW::EDGE " << std::endl;
       PrepareEdgeNumbering();
       f_nums_buf_ready = true;
    }
-   if (drawnums == GLVIS_DRAW::VERTEX && !v_nums_buf_ready)
+   if (drawnums == GLVIS_DRAW_NUM::VERTEX && !v_nums_buf_ready)
    {
-      std::cerr << "[PrepareNumbering] GLVIS_DRAW::VERTEX " << std::endl;
       PrepareVertexNumbering();
       v_nums_buf_ready = true;
    }
-   if (drawnums == GLVIS_DRAW::DOF && !d_nums_buf_ready)
+   if (drawnums == GLVIS_DRAW_NUM::DOF && !d_nums_buf_ready)
    {
-      std::cerr << "[PrepareNumbering] GLVIS_DRAW::DOF " << std::endl;
       PrepareDofNumbering();
       d_nums_buf_ready = true;
    }
@@ -2603,23 +2587,23 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    }
 
    // draw numberings
-   if (drawnums == GLVIS_DRAW::ELEM)
+   if (drawnums == GLVIS_DRAW_NUM::ELEM)
    {
       scene.queue.emplace_back(params, &e_nums_buf);
    }
-   else if (drawnums == GLVIS_DRAW::EDGE)
+   else if (drawnums == GLVIS_DRAW_NUM::EDGE)
    {
       scene.queue.emplace_back(params, &f_nums_buf);
    }
-   else if (drawnums == GLVIS_DRAW::VERTEX)
+   else if (drawnums == GLVIS_DRAW_NUM::VERTEX)
    {
       scene.queue.emplace_back(params, &v_nums_buf);
    }
-   else if (drawnums == GLVIS_DRAW::DOF)
+   else if (drawnums == GLVIS_DRAW_NUM::DOF)
    {
       scene.queue.emplace_back(params, &d_nums_buf);
    }
-   else { assert(drawnums == GLVIS_DRAW::NONE); }
+   else { assert(drawnums == GLVIS_DRAW_NUM::NONE); }
 
    // draw orderings -- "black" modes
    if (draworder == 3)

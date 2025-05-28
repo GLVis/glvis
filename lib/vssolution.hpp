@@ -25,11 +25,8 @@ protected:
    mfem::GridFunction *rsol;
 
    int drawmesh, drawelems, draworder;
-   enum class GLVIS_DRAW
-   {
-      NONE = 0, ELEM = 1, EDGE = 2, VERTEX = 3, DOF = 4, MAX = 5
-   };
-   GLVIS_DRAW drawnums;
+   enum class GLVIS_DRAW_NUM { NONE, ELEM, EDGE, VERTEX, DOF, MAX };
+   GLVIS_DRAW_NUM drawnums;
    int drawbdr, draw_cp;
 
    int refine_func = 0;
@@ -163,7 +160,7 @@ public:
    // 0 - none, 1 - elements, 2 - edges, 3 - vertices, 4 - DOFs
    void ToggleDrawNumberings()
    {
-      drawnums = (GLVIS_DRAW) (((int)drawnums + 1) % (int)GLVIS_DRAW::MAX);
+      drawnums = (GLVIS_DRAW_NUM) (((int)drawnums + 1) % (int)GLVIS_DRAW_NUM::MAX);
       PrepareNumbering(false);
    }
 
