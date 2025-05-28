@@ -124,7 +124,8 @@ bool EglMainThread::CreateWndImpl(CreateWndCmd &cmd)
    };
 
    GLint numConfigs;
-   GLError err = CGLChoosePixelFormat(pixAttribs, &new_handle.pixFmt, &numConfigs);
+   CGLError err = CGLChoosePixelFormat(pixAttribs, &new_handle.pixFmt,
+                                       &numConfigs);
    if (multisamples > 0 && (err != kCGLNoError || numConfigs < 1))
    {
       std::cerr << "CGL with multisampling is not supported, turning it off" <<
