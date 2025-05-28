@@ -23,9 +23,9 @@ using namespace std;
 #include "aux_vis.hpp"
 #include "material.hpp"
 #include "palettes.hpp"
+#ifndef __EMSCRIPTEN__
 #include "threads.hpp"
-
-#include "gl2ps.h"
+#endif
 
 const char *strings_off_on[] = { "off", "on" };
 

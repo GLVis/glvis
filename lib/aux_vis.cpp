@@ -460,6 +460,7 @@ void InitIdleFuncs()
    }
 }
 
+#ifndef __EMSCRIPTEN__
 bool CommunicationIdleFunc()
 {
    int status = glvis_command->Execute();
@@ -475,6 +476,7 @@ bool CommunicationIdleFunc()
    }
    return false;
 }
+#endif
 
 bool MainIdleFunc()
 {

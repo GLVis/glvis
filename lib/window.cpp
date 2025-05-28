@@ -56,6 +56,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
       return false;
    }
 
+#ifndef __EMSCRIPTEN__
    if (input_streams.size() > 0)
    {
       wnd->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
@@ -64,6 +65,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
       internal.comm_thread.reset(new communication_thread(std::move(input_streams),
                                                           glvis_command.get()));
    }
+#endif
 
    locwin = this;
 
