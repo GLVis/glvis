@@ -122,8 +122,9 @@ bool EglMainThread::CreateWndImpl(CreateWndCmd &cmd)
 
    if (cmd.legacy_gl)
    {
+      // insert legacy OpenGL compatibility requirement
       auto it = (pixAttribs.end() -= 2);
-      pixAttribs.insert(it, {kCGLPFAOpenGLProfile, kCGLOGLPVersion_Legacy});
+      pixAttribs.insert(it, {kCGLPFAOpenGLProfile, CGLPixelFormatAttribute(kCGLOGLPVersion_Legacy)});
    }
 
    GLint numConfigs;
