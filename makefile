@@ -250,6 +250,13 @@ ifeq ($(GLVIS_USE_EGL),YES)
 	GLVIS_LIBS  += $(EGL_LIBS)
 endif
 
+# CGL headless rendering
+GLVIS_USE_CGL ?= NO
+CGL_OPTS = -DGLVIS_USE_CGL
+ifeq ($(GLVIS_USE_CGL),YES)
+	GLVIS_FLAGS += $(CGL_OPTS)
+endif
+
 PTHREAD_LIB = -lpthread
 GLVIS_LIBS += $(PTHREAD_LIB)
 

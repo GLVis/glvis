@@ -11,11 +11,19 @@
 
 #ifndef GLVIS_EGL_HPP
 #define GLVIS_EGL_HPP
-#ifdef GLVIS_USE_EGL
+#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
 
 #include "../glwindow.hpp"
 
+#ifdef GLVIS_USE_EGL
 #include <EGL/egl.h>
+#endif
+
+#ifdef GLVIS_USE_CGL
+#include <OpenGL/CGLTypes.h>
+#include <OpenGL/CGLCurrent.h>
+#include <OpenGL/OpenGL.h>
+#endif
 
 #include <condition_variable>
 #include <mutex>
@@ -27,13 +35,25 @@ class EglWindow : public GLWindow
 public:
    struct Handle
    {
-      EGLSurface surf{EGL_NO_SURFACE};
+#ifdef GLVIS_USE_EGL
+      EGLSurface surf {EGL_NO_SURFACE};
       EGLContext ctx{EGL_NO_CONTEXT};
       EGLConfig eglCfg{};
+#endif
+#ifdef GLVIS_USE_CGL
+      GLuint buf_frame {}, buf_color {}, buf_depth {};
+      CGLPixelFormatObj pixFmt {};
+      CGLContextObj ctx{};
+#endif
 
       bool isInitialized()
       {
+#ifdef GLVIS_USE_EGL
          return surf != EGL_NO_SURFACE && ctx != EGL_NO_CONTEXT;
+#endif
+#ifdef GLVIS_USE_CGL
+         return ctx != nullptr;
+#endif
       }
    };
 
@@ -103,8 +123,13 @@ public:
 
    void setWindowSize(int w, int h) override;
 
+#if defined(GLVIS_USE_EGL)
    bool isWindowInitialized() const override { return handle.surf != EGL_NO_SURFACE; }
    bool isGlInitialized() const override { return handle.ctx != EGL_NO_CONTEXT; }
+#elif defined(GLVIS_USE_CGL)
+   bool isWindowInitialized() const override { return isGlInitialized(); }
+   bool isGlInitialized() const override { return handle.ctx != nullptr; }
+#endif
 
    void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE) override;
    void signalQuit() override;
@@ -118,5 +143,5 @@ public:
    void screenshot(std::string filename, bool convert = false) override;
 };
 
-#endif //GLVIS_USE_EGL
+#endif //GLVIS_USE_EGL || GLVIS_USE_CGL
 #endif //GLVIS_EGL_HPP

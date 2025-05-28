@@ -59,7 +59,7 @@ static bool wndUseHiDPI = true;
 
 MainThread& GetMainThread(bool headless)
 {
-#ifdef GLVIS_USE_EGL
+#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
    if (headless)
    {
       return EglMainThread::Get();
@@ -145,7 +145,7 @@ GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
    }
    else
    {
-#ifdef GLVIS_USE_EGL
+#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
       sdl_wnd = nullptr;
       if (!wnd)
       {
@@ -161,10 +161,10 @@ GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
       {
          wnd->clearEvents();
       }
-#else //GLVIS_USE_EGL
-      cerr << "EGL is required for headless rendering!" << endl;
+#else //GLVIS_USE_EGL || GLVIS_USE_CGL
+      cerr << "EGL or CGL are required for headless rendering!" << endl;
       return NULL;
-#endif //GLVIS_USE_EGL
+#endif //GLVIS_USE_EGL || GLVIS_USE_CGL
    }
 
 #ifdef GLVIS_DEBUG

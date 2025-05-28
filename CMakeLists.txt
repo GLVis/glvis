@@ -62,6 +62,10 @@ option(GLVIS_USE_EGL
   "Use EGL for headless rendering"
   OFF)
 
+option(GLVIS_USE_CGL
+  "Use CGL for headless rendering"
+  OFF)
+
 #
 # Handle a few other definitions
 #
@@ -242,6 +246,11 @@ if (NOT EMSCRIPTEN)
       set(GLVIS_USE_EGL OFF)
     endif (OpenGL_EGL_FOUND)
   endif (GLVIS_USE_EGL)
+
+  # Find CGL
+  if (GLVIS_USE_CGL)
+    list(APPEND _glvis_compile_defs "GLVIS_USE_CGL")
+  endif (GLVIS_USE_CGL)
 
   # Find threading library
   find_package(Threads REQUIRED)
