@@ -21,7 +21,6 @@ class EglMainThread : public MainThread
    EGLDisplay disp{EGL_NO_DISPLAY};
 
    bool server_mode{false};
-   bool terminating{false};
 
    std::list<EglWindow*> windows;
    int num_windows{-1};
