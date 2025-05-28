@@ -45,7 +45,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
                                           "GLVis [vector data]",
                                         };
 
-   const char *win_title = (window_title == string_default) ?
+   const char *win_title = (window_title == nullptr) ?
                            window_titles[(int)field_type] : window_title;
 
    internal.wnd.reset(InitVisualization(win_title, window_x, window_y, window_w,

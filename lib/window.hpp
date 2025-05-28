@@ -22,9 +22,6 @@ class VisualizationSceneScalarData;
 class communication_thread;
 class GLVisCommand;
 
-extern const char *string_none;
-extern const char *string_default;
-
 struct Window
 {
 private:
@@ -43,7 +40,7 @@ public:
    const std::unique_ptr<SdlWindow> &wnd{internal.wnd};
    const std::unique_ptr<VisualizationSceneScalarData> &vs{internal.vs};
 #ifndef __EMSCRIPTEN__
-   const std::unique_ptr<communication_thread> &comm_thread{internal.comm_thread};
+   const std::unique_ptr<communication_thread> &comm_thread {internal.comm_thread};
    const std::unique_ptr<GLVisCommand> &glvis_command{internal.glvis_command};
 #endif
 
@@ -51,7 +48,7 @@ public:
    int         window_y        = 0; // not a command line option
    int         window_w        = 400;
    int         window_h        = 350;
-   const char *window_title    = string_default;
+   const char *window_title    = nullptr;
    std::string plot_caption;
    std::string extra_caption;
 
