@@ -12,14 +12,16 @@
 #ifndef GLVIS_VSSOLUTION_HPP
 #define GLVIS_VSSOLUTION_HPP
 
-#include "mfem.hpp"
-using namespace mfem;
+#include <mfem.hpp>
+using mfem::Mesh;
+using mfem::Array;
+using mfem::Vector;
+using mfem::DenseMatrix;
+using mfem::GridFunction;
+using mfem::IntegrationRule;
 
-#include "sdl.hpp"
 #include "gl/types.hpp"
 #include "vsdata.hpp"
-
-#include <map>
 
 // Visualization header file
 
@@ -29,7 +31,9 @@ protected:
    Vector *v_normals;
    GridFunction *rsol;
 
-   int drawmesh, drawelems, drawnums, draworder;
+   int drawmesh, drawelems, draworder;
+   enum class GLVIS_DRAW_NUM { NONE, ELEM, EDGE, VERTEX, DOF, MAX };
+   GLVIS_DRAW_NUM drawnums;
    int drawbdr, draw_cp;
 
    int refine_func = 0;
@@ -44,9 +48,8 @@ protected:
    bool e_nums_buf_ready = false;
    bool v_nums_buf_ready = false;
    bool f_nums_buf_ready = false;
-   gl3::GlDrawable e_nums_buf;
-   gl3::GlDrawable v_nums_buf;
-   gl3::GlDrawable f_nums_buf;
+   bool d_nums_buf_ready = false;
+   gl3::GlDrawable e_nums_buf, v_nums_buf, f_nums_buf, d_nums_buf;
 
    gl3::GlDrawable lcurve_buf;
    gl3::GlDrawable line_buf;
@@ -73,7 +76,8 @@ protected:
                                           Vector &vals, DenseMatrix &tr,
                                           DenseMatrix &normals);
 
-   void DrawLevelCurves(gl3::GlBuilder& buf, Array<int> &RG, DenseMatrix &pointmat,
+   void DrawLevelCurves(gl3::GlBuilder& buf, Array<int> &RG,
+                        DenseMatrix &pointmat,
                         Vector &values, int sides, Array<double> &lvl,
                         int flat = 0);
 
@@ -87,7 +91,8 @@ public:
    Array<int> el_attr_to_show, bdr_el_attr_to_show;
 
    VisualizationSceneSolution();
-   VisualizationSceneSolution(Mesh &m, Vector &s, Mesh *mc = NULL,
+   VisualizationSceneSolution(Mesh &m, Vector &s,
+                              Mesh *mc = NULL,
                               Vector *normals = NULL);
 
    virtual ~VisualizationSceneSolution();
@@ -96,7 +101,8 @@ public:
 
    void SetGridFunction(GridFunction & u) { rsol = &u; }
 
-   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc,
+                           Vector *new_sol,
                            GridFunction *new_u = NULL);
 
    void SetNewScalingFromBox() override;
@@ -137,6 +143,7 @@ public:
    void PrepareVertexNumbering1();
    void PrepareVertexNumbering2();
    void PrepareEdgeNumbering();
+   void PrepareDofNumbering();
 
    void PrepareCP();
 
@@ -157,10 +164,10 @@ public:
    //           3 - no arrows (black), 4 - with arrows (black)
    void ToggleDrawOrdering() { draworder = (draworder+1)%5; }
 
-   // 0 - none, 1 - elements, 2 - edges, 3 - vertices
+   // 0 - none, 1 - elements, 2 - edges, 3 - vertices, 4 - DOFs
    void ToggleDrawNumberings()
    {
-      drawnums = (drawnums+1)%4;
+      drawnums = (GLVIS_DRAW_NUM) (((int)drawnums + 1) % (int)GLVIS_DRAW_NUM::MAX);
       PrepareNumbering(false);
    }
 
@@ -183,4 +190,4 @@ public:
 void DrawNumberedMarker(gl3::GlDrawable& buff, const double x[3], double dx,
                         int n);
 
-#endif
+#endif // GLVIS_VSSOLUTION_HPP

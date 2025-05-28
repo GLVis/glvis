@@ -1020,11 +1020,11 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
    }
 
    // draw numberings
-   if (drawnums == 1)
+   if (drawnums == GLVIS_DRAW_NUM::ELEM)
    {
       scene.queue.emplace_back(params, &e_nums_buf);
    }
-   else if (drawnums == 2)
+   else if (drawnums == GLVIS_DRAW_NUM::EDGE)
    {
       scene.queue.emplace_back(params, &v_nums_buf);
    }

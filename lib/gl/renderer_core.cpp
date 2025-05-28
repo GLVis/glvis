@@ -9,13 +9,15 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
+#include <unordered_map>
+
 #include "attr_traits.hpp"
 #include "renderer_core.hpp"
 #include "../aux_vis.hpp"
 
-#include <regex>
-#include <type_traits>
+#ifdef GLVIS_DEBUG
 #include <unordered_set>
+#endif
 
 // weird but loads them inline
 
@@ -146,7 +148,7 @@ void CoreGLDevice::initializeShaderState(const ShaderProgram& prog)
       }
    }
 #ifdef GLVIS_DEBUG
-   unordered_set<string> expectedUnifs(unif_list.begin(), unif_list.end());
+   std::unordered_set<string> expectedUnifs(unif_list.begin(), unif_list.end());
    for (const auto& pairunif : uniforms)
    {
       if (expectedUnifs.find(pairunif.first) == expectedUnifs.end())

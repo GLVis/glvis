@@ -11,11 +11,17 @@
 
 #ifndef GLVIS_RENDERER_CORE_HPP
 #define GLVIS_RENDERER_CORE_HPP
+
+#include <unordered_map>
+
 #include "renderer.hpp"
 #include "shader.hpp"
 
 namespace gl3
 {
+
+using namespace resource;
+
 // Renderer for OpenGL versions with access to the programmable pipeline
 class CoreGLDevice : public GLDevice
 {

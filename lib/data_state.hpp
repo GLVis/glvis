@@ -13,9 +13,15 @@
 #define GLVIS_DATA_STATE_HPP
 
 #include <string>
-#include <vector>
 #include <memory>
-#include "mfem.hpp"
+
+#include <mfem.hpp>
+using mfem::Mesh;
+using mfem::Vector;
+using mfem::GridFunction;
+using mfem::QuadratureFunction;
+using mfem::DataCollection;
+
 #include "openglvis.hpp"
 
 struct DataState
@@ -49,11 +55,11 @@ private:
    friend class FileReader;
    struct
    {
-      std::unique_ptr<mfem::Mesh> mesh;
-      std::unique_ptr<mfem::Mesh> mesh_quad;
-      std::unique_ptr<mfem::GridFunction> grid_f;
-      std::unique_ptr<mfem::QuadratureFunction> quad_f;
-      std::unique_ptr<mfem::DataCollection> data_coll;
+      std::unique_ptr<Mesh> mesh;
+      std::unique_ptr<Mesh> mesh_quad;
+      std::unique_ptr<GridFunction> grid_f;
+      std::unique_ptr<QuadratureFunction> quad_f;
+      std::unique_ptr<DataCollection> data_coll;
    } internal;
 
    FieldType type {FieldType::UNKNOWN};
@@ -63,12 +69,12 @@ private:
    void SetQuadFunctionSolution(int component = -1);
 
 public:
-   mfem::Vector sol, solu, solv, solw, normals;
-   const std::unique_ptr<mfem::Mesh> &mesh{internal.mesh};
-   const std::unique_ptr<mfem::Mesh> &mesh_quad{internal.mesh_quad};
-   const std::unique_ptr<mfem::GridFunction> &grid_f{internal.grid_f};
-   const std::unique_ptr<mfem::QuadratureFunction> &quad_f{internal.quad_f};
-   const std::unique_ptr<mfem::DataCollection> &data_coll{internal.data_coll};
+   Vector sol, solu, solv, solw, normals;
+   const std::unique_ptr<Mesh> &mesh{internal.mesh};
+   const std::unique_ptr<Mesh> &mesh_quad{internal.mesh_quad};
+   const std::unique_ptr<GridFunction> &grid_f{internal.grid_f};
+   const std::unique_ptr<QuadratureFunction> &quad_f{internal.quad_f};
+   const std::unique_ptr<DataCollection> &data_coll{internal.data_coll};
 
    std::string keys;
    bool fix_elem_orient{false};
@@ -84,38 +90,38 @@ public:
 
    /// Set a mesh (plain pointer version)
    /** Note that ownership is passed from the caller.
-       @see SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh) */
-   void SetMesh(mfem::Mesh *mesh);
+       @see SetMesh(std::unique_ptr<Mesh> &&pmesh) */
+   void SetMesh(Mesh *mesh);
 
    /// Set a mesh (unique pointer version)
    /** Sets the mesh and resets grid/quadrature functions if they do not use
        the same one. */
-   void SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh);
+   void SetMesh(std::unique_ptr<Mesh> &&pmesh);
 
    /// Set a grid function (plain pointer version)
    /** Note that ownership is passed from the caller.
-       @see SetGridFunction(std::unique_ptr<mfem::GridFunction> &&, int ) */
-   void SetGridFunction(mfem::GridFunction *gf, int component = -1);
+       @see SetGridFunction(std::unique_ptr<GridFunction> &&, int ) */
+   void SetGridFunction(GridFunction *gf, int component = -1);
 
    /// Set a grid function (unique pointer version)
    /** Sets the grid function or its component (-1 means all components). */
-   void SetGridFunction(std::unique_ptr<mfem::GridFunction> &&pgf,
+   void SetGridFunction(std::unique_ptr<GridFunction> &&pgf,
                         int component = -1);
 
    /// Set a quadrature function (plain pointer version)
    /** Note that ownership is passed from the caller.
-       @see SetQuadFunction(std::unique_ptr<mfem::QuadFunction> &&, int ) */
-   void SetQuadFunction(mfem::QuadratureFunction *qf, int component = -1);
+       @see SetQuadFunction(std::unique_ptr<QuadFunction> &&, int ) */
+   void SetQuadFunction(QuadratureFunction *qf, int component = -1);
 
    /// Set a quadrature function (unique pointer version)
    /** Sets the quadrature function or its component (-1 means all components). */
-   void SetQuadFunction(std::unique_ptr<mfem::QuadratureFunction> &&pqf,
+   void SetQuadFunction(std::unique_ptr<QuadratureFunction> &&pqf,
                         int component = -1);
 
    /// Set a quadrature function from pieces
    /** Serializes the pieces of a quadrature function and sets it or its
        component (-1 means all components) */
-   void SetQuadFunction(const std::vector<mfem::QuadratureFunction*> &qf_array,
+   void SetQuadFunction(const std::vector<QuadratureFunction*> &qf_array,
                         int component = -1);
 
    /// Set a data collection field
@@ -126,7 +132,7 @@ public:
        @param field     name of the (Q-)field to load (NULL for mesh only)
        @param quad      if true, Q-field is loaded, otherwise a regular field
        @param component component of the field (-1 means all components) */
-   void SetDataCollectionField(mfem::DataCollection *dc, int ti,
+   void SetDataCollectionField(DataCollection *dc, int ti,
                                const char *field = NULL, bool quad = false, int component = -1);
 
    /// Helper function for visualizing 1D or 2D3V data
@@ -153,8 +159,8 @@ public:
    // Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec
    // or Raviart-Thomas space) with a discontinuous piece-wise polynomial Cartesian
    // product vector grid function of the same order.
-   static std::unique_ptr<mfem::GridFunction>
-   ProjectVectorFEGridFunction(std::unique_ptr<mfem::GridFunction> gf);
+   static std::unique_ptr<GridFunction>
+   ProjectVectorFEGridFunction(std::unique_ptr<GridFunction> gf);
 
    void ProjectVectorFEGridFunction()
    { internal.grid_f = ProjectVectorFEGridFunction(std::move(internal.grid_f)); }

@@ -12,15 +12,16 @@
 #include "palettes_base.hpp"
 #include "palettes_default.cpp"
 #include "gl/renderer.hpp"
-
+#include <iomanip>
+#include <fstream>
 
 void RGBAf::Print(ostream& os) const
 {
-   os << fixed << setprecision(6)
-      << setw(10) << r << " "
-      << setw(10) << g << " "
-      << setw(10) << b << " "
-      << setw(10) << a;
+   os << std::fixed << std::setprecision(6)
+      << std::setw(10) << r << " "
+      << std::setw(10) << g << " "
+      << std::setw(10) << b << " "
+      << std::setw(10) << a;
 }
 
 template <size_t N>

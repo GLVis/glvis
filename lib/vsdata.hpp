@@ -12,13 +12,15 @@
 #ifndef GLVIS_VSDATA_HPP
 #define GLVIS_VSDATA_HPP
 
-#include <array>
+#include <mfem.hpp>
+using mfem::Mesh;
+using mfem::Array;
+using mfem::Vector;
+using mfem::GridFunction;
+using mfem::DenseMatrix;
 
-#include "mfem.hpp"
 #include "openglvis.hpp"
 #include "aux_vis.hpp"
-
-using namespace mfem;
 
 extern thread_local std::string plot_caption; // defined in glvis.cpp
 extern thread_local std::string extra_caption; // defined in glvis.cpp
@@ -160,7 +162,8 @@ public:
 
    VisualizationSceneScalarData()
       : a_label_x("x"), a_label_y("y"), a_label_z("z") {}
-   VisualizationSceneScalarData (Mesh & m, Vector & s, Mesh *mc = NULL);
+   VisualizationSceneScalarData (Mesh & m, Vector & s,
+                                 Mesh *mc = NULL);
 
    virtual ~VisualizationSceneScalarData();
 

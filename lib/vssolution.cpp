@@ -16,14 +16,11 @@
 #include <cmath>
 #include <vector>
 
-#include "mfem.hpp"
-#include "visual.hpp"
+#include "vssolution.hpp"
 #include "palettes.hpp"
 #include "gltf.hpp"
 
 using namespace mfem;
-using namespace std;
-
 
 thread_local VisualizationSceneSolution *vssol;
 extern thread_local VisualizationScene  *locscene;
@@ -444,7 +441,7 @@ void VisualizationSceneSolution::Init()
    shading = Shading::Smooth;
    drawmesh  = 0;
    draworder = 0;
-   drawnums  = 0;
+   drawnums  = GLVIS_DRAW_NUM::NONE;
 
    refine_func = 0;
    have_sol_range = false;
@@ -2033,6 +2030,33 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
    updated_bufs.emplace_back(&f_nums_buf);
 }
 
+void VisualizationSceneSolution::PrepareDofNumbering()
+{
+   d_nums_buf.clear();
+   const auto *fes = rsol->FESpace();
+   const int ne = mesh->GetNE(), sdim = mesh->SpaceDimension();
+   FiniteElementSpace dof_fes(mesh, fes->FEColl(), sdim);
+
+   Vector vals;
+   DenseMatrix tr;
+   Array<int> dofs;
+
+   for (int e = 0; e < ne; e++)
+   {
+      if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
+      const auto dx = 0.05 * GetElementLengthScale(e);
+      const IntegrationRule &ir = fes->GetFE(e)->GetNodes();
+      GetRefinedValues(e, ir, vals, tr);
+      dof_fes.GetElementDofs(e, dofs);
+      for (int q = 0; q < ir.GetNPoints(); q++)
+      {
+         const real_t x[3] = {tr(0,q), tr(1,q), vals[q]};
+         DrawNumberedMarker(d_nums_buf, x, dx, dofs[q]);
+      }
+   }
+   updated_bufs.emplace_back(&d_nums_buf);
+}
+
 void VisualizationSceneSolution::PrepareOrderingCurve()
 {
    bool color = draworder < 3;
@@ -2129,21 +2153,27 @@ void VisualizationSceneSolution::PrepareNumbering(bool invalidate)
       e_nums_buf_ready = false;
       v_nums_buf_ready = false;
       f_nums_buf_ready = false;
+      d_nums_buf_ready = false;
    }
-   if (drawnums == 1 && !e_nums_buf_ready)
+   if (drawnums == GLVIS_DRAW_NUM::ELEM && !e_nums_buf_ready)
    {
       PrepareElementNumbering();
       e_nums_buf_ready = true;
    }
-   if (drawnums == 2 && !f_nums_buf_ready)
+   if (drawnums == GLVIS_DRAW_NUM::EDGE && !f_nums_buf_ready)
    {
       PrepareEdgeNumbering();
       f_nums_buf_ready = true;
    }
-   if (drawnums == 3 && !v_nums_buf_ready)
+   if (drawnums == GLVIS_DRAW_NUM::VERTEX && !v_nums_buf_ready)
    {
       PrepareVertexNumbering();
       v_nums_buf_ready = true;
+   }
+   if (drawnums == GLVIS_DRAW_NUM::DOF && !d_nums_buf_ready)
+   {
+      PrepareDofNumbering();
+      d_nums_buf_ready = true;
    }
 }
 
@@ -2554,18 +2584,23 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    }
 
    // draw numberings
-   if (drawnums == 1)
+   if (drawnums == GLVIS_DRAW_NUM::ELEM)
    {
       scene.queue.emplace_back(params, &e_nums_buf);
    }
-   else if (drawnums == 2)
+   else if (drawnums == GLVIS_DRAW_NUM::EDGE)
    {
       scene.queue.emplace_back(params, &f_nums_buf);
    }
-   else if (drawnums == 3)
+   else if (drawnums == GLVIS_DRAW_NUM::VERTEX)
    {
       scene.queue.emplace_back(params, &v_nums_buf);
    }
+   else if (drawnums == GLVIS_DRAW_NUM::DOF)
+   {
+      scene.queue.emplace_back(params, &d_nums_buf);
+   }
+   else { assert(drawnums == GLVIS_DRAW_NUM::NONE); }
 
    // draw orderings -- "black" modes
    if (draworder == 3)

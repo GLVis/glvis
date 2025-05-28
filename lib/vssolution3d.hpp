@@ -12,11 +12,17 @@
 #ifndef GLVIS_VSSOLUTION_3D_HPP
 #define GLVIS_VSSOLUTION_3D_HPP
 
-#include "mfem.hpp"
+#include <mfem.hpp>
+using mfem::Mesh;
+using mfem::Array;
+using mfem::Vector;
+using mfem::Geometry;
+using mfem::DenseMatrix;
+using mfem::GridFunction;
+using mfem::IntegrationRule;
+
 #include "gl/types.hpp"
 #include "vsdata.hpp"
-#include <map>
-using namespace mfem;
 
 class VisualizationSceneSolution3d : public VisualizationSceneScalarData
 {
@@ -62,7 +68,8 @@ protected:
    void DrawBdrElCoarseSurfEdges(gl3::GlBuilder &line, int be,
                                  DenseMatrix &pointmat, const IntegrationRule *ir = NULL,
                                  Array<int> *idxs = NULL);
-   void DrawFaceCoarseSurfEdges(gl3::GlBuilder &line, int f, DenseMatrix &pointmat,
+   void DrawFaceCoarseSurfEdges(gl3::GlBuilder &line, int f,
+                                DenseMatrix &pointmat,
                                 const IntegrationRule *ir = NULL, Array<int> *idxs = NULL);
    void DrawCoarseSurfEdges(gl3::GlBuilder &line, int f, int e1, int e2,
                             DenseMatrix &pointmat, const IntegrationRule *ir = NULL,
@@ -124,7 +131,8 @@ public:
 
    void SetGridFunction (GridFunction *gf) { GridF = gf; }
 
-   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc,
+                           Vector *new_sol,
                            GridFunction *new_u = NULL);
 
    virtual ~VisualizationSceneSolution3d();
