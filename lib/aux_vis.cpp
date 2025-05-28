@@ -20,7 +20,9 @@
 #include "sdl.hpp"
 #include "palettes.hpp"
 #include "visual.hpp"
+#ifndef __EMSCRIPTEN__
 #include "gl2ps.h"
+#endif
 
 #if defined(GLVIS_USE_LIBTIFF)
 #include "tiffio.h"
@@ -1176,6 +1178,7 @@ void KeyS()
    SendExposeEvent();
 }
 
+#ifndef __EMSCRIPTEN__
 inline GL2PSvertex CreatePrintVtx(gl3::FeedbackVertex v)
 {
    return
@@ -1218,6 +1221,7 @@ void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
       gl2psText(entry.text.c_str(), "Times", 12);
    }
 }
+#endif
 
 void KeyCtrlP()
 {
