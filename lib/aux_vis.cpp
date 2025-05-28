@@ -15,6 +15,7 @@
 #include <cmath>
 #include <chrono>
 #include <regex>
+#include <thread>
 
 #include "mfem.hpp"
 #include "sdl.hpp"
@@ -1286,7 +1287,9 @@ void ThreadsPauseFunc(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
+#ifndef __EMSCRIPTEN__
       glvis_command->ToggleAutopause();
+#endif
    }
    else
    {
