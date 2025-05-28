@@ -179,12 +179,14 @@ void Window::GLVisStartVis()
    RunVisualization();
    internal.vs.reset();
    internal.wnd.reset();
+#ifndef __EMSCRIPTEN__
    if (glvis_command)
    {
       glvis_command->Terminate();
       internal.comm_thread.reset();
       internal.glvis_command.reset();
    }
+#endif
    cout << "GLVis window closed." << endl;
 }
 
