@@ -112,8 +112,10 @@ void Camera::Print()
              << std::endl;
 }
 
-VisualizationScene::VisualizationScene()
+VisualizationScene::VisualizationScene(SdlWindow &wnd_)
 {
+   wnd = &wnd_;
+
    translmat = glm::mat4(1.0);
    rotmat = glm::mat4(1.0);
    rotmat = glm::rotate(rotmat, glm::radians(-60.f), glm::vec3(1.f, 0.f, 0.f));
@@ -130,7 +132,7 @@ VisualizationScene::VisualizationScene()
    cut_updated = false;
 
    background = BG_WHITE;
-   GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
+   wnd->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
    _use_cust_l0_pos = false;
    light_mat_idx = 3;
    use_light = true;
@@ -1068,12 +1070,12 @@ void VisualizationScene::ToggleBackground()
    if (background == BG_BLK)
    {
       background = BG_WHITE;
-      GetAppWindow()->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
+      wnd->getRenderer().setClearColor(1.f, 1.f, 1.f, 1.f);
    }
    else
    {
       background = BG_BLK;
-      GetAppWindow()->getRenderer().setClearColor(0.f, 0.f, 0.f, 1.f);
+      wnd->getRenderer().setClearColor(0.f, 0.f, 0.f, 1.f);
    }
 }
 
