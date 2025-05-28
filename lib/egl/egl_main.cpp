@@ -109,29 +109,40 @@ bool EglMainThread::CreateWndImpl(CreateWndCmd &cmd)
 #ifdef GLVIS_USE_CGL
    const int multisamples = GetMultisample();
 
-   CGLPixelFormatAttribute pixAttribs[] =
+   vector<CGLPixelFormatAttribute> pixAttribs =
    {
       kCGLPFASampleBuffers, CGLPixelFormatAttribute((multisamples > 0)?(1):(0)), // must be first
       kCGLPFASamples,       CGLPixelFormatAttribute(multisamples),
-      //kCGLPFAOpenGLProfile, CGLPixelFormatAttribute((cmd.legacy_gl)?(kCGLOGLPVersion_Legacy):(kCGLOGLPVersion_3_2_Core)),
       kCGLPFAColorSize,     CGLPixelFormatAttribute(24),
       kCGLPFAAlphaSize,     CGLPixelFormatAttribute(8),
       kCGLPFADepthSize,     CGLPixelFormatAttribute(24),
-      //kCGLPFAStencilSize,   CGLPixelFormatAttribute(stencilBits),
-      //kCGLPFAAccumSize,     CGLPixelFormatAttribute(accumBits),
-      kCGLPFAAccelerated,
+      kCGLPFAAccelerated, // must be last
       CGLPixelFormatAttribute(0)
    };
 
+   if (cmd.legacy_gl)
+   {
+      auto it = (pixAttribs.end() -= 2);
+      pixAttribs.insert(it, {kCGLPFAOpenGLProfile, kCGLOGLPVersion_Legacy});
+   }
+
    GLint numConfigs;
-   CGLError err = CGLChoosePixelFormat(pixAttribs, &new_handle.pixFmt,
+   CGLError err = CGLChoosePixelFormat(pixAttribs.data(), &new_handle.pixFmt,
                                        &numConfigs);
    if (multisamples > 0 && (err != kCGLNoError || numConfigs < 1))
    {
       std::cerr << "CGL with multisampling is not supported, turning it off" <<
                 std::endl;
-      pixAttribs[0] = CGLPixelFormatAttribute(0);
-      err = CGLChoosePixelFormat(pixAttribs, &new_handle.pixFmt, &numConfigs);
+      pixAttribs[1] = CGLPixelFormatAttribute(0);
+      err = CGLChoosePixelFormat(pixAttribs.data(), &new_handle.pixFmt, &numConfigs);
+   }
+   if (err != kCGLNoError || numConfigs < 1)
+   {
+      std::cerr << "CGL with hardware acceleration not supported, turning it off" <<
+                std::endl;
+      pixAttribs.pop_back();
+      pixAttribs.back() = CGLPixelFormatAttribute(0);
+      err = CGLChoosePixelFormat(pixAttribs.data(), &new_handle.pixFmt, &numConfigs);
    }
    if (err != kCGLNoError || numConfigs < 1)
    {
