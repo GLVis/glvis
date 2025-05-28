@@ -431,7 +431,7 @@ void MyExpose()
 }
 
 
-thread_local mfem::Array<void (*)()> IdleFuncs;
+thread_local Array<void (*)()> IdleFuncs;
 thread_local int LastIdleFunc;
 thread_local bool use_idle = false;
 

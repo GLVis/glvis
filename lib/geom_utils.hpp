@@ -12,8 +12,6 @@
 #ifndef GLVIS_GEOM_UTILS_HPP
 #define GLVIS_GEOM_UTILS_HPP
 
-#include <cmath>
-
 #include <mfem.hpp>
 
 // Some inline functions

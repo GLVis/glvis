@@ -2032,9 +2032,7 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
 
 void VisualizationSceneSolution::PrepareDofNumbering()
 {
-   MFEM_VERIFY(rsol, "Solution is not set!");
    d_nums_buf.clear();
-
    const auto *fes = rsol->FESpace();
    const int ne = mesh->GetNE(), sdim = mesh->SpaceDimension();
    FiniteElementSpace dof_fes(mesh, fes->FEColl(), sdim);
