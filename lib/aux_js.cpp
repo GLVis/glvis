@@ -13,7 +13,6 @@
 #include "palettes.hpp"
 #include "stream_reader.hpp"
 #include "visual.hpp"
-#include "glwindow.hpp"
 
 #ifdef GLVIS_USE_LIBPNG
 #include <png.h>
