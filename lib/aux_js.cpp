@@ -31,6 +31,9 @@ thread_local mfem::GeometryRefiner GLVisGeometryRefiner;
 std::vector<unsigned char> * screen_state = nullptr;
 
 static Window win;
+// using StreamCollection = std::vector<std::unique_ptr<std::istream>>;
+// static StreamCollection input_streams;
+// static std::thread handler;
 
 int last_stream_nproc = 1;
 
@@ -84,6 +87,33 @@ void display(std::stringstream & commands, const int w, const int h)
 
    SendExposeEvent();
 }
+
+// void display2(const int w, const int h)
+// {
+//    // reset antialiasing
+//    win.wnd->getRenderer().setAntialiasing(0);
+
+//    win.window_title = "glvis";
+//    win.window_x = 0.;
+//    win.window_y = 0.;
+//    win.window_w = w;
+//    win.window_h = h;
+
+//    auto funcThread = [](Window w, StreamCollection is)
+//    {
+//       if (w.GLVisInitVis(std::move(is)))
+//       {
+//          w.GLVisStartVis();
+//       }
+//    };
+//    handler = std::thread {funcThread,
+//                            std::move(win), std::move(input_streams)};
+//    handler.detach();
+
+//    // win.GLVisInitVis({});
+//    // CallKeySequence(win.data_state.keys.c_str());
+//    // SendExposeEvent();
+// }
 
 //
 // StreamReader::ReadStream requires a list of unique_ptr to istream and since
@@ -149,6 +179,22 @@ void displayStream(const std::string & stream, const int w, const int h)
 
    display(ss, w, h);
 }
+
+// void displayStream(const std::string & stream, const int w, const int h)
+// {
+//    std::stringstream ss(stream);
+//    std::string data_type;
+//    ss >> data_type >> ws;
+
+//    StreamReader reader(win.data_state);
+//    reader.ReadStream(ss, data_type);
+//    input_streams.emplace_back(std::move(&ss));
+
+//    // display(ss, w, h);
+//    display2(w, h);
+// }
+
+
 
 //
 // update the existing stream
