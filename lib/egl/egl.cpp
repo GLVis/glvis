@@ -9,7 +9,7 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifdef GLVIS_USE_EGL
+#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
 #include "egl.hpp"
 #include "egl_main.hpp"
 #include "../aux_vis.hpp"
@@ -156,6 +156,7 @@ void EglWindow::signalLoop()
 
 void EglWindow::getGLDrawSize(int& w, int& h) const
 {
+#ifdef GLVIS_USE_EGL
    EGLint egl_w, egl_h;
 
    EGLDisplay disp = EglMainThread::Get().GetDisplay();
@@ -163,6 +164,14 @@ void EglWindow::getGLDrawSize(int& w, int& h) const
    eglQuerySurface(disp, handle.surf, EGL_HEIGHT, &egl_h);
    w = egl_w;
    h = egl_h;
+#endif
+#ifdef GLVIS_USE_CGL
+   GLint cgl_w, cgl_h;
+   glGetRenderbufferParameteriv(handle.buf_color, GL_RENDERBUFFER_WIDTH, &cgl_w);
+   glGetRenderbufferParameteriv(handle.buf_color, GL_RENDERBUFFER_HEIGHT, &cgl_h);
+   w = cgl_w;
+   h = cgl_h;
+#endif
 }
 
 bool EglWindow::isHighDpi() const
@@ -197,4 +206,4 @@ void EglWindow::screenshot(string filename, bool convert)
    signalExpose();
 }
 
-#endif //GLVIS_USE_EGL
+#endif //GLVIS_USE_EGL || GLVIS_USE_CGL
