@@ -272,7 +272,8 @@ ALL_SOURCE_FILES = \
  lib/vsvector3d.cpp lib/window.cpp
 OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl/sdl_mac.mm)
 DESKTOP_ONLY_SOURCE_FILES = \
- lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c lib/sdl/sdl_x11.cpp
+ lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c                     \
+ lib/script_controller.cpp lib/sdl/sdl_x11.cpp
 WEB_ONLY_SOURCE_FILES = lib/aux_js.cpp
 LOGO_FILE = share/logo.rgba
 LOGO_FILE_CPP = $(LOGO_FILE).bin.cpp

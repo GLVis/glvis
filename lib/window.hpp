@@ -22,9 +22,6 @@ class VisualizationSceneScalarData;
 class communication_thread;
 class GLVisCommand;
 
-extern const char *string_none;
-extern const char *string_default;
-
 struct Window
 {
 private:
@@ -32,22 +29,26 @@ private:
    {
       std::unique_ptr<GLWindow> wnd;
       std::unique_ptr<VisualizationSceneScalarData> vs;
+#ifndef __EMSCRIPTEN__
       std::unique_ptr<communication_thread> comm_thread;
       std::unique_ptr<GLVisCommand> glvis_command;
+#endif
    } internal;
 
 public:
    DataState data_state;
    const std::unique_ptr<GLWindow> &wnd{internal.wnd};
    const std::unique_ptr<VisualizationSceneScalarData> &vs{internal.vs};
-   const std::unique_ptr<communication_thread> &comm_thread{internal.comm_thread};
+#ifndef __EMSCRIPTEN__
+   const std::unique_ptr<communication_thread> &comm_thread {internal.comm_thread};
    const std::unique_ptr<GLVisCommand> &glvis_command{internal.glvis_command};
+#endif
 
    int         window_x        = 0; // not a command line option
    int         window_y        = 0; // not a command line option
    int         window_w        = 400;
    int         window_h        = 350;
-   const char *window_title    = string_default;
+   const char *window_title    = nullptr;
    bool        headless        = false;
    std::string plot_caption;
    std::string extra_caption;

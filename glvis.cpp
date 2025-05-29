@@ -378,6 +378,7 @@ int main (int argc, char *argv[])
    const char *stream_file   = string_none;
    const char *script_file   = string_none;
    const char *palette_file  = string_none;
+   const char *window_title  = string_default;
    const char *font_name     = string_default;
    int         portnum       = 19916;
    bool        persistent    = true;
@@ -465,7 +466,7 @@ int main (int argc, char *argv[])
                   "Set the window width.");
    args.AddOption(&win.window_h, "-wh", "--window-height",
                   "Set the window height.");
-   args.AddOption(&win.window_title, "-wt", "--window-title",
+   args.AddOption(&window_title, "-wt", "--window-title",
                   "Set the window title.");
    args.AddOption(&win.headless, "-hl", "--headless",
                   "-no-hl", "--no-headless",
@@ -562,6 +563,10 @@ int main (int argc, char *argv[])
    if (arg_keys != string_none)
    {
       win.data_state.keys = arg_keys;
+   }
+   if (window_title != string_default)
+   {
+      win.window_title = window_title;
    }
    if (font_name != string_default)
    {
