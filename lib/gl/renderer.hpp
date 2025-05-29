@@ -55,11 +55,11 @@ struct RenderParams
    bool contains_translucent;
 };
 
-typedef vector<pair<RenderParams, GlDrawable*>> RenderQueue;
+typedef std::vector<std::pair<RenderParams, GlDrawable*>> RenderQueue;
 
 struct SceneInfo
 {
-   vector<GlDrawable*> needs_buffering;
+   std::vector<GlDrawable*> needs_buffering;
    RenderQueue queue;
 };
 
@@ -88,9 +88,9 @@ struct FeedbackText
 
 struct CaptureBuffer
 {
-   vector<FeedbackVertex> lines;
-   vector<FeedbackVertex> triangles;
-   vector<FeedbackText> text;
+   std::vector<FeedbackVertex> lines;
+   std::vector<FeedbackVertex> triangles;
+   std::vector<FeedbackText> text;
 };
 
 // OpenGL device interface representing rendering capabilities
@@ -195,7 +195,7 @@ public:
 
 class MeshRenderer
 {
-   unique_ptr<GLDevice> device;
+   std::unique_ptr<GLDevice> device;
    bool msaa_enable;
    int msaa_samples;
    GLuint color_tex, alpha_tex, font_tex;
@@ -243,7 +243,7 @@ public:
          std::cerr << "GL_MAX_SAMPLES = " << msaa_samples
                    << " but requested " << samples << "x MSAA. ";
          std::cerr << "Setting antialiasing mode to "
-                   << msaa_samples << "x MSAA." << endl;
+                   << msaa_samples << "x MSAA." << std::endl;
       }
       else
       {

@@ -17,11 +17,9 @@
 #include "mfem.hpp"
 #include "openglvis.hpp"
 #include "aux_vis.hpp"
+#include "window.hpp"
 
 using namespace mfem;
-
-extern thread_local std::string plot_caption; // defined in glvis.cpp
-extern thread_local std::string extra_caption; // defined in glvis.cpp
 
 class Plane
 {
@@ -72,19 +70,23 @@ protected:
    Mesh   *mesh{}, *mesh_coarse{};
    Vector *sol{};
 
+   Window &win;
+
    double minv, maxv;
 
-   std::string a_label_x, a_label_y, a_label_z;
+   std::string a_label_x{"x"}, a_label_y{"y"}, a_label_z{"z"};
 
    int scaling, colorbar, drawaxes;
    Shading shading;
    int auto_ref_max, auto_ref_min_surf_vert, auto_ref_max_surf_vert;
 
    // Formatter for axes & colorbar numbers. Set defaults.
-   function<string(double)> axis_formatter = NumberFormatter(4, 'd', false);
-   function<string(double)> colorbar_formatter = NumberFormatter(4, 'd', false);
+   std::function<std::string(double)> axis_formatter
+      = NumberFormatter(4, 'd', false);
+   std::function<std::string(double)> colorbar_formatter
+      = NumberFormatter(4, 'd', false);
 
-   vector<gl3::GlDrawable*> updated_bufs;
+   std::vector<gl3::GlDrawable*> updated_bufs;
    gl3::GlDrawable axes_buf;
    gl3::GlDrawable coord_cross_buf;
    gl3::GlDrawable color_bar;
@@ -158,9 +160,7 @@ public:
    /// Shrink factor with respect to the element (material) attributes centers
    double shrinkmat;
 
-   VisualizationSceneScalarData()
-      : a_label_x("x"), a_label_y("y"), a_label_z("z") {}
-   VisualizationSceneScalarData (Mesh & m, Vector & s, Mesh *mc = NULL);
+   VisualizationSceneScalarData(Window &win, bool init = true);
 
    virtual ~VisualizationSceneScalarData();
 
@@ -272,14 +272,14 @@ public:
       // colorbar states are: 0) no colorbar, no caption; 1) colorbar with
       // caption; 2) colorbar without caption.
       static const int next[2][3] = { { 1, 2, 0 }, { 2, 0, 0 } };
-      colorbar = next[plot_caption.empty()][colorbar];
+      colorbar = next[win.plot_caption.empty()][colorbar];
    }
 
    // Turn on or off the caption
    void PrepareCaption();
 
    void SetColorbarNumberFormat(int precision, char format, bool showsign);
-   void SetColorbarNumberFormat(string formatting);
+   void SetColorbarNumberFormat(std::string formatting);
 
    void PrepareColorBar(double minval, double maxval,
                         Array<double> * level = NULL,
@@ -288,7 +288,7 @@ public:
    void SetAxisLabels(const char * a_x, const char * a_y, const char * a_z);
 
    void SetAxisNumberFormat(int precision, char format, bool showsign);
-   void SetAxisNumberFormat(string formatting);
+   void SetAxisNumberFormat(std::string formatting);
 
    void PrepareAxes();
    void ToggleDrawAxes()

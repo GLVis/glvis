@@ -192,7 +192,7 @@ void FFGLDevice::bufferToDevice(array_layout layout, IVertexBuffer& buf)
          bufferFFDeviceImpl(static_cast<const VertexBuffer<VertexNormTex>&>(buf));
          break;
       default:
-         cerr << "WARNING: Unhandled vertex layout " << layout << endl;
+         std::cerr << "WARNING: Unhandled vertex layout " << layout << std::endl;
    }
 }
 
@@ -232,7 +232,7 @@ void FFGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
          bufferFFDeviceImpl(static_cast<const IndexedVertexBuffer<VertexNormTex>&>(buf));
          break;
       default:
-         cerr << "WARNING: Unhandled vertex layout " << layout << endl;
+         std::cerr << "WARNING: Unhandled vertex layout " << layout << std::endl;
    }
 }
 
@@ -370,7 +370,7 @@ void FFGLDevice::captureXfbBuffer(PaletteState& pal, CaptureBuffer& cbuf,
       return;
    }
    // allocate feedback buffer
-   vector<float> xfb_buf;
+   std::vector<float> xfb_buf;
    xfb_buf.resize(sizebuf);
    glFeedbackBuffer(sizebuf, fbType, xfb_buf.data());
    // draw with feedback capture
