@@ -135,7 +135,7 @@ void displayStream(const std::string & stream, const int w, const int h)
    StreamReader reader(win.data_state);
    reader.ReadStream(*ss, data_type);
 
-   StreamCollection sc({std::move(ss)});
+   StreamCollection sc{std::move(ss)};
    display(std::move(sc), w, h);
 }
 
