@@ -567,11 +567,6 @@ bool MainIdleFunc()
    use_idle = !use_idle;
 
    return sleep;
-   LastIdleFunc = (LastIdleFunc + 1) % IdleFuncs.Size();
-   if (IdleFuncs[LastIdleFunc])
-   {
-      (*IdleFuncs[LastIdleFunc])();
-   }
 }
 
 void AddIdleFunc(void (*Func)(void))
