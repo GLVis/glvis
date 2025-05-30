@@ -962,9 +962,6 @@ communication_thread::communication_thread(StreamCollection _is,
                                            bool end_quit_)
    : is(std::move(_is)), glvis_command(cmd), end_quit(end_quit_)
 {
-   new_m = NULL;
-   new_g = NULL;
-
    if (is.size() > 0)
    {
       tid = std::thread(&communication_thread::execute, this);
@@ -990,9 +987,602 @@ void communication_thread::print_commands()
    }
 }
 
+bool communication_thread::execute_one(std::string ident)
+{
+   // new solution handled by StreamReader
+   if (StreamReader::SupportsDataType(ident))
+   {
+      DataState tmp;
+      tmp.fix_elem_orient = glvis_command->FixElementOrientations();
+      StreamReader reader(tmp);
+      reader.ReadStream(*is[0], ident);
+
+      // cout << "Stream: new solution" << endl;
+
+      if (glvis_command->NewMeshAndSolution(std::move(tmp)))
+      {
+         return false;
+      }
+      if (!tmp.keys.empty())
+      {
+         if (glvis_command->KeyCommands(tmp.keys.c_str()))
+         {
+            return false;
+         }
+      }
+      return true;
+   }
+
+   auto it = find(commands.begin(), commands.end(), ident);
+   if (it == commands.end())
+   {
+      cout << "Stream: unknown command: " << ident << endl;
+      print_commands();
+      return false;
+   }
+
+   const ThreadCommand cmd = (ThreadCommand)(it - commands.begin());
+   switch (cmd)
+   {
+      case ThreadCommand::Parallel:
+      {
+         unsigned int proc, nproc, np = 0;
+         do
+         {
+            istream &isock = *is[np];
+            isock >> nproc >> proc >> ws;
+#ifdef GLVIS_DEBUG
+            cout << "connection[" << np << "]: parallel " << nproc << ' '
+                 << proc << endl;
+#endif
+            if (nproc != is.size())
+            {
+               cout << "Unexpected number of processors: " << nproc
+                    << ", expected: " << is.size() << endl;
+               mfem_error();
+            }
+            if (proc >= nproc)
+            {
+               cout << "Invalid processor rank: " << proc
+                    << ", number of processors: " << nproc << endl;
+               mfem_error();
+            }
+            np++;
+            if (np == nproc)
+            {
+               break;
+            }
+            *is[np] >> ident >> ws; // "parallel"
+            if (ident != "parallel")
+            {
+               cout << "Expected keyword \"parallel\", got \"" << ident
+                    << '"' << endl;
+               mfem_error();
+            }
+         }
+         while (1);
+
+         DataState tmp;
+         tmp.fix_elem_orient = glvis_command->FixElementOrientations();
+         tmp.keep_attr = glvis_command->KeepAttrib();
+         StreamReader reader(tmp);
+         reader.ReadStreams(is);
+
+         // cout << "Stream: new solution" << endl;
+
+         if (glvis_command->NewMeshAndSolution(std::move(tmp)))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::Screenshot:
+      {
+         string filename;
+
+         *is[0] >> ws >> filename;
+
+         // all processors sent the screenshot command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'screenshot'
+            *is[i] >> ws >> ident; // filename
+         }
+
+         if (glvis_command->Screenshot(filename.c_str()))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::Keys:
+      {
+         string keys;
+
+         *is[0] >> ws >> keys;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'keys'
+            *is[i] >> ws >> ident; // keys
+         }
+
+         if (glvis_command->KeyCommands(keys.c_str()))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::WindowSize:
+      {
+         int w, h, t;
+
+         *is[0] >> w >> h;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'window_size'
+            *is[i] >> t >> t;
+         }
+
+         if (glvis_command->WindowSize(w, h))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::WindowGeometry:
+      {
+         int x, y, w, h, t;
+
+         *is[0] >> x >> y >> w >> h;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'window_geometry'
+            *is[i] >> t >> t >> t >> t;
+         }
+
+         if (glvis_command->WindowGeometry(x, y, w, h))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::WindowTitle:
+      {
+         char c;
+         string title;
+
+         // read the opening char
+         *is[0] >> ws >> c;
+         // use the opening char as termination as well
+         getline(*is[0], title, c);
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'window_title'
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
+         }
+
+         if (glvis_command->WindowTitle(title.c_str()))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::PlotCaption:
+      {
+         char c;
+         string caption;
+
+         // read the opening char
+         *is[0] >> ws >> c;
+         // use the opening char as termination as well
+         getline(*is[0], caption, c);
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'plot_caption'
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
+         }
+
+         if (glvis_command->PlotCaption(caption.c_str()))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::AxisLabels:
+      {
+         char c;
+         string label_x, label_y, label_z;
+
+         // read the opening char
+         *is[0] >> ws >> c;
+         // use the opening char as termination as well
+         getline(*is[0], label_x, c);
+         *is[0] >> ws >> c;
+         getline(*is[0], label_y, c);
+         *is[0] >> ws >> c;
+         getline(*is[0], label_z, c);
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'axis_label'
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
+         }
+
+         if (glvis_command->AxisLabels(label_x.c_str(),
+                                       label_y.c_str(),
+                                       label_z.c_str()))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::Pause:
+      {
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'pause'
+         }
+
+         if (glvis_command->Pause())
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::View:
+      {
+         double theta, phi, a;
+
+         *is[0] >> theta >> phi;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'view'
+            *is[i] >> a >> a;
+         }
+
+         if (glvis_command->ViewAngles(theta, phi))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::Zoom:
+      {
+         double factor, a;
+
+         *is[0] >> factor;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'zoom'
+            *is[i] >> a;
+         }
+
+         if (glvis_command->Zoom(factor))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::Subdivisions:
+      {
+         int tot, bdr, a;
+
+         *is[0] >> tot >> bdr;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'subdivisions'
+            *is[i] >> a >> a;
+         }
+
+         if (glvis_command->Subdivisions(tot, bdr))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::Valuerange:
+      {
+         double minv, maxv, a;
+
+         *is[0] >> minv >> maxv;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'valuerange'
+            *is[i] >> a >> a;
+         }
+
+         if (glvis_command->ValueRange(minv, maxv))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::Levellines:
+      {
+         double minv, maxv, a;
+         int num, b;
+
+         *is[0] >> minv >> maxv >> num;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'levellines'
+            *is[i] >> a >> a >> b;
+         }
+
+         if (glvis_command->Levellines(minv, maxv, num))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::AxisNumberFormat:
+      {
+         char c;
+         string formatting;
+
+         // read the opening char
+         *is[0] >> ws >> c;
+         // read formatting string & use c for termination
+         getline(*is[0], formatting, c);
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'axis_numberformat'
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
+         }
+
+         if (glvis_command->AxisNumberFormat(formatting))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::ColorbarNumberFormat:
+      {
+         char c;
+         string formatting;
+
+         // read the opening char
+         *is[0] >> ws >> c;
+         // read formatting string & use c for termination
+         getline(*is[0], formatting, c);
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'colorbar_numberformat'
+            *is[i] >> ws >> c;
+            getline(*is[i], ident, c);
+         }
+
+         if (glvis_command->ColorbarNumberFormat(formatting))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::Shading:
+      {
+         string shd;
+
+         *is[0] >> ws >> shd;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'shading'
+            *is[i] >> ws >> ident;
+         }
+
+         if (glvis_command->SetShading(shd.c_str()))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::Viewcenter:
+      {
+         double x, y, a;
+
+         *is[0] >> x >> y;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'viewcenter'
+            *is[i] >> a >> a;
+         }
+
+         if (glvis_command->ViewCenter(x, y))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::Autoscale:
+      {
+         string mode;
+
+         *is[0] >> ws >> mode;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'autoscale'
+            *is[i] >> ws >> ident;
+         }
+
+         if (glvis_command->Autoscale(mode.c_str()))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::Palette:
+      {
+         int pal, a;
+
+         *is[0] >> pal;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'palette'
+            *is[i] >> a;
+         }
+
+         if (glvis_command->Palette(pal))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::PaletteFile:
+      {
+         std::string filename, a;
+
+         *is[0] >> ws;
+         std::getline(*is[0], filename);
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'palette_file'
+            *is[i] >> a;
+         }
+
+         if (glvis_command->PaletteFile(filename))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::PaletteName:
+      {
+         std::string palname, a;
+
+         *is[0] >> palname;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'palette_name'
+            *is[i] >> a;
+         }
+
+         if (glvis_command->PaletteName(palname))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::PaletteRepeat:
+      {
+         int n, a;
+
+         *is[0] >> n;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'palette_repeat'
+            *is[i] >> a;
+         }
+
+         if (glvis_command->PaletteRepeat(n))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::Camera:
+      {
+         double cam[9], a;
+
+         for (int i = 0; i < 9; i++)
+         {
+            *is[0] >> cam[i];
+         }
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'camera'
+            for (int j = 0; j < 9; j++)
+            {
+               *is[i] >> a;
+            }
+         }
+
+         if (glvis_command->Camera(cam))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::Autopause:
+      {
+         string mode;
+
+         *is[0] >> ws >> mode;
+
+         // all processors sent the command
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'autopause'
+            *is[i] >> ws >> ident;
+         }
+
+         if (glvis_command->Autopause(mode.c_str()))
+         {
+            return false;
+         }
+      }
+      break;
+      case ThreadCommand::Max: //dummy
+         break;
+   }
+
+   return true;
+}
+
 void communication_thread::execute()
 {
-   while (1)
+   std::string ident;
+   bool status = true;
+
+   while (status)
    {
       *is[0] >> ws;
       // thread cancellation point
@@ -1004,604 +1594,18 @@ void communication_thread::execute()
          break;
       }
 
-      // new solution handled by StreamReader
-      if (StreamReader::SupportsDataType(ident))
-      {
-         DataState tmp;
-         tmp.fix_elem_orient = glvis_command->FixElementOrientations();
-         StreamReader reader(tmp);
-         reader.ReadStream(*is[0], ident);
-         if (!(*is[0]))
-         {
-            break;
-         }
-
-         // cout << "Stream: new solution" << endl;
-
-         if (glvis_command->NewMeshAndSolution(std::move(tmp)))
-         {
-            goto comm_terminate;
-         }
-         if (!tmp.keys.empty())
-         {
-            if (glvis_command->KeyCommands(tmp.keys.c_str()))
-            {
-               goto comm_terminate;
-            }
-         }
-         continue;
-      }
-
-      auto it = find(commands.begin(), commands.end(), ident);
-      if (it == commands.end())
-      {
-         cout << "Stream: unknown command: " << ident << endl;
-         print_commands();
-         goto comm_terminate;
-      }
-
-      const ThreadCommand cmd = (ThreadCommand)(it - commands.begin());
-      switch (cmd)
-      {
-         case ThreadCommand::Parallel:
-         {
-            unsigned int proc, nproc, np = 0;
-            do
-            {
-               istream &isock = *is[np];
-               isock >> nproc >> proc >> ws;
-#ifdef GLVIS_DEBUG
-               cout << "connection[" << np << "]: parallel " << nproc << ' '
-                    << proc << endl;
-#endif
-               if (nproc != is.size())
-               {
-                  cout << "Unexpected number of processors: " << nproc
-                       << ", expected: " << is.size() << endl;
-                  mfem_error();
-               }
-               if (proc >= nproc)
-               {
-                  cout << "Invalid processor rank: " << proc
-                       << ", number of processors: " << nproc << endl;
-                  mfem_error();
-               }
-               np++;
-               if (np == nproc)
-               {
-                  break;
-               }
-               *is[np] >> ident >> ws; // "parallel"
-               if (ident != "parallel")
-               {
-                  cout << "Expected keyword \"parallel\", got \"" << ident
-                       << '"' << endl;
-                  mfem_error();
-               }
-            }
-            while (1);
-
-            DataState tmp;
-            tmp.fix_elem_orient = glvis_command->FixElementOrientations();
-            tmp.keep_attr = glvis_command->KeepAttrib();
-            StreamReader reader(tmp);
-            reader.ReadStreams(is);
-
-            // cout << "Stream: new solution" << endl;
-
-            if (glvis_command->NewMeshAndSolution(std::move(tmp)))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::Screenshot:
-         {
-            string filename;
-
-            *is[0] >> ws >> filename;
-
-            // all processors sent the screenshot command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'screenshot'
-               *is[i] >> ws >> ident; // filename
-            }
-
-            if (glvis_command->Screenshot(filename.c_str()))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::Keys:
-         {
-            string keys;
-
-            *is[0] >> ws >> keys;
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'keys'
-               *is[i] >> ws >> ident; // keys
-            }
-
-            if (glvis_command->KeyCommands(keys.c_str()))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::WindowSize:
-         {
-            int w, h, t;
-
-            *is[0] >> w >> h;
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'window_size'
-               *is[i] >> t >> t;
-            }
-
-            if (glvis_command->WindowSize(w, h))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::WindowGeometry:
-         {
-            int x, y, w, h, t;
-
-            *is[0] >> x >> y >> w >> h;
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'window_geometry'
-               *is[i] >> t >> t >> t >> t;
-            }
-
-            if (glvis_command->WindowGeometry(x, y, w, h))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::WindowTitle:
-         {
-            char c;
-            string title;
-
-            // read the opening char
-            *is[0] >> ws >> c;
-            // use the opening char as termination as well
-            getline(*is[0], title, c);
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'window_title'
-               *is[i] >> ws >> c;
-               getline(*is[i], ident, c);
-            }
-
-            if (glvis_command->WindowTitle(title.c_str()))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::PlotCaption:
-         {
-            char c;
-            string caption;
-
-            // read the opening char
-            *is[0] >> ws >> c;
-            // use the opening char as termination as well
-            getline(*is[0], caption, c);
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'plot_caption'
-               *is[i] >> ws >> c;
-               getline(*is[i], ident, c);
-            }
-
-            if (glvis_command->PlotCaption(caption.c_str()))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::AxisLabels:
-         {
-            char c;
-            string label_x, label_y, label_z;
-
-            // read the opening char
-            *is[0] >> ws >> c;
-            // use the opening char as termination as well
-            getline(*is[0], label_x, c);
-            *is[0] >> ws >> c;
-            getline(*is[0], label_y, c);
-            *is[0] >> ws >> c;
-            getline(*is[0], label_z, c);
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'axis_label'
-               *is[i] >> ws >> c;
-               getline(*is[i], ident, c);
-               *is[i] >> ws >> c;
-               getline(*is[i], ident, c);
-               *is[i] >> ws >> c;
-               getline(*is[i], ident, c);
-            }
-
-            if (glvis_command->AxisLabels(label_x.c_str(),
-                                          label_y.c_str(),
-                                          label_z.c_str()))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::Pause:
-         {
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'pause'
-            }
-
-            if (glvis_command->Pause())
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::View:
-         {
-            double theta, phi, a;
-
-            *is[0] >> theta >> phi;
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'view'
-               *is[i] >> a >> a;
-            }
-
-            if (glvis_command->ViewAngles(theta, phi))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::Zoom:
-         {
-            double factor, a;
-
-            *is[0] >> factor;
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'zoom'
-               *is[i] >> a;
-            }
-
-            if (glvis_command->Zoom(factor))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::Subdivisions:
-         {
-            int tot, bdr, a;
-
-            *is[0] >> tot >> bdr;
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'subdivisions'
-               *is[i] >> a >> a;
-            }
-
-            if (glvis_command->Subdivisions(tot, bdr))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::Valuerange:
-         {
-            double minv, maxv, a;
-
-            *is[0] >> minv >> maxv;
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'valuerange'
-               *is[i] >> a >> a;
-            }
-
-            if (glvis_command->ValueRange(minv, maxv))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::Levellines:
-         {
-            double minv, maxv, a;
-            int num, b;
-
-            *is[0] >> minv >> maxv >> num;
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'levellines'
-               *is[i] >> a >> a >> b;
-            }
-
-            if (glvis_command->Levellines(minv, maxv, num))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::AxisNumberFormat:
-         {
-            char c;
-            string formatting;
-
-            // read the opening char
-            *is[0] >> ws >> c;
-            // read formatting string & use c for termination
-            getline(*is[0], formatting, c);
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'axis_numberformat'
-               *is[i] >> ws >> c;
-               getline(*is[i], ident, c);
-            }
-
-            if (glvis_command->AxisNumberFormat(formatting))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::ColorbarNumberFormat:
-         {
-            char c;
-            string formatting;
-
-            // read the opening char
-            *is[0] >> ws >> c;
-            // read formatting string & use c for termination
-            getline(*is[0], formatting, c);
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'colorbar_numberformat'
-               *is[i] >> ws >> c;
-               getline(*is[i], ident, c);
-            }
-
-            if (glvis_command->ColorbarNumberFormat(formatting))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::Shading:
-         {
-            string shd;
-
-            *is[0] >> ws >> shd;
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'shading'
-               *is[i] >> ws >> ident;
-            }
-
-            if (glvis_command->SetShading(shd.c_str()))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::Viewcenter:
-         {
-            double x, y, a;
-
-            *is[0] >> x >> y;
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'viewcenter'
-               *is[i] >> a >> a;
-            }
-
-            if (glvis_command->ViewCenter(x, y))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::Autoscale:
-         {
-            string mode;
-
-            *is[0] >> ws >> mode;
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'autoscale'
-               *is[i] >> ws >> ident;
-            }
-
-            if (glvis_command->Autoscale(mode.c_str()))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::Palette:
-         {
-            int pal, a;
-
-            *is[0] >> pal;
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'palette'
-               *is[i] >> a;
-            }
-
-            if (glvis_command->Palette(pal))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::PaletteFile:
-         {
-            std::string filename, a;
-
-            *is[0] >> ws;
-            std::getline(*is[0], filename);
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'palette_file'
-               *is[i] >> a;
-            }
-
-            if (glvis_command->PaletteFile(filename))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::PaletteName:
-         {
-            std::string palname, a;
-
-            *is[0] >> palname;
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'palette_name'
-               *is[i] >> a;
-            }
-
-            if (glvis_command->PaletteName(palname))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::PaletteRepeat:
-         {
-            int n, a;
-
-            *is[0] >> n;
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'palette_repeat'
-               *is[i] >> a;
-            }
-
-            if (glvis_command->PaletteRepeat(n))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::Camera:
-         {
-            double cam[9], a;
-
-            for (int i = 0; i < 9; i++)
-            {
-               *is[0] >> cam[i];
-            }
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'camera'
-               for (int j = 0; j < 9; j++)
-               {
-                  *is[i] >> a;
-               }
-            }
-
-            if (glvis_command->Camera(cam))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::Autopause:
-         {
-            string mode;
-
-            *is[0] >> ws >> mode;
-
-            // all processors sent the command
-            for (size_t i = 1; i < is.size(); i++)
-            {
-               *is[i] >> ws >> ident; // 'autopause'
-               *is[i] >> ws >> ident;
-            }
-
-            if (glvis_command->Autopause(mode.c_str()))
-            {
-               goto comm_terminate;
-            }
-         }
-         break;
-         case ThreadCommand::Max: //dummy
-            break;
-      }
+      status = execute_one(ident);
    }
 
-   cout << "Stream: end of input." << endl;
-
-   if (end_quit)
+   if (status)
    {
-      glvis_command->Quit();
+      cout << "Stream: end of input." << endl;
+      if (end_quit)
+      {
+         glvis_command->Quit();
+      }
    }
 
-comm_terminate:
    for (size_t i = 0; i < is.size(); i++)
    {
       socketstream *isock = dynamic_cast<socketstream *>(is[i].get());

@@ -164,11 +164,6 @@ private:
 
    GLVisCommand* glvis_command;
 
-   // data that may be dynamically allocated by the thread
-   std::unique_ptr<mfem::Mesh> new_m;
-   std::unique_ptr<mfem::GridFunction> new_g;
-   std::string ident;
-
    // thread object
    std::thread tid;
    // signal for thread cancellation
@@ -178,6 +173,7 @@ private:
    bool end_quit;
 
    static void print_commands();
+   bool execute_one(std::string word);
    void execute();
 
 public:
