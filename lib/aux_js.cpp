@@ -50,42 +50,15 @@ void display(std::stringstream & commands, const int w, const int h)
    // reset antialiasing
    win.wnd->getRenderer().setAntialiasing(0);
 
-   std::string word;
-   double minv = 0.0, maxv = 0.0;
-   while (commands >> word)
-   {
-      if (word == "keys")
-      {
-         std::cout << "parsing 'keys'" << std::endl;
-         commands >> win.data_state.keys;
-      }
-      else if (word == "valuerange")
-      {
-         std::cout << "parsing 'valuerange'" << std::endl;
-         commands >> minv >> maxv;
-      }
-      else
-      {
-         std::cout << "unknown command '" << word << "'" << std::endl;
-      }
-   }
-
    win.window_title = "glvis";
    win.window_x = 0.;
    win.window_y = 0.;
    win.window_w = w;
    win.window_h = h;
 
-   win.GLVisInitVis({});
+   win.GLVisInitVis({commands});
 
-   CallKeySequence(win.data_state.keys.c_str());
-
-   if (minv || maxv)
-   {
-      win.vs->SetValueRange(minv, maxv);
-   }
-
-   SendExposeEvent();
+   win.comm_thread->process_one();
 }
 
 // void display2(const int w, const int h)
