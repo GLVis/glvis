@@ -45,7 +45,7 @@ namespace js
 using namespace mfem;
 
 /// Display a new stream
-void display(std::stringstream & commands, const int w, const int h)
+void display(StreamCollection streams, const int w, const int h)
 {
    // reset antialiasing
    win.wnd->getRenderer().setAntialiasing(0);
@@ -56,7 +56,7 @@ void display(std::stringstream & commands, const int w, const int h)
    win.window_w = w;
    win.window_h = h;
 
-   win.GLVisInitVis({commands});
+   win.GLVisInitVis(std::move(streams));
 
    win.comm_thread->process_one();
 }
@@ -96,61 +96,47 @@ void display(std::stringstream & commands, const int w, const int h)
 // each string in streams must start with `parallel <nproc> <rank>'
 //
 using StringArray = std::vector<std::string>;
-void processParallelStreams(DataState & state,
-                            const StringArray & streams,
-                            std::stringstream * commands = nullptr)
+StreamCollection processParallelStreams(DataState & state,
+                                        const StringArray & streams)
 {
    // std::cerr << "got " << streams.size() << " streams" << std::endl;
-   // HACK: match unique_ptr<istream> interface for ReadStreams:
-   std::vector<std::stringstream> sstreams(streams.size());
    StreamCollection istreams(streams.size());
    for (int i = 0; i < streams.size(); ++i)
    {
-      sstreams[i] = std::stringstream(streams[i]);
+      istreams[i] = std::unique_ptr<std::istream>(new std::stringstream(streams[i]));
       // pull off the first list
       std::string word;
       int nproc, rank;
-      sstreams[i] >> word >> nproc >> rank;
-      // std::cerr << "packing " << rank+1 << "/" << nproc << std::endl;
-      istreams[i] = std::unique_ptr<std::istream>(&sstreams[i]);
+      *istreams[i] >> word >> nproc >> rank;
    }
 
    StreamReader reader(state);
    reader.ReadStreams(istreams);
 
-   if (commands)
-   {
-      commands->seekg(istreams[0]->tellg());
-   }
-
-   // HACK: don't let unique_ptr free the data
-   for (int i = 0; i < streams.size(); ++i)
-   {
-      istreams[i].release();
-   }
-
    last_stream_nproc = streams.size();
+
+   return istreams;
 }
 
 void displayParallelStreams(const StringArray & streams, const int w,
                             const int h)
 {
-   std::stringstream commands(streams[0]);
-   processParallelStreams(win.data_state, streams, &commands);
+   StreamCollection sc = processParallelStreams(win.data_state, streams);
 
-   display(commands, w, h);
+   display(std::move(sc), w, h);
 }
 
 void displayStream(const std::string & stream, const int w, const int h)
 {
-   std::stringstream ss(stream);
+   std::unique_ptr<std::istream> ss(new std::istringstream(stream));
    std::string data_type;
-   ss >> data_type;
+   *ss >> data_type;
 
    StreamReader reader(win.data_state);
-   reader.ReadStream(ss, data_type);
+   reader.ReadStream(*ss, data_type);
 
-   display(ss, w, h);
+   StreamCollection sc({std::move(ss)});
+   display(std::move(sc), w, h);
 }
 
 // void displayStream(const std::string & stream, const int w, const int h)
