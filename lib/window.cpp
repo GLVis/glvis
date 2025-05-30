@@ -60,14 +60,21 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
 
    if (input_streams.size() > 0)
    {
+#ifndef __EMSCRIPTEN__
       if (!headless)
       {
          wnd->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
       }
+#endif
       internal.glvis_command.reset(new GLVisCommand(*this));
       SetGLVisCommand(glvis_command.get());
+#ifndef __EMSCRIPTEN__
+      constexpr bool multithreaded = true;
+#else
+      constexpr bool multithreaded = false;
+#endif
       internal.comm_thread.reset(new communication_thread(std::move(input_streams),
-                                                          glvis_command.get(), headless));
+                                                          glvis_command.get(), headless, multithreaded));
    }
 
    locwin = this;
