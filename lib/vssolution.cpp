@@ -2669,7 +2669,8 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    }
    else
    {
-      MFEM_ABORT("Unsupported drawnums value: " << (int)drawnums);
+      MFEM_VERIFY(drawnums == Numbering::NONE,
+                  "Unsupported drawnums value: " << (int)drawnums);
    }
 
    // draw orderings -- "black" modes
