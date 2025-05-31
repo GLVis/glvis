@@ -2080,7 +2080,7 @@ void VisualizationSceneSolution::PrepareDofNumbering()
    }
    else if (shading == Shading::Flat || shading == Shading::Smooth)
    {
-      FiniteElementSpace flat_fes(mesh, rsol_fec->Clone(1));
+      FiniteElementSpace flat_fes(mesh, rsol_fec->Clone(1), rsol_fes->GetVDim());
       MFEM_VERIFY(sol->Size() == flat_fes.GetNDofs(),
                   "Flat space does not match the solution size");
 
