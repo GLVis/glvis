@@ -539,7 +539,10 @@ void SdlWindow::signalLoop()
       lock_guard<mutex> evt_guard{event_mutex};
       call_idle_func = true;
    }
-   events_available.notify_all();
+   if (is_multithreaded)
+   {
+      events_available.notify_all();
+   }
 }
 
 void SdlWindow::getWindowSize(int& w, int& h)

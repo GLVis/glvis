@@ -11,20 +11,20 @@
 
 #include "visual.hpp"
 #include "palettes.hpp"
-#include <vector>
+
+#include <array>
+#include <algorithm>
 
 using namespace std;
 
 extern const char *strings_off_on[]; // defined in vsdata.cpp
 
 
-GLVisCommand::GLVisCommand(
-   VisualizationSceneScalarData **_vs, DataState& state)
-   : curr_state(state)
+GLVisCommand::GLVisCommand(Window &win_)
+   : win(win_)
 {
-   vs        = _vs;
    // should be set in this thread by a call to InitVisualization()
-   thread_wnd = GetAppWindow();
+   thread_wnd = win.wnd.get();
 
    num_waiting = 0;
    terminating = false;
@@ -463,7 +463,7 @@ int GLVisCommand::Execute()
             }
             else
             {
-               auto qs = curr_state.GetQuadSolution();
+               auto qs = win.data_state.GetQuadSolution();
                if (qs != DataState::QuadSolution::NONE)
                {
                   new_state.SetQuadSolution(qs);
@@ -475,11 +475,11 @@ int GLVisCommand::Execute()
                new_state.ExtrudeMeshAndSolution();
             }
          }
-         if (curr_state.SetNewMeshAndSolution(std::move(new_state), *vs))
+         if (win.SetNewMeshAndSolution(std::move(new_state)))
          {
             if (mesh_range > 0.0)
             {
-               (*vs)->SetValueRange(-mesh_range, mesh_range);
+               win.vs->SetValueRange(-mesh_range, mesh_range);
             }
             MyExpose();
          }
@@ -500,7 +500,7 @@ int GLVisCommand::Execute()
          cout << "Command: screenshot -> " << screenshot_filename << endl;
          // Allow SdlWindow to handle the expose and screenshot action, in case
          // any actions need to be taken before MyExpose().
-         GetAppWindow()->screenshot(screenshot_filename, true);
+         thread_wnd->screenshot(screenshot_filename, true);
          break;
       }
 
@@ -539,8 +539,8 @@ int GLVisCommand::Execute()
       case PLOT_CAPTION:
       {
          cout << "Command: plot_caption: " << plot_caption << endl;
-         ::plot_caption = plot_caption;
-         (*vs)->PrepareCaption(); // turn on or off the caption
+         win.plot_caption = plot_caption;
+         win.vs->PrepareCaption(); // turn on or off the caption
          MyExpose();
          break;
       }
@@ -549,8 +549,8 @@ int GLVisCommand::Execute()
       {
          cout << "Command: axis_labels: '" << axis_label_x << "' '"
               << axis_label_y << "' '" << axis_label_z << "'" << endl;
-         (*vs)->SetAxisLabels(axis_label_x.c_str(), axis_label_y.c_str(),
-                              axis_label_z.c_str());
+         win.vs->SetAxisLabels(axis_label_x.c_str(), axis_label_y.c_str(),
+                               axis_label_z.c_str());
          MyExpose();
          break;
       }
@@ -559,7 +559,7 @@ int GLVisCommand::Execute()
       {
          cout << "Command: axis_numberformat: '"
               << axis_formatting << "'" << endl;
-         (*vs)->SetAxisNumberFormat(axis_formatting);
+         win.vs->SetAxisNumberFormat(axis_formatting);
          MyExpose();
          break;
       }
@@ -568,7 +568,7 @@ int GLVisCommand::Execute()
       {
          cout << "Command: colorbar_numberformat: '"
               << colorbar_formatting << "'" << endl;
-         (*vs)->SetColorbarNumberFormat(colorbar_formatting);
+         win.vs->SetColorbarNumberFormat(colorbar_formatting);
          MyExpose();
          break;
       }
@@ -584,7 +584,7 @@ int GLVisCommand::Execute()
       {
          cout << "Command: view: " << view_ang_theta << ' ' << view_ang_phi
               << endl;
-         (*vs)->SetView(view_ang_theta, view_ang_phi);
+         win.vs->SetView(view_ang_theta, view_ang_phi);
          MyExpose();
          break;
       }
@@ -592,7 +592,7 @@ int GLVisCommand::Execute()
       case ZOOM:
       {
          cout << "Command: zoom: " << zoom_factor << endl;
-         (*vs)->Zoom(zoom_factor);
+         win.vs->Zoom(zoom_factor);
          MyExpose();
          break;
       }
@@ -600,7 +600,7 @@ int GLVisCommand::Execute()
       case SUBDIVISIONS:
       {
          cout << "Command: subdivisions: " << flush;
-         (*vs)->SetRefineFactors(subdiv_tot, subdiv_bdr);
+         win.vs->SetRefineFactors(subdiv_tot, subdiv_bdr);
          cout << subdiv_tot << ' ' << subdiv_bdr << endl;
          MyExpose();
          break;
@@ -609,7 +609,7 @@ int GLVisCommand::Execute()
       case VALUE_RANGE:
       {
          cout << "Command: valuerange: " << flush;
-         (*vs)->SetValueRange(val_min, val_max);
+         win.vs->SetValueRange(val_min, val_max);
          cout << val_min << ' ' << val_max << endl;
          MyExpose();
          break;
@@ -618,8 +618,8 @@ int GLVisCommand::Execute()
       case LEVELLINES:
       {
          cout << "Command: levellines: " << flush;
-         (*vs)->SetLevelLines(lvl_min, lvl_max, lvl_num);
-         (*vs)->UpdateLevelLines();
+         win.vs->SetLevelLines(lvl_min, lvl_max, lvl_num);
+         win.vs->UpdateLevelLines();
          cout << lvl_min << ' ' << lvl_max << ' ' << lvl_num << endl;
          MyExpose();
          break;
@@ -644,7 +644,7 @@ int GLVisCommand::Execute()
          }
          if (s != VisualizationSceneScalarData::Shading::Invalid)
          {
-            (*vs)->SetShading(s, false);
+            win.vs->SetShading(s, false);
             cout << shading << endl;
             MyExpose();
          }
@@ -659,8 +659,8 @@ int GLVisCommand::Execute()
       {
          cout << "Command: viewcenter: "
               << view_center_x << ' ' << view_center_y << endl;
-         (*vs)->ViewCenterX = view_center_x;
-         (*vs)->ViewCenterY = view_center_y;
+         win.vs->ViewCenterX = view_center_x;
+         win.vs->ViewCenterY = view_center_y;
          MyExpose();
          break;
       }
@@ -670,19 +670,19 @@ int GLVisCommand::Execute()
          cout << "Command: autoscale: " << autoscale_mode;
          if (autoscale_mode == "off")
          {
-            (*vs)->SetAutoscale(0);
+            win.vs->SetAutoscale(0);
          }
          else if (autoscale_mode == "on")
          {
-            (*vs)->SetAutoscale(1);
+            win.vs->SetAutoscale(1);
          }
          else if (autoscale_mode == "value")
          {
-            (*vs)->SetAutoscale(2);
+            win.vs->SetAutoscale(2);
          }
          else if (autoscale_mode == "mesh")
          {
-            (*vs)->SetAutoscale(3);
+            win.vs->SetAutoscale(3);
          }
          else
          {
@@ -695,10 +695,10 @@ int GLVisCommand::Execute()
       case PALETTE:
       {
          cout << "Command: palette: " << palette << endl;
-         (*vs)->palette.SetIndex(palette-1);
+         win.vs->palette.SetIndex(palette-1);
          if (!GetUseTexture())
          {
-            (*vs)->EventUpdateColors();
+            win.vs->EventUpdateColors();
          }
          MyExpose();
          break;
@@ -707,12 +707,12 @@ int GLVisCommand::Execute()
       case PALETTE_REPEAT:
       {
          cout << "Command: palette_repeat: " << palette_repeat << endl;
-         (*vs)->palette.SetRepeatTimes(palette_repeat);
-         (*vs)->palette.GenerateTextures();
+         win.vs->palette.SetRepeatTimes(palette_repeat);
+         win.vs->palette.GenerateTextures();
 
          if (!GetUseTexture())
          {
-            (*vs)->EventUpdateColors();
+            win.vs->EventUpdateColors();
          }
          MyExpose();
          break;
@@ -726,7 +726,7 @@ int GLVisCommand::Execute()
             cout << ' ' << camera[i];
          }
          cout << endl;
-         (*vs)->cam.Set(camera);
+         win.vs->cam.Set(camera);
          MyExpose();
          break;
       }
@@ -798,172 +798,211 @@ GLVisCommand::~GLVisCommand()
    }
 }
 
-communication_thread::communication_thread(StreamCollection _is,
-                                           GLVisCommand* cmd)
-   : is(std::move(_is)), glvis_command(cmd)
+enum class Command
 {
-   new_m = NULL;
-   new_g = NULL;
+   Parallel,
+   Screenshot,
+   Viewcenter,
+   View,
+   Zoom,
+   Shading,
+   Subdivisions,
+   Valuerange,
+   Autoscale,
+   Levellines,
+   AxisNumberFormat,
+   ColorbarNumberFormat,
+   WindowSize,
+   WindowGeometry,
+   WindowTitle,
+   Keys,
+   Palette,
+   PaletteRepeat,
+   Camera,
+   PlotCaption,
+   AxisLabels,
+   Pause,
+   Autopause,
+   //----------
+   Max
+};
 
-   if (is.size() > 0)
+class ThreadCommands
+{
+   struct CmdItem
+   {
+      const char *keyword;
+      const char *params;
+      const char *desc;
+
+      bool operator==(const string &key) const { return key == keyword; }
+   };
+   array<CmdItem,(size_t)Command::Max> commands;
+
+public:
+   ThreadCommands();
+
+   decltype(commands)::const_iterator begin() const { return commands.begin(); }
+   decltype(commands)::const_iterator end() const { return commands.end(); }
+   CmdItem& operator[](Command cmd) { return commands[(size_t)cmd]; }
+   const CmdItem& operator[](Command cmd) const { return commands[(size_t)cmd]; }
+};
+static const ThreadCommands commands;
+
+ThreadCommands::ThreadCommands()
+{
+   (*this)[Command::Parallel]             = {"parallel", "<num proc> <proc>", "Prefix for distributed mesh/solution/quadrature."};
+   (*this)[Command::Screenshot]           = {"screenshot", "<file>", "Take a screenshot, saving it to the file."};
+   (*this)[Command::Viewcenter]           = {"viewcenter", "<x> <y>", "Change the viewcenter."};
+   (*this)[Command::View]                 = {"view", "<theta> <phi>", "Change the solid angle of view."};
+   (*this)[Command::Zoom]                 = {"zoom", "<zoom>", "Change the zoom factor."};
+   (*this)[Command::Shading]              = {"shading", "<flat/smooth/cool>", "Change the shading algorithm."};
+   (*this)[Command::Subdivisions]         = {"subdivisions", "<times> <dummy>", "Change the refinement level."};
+   (*this)[Command::Valuerange]           = {"valuerange", "<min> <max>", "Change the value range."};
+   (*this)[Command::Autoscale]            = {"autoscale", "<off/on/value/mesh>", "Change the autoscale algorithm."};
+   (*this)[Command::Levellines]           = {"levellines", "<min> <max> <num>", "Set the level lines."};
+   (*this)[Command::AxisNumberFormat]     = {"axis_numberformat", "'<format>'", "Set the axis number format."};
+   (*this)[Command::ColorbarNumberFormat] = {"colorbar_numberformat", "'<format>'", "Set the colorbar number format."};
+   (*this)[Command::WindowSize]           = {"window_size", "<w> <h>", "Set the size of the window."};
+   (*this)[Command::WindowGeometry]       = {"window_geometry", "<x> <y> <w> <h>", "Set the position and size of the window."};
+   (*this)[Command::WindowTitle]          = {"window_title", "'<title>'", "Set title of the window."};
+   (*this)[Command::Keys]                 = {"keys", "<keys>", "Send the control key sequence."};
+   (*this)[Command::Palette]              = {"palette", "<index>", "Set the palette index."};
+   (*this)[Command::PaletteRepeat]        = {"palette_repeat", "<times>", "Set the repetition of the palette."};
+   (*this)[Command::Camera]               = {"camera", "<cam[0]> ... <cam[2]> <dir[0]> ... <dir[2]> <up[0]> ... <up[2]>", "Set the camera position, direction and upward vector."};
+   (*this)[Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
+   (*this)[Command::AxisLabels]           = {"axis_labels", "'<x label>' '<y label>' '<z label>'", "Set labels of the axes."};
+   (*this)[Command::Pause]                = {"pause", "", "Stop the stream until space is pressed."};
+   (*this)[Command::Autopause]            = {"autopause", "<0/off/1/on>", "Turns off or on autopause."};
+}
+
+communication_thread::communication_thread(StreamCollection _is,
+                                           GLVisCommand* cmd, bool multithread)
+   : is(std::move(_is)), glvis_command(cmd), is_multithread(multithread)
+{
+   if (is_multithread && is.size() > 0)
    {
       tid = std::thread(&communication_thread::execute, this);
    }
 }
 
+bool communication_thread::process_one()
+{
+   std::string word;
+   *is[0] >> ws;
+   *is[0] >> word;
+   return execute_one(word);
+}
+
 communication_thread::~communication_thread()
 {
-   if (is.size() > 0)
+   if (is_multithread && is.size() > 0)
    {
       terminate_thread = true;
       tid.join();
    }
 }
 
-void communication_thread::execute()
+void communication_thread::print_commands()
 {
-   while (1)
+   StreamReader::PrintCommands();
+
+   for (const auto &ci : commands)
    {
-      *is[0] >> ws;
-      // thread cancellation point
-      if (terminate_thread) { break; }
+      cout << "\t" << ci.keyword << " " << ci.params << " - " << ci.desc << endl;
+   }
+}
 
-      *is[0] >> ident;
-      if (!(*is[0]))
+bool communication_thread::execute_one(std::string ident)
+{
+   // new solution handled by StreamReader
+   if (StreamReader::SupportsDataType(ident))
+   {
+      DataState tmp;
+      tmp.fix_elem_orient = glvis_command->FixElementOrientations();
+      StreamReader reader(tmp);
+      reader.ReadStream(*is[0], ident);
+
+      // cout << "Stream: new solution" << endl;
+
+      if (glvis_command->NewMeshAndSolution(std::move(tmp)))
       {
-         break;
+         return false;
       }
-
-      if (ident == "mesh" || ident == "solution" ||
-          ident == "quadrature" || ident == "parallel")
+      if (!tmp.keys.empty())
       {
-         bool fix_elem_orient = glvis_command->FixElementOrientations();
-         DataState tmp;
-         if (ident == "mesh")
+         if (glvis_command->KeyCommands(tmp.keys.c_str()))
          {
-            tmp.SetMesh(new Mesh(*is[0], 1, 0, fix_elem_orient));
-            if (!(*is[0]))
-            {
-               break;
-            }
-            tmp.SetGridFunction(NULL);
+            return false;
          }
-         else if (ident == "solution")
+      }
+      return true;
+   }
+
+   auto it = find(commands.begin(), commands.end(), ident);
+   if (it == commands.end())
+   {
+      cout << "Stream: unknown command: " << ident << endl;
+      print_commands();
+      return false;
+   }
+
+   const Command cmd = (Command)(it - commands.begin());
+   switch (cmd)
+   {
+      case Command::Parallel:
+      {
+         unsigned int proc, nproc, np = 0;
+         do
          {
-            tmp.SetMesh(new Mesh(*is[0], 1, 0, fix_elem_orient));
-            if (!(*is[0]))
-            {
-               break;
-            }
-            tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), *is[0]));
-            if (!(*is[0]))
-            {
-               break;
-            }
-         }
-         else if (ident == "quadrature")
-         {
-            tmp.SetMesh(new Mesh(*is[0], 1, 0, fix_elem_orient));
-            if (!(*is[0]))
-            {
-               break;
-            }
-            tmp.SetQuadFunction(new QuadratureFunction(tmp.mesh.get(), *is[0]));
-            if (!(*is[0]))
-            {
-               break;
-            }
-         }
-         else if (ident == "parallel")
-         {
-            std::vector<Mesh*> mesh_array;
-            std::vector<GridFunction*> gf_array;
-            std::vector<QuadratureFunction*> qf_array;
-            int proc, nproc, np = 0;
-            bool keep_attr = glvis_command->KeepAttrib();
-            do
-            {
-               istream &isock = *is[np];
-               isock >> nproc >> proc >> ws;
+            istream &isock = *is[np];
+            isock >> nproc >> proc >> ws;
 #ifdef GLVIS_DEBUG
-               cout << "connection[" << np << "]: parallel " << nproc << ' '
-                    << proc << endl;
+            cout << "connection[" << np << "]: parallel " << nproc << ' '
+                 << proc << endl;
 #endif
-               isock >> ident >> ws;
-               mesh_array.resize(nproc);
-               mesh_array[proc] = new Mesh(isock, 1, 0, fix_elem_orient);
-               if (!keep_attr)
-               {
-                  // set element and boundary attributes to proc+1
-                  for (int i = 0; i < mesh_array[proc]->GetNE(); i++)
-                  {
-                     mesh_array[proc]->GetElement(i)->SetAttribute(proc+1);
-                  }
-                  for (int i = 0; i < mesh_array[proc]->GetNBE(); i++)
-                  {
-                     mesh_array[proc]->GetBdrElement(i)->SetAttribute(proc+1);
-                  }
-               }
-               if (ident == "solution")
-               {
-                  gf_array.resize(nproc);
-                  gf_array[proc] = new GridFunction(mesh_array[proc], isock);
-               }
-               else if (ident == "quadrature")
-               {
-                  qf_array.resize(nproc);
-                  qf_array[proc] = new QuadratureFunction(mesh_array[proc], isock);
-               }
-               else
-               {
-                  cout << "Stream: unknown command: " << ident << endl;
-               }
-               np++;
-               if (np == nproc)
-               {
-                  break;
-               }
-               *is[np] >> ident >> ws; // "parallel"
-            }
-            while (1);
-
-            tmp.SetMesh(new Mesh(mesh_array.data(), nproc));
-            if (gf_array.size() > 0)
+            if (nproc != is.size())
             {
-               tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), gf_array.data(), nproc));
+               cout << "Unexpected number of processors: " << nproc
+                    << ", expected: " << is.size() << endl;
+               mfem_error();
             }
-            else if (qf_array.size() > 0)
+            if (proc >= nproc)
             {
-               tmp.SetQuadFunction(qf_array);
+               cout << "Invalid processor rank: " << proc
+                    << ", number of processors: " << nproc << endl;
+               mfem_error();
             }
-
-            for (int p = 0; p < nproc; p++)
+            np++;
+            if (np == nproc)
             {
-               if (gf_array.size() > 0)
-               {
-                  delete gf_array[nproc-1-p];
-               }
-               if (qf_array.size() > 0)
-               {
-                  delete qf_array[nproc-1-p];
-               }
-               delete mesh_array[nproc-1-p];
+               break;
             }
-            gf_array.clear();
-            qf_array.clear();
-            mesh_array.clear();
+            *is[np] >> ident >> ws; // "parallel"
+            if (ident != "parallel")
+            {
+               cout << "Expected keyword \"parallel\", got \"" << ident
+                    << '"' << endl;
+               mfem_error();
+            }
          }
+         while (1);
+
+         DataState tmp;
+         tmp.fix_elem_orient = glvis_command->FixElementOrientations();
+         tmp.keep_attr = glvis_command->KeepAttrib();
+         StreamReader reader(tmp);
+         reader.ReadStreams(is);
 
          // cout << "Stream: new solution" << endl;
 
-         tmp.ExtrudeMeshAndSolution();
-
          if (glvis_command->NewMeshAndSolution(std::move(tmp)))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "screenshot")
+      break;
+      case Command::Screenshot:
       {
          string filename;
 
@@ -978,10 +1017,11 @@ void communication_thread::execute()
 
          if (glvis_command->Screenshot(filename.c_str()))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "keys")
+      break;
+      case Command::Keys:
       {
          string keys;
 
@@ -996,10 +1036,11 @@ void communication_thread::execute()
 
          if (glvis_command->KeyCommands(keys.c_str()))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "window_size")
+      break;
+      case Command::WindowSize:
       {
          int w, h, t;
 
@@ -1014,10 +1055,11 @@ void communication_thread::execute()
 
          if (glvis_command->WindowSize(w, h))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "window_geometry")
+      break;
+      case Command::WindowGeometry:
       {
          int x, y, w, h, t;
 
@@ -1032,10 +1074,11 @@ void communication_thread::execute()
 
          if (glvis_command->WindowGeometry(x, y, w, h))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "window_title")
+      break;
+      case Command::WindowTitle:
       {
          char c;
          string title;
@@ -1055,10 +1098,11 @@ void communication_thread::execute()
 
          if (glvis_command->WindowTitle(title.c_str()))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "plot_caption")
+      break;
+      case Command::PlotCaption:
       {
          char c;
          string caption;
@@ -1078,10 +1122,11 @@ void communication_thread::execute()
 
          if (glvis_command->PlotCaption(caption.c_str()))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "axis_labels")
+      break;
+      case Command::AxisLabels:
       {
          char c;
          string label_x, label_y, label_z;
@@ -1111,10 +1156,11 @@ void communication_thread::execute()
                                        label_y.c_str(),
                                        label_z.c_str()))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "pause")
+      break;
+      case Command::Pause:
       {
          // all processors sent the command
          for (size_t i = 1; i < is.size(); i++)
@@ -1124,10 +1170,11 @@ void communication_thread::execute()
 
          if (glvis_command->Pause())
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "view")
+      break;
+      case Command::View:
       {
          double theta, phi, a;
 
@@ -1142,10 +1189,11 @@ void communication_thread::execute()
 
          if (glvis_command->ViewAngles(theta, phi))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "zoom")
+      break;
+      case Command::Zoom:
       {
          double factor, a;
 
@@ -1160,10 +1208,11 @@ void communication_thread::execute()
 
          if (glvis_command->Zoom(factor))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "subdivisions")
+      break;
+      case Command::Subdivisions:
       {
          int tot, bdr, a;
 
@@ -1178,10 +1227,11 @@ void communication_thread::execute()
 
          if (glvis_command->Subdivisions(tot, bdr))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "valuerange")
+      break;
+      case Command::Valuerange:
       {
          double minv, maxv, a;
 
@@ -1196,10 +1246,11 @@ void communication_thread::execute()
 
          if (glvis_command->ValueRange(minv, maxv))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "levellines")
+      break;
+      case Command::Levellines:
       {
          double minv, maxv, a;
          int num, b;
@@ -1215,10 +1266,11 @@ void communication_thread::execute()
 
          if (glvis_command->Levellines(minv, maxv, num))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "axis_numberformat")
+      break;
+      case Command::AxisNumberFormat:
       {
          char c;
          string formatting;
@@ -1238,10 +1290,11 @@ void communication_thread::execute()
 
          if (glvis_command->AxisNumberFormat(formatting))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "colorbar_numberformat")
+      break;
+      case Command::ColorbarNumberFormat:
       {
          char c;
          string formatting;
@@ -1261,10 +1314,11 @@ void communication_thread::execute()
 
          if (glvis_command->ColorbarNumberFormat(formatting))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "shading")
+      break;
+      case Command::Shading:
       {
          string shd;
 
@@ -1279,10 +1333,11 @@ void communication_thread::execute()
 
          if (glvis_command->SetShading(shd.c_str()))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "viewcenter")
+      break;
+      case Command::Viewcenter:
       {
          double x, y, a;
 
@@ -1297,10 +1352,11 @@ void communication_thread::execute()
 
          if (glvis_command->ViewCenter(x, y))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "autoscale")
+      break;
+      case Command::Autoscale:
       {
          string mode;
 
@@ -1315,10 +1371,11 @@ void communication_thread::execute()
 
          if (glvis_command->Autoscale(mode.c_str()))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "palette")
+      break;
+      case Command::Palette:
       {
          int pal, a;
 
@@ -1333,10 +1390,11 @@ void communication_thread::execute()
 
          if (glvis_command->Palette(pal))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "palette_repeat")
+      break;
+      case Command::PaletteRepeat:
       {
          int n, a;
 
@@ -1351,10 +1409,11 @@ void communication_thread::execute()
 
          if (glvis_command->PaletteRepeat(n))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "camera")
+      break;
+      case Command::Camera:
       {
          double cam[9], a;
 
@@ -1375,10 +1434,11 @@ void communication_thread::execute()
 
          if (glvis_command->Camera(cam))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else if (ident == "autopause")
+      break;
+      case Command::Autopause:
       {
          string mode;
 
@@ -1393,18 +1453,42 @@ void communication_thread::execute()
 
          if (glvis_command->Autopause(mode.c_str()))
          {
-            goto comm_terminate;
+            return false;
          }
       }
-      else
-      {
-         cout << "Stream: unknown command: " << ident << endl;
-      }
+      break;
+      case Command::Max: //dummy
+         break;
    }
 
-   cout << "Stream: end of input." << endl;
+   return true;
+}
 
-comm_terminate:
+void communication_thread::execute()
+{
+   std::string ident;
+   bool status = true;
+
+   while (status)
+   {
+      *is[0] >> ws;
+      // thread cancellation point
+      if (terminate_thread) { break; }
+
+      *is[0] >> ident;
+      if (!(*is[0]))
+      {
+         break;
+      }
+
+      status = execute_one(ident);
+   }
+
+   if (status)
+   {
+      cout << "Stream: end of input." << endl;
+   }
+
    for (size_t i = 0; i < is.size(); i++)
    {
       socketstream *isock = dynamic_cast<socketstream *>(is[i].get());
