@@ -26,7 +26,7 @@ protected:
    mfem::GridFunction *rsol;
 
    int drawmesh, drawelems, draworder;
-   enum class Numbering { NONE, ELEM, EDGE, VERTEX, DOF, MAX };
+   enum class Numbering { NONE, ELEMENTS, EDGES, VERTICES, DOFS, MAX };
    Numbering drawnums;
    int drawbdr, draw_cp;
 

@@ -1020,14 +1020,23 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
    }
 
    // draw numberings
-   if (drawnums == Numbering::ELEM)
+   if (drawnums == Numbering::ELEMENTS)
    {
       scene.queue.emplace_back(params, &e_nums_buf);
    }
-   else if (drawnums == Numbering::EDGE)
+   else if (drawnums == Numbering::VERTICES)
    {
       scene.queue.emplace_back(params, &v_nums_buf);
    }
+   else if (drawnums == Numbering::EDGES)
+   {
+      scene.queue.emplace_back(params, &f_nums_buf);
+   }
+   else if (drawnums == Numbering::DOFS)
+   {
+      scene.queue.emplace_back(params, &d_nums_buf);
+   }
+   else { /* Numbering::NONE */ }
 
    if (drawvector == 1 || drawvector > 3)
    {

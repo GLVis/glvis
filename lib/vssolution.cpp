@@ -2229,22 +2229,22 @@ void VisualizationSceneSolution::PrepareNumbering(bool invalidate)
       std::cout << "Numbering : " << numbering[(int)drawnums] << std::endl;
    }
 
-   if (drawnums == Numbering::ELEM && !e_nums_buf_ready)
+   if (drawnums == Numbering::ELEMENTS && !e_nums_buf_ready)
    {
       PrepareElementNumbering();
       e_nums_buf_ready = true;
    }
-   if (drawnums == Numbering::EDGE && !f_nums_buf_ready)
+   if (drawnums == Numbering::EDGES && !f_nums_buf_ready)
    {
       PrepareEdgeNumbering();
       f_nums_buf_ready = true;
    }
-   if (drawnums == Numbering::VERTEX && !v_nums_buf_ready)
+   if (drawnums == Numbering::VERTICES && !v_nums_buf_ready)
    {
       PrepareVertexNumbering();
       v_nums_buf_ready = true;
    }
-   if (drawnums == Numbering::DOF && !d_nums_buf_ready)
+   if (drawnums == Numbering::DOFS && !d_nums_buf_ready)
    {
       PrepareDofNumbering();
       d_nums_buf_ready = true;
@@ -2658,19 +2658,19 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    }
 
    // draw numberings
-   if (drawnums == Numbering::ELEM)
+   if (drawnums == Numbering::ELEMENTS)
    {
       scene.queue.emplace_back(params, &e_nums_buf);
    }
-   else if (drawnums == Numbering::EDGE)
+   else if (drawnums == Numbering::EDGES)
    {
       scene.queue.emplace_back(params, &f_nums_buf);
    }
-   else if (drawnums == Numbering::VERTEX)
+   else if (drawnums == Numbering::VERTICES)
    {
       scene.queue.emplace_back(params, &v_nums_buf);
    }
-   else if (drawnums == Numbering::DOF)
+   else if (drawnums == Numbering::DOFS)
    {
       scene.queue.emplace_back(params, &d_nums_buf);
    }
