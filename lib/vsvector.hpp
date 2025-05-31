@@ -13,13 +13,6 @@
 #define GLVIS_VSVECTOR_HPP
 
 #include <mfem.hpp>
-using mfem::Vector;
-using mfem::Mesh;
-using mfem::GridFunction;
-using mfem::IntegrationRule;
-using mfem::DenseMatrix;
-using mfem::IsoparametricTransformation;
-
 #include "gl/types.hpp"
 #include "vssolution.hpp"
 
@@ -27,20 +20,20 @@ class VisualizationSceneVector : public VisualizationSceneSolution
 {
 protected:
 
-   Vector *solx, *soly;
+   mfem::Vector *solx, *soly;
    int drawdisp, drawvector;
 
    gl3::GlDrawable vector_buf;
    gl3::GlDrawable displine_buf;
-   GridFunction *VecGridF;
+   mfem::GridFunction *VecGridF;
 
    void Init();
 
-   void GetRefinedValues(int i, const IntegrationRule &ir,
-                         Vector &vals, DenseMatrix &tr) override;
-   int GetRefinedValuesAndNormals(int i, const IntegrationRule &ir,
-                                  Vector &vals, DenseMatrix &tr,
-                                  DenseMatrix &normals) override;
+   void GetRefinedValues(int i, const mfem::IntegrationRule &ir,
+                         mfem::Vector &vals, mfem::DenseMatrix &tr) override;
+   int GetRefinedValuesAndNormals(int i, const mfem::IntegrationRule &ir,
+                                  mfem::Vector &vals,mfem::DenseMatrix &tr,
+                                  mfem::DenseMatrix &normals) override;
 
    double (*Vec2Scalar)(double, double);
 
@@ -48,16 +41,17 @@ protected:
 
    double maxlen;
 
-   Vector vc0;
-   IsoparametricTransformation T0;
+   mfem::Vector vc0;
+   mfem::IsoparametricTransformation T0;
 
    int GetFunctionAutoRefineFactor() override;
 
 public:
-   VisualizationSceneVector(Mesh &m, Vector &sx, Vector &sy, Mesh *mc = NULL);
-   VisualizationSceneVector(GridFunction &vgf);
+   VisualizationSceneVector(mfem::Mesh &m, mfem::Vector &sx, mfem::Vector &sy,
+                            mfem::Mesh *mc = nullptr);
+   VisualizationSceneVector(mfem::GridFunction &vgf);
 
-   void NewMeshAndSolution(GridFunction &vgf, Mesh *mc = NULL);
+   void NewMeshAndSolution(mfem::GridFunction &vgf, mfem::Mesh *mc = nullptr);
 
    virtual ~VisualizationSceneVector();
 

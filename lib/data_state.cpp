@@ -9,10 +9,11 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#include "data_state.hpp"
-#include "visual.hpp"
-
 #include <cstdlib>
+
+#include "data_state.hpp"
+#include "vsvector.hpp"
+#include "vsvector3d.hpp"
 
 using namespace std;
 using namespace mfem;

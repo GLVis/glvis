@@ -89,7 +89,7 @@ CFLAGS ?= -O3
 XXD_FOUND := $(shell command -v xxd 2> /dev/null)
 
 # Optional compile/link flags
-GLVIS_OPTS ?=
+GLVIS_OPTS ?= -Wmissing-declarations -Wimplicit -pedantic
 GLVIS_LDFLAGS ?=
 
 # emcc is used when building the wasm/js version

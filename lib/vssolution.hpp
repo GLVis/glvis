@@ -12,28 +12,22 @@
 #ifndef GLVIS_VSSOLUTION_HPP
 #define GLVIS_VSSOLUTION_HPP
 
-#include <mfem.hpp>
-using mfem::Mesh;
-using mfem::Array;
-using mfem::Vector;
-using mfem::DenseMatrix;
-using mfem::GridFunction;
-using mfem::IntegrationRule;
-
 #include "gl/types.hpp"
 #include "vsdata.hpp"
+
+#include <mfem.hpp>
 
 // Visualization header file
 
 class VisualizationSceneSolution : public VisualizationSceneScalarData
 {
 protected:
-   Vector *v_normals;
-   GridFunction *rsol;
+   mfem::Vector *v_normals;
+   mfem::GridFunction *rsol;
 
    int drawmesh, drawelems, draworder;
-   enum class GLVIS_DRAW_NUM { NONE, ELEM, EDGE, VERTEX, DOF, MAX };
-   GLVIS_DRAW_NUM drawnums;
+   enum class Numbering { NONE, ELEM, EDGE, VERTEX, DOF, MAX };
+   Numbering drawnums;
    int drawbdr, draw_cp;
 
    int refine_func = 0;
@@ -64,21 +58,21 @@ protected:
    void FindNewBox(double rx[], double ry[], double rval[]);
 
    void DrawCPLine(gl3::GlBuilder& bld,
-                   DenseMatrix &pointmat, Vector &values, Array<int> &ind);
+                   mfem::DenseMatrix &pointmat, mfem::Vector &values, mfem::Array<int> &ind);
 
-   void GetRefinedDetJ(int i, const IntegrationRule &ir,
-                       Vector &vals, DenseMatrix &tr);
+   void GetRefinedDetJ(int i, const mfem::IntegrationRule &ir,
+                       mfem::Vector &vals, mfem::DenseMatrix &tr);
 
    // redefined for vector solution
-   virtual void GetRefinedValues(int i, const IntegrationRule &ir,
-                                 Vector &vals, DenseMatrix &tr);
-   virtual int GetRefinedValuesAndNormals(int i, const IntegrationRule &ir,
-                                          Vector &vals, DenseMatrix &tr,
-                                          DenseMatrix &normals);
+   virtual void GetRefinedValues(int i, const mfem::IntegrationRule &ir,
+                                 mfem::Vector &vals, mfem::DenseMatrix &tr);
+   virtual int GetRefinedValuesAndNormals(int i, const mfem::IntegrationRule &ir,
+                                          mfem::Vector &vals, mfem::DenseMatrix &tr,
+                                          mfem::DenseMatrix &normals);
 
-   void DrawLevelCurves(gl3::GlBuilder& buf, Array<int> &RG,
-                        DenseMatrix &pointmat,
-                        Vector &values, int sides, Array<double> &lvl,
+   void DrawLevelCurves(gl3::GlBuilder& buf, mfem::Array<int> &RG,
+                        mfem::DenseMatrix &pointmat,
+                        mfem::Vector &values, int sides, mfem::Array<double> &lvl,
                         int flat = 0);
 
    int GetFunctionAutoRefineFactor() override;
@@ -88,22 +82,22 @@ protected:
 
 public:
    int attr_to_show, bdr_attr_to_show;
-   Array<int> el_attr_to_show, bdr_el_attr_to_show;
+   mfem::Array<int> el_attr_to_show, bdr_el_attr_to_show;
 
    VisualizationSceneSolution();
-   VisualizationSceneSolution(Mesh &m, Vector &s,
-                              Mesh *mc = NULL,
-                              Vector *normals = NULL);
+   VisualizationSceneSolution(mfem::Mesh &m, mfem::Vector &s,
+                              mfem::Mesh *mc = nullptr,
+                              mfem::Vector *normals = nullptr);
 
    virtual ~VisualizationSceneSolution();
 
    std::string GetHelpString() const override;
 
-   void SetGridFunction(GridFunction & u) { rsol = &u; }
+   void SetGridFunction(mfem::GridFunction & u);
 
-   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc,
-                           Vector *new_sol,
-                           GridFunction *new_u = NULL);
+   void NewMeshAndSolution(mfem::Mesh *new_m, mfem::Mesh *new_mc,
+                           mfem::Vector *new_sol,
+                           mfem::GridFunction *new_u = nullptr);
 
    void SetNewScalingFromBox() override;
    void FindNewBox(bool prepare) override;
@@ -167,7 +161,7 @@ public:
    // 0 - none, 1 - elements, 2 - edges, 3 - vertices, 4 - DOFs
    void ToggleDrawNumberings()
    {
-      drawnums = (GLVIS_DRAW_NUM) (((int)drawnums + 1) % (int)GLVIS_DRAW_NUM::MAX);
+      drawnums = (Numbering) (((int)drawnums + 1) % (int)Numbering::MAX);
       PrepareNumbering(false);
    }
 
@@ -181,7 +175,7 @@ public:
 
    void SetRefineFactors(int, int) override;
    void AutoRefine() override;
-   void ToggleAttributes(Array<int> &attr_list) override;
+   void ToggleAttributes(mfem::Array<int> &attr_list) override;
 
    virtual void SetDrawMesh(int i) { drawmesh = i % 3; }
    virtual int GetDrawMesh() { return drawmesh; }

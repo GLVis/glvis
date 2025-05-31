@@ -12,7 +12,6 @@
 #ifndef GLVIS_AUX_VIS_HPP
 #define GLVIS_AUX_VIS_HPP
 
-#include "gl/platform_gl.hpp"
 #include "gl/types.hpp"
 
 #include "openglvis.hpp"

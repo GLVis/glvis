@@ -9,13 +9,6 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#include <cstdlib>
-#include <iostream>
-#include <string>
-#include <limits>
-#include <cmath>
-#include <vector>
-
 #include "vssolution.hpp"
 #include "palettes.hpp"
 #include "gltf.hpp"
@@ -426,7 +419,7 @@ VisualizationSceneSolution::VisualizationSceneSolution(
 {
    mesh = &m;
    mesh_coarse = mc;
-   sol = &s;
+   sol = new Vector(m.GetNV());
    v_normals = normals;
 
    Init();
@@ -441,7 +434,7 @@ void VisualizationSceneSolution::Init()
    shading = Shading::Smooth;
    drawmesh  = 0;
    draworder = 0;
-   drawnums  = GLVIS_DRAW_NUM::NONE;
+   drawnums  = Numbering::NONE;
 
    refine_func = 0;
    have_sol_range = false;
@@ -520,6 +513,7 @@ void VisualizationSceneSolution::Init()
 
 VisualizationSceneSolution::~VisualizationSceneSolution()
 {
+   delete sol;
 }
 
 void VisualizationSceneSolution::ToggleDrawElems()
@@ -583,14 +577,23 @@ void VisualizationSceneSolution::ToggleDrawElems()
    }
 }
 
+void VisualizationSceneSolution::SetGridFunction(GridFunction & u)
+{
+   rsol = &u;
+   u.GetNodalValues(*sol);
+}
+
 void VisualizationSceneSolution::NewMeshAndSolution(
    Mesh *new_m, Mesh *new_mc, Vector *new_sol, GridFunction *new_u)
 {
    Mesh *old_m = mesh;
    mesh = new_m;
    mesh_coarse = new_mc;
-   sol = new_sol;
-   rsol = new_u;
+   MFEM_VERIFY(new_sol->Size() == mesh->GetNV(),
+               "New solution vector size does not match the mesh node count.");
+   delete sol;
+   sol  = new Vector(mesh->GetNV());
+   SetGridFunction(*new_u);
 
    // If the number of elements changes, recompute the refinement factor
    if (mesh->GetNE() != old_m->GetNE())
@@ -615,7 +618,6 @@ void VisualizationSceneSolution::NewMeshAndSolution(
    PrepareNumbering();
    PrepareOrderingCurve();
 }
-
 
 void VisualizationSceneSolution::GetRefinedDetJ(
    int i, const IntegrationRule &ir, Vector &vals, DenseMatrix &tr)
@@ -1995,65 +1997,130 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
 
    f_nums_buf.clear();
 
+   Vector vals;
    DenseMatrix p;
-   Array<int> vertices;
-   Array<int> edges;
-   Array<int> edges_ori;
+   Array<int> vertices, edges, edges_ori;
 
-   const int ne = mesh->GetNE();
-   for (int k = 0; k < ne; k++)
+   if (shading == Shading::Flat || shading == Shading::Smooth)
    {
-      mesh->GetElementEdges(k, edges, edges_ori);
-
-      double ds = GetElementLengthScale(k);
-      double xs = 0.05 * ds;
-
-      for (int i = 0; i < edges.Size(); i++)
+      for (int e = 0; e < mesh->GetNE(); e++)
       {
-         mesh->GetEdgeVertices(edges[i], vertices);
-
-         p.SetSize(mesh->Dimension(), vertices.Size());
-         p.SetCol(0, mesh->GetVertex(vertices[0]));
-         p.SetCol(1, mesh->GetVertex(vertices[1]));
-
-         ShrinkPoints(p, k, 0, 0);
-
-         const double m[2] = {0.5 * (p(0,0) + p(0,1)), 0.5 * (p(1,0) + p(1,1))};
-         // TODO: figure out something better...
-         double u = LogVal(0.5 * ((*sol)(vertices[0]) + (*sol)(vertices[1])));
-
-         double xx[3] = {m[0], m[1], u};
-         DrawNumberedMarker(f_nums_buf, xx, xs, edges[i]);
+         mesh->GetElementEdges(e, edges, edges_ori);
+         const double dx = 0.05 * GetElementLengthScale(e);
+         for (int i = 0; i < edges.Size(); i++)
+         {
+            mesh->GetEdgeVertices(edges[i], vertices);
+            p.SetSize(mesh->Dimension(), vertices.Size());
+            p.SetCol(0, mesh->GetVertex(vertices[0]));
+            p.SetCol(1, mesh->GetVertex(vertices[1]));
+            ShrinkPoints(p, e, 0, 0);
+            const double m[2] = {0.5 * (p(0,0) + p(0,1)), 0.5 * (p(1,0) + p(1,1))};
+            const double u = LogVal(0.5 * ((*sol)(vertices[0]) + (*sol)(vertices[1])));
+            const double xx[3] = {m[0], m[1], u};
+            DrawNumberedMarker(f_nums_buf, xx, dx, edges[i]);
+         }
       }
    }
-
+   else if (shading == Shading::Noncomforming)
+   {
+      for (int e = 0; e < mesh->GetNE(); e++)
+      {
+         mesh->GetElementEdges(e, edges, edges_ori);
+         const auto dx = 0.05 * GetElementLengthScale(e);
+         const auto geom = mesh->GetElementBaseGeometry(e);
+         MFEM_VERIFY(geom == Geometry::TRIANGLE || geom == Geometry::SQUARE,
+                     "Only TRIANGLE and SQUARE geometries are supported.");
+         const auto *RefG = GLVisGeometryRefiner.Refine(geom, 2, 2);
+         GetRefinedValues(e, RefG->RefPts, vals, p);
+         ShrinkPoints(p, e, 0, 0);
+         const int ij3[3] = { 1, 4, 3 }, ie3[3] = { 0, 1, 2 };
+         const int ij4[4] = { 1, 3, 5, 7 }, ie4[4] = { 0, 3, 1, 2 };
+         const int *ij = geom == Geometry::TRIANGLE ? ij3 : ij4;
+         const int *ie = geom == Geometry::TRIANGLE ? ie3 : ie4;
+         for (int i = 0; i < edges.Size(); i++)
+         {
+            const int j = ij[i];
+            const double xx[3] = { p(0,j), p(1,j), vals(j) };
+            DrawNumberedMarker(f_nums_buf, xx, dx, edges[ie[i]]);
+         }
+      }
+   }
+   else { MFEM_ABORT("Shading not supported"); }
    updated_bufs.emplace_back(&f_nums_buf);
 }
 
 void VisualizationSceneSolution::PrepareDofNumbering()
 {
-   d_nums_buf.clear();
-   const auto *fes = rsol->FESpace();
-   const int ne = mesh->GetNE(), sdim = mesh->SpaceDimension();
-   FiniteElementSpace dof_fes(mesh, fes->FEColl(), sdim);
-
-   Vector vals;
    DenseMatrix tr;
    Array<int> dofs;
 
-   for (int e = 0; e < ne; e++)
+   d_nums_buf.clear();
+
+   const int ne = mesh->GetNE();
+   auto *rsol_fes = rsol->FESpace();
+   const auto *rsol_fec = rsol_fes->FEColl();
+   FiniteElementSpace rdof_fes(mesh, rsol_fec);
+
+   if (shading == Shading::Noncomforming)
    {
-      if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
-      const auto dx = 0.05 * GetElementLengthScale(e);
-      const IntegrationRule &ir = fes->GetFE(e)->GetNodes();
-      GetRefinedValues(e, ir, vals, tr);
-      dof_fes.GetElementDofs(e, dofs);
-      for (int q = 0; q < ir.GetNPoints(); q++)
+      Vector vals;
+      for (int e = 0; e < ne; e++)
       {
-         const real_t x[3] = {tr(0,q), tr(1,q), vals[q]};
-         DrawNumberedMarker(d_nums_buf, x, dx, dofs[q]);
+         if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
+         const auto dx = 0.05 * GetElementLengthScale(e);
+         const IntegrationRule &ir = rsol_fes->GetFE(e)->GetNodes();
+         GetRefinedValues(e, ir, vals, tr);
+         rdof_fes.GetElementDofs(e, dofs);
+         for (int q = 0; q < ir.GetNPoints(); q++)
+         {
+            const real_t x[3] = {tr(0,q), tr(1,q), vals[q]};
+            DrawNumberedMarker(d_nums_buf, x, dx, dofs[q]);
+         }
       }
    }
+   else if (shading == Shading::Flat || shading == Shading::Smooth)
+   {
+      FiniteElementSpace flat_fes(mesh, rsol_fec->Clone(1));
+      MFEM_VERIFY(sol->Size() == flat_fes.GetNDofs(),
+                  "Flat space does not match the solution size");
+
+      const LORDiscretization lor_discretization(*rsol_fes);
+      auto &lor_fes = lor_discretization.GetFESpace();
+      const auto &lor_perm = lor_discretization.GetDofPermutation();
+      MFEM_VERIFY(rsol_fes->GetNDofs() == lor_fes.GetNDofs(),
+                  "LOR space does not match the solution size");
+
+      InterpolationGridTransfer gt(flat_fes, lor_fes);
+      GridFunction flat_sol(&flat_fes, sol->GetData()), lor_sol(&lor_fes);
+      gt.ForwardOperator().Mult(flat_sol, lor_sol);
+
+      // store 'dx' for the sol mesh elements
+      std::map<int, double> dx;
+      for (int e = 0; e < ne; e++)
+      {
+         mesh->GetPointMatrix(e, tr);
+         ShrinkPoints(tr, e, 0, 0);
+         const auto dx_e = 0.05 * GetElementLengthScale(e);
+         rdof_fes.GetElementDofs(e, dofs);
+         for (int d = 0; d < dofs.Size(); d++) { dx[dofs[d]] = dx_e; }
+      }
+
+      // use the LOR mesh, fes & dofs
+      auto *lor_mesh = lor_fes.GetMesh();
+      for (int e = 0; e < lor_mesh->GetNE(); e++)
+      {
+         lor_fes.GetElementDofs(e, dofs);
+         lor_mesh->GetPointMatrix(e, tr);
+         const auto &ir = lor_fes.GetFE(e)->GetNodes();
+         for (int q = 0; q < ir.GetNPoints(); q++)
+         {
+            const int dof = dofs[lor_perm[q]];
+            const real_t x[3] = {tr(0,q), tr(1,q), LogVal(lor_sol(dof))};
+            DrawNumberedMarker(d_nums_buf, x, dx.at(dof), dof);
+         }
+      }
+   }
+   else { MFEM_ABORT("Shading not supported"); }
    updated_bufs.emplace_back(&d_nums_buf);
 }
 
@@ -2155,22 +2222,22 @@ void VisualizationSceneSolution::PrepareNumbering(bool invalidate)
       f_nums_buf_ready = false;
       d_nums_buf_ready = false;
    }
-   if (drawnums == GLVIS_DRAW_NUM::ELEM && !e_nums_buf_ready)
+   if (drawnums == Numbering::ELEM && !e_nums_buf_ready)
    {
       PrepareElementNumbering();
       e_nums_buf_ready = true;
    }
-   if (drawnums == GLVIS_DRAW_NUM::EDGE && !f_nums_buf_ready)
+   if (drawnums == Numbering::EDGE && !f_nums_buf_ready)
    {
       PrepareEdgeNumbering();
       f_nums_buf_ready = true;
    }
-   if (drawnums == GLVIS_DRAW_NUM::VERTEX && !v_nums_buf_ready)
+   if (drawnums == Numbering::VERTEX && !v_nums_buf_ready)
    {
       PrepareVertexNumbering();
       v_nums_buf_ready = true;
    }
-   if (drawnums == GLVIS_DRAW_NUM::DOF && !d_nums_buf_ready)
+   if (drawnums == Numbering::DOF && !d_nums_buf_ready)
    {
       PrepareDofNumbering();
       d_nums_buf_ready = true;
@@ -2584,23 +2651,26 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    }
 
    // draw numberings
-   if (drawnums == GLVIS_DRAW_NUM::ELEM)
+   if (drawnums == Numbering::ELEM)
    {
       scene.queue.emplace_back(params, &e_nums_buf);
    }
-   else if (drawnums == GLVIS_DRAW_NUM::EDGE)
+   else if (drawnums == Numbering::EDGE)
    {
       scene.queue.emplace_back(params, &f_nums_buf);
    }
-   else if (drawnums == GLVIS_DRAW_NUM::VERTEX)
+   else if (drawnums == Numbering::VERTEX)
    {
       scene.queue.emplace_back(params, &v_nums_buf);
    }
-   else if (drawnums == GLVIS_DRAW_NUM::DOF)
+   else if (drawnums == Numbering::DOF)
    {
       scene.queue.emplace_back(params, &d_nums_buf);
    }
-   else { assert(drawnums == GLVIS_DRAW_NUM::NONE); }
+   else
+   {
+      MFEM_ABORT("Unsupported drawnums value: " << (int)drawnums);
+   }
 
    // draw orderings -- "black" modes
    if (draworder == 3)

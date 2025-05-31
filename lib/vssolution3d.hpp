@@ -13,14 +13,6 @@
 #define GLVIS_VSSOLUTION_3D_HPP
 
 #include <mfem.hpp>
-using mfem::Mesh;
-using mfem::Array;
-using mfem::Vector;
-using mfem::Geometry;
-using mfem::DenseMatrix;
-using mfem::GridFunction;
-using mfem::IntegrationRule;
-
 #include "gl/types.hpp"
 #include "vsdata.hpp"
 
@@ -47,70 +39,70 @@ protected:
    double *node_pos;
 
    int nlevels;
-   Array<double> levels;
+   mfem::Array<double> levels;
 
-   GridFunction *GridF;
+   mfem::GridFunction *GridF;
 
    void Init();
 
    void GetFaceNormals(const int FaceNo, const int side,
-                       const IntegrationRule &ir, DenseMatrix &normals);
+                       const mfem::IntegrationRule &ir, mfem::DenseMatrix &normals);
 
    void DrawRefinedSurf (int n, double *points, int elem, int func,
                          int part = -1);
-   void DrawRefinedSurf (int n, DenseMatrix &pointmat,
-                         Vector &values, Array<int> &RefGeoms);
-   void DrawRefinedSurfLevelLines (int n, DenseMatrix &pointmat,
-                                   Vector &values, Array<int> &RefGeoms);
-   void DrawRefinedSurfEdges (int n, DenseMatrix &pointmat,
-                              Vector &values, Array<int> &RefEdges,
+   void DrawRefinedSurf (int n, mfem::DenseMatrix &pointmat,
+                         mfem::Vector &values, mfem::Array<int> &RefGeoms);
+   void DrawRefinedSurfLevelLines (int n, mfem::DenseMatrix &pointmat,
+                                   mfem::Vector &values, mfem::Array<int> &RefGeoms);
+   void DrawRefinedSurfEdges (int n, mfem::DenseMatrix &pointmat,
+                              mfem::Vector &values, mfem::Array<int> &RefEdges,
                               int part = -1);
    void DrawBdrElCoarseSurfEdges(gl3::GlBuilder &line, int be,
-                                 DenseMatrix &pointmat, const IntegrationRule *ir = NULL,
-                                 Array<int> *idxs = NULL);
+                                 mfem::DenseMatrix &pointmat, const mfem::IntegrationRule *ir = NULL,
+                                 mfem::Array<int> *idxs = NULL);
    void DrawFaceCoarseSurfEdges(gl3::GlBuilder &line, int f,
-                                DenseMatrix &pointmat,
-                                const IntegrationRule *ir = NULL, Array<int> *idxs = NULL);
+                                mfem::DenseMatrix &pointmat,
+                                const mfem::IntegrationRule *ir = NULL, mfem::Array<int> *idxs = NULL);
    void DrawCoarseSurfEdges(gl3::GlBuilder &line, int f, int e1, int e2,
-                            DenseMatrix &pointmat, const IntegrationRule *ir = NULL,
-                            Array<int> *idxs = NULL);
-   void LiftRefinedSurf (int n, DenseMatrix &pointmat,
-                         Vector &values, int *RG);
-   void DrawTetLevelSurf(gl3::GlDrawable& target, const DenseMatrix &verts,
-                         const Vector &vals,
-                         const int *ind, const Array<double> &levels,
-                         const DenseMatrix *grad = NULL);
+                            mfem::DenseMatrix &pointmat, const mfem::IntegrationRule *ir = NULL,
+                            mfem::Array<int> *idxs = NULL);
+   void LiftRefinedSurf (int n, mfem::DenseMatrix &pointmat,
+                         mfem::Vector &values, int *RG);
+   void DrawTetLevelSurf(gl3::GlDrawable& target, const mfem::DenseMatrix &verts,
+                         const mfem::Vector &vals,
+                         const int *ind, const mfem::Array<double> &levels,
+                         const mfem::DenseMatrix *grad = NULL);
 
-   static int GetPyramidFaceSplits(const Array<bool> &quad_diag,
-                                   const Array<int> &faces,
-                                   const Array<int> &ofaces);
+   static int GetPyramidFaceSplits(const mfem::Array<bool> &quad_diag,
+                                   const mfem::Array<int> &faces,
+                                   const mfem::Array<int> &ofaces);
    void DrawRefinedPyramidLevelSurf(gl3::GlDrawable& target,
-                                    const DenseMatrix &verts,
-                                    const Vector &vals, const int *RG,
+                                    const mfem::DenseMatrix &verts,
+                                    const mfem::Vector &vals, const int *RG,
                                     const int np, const int face_splits,
-                                    const DenseMatrix *grad = NULL);
+                                    const mfem::DenseMatrix *grad = NULL);
 
-   static int GetWedgeFaceSplits(const Array<bool> &quad_diag,
-                                 const Array<int> &faces,
-                                 const Array<int> &ofaces);
+   static int GetWedgeFaceSplits(const mfem::Array<bool> &quad_diag,
+                                 const mfem::Array<int> &faces,
+                                 const mfem::Array<int> &ofaces);
    void DrawRefinedWedgeLevelSurf(gl3::GlDrawable& target,
-                                  const DenseMatrix &verts,
-                                  const Vector &vals, const int *RG,
+                                  const mfem::DenseMatrix &verts,
+                                  const mfem::Vector &vals, const int *RG,
                                   const int np, const int face_splits,
-                                  const DenseMatrix *grad = NULL);
+                                  const mfem::DenseMatrix *grad = NULL);
 
-   static int GetHexFaceSplits(const Array<bool> &quad_diag,
-                               const Array<int> &faces,
-                               const Array<int> &ofaces);
+   static int GetHexFaceSplits(const mfem::Array<bool> &quad_diag,
+                               const mfem::Array<int> &faces,
+                               const mfem::Array<int> &ofaces);
    void DrawRefinedHexLevelSurf(gl3::GlDrawable& target,
-                                const DenseMatrix &verts,
-                                const Vector &vals, const int *RG,
+                                const mfem::DenseMatrix &verts,
+                                const mfem::Vector &vals, const int *RG,
                                 const int nh, const int face_splits,
-                                const DenseMatrix *grad = NULL);
+                                const mfem::DenseMatrix *grad = NULL);
 
    int GetFunctionAutoRefineFactor() override;
 
-   bool CheckPositions(Array<int> &vertices) const
+   bool CheckPositions(mfem::Array<int> &vertices) const
    {
       int n = 0;
       for (int j = 0; j < vertices.Size(); j++)
@@ -124,16 +116,16 @@ public:
    int TimesToRefine;
    double FaceShiftScale;
 
-   Array<int> bdr_attr_to_show;
+   mfem::Array<int> bdr_attr_to_show;
 
    VisualizationSceneSolution3d();
-   VisualizationSceneSolution3d(Mesh & m, Vector & s, Mesh *mc);
+   VisualizationSceneSolution3d(mfem::Mesh & m, mfem::Vector & s, mfem::Mesh *mc);
 
-   void SetGridFunction (GridFunction *gf) { GridF = gf; }
+   void SetGridFunction(mfem::GridFunction *gf) { GridF = gf; }
 
-   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc,
-                           Vector *new_sol,
-                           GridFunction *new_u = NULL);
+   void NewMeshAndSolution(mfem::Mesh *new_m, mfem::Mesh *new_mc,
+                           mfem::Vector *new_sol,
+                           mfem::GridFunction *new_u = nullptr);
 
    virtual ~VisualizationSceneSolution3d();
 
@@ -167,19 +159,19 @@ public:
    void ToggleShading() override;
    void SetRefineFactors(int, int) override;
    void AutoRefine() override;
-   void ToggleAttributes(Array<int> &attr_list) override;
+   void ToggleAttributes(mfem::Array<int> &attr_list) override;
 
    void FindNodePos();
 
    void CuttingPlaneFunc (int type);
    // func: 0 - draw surface, 1 - draw level lines
    void CutRefinedElement(gl3::GlDrawable& target,
-                          const DenseMatrix &verts, const Vector &vert_dist,
-                          const Vector &vals, const Geometry::Type geom,
+                          const mfem::DenseMatrix &verts, const mfem::Vector &vert_dist,
+                          const mfem::Vector &vals, const mfem::Geometry::Type geom,
                           const int *elems, int num_elems, int func);
    void CutRefinedFace(gl3::GlDrawable& target,
-                       const DenseMatrix &verts, const Vector &vert_dist,
-                       const Vector &vals, const Geometry::Type geom,
+                       const mfem::DenseMatrix &verts, const mfem::Vector &vert_dist,
+                       const mfem::Vector &vals, const mfem::Geometry::Type geom,
                        const int *faces, int num_faces);
    void CPPrepare();
    void CPMoved();

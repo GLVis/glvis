@@ -14,8 +14,8 @@
 #include <limits>
 #include <cmath>
 
-#include "mfem.hpp"
-#include "visual.hpp"
+#include <mfem.hpp>
+#include "vsvector.hpp"
 
 using namespace mfem;
 using namespace std;
@@ -1020,11 +1020,11 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
    }
 
    // draw numberings
-   if (drawnums == GLVIS_DRAW_NUM::ELEM)
+   if (drawnums == Numbering::ELEM)
    {
       scene.queue.emplace_back(params, &e_nums_buf);
    }
-   else if (drawnums == GLVIS_DRAW_NUM::EDGE)
+   else if (drawnums == Numbering::EDGE)
    {
       scene.queue.emplace_back(params, &v_nums_buf);
    }

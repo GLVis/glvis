@@ -12,41 +12,40 @@
 #ifndef GLVIS_VSVECTOR_3D_HPP
 #define GLVIS_VSVECTOR_3D_HPP
 
+#include <mfem.hpp>
 #include "gl/types.hpp"
 #include "vssolution3d.hpp"
-
-using mfem::FiniteElementSpace;
 
 class VisualizationSceneVector3d : public VisualizationSceneSolution3d
 {
 protected:
 
-   Vector *solx, *soly, *solz;
+   mfem::Vector *solx, *soly, *solz;
    int drawvector, scal_func;
    double mesh_volume;
    gl3::GlDrawable vector_buf;
    gl3::GlDrawable displine_buf;
 
-   GridFunction *VecGridF;
-   FiniteElementSpace *sfes;
+   mfem::GridFunction *VecGridF;
+   mfem::FiniteElementSpace *sfes;
 
    void Init();
 
-   Array<int> vflevel;
-   Array<double> dvflevel;
+   mfem::Array<int> vflevel;
+   mfem::Array<double> dvflevel;
 
    int GetFunctionAutoRefineFactor() override;
 
 public:
    int ianim, ianimd, ianimmax, drawdisp;
 
-   VisualizationSceneVector3d(Mesh & m, Vector & sx, Vector & sy,
-                              Vector & sz,
-                              Mesh *mc = NULL);
-   VisualizationSceneVector3d (GridFunction &vgf, Mesh *mc = NULL);
+   VisualizationSceneVector3d(mfem::Mesh & m, mfem::Vector & sx, mfem::Vector & sy,
+                              mfem::Vector & sz,
+                              mfem::Mesh *mc = nullptr);
+   VisualizationSceneVector3d(mfem::GridFunction &vgf, mfem::Mesh *mc = nullptr);
 
-   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc,
-                           GridFunction *new_v);
+   void NewMeshAndSolution(mfem::Mesh *new_m, mfem::Mesh *new_mc,
+                           mfem::GridFunction *new_v);
 
    virtual ~VisualizationSceneVector3d();
 
