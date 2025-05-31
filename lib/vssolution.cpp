@@ -2222,6 +2222,13 @@ void VisualizationSceneSolution::PrepareNumbering(bool invalidate)
       f_nums_buf_ready = false;
       d_nums_buf_ready = false;
    }
+   else
+   {
+      static const char *numbering[(int)Numbering::MAX] =
+      { "None", "Elements", "Edges", "Vertices", "DOFs" };
+      std::cout << "Numbering : " << numbering[(int)drawnums] << std::endl;
+   }
+
    if (drawnums == Numbering::ELEM && !e_nums_buf_ready)
    {
       PrepareElementNumbering();
