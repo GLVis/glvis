@@ -523,7 +523,7 @@ void VisualizationSceneVector::Init()
 
 VisualizationSceneVector::~VisualizationSceneVector()
 {
-   delete sol;
+   // sol is deleted in parent VisualizationSceneSolution destructor
 
    if (VecGridF)
    {
