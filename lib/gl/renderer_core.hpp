@@ -20,8 +20,6 @@
 namespace gl3
 {
 
-using namespace resource;
-
 // Renderer for OpenGL versions with access to the programmable pipeline
 class CoreGLDevice : public GLDevice
 {
@@ -46,9 +44,9 @@ public:
 private:
    ShaderProgram default_prgm;
    ShaderProgram feedback_prgm;
-   VtxArrayHandle global_vao;
+   resource::VtxArrayHandle global_vao;
 
-   BufObjHandle feedback_vbo;
+   resource::BufObjHandle feedback_vbo;
 
    const static std::vector<std::string> unif_list;
 
@@ -58,8 +56,8 @@ private:
 
    struct VBOData
    {
-      BufObjHandle vert_buf;
-      BufObjHandle elem_buf;
+      resource::BufObjHandle vert_buf;
+      resource::BufObjHandle elem_buf;
       GLenum shape;
       size_t count;
       array_layout layout;

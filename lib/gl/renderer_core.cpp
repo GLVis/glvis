@@ -177,12 +177,12 @@ void CoreGLDevice::init()
    {
       GLuint hnd_vao;
       glGenVertexArrays(1, &hnd_vao);
-      global_vao = VtxArrayHandle(hnd_vao);
+      global_vao = resource::VtxArrayHandle(hnd_vao);
       glBindVertexArray(global_vao);
    }
    GLuint hnd_fb_buf;
    glGenBuffers(1, &hnd_fb_buf);
-   feedback_vbo = BufObjHandle(hnd_fb_buf);
+   feedback_vbo = resource::BufObjHandle(hnd_fb_buf);
 }
 
 void CoreGLDevice::setTransformMatrices(glm::mat4 model_view,
