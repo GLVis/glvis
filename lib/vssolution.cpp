@@ -2074,6 +2074,7 @@ void VisualizationSceneSolution::PrepareDofNumbering()
          const IntegrationRule &ir = rsol_fes->GetFE(e)->GetNodes();
          GetRefinedValues(e, ir, vals, tr);
          rdof_fes.GetElementDofs(e, dofs);
+         rdof_fes.AdjustVDofs(dofs);
          for (int q = 0; q < ir.GetNPoints(); q++)
          {
             const real_t x[3] = {tr(0,q), tr(1,q), vals[q]};
