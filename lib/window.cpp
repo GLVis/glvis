@@ -221,8 +221,9 @@ void Window::ResetMeshAndSolution(DataState &ss)
       {
          VisualizationSceneSolution *vss =
             dynamic_cast<VisualizationSceneSolution *>(internal.vs.get());
-         ss.grid_f->GetNodalValues(ss.sol);
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
+         // use the local vector as pointer is invalid after the move
+         ss.grid_f->GetNodalValues(data_state.sol);
+         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &data_state.sol,
                                  ss.grid_f.get());
       }
       else
@@ -238,8 +239,9 @@ void Window::ResetMeshAndSolution(DataState &ss)
       {
          VisualizationSceneSolution3d *vss =
             dynamic_cast<VisualizationSceneSolution3d *>(internal.vs.get());
-         ss.grid_f->GetNodalValues(ss.sol);
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
+         // use the local vector as pointer is invalid after the move
+         ss.grid_f->GetNodalValues(data_state.sol);
+         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &data_state.sol,
                                  ss.grid_f.get());
       }
       else
