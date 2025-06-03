@@ -2086,8 +2086,8 @@ void VisualizationSceneSolution::PrepareDofNumbering()
          }
       }
    }
-   else if (rsol_fes->GetTypicalFE()->GetRangeType() ==
-            FiniteElement::RangeType::VECTOR)
+   else if (dynamic_cast<const L2_FECollection*>(rsol_fec) ||
+            rsol_fes->GetTypicalFE()->GetRangeType() == FiniteElement::RangeType::VECTOR)
    {
       H1_FECollection h1_fec(1, mesh->Dimension());
       FiniteElementSpace h1_fes(mesh, &h1_fec);
