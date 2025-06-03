@@ -368,12 +368,11 @@ VisualizationSceneVector3d::VisualizationSceneVector3d(Window &win_)
    }
    else
    {
+      sol = new Vector(mesh->GetNV());
       solx = &win.data_state.solu;
       soly = &win.data_state.solv;
       solz = &win.data_state.solw;
    }
-
-   sol = new Vector(mesh->GetNV());
 
    Init();
 }
@@ -451,8 +450,6 @@ int VisualizationSceneVector3d::GetFunctionAutoRefineFactor()
 
 VisualizationSceneVector3d::~VisualizationSceneVector3d()
 {
-   delete sol;
-
    if (VecGridF)
    {
       delete solz;
@@ -460,6 +457,10 @@ VisualizationSceneVector3d::~VisualizationSceneVector3d()
       delete solx;
       delete GridF;
       delete sfes;
+   }
+   else
+   {
+      delete sol;
    }
 }
 

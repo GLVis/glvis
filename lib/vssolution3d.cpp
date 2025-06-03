@@ -691,13 +691,19 @@ VisualizationSceneSolution3d::VisualizationSceneSolution3d(Window &win_,
                                                            bool init)
    : VisualizationSceneScalarData(win_, false)
 {
+   if (win.data_state.grid_f)
+   {
+      GridF = win.data_state.grid_f.get();
+      sol = new Vector(mesh->GetNV());
+   }
+
    if (init)
    {
-      Init();
-      if (win.data_state.grid_f)
+      if (GridF)
       {
-         SetGridFunction(win.data_state.grid_f.get());
+         GridF->GetNodalValues(*sol);
       }
+      Init();
    }
 }
 
@@ -818,6 +824,10 @@ void VisualizationSceneSolution3d::Init()
 
 VisualizationSceneSolution3d::~VisualizationSceneSolution3d()
 {
+   if (GridF)
+   {
+      delete sol;
+   }
    delete [] node_pos;
 }
 

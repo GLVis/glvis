@@ -124,8 +124,6 @@ public:
 
    VisualizationSceneSolution3d(Window &win, bool init = true);
 
-   void SetGridFunction (GridFunction *gf) { GridF = gf; }
-
    void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol)
    { NewMeshAndSolution(new_m, new_mc, new_sol, NULL); }
 
