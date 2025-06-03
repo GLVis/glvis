@@ -597,10 +597,10 @@ void VisualizationSceneSolution::ToggleDrawElems()
 }
 
 void VisualizationSceneSolution::NewMeshAndSolution(
-   GridFunction *new_u, Mesh *new_mc)
+   GridFunction &new_u, Mesh *new_mc)
 {
-   new_u->GetNodalValues(*sol);
-   NewMeshAndSolution(new_u->FESpace()->GetMesh(), new_mc, sol, new_u);
+   new_u.GetNodalValues(*sol);
+   NewMeshAndSolution(new_u.FESpace()->GetMesh(), new_mc, sol, &new_u);
 }
 
 void VisualizationSceneSolution::NewMeshAndSolution(

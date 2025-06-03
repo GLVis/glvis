@@ -217,7 +217,7 @@ void Window::ResetMeshAndSolution(DataState &ss)
       {
          VisualizationSceneSolution *vss =
             dynamic_cast<VisualizationSceneSolution *>(internal.vs.get());
-         vss->NewMeshAndSolution(ss.grid_f.get(), ss.mesh_quad.get());
+         vss->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
       }
       else
       {
@@ -232,7 +232,7 @@ void Window::ResetMeshAndSolution(DataState &ss)
       {
          VisualizationSceneSolution3d *vss =
             dynamic_cast<VisualizationSceneSolution3d *>(internal.vs.get());
-         vss->NewMeshAndSolution(ss.grid_f.get(), ss.mesh_quad.get());
+         vss->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
       }
       else
       {
@@ -240,7 +240,7 @@ void Window::ResetMeshAndSolution(DataState &ss)
 
          VisualizationSceneVector3d *vss =
             dynamic_cast<VisualizationSceneVector3d *>(internal.vs.get());
-         vss->NewMeshAndSolution(ss.grid_f.get(), ss.mesh_quad.get());
+         vss->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
       }
    }
 }

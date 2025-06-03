@@ -465,7 +465,7 @@ VisualizationSceneVector3d::~VisualizationSceneVector3d()
 }
 
 void VisualizationSceneVector3d::NewMeshAndSolution(
-   GridFunction *new_v, Mesh *new_mc)
+   GridFunction &new_v, Mesh *new_mc)
 {
    delete sol;
    if (VecGridF)
@@ -476,7 +476,7 @@ void VisualizationSceneVector3d::NewMeshAndSolution(
       delete GridF;
       delete sfes;
    }
-   Mesh *new_m = new_v->FESpace()->GetMesh();
+   Mesh *new_m = new_v.FESpace()->GetMesh();
    if (mesh->GetNV() != new_m->GetNV())
    {
       delete [] node_pos;
@@ -484,7 +484,7 @@ void VisualizationSceneVector3d::NewMeshAndSolution(
    }
 
    Mesh *old_m = mesh;
-   VecGridF = new_v;
+   VecGridF = &new_v;
    mesh = new_m;
    mesh_coarse = new_mc;
 
@@ -501,7 +501,7 @@ void VisualizationSceneVector3d::NewMeshAndSolution(
       }
    }
 
-   FiniteElementSpace *new_fes = new_v->FESpace();
+   FiniteElementSpace *new_fes = new_v.FESpace();
 
    FindNodePos();
 

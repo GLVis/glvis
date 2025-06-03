@@ -127,7 +127,7 @@ public:
    void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol)
    { NewMeshAndSolution(new_m, new_mc, new_sol, NULL); }
 
-   void NewMeshAndSolution(GridFunction *new_u, Mesh *new_mc);
+   void NewMeshAndSolution(GridFunction &new_u, Mesh *new_mc = NULL);
 
    virtual ~VisualizationSceneSolution3d();
 

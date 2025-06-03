@@ -41,7 +41,7 @@ public:
 
    VisualizationSceneVector3d(Window &win);
 
-   void NewMeshAndSolution(GridFunction *new_v, Mesh *new_mc);
+   void NewMeshAndSolution(GridFunction &new_v, Mesh *new_mc = NULL);
 
    virtual ~VisualizationSceneVector3d();
 
