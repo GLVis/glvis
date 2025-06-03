@@ -169,7 +169,7 @@ bool GLVisInitVis(StreamCollection input_streams)
             vs->Zoom(1.8);
             // Use the 'bone' palette when visualizing a 2D mesh only (otherwise
             // the 'jet-like' palette is used in 2D, see vssolution.cpp).
-            vs->palette.SetIndex(4);
+            vs->palette.SetFallbackIndex(4);
          }
       }
       else if (stream_state.mesh->SpaceDimension() == 3)
@@ -186,13 +186,13 @@ bool GLVisInitVis(StreamCollection input_streams)
             if (stream_state.mesh->Dimension() == 3)
             {
                // Use the 'white' palette when visualizing a 3D volume mesh only
-               vss->palette.SetIndex(11);
+               vss->palette.SetFallbackIndex(11);
                vss->SetLightMatIdx(4);
             }
             else
             {
                // Use the 'bone' palette when visualizing a surface mesh only
-               vss->palette.SetIndex(4);
+               vss->palette.SetFallbackIndex(4);
             }
             // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
             vss->ToggleDrawAxes();
@@ -1417,6 +1417,7 @@ int main (int argc, char *argv[])
    const char *stream_file   = string_none;
    const char *script_file   = string_none;
    const char *palette_file  = string_none;
+   const char *palette_init  = string_none;
    const char *font_name     = string_default;
    int         portnum       = 19916;
    int         multisample   = GetMultisample();
@@ -1468,8 +1469,10 @@ int main (int argc, char *argv[])
                   "Number of digits used for processor ranks in file names.");
    args.AddOption(&script_file, "-run", "--run-script",
                   "Run a GLVis script file.");
-   args.AddOption(&palette_file, "-pal", "--palettes",
+   args.AddOption(&palette_file, "-pfile", "--palette-file",
                   "Palette file.");
+   args.AddOption(&palette_init, "-pal", "--palette-init",
+                  "Initial palette.");
    args.AddOption(&arg_keys, "-k", "--keys",
                   "Execute key shortcut commands in the GLVis window.");
    args.AddOption(&stream_state.fix_elem_orient, "-fo", "--fix-orientations",
@@ -1625,6 +1628,11 @@ int main (int argc, char *argv[])
    if (palette_file != string_none)
    {
       BasePalettes.Load(palette_file);
+   }
+
+   if (palette_init != string_none)
+   {
+      BasePalettes.SetDefault(palette_init);
    }
 
    GLVisGeometryRefiner.SetType(geom_ref_type);

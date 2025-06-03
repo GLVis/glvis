@@ -29,6 +29,11 @@ public:
    int GetSmoothSetting() { return use_smooth; }
    /// Sets the palette texture to bind.
    void SetIndex(int num);
+   /// Use the default index if set
+   bool UseDefaultIndex();
+   /// If default index is not set, sets to this index.
+   /// Used for setting recommend palettes
+   void SetFallbackIndex(int idx) { if (!UseDefaultIndex()) { SetIndex(idx); } };
    int GetCurrIndex() const { return curr_palette; }
    void NextIndex();
    void PrevIndex();

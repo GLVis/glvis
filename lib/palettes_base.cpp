@@ -392,6 +392,23 @@ Palette* PaletteRegistry::Get(const string& name) const
    return palettes.back().get();
 }
 
+void PaletteRegistry::SetDefault(const string& name)
+{
+   const int idx = GetIndexByName(name);
+   if (idx < 0)
+   {
+      cout << "Palette (name = " << name << ") not found. Available palettes:"
+           << endl;
+      PrintSummary();
+   }
+   else
+   {
+      default_palette = idx;
+      cout << "Default palette set to: " << default_palette << ") "
+            << Get(default_palette)->name << endl;
+   }
+}
+
 void PaletteRegistry::PrintSummary(ostream& os) const
 {
    for (int i = 0; i < NumPalettes(); i++)

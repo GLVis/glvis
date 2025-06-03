@@ -126,7 +126,7 @@ void display(std::stringstream & commands, const int w, const int h)
             vs->Zoom(1.8);
             // Use the 'bone' palette when visualizing a 2D mesh only (otherwise
             // the 'jet-like' palette is used in 2D, see vssolution.cpp).
-            vs->palette.SetIndex(4);
+            vs->palette.SetFallbackIndex(4);
          }
       }
       else if (stream_state.mesh->SpaceDimension() == 3)
@@ -143,13 +143,13 @@ void display(std::stringstream & commands, const int w, const int h)
             if (stream_state.mesh->Dimension() == 3)
             {
                // Use the 'white' palette when visualizing a 3D volume mesh only
-               vs->palette.SetIndex(11);
+               vs->palette.SetFallbackIndex(11);
                vss->SetLightMatIdx(4);
             }
             else
             {
                // Use the 'bone' palette when visualizing a surface mesh only
-               vs->palette.SetIndex(4);
+               vs->palette.SetFallbackIndex(4);
             }
             // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
 

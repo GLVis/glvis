@@ -171,6 +171,18 @@ void PaletteState::SetIndex(int num)
    cout << "Palette: " << num << ") " << Palettes->Get(curr_palette)->name << endl;
 }
 
+bool PaletteState::UseDefaultIndex()
+{
+   int num = Palettes->GetDefault();
+   if (num >= 0 || num < Palettes->NumPalettes())
+   {
+      curr_palette = num;
+      cout << "Palette: " << num << ") " << Palettes->Get(curr_palette)->name << endl;
+      return true;
+   }
+   return false;
+}
+
 void PaletteState::NextIndex()
 {
    SetIndex((curr_palette + 1) % Palettes->NumPalettes());
