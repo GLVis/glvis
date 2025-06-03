@@ -426,19 +426,19 @@ VisualizationSceneSolution::VisualizationSceneSolution(
       v_normals = &win.data_state.normals;
    }
 
+   if (win.data_state.grid_f)
+   {
+      rsol = win.data_state.grid_f.get();
+   }
+
    if (init)
    {
       Init();
-      if (win.data_state.grid_f)
-      {
-         SetGridFunction(*win.data_state.grid_f);
-      }
    }
 }
 
 void VisualizationSceneSolution::Init()
 {
-   rsol  = NULL;
    vssol = this;
 
    drawelems = 1;

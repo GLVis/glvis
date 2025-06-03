@@ -92,8 +92,6 @@ public:
 
    std::string GetHelpString() const override;
 
-   void SetGridFunction(GridFunction & u) { rsol = &u; }
-
    void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
                            GridFunction *new_u = NULL);
 

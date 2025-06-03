@@ -286,9 +286,6 @@ VisualizationSceneVector::VisualizationSceneVector(Window &win_)
 
    if (VecGridF)
    {
-      //  VisualizationSceneSolution::Init()  sets rsol = NULL !
-      SetGridFunction(*VecGridF);
-
       mesh->GetNodes(vc0);
       if (vc0.Size() != VecGridF->Size())
       {
