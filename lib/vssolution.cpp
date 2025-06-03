@@ -2069,8 +2069,7 @@ void VisualizationSceneSolution::PrepareDofNumbering()
    FiniteElementSpace rdof_fes(mesh, rsol_fec);
    // filter out unsupported basis types for Flat or Smooth shading
    const bool force_non_comforming =
-      dynamic_cast<const ND_FECollection*>(rsol_fec) ||
-      dynamic_cast<const RT_FECollection*>(rsol_fec);
+      rsol_fes->GetTypicalFE()->GetRangeType() == FiniteElement::RangeType::VECTOR;
 
    if (shading == Shading::Noncomforming || force_non_comforming)
    {
