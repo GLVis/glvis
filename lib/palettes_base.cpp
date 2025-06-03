@@ -405,7 +405,7 @@ void PaletteRegistry::SetDefault(const string& name)
    {
       default_palette = idx;
       cout << "Default palette set to: " << default_palette << ") "
-            << Get(default_palette)->name << endl;
+           << Get(default_palette)->name << endl;
    }
 }
 
