@@ -2067,9 +2067,10 @@ void VisualizationSceneSolution::PrepareDofNumbering()
    auto *rsol_fes = rsol->FESpace();
    const auto *rsol_fec = rsol_fes->FEColl();
    FiniteElementSpace rdof_fes(mesh, rsol_fec);
-   FiniteElementSpace flat_fes(mesh, rsol_fec->Clone(1), rsol_fes->GetVDim());
-   // filter out unsupported basis types
-   const bool force_non_comforming = sol->Size() != flat_fes.GetNDofs();
+   // filter out unsupported basis types for Flat or Smooth shading
+   const bool force_non_comforming =
+      dynamic_cast<const ND_FECollection*>(rsol_fec) ||
+      dynamic_cast<const RT_FECollection*>(rsol_fec);
 
    if (shading == Shading::Noncomforming || force_non_comforming)
    {
@@ -2091,6 +2092,7 @@ void VisualizationSceneSolution::PrepareDofNumbering()
    }
    else if (shading == Shading::Flat || shading == Shading::Smooth)
    {
+      FiniteElementSpace flat_fes(mesh, rsol_fec->Clone(1), rsol_fes->GetVDim());
       MFEM_VERIFY(sol->Size() == flat_fes.GetNDofs(),
                   "Flat space does not match the solution size");
 
