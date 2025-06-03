@@ -9,8 +9,11 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#include "shader.hpp"
+#include <unordered_map>
 #include <regex>
+
+#include "shader.hpp"
+#include "renderer.hpp"
 
 namespace gl3
 {

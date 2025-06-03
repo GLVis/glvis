@@ -14,8 +14,6 @@
 
 #include <memory>
 #include <vector>
-#include <set>
-#include <unordered_map>
 
 #include "platform_gl.hpp"
 #include "types.hpp"
@@ -25,13 +23,11 @@
 namespace gl3
 {
 
-using namespace resource;
-
 const int LIGHTS_MAX = 3;
 #ifdef GLVIS_MS_LINEWIDTH
 const float LINE_WIDTH_AA = GLVIS_MS_LINEWIDTH;
 #else
-const float LINE_WIDTH_AA = 1.4;
+const float LINE_WIDTH_AA = 1.4f;
 #endif
 
 struct RenderParams
@@ -105,7 +101,7 @@ protected:
    std::array<float, 4> static_color;
 
 protected:
-   TextureHandle passthrough_texture;
+   resource::TextureHandle passthrough_texture;
 
 public:
 

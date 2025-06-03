@@ -19,4 +19,4 @@ extern unsigned int logo_rgba_len;
 
 #endif // GLVIS_USE_LOGO
 
-#endif //__LOGO_HPP__
+#endif // GLVIS_LOGO_HPP

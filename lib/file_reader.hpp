@@ -12,8 +12,6 @@
 #ifndef GLVIS_FILE_READER_HPP
 #define GLVIS_FILE_READER_HPP
 
-#include <iostream>
-#include "mfem.hpp"
 #include "data_state.hpp"
 
 class FileReader

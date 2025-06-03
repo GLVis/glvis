@@ -13,9 +13,11 @@
 #define GLVIS_DATA_STATE_HPP
 
 #include <string>
-#include <vector>
 #include <memory>
-#include "mfem.hpp"
+#include <vector>
+
+#include <mfem.hpp>
+
 #include "openglvis.hpp"
 
 struct DataState
