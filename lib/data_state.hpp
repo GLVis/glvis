@@ -86,7 +86,7 @@ public:
 
    /// Set a mesh (plain pointer version)
    /** Note that ownership is passed from the caller.
-       @see SetMesh(std::unique_ptr<Mesh> &&pmesh) */
+       @see SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh) */
    void SetMesh(mfem::Mesh *mesh);
 
    /// Set a mesh (unique pointer version)
@@ -96,7 +96,7 @@ public:
 
    /// Set a grid function (plain pointer version)
    /** Note that ownership is passed from the caller.
-       @see SetGridFunction(std::unique_ptr<GridFunction> &&, int ) */
+       @see SetGridFunction(std::unique_ptr<mfem::GridFunction> &&, int ) */
    void SetGridFunction(mfem::GridFunction *gf, int component = -1);
 
    /// Set a grid function (unique pointer version)
@@ -106,7 +106,7 @@ public:
 
    /// Set a quadrature function (plain pointer version)
    /** Note that ownership is passed from the caller.
-       @see SetQuadFunction(std::unique_ptr<QuadFunction> &&, int ) */
+       @see SetQuadFunction(std::unique_ptr<mfem::QuadFunction> &&, int ) */
    void SetQuadFunction(mfem::QuadratureFunction *qf, int component = -1);
 
    /// Set a quadrature function (unique pointer version)

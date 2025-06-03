@@ -592,8 +592,15 @@ void VisualizationSceneSolution::NewMeshAndSolution(
    MFEM_VERIFY(new_sol->Size() == mesh->GetNV(),
                "New solution vector size does not match the mesh node count.");
    delete sol;
-   sol  = new Vector(mesh->GetNV());
-   SetGridFunction(*new_u);
+   sol = new Vector(mesh->GetNV());
+   if (new_u)
+   {
+      SetGridFunction(*new_u);
+   }
+   else
+   {
+      for (int i = 0; i < mesh->GetNV(); i++) { (*sol)(i) = (*new_sol)(i); }
+   }
 
    // If the number of elements changes, recompute the refinement factor
    if (mesh->GetNE() != old_m->GetNE())

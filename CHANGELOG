@@ -12,7 +12,7 @@
 Version 4.5 (development)
 =========================
 
-- Implemented DOF numbering, pressing the `n` key in 2D mode cycles through:
+- Implemented DOF numbering, pressing the `n` or `N` key in 2D mode cycles through:
   None → Elements → Edges → Vertices → DOFs.
 
 Version 4.4 released on May 1, 2025

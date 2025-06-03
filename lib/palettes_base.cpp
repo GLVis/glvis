@@ -10,8 +10,8 @@
 // CONTRIBUTING.md for details.
 
 #include "palettes_base.hpp"
-#include "palettes_default.cpp"
 #include "gl/renderer.hpp"
+
 #include <iomanip>
 #include <fstream>
 

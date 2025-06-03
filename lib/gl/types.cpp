@@ -20,8 +20,8 @@ void GlDrawable::addCone(float x, float y, float z,
                          float cone_scale)
 {
    double rhos  = sqrt(vx*vx+vy*vy+vz*vz);
-   float phi   = acos (vz/rhos);
-   float theta = atan2 (vy, vx);
+   float phi    = acos(vz/rhos);
+   float theta  = atan2(vy, vx);
 
    glm::mat4 mtx(1.0);
    mtx = glm::translate(mtx, glm::vec3(x, y, z));
