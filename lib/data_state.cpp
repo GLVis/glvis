@@ -572,7 +572,8 @@ bool DataState::SetNewMeshAndSolution(DataState new_state,
    {
       ResetMeshAndSolution(new_state, vs);
 
-      *this = std::move(new_state);
+      // do not sol vector as it is updated directly
+      internal = std::move(new_state.internal);
 
       return true;
    }
