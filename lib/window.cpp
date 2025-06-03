@@ -78,10 +78,6 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
    if (field_type == DataState::FieldType::SCALAR
        || field_type == DataState::FieldType::MESH)
    {
-      if (data_state.grid_f)
-      {
-         data_state.grid_f->GetNodalValues(data_state.sol);
-      }
       if (data_state.mesh->SpaceDimension() == 2)
       {
          internal.vs.reset(new VisualizationSceneSolution(*this));
@@ -221,10 +217,7 @@ void Window::ResetMeshAndSolution(DataState &ss)
       {
          VisualizationSceneSolution *vss =
             dynamic_cast<VisualizationSceneSolution *>(internal.vs.get());
-         // use the local vector as pointer is invalid after the move
-         ss.grid_f->GetNodalValues(data_state.sol);
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &data_state.sol,
-                                 ss.grid_f.get());
+         vss->NewMeshAndSolution(ss.grid_f.get(), ss.mesh_quad.get());
       }
       else
       {
@@ -239,10 +232,7 @@ void Window::ResetMeshAndSolution(DataState &ss)
       {
          VisualizationSceneSolution3d *vss =
             dynamic_cast<VisualizationSceneSolution3d *>(internal.vs.get());
-         // use the local vector as pointer is invalid after the move
-         ss.grid_f->GetNodalValues(data_state.sol);
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &data_state.sol,
-                                 ss.grid_f.get());
+         vss->NewMeshAndSolution(ss.grid_f.get(), ss.mesh_quad.get());
       }
       else
       {
@@ -250,7 +240,7 @@ void Window::ResetMeshAndSolution(DataState &ss)
 
          VisualizationSceneVector3d *vss =
             dynamic_cast<VisualizationSceneVector3d *>(internal.vs.get());
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.grid_f.get());
+         vss->NewMeshAndSolution(ss.grid_f.get(), ss.mesh_quad.get());
       }
    }
 }

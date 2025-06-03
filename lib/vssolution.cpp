@@ -429,10 +429,15 @@ VisualizationSceneSolution::VisualizationSceneSolution(
    if (win.data_state.grid_f)
    {
       rsol = win.data_state.grid_f.get();
+      sol = new Vector(mesh->GetNV());
    }
 
    if (init)
    {
+      if (rsol)
+      {
+         rsol->GetNodalValues(*sol);
+      }
       Init();
    }
 }
@@ -524,6 +529,10 @@ void VisualizationSceneSolution::Init()
 
 VisualizationSceneSolution::~VisualizationSceneSolution()
 {
+   if (rsol)
+   {
+      delete sol;
+   }
 }
 
 void VisualizationSceneSolution::ToggleDrawElems()
@@ -585,6 +594,13 @@ void VisualizationSceneSolution::ToggleDrawElems()
       PrepareCP();
       PrepareNumbering();
    }
+}
+
+void VisualizationSceneSolution::NewMeshAndSolution(
+   GridFunction *new_u, Mesh *new_mc)
+{
+   new_u->GetNodalValues(*sol);
+   NewMeshAndSolution(new_u->FESpace()->GetMesh(), new_mc, sol, new_u);
 }
 
 void VisualizationSceneSolution::NewMeshAndSolution(

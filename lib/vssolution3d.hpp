@@ -47,6 +47,9 @@ protected:
 
    void Init();
 
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
+                           GridFunction *new_u);
+
    void GetFaceNormals(const int FaceNo, const int side,
                        const IntegrationRule &ir, DenseMatrix &normals);
 
@@ -123,8 +126,10 @@ public:
 
    void SetGridFunction (GridFunction *gf) { GridF = gf; }
 
-   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
-                           GridFunction *new_u = NULL);
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol)
+   { NewMeshAndSolution(new_m, new_mc, new_sol, NULL); }
+
+   void NewMeshAndSolution(GridFunction *new_u, Mesh *new_mc);
 
    virtual ~VisualizationSceneSolution3d();
 

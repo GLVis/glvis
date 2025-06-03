@@ -276,11 +276,10 @@ VisualizationSceneVector::VisualizationSceneVector(Window &win_)
    }
    else
    {
+      sol  = new Vector(mesh -> GetNV());
       solx = &win.data_state.solu;
       soly = &win.data_state.solv;
    }
-
-   sol  = new Vector(mesh -> GetNV());
 
    Init();
 
@@ -512,12 +511,14 @@ void VisualizationSceneVector::Init()
 
 VisualizationSceneVector::~VisualizationSceneVector()
 {
-   delete sol;
-
    if (VecGridF)
    {
       delete soly;
       delete solx;
+   }
+   else
+   {
+      delete sol;
    }
 }
 

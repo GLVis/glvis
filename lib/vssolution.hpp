@@ -58,6 +58,9 @@ protected:
 
    void Init();
 
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
+                           GridFunction *new_u);
+
    void FindNewBox(double rx[], double ry[], double rval[]);
 
    void DrawCPLine(gl3::GlBuilder& bld,
@@ -92,8 +95,10 @@ public:
 
    std::string GetHelpString() const override;
 
-   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
-                           GridFunction *new_u = NULL);
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol)
+   { NewMeshAndSolution(new_m, new_mc, sol, NULL); }
+
+   void NewMeshAndSolution(GridFunction *new_u, Mesh *new_mc);
 
    void SetNewScalingFromBox() override;
    void FindNewBox(bool prepare) override;

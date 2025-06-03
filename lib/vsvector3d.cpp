@@ -464,7 +464,7 @@ VisualizationSceneVector3d::~VisualizationSceneVector3d()
 }
 
 void VisualizationSceneVector3d::NewMeshAndSolution(
-   Mesh *new_m, Mesh *new_mc, GridFunction *new_v)
+   GridFunction *new_v, Mesh *new_mc)
 {
    delete sol;
    if (VecGridF)
@@ -475,6 +475,7 @@ void VisualizationSceneVector3d::NewMeshAndSolution(
       delete GridF;
       delete sfes;
    }
+   Mesh *new_m = new_v->FESpace()->GetMesh();
    if (mesh->GetNV() != new_m->GetNV())
    {
       delete [] node_pos;

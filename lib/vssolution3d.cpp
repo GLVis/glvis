@@ -822,6 +822,13 @@ VisualizationSceneSolution3d::~VisualizationSceneSolution3d()
 }
 
 void VisualizationSceneSolution3d::NewMeshAndSolution(
+   GridFunction *new_u, Mesh *new_mc)
+{
+   new_u->GetNodalValues(*sol);
+   NewMeshAndSolution(new_u->FESpace()->GetMesh(), new_mc, sol, new_u);
+}
+
+void VisualizationSceneSolution3d::NewMeshAndSolution(
    Mesh *new_m, Mesh *new_mc, Vector *new_sol, GridFunction *new_u)
 {
    if (mesh->GetNV() != new_m->GetNV())

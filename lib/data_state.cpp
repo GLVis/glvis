@@ -311,7 +311,6 @@ void DataState::SetMeshSolution()
          }
          cout << "Number of colors: " << grid_f->Max() + 1 << endl;
       }
-      grid_f->GetNodalValues(sol);
       if (save_coloring)
       {
          const char col_fname[] = "GLVis_coloring.gf";
@@ -358,15 +357,7 @@ void DataState::SetGridFunctionSolution(int gf_component)
       return;
    }
 
-   if (grid_f->VectorDim() == 1)
-   {
-      grid_f->GetNodalValues(sol);
-      type = FieldType::SCALAR;
-   }
-   else
-   {
-      type = FieldType::VECTOR;
-   }
+   type = (grid_f->VectorDim() == 1) ? FieldType::SCALAR : FieldType::VECTOR;
 }
 
 void DataState::SetQuadFunctionSolution(int qf_component)
