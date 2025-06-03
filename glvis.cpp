@@ -1471,7 +1471,7 @@ int main (int argc, char *argv[])
                   "Run a GLVis script file.");
    args.AddOption(&palette_file, "-pfile", "--palette-file",
                   "Palette file.");
-   args.AddOption(&palette_init, "-pal", "--palette-init",
+   args.AddOption(&palette_init, "-pal", "--palette",
                   "Initial palette.");
    args.AddOption(&arg_keys, "-k", "--keys",
                   "Execute key shortcut commands in the GLVis window.");
