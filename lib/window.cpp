@@ -124,7 +124,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
          }
          else
          {
-            mesh_range = data_state.sol.Max() + 1.0;
+            mesh_range = data_state.sol->Max() + 1.0;
          }
       }
    }
@@ -226,10 +226,7 @@ void Window::ResetMeshAndSolution(DataState &ss)
          }
          else
          {
-            // pointer to 'sol' vector is invalidated by the move, so we copy
-            // the data and use a pointer to the local data
-            data_state.sol = ss.sol;
-            vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &data_state.sol);
+            vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.sol.get());
          }
       }
       else
@@ -242,12 +239,8 @@ void Window::ResetMeshAndSolution(DataState &ss)
          }
          else
          {
-            // pointer to 'solu/v' vectors is invalidated by the move, so we
-            // copy the data and use a pointer to the local data
-            data_state.solu = ss.solu;
-            data_state.solv = ss.solv;
-            vsv->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &data_state.solu,
-                                    &data_state.solv);
+            vsv->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.solx.get(),
+                                    ss.soly.get());
          }
       }
    }
@@ -263,10 +256,7 @@ void Window::ResetMeshAndSolution(DataState &ss)
          }
          else
          {
-            // pointer to 'sol' vector is invalidated by the move, so we copy the data
-            // and use a pointer to the local data
-            data_state.sol = ss.sol;
-            vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &data_state.sol);
+            vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.sol.get());
          }
       }
       else
@@ -281,13 +271,8 @@ void Window::ResetMeshAndSolution(DataState &ss)
          }
          else
          {
-            // pointer to 'solu/v/w' vectors is invalidated by the move, so we
-            // copy the data and use a pointer to the local data
-            data_state.solu = ss.solu;
-            data_state.solv = ss.solv;
-            data_state.solw = ss.solw;
-            vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &data_state.solu,
-                                    &data_state.solv, &data_state.solw);
+            vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.solx.get(),
+                                    ss.soly.get(), ss.solz.get());
          }
       }
    }

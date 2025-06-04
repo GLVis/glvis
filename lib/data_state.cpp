@@ -41,12 +41,6 @@ DataState &DataState::operator=(DataState &&ss)
 
    type = ss.type;
    quad_sol = ss.quad_sol;
-
-   sol = std::move(ss.sol);
-   solu = std::move(ss.solu);
-   solv = std::move(ss.solv);
-   solw = std::move(ss.solw);
-   normals = std::move(ss.normals);
    keys = std::move(ss.keys);
 
    fix_elem_orient = ss.fix_elem_orient;
@@ -68,6 +62,77 @@ void DataState::SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh)
    internal.mesh_quad.reset();
    if (grid_f && grid_f->FESpace()->GetMesh() != mesh.get()) { SetGridFunction(NULL); }
    if (quad_f && quad_f->GetSpace()->GetMesh() != mesh.get()) { SetQuadFunction(NULL); }
+}
+
+void DataState::SetScalarData(mfem::Vector new_sol)
+{
+   internal.grid_f.reset();
+   internal.quad_f.reset();
+
+   if (!sol)
+   {
+      internal.sol.reset(new Vector(std::move(new_sol)));
+   }
+   else
+   {
+      *sol = std::move(new_sol);
+   }
+   type = DataState::FieldType::SCALAR;
+}
+
+void DataState::SetNormals(mfem::Vector new_normals)
+{
+   if (!normals)
+   {
+      internal.sol.reset(new Vector(std::move(new_normals)));
+   }
+   else
+   {
+      *sol = std::move(new_normals);
+   }
+}
+
+void DataState::SetVectorData(mfem::Vector new_solx, mfem::Vector new_soly)
+{
+   MFEM_VERIFY(mesh->SpaceDimension() == 2, "Incompatible space dimension");
+
+   internal.grid_f.reset();
+   internal.quad_f.reset();
+
+   if (!solx || !soly)
+   {
+      internal.solx.reset(new Vector(std::move(new_solx)));
+      internal.soly.reset(new Vector(std::move(new_soly)));
+   }
+   else
+   {
+      *solx = std::move(new_solx);
+      *soly = std::move(new_soly);
+   }
+   type = DataState::FieldType::VECTOR;
+}
+
+void DataState::SetVectorData(mfem::Vector new_solx, mfem::Vector new_soly,
+                              mfem::Vector new_solz)
+{
+   MFEM_VERIFY(mesh->SpaceDimension() == 3, "Incompatible space dimension");
+
+   internal.grid_f.reset();
+   internal.quad_f.reset();
+
+   if (!solx || !soly || !solz)
+   {
+      internal.solx.reset(new Vector(std::move(new_solx)));
+      internal.soly.reset(new Vector(std::move(new_soly)));
+      internal.solz.reset(new Vector(std::move(new_solz)));
+   }
+   else
+   {
+      *solx = std::move(new_solx);
+      *soly = std::move(new_soly);
+      *solz = std::move(new_solz);
+   }
+   type = DataState::FieldType::VECTOR;
 }
 
 void DataState::SetGridFunction(mfem::GridFunction *gf, int component)
@@ -229,14 +294,14 @@ void DataState::Extrude1DMeshAndSolution()
 
       internal.grid_f.reset(grid_f_2d);
    }
-   else if (sol.Size() == mesh->GetNV())
+   else if (sol)
    {
       Vector sol2d(mesh2d->GetNV());
       for (int i = 0; i < mesh->GetNV(); i++)
       {
-         sol2d(2*i+0) = sol2d(2*i+1) = sol(i);
+         sol2d(2*i+0) = sol2d(2*i+1) = (*sol)(i);
       }
-      sol = sol2d;
+      *sol = std::move(sol2d);
    }
 
    if (!mesh_quad) { internal.mesh.swap(internal.mesh_quad); }
@@ -322,8 +387,8 @@ void DataState::SetMeshSolution()
    }
    else // zero solution
    {
-      sol.SetSize (mesh -> GetNV());
-      sol = 0.0;
+      internal.sol.reset(new Vector(mesh->GetNV()));
+      *sol = 0.0;
    }
    type = FieldType::MESH;
 }

@@ -421,10 +421,7 @@ static void KeyF12Pressed()
 VisualizationSceneSolution::VisualizationSceneSolution(
    Window &win_, bool init) : VisualizationSceneScalarData(win_, false)
 {
-   if (win.data_state.normals.Size() > 0)
-   {
-      v_normals = &win.data_state.normals;
-   }
+   v_normals = win.data_state.normals.get();
 
    if (win.data_state.grid_f)
    {

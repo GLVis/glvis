@@ -369,9 +369,9 @@ VisualizationSceneVector3d::VisualizationSceneVector3d(Window &win_)
    else
    {
       sol = new Vector(mesh->GetNV());
-      solx = &win.data_state.solu;
-      soly = &win.data_state.solv;
-      solz = &win.data_state.solw;
+      solx = win.data_state.solx.get();
+      soly = win.data_state.soly.get();
+      solz = win.data_state.solz.get();
    }
 
    Init();

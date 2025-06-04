@@ -277,8 +277,8 @@ VisualizationSceneVector::VisualizationSceneVector(Window &win_)
    else
    {
       sol  = new Vector(mesh -> GetNV());
-      solx = &win.data_state.solu;
-      soly = &win.data_state.solv;
+      solx = win.data_state.solx.get();
+      soly = win.data_state.soly.get();
    }
 
    Init();
