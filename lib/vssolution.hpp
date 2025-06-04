@@ -26,8 +26,8 @@ using namespace mfem;
 class VisualizationSceneSolution : public VisualizationSceneScalarData
 {
 protected:
-   Vector *v_normals;
-   GridFunction *rsol;
+   Vector *v_normals{};
+   GridFunction *rsol{};
 
    int drawmesh, drawelems, drawnums, draworder;
    int drawbdr, draw_cp;
@@ -58,6 +58,9 @@ protected:
 
    void Init();
 
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
+                           GridFunction *new_u = NULL);
+
    void FindNewBox(double rx[], double ry[], double rval[]);
 
    void DrawCPLine(gl3::GlBuilder& bld,
@@ -86,18 +89,13 @@ public:
    int attr_to_show, bdr_attr_to_show;
    Array<int> el_attr_to_show, bdr_el_attr_to_show;
 
-   VisualizationSceneSolution();
-   VisualizationSceneSolution(Mesh &m, Vector &s, Mesh *mc = NULL,
-                              Vector *normals = NULL);
+   VisualizationSceneSolution(Window &win, bool init = true);
 
    virtual ~VisualizationSceneSolution();
 
    std::string GetHelpString() const override;
 
-   void SetGridFunction(GridFunction & u) { rsol = &u; }
-
-   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
-                           GridFunction *new_u = NULL);
+   void NewMeshAndSolution(const DataState &s) override;
 
    void SetNewScalingFromBox() override;
    void FindNewBox(bool prepare) override;
