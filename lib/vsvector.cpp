@@ -400,9 +400,16 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
    }
 }
 
-void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
+void VisualizationSceneVector::NewMeshAndSolution(const DataState &s)
 {
-   NewMeshAndSolution(vgf.FESpace()->GetMesh(), mc, solx, soly, &vgf);
+   if (VecGridF && s.grid_f)
+   {
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), solx, soly, s.grid_f.get());
+   }
+   else
+   {
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), s.solx.get(), s.soly.get());
+   }
 }
 
 void VisualizationSceneVector::NewMeshAndSolution(

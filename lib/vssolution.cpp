@@ -593,11 +593,17 @@ void VisualizationSceneSolution::ToggleDrawElems()
    }
 }
 
-void VisualizationSceneSolution::NewMeshAndSolution(
-   GridFunction &new_u, Mesh *new_mc)
+void VisualizationSceneSolution::NewMeshAndSolution(const DataState &s)
 {
-   new_u.GetNodalValues(*sol);
-   NewMeshAndSolution(new_u.FESpace()->GetMesh(), new_mc, sol, &new_u);
+   if (rsol && s.grid_f)
+   {
+      s.grid_f->GetNodalValues(*sol);
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), sol, s.grid_f.get());
+   }
+   else
+   {
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), s.sol.get());
+   }
 }
 
 void VisualizationSceneSolution::NewMeshAndSolution(

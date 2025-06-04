@@ -214,68 +214,13 @@ bool Window::SetNewMeshAndSolution(DataState new_state)
 
 void Window::ResetMeshAndSolution(DataState &ss)
 {
-   if (ss.mesh->SpaceDimension() == 2)
+   if (ss.mesh->SpaceDimension() == 3 &&
+       ss.GetType() == DataState::FieldType::VECTOR)
    {
-      if (ss.GetType() != DataState::FieldType::VECTOR)
-      {
-         VisualizationSceneSolution *vss =
-            dynamic_cast<VisualizationSceneSolution *>(internal.vs.get());
-         if (ss.grid_f)
-         {
-            vss->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
-         }
-         else
-         {
-            vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.sol.get());
-         }
-      }
-      else
-      {
-         VisualizationSceneVector *vsv =
-            dynamic_cast<VisualizationSceneVector *>(internal.vs.get());
-         if (ss.grid_f)
-         {
-            vsv->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
-         }
-         else
-         {
-            vsv->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.solx.get(),
-                                    ss.soly.get());
-         }
-      }
+      ss.ProjectVectorFEGridFunction();
    }
-   else
-   {
-      if (ss.GetType() != DataState::FieldType::VECTOR)
-      {
-         VisualizationSceneSolution3d *vss =
-            dynamic_cast<VisualizationSceneSolution3d *>(internal.vs.get());
-         if (ss.grid_f)
-         {
-            vss->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
-         }
-         else
-         {
-            vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.sol.get());
-         }
-      }
-      else
-      {
-         ss.ProjectVectorFEGridFunction();
 
-         VisualizationSceneVector3d *vss =
-            dynamic_cast<VisualizationSceneVector3d *>(internal.vs.get());
-         if (ss.grid_f)
-         {
-            vss->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
-         }
-         else
-         {
-            vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.solx.get(),
-                                    ss.soly.get(), ss.solz.get());
-         }
-      }
-   }
+   vs->NewMeshAndSolution(ss);
 }
 
 

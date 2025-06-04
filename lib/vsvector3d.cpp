@@ -464,11 +464,18 @@ VisualizationSceneVector3d::~VisualizationSceneVector3d()
    }
 }
 
-void VisualizationSceneVector3d::NewMeshAndSolution(
-   GridFunction &new_v, Mesh *new_mc)
+void VisualizationSceneVector3d::NewMeshAndSolution(const DataState &s)
 {
-   NewMeshAndSolution(new_v.FESpace()->GetMesh(), new_mc, solx, soly, solz,
-                      &new_v);
+   if (VecGridF && s.grid_f)
+   {
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), solx, soly, solz,
+                         s.grid_f.get());
+   }
+   else
+   {
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), s.solx.get(), s.soly.get(),
+                         s.solz.get());
+   }
 }
 
 void VisualizationSceneVector3d::NewMeshAndSolution(
