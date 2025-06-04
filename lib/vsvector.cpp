@@ -345,7 +345,7 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
    for (i = 0; Vec2Scalar != Vec2ScalarFunctions[i]; i++)
       ;
 
-   if (VecGridF->FESpace()->GetVDim() == 1)
+   if (VecGridF && VecGridF->FESpace()->GetVDim() == 1)
    {
       if (dynamic_cast<const ND_FECollection*>(VecGridF->FESpace()->FEColl()))
       {
@@ -358,9 +358,13 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
          i = (i + 1) % 5;
       }
    }
-   else
+   else if (VecGridF)
    {
       i = (i + 1) % 7;
+   }
+   else
+   {
+      i = (i + 1) % 4;
    }
 
    if (print)
