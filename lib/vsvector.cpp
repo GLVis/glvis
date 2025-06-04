@@ -398,6 +398,13 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
 
 void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
 {
+   NewMeshAndSolution(vgf.FESpace()->GetMesh(), mc, solx, soly, &vgf);
+}
+
+void VisualizationSceneVector::NewMeshAndSolution(
+   Mesh *new_m, Mesh *new_mc, Vector *new_sol_x, Vector *new_sol_y,
+   GridFunction *vgf)
+{
    delete sol;
 
    if (VecGridF)
@@ -407,10 +414,9 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
    }
 
    Mesh *old_m = mesh;
-   Mesh *new_mesh = vgf.FESpace()->GetMesh();
-   mesh = new_mesh;
-   mesh_coarse = mc;
-   VecGridF = &vgf;
+   mesh = new_m;
+   mesh_coarse = new_mc;
+   VecGridF = vgf;
 
    // If the number of elements changes, recompute the refinement factor
    if (mesh->GetNE() != old_m->GetNE())
@@ -429,20 +435,28 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
       }
    }
 
-   solx = new Vector(mesh->GetNV());
-   soly = new Vector(mesh->GetNV());
-
-   vgf.GetNodalValues(*solx, 1);
-   vgf.GetNodalValues(*soly, 2);
-
-   mesh->GetNodes(vc0);
-   if (vc0.Size() != vgf.Size())
+   if (vgf)
    {
-      vc0.Destroy();
+      solx = new Vector(mesh->GetNV());
+      soly = new Vector(mesh->GetNV());
+
+      vgf->GetNodalValues(*solx, 1);
+      vgf->GetNodalValues(*soly, 2);
+
+      mesh->GetNodes(vc0);
+      if (vc0.Size() != vgf->Size())
+      {
+         vc0.Destroy();
+      }
+      else
+      {
+         vc0 += *vgf;
+      }
    }
    else
    {
-      vc0 += vgf;
+      solx = new_sol_x;
+      soly = new_sol_y;
    }
 
    sol = new Vector(mesh->GetNV());
@@ -451,7 +465,7 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
    }
 
-   VisualizationSceneSolution::NewMeshAndSolution(mesh, mesh_coarse, sol, &vgf);
+   VisualizationSceneSolution::NewMeshAndSolution(mesh, mesh_coarse, sol, vgf);
 
    if (autoscale)
    {

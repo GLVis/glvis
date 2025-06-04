@@ -31,6 +31,9 @@ protected:
 
    void Init();
 
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol_x,
+                           Vector *new_sol_y, Vector *new_sol_z, GridFunction *new_u);
+
    Array<int> vflevel;
    Array<double> dvflevel;
 
@@ -40,6 +43,10 @@ public:
    int ianim, ianimd, ianimmax, drawdisp;
 
    VisualizationSceneVector3d(Window &win);
+
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol_x,
+                           Vector *new_sol_y, Vector *new_sol_z)
+   { NewMeshAndSolution(new_m, new_mc, new_sol_x, new_sol_y, new_sol_z, NULL); }
 
    void NewMeshAndSolution(GridFunction &new_v, Mesh *new_mc = NULL);
 

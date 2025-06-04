@@ -96,7 +96,7 @@ public:
    std::string GetHelpString() const override;
 
    void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol)
-   { NewMeshAndSolution(new_m, new_mc, sol, NULL); }
+   { NewMeshAndSolution(new_m, new_mc, new_sol, NULL); }
 
    void NewMeshAndSolution(GridFunction &new_u, Mesh *new_mc = NULL);
 

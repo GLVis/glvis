@@ -226,7 +226,10 @@ void Window::ResetMeshAndSolution(DataState &ss)
          }
          else
          {
-            std::cerr << "Not implemented" << std::endl;
+            // pointer to 'sol' vector is invalidated by the move, so we copy
+            // the data and use a pointer to the local data
+            data_state.sol = ss.sol;
+            vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &data_state.sol);
          }
       }
       else
@@ -239,7 +242,12 @@ void Window::ResetMeshAndSolution(DataState &ss)
          }
          else
          {
-            std::cerr << "Not implemented" << std::endl;
+            // pointer to 'solu/v' vectors is invalidated by the move, so we
+            // copy the data and use a pointer to the local data
+            data_state.solu = ss.solu;
+            data_state.solv = ss.solv;
+            vsv->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &data_state.solu,
+                                    &data_state.solv);
          }
       }
    }
@@ -255,7 +263,10 @@ void Window::ResetMeshAndSolution(DataState &ss)
          }
          else
          {
-            std::cerr << "Not implemented" << std::endl;
+            // pointer to 'sol' vector is invalidated by the move, so we copy the data
+            // and use a pointer to the local data
+            data_state.sol = ss.sol;
+            vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &data_state.sol);
          }
       }
       else
@@ -270,7 +281,13 @@ void Window::ResetMeshAndSolution(DataState &ss)
          }
          else
          {
-            std::cerr << "Not implemented" << std::endl;
+            // pointer to 'solu/v/w' vectors is invalidated by the move, so we
+            // copy the data and use a pointer to the local data
+            data_state.solu = ss.solu;
+            data_state.solv = ss.solv;
+            data_state.solw = ss.solw;
+            vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &data_state.solu,
+                                    &data_state.solv, &data_state.solw);
          }
       }
    }
