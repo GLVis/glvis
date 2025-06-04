@@ -27,7 +27,7 @@ class VisualizationSceneSolution : public VisualizationSceneScalarData
 {
 protected:
    Vector *v_normals{};
-   GridFunction *rsol;
+   GridFunction *rsol{};
 
    int drawmesh, drawelems, drawnums, draworder;
    int drawbdr, draw_cp;
