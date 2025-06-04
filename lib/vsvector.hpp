@@ -53,7 +53,7 @@ protected:
 public:
    VisualizationSceneVector(Window &win_);
 
-   void NewMeshAndSolution(const DataState &s);
+   void NewMeshAndSolution(const DataState &s) override;
 
    virtual ~VisualizationSceneVector();
 
