@@ -195,7 +195,10 @@ void Window::SwitchQuadSolution(DataState::QuadSolution quad_type)
 bool Window::SetNewMeshAndSolution(DataState new_state)
 {
    if (new_state.mesh->SpaceDimension() == data_state.mesh->SpaceDimension() &&
-       new_state.grid_f->VectorDim() == data_state.grid_f->VectorDim())
+       new_state.GetType() == data_state.GetType() &&
+       (((new_state.grid_f && data_state.grid_f) &&
+         (new_state.grid_f->VectorDim() == data_state.grid_f->VectorDim()))
+        ||(!new_state.grid_f && !data_state.grid_f)))
    {
       ResetMeshAndSolution(new_state);
 
@@ -213,26 +216,47 @@ void Window::ResetMeshAndSolution(DataState &ss)
 {
    if (ss.mesh->SpaceDimension() == 2)
    {
-      if (ss.grid_f->VectorDim() == 1)
+      if (ss.GetType() != DataState::FieldType::VECTOR)
       {
          VisualizationSceneSolution *vss =
             dynamic_cast<VisualizationSceneSolution *>(internal.vs.get());
-         vss->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
+         if (ss.grid_f)
+         {
+            vss->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
+         }
+         else
+         {
+            std::cerr << "Not implemented" << std::endl;
+         }
       }
       else
       {
          VisualizationSceneVector *vsv =
             dynamic_cast<VisualizationSceneVector *>(internal.vs.get());
-         vsv->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
+         if (ss.grid_f)
+         {
+            vsv->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
+         }
+         else
+         {
+            std::cerr << "Not implemented" << std::endl;
+         }
       }
    }
    else
    {
-      if (ss.grid_f->VectorDim() == 1)
+      if (ss.GetType() != DataState::FieldType::VECTOR)
       {
          VisualizationSceneSolution3d *vss =
             dynamic_cast<VisualizationSceneSolution3d *>(internal.vs.get());
-         vss->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
+         if (ss.grid_f)
+         {
+            vss->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
+         }
+         else
+         {
+            std::cerr << "Not implemented" << std::endl;
+         }
       }
       else
       {
@@ -240,7 +264,14 @@ void Window::ResetMeshAndSolution(DataState &ss)
 
          VisualizationSceneVector3d *vss =
             dynamic_cast<VisualizationSceneVector3d *>(internal.vs.get());
-         vss->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
+         if (ss.grid_f)
+         {
+            vss->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
+         }
+         else
+         {
+            std::cerr << "Not implemented" << std::endl;
+         }
       }
    }
 }
