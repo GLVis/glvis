@@ -9,21 +9,11 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#include <cstdlib>
-#include <iostream>
-#include <string>
-#include <limits>
-#include <cmath>
-#include <vector>
-
-#include "mfem.hpp"
-#include "visual.hpp"
+#include "vssolution.hpp"
 #include "palettes.hpp"
 #include "gltf.hpp"
 
 using namespace mfem;
-using namespace std;
-
 
 thread_local VisualizationSceneSolution *vssol;
 extern thread_local VisualizationScene  *locscene;
@@ -191,6 +181,7 @@ static void SwitchAttribute(int increment, int &attribute,
    }
    else
    {
+      vssol->PrepareNumbering();
       vssol->PrepareLines();
       vssol->Prepare();
    }
@@ -444,7 +435,7 @@ void VisualizationSceneSolution::Init()
    shading = Shading::Smooth;
    drawmesh  = 0;
    draworder = 0;
-   drawnums  = 0;
+   drawnums  = Numbering::NONE;
 
    refine_func = 0;
    have_sol_range = false;
@@ -594,6 +585,8 @@ void VisualizationSceneSolution::NewMeshAndSolution(
    mesh_coarse = new_mc;
    sol = new_sol;
    rsol = new_u;
+   MFEM_VERIFY(new_sol->Size() == mesh->GetNV(),
+               "New solution vector size does not match the mesh node count.");
 
    // If the number of elements changes, recompute the refinement factor
    if (mesh->GetNE() != old_m->GetNE())
@@ -618,7 +611,6 @@ void VisualizationSceneSolution::NewMeshAndSolution(
    PrepareNumbering();
    PrepareOrderingCurve();
 }
-
 
 void VisualizationSceneSolution::GetRefinedDetJ(
    int i, const IntegrationRule &ir, Vector &vals, DenseMatrix &tr)
@@ -697,8 +689,10 @@ void VisualizationSceneSolution::GetRefinedDetJ(
    J.ClearExternalData();
 }
 
-void VisualizationSceneSolution::GetRefinedValues(
-   int i, const IntegrationRule &ir, Vector &vals, DenseMatrix &tr)
+void VisualizationSceneSolution::GetRefinedValues(const int i,
+                                                  const IntegrationRule &ir,
+                                                  Vector &vals, DenseMatrix &tr,
+                                                  const bool do_shrink)
 {
    if (drawelems < 2)
    {
@@ -715,15 +709,16 @@ void VisualizationSceneSolution::GetRefinedValues(
          vals(j) = _LogVal(vals(j));
       }
 
-   if (shrink != 1.0 || shrinkmat != 1.0)
+   if (do_shrink && (shrink != 1.0 || shrinkmat != 1.0))
    {
       ShrinkPoints(tr, i, 0, 0);
    }
 }
 
-int VisualizationSceneSolution::GetRefinedValuesAndNormals(
-   int i, const IntegrationRule &ir, Vector &vals, DenseMatrix &tr,
-   DenseMatrix &normals)
+int VisualizationSceneSolution::GetRefinedValuesAndNormals(const int i,
+                                                           const IntegrationRule &ir,
+                                                           Vector &vals, DenseMatrix &tr,
+                                                           DenseMatrix &normals)
 {
    int have_normals = 0;
 
@@ -1845,6 +1840,8 @@ void VisualizationSceneSolution::PrepareElementNumbering1()
    int ne = mesh->GetNE();
    for (int k = 0; k < ne; k++)
    {
+      if (!el_attr_to_show[mesh->GetAttribute(k) - 1]) { continue; }
+
       mesh->GetPointMatrix (k, pointmat);
       mesh->GetElementVertices (k, vertices);
       int nv = vertices.Size();
@@ -1930,11 +1927,11 @@ void VisualizationSceneSolution::PrepareVertexNumbering1()
    const int ne = mesh->GetNE();
    for (int k = 0; k < ne; k++)
    {
+      if (!el_attr_to_show[mesh->GetAttribute(k) - 1]) { continue; }
+
       mesh->GetPointMatrix (k, pointmat);
       mesh->GetElementVertices (k, vertices);
       int nv = vertices.Size();
-
-      ShrinkPoints(pointmat, k, 0, 0);
 
       double ds = GetElementLengthScale(k);
       double xs = 0.05*ds;
@@ -1998,39 +1995,94 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
 
    f_nums_buf.clear();
 
+   Vector vals;
    DenseMatrix p;
-   Array<int> vertices;
-   Array<int> edges;
-   Array<int> edges_ori;
+   Array<int> vertices, edges, edges_ori;
 
-   const int ne = mesh->GetNE();
-   for (int k = 0; k < ne; k++)
+   if (shading == Shading::Flat || shading == Shading::Smooth)
    {
-      mesh->GetElementEdges(k, edges, edges_ori);
-
-      double ds = GetElementLengthScale(k);
-      double xs = 0.05 * ds;
-
-      for (int i = 0; i < edges.Size(); i++)
+      for (int e = 0; e < mesh->GetNE(); e++)
       {
-         mesh->GetEdgeVertices(edges[i], vertices);
-
-         p.SetSize(mesh->Dimension(), vertices.Size());
-         p.SetCol(0, mesh->GetVertex(vertices[0]));
-         p.SetCol(1, mesh->GetVertex(vertices[1]));
-
-         ShrinkPoints(p, k, 0, 0);
-
-         const double m[2] = {0.5 * (p(0,0) + p(0,1)), 0.5 * (p(1,0) + p(1,1))};
-         // TODO: figure out something better...
-         double u = LogVal(0.5 * ((*sol)(vertices[0]) + (*sol)(vertices[1])));
-
-         double xx[3] = {m[0], m[1], u};
-         DrawNumberedMarker(f_nums_buf, xx, xs, edges[i]);
+         if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
+         mesh->GetElementEdges(e, edges, edges_ori);
+         const double dx = 0.05 * GetElementLengthScale(e);
+         for (int i = 0; i < edges.Size(); i++)
+         {
+            mesh->GetEdgeVertices(edges[i], vertices);
+            p.SetSize(mesh->Dimension(), vertices.Size());
+            p.SetCol(0, mesh->GetVertex(vertices[0]));
+            p.SetCol(1, mesh->GetVertex(vertices[1]));
+            ShrinkPoints(p, e, 0, 0);
+            const double m[2] = {0.5 * (p(0,0) + p(0,1)), 0.5 * (p(1,0) + p(1,1))};
+            const double u = LogVal(0.5 * ((*sol)(vertices[0]) + (*sol)(vertices[1])));
+            const double xx[3] = {m[0], m[1], u};
+            DrawNumberedMarker(f_nums_buf, xx, dx, edges[i]);
+         }
       }
    }
-
+   else if (shading == Shading::Noncomforming)
+   {
+      for (int e = 0; e < mesh->GetNE(); e++)
+      {
+         if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
+         mesh->GetElementEdges(e, edges, edges_ori);
+         const auto dx = 0.05 * GetElementLengthScale(e);
+         const auto geom = mesh->GetElementBaseGeometry(e);
+         MFEM_VERIFY(geom == Geometry::TRIANGLE || geom == Geometry::SQUARE,
+                     "Only TRIANGLE and SQUARE geometries are supported.");
+         const auto *RefG = GLVisGeometryRefiner.Refine(geom, 2, 2);
+         GetRefinedValues(e, RefG->RefPts, vals, p);
+         const int ij3[3] = { 1, 4, 3 }, ie3[3] = { 0, 1, 2 };
+         const int ij4[4] = { 1, 3, 5, 7 }, ie4[4] = { 0, 3, 1, 2 };
+         const int *ij = geom == Geometry::TRIANGLE ? ij3 : ij4;
+         const int *ie = geom == Geometry::TRIANGLE ? ie3 : ie4;
+         for (int i = 0; i < edges.Size(); i++)
+         {
+            const int j = ij[i];
+            const double xx[3] = { p(0,j), p(1,j), vals(j) };
+            DrawNumberedMarker(f_nums_buf, xx, dx, edges[ie[i]]);
+         }
+      }
+   }
+   else { MFEM_ABORT("Shading not supported"); }
    updated_bufs.emplace_back(&f_nums_buf);
+}
+
+void VisualizationSceneSolution::PrepareDofNumbering()
+{
+   Vector vals;
+   DenseMatrix tr;
+   Array<int> dofs;
+
+   d_nums_buf.clear();
+
+   auto *rsol_fes = rsol->FESpace();
+   FiniteElementSpace rdof_fes(mesh, rsol_fes->FEColl());
+   H1_FECollection h1_fec(1, mesh->Dimension());
+   FiniteElementSpace h1_fes(mesh, &h1_fec);
+   MFEM_VERIFY(sol->Size() == h1_fes.GetNDofs(),
+               "Flat space does not match the solution size");
+   GridFunction h1_sol(&h1_fes, sol->GetData());
+   const bool non_conforming_shading = shading == Shading::Noncomforming;
+
+   for (int e = 0; e < mesh->GetNE(); e++)
+   {
+      if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
+      const auto dx = 0.05 * GetElementLengthScale(e);
+      const auto &ir = rsol_fes->GetFE(e)->GetNodes();
+      const bool do_shrink = non_conforming_shading;
+      GetRefinedValues(e, ir, vals, tr, do_shrink);
+      rdof_fes.GetElementDofs(e, dofs);
+      rdof_fes.AdjustVDofs(dofs);
+      for (int q = 0; q < ir.GetNPoints(); q++)
+      {
+         const real_t z = non_conforming_shading ? vals[q] :
+                          h1_sol.GetValue(e, ir.IntPoint(q));
+         const real_t x[3] = {tr(0,q), tr(1,q), z};
+         DrawNumberedMarker(d_nums_buf, x, dx, dofs[q]);
+      }
+   }
+   updated_bufs.emplace_back(&d_nums_buf);
 }
 
 void VisualizationSceneSolution::PrepareOrderingCurve()
@@ -2129,21 +2181,34 @@ void VisualizationSceneSolution::PrepareNumbering(bool invalidate)
       e_nums_buf_ready = false;
       v_nums_buf_ready = false;
       f_nums_buf_ready = false;
+      d_nums_buf_ready = false;
    }
-   if (drawnums == 1 && !e_nums_buf_ready)
+   else
+   {
+      static const char *numbering[(int)Numbering::MAX] =
+      { "None", "Elements", "Edges", "Vertices", "DOFs" };
+      std::cout << "Numbering : " << numbering[(int)drawnums] << std::endl;
+   }
+
+   if (drawnums == Numbering::ELEMENTS && !e_nums_buf_ready)
    {
       PrepareElementNumbering();
       e_nums_buf_ready = true;
    }
-   if (drawnums == 2 && !f_nums_buf_ready)
+   if (drawnums == Numbering::EDGES && !f_nums_buf_ready)
    {
       PrepareEdgeNumbering();
       f_nums_buf_ready = true;
    }
-   if (drawnums == 3 && !v_nums_buf_ready)
+   if (drawnums == Numbering::VERTICES && !v_nums_buf_ready)
    {
       PrepareVertexNumbering();
       v_nums_buf_ready = true;
+   }
+   if (drawnums == Numbering::DOFS && !d_nums_buf_ready)
+   {
+      PrepareDofNumbering();
+      d_nums_buf_ready = true;
    }
 }
 
@@ -2554,17 +2619,26 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    }
 
    // draw numberings
-   if (drawnums == 1)
+   if (drawnums == Numbering::ELEMENTS)
    {
       scene.queue.emplace_back(params, &e_nums_buf);
    }
-   else if (drawnums == 2)
+   else if (drawnums == Numbering::EDGES)
    {
       scene.queue.emplace_back(params, &f_nums_buf);
    }
-   else if (drawnums == 3)
+   else if (drawnums == Numbering::VERTICES)
    {
       scene.queue.emplace_back(params, &v_nums_buf);
+   }
+   else if (drawnums == Numbering::DOFS)
+   {
+      scene.queue.emplace_back(params, &d_nums_buf);
+   }
+   else
+   {
+      MFEM_VERIFY(drawnums == Numbering::NONE,
+                  "Unsupported drawnums value: " << (int)drawnums);
    }
 
    // draw orderings -- "black" modes

@@ -12,11 +12,9 @@
 #ifndef GLVIS_OPENGLVIS_HPP
 #define GLVIS_OPENGLVIS_HPP
 
-#include <cmath>
 #include "gl/types.hpp"
 #include "material.hpp"
 #include "palettes.hpp"
-#include "mfem.hpp"
 #include "geom_utils.hpp"
 #include "sdl.hpp"
 #include "gltf.hpp"
@@ -113,7 +111,7 @@ protected:
       if (val < 0.0) { val = 0.0; }
       if (val > 1.0) { val = 1.0; }
 
-      builder.glTexCoord1f(val);
+      builder.glTexCoord1f(static_cast<float>(val));
    }
 
    // We only need 3 points, but the array is 4x3
@@ -228,4 +226,4 @@ public:
    int view;
 };
 
-#endif
+#endif // GLVIS_OPENGLVIS_HPP

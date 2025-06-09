@@ -177,9 +177,10 @@ Key commands
 - <kbd>Ctrl</kbd> + <kbd>o</kbd> – Toggle an element ordering curve
 - <kbd>n</kbd> / <kbd>N</kbd> – Cycle through numberings. The options are:
   - none
-  - show element numbering
-  - show edge numbering
-  - show vertex numbering
+  - show elements numbering
+  - show edges numbering
+  - show vertices numbering
+  - show DOFs numbering
 - <kbd>`</kbd> – Toggle a ruler, with initial origin at the center of the bounding box. The origin can be later moved with <kbd>~</kbd>. The options are:
   - none
   - coordinate axes lines

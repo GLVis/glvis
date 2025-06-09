@@ -9,10 +9,11 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#include "data_state.hpp"
-#include "visual.hpp"
-
 #include <cstdlib>
+
+#include "data_state.hpp"
+#include "vsvector.hpp"
+#include "vsvector3d.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -57,13 +58,13 @@ DataState &DataState::operator=(DataState &&ss)
    return *this;
 }
 
-void DataState::SetMesh(mfem::Mesh *mesh_)
+void DataState::SetMesh(Mesh *mesh_)
 {
    internal.mesh.reset(mesh_);
    SetMesh(std::move(internal.mesh));
 }
 
-void DataState::SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh)
+void DataState::SetMesh(std::unique_ptr<Mesh> &&pmesh)
 {
    internal.mesh = std::move(pmesh);
    internal.mesh_quad.reset();
@@ -71,14 +72,14 @@ void DataState::SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh)
    if (quad_f && quad_f->GetSpace()->GetMesh() != mesh.get()) { SetQuadFunction(NULL); }
 }
 
-void DataState::SetGridFunction(mfem::GridFunction *gf, int component)
+void DataState::SetGridFunction(GridFunction *gf, int component)
 {
    internal.grid_f.reset(gf);
    SetGridFunction(std::move(internal.grid_f), component);
 }
 
-void DataState::SetGridFunction(
-   std::unique_ptr<mfem::GridFunction> &&pgf, int component)
+void DataState::SetGridFunction(std::unique_ptr<GridFunction> &&pgf,
+                                int component)
 {
    internal.grid_f = std::move(pgf);
    internal.quad_f.reset();
@@ -86,7 +87,7 @@ void DataState::SetGridFunction(
    SetGridFunctionSolution(component);
 }
 
-void DataState::SetQuadFunction(mfem::QuadratureFunction *qf, int component)
+void DataState::SetQuadFunction(QuadratureFunction *qf, int component)
 {
    if (quad_f.get() != qf)
    {
@@ -97,8 +98,8 @@ void DataState::SetQuadFunction(mfem::QuadratureFunction *qf, int component)
    SetQuadFunctionSolution(component);
 }
 
-void DataState::SetQuadFunction(
-   std::unique_ptr<mfem::QuadratureFunction> &&pqf, int component)
+void DataState::SetQuadFunction(std::unique_ptr<QuadratureFunction> &&pqf,
+                                int component)
 {
    if (quad_f.get() != pqf.get())
    {
@@ -109,8 +110,8 @@ void DataState::SetQuadFunction(
    SetQuadFunctionSolution(component);
 }
 
-void DataState::SetQuadFunction(
-   const std::vector<QuadratureFunction*> &qf_array, int component)
+void DataState::SetQuadFunction(const std::vector<QuadratureFunction*>
+                                &qf_array, int component)
 {
    // assume the same vdim
    const int vdim = qf_array[0]->GetVDim();
@@ -132,7 +133,7 @@ void DataState::SetQuadFunction(
    SetQuadFunction(qf, component);
 }
 
-void DataState::SetDataCollectionField(mfem::DataCollection *dc, int ti,
+void DataState::SetDataCollectionField(DataCollection *dc, int ti,
                                        const char *field, bool quad, int component)
 {
    internal.data_coll.reset(dc);
@@ -572,10 +573,8 @@ bool DataState::SetNewMeshAndSolution(DataState new_state,
    {
       ResetMeshAndSolution(new_state, vs);
 
-      internal.grid_f = std::move(new_state.internal.grid_f);
-      internal.mesh = std::move(new_state.internal.mesh);
-      internal.quad_f = std::move(new_state.internal.quad_f);
-      internal.mesh_quad = std::move(new_state.internal.mesh_quad);
+      // do not move 'sol' vector as it is updated directly
+      internal = std::move(new_state.internal);
 
       return true;
    }
@@ -593,8 +592,9 @@ void DataState::ResetMeshAndSolution(DataState &ss, VisualizationScene* vs)
       {
          VisualizationSceneSolution *vss =
             dynamic_cast<VisualizationSceneSolution *>(vs);
-         ss.grid_f->GetNodalValues(ss.sol);
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
+         // use the local vector as pointer is invalid after the move
+         ss.grid_f->GetNodalValues(sol);
+         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &sol,
                                  ss.grid_f.get());
       }
       else
@@ -610,8 +610,9 @@ void DataState::ResetMeshAndSolution(DataState &ss, VisualizationScene* vs)
       {
          VisualizationSceneSolution3d *vss =
             dynamic_cast<VisualizationSceneSolution3d *>(vs);
-         ss.grid_f->GetNodalValues(ss.sol);
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
+         // use the local vector as pointer is invalid after the move
+         ss.grid_f->GetNodalValues(sol);
+         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &sol,
                                  ss.grid_f.get());
       }
       else
