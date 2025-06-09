@@ -64,6 +64,12 @@ private:
    void SetGridFunctionSolution(int component = -1);
    void SetQuadFunctionSolution(int component = -1);
 
+   /// Updates the given VisualizationScene pointer with the new data
+   /// of the given DataState object.
+   /// @note: Use with caution when the update is compatible
+   /// @see SetNewMeshAndSolution()
+   void ResetMeshAndSolution(DataState &ss, VisualizationScene* vs);
+
 public:
    mfem::Vector sol, solu, solv, solw, normals;
    const std::unique_ptr<mfem::Mesh> &mesh{internal.mesh};
@@ -170,12 +176,6 @@ public:
    /// updated.
    bool SetNewMeshAndSolution(DataState new_state,
                               VisualizationScene* vs);
-
-   /// Updates the given VisualizationScene pointer with the new data
-   /// of the given DataState object.
-   /// @note: Use with caution when the update is compatible
-   /// @see SetNewMeshAndSolution()
-   static void ResetMeshAndSolution(DataState &ss, VisualizationScene* vs);
 };
 
 #endif // GLVIS_DATA_STATE_HPP
