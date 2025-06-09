@@ -420,7 +420,7 @@ VisualizationSceneSolution::VisualizationSceneSolution(
 {
    mesh = &m;
    mesh_coarse = mc;
-   sol = new Vector(m.GetNV());
+   sol = &s;
    v_normals = normals;
 
    Init();
@@ -514,7 +514,6 @@ void VisualizationSceneSolution::Init()
 
 VisualizationSceneSolution::~VisualizationSceneSolution()
 {
-   delete sol;
 }
 
 void VisualizationSceneSolution::ToggleDrawElems()
@@ -578,30 +577,16 @@ void VisualizationSceneSolution::ToggleDrawElems()
    }
 }
 
-void VisualizationSceneSolution::SetGridFunction(GridFunction & u)
-{
-   rsol = &u;
-   u.GetNodalValues(*sol);
-}
-
 void VisualizationSceneSolution::NewMeshAndSolution(
    Mesh *new_m, Mesh *new_mc, Vector *new_sol, GridFunction *new_u)
 {
    Mesh *old_m = mesh;
    mesh = new_m;
    mesh_coarse = new_mc;
+   sol = new_sol;
+   rsol = new_u;
    MFEM_VERIFY(new_sol->Size() == mesh->GetNV(),
                "New solution vector size does not match the mesh node count.");
-   delete sol;
-   sol = new Vector(mesh->GetNV());
-   if (new_u)
-   {
-      SetGridFunction(*new_u);
-   }
-   else
-   {
-      for (int i = 0; i < mesh->GetNV(); i++) { (*sol)(i) = (*new_sol)(i); }
-   }
 
    // If the number of elements changes, recompute the refinement factor
    if (mesh->GetNE() != old_m->GetNE())

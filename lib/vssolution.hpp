@@ -94,7 +94,7 @@ public:
 
    std::string GetHelpString() const override;
 
-   void SetGridFunction(mfem::GridFunction & u);
+   void SetGridFunction(mfem::GridFunction & u) { rsol = &u; }
 
    void NewMeshAndSolution(mfem::Mesh *new_m, mfem::Mesh *new_mc,
                            mfem::Vector *new_sol,
