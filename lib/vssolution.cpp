@@ -1855,6 +1855,8 @@ void VisualizationSceneSolution::PrepareElementNumbering1()
    int ne = mesh->GetNE();
    for (int k = 0; k < ne; k++)
    {
+      if (!el_attr_to_show[mesh->GetAttribute(k) - 1]) { continue; }
+
       mesh->GetPointMatrix (k, pointmat);
       mesh->GetElementVertices (k, vertices);
       int nv = vertices.Size();
@@ -1940,6 +1942,8 @@ void VisualizationSceneSolution::PrepareVertexNumbering1()
    const int ne = mesh->GetNE();
    for (int k = 0; k < ne; k++)
    {
+      if (!el_attr_to_show[mesh->GetAttribute(k) - 1]) { continue; }
+
       mesh->GetPointMatrix (k, pointmat);
       mesh->GetElementVertices (k, vertices);
       int nv = vertices.Size();
@@ -2014,6 +2018,7 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
    {
       for (int e = 0; e < mesh->GetNE(); e++)
       {
+         if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
          mesh->GetElementEdges(e, edges, edges_ori);
          const double dx = 0.05 * GetElementLengthScale(e);
          for (int i = 0; i < edges.Size(); i++)
@@ -2034,6 +2039,7 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
    {
       for (int e = 0; e < mesh->GetNE(); e++)
       {
+         if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
          mesh->GetElementEdges(e, edges, edges_ori);
          const auto dx = 0.05 * GetElementLengthScale(e);
          const auto geom = mesh->GetElementBaseGeometry(e);
