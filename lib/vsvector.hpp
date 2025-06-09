@@ -29,8 +29,9 @@ protected:
 
    void Init();
 
-   void GetRefinedValues(int i, const mfem::IntegrationRule &ir,
-                         mfem::Vector &vals, mfem::DenseMatrix &tr) override;
+   void GetRefinedValues(const int i, const mfem::IntegrationRule &ir,
+                         mfem::Vector &vals, mfem::DenseMatrix &tr,
+                         const bool do_shrink = true) override;
    int GetRefinedValuesAndNormals(int i, const mfem::IntegrationRule &ir,
                                   mfem::Vector &vals,mfem::DenseMatrix &tr,
                                   mfem::DenseMatrix &normals) override;

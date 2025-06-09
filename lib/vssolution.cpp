@@ -181,6 +181,7 @@ static void SwitchAttribute(int increment, int &attribute,
    }
    else
    {
+      vssol->PrepareNumbering();
       vssol->PrepareLines();
       vssol->Prepare();
    }
@@ -703,8 +704,10 @@ void VisualizationSceneSolution::GetRefinedDetJ(
    J.ClearExternalData();
 }
 
-void VisualizationSceneSolution::GetRefinedValues(
-   int i, const IntegrationRule &ir, Vector &vals, DenseMatrix &tr)
+void VisualizationSceneSolution::GetRefinedValues(const int i,
+                                                  const IntegrationRule &ir,
+                                                  Vector &vals, DenseMatrix &tr,
+                                                  const bool do_shrink)
 {
    if (drawelems < 2)
    {
@@ -721,15 +724,16 @@ void VisualizationSceneSolution::GetRefinedValues(
          vals(j) = _LogVal(vals(j));
       }
 
-   if (shrink != 1.0 || shrinkmat != 1.0)
+   if (do_shrink && (shrink != 1.0 || shrinkmat != 1.0))
    {
       ShrinkPoints(tr, i, 0, 0);
    }
 }
 
-int VisualizationSceneSolution::GetRefinedValuesAndNormals(
-   int i, const IntegrationRule &ir, Vector &vals, DenseMatrix &tr,
-   DenseMatrix &normals)
+int VisualizationSceneSolution::GetRefinedValuesAndNormals(const int i,
+                                                           const IntegrationRule &ir,
+                                                           Vector &vals, DenseMatrix &tr,
+                                                           DenseMatrix &normals)
 {
    int have_normals = 0;
 
@@ -1940,8 +1944,6 @@ void VisualizationSceneSolution::PrepareVertexNumbering1()
       mesh->GetElementVertices (k, vertices);
       int nv = vertices.Size();
 
-      ShrinkPoints(pointmat, k, 0, 0);
-
       double ds = GetElementLengthScale(k);
       double xs = 0.05*ds;
 
@@ -2039,7 +2041,6 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
                      "Only TRIANGLE and SQUARE geometries are supported.");
          const auto *RefG = GLVisGeometryRefiner.Refine(geom, 2, 2);
          GetRefinedValues(e, RefG->RefPts, vals, p);
-         ShrinkPoints(p, e, 0, 0);
          const int ij3[3] = { 1, 4, 3 }, ie3[3] = { 0, 1, 2 };
          const int ij4[4] = { 1, 3, 5, 7 }, ie4[4] = { 0, 3, 1, 2 };
          const int *ij = geom == Geometry::TRIANGLE ? ij3 : ij4;
@@ -2078,10 +2079,10 @@ void VisualizationSceneSolution::PrepareDofNumbering()
       if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
       const auto dx = 0.05 * GetElementLengthScale(e);
       const auto &ir = rsol_fes->GetFE(e)->GetNodes();
-      GetRefinedValues(e, ir, vals, tr);
+      const bool do_shrink = non_conforming_shading;
+      GetRefinedValues(e, ir, vals, tr, do_shrink);
       rdof_fes.GetElementDofs(e, dofs);
       rdof_fes.AdjustVDofs(dofs);
-      ShrinkPoints(tr, e, 0, 0);
       for (int q = 0; q < ir.GetNPoints(); q++)
       {
          const real_t z = non_conforming_shading ? vals[q] :

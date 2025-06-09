@@ -532,8 +532,10 @@ VisualizationSceneVector::~VisualizationSceneVector()
    }
 }
 
-void VisualizationSceneVector::GetRefinedValues(
-   int i, const IntegrationRule &ir, Vector &vals, DenseMatrix &tr)
+void VisualizationSceneVector::GetRefinedValues(const int i,
+                                                const IntegrationRule &ir,
+                                                Vector &vals, DenseMatrix &tr,
+                                                const bool do_shrink)
 {
    if (drawelems < 2)
    {
@@ -638,7 +640,7 @@ void VisualizationSceneVector::GetRefinedValues(
          vals(j) = _LogVal(vals(j));
       }
 
-   if (shrink != 1.0 || shrinkmat != 1.0)
+   if (do_shrink && (shrink != 1.0 || shrinkmat != 1.0))
    {
       ShrinkPoints(tr, i, 0, 0);
    }
