@@ -2127,7 +2127,7 @@ void VisualizationSceneSolution::PrepareDofNumbering()
       const int attr = mesh->GetAttribute(e);
       const int rank = attr - 1;
       assert(rank >= 0 && rank < (int)offsets->size());
-      const auto key = DataOffset::key(e,q);
+      const auto key = DataState::Offset::key(e,q);
       return (*offsets)[rank].dof_map.at(key);
    };
 

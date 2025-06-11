@@ -68,7 +68,7 @@ public:
 protected:
    mfem::Mesh   *mesh{}, *mesh_coarse{};
    mfem::Vector *sol{};
-   const DataOffsets *offsets{};
+   const DataState::Offsets *offsets{};
 
    double minv, maxv;
 
@@ -219,9 +219,13 @@ public:
    virtual void PrintState();
 
    mfem::Mesh *GetMesh() { return mesh; }
-   void SetDataOffsets(const DataOffsets *data_offsets);
 
-   virtual gl3::SceneInfo GetSceneObjs();
+   void SetDataOffsets(const DataState::Offsets *data_offsets)
+   {
+      offsets = data_offsets;
+   }
+
+   gl3::SceneInfo GetSceneObjs() override;
 
    void ProcessUpdatedBufs(gl3::SceneInfo& scene);
 

@@ -69,7 +69,7 @@ void DataState::ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array)
    const int nprocs = static_cast<int>(gf_array.size());
    MFEM_VERIFY(!gf_array.empty(), "No grid functions provided for offsets");
 
-   internal.offsets.reset(new DataOffsets(nprocs));
+   internal.offsets.reset(new DataState::Offsets(nprocs));
 
    DenseMatrix pointmat;
    Array<int> dofs, vertices;
@@ -94,7 +94,7 @@ void DataState::ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array)
          l_fes->GetElementDofs(l_e, dofs), l_fes->AdjustVDofs(dofs);
          for (int k = 0; k < dofs.Size(); k++)
          {
-            offset.dof_map[DataOffset::key(g_e,k)] = dofs[k];
+            offset.dof_map[DataState::Offset::key(g_e,k)] = dofs[k];
          }
       }
       if (i + 1 == nprocs) { continue; }

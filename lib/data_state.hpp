@@ -21,21 +21,6 @@
 
 #include "openglvis.hpp"
 
-struct DataOffset
-{
-   int nelems, nedges, nverts;
-   std::map<uint64_t, int> dof_map;
-   struct xy {double x,y;};
-#ifdef GLVIS_DEBUG
-   std::map<uint64_t, xy> exy_map;
-#endif
-   static std::uint64_t key(uint32_t i, uint32_t j)
-   {
-      return (uint64_t)i << 32 | (uint32_t)j;
-   };
-   DataOffset() = default;
-};
-using DataOffsets = std::vector<DataOffset>;
 
 struct DataState
 {
@@ -63,6 +48,20 @@ struct DataState
       MAX
    };
 
+   struct Offset
+   {
+      int nelems, nedges, nverts;
+#ifdef GLVIS_DEBUG
+      struct xy {double x,y;};
+      std::map<uint64_t, xy> exy_map;
+#endif
+      std::map<uint64_t, int> dof_map;
+      static std::uint64_t key(uint32_t i, uint32_t j) { return (uint64_t)i << 32 | (uint32_t)j; };
+      // const int& at(const int i, const int j) const { return dof_map.at(key(i,j)); }
+      Offset() = default;
+   };
+   using Offsets = std::vector<Offset>;
+
 private:
    friend class StreamReader;
    friend class FileReader;
@@ -73,7 +72,7 @@ private:
       std::unique_ptr<mfem::GridFunction> grid_f;
       std::unique_ptr<mfem::QuadratureFunction> quad_f;
       std::unique_ptr<mfem::DataCollection> data_coll;
-      std::unique_ptr<DataOffsets> offsets;
+      std::unique_ptr<Offsets> offsets;
    } internal;
 
    FieldType type {FieldType::UNKNOWN};
@@ -95,7 +94,7 @@ public:
    const std::unique_ptr<mfem::GridFunction> &grid_f{internal.grid_f};
    const std::unique_ptr<mfem::QuadratureFunction> &quad_f{internal.quad_f};
    const std::unique_ptr<mfem::DataCollection> &data_coll{internal.data_coll};
-   const std::unique_ptr<DataOffsets> &offsets{internal.offsets};
+   const std::unique_ptr<Offsets> &offsets{internal.offsets};
 
    std::string keys;
    bool fix_elem_orient{false};
