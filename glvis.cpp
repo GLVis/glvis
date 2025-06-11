@@ -161,7 +161,6 @@ bool GLVisInitVis(StreamCollection input_streams)
             vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
                                                       stream_state.mesh_quad.get());
          }
-         vs->SetDataOffsets(stream_state.offsets.get());
          if (stream_state.grid_f)
          {
             vss->SetGridFunction(*stream_state.grid_f);
@@ -175,6 +174,7 @@ bool GLVisInitVis(StreamCollection input_streams)
             // the 'jet-like' palette is used in 2D, see vssolution.cpp).
             vs->palette.SetIndex(4);
          }
+         vs->SetDataOffsets(stream_state.offsets.get());
       }
       else if (stream_state.mesh->SpaceDimension() == 3)
       {
