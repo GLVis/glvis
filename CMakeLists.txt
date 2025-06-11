@@ -13,6 +13,7 @@
 # introduced.
 cmake_minimum_required(VERSION 3.10)
 
+
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -23,6 +24,16 @@ if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 endif ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 
 project(glvis NONE)
+
+# Load user settings
+set(USER_CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/user.cmake" CACHE PATH
+  "User configuration file. This file is not part of the GLVis source code and
+   is not distributed with GLVis. It can be used to set user-specific options,
+   such as paths to external libraries, compiler flags, etc.")
+include("${USER_CONFIG}" OPTIONAL RESULT_VARIABLE USER_CONFIG_LOADED)
+if (USER_CONFIG_LOADED)
+  message(STATUS "USER_CONFIG = ${USER_CONFIG} (LOADED)")
+endif()
 
 # Import MFEM. The following variables can be used to help CMake find MFEM:
 #  * MFEM_DIR - absolute path to the MFEM build or install prefix.

@@ -32,3 +32,6 @@ compile_commands.json
 
 # Visual Studio Code
 /.vscode/
+
+# CMake user configuration files
+user.cmake

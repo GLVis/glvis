@@ -64,6 +64,48 @@ void DataState::SetMesh(Mesh *mesh_)
    SetMesh(std::move(internal.mesh));
 }
 
+void DataState::ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array)
+{
+   const int nprocs = static_cast<int>(gf_array.size());
+   MFEM_VERIFY(!gf_array.empty(), "No grid functions provided for offsets");
+
+   internal.offsets.reset(new DataOffsets(nprocs));
+
+   DenseMatrix pointmat;
+   Array<int> dofs, vertices;
+   for (int i = 0, g_e = 0; i < nprocs; i++)
+   {
+      const GridFunction *gf = gf_array[i];
+      const FiniteElementSpace *l_fes = gf->FESpace();
+      Mesh *l_mesh = l_fes->GetMesh();
+      // store the dofs numbers as they are fespace dependent
+      auto &offset = offsets->operator[](i);
+      for (int l_e = 0; l_e < l_mesh->GetNE(); l_e++, g_e++)
+      {
+#ifdef GLVIS_DEBUG
+         // Store elements centers
+         l_mesh->GetPointMatrix(l_e, pointmat);
+         const int nv = pointmat.Width();
+         double xs = 0.0, ys = 0.0;
+         for (int j = 0; j < nv; j++) { xs += pointmat(0,j), ys += pointmat(1,j); }
+         xs /= nv, ys /= nv;
+         offset.exy_map[DataOffset::key(l_e,i)] = {xs, ys};
+#endif // end GLVIS_DEBUG
+         l_fes->GetElementDofs(l_e, dofs), l_fes->AdjustVDofs(dofs);
+         for (int k = 0; k < dofs.Size(); k++)
+         {
+            offset.dof_map[DataOffset::key(g_e,k)] = dofs[k];
+         }
+      }
+      if (i + 1 == nprocs) { continue; }
+      auto &next = offsets->operator[](i+1);
+      // for NE, NV and NEdges, we accumulate the values
+      next.nelems = offset.nelems + l_mesh->GetNE();
+      next.nedges = offset.nedges + l_mesh->GetNEdges();
+      next.nverts = offset.nverts + l_mesh->GetNV();
+   }
+}
+
 void DataState::SetMesh(std::unique_ptr<Mesh> &&pmesh)
 {
    internal.mesh = std::move(pmesh);
@@ -590,17 +632,18 @@ void DataState::ResetMeshAndSolution(DataState &ss, VisualizationScene* vs)
    {
       if (ss.grid_f->VectorDim() == 1)
       {
-         VisualizationSceneSolution *vss =
-            dynamic_cast<VisualizationSceneSolution *>(vs);
+         auto *vss = dynamic_cast<VisualizationSceneSolution *>(vs);
          // use the local vector as pointer is invalid after the move
          ss.grid_f->GetNodalValues(sol);
+         // update the offsets before the mesh and solution
+         vss->SetDataOffsets(ss.offsets.get());
          vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &sol,
                                  ss.grid_f.get());
       }
       else
       {
-         VisualizationSceneVector *vsv =
-            dynamic_cast<VisualizationSceneVector *>(vs);
+         auto *vsv = dynamic_cast<VisualizationSceneVector *>(vs);
+         vsv->SetDataOffsets(ss.offsets.get());
          vsv->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
       }
    }
@@ -608,8 +651,7 @@ void DataState::ResetMeshAndSolution(DataState &ss, VisualizationScene* vs)
    {
       if (ss.grid_f->VectorDim() == 1)
       {
-         VisualizationSceneSolution3d *vss =
-            dynamic_cast<VisualizationSceneSolution3d *>(vs);
+         auto *vss = dynamic_cast<VisualizationSceneSolution3d *>(vs);
          // use the local vector as pointer is invalid after the move
          ss.grid_f->GetNodalValues(sol);
          vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &sol,
@@ -619,8 +661,7 @@ void DataState::ResetMeshAndSolution(DataState &ss, VisualizationScene* vs)
       {
          ss.ProjectVectorFEGridFunction();
 
-         VisualizationSceneVector3d *vss =
-            dynamic_cast<VisualizationSceneVector3d *>(vs);
+         auto *vss = dynamic_cast<VisualizationSceneVector3d *>(vs);
          vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.grid_f.get());
       }
    }

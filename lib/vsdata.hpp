@@ -15,6 +15,7 @@
 #include <mfem.hpp>
 #include "openglvis.hpp"
 #include "aux_vis.hpp"
+#include "data_state.hpp"
 
 extern thread_local std::string plot_caption; // defined in glvis.cpp
 extern thread_local std::string extra_caption; // defined in glvis.cpp
@@ -67,6 +68,7 @@ public:
 protected:
    mfem::Mesh   *mesh{}, *mesh_coarse{};
    mfem::Vector *sol{};
+   const DataOffsets *offsets{};
 
    double minv, maxv;
 
@@ -217,6 +219,7 @@ public:
    virtual void PrintState();
 
    mfem::Mesh *GetMesh() { return mesh; }
+   void SetDataOffsets(const DataOffsets *data_offsets);
 
    virtual gl3::SceneInfo GetSceneObjs();
 

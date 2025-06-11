@@ -6473,7 +6473,7 @@ GL2PSDLL_API const char *gl2psGetFormatDescription(GLint format)
     return "Unknown format";
 }
 
-GL2PSDLL_API GLint gl2psGetFileFormat()
+GL2PSDLL_API GLint gl2psGetFileFormat(void)
 {
   return gl2ps->format;
 }

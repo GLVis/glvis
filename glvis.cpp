@@ -161,6 +161,7 @@ bool GLVisInitVis(StreamCollection input_streams)
             vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
                                                       stream_state.mesh_quad.get());
          }
+         vs->SetDataOffsets(stream_state.offsets.get());
          if (stream_state.grid_f)
          {
             vss->SetGridFunction(*stream_state.grid_f);
@@ -227,6 +228,7 @@ bool GLVisInitVis(StreamCollection input_streams)
             vs = new VisualizationSceneVector(*stream_state.mesh, stream_state.solu,
                                               stream_state.solv, stream_state.mesh_quad.get());
          }
+         vs->SetDataOffsets(stream_state.offsets.get());
       }
       else if (stream_state.mesh->SpaceDimension() == 3)
       {

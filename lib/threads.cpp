@@ -937,6 +937,7 @@ void communication_thread::execute()
             if (gf_array.size() > 0)
             {
                tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), gf_array.data(), nproc));
+               if (!keep_attr) { tmp.ComputeDofsOffsets(gf_array); }
             }
             else if (qf_array.size() > 0)
             {

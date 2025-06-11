@@ -24,6 +24,15 @@ using namespace mfem;
 
 const char *strings_off_on[] = { "off", "on" };
 
+void VisualizationSceneScalarData::SetDataOffsets(const DataOffsets
+                                                  *data_offsets)
+{
+   MFEM_VERIFY(data_offsets != nullptr,
+               "VisualizationSceneScalarData::SetDataOffsets: "
+               "data_offsets is null");
+   offsets = data_offsets;
+}
+
 void VisualizationSceneScalarData::FixValueRange()
 {
    double am = fabs(minv);
