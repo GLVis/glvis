@@ -87,14 +87,18 @@ void DataState::ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array)
          l_mesh->GetPointMatrix(l_e, pointmat);
          const int nv = pointmat.Width();
          double xs = 0.0, ys = 0.0;
-         for (int j = 0; j < nv; j++) { xs += pointmat(0,j), ys += pointmat(1,j); }
+         for (int j = 0; j < nv; j++)
+         {
+            xs += pointmat(0,j), ys += pointmat(1,j);
+         }
          xs /= nv, ys /= nv;
-         offset.exy_map[DataOffset::key(l_e,i)] = {xs, ys};
+         offset.exy_map[ {l_e, i} ] = {xs, ys};
 #endif // end GLVIS_DEBUG
-         l_fes->GetElementDofs(l_e, dofs), l_fes->AdjustVDofs(dofs);
+         l_fes->GetElementDofs(l_e, dofs);
+         l_fes->AdjustVDofs(dofs);
          for (int k = 0; k < dofs.Size(); k++)
          {
-            offset.dof_map[DataState::Offset::key(g_e,k)] = dofs[k];
+            offset[ {g_e, k} ] = dofs[k];
          }
       }
       if (i + 1 == nprocs) { continue; }

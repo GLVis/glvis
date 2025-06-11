@@ -1840,7 +1840,8 @@ void VisualizationSceneSolution::PrepareElementNumbering()
    }
 }
 
-void VisualizationSceneSolution::PrepareElementNumbering1(e_offset_fn offset)
+void VisualizationSceneSolution::PrepareElementNumbering1(
+   const e_offset_fn &offset)
 {
    e_nums_buf.clear();
 
@@ -1876,9 +1877,7 @@ void VisualizationSceneSolution::PrepareElementNumbering1(e_offset_fn offset)
          constexpr double eps = 1e-12;
          const int rank = mesh->GetAttribute(e) - 1;
          assert(rank >= 0 && rank < (int)offsets->size());
-         const int l_e = offset(e);
-         const auto key = DataOffset::key(l_e,rank);
-         const DataOffset::xy xy = (*offsets)[rank].exy_map.at(key);
+         const auto &xy = (*offsets)[rank].exy_map.at({offset(e), rank});
          assert(fabs(xy.x - xs) < eps && fabs(xy.y - ys) < eps);
       }
 #endif // GLVIS_DEBUG
@@ -1893,7 +1892,8 @@ void VisualizationSceneSolution::PrepareElementNumbering1(e_offset_fn offset)
    updated_bufs.emplace_back(&e_nums_buf);
 }
 
-void VisualizationSceneSolution::PrepareElementNumbering2(e_offset_fn offset)
+void VisualizationSceneSolution::PrepareElementNumbering2(
+   const e_offset_fn &offset)
 {
    IntegrationRule center_ir(1);
    DenseMatrix pointmat;
@@ -1927,8 +1927,7 @@ void VisualizationSceneSolution::PrepareElementNumbering2(e_offset_fn offset)
          const int rank = mesh->GetAttribute(e) - 1;
          assert(rank >= 0 && rank < (int)offsets->size());
          const int l_e = offset(e);
-         const auto key = DataOffset::key(l_e,rank);
-         const DataOffset::xy xy = (*offsets)[rank].exy_map.at(key);
+         const auto &xy = (*offsets)[rank].exy_map.at({l_e,rank});
          assert(fabs(xy.x - xc) < eps && fabs(xy.y - yc) < eps);
       }
 #endif // GLVIS_DEBUG
@@ -1959,7 +1958,8 @@ void VisualizationSceneSolution::PrepareVertexNumbering()
    }
 }
 
-void VisualizationSceneSolution::PrepareVertexNumbering1(v_offset_fn offset)
+void VisualizationSceneSolution::PrepareVertexNumbering1(
+   const v_offset_fn &offset)
 {
    v_nums_buf.clear();
 
@@ -1995,7 +1995,8 @@ void VisualizationSceneSolution::PrepareVertexNumbering1(v_offset_fn offset)
    updated_bufs.emplace_back(&v_nums_buf);
 }
 
-void VisualizationSceneSolution::PrepareVertexNumbering2(v_offset_fn offset)
+void VisualizationSceneSolution::PrepareVertexNumbering2(
+   const v_offset_fn &offset)
 {
    DenseMatrix pointmat;
    Vector values;
@@ -2124,11 +2125,8 @@ void VisualizationSceneSolution::PrepareDofNumbering()
    auto offset = [&](const int e, const int q)
    {
       if (!offsets) { return dofs[q]; }
-      const int attr = mesh->GetAttribute(e);
-      const int rank = attr - 1;
-      assert(rank >= 0 && rank < (int)offsets->size());
-      const auto key = DataState::Offset::key(e,q);
-      return (*offsets)[rank].dof_map.at(key);
+      const int rank = mesh->GetAttribute(e) - 1;
+      return (*offsets)[rank][ {e,q}];
    };
 
    for (int e = 0; e < mesh->GetNE(); e++)

@@ -16,6 +16,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <utility>
 
 #include <mfem.hpp>
 
@@ -48,17 +49,23 @@ struct DataState
       MAX
    };
 
-   struct Offset
+   // Class used for storing offsets and map of DOFs for each rank
+   class Offset
    {
+      std::map<std::pair<int, int>, int> dof;
+   public:
       int nelems, nedges, nverts;
 #ifdef GLVIS_DEBUG
+      // in debug mode, we store the element centers
+      // to be able to compare them with the ones of the global mesh,
+      // as it could depend on the way the global mesh is constructed
+      // from the array of 'local' ones.
       struct xy {double x,y;};
-      std::map<uint64_t, xy> exy_map;
+      std::map<std::pair<int, int>, xy> exy_map;
 #endif
-      std::map<uint64_t, int> dof_map;
-      static std::uint64_t key(uint32_t i, uint32_t j) { return (uint64_t)i << 32 | (uint32_t)j; };
-      // const int& at(const int i, const int j) const { return dof_map.at(key(i,j)); }
       Offset() = default;
+      int& operator[](const std::pair<int, int> &key) { return dof[key]; }
+      const int& operator[](const std::pair<int, int> &key) const { return dof.at(key); }
    };
    using Offsets = std::vector<Offset>;
 
