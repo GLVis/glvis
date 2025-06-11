@@ -2123,7 +2123,7 @@ void VisualizationSceneSolution::PrepareDofNumbering()
 
    auto offset = [&](const int e, const int q)
    {
-      if (!offsets) { return e; }
+      if (!offsets) { return dofs[q]; }
       const int attr = mesh->GetAttribute(e);
       const int rank = attr - 1;
       assert(rank >= 0 && rank < (int)offsets->size());
