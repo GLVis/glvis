@@ -131,17 +131,8 @@ public:
    void PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows, bool color);
 
    void PrepareNumbering(bool invalidate = true);
-
    void PrepareElementNumbering();
-   using e_offset_fn = std::function<int(const int)>;
-   void PrepareElementNumbering1(const e_offset_fn&);
-   void PrepareElementNumbering2(const e_offset_fn&);
-
    void PrepareVertexNumbering();
-   using v_offset_fn = std::function<int(const int, const int)>;
-   void PrepareVertexNumbering1(const v_offset_fn&);
-   void PrepareVertexNumbering2(const v_offset_fn&);
-
    void PrepareEdgeNumbering();
    void PrepareDofNumbering();
 

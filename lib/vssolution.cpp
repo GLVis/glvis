@@ -1830,109 +1830,74 @@ void VisualizationSceneSolution::PrepareElementNumbering()
       return e - nelems;
    };
 
+   e_nums_buf.clear();
+
    if (shading == Shading::Noncomforming)
    {
-      PrepareElementNumbering2(offset);
+      IntegrationRule center_ir(1);
+      DenseMatrix pointmat;
+      Vector values;
+
+      for (int e = 0; e < mesh->GetNE(); e++)
+      {
+         if (!el_attr_to_show[mesh->GetAttribute(e)-1]) { continue; }
+         center_ir.IntPoint(0) =
+            Geometries.GetCenter(mesh->GetElementBaseGeometry(e));
+         GetRefinedValues (e, center_ir, values, pointmat);
+         const double xc = pointmat(0,0), yc = pointmat(1,0), uc = values(0);
+         const double dx = 0.05 * GetElementLengthScale(e);
+         const double xx[3] = {xc, yc, uc};
+         DrawNumberedMarker(e_nums_buf, xx, dx, offset(e));
+#ifdef GLVIS_DEBUG
+         if (offsets && shrink == 1.0 && shrinkmat == 1.0)
+         {
+            constexpr double eps = 1e-12;
+            const int rank = mesh->GetAttribute(e) - 1;
+            assert(rank >= 0 && rank < (int)offsets->size());
+            const int l_e = offset(e);
+            const auto &xy = (*offsets)[rank].exy_map.at({l_e,rank});
+            assert(fabs(xy.x - xc) < eps && fabs(xy.y - yc) < eps);
+         }
+#endif // GLVIS_DEBUG
+      }
    }
    else
    {
-      PrepareElementNumbering1(offset);
-   }
-}
+      DenseMatrix pointmat;
+      Array<int> vertices;
 
-void VisualizationSceneSolution::PrepareElementNumbering1(
-   const e_offset_fn &offset)
-{
-   e_nums_buf.clear();
-
-   DenseMatrix pointmat;
-   Array<int> vertices;
-
-   for (int e = 0; e < mesh->GetNE(); e++)
-   {
-      if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
-
-      mesh->GetPointMatrix (e, pointmat);
-      mesh->GetElementVertices (e, vertices);
-      int nv = vertices.Size();
-
-      ShrinkPoints(pointmat, e, 0, 0);
-
-      double xs = 0.0;
-      double ys = 0.0;
-      double us = 0.0;
-      for (int j = 0; j < nv; j++)
+      for (int e = 0; e < mesh->GetNE(); e++)
       {
-         xs += pointmat(0,j);
-         ys += pointmat(1,j);
-         us += LogVal((*sol)(vertices[j]));
-      }
-      xs /= nv;
-      ys /= nv;
-      us /= nv;
-
+         if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
+         mesh->GetPointMatrix (e, pointmat);
+         mesh->GetElementVertices (e, vertices);
+         const int nv = vertices.Size();
+         ShrinkPoints(pointmat, e, 0, 0);
+         double xs = 0.0, ys = 0.0, us = 0.0;
+         for (int j = 0; j < nv; j++)
+         {
+            xs += pointmat(0,j);
+            ys += pointmat(1,j);
+            us += LogVal((*sol)(vertices[j]));
+         }
+         xs /= nv;
+         ys /= nv;
+         us /= nv;
 #ifdef GLVIS_DEBUG
-      if (offsets && shrink == 1.0 && shrinkmat == 1.0)
-      {
-         constexpr double eps = 1e-12;
-         const int rank = mesh->GetAttribute(e) - 1;
-         assert(rank >= 0 && rank < (int)offsets->size());
-         const auto &xy = (*offsets)[rank].exy_map.at({offset(e), rank});
-         assert(fabs(xy.x - xs) < eps && fabs(xy.y - ys) < eps);
-      }
+         if (offsets && shrink == 1.0 && shrinkmat == 1.0)
+         {
+            constexpr double eps = 1e-12;
+            const int rank = mesh->GetAttribute(e) - 1;
+            assert(rank >= 0 && rank < (int)offsets->size());
+            const auto &xy = (*offsets)[rank].exy_map.at({offset(e), rank});
+            assert(fabs(xy.x - xs) < eps && fabs(xy.y - ys) < eps);
+         }
 #endif // GLVIS_DEBUG
-
-      double ds = GetElementLengthScale(e);
-      double dx = 0.05*ds;
-
-      double xx[3] = {xs,ys,us};
-      DrawNumberedMarker(e_nums_buf,xx,dx,offset(e));
-   }
-
-   updated_bufs.emplace_back(&e_nums_buf);
-}
-
-void VisualizationSceneSolution::PrepareElementNumbering2(
-   const e_offset_fn &offset)
-{
-   IntegrationRule center_ir(1);
-   DenseMatrix pointmat;
-   Vector values;
-
-   e_nums_buf.clear();
-
-   int ne = mesh->GetNE();
-   for (int e = 0; e < ne; e++)
-   {
-      if (!el_attr_to_show[mesh->GetAttribute(e)-1]) { continue; }
-
-      center_ir.IntPoint(0) =
-         Geometries.GetCenter(mesh->GetElementBaseGeometry(e));
-      GetRefinedValues (e, center_ir, values, pointmat);
-
-      double xc = pointmat(0,0);
-      double yc = pointmat(1,0);
-      double uc = values(0);
-
-      double ds = GetElementLengthScale(e);
-      double dx = 0.05*ds;
-
-      double xx[3] = {xc,yc,uc};
-      DrawNumberedMarker(e_nums_buf,xx,dx,offset(e));
-
-#ifdef GLVIS_DEBUG
-      if (offsets && shrink == 1.0 && shrinkmat == 1.0)
-      {
-         constexpr double eps = 1e-12;
-         const int rank = mesh->GetAttribute(e) - 1;
-         assert(rank >= 0 && rank < (int)offsets->size());
-         const int l_e = offset(e);
-         const auto &xy = (*offsets)[rank].exy_map.at({l_e,rank});
-         assert(fabs(xy.x - xc) < eps && fabs(xy.y - yc) < eps);
+         const double dx = 0.05 * GetElementLengthScale(e);
+         const double xx[3] = {xs, ys, us};
+         DrawNumberedMarker(e_nums_buf, xx, dx, offset(e));
       }
-#endif // GLVIS_DEBUG
    }
-
    updated_bufs.emplace_back(&e_nums_buf);
 }
 
@@ -1948,89 +1913,52 @@ void VisualizationSceneSolution::PrepareVertexNumbering()
       return v - nverts;
    };
 
+   v_nums_buf.clear();
+   DenseMatrix pointmat;
+   Array<int> vertices;
+
    if (shading == Shading::Noncomforming)
    {
-      PrepareVertexNumbering2(offset);
+      Vector values;
+      for (int i = 0; i < mesh->GetNE(); i++)
+      {
+         if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
+         mesh->GetElementVertices (i, vertices);
+         const IntegrationRule &vert_ir =
+            *Geometries.GetVertices(mesh->GetElementBaseGeometry(i));
+         GetRefinedValues (i, vert_ir, values, pointmat);
+         const double xs = 0.05 * GetElementLengthScale(i);
+         for (int j = 0; j < values.Size(); j++)
+         {
+            double xv = pointmat(0, j);
+            double yv = pointmat(1, j);
+            double u = values[j];
+            double xx[3] = {xv, yv, u};
+            DrawNumberedMarker(v_nums_buf, xx, xs, offset(i, vertices[j]));
+         }
+      }
    }
    else
    {
-      PrepareVertexNumbering1(offset);
-   }
-}
-
-void VisualizationSceneSolution::PrepareVertexNumbering1(
-   const v_offset_fn &offset)
-{
-   v_nums_buf.clear();
-
-   DenseMatrix pointmat;
-   Array<int> vertices;
-
-   // Draw the vertices for each element. This is redundant, except when the
-   // elements or domains are shrunk.
-
-   const int ne = mesh->GetNE();
-   for (int e = 0; e < ne; e++)
-   {
-      if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
-
-      mesh->GetPointMatrix(e, pointmat);
-      mesh->GetElementVertices(e, vertices);
-      int nv = vertices.Size();
-
-      double ds = GetElementLengthScale(e);
-      double xs = 0.05*ds;
-
-      for (int j = 0; j < nv; j++)
+      // Draw the vertices for each element. This is redundant,
+      // except when the elements or domains are shrunk.
+      for (int e = 0; e < mesh->GetNE(); e++)
       {
-         double x = pointmat(0,j);
-         double y = pointmat(1,j);
-         double u = LogVal((*sol)(vertices[j]));
-
-         double xx[3] = {x,y,u};
-         DrawNumberedMarker(v_nums_buf, xx, xs, offset(e, vertices[j]));
+         if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
+         mesh->GetPointMatrix(e, pointmat);
+         mesh->GetElementVertices(e, vertices);
+         const int nv = vertices.Size();
+         const double xs = 0.05 * GetElementLengthScale(e);
+         for (int j = 0; j < nv; j++)
+         {
+            double x = pointmat(0,j);
+            double y = pointmat(1,j);
+            double u = LogVal((*sol)(vertices[j]));
+            double xx[3] = {x, y, u};
+            DrawNumberedMarker(v_nums_buf, xx, xs, offset(e, vertices[j]));
+         }
       }
    }
-
-   updated_bufs.emplace_back(&v_nums_buf);
-}
-
-void VisualizationSceneSolution::PrepareVertexNumbering2(
-   const v_offset_fn &offset)
-{
-   DenseMatrix pointmat;
-   Vector values;
-   Array<int> vertices;
-
-   v_nums_buf.clear();
-
-   const int ne = mesh->GetNE();
-   for (int i = 0; i < ne; i++)
-   {
-      if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
-
-      mesh->GetElementVertices (i, vertices);
-
-      const IntegrationRule &vert_ir =
-         *Geometries.GetVertices(mesh->GetElementBaseGeometry(i));
-
-      GetRefinedValues (i, vert_ir, values, pointmat);
-
-      double ds = GetElementLengthScale(i);
-      double xs = 0.05*ds;
-
-      for (int j = 0; j < values.Size(); j++)
-      {
-         double xv = pointmat(0, j);
-         double yv = pointmat(1, j);
-
-         double u = values[j];
-
-         double xx[3] = {xv,yv,u};
-         DrawNumberedMarker(v_nums_buf, xx, xs, offset(i, vertices[j]));
-      }
-   }
-
    updated_bufs.emplace_back(&v_nums_buf);
 }
 
