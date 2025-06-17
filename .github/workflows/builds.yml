@@ -194,11 +194,6 @@ jobs:
         path: glvis
         submodules: recursive
 
-    - name: Checkout specific submodule branches
-      run: |
-        git submodule foreach git checkout dofs_numbering_tests_data
-        git submodule foreach git pull origin dofs_numbering_tests_data
-
     - name: build GLVis (make)
       if: matrix.build-system == 'make'
       run: |
