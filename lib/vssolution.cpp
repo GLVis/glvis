@@ -1824,9 +1824,12 @@ void VisualizationSceneSolution::PrepareElementNumbering()
    {
       if (!offsets) { return e; }
       const int rank = mesh->GetAttribute(e) - 1;
-      assert(rank >= 0 && rank < (int)offsets->size());
+      MFEM_VERIFY(rank >= 0 && rank < (int)offsets->size(),
+                  "Invalid rank for element " + std::to_string(e));
       const int nelems = (*offsets)[rank].nelems;
-      assert(e >= nelems);
+      MFEM_VERIFY(e >= nelems,
+                  "Invalid element " + std::to_string(e) +
+                  " for rank " + std::to_string(rank));
       return e - nelems;
    };
 
@@ -1853,10 +1856,12 @@ void VisualizationSceneSolution::PrepareElementNumbering()
          {
             constexpr double eps = 1e-12;
             const int rank = mesh->GetAttribute(e) - 1;
-            assert(rank >= 0 && rank < (int)offsets->size());
+            MFEM_VERIFY(rank >= 0 && rank < (int)offsets->size(),
+                        "Invalid rank");
             const int l_e = offset(e);
             const auto &xy = (*offsets)[rank].exy_map.at({l_e,rank});
-            assert(fabs(xy.x - xc) < eps && fabs(xy.y - yc) < eps);
+            MFEM_VERIFY(fabs(xy.x - xc) < eps && fabs(xy.y - yc) < eps,
+                        "Element center does not match expected position");
          }
 #endif // GLVIS_DEBUG
       }
@@ -1888,9 +1893,11 @@ void VisualizationSceneSolution::PrepareElementNumbering()
          {
             constexpr double eps = 1e-12;
             const int rank = mesh->GetAttribute(e) - 1;
-            assert(rank >= 0 && rank < (int)offsets->size());
+            MFEM_VERIFY(rank >= 0 && rank < (int)offsets->size(),
+                        "Invalid rank");
             const auto &xy = (*offsets)[rank].exy_map.at({offset(e), rank});
-            assert(fabs(xy.x - xs) < eps && fabs(xy.y - ys) < eps);
+            MFEM_VERIFY(fabs(xy.x - xs) < eps && fabs(xy.y - ys) < eps,
+                        "Element center does not match expected position");
          }
 #endif // GLVIS_DEBUG
          const double dx = 0.05 * GetElementLengthScale(e);
@@ -1907,9 +1914,12 @@ void VisualizationSceneSolution::PrepareVertexNumbering()
    {
       if (!offsets) { return v; }
       const int rank = mesh->GetAttribute(e) - 1;
-      assert(rank >= 0 && rank < (int)offsets->size());
+      MFEM_VERIFY(rank >= 0 && rank < (int)offsets->size(),
+                  "Invalid rank for element " + std::to_string(e));
       const int nverts = (*offsets)[rank].nverts;
-      assert(v >= nverts);
+      MFEM_VERIFY(v >= nverts,
+                  "Invalid vertex " + std::to_string(v) +
+                  " for element " + std::to_string(e));
       return v - nverts;
    };
 
@@ -1978,9 +1988,12 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
       const int edge = edges[i];
       if (!offsets) { return edge; }
       const int rank = mesh->GetAttribute(e) - 1;
-      assert(rank >= 0 && rank < (int)offsets->size());
+      MFEM_VERIFY(rank >= 0 && rank < (int)offsets->size(),
+                  "Invalid rank for element " + std::to_string(e));
       const int nedges = (*offsets)[rank].nedges;
-      assert(edge >= (int)nedges);
+      MFEM_VERIFY(edge >= (int)nedges,
+                  "Invalid edge " + std::to_string(edge) +
+                  " for element " + std::to_string(e));
       return edge - nedges;
    };
 
