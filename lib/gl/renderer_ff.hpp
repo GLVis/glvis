@@ -12,6 +12,10 @@
 #ifndef GLVIS_RENDERER_FF_HPP
 #define GLVIS_RENDERER_FF_HPP
 
+#include <array>
+#include <vector>
+#include <cstddef>
+
 #include "renderer.hpp"
 
 namespace gl3
@@ -23,7 +27,7 @@ class FFGLDevice : public GLDevice
 {
    struct DispListData_
    {
-      DispListHandle list;
+      resource::DispListHandle list;
       GLenum shape;
       size_t count;
       array_layout layout;

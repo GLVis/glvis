@@ -12,9 +12,7 @@
 #ifndef GLVIS_ATTR_TRAITS_HPP
 #define GLVIS_ATTR_TRAITS_HPP
 
-#include "types.hpp"
 #include "renderer_core.hpp"
-#include <type_traits>
 
 namespace gl3
 {
@@ -159,4 +157,4 @@ AttrTexcoord<TV, decltype((void)TV::texCoord, 0)>>
 
 }
 
-#endif
+#endif // GLVIS_ATTR_TRAITS_HPP

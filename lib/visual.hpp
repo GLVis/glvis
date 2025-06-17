@@ -25,4 +25,4 @@
 #include "threads.hpp"
 #include "gl/types.hpp"
 
-#endif
+#endif // GLVIS_VISUAL_HPP
