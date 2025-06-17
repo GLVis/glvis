@@ -31,6 +31,7 @@ set(stream_tests
     "ex27"
     "ex3"
     "ex5"
+    "ex6-dofs-numbering"
     "ex9"
     "klein-bottle"
     "laghos"
