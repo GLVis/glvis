@@ -15,8 +15,6 @@
 #include <cstdio>
 #include <cmath>
 #include <iostream>
-#include <fstream>
-#include <iomanip>
 
 using namespace std;
 

@@ -16,7 +16,6 @@
 #include <vector>
 #include <iostream>
 #include <memory>
-#include "mfem.hpp"
 #include "data_state.hpp"
 
 using StreamCollection = std::vector<std::unique_ptr<std::istream>>;

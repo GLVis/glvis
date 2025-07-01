@@ -9,11 +9,17 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#include "visual.hpp"
-#include "palettes.hpp"
+#include <thread>
 #include <vector>
 
+#include <mfem.hpp>
+
+#include "threads.hpp"
+#include "vsdata.hpp"
+#include "palettes.hpp"
+
 using namespace std;
+using namespace mfem;
 
 extern const char *strings_off_on[]; // defined in vsdata.cpp
 
@@ -931,6 +937,7 @@ void communication_thread::execute()
             if (gf_array.size() > 0)
             {
                tmp.SetGridFunction(new GridFunction(tmp.mesh.get(), gf_array.data(), nproc));
+               if (!keep_attr) { tmp.ComputeDofsOffsets(gf_array); }
             }
             else if (qf_array.size() > 0)
             {
