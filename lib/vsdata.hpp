@@ -77,6 +77,7 @@ protected:
    int scaling, colorbar, drawaxes;
    Shading shading;
    int auto_ref_max, auto_ref_min_surf_vert, auto_ref_max_surf_vert;
+   bool legacy_parallel_numbering = false;
 
    // Formatter for axes & colorbar numbers. Set defaults.
    function<string(double)> axis_formatter = NumberFormatter(4, 'd', false);

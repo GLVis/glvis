@@ -162,6 +162,15 @@ public:
       PrepareNumbering(false);
    }
 
+   void ToggleParallelNumbering()
+   {
+      legacy_parallel_numbering = !legacy_parallel_numbering;
+      std::cout << "Numbering : "
+                << (legacy_parallel_numbering ? "global": "local")
+                << std::endl;
+      PrepareNumbering(true);
+   }
+
    void SetShading(Shading, bool) override;
    void ToggleShading() override;
 

@@ -13,7 +13,8 @@ Version 4.5 (development)
 =========================
 
 - Implemented DOF numbering, pressing the `n` or `N` key in 2D mode cycles through:
-  None → Elements → Edges → Vertices → DOFs.
+  None → Elements → Edges → Vertices → DOFs. Parallel numbering is now by default
+  'local' to each rank; 'global' vs. 'local' numbering can be toggled with 'Alt+n'.
 
 Version 4.4 released on May 1, 2025
 ===================================

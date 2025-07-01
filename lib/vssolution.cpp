@@ -77,6 +77,7 @@ std::string VisualizationSceneSolution::GetHelpString() const
       << "| \\ -  Set light source position     |" << endl
       << "| Alt+a  - Axes number format        |" << endl
       << "| Alt+c  - Colorbar number format    |" << endl
+      << "| Alt+n  - Numberings method         |" << endl
       << "| Ctrl+o - Element ordering curve    |" << endl
       << "| Ctrl+p - Print to a PDF file       |" << endl
       << "+------------------------------------+" << endl
@@ -270,9 +271,20 @@ static void KeyMPressed()
    SendExposeEvent();
 }
 
-static void KeyNPressed()
+static void KeyNPressed(GLenum state)
 {
-   vssol -> ToggleDrawNumberings();
+   if (state & KMOD_ALT)
+   {
+      vssol->ToggleParallelNumbering();
+   }
+   else if (state & (KMOD_CTRL | KMOD_GUI))
+   {
+      /* No-op */
+   }
+   else
+   {
+      vssol->ToggleDrawNumberings();
+   }
    SendExposeEvent();
 }
 
@@ -1823,6 +1835,12 @@ void VisualizationSceneSolution::PrepareElementNumbering()
    auto offset = [&](const int e)
    {
       if (!offsets) { return e; }
+      if (legacy_parallel_numbering)
+      {
+         // std::cout << "\x1b[31m[legacy_parallel_numbering]\x1b[m";
+         return e;
+      }
+      // std::cout << "\x1b[32m[legacy_parallel_numbering]\x1b[m";
       const int rank = mesh->GetAttribute(e) - 1;
       MFEM_VERIFY(rank >= 0 && rank < (int)offsets->size(),
                   "Invalid rank for element " + std::to_string(e));
@@ -1913,6 +1931,12 @@ void VisualizationSceneSolution::PrepareVertexNumbering()
    auto offset = [&](const int e, const int v)
    {
       if (!offsets) { return v; }
+      if (legacy_parallel_numbering)
+      {
+         // std::cout << "\x1b[31m[legacy_parallel_numbering]\x1b[m";
+         return v;
+      }
+      // std::cout << "\x1b[32m[legacy_parallel_numbering]\x1b[m";
       const int rank = mesh->GetAttribute(e) - 1;
       MFEM_VERIFY(rank >= 0 && rank < (int)offsets->size(),
                   "Invalid rank for element " + std::to_string(e));
@@ -1987,6 +2011,12 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
    {
       const int edge = edges[i];
       if (!offsets) { return edge; }
+      if (legacy_parallel_numbering)
+      {
+         // std::cout << "\x1b[31m[legacy_parallel_numbering]\x1b[m";
+         return edge;
+      }
+      // std::cout << "\x1b[32m[legacy_parallel_numbering]\x1b[m";
       const int rank = mesh->GetAttribute(e) - 1;
       MFEM_VERIFY(rank >= 0 && rank < (int)offsets->size(),
                   "Invalid rank for element " + std::to_string(e));
@@ -2066,6 +2096,12 @@ void VisualizationSceneSolution::PrepareDofNumbering()
    auto offset = [&](const int e, const int q)
    {
       if (!offsets) { return dofs[q]; }
+      if (legacy_parallel_numbering)
+      {
+         // std::cout << "\x1b[31m[legacy_parallel_numbering]\x1b[m";
+         return dofs[q];
+      }
+      // std::cout << "\x1b[32m[legacy_parallel_numbering]\x1b[m";
       const int rank = mesh->GetAttribute(e) - 1;
       return (*offsets)[rank][ {e,q}];
    };
