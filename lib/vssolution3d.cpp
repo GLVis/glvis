@@ -21,7 +21,7 @@ using namespace mfem;
 using namespace std;
 
 
-thread_local VisualizationSceneSolution3d *vssol3d;
+static thread_local VisualizationSceneSolution3d *vssol3d;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 // Reference geometries with a cut in the middle, based on subdivision of
@@ -687,18 +687,24 @@ static void KeyF10Pressed()
    SendExposeEvent();
 }
 
-VisualizationSceneSolution3d::VisualizationSceneSolution3d()
-{}
-
-VisualizationSceneSolution3d::VisualizationSceneSolution3d(Mesh &m, Vector &s,
-                                                           Mesh *mc)
+VisualizationSceneSolution3d::VisualizationSceneSolution3d(Window &win_,
+                                                           bool init)
+   : VisualizationSceneScalarData(win_, false)
 {
-   mesh = &m;
-   mesh_coarse = mc;
-   sol = &s;
-   GridF = NULL;
+   if (win.data_state.grid_f)
+   {
+      GridF = win.data_state.grid_f.get();
+      sol = new Vector(mesh->GetNV());
+   }
 
-   Init();
+   if (init)
+   {
+      if (GridF)
+      {
+         GridF->GetNodalValues(*sol);
+      }
+      Init();
+   }
 }
 
 
@@ -818,7 +824,24 @@ void VisualizationSceneSolution3d::Init()
 
 VisualizationSceneSolution3d::~VisualizationSceneSolution3d()
 {
+   if (GridF)
+   {
+      delete sol;
+   }
    delete [] node_pos;
+}
+
+void VisualizationSceneSolution3d::NewMeshAndSolution(const DataState &s)
+{
+   if (GridF && s.grid_f)
+   {
+      s.grid_f->GetNodalValues(*sol);
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), sol, s.grid_f.get());
+   }
+   else
+   {
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), s.sol.get());
+   }
 }
 
 void VisualizationSceneSolution3d::NewMeshAndSolution(
