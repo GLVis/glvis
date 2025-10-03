@@ -11,7 +11,7 @@
 
 #include <iostream>
 #include <sstream>
-#include <fstream>
+// #include <fstream>
 #include <cmath>
 #include <chrono>
 #include <regex>
@@ -24,6 +24,15 @@
 #include "palettes.hpp"
 #include "visual.hpp"
 #include "gl2ps.h"
+
+#if defined(__has_include) && __has_include("../nvtx.hpp") && !defined(_WIN32)
+#undef NVTX_COLOR
+#define NVTX_COLOR ::nvtx::kCyan
+#include "../nvtx.hpp"
+#else
+#define dbg(...)
+#endif
+
 
 #if defined(GLVIS_USE_LIBTIFF)
 #include "tiffio.h"
@@ -59,7 +68,8 @@ static bool wndUseHiDPI = true;
 
 MainThread& GetMainThread(bool headless)
 {
-#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
+   dbg();
+#if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
    if (headless)
    {
       return EglMainThread::Get();
@@ -115,6 +125,7 @@ void MyExpose();
 GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
                             bool headless)
 {
+   dbg();
 #ifdef GLVIS_DEBUG
    if (!headless)
    {
@@ -122,7 +133,13 @@ GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
    }
    else
    {
+#if defined(GLVIS_USE_EGL)
       cout << "OpenGL+EGL Visualization" << endl;
+#elif defined(GLVIS_USE_CGL)
+      cout << "OpenGL+CGL Visualization" << endl;
+#else
+      cout << "Headless rendering requires EGL or CGL!" << endl;
+#endif
    }
 #endif
 
@@ -145,10 +162,11 @@ GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
    }
    else
    {
-#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
+#if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
       sdl_wnd = nullptr;
       if (!wnd)
       {
+         dbg("new EGL window");
          wnd = new EglWindow();
          if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
          {
@@ -1029,7 +1047,7 @@ int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi, bool with_alpha,
    }
 
    png_uint_32 ppi = is_hidpi ? 144 : 72; // pixels/inch
-   png_uint_32 ppm = ppi/0.0254 + 0.5;    // pixels/meter
+   auto ppm = static_cast<png_uint_32>(ppi/0.0254 + 0.5);    // pixels/meter
    png_set_pHYs(png_ptr, info_ptr, ppm, ppm, PNG_RESOLUTION_METER);
 
    png_init_io(png_ptr, fp);

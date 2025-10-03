@@ -9,13 +9,13 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
+#if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
+
 #include "egl.hpp"
 #include "egl_main.hpp"
 #include "../aux_vis.hpp"
 #include <iostream>
 #include <vector>
-#include <future>
 
 #ifdef GLVIS_DEBUG
 #define PRINT_DEBUG(s) std::cerr << s
@@ -193,7 +193,7 @@ void EglWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
 
 void EglWindow::signalQuit()
 {
-   queueEvents({{EventType::Quit}});
+   queueEvents({{EventType::Quit, {}}});
 }
 
 void EglWindow::screenshot(string filename, bool convert)

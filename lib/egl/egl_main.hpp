@@ -11,10 +11,13 @@
 
 #ifndef GLVIS_EGL_MAIN_HPP
 #define GLVIS_EGL_MAIN_HPP
+
 #if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
 
-#include "egl.hpp"
+#include <list>
 #include <future>
+
+#include "egl.hpp"
 
 class EglMainThread : public MainThread
 {

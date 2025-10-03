@@ -12,11 +12,12 @@
 #ifndef GLVIS_GLWINDOW_HPP
 #define GLVIS_GLWINDOW_HPP
 
-#include "gl/renderer.hpp"
 #include <memory>
 #include <map>
 #include <functional>
 #include <string>
+
+#include "gl/renderer.hpp"
 
 class MainThread
 {

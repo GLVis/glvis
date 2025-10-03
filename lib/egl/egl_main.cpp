@@ -9,7 +9,7 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
+#if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
 #include "egl_main.hpp"
 #include "../aux_vis.hpp"
 #include <iostream>
@@ -451,6 +451,7 @@ EglMainThread::Handle EglMainThread::CreateWindow(EglWindow *caller, int w,
       return out_hnd;
    }
 
+   assert(out_hnd.buf_frame != 0);
    glGenFramebuffers(1, &out_hnd.buf_frame);
    glGenRenderbuffers(1, &out_hnd.buf_color);
    glGenRenderbuffers(1, &out_hnd.buf_depth);

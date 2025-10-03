@@ -11,7 +11,8 @@
 
 #ifndef GLVIS_EGL_HPP
 #define GLVIS_EGL_HPP
-#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
+
+#if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
 
 #include "../glwindow.hpp"
 
@@ -29,7 +30,6 @@
 #include <condition_variable>
 #include <mutex>
 #include <deque>
-#include <list>
 
 class EglWindow : public GLWindow
 {

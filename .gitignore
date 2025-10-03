@@ -26,3 +26,6 @@ compile_commands.json
 # OS-specific: Mac
 *.dSYM
 .DS_Store
+
+user.cmake
+nvtx.hpp
