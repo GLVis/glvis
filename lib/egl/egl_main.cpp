@@ -482,7 +482,7 @@ void EglMainThread::ResizeWindow(Handle &handle, int w, int h)
    if (glGetError() != GL_NO_ERROR ||
        glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
    {
-      PRINT_DEBUG("Cannot resize the framebuffer!");
+      std::cerr << "Cannot resize the framebuffer!" << std::endl;
    }
 #endif
 }
