@@ -19,8 +19,8 @@
 #include "mfem.hpp"
 #include "sdl/sdl.hpp"
 #include "sdl/sdl_main.hpp"
-#include "cgl/cgl.hpp"
-#include "cgl/cgl_main.hpp"
+// #include "cgl/cgl.hpp"
+// #include "cgl/cgl_main.hpp"
 #include "egl/egl.hpp"
 #include "egl/egl_main.hpp"
 #include "palettes.hpp"
@@ -65,11 +65,11 @@ static bool wndUseHiDPI = true;
 MainThread& GetMainThread(bool headless)
 {
    dbg();
-#if defined(GLVIS_USE_EGL)
-   if (headless) { return EglMainThread::Get(); }
-#endif
-#if defined(GLVIS_USE_CGL)
-   if (headless) { return CGLMainThread::Get(); }
+#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
+   if (headless)
+   {
+      return EglMainThread::Get();
+   }
 #endif
    return GetSdlMainThread();
 }
@@ -154,11 +154,11 @@ GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
    }
    else
    {
-#if defined(GLVIS_USE_EGL)
+#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
       sdl_wnd = nullptr;
       if (!wnd)
       {
-         dbg("new EGL window");
+         dbg("new XGL window");
          wnd = new EglWindow();
          if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
          {
@@ -171,24 +171,24 @@ GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
       {
          wnd->clearEvents();
       }
-#elif defined(GLVIS_USE_CGL)
-      sdl_wnd = nullptr;
-      if (!wnd)
-      {
-         dbg("new CGL window");
-         wnd = new CGLWindow();
-         if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
-         {
-            dbg("❌ Failed to create CGL window");
-            delete wnd;
-            wnd = nullptr;
-            return NULL;
-         }
-      }
-      else
-      {
-         wnd->clearEvents();
-      }
+      // #elif defined(GLVIS_USE_CGL)
+      //       sdl_wnd = nullptr;
+      //       if (!wnd)
+      //       {
+      //          dbg("new CGL window");
+      //          wnd = new CGLWindow();
+      //          if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
+      //          {
+      //             dbg("❌ Failed to create CGL window");
+      //             delete wnd;
+      //             wnd = nullptr;
+      //             return NULL;
+      //          }
+      //       }
+      //       else
+      //       {
+      //          wnd->clearEvents();
+      //       }
 #else // GLVIS_USE_EGL || GLVIS_USE_CGL
       cerr << "EGL or CGL are required for headless rendering!" << endl;
       return NULL;

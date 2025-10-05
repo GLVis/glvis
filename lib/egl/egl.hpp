@@ -12,13 +12,20 @@
 #ifndef GLVIS_EGL_HPP
 #define GLVIS_EGL_HPP
 
-#ifdef GLVIS_USE_EGL
+#if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
 
 #include "../glwindow.hpp"
 
+#ifdef GLVIS_USE_EGL
 #include <EGL/egl.h>
+#endif
+
+#ifdef GLVIS_USE_CGL
+#include <OpenGL/OpenGL.h>
+#endif
 
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 #include <deque>
 
@@ -27,22 +34,37 @@ class EglWindow : public GLWindow
 public:
    struct Handle
    {
+#ifdef GLVIS_USE_EGL
       EGLSurface surf {EGL_NO_SURFACE};
       EGLContext ctx{EGL_NO_CONTEXT};
       EGLConfig eglCfg{};
+#endif
+#ifdef GLVIS_USE_CGL
+      GLuint buf_frame, buf_color, buf_depth;
+      CGLPixelFormatObj pix;
+
+      using CGLContextDeleter = void(*)(CGLContextObj);
+      std::unique_ptr<_CGLContextObject, CGLContextDeleter> ctx
+      {nullptr, [](CGLContextObj ctx) { CGLDestroyContext(ctx); }};
+#endif
 
       bool isInitialized()
       {
+#ifdef GLVIS_USE_EGL
          return surf != EGL_NO_SURFACE && ctx != EGL_NO_CONTEXT;
+#endif
+#ifdef GLVIS_USE_CGL
+         return ctx != nullptr;
+#endif
       }
    };
 
 private:
    Handle handle;
 
-   bool running { false };
-   bool is_multithreaded { true };
-   bool call_idle_func { false };
+   bool running {false};
+   bool is_multithreaded {true};
+   bool call_idle_func {false};
 
    enum class EventType
    {
@@ -82,8 +104,12 @@ public:
    EglWindow();
    ~EglWindow();
 
-   /** @brief Creates a new OpenGL window.
-      Returns false if EGL or OpenGL initialization fails. */
+#if defined(GLVIS_USE_CGL)
+   bool initGLEW(bool legacyGlOnly);
+#endif
+
+   /** @brief Creates a new OpenGL window. Returns false if EGL or OpenGL
+       initialization fails. */
    bool createWindow(const char *title, int x, int y, int w, int h,
                      bool legacyGlOnly) override;
 
@@ -102,8 +128,13 @@ public:
 
    void setWindowSize(int w, int h) override;
 
+#if defined(GLVIS_USE_EGL)
    bool isWindowInitialized() const override { return handle.surf != EGL_NO_SURFACE; }
    bool isGlInitialized() const override { return handle.ctx != EGL_NO_CONTEXT; }
+#elif defined(GLVIS_USE_CGL)
+   bool isWindowInitialized() const override { return isGlInitialized(); }
+   bool isGlInitialized() const override { return handle.ctx != nullptr; }
+#endif
 
    void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE) override;
    void signalQuit() override;
@@ -117,5 +148,5 @@ public:
    void screenshot(std::string filename, bool convert = false) override;
 };
 
-#endif // GLVIS_USE_EGL
+#endif // GLVIS_USE_EGL || GLVIS_USE_CGL
 #endif // GLVIS_EGL_HPP

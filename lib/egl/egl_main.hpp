@@ -12,7 +12,7 @@
 #ifndef GLVIS_EGL_MAIN_HPP
 #define GLVIS_EGL_MAIN_HPP
 
-#ifdef GLVIS_USE_EGL
+#if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
 
 #include <list>
 #include <future>
@@ -22,11 +22,13 @@
 class EglMainThread : public MainThread
 {
    using Handle = EglWindow::Handle;
+#ifdef GLVIS_USE_EGL
    EGLDisplay disp {EGL_NO_DISPLAY};
+#endif
    bool server_mode {false};
 
    std::list<EglWindow*> windows;
-   int num_windows{-1};
+   int num_windows {-1};
 
    struct CreateWndCmd;
    struct ResizeWndCmd;

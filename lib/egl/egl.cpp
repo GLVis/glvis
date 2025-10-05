@@ -9,19 +9,23 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifdef GLVIS_USE_EGL
+#if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
 
 #include "egl.hpp"
 #include "egl_main.hpp"
 #include "../aux_vis.hpp"
 #include <iostream>
 #include <vector>
+// #include <future>
 
 #ifdef GLVIS_DEBUG
 #define PRINT_DEBUG(s) std::cerr << s
 #else
 #define PRINT_DEBUG(s) {}
 #endif
+
+#define NVTX_COLOR ::nvtx::kMagenta
+#include "../../nvtx.hpp" // IWYU pragma: keep
 
 using namespace std;
 
@@ -34,14 +38,29 @@ EglWindow::~EglWindow()
    EglMainThread::Get().DeleteWindow(this, handle);
 }
 
+#ifdef GLVIS_USE_CGL
+bool EglWindow::initGLEW(bool legacyGlOnly)
+{
+   return GLWindow::initGLEW(legacyGlOnly);
+}
+#endif
+
+
 bool EglWindow::createWindow(const char *, int, int, int w, int h,
                              bool legacyGlOnly)
 {
    handle = EglMainThread::Get().CreateWindow(this, w, h, legacyGlOnly);
+   assert(glGetError() == GL_NO_ERROR);
+
    if (!handle.isInitialized())
    {
+      dbg("❌ Cannot create GL window");
       return false;
    }
+
+#ifdef GLVIS_USE_CGL
+   return true;
+#endif
 
 #ifndef __EMSCRIPTEN__
    glEnable(GL_DEBUG_OUTPUT);
@@ -156,6 +175,7 @@ void EglWindow::signalLoop()
 
 void EglWindow::getGLDrawSize(int& w, int& h) const
 {
+#ifdef GLVIS_USE_EGL
    EGLint egl_w, egl_h;
 
    EGLDisplay disp = EglMainThread::Get().GetDisplay();
@@ -163,6 +183,55 @@ void EglWindow::getGLDrawSize(int& w, int& h) const
    eglQuerySurface(disp, handle.surf, EGL_HEIGHT, &egl_h);
    w = egl_w;
    h = egl_h;
+#endif
+#ifdef GLVIS_USE_CGL
+
+   const auto err = glGetError();
+   dbg("glGetError: {:x}", err);
+   std::cout << "glGetError:" << err << std::endl;
+
+   assert(glGetError() == GL_NO_ERROR);
+   GLint cgl_w, cgl_h;
+   static_assert(sizeof(GLint) == sizeof(int),
+                 "CGL width size must be 4 bytes");
+   // CGLGetRenderbufferParameter(handle, cgl_w, cgl_h);
+   {
+      // dbg("glGetError:{}", glGetError());
+      assert(glGetError() == GL_NO_ERROR);
+      // assert(handle.isInitialized());
+
+      // Optional: Ensure context is current if not guaranteed elsewhere
+      CGLError ctx_err = CGLSetCurrentContext(handle.ctx.get());
+      if (ctx_err != kCGLNoError) { dbg("❌ Cannot set CGL context as current");}
+      // Bind the color renderbuffer (assuming that's what we want to query)
+      glBindRenderbuffer(GL_RENDERBUFFER, handle.buf_color);
+      if (glGetError() != GL_NO_ERROR)
+      {
+         dbg("❌ Failed to bind renderbuffer");
+         // return EXIT_FAILURE;
+      }
+      // Query width and height
+      glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &cgl_w);
+      glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &cgl_h);
+      // Check for query errors
+      GLenum gl_err = glGetError();
+      if (gl_err != GL_NO_ERROR)
+      {
+         dbg("❌ GL error during parameter query: {}", gl_err);
+         // Unbind to clean up
+         glBindRenderbuffer(GL_RENDERBUFFER, 0);
+         return ;
+      }
+      dbg("Renderbuffer parameters - width: {}, height: {}", cgl_w, cgl_h);
+      // Unbind to restore state
+      glBindRenderbuffer(GL_RENDERBUFFER, 0);
+      assert(glGetError() == GL_NO_ERROR);
+   }
+
+   dbg("CGL draw size: {}x{}", (int) cgl_w, (int)cgl_h);
+   w = cgl_w;
+   h = cgl_h;
+#endif
 }
 
 bool EglWindow::isHighDpi() const

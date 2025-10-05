@@ -266,7 +266,6 @@ Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
 # generated with 'echo lib/egl/*.c* lib/gl/*.c* lib/sdl/*.c* lib/*.c*', does not include lib/*.m (Obj-C)
 ALL_SOURCE_FILES = \
- lib/cgl/cgl.cpp lib/cgl/cgl_main.cpp 									\
  lib/egl/egl.cpp lib/egl/egl_main.cpp lib/gl/renderer_core.cpp          \
  lib/gl/renderer.cpp lib/gl/renderer_ff.cpp lib/gl/shader.cpp           \
  lib/gl/types.cpp lib/sdl/sdl.cpp lib/sdl/sdl_helper.cpp                \
