@@ -429,7 +429,8 @@ EglMainThread::Handle EglMainThread::CreateWindow(EglWindow *caller, int w,
    if (err != kCGLNoError) { return out_hnd; }
    // initialize GLEW before using any OpenGL functions
    const auto status = caller->initGLEW(legacy_gl);
-   assert(status && glGetError() == GL_NO_ERROR);
+   MFEM_VERIFY(status, "GLEW initialization failed!");
+   assert(glGetError() == GL_NO_ERROR);
    const auto *renderer = glGetString(GL_RENDERER);
    if (strstr((const char*)renderer, "Software") != nullptr)
    {
