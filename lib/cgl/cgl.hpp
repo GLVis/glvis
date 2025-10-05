@@ -8,38 +8,34 @@
 // GLVis is free software; you can redistribute it and/or modify it under the
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
+#pragma once
 
-#ifndef GLVIS_EGL_HPP
-#define GLVIS_EGL_HPP
+#ifdef GLVIS_USE_CGL
 
-#ifdef GLVIS_USE_EGL
+#include <memory>
+
+#include "../gl/platform_gl.hpp"
+#include <OpenGL/OpenGL.h>
 
 #include "../glwindow.hpp"
 
-#include <EGL/egl.h>
-
-#include <condition_variable>
-#include <mutex>
-#include <deque>
-
-class EglWindow : public GLWindow
+class CGLWindow : public GLWindow
 {
 public:
-   struct Handle
+   struct CGLHandle
    {
-      EGLSurface surf {EGL_NO_SURFACE};
-      EGLContext ctx{EGL_NO_CONTEXT};
-      EGLConfig eglCfg{};
+      GLuint buf_frame, buf_color, buf_depth;
+      CGLPixelFormatObj pix;
 
-      bool isInitialized()
-      {
-         return surf != EGL_NO_SURFACE && ctx != EGL_NO_CONTEXT;
-      }
+      using CGLContextDeleter = void(*)(CGLContextObj);
+      std::unique_ptr<_CGLContextObject, CGLContextDeleter> ctx
+      {nullptr, [](CGLContextObj ctx) { CGLDestroyContext(ctx); }};
+
+      bool isInitialized() const { return ctx != nullptr; }
    };
 
 private:
-   Handle handle;
-
+   CGLHandle handle;
    bool running { false };
    bool is_multithreaded { true };
    bool call_idle_func { false };
@@ -79,11 +75,12 @@ private:
    void queueEvents(std::vector<Event> events);
 
 public:
-   EglWindow();
-   ~EglWindow();
+   CGLWindow();
+   ~CGLWindow();
 
-   /** @brief Creates a new OpenGL window.
-      Returns false if EGL or OpenGL initialization fails. */
+   bool initGLEW(bool legacyGlOnly);
+
+   /// Creates a new OpenGL window. Returns false if initialization fails
    bool createWindow(const char *title, int x, int y, int w, int h,
                      bool legacyGlOnly) override;
 
@@ -102,8 +99,8 @@ public:
 
    void setWindowSize(int w, int h) override;
 
-   bool isWindowInitialized() const override { return handle.surf != EGL_NO_SURFACE; }
-   bool isGlInitialized() const override { return handle.ctx != EGL_NO_CONTEXT; }
+   bool isWindowInitialized() const override { return isGlInitialized(); }
+   bool isGlInitialized() const override { return handle.ctx != nullptr; }
 
    void signalKeyDown(SDL_Keycode k, SDL_Keymod m = KMOD_NONE) override;
    void signalQuit() override;
@@ -117,5 +114,4 @@ public:
    void screenshot(std::string filename, bool convert = false) override;
 };
 
-#endif // GLVIS_USE_EGL
-#endif // GLVIS_EGL_HPP
+#endif // GLVIS_USE_CGL

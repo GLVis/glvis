@@ -9,7 +9,7 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
+#ifdef GLVIS_USE_EGL
 #include "egl_main.hpp"
 #include "../aux_vis.hpp"
 #include <iostream>
@@ -47,7 +47,6 @@ bool EglMainThread::CreateWndImpl(CreateWndCmd &cmd)
 {
    Handle new_handle;
 
-#ifdef GLVIS_USE_EGL
    // 1. Select an appropriate configuration
 
    const int multisamples = GetMultisample();
@@ -105,61 +104,6 @@ bool EglMainThread::CreateWndImpl(CreateWndCmd &cmd)
                 std::endl;
       return false;
    }
-#endif
-#ifdef GLVIS_USE_CGL
-   const int multisamples = GetMultisample();
-
-   vector<CGLPixelFormatAttribute> pixAttribs =
-   {
-      kCGLPFASampleBuffers, CGLPixelFormatAttribute((multisamples > 0)?(1):(0)), // must be first
-      kCGLPFASamples,       CGLPixelFormatAttribute(multisamples),
-      kCGLPFAColorSize,     CGLPixelFormatAttribute(24),
-      kCGLPFAAlphaSize,     CGLPixelFormatAttribute(8),
-      kCGLPFADepthSize,     CGLPixelFormatAttribute(24),
-      kCGLPFAAccelerated, // must be last
-      CGLPixelFormatAttribute(0)
-   };
-
-   if (cmd.legacy_gl)
-   {
-      // insert legacy OpenGL compatibility requirement
-      auto it = (pixAttribs.end() -= 2);
-      pixAttribs.insert(it, {kCGLPFAOpenGLProfile, CGLPixelFormatAttribute(kCGLOGLPVersion_Legacy)});
-   }
-
-   GLint numConfigs;
-   CGLError err = CGLChoosePixelFormat(pixAttribs.data(), &new_handle.pixFmt,
-                                       &numConfigs);
-   if (multisamples > 0 && (err != kCGLNoError || numConfigs < 1))
-   {
-      std::cerr << "CGL with multisampling is not supported, turning it off" <<
-                std::endl;
-      pixAttribs[1] = CGLPixelFormatAttribute(0);
-      err = CGLChoosePixelFormat(pixAttribs.data(), &new_handle.pixFmt, &numConfigs);
-   }
-   if (err != kCGLNoError || numConfigs < 1)
-   {
-      std::cerr << "CGL with hardware acceleration not supported, turning it off" <<
-                std::endl;
-      pixAttribs.pop_back();
-      pixAttribs.back() = CGLPixelFormatAttribute(0);
-      err = CGLChoosePixelFormat(pixAttribs.data(), &new_handle.pixFmt, &numConfigs);
-   }
-   if (err != kCGLNoError || numConfigs < 1)
-   {
-      std::cerr << "Cannot set up CGL pixel format configuration, error: "
-                << CGLErrorString(err) << std::endl;
-      return false;
-   }
-
-   err = CGLCreateContext(new_handle.pixFmt, NULL, &new_handle.ctx);
-   if (err != kCGLNoError)
-   {
-      std::cerr << "Cannot create an OpenGL context, error: "
-                << CGLErrorString(err) << std::endl;
-      return false;
-   }
-#endif
 
    windows.push_back(cmd.wnd);
    if (num_windows < 0)
@@ -177,7 +121,6 @@ bool EglMainThread::CreateWndImpl(CreateWndCmd &cmd)
 
 bool EglMainThread::ResizeWndImpl(ResizeWndCmd &cmd)
 {
-#ifdef GLVIS_USE_EGL
    const EGLint pbufferAttribs[] =
    {
       EGL_WIDTH, cmd.w,
@@ -201,13 +144,11 @@ bool EglMainThread::ResizeWndImpl(ResizeWndCmd &cmd)
    }
 
    cmd.handle->surf = surf_new;
-#endif
    return true;
 }
 
 bool EglMainThread::DeleteWndImpl(DeleteWndCmd &cmd)
 {
-#ifdef GLVIS_USE_EGL
    if (cmd.handle->ctx != EGL_NO_CONTEXT)
    {
       if (!eglDestroyContext(disp, cmd.handle->ctx))
@@ -227,39 +168,6 @@ bool EglMainThread::DeleteWndImpl(DeleteWndCmd &cmd)
       }
       cmd.handle->surf = EGL_NO_SURFACE;
    }
-#endif
-#ifdef GLVIS_USE_CGL
-   if (cmd.handle->isInitialized())
-   {
-      glDeleteFramebuffers(1, &cmd.handle->buf_frame);
-      glDeleteRenderbuffers(1, &cmd.handle->buf_color);
-      glDeleteRenderbuffers(1, &cmd.handle->buf_depth);
-   }
-
-   if (cmd.handle->ctx)
-   {
-      CGLError err = CGLDestroyContext(cmd.handle->ctx);
-      if (err != kCGLNoError)
-      {
-         std::cerr << "Cannot destroy context, error: "
-                   << CGLErrorString(err) << std::endl;
-         return false;
-      }
-      cmd.handle->ctx = nullptr;
-   }
-
-   if (cmd.handle->pixFmt)
-   {
-      CGLError err = CGLDestroyPixelFormat(cmd.handle->pixFmt);
-      if (err != kCGLNoError)
-      {
-         std::cerr << "Cannot destroy pixel format, error: "
-                   << CGLErrorString(err) << std::endl;
-         return false;
-      }
-      cmd.handle->pixFmt = nullptr;
-   }
-#endif
    windows.remove(cmd.wnd);
    num_windows--;
 
@@ -291,7 +199,6 @@ void EglMainThread::InterruptHandler(int param)
 
 EglMainThread::EglMainThread()
 {
-#ifdef GLVIS_USE_EGL
    if (disp != EGL_NO_DISPLAY)
    {
       return;
@@ -315,20 +222,11 @@ EglMainThread::EglMainThread()
    }
 
    std::cout << "Using EGL " << major << "." << minor << std::endl;
-#endif
-#ifdef GLVIS_USE_CGL
-   GLint major, minor;
-   CGLGetVersion(&major, &minor);
-
-   std::cout << "Using CGL " << major << "." << minor << std::endl;
-#endif
 }
 
 EglMainThread::~EglMainThread()
 {
-#ifdef GLVIS_USE_EGL
    eglTerminate(disp);
-#endif
 }
 
 EglMainThread &EglMainThread::Get()
@@ -357,7 +255,6 @@ EglMainThread::Handle EglMainThread::CreateWindow(EglWindow *caller, int w,
 
    Handle out_hnd = res_handle.get();
 
-#ifdef GLVIS_USE_EGL
    if (out_hnd.surf == EGL_NO_SURFACE)
    {
       return out_hnd;
@@ -435,29 +332,6 @@ EglMainThread::Handle EglMainThread::CreateWindow(EglWindow *caller, int w,
 
       return out_hnd;
    }
-#endif //GLVIS_USE_EGL
-#ifdef GLVIS_USE_CGL
-   if (!out_hnd.isInitialized())
-   {
-      return out_hnd;
-   }
-
-   CGLError err = CGLSetCurrentContext(out_hnd.ctx);
-   if (err != kCGLNoError)
-   {
-      std::cerr << "Cannot set the CGL context as current, error: "
-                << CGLErrorString(err) << std::endl;
-
-      return out_hnd;
-   }
-
-   assert(out_hnd.buf_frame != 0);
-   glGenFramebuffers(1, &out_hnd.buf_frame);
-   glGenRenderbuffers(1, &out_hnd.buf_color);
-   glGenRenderbuffers(1, &out_hnd.buf_depth);
-
-   ResizeWindow(out_hnd, cmd.create_cmd->w, cmd.create_cmd->h);
-#endif //GLVIS_USE_CGL
 
    return out_hnd;
 }
@@ -466,7 +340,6 @@ void EglMainThread::ResizeWindow(Handle &handle, int w, int h)
 {
    if (!handle.isInitialized()) { return; }
 
-#ifdef GLVIS_USE_EGL
    CtrlCmd cmd;
    cmd.type = CtrlCmdType::Resize;
 
@@ -485,26 +358,6 @@ void EglMainThread::ResizeWindow(Handle &handle, int w, int h)
                 << std::endl;
       return;
    }
-#endif
-#ifdef GLVIS_USE_CGL
-   glBindRenderbuffer(GL_RENDERBUFFER, handle.buf_color);
-   glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, w, h);
-
-   glBindRenderbuffer(GL_RENDERBUFFER, handle.buf_depth);
-   glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
-
-   glBindFramebuffer(GL_FRAMEBUFFER, handle.buf_frame);
-   glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                             GL_RENDERBUFFER, handle.buf_color);
-   glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                             GL_RENDERBUFFER, handle.buf_depth);
-
-   if (glGetError() != GL_NO_ERROR ||
-       glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-   {
-      std::cerr << "Cannot resize the framebuffer!" << std::endl;
-   }
-#endif
 }
 
 void EglMainThread::DeleteWindow(EglWindow *caller, Handle &handle)
@@ -630,4 +483,4 @@ void EglMainThread::MainLoop(bool server)
    }
 }
 
-#endif //GLVIS_USE_EGL || GLVIS_USE_CGL
+#endif // GLVIS_USE_EGL

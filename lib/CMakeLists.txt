@@ -10,6 +10,8 @@
 # CONTRIBUTING.md for details.
 
 list(APPEND SOURCES
+  cgl/cgl.cpp
+  cgl/cgl_main.cpp
   egl/egl.cpp
   egl/egl_main.cpp
   gl/renderer.cpp
@@ -40,6 +42,8 @@ list(APPEND SOURCES
   window.cpp)
 
 list(APPEND HEADERS
+  cgl/cgl.hpp
+  cgl/cgl_main.hpp
   egl/egl.hpp
   egl/egl_main.hpp
   gl/attr_traits.hpp

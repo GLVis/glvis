@@ -9,51 +9,60 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#ifdef GLVIS_USE_EGL
+#ifdef GLVIS_USE_CGL
 
-#include "egl.hpp"
-#include "egl_main.hpp"
-#include "../aux_vis.hpp"
 #include <iostream>
 #include <vector>
 
-#ifdef GLVIS_DEBUG
-#define PRINT_DEBUG(s) std::cerr << s
-#else
-#define PRINT_DEBUG(s) {}
-#endif
+#include "cgl.hpp"
+#include "cgl_main.hpp"
+
+#include "../aux_vis.hpp"
+
+#define NVTX_COLOR ::nvtx::kMagenta
+#include "../../nvtx.hpp" // IWYU pragma: keep
 
 using namespace std;
 
-EglWindow::EglWindow()
+CGLWindow::CGLWindow()
 {
+   dbg("Could create window");
 }
 
-EglWindow::~EglWindow()
+CGLWindow::~CGLWindow()
 {
-   EglMainThread::Get().DeleteWindow(this, handle);
+   dbg();
+   CGLMainThread::Get().DeleteWindow(this, handle);
+}
+// return initGLEW(legacyGlOnly);
+
+bool CGLWindow::initGLEW(bool legacyGlOnly)
+{
+   return GLWindow::initGLEW(legacyGlOnly);
 }
 
-bool EglWindow::createWindow(const char *, int, int, int w, int h,
+bool CGLWindow::createWindow(const char *title, int x, int y, int w, int h,
                              bool legacyGlOnly)
 {
-   handle = EglMainThread::Get().CreateWindow(this, w, h, legacyGlOnly);
+   dbg("title: '{}' x:{} y:{} {}x{} legacyGlOnly:{}",
+       title, x, y, w, h, legacyGlOnly);
+   handle = CGLMainThread::Get().CreateWindow(this, w, h, legacyGlOnly);
+   assert(glGetError() == GL_NO_ERROR);
+
    if (!handle.isInitialized())
    {
+      dbg("❌ Cannot create CGL window");
       return false;
    }
 
-#ifndef __EMSCRIPTEN__
-   glEnable(GL_DEBUG_OUTPUT);
-#endif
-
-   PRINT_DEBUG("EGL context is ready" << endl);
-
-   return initGLEW(legacyGlOnly);
+   // dbg("CGL context is ready");
+   // return initGLEW(legacyGlOnly);
+   return true;
 }
 
-void EglWindow::queueEvents(vector<Event> events)
+void CGLWindow::queueEvents(vector<Event> events)
 {
+   dbg();
    {
       lock_guard<mutex> evt_guard{event_mutex};
       waiting_events.insert(waiting_events.end(), events.begin(), events.end());
@@ -64,8 +73,9 @@ void EglWindow::queueEvents(vector<Event> events)
    }
 }
 
-void EglWindow::mainLoop()
+void CGLWindow::mainLoop()
 {
+   dbg();
    running = true;
    while (running)
    {
@@ -73,8 +83,9 @@ void EglWindow::mainLoop()
    }
 }
 
-void EglWindow::mainIter()
+void CGLWindow::mainIter()
 {
+   dbg();
    bool sleep = false;
    bool events_pending = false;
    {
@@ -144,8 +155,9 @@ void EglWindow::mainIter()
    }
 }
 
-void EglWindow::signalLoop()
+void CGLWindow::signalLoop()
 {
+   dbg();
    // Note: not executed from the main thread
    {
       lock_guard<mutex> evt_guard{event_mutex};
@@ -154,41 +166,85 @@ void EglWindow::signalLoop()
    events_available.notify_all();
 }
 
-void EglWindow::getGLDrawSize(int& w, int& h) const
+void CGLWindow::getGLDrawSize(int& w, int& h) const
 {
-   EGLint egl_w, egl_h;
+   const auto err = glGetError();
+   dbg("glGetError: {:x}", err);
+   std::cout << "glGetError:" << err << std::endl;
 
-   EGLDisplay disp = EglMainThread::Get().GetDisplay();
-   eglQuerySurface(disp, handle.surf, EGL_WIDTH, &egl_w);
-   eglQuerySurface(disp, handle.surf, EGL_HEIGHT, &egl_h);
-   w = egl_w;
-   h = egl_h;
+   assert(glGetError() == GL_NO_ERROR);
+   GLint cgl_w, cgl_h;
+   static_assert(sizeof(GLint) == sizeof(int),
+                 "CGL width size must be 4 bytes");
+   // CGLGetRenderbufferParameter(handle, cgl_w, cgl_h);
+   {
+      dbg("glGetError:{}", glGetError());
+      assert(glGetError() == GL_NO_ERROR);
+      assert(handle.isInitialized());
+
+      // Optional: Ensure context is current if not guaranteed elsewhere
+      CGLError err = CGLSetCurrentContext(handle.ctx.get());
+      if (err != kCGLNoError) { dbg("❌ Cannot set CGL context as current");}
+      // Bind the color renderbuffer (assuming that's what we want to query)
+      glBindRenderbuffer(GL_RENDERBUFFER, handle.buf_color);
+      if (glGetError() != GL_NO_ERROR)
+      {
+         dbg("❌ Failed to bind renderbuffer");
+         // return EXIT_FAILURE;
+      }
+      // Query width and height
+      glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &cgl_w);
+      glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &cgl_h);
+      // Check for query errors
+      GLenum gl_err = glGetError();
+      if (gl_err != GL_NO_ERROR)
+      {
+         dbg("❌ GL error during parameter query: {}", gl_err);
+         // Unbind to clean up
+         glBindRenderbuffer(GL_RENDERBUFFER, 0);
+         return ;
+      }
+      dbg("Renderbuffer parameters - width: {}, height: {}", cgl_w, cgl_h);
+      // Unbind to restore state
+      glBindRenderbuffer(GL_RENDERBUFFER, 0);
+      assert(glGetError() == GL_NO_ERROR);
+   }
+
+   // cgl_w = 1024, cgl_h = 768; // TEMP
+   dbg("CGL draw size: {}x{}", (int) cgl_w, (int)cgl_h);
+   w = cgl_w;
+   h = cgl_h;
 }
 
-bool EglWindow::isHighDpi() const
+bool CGLWindow::isHighDpi() const
 {
+   dbg("{}", GetUseHiDPI());
    return GetUseHiDPI();
 }
 
-void EglWindow::setWindowSize(int w, int h)
+void CGLWindow::setWindowSize(int w, int h)
 {
-   EglMainThread::Get().ResizeWindow(handle, w, h);
+   dbg("w:{} h:{}", w, h);
+   CGLMainThread::Get().ResizeWindow(handle, w, h);
 }
 
-void EglWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
+void CGLWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
 {
+   dbg("k:{} m:{}", (int)k, (int)m);
    Event::Events e;
    e.keydown = {k, m};
    queueEvents({{EventType::Keydown, e}});
 }
 
-void EglWindow::signalQuit()
+void CGLWindow::signalQuit()
 {
+   dbg("Quit");
    queueEvents({{EventType::Quit, {}}});
 }
 
-void EglWindow::screenshot(string filename, bool convert)
+void CGLWindow::screenshot(string filename, bool convert)
 {
+   dbg("filename:{} convert:{}", filename, convert);
    screenshot_filename = filename;
    Event::Events e;
    e.screenshot = {convert};
@@ -197,4 +253,4 @@ void EglWindow::screenshot(string filename, bool convert)
    signalExpose();
 }
 
-#endif // GLVIS_USE_EGL
+#endif // GLVIS_USE_CGL

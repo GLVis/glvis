@@ -266,6 +266,7 @@ Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
 # generated with 'echo lib/egl/*.c* lib/gl/*.c* lib/sdl/*.c* lib/*.c*', does not include lib/*.m (Obj-C)
 ALL_SOURCE_FILES = \
+ lib/cgl/cgl.cpp lib/cgl/cgl_main.cpp 									\
  lib/egl/egl.cpp lib/egl/egl_main.cpp lib/gl/renderer_core.cpp          \
  lib/gl/renderer.cpp lib/gl/renderer_ff.cpp lib/gl/shader.cpp           \
  lib/gl/types.cpp lib/sdl/sdl.cpp lib/sdl/sdl_helper.cpp                \
@@ -288,6 +289,7 @@ COMMON_SOURCE_FILES = $(filter-out \
 
 # generated with 'echo lib/egl/*.h* lib/gl/*.h* lib/sdl/*.h* lib/*.h*'
 HEADER_FILES = \
+ lib/cgl/cgl.hpp lib/cgl/cgl_main.hpp                                   \
  lib/egl/egl.hpp lib/egl/egl_main.hpp lib/gl/attr_traits.hpp            \
  lib/gl/platform_gl.hpp lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp \
  lib/gl/renderer.hpp lib/gl/shader.hpp lib/gl/types.hpp                 \

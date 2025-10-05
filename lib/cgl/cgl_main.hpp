@@ -8,25 +8,21 @@
 // GLVis is free software; you can redistribute it and/or modify it under the
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
+#pragma once
 
-#ifndef GLVIS_EGL_MAIN_HPP
-#define GLVIS_EGL_MAIN_HPP
-
-#ifdef GLVIS_USE_EGL
+#ifdef GLVIS_USE_CGL
 
 #include <list>
 #include <future>
 
-#include "egl.hpp"
+#include "cgl.hpp"
 
-class EglMainThread : public MainThread
+class CGLMainThread : public MainThread
 {
-   using Handle = EglWindow::Handle;
-   EGLDisplay disp {EGL_NO_DISPLAY};
+   using Handle = CGLWindow::CGLHandle;
    bool server_mode {false};
-
-   std::list<EglWindow*> windows;
-   int num_windows{-1};
+   std::list<CGLWindow*> windows;
+   int num_windows {-1};
 
    struct CreateWndCmd;
    struct ResizeWndCmd;
@@ -49,7 +45,6 @@ class EglMainThread : public MainThread
          ResizeWndCmd *resize_cmd;
          DeleteWndCmd *delete_cmd;
       };
-
       std::promise<void> finished;
    };
 
@@ -66,21 +61,18 @@ class EglMainThread : public MainThread
 
 public:
 
-   EglMainThread();
-   ~EglMainThread();
+   CGLMainThread();
+   ~CGLMainThread();
 
-   static EglMainThread& Get();
-#ifdef GLVIS_USE_EGL
-   EGLDisplay GetDisplay() const { return disp; }
-#endif
+   static CGLMainThread& Get();
 
-   Handle CreateWindow(EglWindow *caller, int w, int h, bool legacy_gl);
+   Handle CreateWindow(CGLWindow *caller, int w, int h,
+                       bool legacy_gl);
    void ResizeWindow(Handle &hnd, int w, int h);
-   void DeleteWindow(EglWindow *caller, Handle &hnd);
+   void DeleteWindow(CGLWindow *caller, Handle &hnd);
    void Terminate();
 
    void MainLoop(bool server = false) override;
 };
 
-#endif // GLVIS_USE_EGL
-#endif // GLVIS_EGL_MAIN_HPP
+#endif //GLVIS_USE_CGL
