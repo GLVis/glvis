@@ -23,9 +23,6 @@
 #define PRINT_DEBUG(s) {}
 #endif
 
-#define NVTX_COLOR ::nvtx::kYellow
-#include "../../nvtx.hpp" // IWYU pragma: keep
-
 using namespace std;
 
 struct EglMainThread::CreateWndCmd
@@ -113,7 +110,6 @@ bool EglMainThread::CreateWndImpl(CreateWndCmd &cmd)
 #endif
 #ifdef GLVIS_USE_CGL
    const int multisamples = GetMultisample();
-   dbg("multisamples:{}", multisamples);
 
    vector<CGLPixelFormatAttribute> pixAttribs =
    {
@@ -128,13 +124,11 @@ bool EglMainThread::CreateWndImpl(CreateWndCmd &cmd)
 
    if (cmd.legacy_gl)
    {
-      dbg("Inserting legacy OpenGL profile");
       // insert legacy OpenGL compatibility requirement
       auto it = (pixAttribs.end() -= 2);
       pixAttribs.insert(it, {kCGLPFAOpenGLProfile, CGLPixelFormatAttribute(kCGLOGLPVersion_Legacy)});
    }
 
-   dbg("Choosing CGL pixel format");
    GLint numConfigs;
    CGLError err = CGLChoosePixelFormat(pixAttribs.data(), &new_handle.pix,
                                        &numConfigs);
@@ -160,7 +154,6 @@ bool EglMainThread::CreateWndImpl(CreateWndCmd &cmd)
       return false;
    }
 
-   dbg("Creating CGL context");
    CGLContextObj ctx;
    err = CGLCreateContext(new_handle.pix, nullptr, &ctx);
    assert(err == kCGLNoError);
@@ -246,27 +239,18 @@ bool EglMainThread::DeleteWndImpl(DeleteWndCmd &cmd)
 
    if (cmd.handle->isInitialized())
    {
-      dbg("Destroying buffers");
-      // CGLDeleteFrameBuffers(cmd.handle);
-
-      dbg();
       assert(glGetError() == GL_NO_ERROR);
       assert(cmd.handle);
       static_assert(sizeof(cmd.handle->buf_frame) == sizeof(GLuint),
                     "Buffer frame size must be 4 bytes");
-      dbg("Deleting frame buffers");
       glDeleteFramebuffers(1, &cmd.handle->buf_frame);
-      dbg("Deleting color buffers");
       glDeleteRenderbuffers(1, &cmd.handle->buf_color);
-      dbg("Deleting depth buffers");
       glDeleteRenderbuffers(1, &cmd.handle->buf_depth);
-      dbg("✅");
       assert(glGetError() == GL_NO_ERROR);
    }
 
    if (cmd.handle->pix)
    {
-      dbg("Destroying pixel format");
       CGLError err = CGLDestroyPixelFormat(cmd.handle->pix);
       if (err != kCGLNoError)
       {
@@ -456,7 +440,6 @@ EglMainThread::Handle EglMainThread::CreateWindow(EglWindow *caller, int w,
 
    if (!out_hnd.isInitialized())
    {
-      dbg("❌ Failed to create window");
       return out_hnd;
    }
 
@@ -464,7 +447,6 @@ EglMainThread::Handle EglMainThread::CreateWindow(EglWindow *caller, int w,
    CGLError err = CGLSetCurrentContext(out_hnd.ctx.get());
    if (err != kCGLNoError)
    {
-      dbg("❌ Failed to set context");
       return out_hnd;
    }
 
@@ -473,17 +455,13 @@ EglMainThread::Handle EglMainThread::CreateWindow(EglWindow *caller, int w,
       const auto status = caller->initGLEW(legacy_gl);
       assert(status && glGetError() == GL_NO_ERROR);
 
-      dbg("GL error: {}", glGetError());
       const GLubyte* renderer = glGetString(GL_RENDERER);
-      dbg("OpenGL renderer: {}", (const char*)renderer);
       if (strstr((const char*)renderer, "Software") != nullptr)
       {
-         dbg("⚠️ Using software renderer; expect limited functionality");
+         PRINT_DEBUG("⚠️ Using software renderer; expect limited functionality");
       }
 
-      const GLubyte* version = glGetString(GL_VERSION);
-      dbg("OpenGL version: {}", (const char*)version);
-      dbg("GL error: {}", glGetError());
+      // const GLubyte* version = glGetString(GL_VERSION);
    }
 
    glGenFramebuffers(1, &out_hnd.buf_frame);
@@ -491,14 +469,9 @@ EglMainThread::Handle EglMainThread::CreateWindow(EglWindow *caller, int w,
    glCheckFramebufferStatus(GL_FRAMEBUFFER);
    assert(glGetError() == GL_NO_ERROR);
 
-   dbg("GL error: {}", glGetError());
-   dbg("new_handle.buf_frame:{}", (int)out_hnd.buf_frame);
    assert(out_hnd.buf_frame != 0);
-   dbg("Creating buf_color and buf_depth renderbuffers on main thread");
    glGenRenderbuffers(1, &out_hnd.buf_color);
-   dbg("new_handle.buf_color:{}", (int)out_hnd.buf_color);
    glGenRenderbuffers(1, &out_hnd.buf_depth);
-   dbg("new_handle.buf_depth:{}", (int)out_hnd.buf_depth);
    ResizeWindow(out_hnd, w, h);  // Perform initial resize here
 
    // Release current context
@@ -511,9 +484,8 @@ EglMainThread::Handle EglMainThread::CreateWindow(EglWindow *caller, int w,
    err = CGLSetCurrentContext(out_hnd.ctx.get());
    if (err != kCGLNoError)
    {
-      dbg("❌ Cannot set CGL context as current");
+      PRINT_DEBUG("❌ Cannot set CGL context as current");
    }
-   dbg("✅");
 #endif
 
    return out_hnd;
@@ -545,28 +517,22 @@ void EglMainThread::ResizeWindow(Handle &handle, int w, int h)
 #endif
 #ifdef GLVIS_USE_CGL
 
-   dbg("Resizing window to {}x{}", w, h);
-   // CGLResizeWindow(handle, w, h);
-   dbg("Resizing window to {}x{}", w, h);
-   assert(glGetError() == GL_NO_ERROR);
 
    if (!handle.isInitialized())
    {
-      dbg("❌ Handle not initialized, cannot resize");
       return;
    }
 
-   dbg("glBindRenderbuffer buf_color");
    glBindRenderbuffer(GL_RENDERBUFFER, handle.buf_color);
 
-   dbg("glRenderbufferStorage");
+   PRINT_DEBUG("glRenderbufferStorage");
    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, w, h);
 
-   dbg("glBindRenderbuffer buf_depth");
+   PRINT_DEBUG("glBindRenderbuffer buf_depth");
    glBindRenderbuffer(GL_RENDERBUFFER, handle.buf_depth);
    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
 
-   dbg("glBindFramebuffer buf_frame");
+   PRINT_DEBUG("glBindFramebuffer buf_frame");
    glBindFramebuffer(GL_FRAMEBUFFER, handle.buf_frame);
    glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                              GL_RENDERBUFFER, handle.buf_color);
@@ -576,7 +542,7 @@ void EglMainThread::ResizeWindow(Handle &handle, int w, int h)
    if (glGetError() != GL_NO_ERROR ||
        glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
    {
-      dbg("❌ Cannot resize the framebuffer!");
+      PRINT_DEBUG("❌ Cannot resize the framebuffer!");
    }
 
    assert(glGetError() == GL_NO_ERROR);

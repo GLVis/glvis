@@ -16,16 +16,12 @@
 #include "../aux_vis.hpp"
 #include <iostream>
 #include <vector>
-// #include <future>
 
 #ifdef GLVIS_DEBUG
 #define PRINT_DEBUG(s) std::cerr << s
 #else
 #define PRINT_DEBUG(s) {}
 #endif
-
-#define NVTX_COLOR ::nvtx::kMagenta
-#include "../../nvtx.hpp" // IWYU pragma: keep
 
 using namespace std;
 
@@ -54,7 +50,6 @@ bool EglWindow::createWindow(const char *, int, int, int w, int h,
 
    if (!handle.isInitialized())
    {
-      dbg("❌ Cannot create GL window");
       return false;
    }
 
@@ -187,7 +182,6 @@ void EglWindow::getGLDrawSize(int& w, int& h) const
 #ifdef GLVIS_USE_CGL
 
    const auto err = glGetError();
-   dbg("glGetError: {:x}", err);
    std::cout << "glGetError:" << err << std::endl;
 
    assert(glGetError() == GL_NO_ERROR);
@@ -202,13 +196,15 @@ void EglWindow::getGLDrawSize(int& w, int& h) const
 
       // Optional: Ensure context is current if not guaranteed elsewhere
       CGLError ctx_err = CGLSetCurrentContext(handle.ctx.get());
-      if (ctx_err != kCGLNoError) { dbg("❌ Cannot set CGL context as current");}
+      if (ctx_err != kCGLNoError)
+      {
+         PRINT_DEBUG("❌ Cannot set CGL context as current");
+      }
       // Bind the color renderbuffer (assuming that's what we want to query)
       glBindRenderbuffer(GL_RENDERBUFFER, handle.buf_color);
       if (glGetError() != GL_NO_ERROR)
       {
-         dbg("❌ Failed to bind renderbuffer");
-         // return EXIT_FAILURE;
+         return;
       }
       // Query width and height
       glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &cgl_w);
@@ -217,18 +213,16 @@ void EglWindow::getGLDrawSize(int& w, int& h) const
       GLenum gl_err = glGetError();
       if (gl_err != GL_NO_ERROR)
       {
-         dbg("❌ GL error during parameter query: {}", gl_err);
+         PRINT_DEBUG("❌ GL error during parameter query");
          // Unbind to clean up
          glBindRenderbuffer(GL_RENDERBUFFER, 0);
          return ;
       }
-      dbg("Renderbuffer parameters - width: {}, height: {}", cgl_w, cgl_h);
       // Unbind to restore state
       glBindRenderbuffer(GL_RENDERBUFFER, 0);
       assert(glGetError() == GL_NO_ERROR);
    }
 
-   dbg("CGL draw size: {}x{}", (int) cgl_w, (int)cgl_h);
    w = cgl_w;
    h = cgl_h;
 #endif

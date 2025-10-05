@@ -11,7 +11,6 @@
 
 #include <iostream>
 #include <sstream>
-// #include <fstream>
 #include <cmath>
 #include <chrono>
 #include <regex>
@@ -24,9 +23,6 @@
 #include "palettes.hpp"
 #include "visual.hpp"
 #include "gl2ps.h"
-
-#define NVTX_COLOR ::nvtx::kCyan
-#include "../nvtx.hpp"
 
 #if defined(GLVIS_USE_LIBTIFF)
 #include "tiffio.h"
@@ -62,7 +58,6 @@ static bool wndUseHiDPI = true;
 
 MainThread& GetMainThread(bool headless)
 {
-   dbg();
 #if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
    if (headless)
    {
@@ -118,7 +113,6 @@ void MyExpose();
 GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
                             bool headless)
 {
-   dbg();
 #ifdef GLVIS_DEBUG
    if (!headless) { cout << "OpenGL Visualization" << endl; }
    else

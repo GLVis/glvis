@@ -28,4 +28,3 @@ compile_commands.json
 .DS_Store
 
 user.cmake
-nvtx.hpp

@@ -288,7 +288,6 @@ COMMON_SOURCE_FILES = $(filter-out \
 
 # generated with 'echo lib/egl/*.h* lib/gl/*.h* lib/sdl/*.h* lib/*.h*'
 HEADER_FILES = \
- lib/cgl/cgl.hpp lib/cgl/cgl_main.hpp                                   \
  lib/egl/egl.hpp lib/egl/egl_main.hpp lib/gl/attr_traits.hpp            \
  lib/gl/platform_gl.hpp lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp \
  lib/gl/renderer.hpp lib/gl/shader.hpp lib/gl/types.hpp                 \
