@@ -160,7 +160,7 @@ bool EglMainThread::CreateWndImpl(CreateWndCmd &cmd)
       return false;
    }
    new_handle.ctx.reset(ctx);
-#endif
+#endif // GLVIS_USE_CGL
 
    windows.push_back(cmd.wnd);
    if (num_windows < 0)

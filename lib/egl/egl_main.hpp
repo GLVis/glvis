@@ -84,5 +84,5 @@ public:
    void MainLoop(bool server = false) override;
 };
 
-#endif // GLVIS_USE_EGL
+#endif // GLVIS_USE_EGL || GLVIS_USE_CGL
 #endif // GLVIS_EGL_MAIN_HPP

@@ -169,7 +169,7 @@ void EglWindow::getGLDrawSize(int& w, int& h) const
 #endif
 #ifdef GLVIS_USE_CGL
    GLint cgl_w, cgl_h;
-   // Bind the color renderbuffer (assuming that's what we want to query)
+   // Bind the color renderbuffer
    glBindRenderbuffer(GL_RENDERBUFFER, handle.buf_color);
    assert(glGetError() == GL_NO_ERROR);
    // Query width and height
@@ -216,4 +216,4 @@ void EglWindow::screenshot(string filename, bool convert)
    signalExpose();
 }
 
-#endif // GLVIS_USE_EGL
+#endif // GLVIS_USE_EGL || GLVIS_USE_CGL
