@@ -21,6 +21,7 @@
 #endif
 
 #ifdef GLVIS_USE_CGL
+#define GL_SILENCE_DEPRECATION
 #include <OpenGL/OpenGL.h>
 #endif
 
