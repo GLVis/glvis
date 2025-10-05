@@ -469,7 +469,6 @@ void EglMainThread::ResizeWindow(Handle &handle, int w, int h)
    }
 #endif
 #ifdef GLVIS_USE_CGL
-   if (!handle.isInitialized()) { return; }
    glBindRenderbuffer(GL_RENDERBUFFER, handle.buf_color);
    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, w, h);
    glBindRenderbuffer(GL_RENDERBUFFER, handle.buf_depth);
