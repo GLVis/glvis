@@ -11,11 +11,13 @@
 
 #if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
 
+#include <cassert>
+#include <iostream>
+#include <vector>
+
 #include "egl.hpp"
 #include "egl_main.hpp"
 #include "../aux_vis.hpp"
-#include <iostream>
-#include <vector>
 
 #ifdef GLVIS_DEBUG
 #define PRINT_DEBUG(s) std::cerr << s
@@ -25,36 +27,22 @@
 
 using namespace std;
 
-EglWindow::EglWindow()
-{
-}
-
 EglWindow::~EglWindow()
 {
    EglMainThread::Get().DeleteWindow(this, handle);
 }
 
-#ifdef GLVIS_USE_CGL
-bool EglWindow::initGLEW(bool legacyGlOnly)
-{
-   return GLWindow::initGLEW(legacyGlOnly);
-}
-#endif
-
-
 bool EglWindow::createWindow(const char *, int, int, int w, int h,
                              bool legacyGlOnly)
 {
    handle = EglMainThread::Get().CreateWindow(this, w, h, legacyGlOnly);
-   assert(glGetError() == GL_NO_ERROR);
-
    if (!handle.isInitialized())
    {
       return false;
    }
 
 #ifdef GLVIS_USE_CGL
-   return true;
+   return true; // CGL already called initGLEW() during CreateWindow()
 #endif
 
 #ifndef __EMSCRIPTEN__
@@ -180,49 +168,17 @@ void EglWindow::getGLDrawSize(int& w, int& h) const
    h = egl_h;
 #endif
 #ifdef GLVIS_USE_CGL
-
-   const auto err = glGetError();
-   std::cout << "glGetError:" << err << std::endl;
-
-   assert(glGetError() == GL_NO_ERROR);
    GLint cgl_w, cgl_h;
-   static_assert(sizeof(GLint) == sizeof(int),
-                 "CGL width size must be 4 bytes");
-   // CGLGetRenderbufferParameter(handle, cgl_w, cgl_h);
-   {
-      // dbg("glGetError:{}", glGetError());
-      assert(glGetError() == GL_NO_ERROR);
-      // assert(handle.isInitialized());
-
-      // Optional: Ensure context is current if not guaranteed elsewhere
-      CGLError ctx_err = CGLSetCurrentContext(handle.ctx.get());
-      if (ctx_err != kCGLNoError)
-      {
-         PRINT_DEBUG("❌ Cannot set CGL context as current");
-      }
-      // Bind the color renderbuffer (assuming that's what we want to query)
-      glBindRenderbuffer(GL_RENDERBUFFER, handle.buf_color);
-      if (glGetError() != GL_NO_ERROR)
-      {
-         return;
-      }
-      // Query width and height
-      glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &cgl_w);
-      glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &cgl_h);
-      // Check for query errors
-      GLenum gl_err = glGetError();
-      if (gl_err != GL_NO_ERROR)
-      {
-         PRINT_DEBUG("❌ GL error during parameter query");
-         // Unbind to clean up
-         glBindRenderbuffer(GL_RENDERBUFFER, 0);
-         return ;
-      }
-      // Unbind to restore state
-      glBindRenderbuffer(GL_RENDERBUFFER, 0);
-      assert(glGetError() == GL_NO_ERROR);
-   }
-
+   // Bind the color renderbuffer (assuming that's what we want to query)
+   glBindRenderbuffer(GL_RENDERBUFFER, handle.buf_color);
+   assert(glGetError() == GL_NO_ERROR);
+   // Query width and height
+   glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &cgl_w);
+   glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &cgl_h);
+   assert(glGetError() == GL_NO_ERROR);
+   // Unbind to restore state
+   glBindRenderbuffer(GL_RENDERBUFFER, 0);
+   assert(glGetError() == GL_NO_ERROR);
    w = cgl_w;
    h = cgl_h;
 #endif

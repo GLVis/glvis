@@ -101,12 +101,8 @@ private:
    void queueEvents(std::vector<Event> events);
 
 public:
-   EglWindow();
+   EglWindow() = default;
    ~EglWindow();
-
-#if defined(GLVIS_USE_CGL)
-   bool initGLEW(bool legacyGlOnly);
-#endif
 
    /** @brief Creates a new OpenGL window. Returns false if EGL or OpenGL
        initialization fails. */
@@ -119,6 +115,7 @@ public:
 
    void signalLoop() override;
 
+   bool initGLEW(bool legacyGlOnly) { return GLWindow::initGLEW(legacyGlOnly); }
    void getWindowSize(int& w, int& h) const override { getGLDrawSize(w, h); }
    void getGLDrawSize(int& w, int& h) const override;
 
