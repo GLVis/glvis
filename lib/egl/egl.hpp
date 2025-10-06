@@ -21,7 +21,7 @@
 #endif
 
 #ifdef GLVIS_USE_CGL
-#define GL_SILENCE_DEPRECATION
+#define GL_SILENCE_DEPRECATION // CGL has been deprecated since MacOS 10.14
 #include <OpenGL/OpenGL.h>
 #endif
 
@@ -41,8 +41,8 @@ public:
       EGLConfig eglCfg{};
 #endif
 #ifdef GLVIS_USE_CGL
-      GLuint buf_frame, buf_color, buf_depth;
-      CGLPixelFormatObj pix;
+      GLuint buf_frame {}, buf_color {}, buf_depth {};
+      CGLPixelFormatObj pix {};
 
       using CGLContextDeleter = void(*)(CGLContextObj);
       std::unique_ptr<_CGLContextObject, CGLContextDeleter> ctx
@@ -116,7 +116,6 @@ public:
 
    void signalLoop() override;
 
-   bool initGLEW(bool legacyGlOnly) { return GLWindow::initGLEW(legacyGlOnly); }
    void getWindowSize(int& w, int& h) const override { getGLDrawSize(w, h); }
    void getGLDrawSize(int& w, int& h) const override;
 

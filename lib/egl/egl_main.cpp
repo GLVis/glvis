@@ -11,7 +11,6 @@
 
 #if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
 
-#include <cassert>
 #include <csignal>
 #include <iostream>
 
@@ -428,16 +427,8 @@ EglMainThread::Handle EglMainThread::CreateWindow(EglWindow *caller, int w,
    CGLError err = CGLSetCurrentContext(out_hnd.ctx.get());
    if (err != kCGLNoError) { return out_hnd; }
    // initialize GLEW before using any OpenGL functions
-   const auto status = caller->initGLEW(legacy_gl);
-   MFEM_VERIFY(status, "GLEW initialization failed!");
-   assert(glGetError() == GL_NO_ERROR);
-   const auto *renderer = glGetString(GL_RENDERER);
-   if (strstr((const char*)renderer, "Software") != nullptr)
-   {
-      PRINT_DEBUG("Using software renderer; expect limited functionality");
-   }
+   caller->initGLEW(legacy_gl);
    glGenFramebuffers(1, &out_hnd.buf_frame);
-   glCheckFramebufferStatus(GL_FRAMEBUFFER);
    glGenRenderbuffers(1, &out_hnd.buf_color);
    glGenRenderbuffers(1, &out_hnd.buf_depth);
    ResizeWindow(out_hnd, w, h);

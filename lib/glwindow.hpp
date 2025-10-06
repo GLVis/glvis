@@ -31,6 +31,7 @@ public:
 
 class GLWindow
 {
+   friend class EglMainThread;
 public:
    typedef Uint8 SDL_Mousebutton;
    struct MouseEventInfo
