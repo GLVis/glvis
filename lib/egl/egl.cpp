@@ -9,13 +9,15 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
+#if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
+
+#include <cassert>
+#include <iostream>
+#include <vector>
+
 #include "egl.hpp"
 #include "egl_main.hpp"
 #include "../aux_vis.hpp"
-#include <iostream>
-#include <vector>
-#include <future>
 
 #ifdef GLVIS_DEBUG
 #define PRINT_DEBUG(s) std::cerr << s
@@ -24,10 +26,6 @@
 #endif
 
 using namespace std;
-
-EglWindow::EglWindow()
-{
-}
 
 EglWindow::~EglWindow()
 {
@@ -42,6 +40,10 @@ bool EglWindow::createWindow(const char *, int, int, int w, int h,
    {
       return false;
    }
+
+#ifdef GLVIS_USE_CGL
+   return true; // CGL already called initGLEW() during CreateWindow()
+#endif
 
 #ifndef __EMSCRIPTEN__
    glEnable(GL_DEBUG_OUTPUT);
@@ -167,8 +169,16 @@ void EglWindow::getGLDrawSize(int& w, int& h) const
 #endif
 #ifdef GLVIS_USE_CGL
    GLint cgl_w, cgl_h;
-   glGetRenderbufferParameteriv(handle.buf_color, GL_RENDERBUFFER_WIDTH, &cgl_w);
-   glGetRenderbufferParameteriv(handle.buf_color, GL_RENDERBUFFER_HEIGHT, &cgl_h);
+   // Bind the color renderbuffer
+   glBindRenderbuffer(GL_RENDERBUFFER, handle.buf_color);
+   assert(glGetError() == GL_NO_ERROR);
+   // Query width and height
+   glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &cgl_w);
+   glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &cgl_h);
+   assert(glGetError() == GL_NO_ERROR);
+   // Unbind to restore state
+   glBindRenderbuffer(GL_RENDERBUFFER, 0);
+   assert(glGetError() == GL_NO_ERROR);
    w = cgl_w;
    h = cgl_h;
 #endif
@@ -193,7 +203,7 @@ void EglWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m)
 
 void EglWindow::signalQuit()
 {
-   queueEvents({{EventType::Quit}});
+   queueEvents({{EventType::Quit, {}}});
 }
 
 void EglWindow::screenshot(string filename, bool convert)
@@ -206,4 +216,4 @@ void EglWindow::screenshot(string filename, bool convert)
    signalExpose();
 }
 
-#endif //GLVIS_USE_EGL || GLVIS_USE_CGL
+#endif // GLVIS_USE_EGL || GLVIS_USE_CGL

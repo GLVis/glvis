@@ -11,7 +11,8 @@
 
 #ifndef GLVIS_EGL_HPP
 #define GLVIS_EGL_HPP
-#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
+
+#if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
 
 #include "../glwindow.hpp"
 
@@ -21,15 +22,13 @@
 
 #ifdef GLVIS_USE_CGL
 #define GL_SILENCE_DEPRECATION // CGL has been deprecated since MacOS 10.14
-#include <OpenGL/CGLTypes.h>
-#include <OpenGL/CGLCurrent.h>
 #include <OpenGL/OpenGL.h>
 #endif
 
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 #include <deque>
-#include <list>
 
 class EglWindow : public GLWindow
 {
@@ -43,8 +42,11 @@ public:
 #endif
 #ifdef GLVIS_USE_CGL
       GLuint buf_frame {}, buf_color {}, buf_depth {};
-      CGLPixelFormatObj pixFmt {};
-      CGLContextObj ctx{};
+      CGLPixelFormatObj pix {};
+
+      using CGLContextDeleter = void(*)(CGLContextObj);
+      std::unique_ptr<_CGLContextObject, CGLContextDeleter> ctx
+      {nullptr, [](CGLContextObj ctx) { CGLDestroyContext(ctx); }};
 #endif
 
       bool isInitialized()
@@ -61,10 +63,9 @@ public:
 private:
    Handle handle;
 
-   bool running{false};
-
-   bool is_multithreaded{true};
-   bool call_idle_func{false};
+   bool running {false};
+   bool is_multithreaded {true};
+   bool call_idle_func {false};
 
    enum class EventType
    {
@@ -72,6 +73,7 @@ private:
       Screenshot,
       Quit,
    };
+
    struct Event
    {
       EventType type;
@@ -93,7 +95,6 @@ private:
    };
 
    std::string screenshot_filename;
-
    std::condition_variable events_available;
    std::mutex event_mutex;
    std::deque<Event> waiting_events;
@@ -101,7 +102,7 @@ private:
    void queueEvents(std::vector<Event> events);
 
 public:
-   EglWindow();
+   EglWindow() = default;
    ~EglWindow();
 
    /** @brief Creates a new OpenGL window. Returns false if EGL or OpenGL
@@ -144,5 +145,5 @@ public:
    void screenshot(std::string filename, bool convert = false) override;
 };
 
-#endif //GLVIS_USE_EGL || GLVIS_USE_CGL
-#endif //GLVIS_EGL_HPP
+#endif // GLVIS_USE_EGL || GLVIS_USE_CGL
+#endif // GLVIS_EGL_HPP
