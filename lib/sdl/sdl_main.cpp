@@ -645,7 +645,11 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
 
 #ifndef __EMSCRIPTEN__
    SDL_GL_SetSwapInterval(0);
+#ifdef SDL_VIDEO_DRIVER_COCOA
    if (GLEW_KHR_debug) { glEnable(GL_DEBUG_OUTPUT); }
+#else
+   glEnable(GL_DEBUG_OUTPUT);
+#endif
 #endif
 
    // Register window internally in the main thread so it can receive events
