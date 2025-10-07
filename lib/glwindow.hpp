@@ -12,11 +12,12 @@
 #ifndef GLVIS_GLWINDOW_HPP
 #define GLVIS_GLWINDOW_HPP
 
-#include "gl/renderer.hpp"
 #include <memory>
 #include <map>
 #include <functional>
 #include <string>
+
+#include "gl/renderer.hpp"
 
 class MainThread
 {
@@ -30,6 +31,7 @@ public:
 
 class GLWindow
 {
+   friend class EglMainThread;
 public:
    typedef Uint8 SDL_Mousebutton;
    struct MouseEventInfo
