@@ -64,7 +64,7 @@ option(GLVIS_USE_EGL
 
 option(GLVIS_USE_CGL
   "Use CGL for headless rendering"
-  OFF)
+  APPLE)
 
 #
 # Handle a few other definitions

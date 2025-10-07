@@ -251,7 +251,7 @@ ifeq ($(GLVIS_USE_EGL),YES)
 endif
 
 # CGL headless rendering
-GLVIS_USE_CGL ?= NO
+GLVIS_USE_CGL ?= $(if $(NOTMAC),NO,YES)
 CGL_OPTS = -DGLVIS_USE_CGL
 ifeq ($(GLVIS_USE_CGL),YES)
 	GLVIS_FLAGS += $(CGL_OPTS)
