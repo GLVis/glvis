@@ -117,7 +117,8 @@ Some important variables for CMake are:
 
 - GLVIS_USE_EGL: Use EGL for headless rendering. Default is "OFF".
 
-- GLVIS_USE_CGL: Use CGL for headless rendering on macos. Default is "OFF".
+- GLVIS_USE_CGL: Use CGL for headless rendering on Mac OS X. Default is "ON" on
+     this platform, "OFF" otherwise.
 
 - GLVIS_MULTISAMPLE and GLVIS_MS_LINEWIDTH: See building considerations below
      for more information on these variables.
