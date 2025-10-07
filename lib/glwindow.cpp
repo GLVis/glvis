@@ -97,6 +97,12 @@ bool GLWindow::initGLEW(bool legacyGlOnly)
    renderer->setDevice<gl3::CoreGLDevice>();
 #endif
 
+   if (glGetError() != GL_NO_ERROR)
+   {
+      std::cerr << "Renderer init OpenGL error: " << glGetError() << std::endl;
+      return false;
+   }
+
    return true;
 }
 
