@@ -914,7 +914,7 @@ void communication_thread::execute()
                   qf_array.resize(nproc);
                   qf_array[proc] = new QuadratureFunction(mesh_array[proc], isock);
                }
-               else
+               else if (ident != "mesh")
                {
                   cout << "Stream: unknown command: " << ident << endl;
                }
