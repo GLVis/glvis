@@ -17,7 +17,6 @@
 #include <iomanip>
 #include <sstream>
 #include <limits>
-using namespace std;
 
 #include "vsdata.hpp"
 #include "aux_vis.hpp"
@@ -25,6 +24,8 @@ using namespace std;
 #include "palettes.hpp"
 
 #include "gl2ps.h"
+
+using namespace std;
 
 const char *strings_off_on[] = { "off", "on" };
 
