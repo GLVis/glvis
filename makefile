@@ -76,7 +76,7 @@ ifeq (,$(filter help clean distclean style,$(MAKECMDGOALS)))
    -include $(CONFIG_MK)
 endif
 
-# GLVis requires c++11 which is also required by MFEM version >= 4.0
+# GLVis requires c++17 which is also required by MFEM version >= 4.9
 CXX = $(MFEM_CXX)
 CPPFLAGS = $(MFEM_CPPFLAGS)
 CXXFLAGS = $(MFEM_CXXFLAGS)
@@ -93,7 +93,7 @@ GLVIS_OPTS ?=
 GLVIS_LDFLAGS ?=
 
 # emcc is used when building the wasm/js version
-EMCC      ?= emcc -std=c++11
+EMCC      ?= emcc -std=c++17
 FONT_FILE ?= OpenSans.ttf
 EMCC_OPTS ?= -s USE_SDL=2 -s USE_FREETYPE=1 -s USE_LIBPNG=1
 # NOTE: we don't want to have DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0
@@ -108,7 +108,7 @@ EMCC_LIBS ?= -s USE_SDL=2 --bind -s ALLOW_MEMORY_GROWTH=1 -s SINGLE_FILE=1 \
  -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0 --minify 0
 
 # Flags used when $(GLVIS_DEBUG) is not the same as $(MFEM_DEBUG)
-CXX11FLAG ?= -std=c++11
+CXX11FLAG ?= -std=c++17
 OPTIM_OPTS ?= $(CXX11FLAG) -O3
 DEBUG_OPTS ?= $(CXX11FLAG) -g -Wall
 GLVIS_DEBUG ?= $(MFEM_DEBUG)
