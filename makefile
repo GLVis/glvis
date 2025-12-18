@@ -254,9 +254,10 @@ ALL_SOURCE_FILES = \
  lib/gl/shader.cpp lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp      \
  lib/coll_reader.cpp lib/data_state.cpp lib/file_reader.cpp             \
  lib/font.cpp lib/gl2ps.c lib/gltf.cpp lib/material.cpp                 \
- lib/openglvis.cpp lib/palettes.cpp lib/palettes_base.cpp lib/sdl.cpp   \
- lib/sdl_helper.cpp lib/sdl_main.cpp lib/sdl_windows.cpp                \
- lib/sdl_x11.cpp lib/stream_reader.cpp lib/threads.cpp lib/vsdata.cpp   \
+ lib/openglvis.cpp lib/palettes.cpp lib/palettes_base.cpp               \
+ lib/palettes_default.cpp lib/sdl.cpp lib/sdl_helper.cpp                \
+ lib/sdl_main.cpp lib/sdl_windows.cpp lib/sdl_x11.cpp                   \
+ lib/stream_reader.cpp lib/threads.cpp lib/vsdata.cpp                   \
  lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp               \
  lib/vsvector3d.cpp
 OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl_mac.mm)
