@@ -13,6 +13,7 @@
 #include "palettes.hpp"
 #include "gltf.hpp"
 
+using namespace std;
 using namespace mfem;
 
 thread_local VisualizationSceneSolution *vssol;
