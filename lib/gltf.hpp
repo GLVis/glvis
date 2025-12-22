@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 #include <array>
-#include <tuple>
 #include <fstream>
 #include <limits>
 #include <memory>

@@ -250,14 +250,15 @@ Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
 # generated with 'echo lib/gl/*.c* lib/*.c*', does not include lib/*.m (Obj-C)
 ALL_SOURCE_FILES = \
- lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp    \
- lib/gl/shader.cpp lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp      \
- lib/coll_reader.cpp lib/data_state.cpp lib/file_reader.cpp             \
- lib/font.cpp lib/gl2ps.c lib/gltf.cpp lib/material.cpp                 \
- lib/openglvis.cpp lib/palettes.cpp lib/palettes_base.cpp lib/sdl.cpp   \
- lib/sdl_helper.cpp lib/sdl_main.cpp lib/sdl_windows.cpp                \
- lib/sdl_x11.cpp lib/stream_reader.cpp lib/threads.cpp lib/vsdata.cpp   \
- lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp               \
+ lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp lib/gl/renderer.cpp \
+ lib/gl/shader.cpp lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp   \
+ lib/coll_reader.cpp lib/data_state.cpp lib/file_reader.cpp          \
+ lib/font.cpp lib/gl2ps.c lib/gltf.cpp lib/material.cpp              \
+ lib/openglvis.cpp lib/palettes_base.cpp lib/palettes_default.cpp    \
+ lib/palettes.cpp lib/sdl_helper.cpp lib/sdl_main.cpp                \
+ lib/sdl_windows.cpp lib/sdl_x11.cpp lib/sdl.cpp                     \
+ lib/stream_reader.cpp lib/threads.cpp lib/vsdata.cpp                \
+ lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp            \
  lib/vsvector3d.cpp
 OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl_mac.mm)
 DESKTOP_ONLY_SOURCE_FILES = \

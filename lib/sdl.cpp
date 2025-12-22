@@ -15,6 +15,7 @@
 #include "gl/renderer_ff.hpp"
 #include "sdl.hpp"
 #include "sdl_main.hpp"
+
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #include <emscripten/html5.h>

@@ -9,6 +9,10 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
+#include <array>
+#include <vector>
+#include <iostream>
+
 #include "renderer_ff.hpp"
 #include "attr_traits.hpp"
 #include "../aux_vis.hpp"

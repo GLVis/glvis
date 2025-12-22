@@ -107,4 +107,4 @@ public:
    void setAlphaChannel(GLenum alpha) { alpha_channel = alpha; }
 };
 
-#endif /* GLVIS_FONT_HPP */
+#endif // GLVIS_FONT_HPP

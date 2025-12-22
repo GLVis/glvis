@@ -17,7 +17,6 @@
 #include <array>
 #include <string>
 #include <iostream>
-#include <fstream>
 #include <memory>
 #include <vector>
 #include <iomanip>
@@ -222,4 +221,4 @@ public:
 
 extern PaletteRegistry BasePalettes;
 
-#endif
+#endif // GLVIS_PALETTESBASE_HPP

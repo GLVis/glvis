@@ -12,11 +12,16 @@
 #ifndef GLVIS_DATA_STATE_HPP
 #define GLVIS_DATA_STATE_HPP
 
+#include <map>
 #include <string>
-#include <vector>
 #include <memory>
-#include "mfem.hpp"
+#include <vector>
+#include <utility>
+
+#include <mfem.hpp>
+
 #include "openglvis.hpp"
+
 
 struct DataState
 {
@@ -44,6 +49,26 @@ struct DataState
       MAX
    };
 
+   // Class used for storing offsets and map of DOFs for each rank
+   class Offset
+   {
+      std::map<std::pair<int, int>, int> dof;
+   public:
+      int nelems, nedges, nverts;
+#ifdef GLVIS_DEBUG
+      // in debug mode, we store the element centers
+      // to be able to compare them with the ones of the global mesh,
+      // as it could depend on the way the global mesh is constructed
+      // from the array of 'local' ones.
+      struct xy {double x,y;};
+      std::map<std::pair<int, int>, xy> exy_map;
+#endif
+      Offset() = default;
+      int& operator[](const std::pair<int, int> &key) { return dof[key]; }
+      const int& operator[](const std::pair<int, int> &key) const { return dof.at(key); }
+   };
+   using Offsets = std::vector<Offset>;
+
 private:
    friend class StreamReader;
    friend class FileReader;
@@ -54,6 +79,7 @@ private:
       std::unique_ptr<mfem::GridFunction> grid_f;
       std::unique_ptr<mfem::QuadratureFunction> quad_f;
       std::unique_ptr<mfem::DataCollection> data_coll;
+      std::unique_ptr<Offsets> offsets;
    } internal;
 
    FieldType type {FieldType::UNKNOWN};
@@ -75,6 +101,7 @@ public:
    const std::unique_ptr<mfem::GridFunction> &grid_f{internal.grid_f};
    const std::unique_ptr<mfem::QuadratureFunction> &quad_f{internal.quad_f};
    const std::unique_ptr<mfem::DataCollection> &data_coll{internal.data_coll};
+   const std::unique_ptr<Offsets> &offsets{internal.offsets};
 
    std::string keys;
    bool fix_elem_orient{false};
@@ -92,6 +119,9 @@ public:
    /** Note that ownership is passed from the caller.
        @see SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh) */
    void SetMesh(mfem::Mesh *mesh);
+
+   /// Compute the dofs offsets from the grid function vector
+   void ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array);
 
    /// Set a mesh (unique pointer version)
    /** Sets the mesh and resets grid/quadrature functions if they do not use
