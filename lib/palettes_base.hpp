@@ -19,6 +19,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <iomanip>
 
 struct RGBAf
 {
@@ -27,31 +28,31 @@ struct RGBAf
    constexpr RGBAf(float r = 0.0, float g = 0.0, float b = 0.0, float a = 1.0)
       : r(r), g(g), b(b), a(a) {}
 
-   void Print(ostream& os = cout) const;
+   void Print(std::ostream& os = std::cout) const;
 
-   array<float, 4> AsArray() const { return {r, g, b, a}; }
+   std::array<float, 4> AsArray() const { return {r, g, b, a}; }
 };
 
 
 class Palette
 {
 public:
-   const string name;
+   const std::string name;
 
    /// Constructors
-   Palette(const string& name) : name(name) {}
+   Palette(const std::string& name) : name(name) {}
 
    /// Constructor from vector of RGBAf
-   Palette(const string& name, const vector<RGBAf>& colors)
+   Palette(const std::string& name, const std::vector<RGBAf>& colors)
       : name(name), colors(colors) {}
 
    /// Constructor from Nx3 array
    template <size_t N>
-   Palette(const string& name, const array<array<float,3>,N>& arr);
+   Palette(const std::string& name, const std::array<std::array<float,3>,N>& arr);
 
    /// Constructor from Nx4 array
    template <size_t N>
-   Palette(const string& name, const array<array<float,4>,N>& arr);
+   Palette(const std::string& name, const std::array<std::array<float,4>,N>& arr);
 
    /// Get size
    int Size() const { return colors.size(); }
@@ -60,25 +61,25 @@ public:
    void AddColor(float r, float g, float b, float a = 1.0);
 
    /// Print each color of this palette to a stream
-   void Print(ostream& os = cout) const;
+   void Print(std::ostream& os = std::cout) const;
 
    /// Get color at index i (optionally, use reversed order)
    RGBAf Color(int i, bool reversed = false) const;
 
    /// Get all colors as a vector of float arrays
-   vector<array<float,4>> GetData(bool reversed = false) const;
+   std::vector<std::array<float,4>> GetData(bool reversed = false) const;
 
    /// Are any alpha != 1.0?
    bool IsTranslucent() const;
 
 private:
-   vector<RGBAf> colors;
+   std::vector<RGBAf> colors;
 };
 
-using TexHandle = gl3::resource::TextureHandle;
 /// Generates the texture data for a given palette, to be used in OpenGL
 class Texture
 {
+   using TexHandle = gl3::resource::TextureHandle;
 public:
    // What type of texture is this (discrete, smooth, alphamap)
    enum class TextureType
@@ -143,8 +144,8 @@ private:
    static void InitStaticGL();
 
    /// Generate alpha/regular texture data
-   vector<float> GenerateAlphaTextureData();
-   vector<array<float,4>> GenerateTextureData();
+   std::vector<float> GenerateAlphaTextureData();
+   std::vector<std::array<float,4>> GenerateTextureData();
 
    /// Set the number of cycles
    void SetCycles(int cycles);
@@ -169,10 +170,10 @@ std::unique_ptr<T> as_unique(Args&&... args)
 class PaletteRegistry
 {
 private:
-   vector<unique_ptr<Palette>> palettes;
+   std::vector<std::unique_ptr<Palette>> palettes;
 
    /// Find the index of a palette by name
-   int GetIndexByName(const string& name) const;
+   int GetIndexByName(const std::string& name) const;
 
 public:
    /// Empty constructor
@@ -180,28 +181,28 @@ public:
 
    /// Constructor via a const vector of Palettes; if name already exists, skip
    /// Used for loading compiled palettes (i.e. `palettes_default.cpp`)
-   PaletteRegistry(const vector<Palette>& paletteRefs);
+   PaletteRegistry(const std::vector<Palette>& paletteRefs);
 
    /// Adds an existing palette to the registry
    void AddPalette(Palette& palette);
 
    /// Create a new palette with the given name and add it to the registry
-   void AddPalette(const string& name);
+   void AddPalette(const std::string& name);
 
    /// Returns true if name is unique
-   bool IsNameUnique(const string& name) const;
+   bool IsNameUnique(const std::string& name) const;
 
    /// Get a palette pointer by index; if not found, returns last palette
    Palette* Get(int index) const;
 
    /// Get a palette pointer by name; if not found, returns last palette
-   Palette* Get(const string& name) const;
+   Palette* Get(const std::string& name) const;
 
    /// Prints a summary (index + name) of all palettes
-   void PrintSummary(ostream& os = cout) const;
+   void PrintSummary(std::ostream& os = std::cout) const;
 
    /// Prints all colors for all palettes
-   void PrintAll(ostream& os = cout) const;
+   void PrintAll(std::ostream& os = std::cout) const;
 
    /// Number of palettes in the registry
    int NumPalettes() const { return palettes.size(); }
@@ -214,7 +215,7 @@ public:
       ...
 
       see `share/palettes-crameri.txt` for an example */
-   void Load(const string& palette_filename);
+   void Load(const std::string& palette_filename);
 };
 
 

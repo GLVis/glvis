@@ -150,7 +150,7 @@ void MeshRenderer::render(const RenderQueue& queue)
 
       if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
       {
-         cerr << "Unable to create multisampled renderbuffer." << flush;
+         std::cerr << "Unable to create multisampled renderbuffer." << std::flush;
          glDeleteFramebuffers(1, &fbo);
          glBindFramebuffer(GL_FRAMEBUFFER, 0);
       }
@@ -270,7 +270,7 @@ void MeshRenderer::render(const RenderQueue& queue)
 
       if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
       {
-         cerr << "Unable to create resolve renderbuffer." << endl;
+         std::cerr << "Unable to create resolve renderbuffer." << std::endl;
          glBindFramebuffer(GL_FRAMEBUFFER, 0);
       }
 

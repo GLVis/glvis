@@ -80,10 +80,12 @@ protected:
    bool legacy_parallel_numbering = false;
 
    // Formatter for axes & colorbar numbers. Set defaults.
-   function<string(double)> axis_formatter = NumberFormatter(4, 'd', false);
-   function<string(double)> colorbar_formatter = NumberFormatter(4, 'd', false);
+   std::function<std::string(double)> axis_formatter
+      = NumberFormatter(4, 'd', false);
+   std::function<std::string(double)> colorbar_formatter
+      = NumberFormatter(4, 'd', false);
 
-   vector<gl3::GlDrawable*> updated_bufs;
+   std::vector<gl3::GlDrawable*> updated_bufs;
    gl3::GlDrawable axes_buf;
    gl3::GlDrawable coord_cross_buf;
    gl3::GlDrawable color_bar;
@@ -284,7 +286,7 @@ public:
    void PrepareCaption();
 
    void SetColorbarNumberFormat(int precision, char format, bool showsign);
-   void SetColorbarNumberFormat(string formatting);
+   void SetColorbarNumberFormat(std::string formatting);
 
    void PrepareColorBar(double minval, double maxval,
                         mfem::Array<double> * level = nullptr,
@@ -293,7 +295,7 @@ public:
    void SetAxisLabels(const char * a_x, const char * a_y, const char * a_z);
 
    void SetAxisNumberFormat(int precision, char format, bool showsign);
-   void SetAxisNumberFormat(string formatting);
+   void SetAxisNumberFormat(std::string formatting);
 
    void PrepareAxes();
    void ToggleDrawAxes()

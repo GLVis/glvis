@@ -34,6 +34,9 @@
 #include <fontconfig/fontconfig.h>
 #endif
 
+using namespace mfem;
+using namespace std;
+
 thread_local int visualize = 0;
 thread_local VisualizationScene * locscene;
 thread_local GLVisCommand *glvis_command = nullptr;

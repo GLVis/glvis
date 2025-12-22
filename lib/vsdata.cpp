@@ -22,6 +22,8 @@
 
 using namespace mfem;
 
+using namespace std;
+
 const char *strings_off_on[] = { "off", "on" };
 
 void VisualizationSceneScalarData::FixValueRange()

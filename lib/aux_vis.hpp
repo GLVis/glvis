@@ -130,14 +130,15 @@ float GetLineWidthMS();
 
 void InitFont();
 GlVisFont * GetFont();
-bool SetFont(const vector<std::string>& patterns, int height);
+bool SetFont(const std::vector<std::string>& patterns, int height);
 void SetFont(const std::string& fn);
 
 void SetUseHiDPI(bool status);
-function<string(double)> NumberFormatter(int precision=4, char format='d',
-                                         bool showsign=false);
-function<string(double)> NumberFormatter(string formatting);
-bool isValidNumberFormatting(const string& formatting);
+
+std::function<std::string(double)> NumberFormatter(int precision=4,
+                                                   char format='d', bool showsign=false);
+std::function<std::string(double)> NumberFormatter(std::string formatting);
+bool isValidNumberFormatting(const std::string& formatting);
 
 // This is a helper function for prompting the user for inputs. The benefit
 // over using just `cin >> input` is that you can specify a type and optionally
@@ -145,22 +146,23 @@ bool isValidNumberFormatting(const string& formatting);
 // True function. If the input cannot be type casted to the expected type, or
 // if it fails the validation, the user is asked again for a new input.
 template <typename T>
-T prompt(const string question,
+T prompt(const std::string question,
          const T* default_value = nullptr,
-function<bool(T)> validator = [](T) { return true; })
+std::function<bool(T)> validator = [](T) { return true; })
 {
    T input;
-   string strInput;
+   std::string strInput;
 
    while (true)
    {
-      cout << question << " ";
-      getline(cin, strInput);
-      stringstream buf(strInput);
+      std::cout << question << " ";
+      std::getline(std::cin, strInput);
+      std::stringstream buf(strInput);
 
       if (strInput.empty() && default_value != nullptr)
       {
-         cout << "Input empty. Using default value: " << *default_value << endl;
+         std::cout << "Input empty. Using default value: " << *default_value
+                   << std::endl;
          return *default_value;
       }
 
@@ -172,12 +174,13 @@ function<bool(T)> validator = [](T) { return true; })
          }
          else
          {
-            cout << "Input is not valid. Please try again." << endl;
+            std::cout << "Input is not valid. Please try again." << std::endl;
          }
       }
       else
       {
-         cout << "Input can not be casted to expected type. Please try again." << endl;
+         std::cout << "Input can not be casted to expected type. Please try again."
+                   << std::endl;
       }
    }
    return input;

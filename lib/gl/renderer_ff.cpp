@@ -196,7 +196,7 @@ void FFGLDevice::bufferToDevice(array_layout layout, IVertexBuffer& buf)
          bufferFFDeviceImpl(static_cast<const VertexBuffer<VertexNormTex>&>(buf));
          break;
       default:
-         cerr << "WARNING: Unhandled vertex layout " << layout << endl;
+         std::cerr << "WARNING: Unhandled vertex layout " << layout << std::endl;
    }
 }
 
@@ -236,7 +236,7 @@ void FFGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
          bufferFFDeviceImpl(static_cast<const IndexedVertexBuffer<VertexNormTex>&>(buf));
          break;
       default:
-         cerr << "WARNING: Unhandled vertex layout " << layout << endl;
+         std::cerr << "WARNING: Unhandled vertex layout " << layout << std::endl;
    }
 }
 

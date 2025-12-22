@@ -125,7 +125,7 @@ private:
    // Objects for handling passing of window control commands to the main event
    // loop.
 
-   mutex window_cmd_mtx;
+   std::mutex window_cmd_mtx;
    std::vector<SdlCtrlCommand> window_cmds;
 
    int num_windows {-1}; // -1: waiting for window to be created
@@ -135,14 +135,14 @@ private:
    // worker threads.
 
    std::unordered_map<int, SdlWindow*> hwnd_to_window;
-   std::unordered_map<int, vector<SDL_Event>> wnd_events;
+   std::unordered_map<int, std::vector<SDL_Event>> wnd_events;
    std::set<SDL_FingerID> fingers;
    bool disable_mouse {false};
 
    std::mutex gl_ctx_mtx;
 
    std::mutex event_mtx;
-   condition_variable event_cv;
+   std::condition_variable event_cv;
    bool try_create_platform{false};
    std::unique_ptr<SdlNativePlatform> platform;
 

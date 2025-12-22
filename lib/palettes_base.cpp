@@ -12,6 +12,7 @@
 #include "palettes_base.hpp"
 #include "gl/renderer.hpp"
 
+using namespace std;
 #include <iomanip>
 #include <fstream>
 

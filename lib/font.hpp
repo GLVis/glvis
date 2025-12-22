@@ -26,8 +26,8 @@ class GlVisFont
 public:
    struct glyph
    {
-      uint32_t w, h;
-      int32_t bear_x, bear_y;
+      std::uint32_t w, h;
+      std::int32_t bear_x, bear_y;
       float adv_x, adv_y;
       float tex_x;
    };
@@ -40,7 +40,7 @@ private:
    glyph font_chars[256];
    float tex_w;
    float tex_h;
-   uint32_t font_tex;
+   std::uint32_t font_tex;
 
    FT_Library  library;
    FT_Face     face;
@@ -51,7 +51,7 @@ public:
 
    const glyph &GetTexChar(char c) const
    {
-      return font_chars[(uint8_t) c];
+      return font_chars[(std::uint8_t) c];
    }
 
    /// Get the width and height of the bounding box containing the rendered text

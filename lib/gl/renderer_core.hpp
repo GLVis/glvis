@@ -72,9 +72,9 @@ private:
    void drawDeviceBufferImpl(GLenum shape, int count, bool indexed);
 
    void processTriangleXfbBuffer(CaptureBuffer& cbuf,
-                                 const vector<ShaderXfbVertex>& verts);
+                                 const std::vector<ShaderXfbVertex>& verts);
    void processLineXfbBuffer(CaptureBuffer& cbuf,
-                             const vector<ShaderXfbVertex>& verts);
+                             const std::vector<ShaderXfbVertex>& verts);
 
 public:
    CoreGLDevice()
