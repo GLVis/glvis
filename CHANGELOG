@@ -9,10 +9,11 @@
                              https://glvis.org
 
 
-Version 4.4.1 (development)
-===================================
+Version 4.5 released on Jan XX, 2026
+====================================
 
 Unlike previous GLVis releases, this version requires a C++17 compiler.
+
 
 Version 4.4 released on May 1, 2025
 ===================================
