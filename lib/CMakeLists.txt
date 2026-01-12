@@ -25,6 +25,7 @@ list(APPEND SOURCES
   palettes.cpp
   palettes_default.cpp
   palettes_base.cpp
+  palettes_default.cpp
   sdl.cpp
   sdl_helper.cpp
   sdl_main.cpp
