@@ -9,8 +9,10 @@
                              https://glvis.org
 
 
-Version 4.4.1  (development)
+Version 4.4.1 (development)
 ===================================
+
+Unlike previous GLVis releases, this version requires a C++17 compiler.
 
 - Refactored code base enabling automatic generation of the script and stream
   command lists (shown as help when an unrecognized option is entered). Other

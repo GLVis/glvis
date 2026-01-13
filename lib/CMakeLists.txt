@@ -24,6 +24,7 @@ list(APPEND SOURCES
   openglvis.cpp
   palettes.cpp
   palettes_base.cpp
+  palettes_default.cpp
   script_controller.cpp
   sdl.cpp
   sdl_helper.cpp
