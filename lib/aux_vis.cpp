@@ -14,6 +14,7 @@
 #include <cmath>
 #include <chrono>
 #include <regex>
+#include <thread>
 
 #include "mfem.hpp"
 #include "sdl/sdl.hpp"
@@ -22,7 +23,9 @@
 #include "egl/egl_main.hpp"
 #include "palettes.hpp"
 #include "visual.hpp"
+#ifndef __EMSCRIPTEN__
 #include "gl2ps.h"
+#endif
 
 #if defined(GLVIS_USE_LIBTIFF)
 #include "tiffio.h"
@@ -523,6 +526,7 @@ void InitIdleFuncs()
    }
 }
 
+#ifndef __EMSCRIPTEN__
 bool CommunicationIdleFunc()
 {
    int status = glvis_command->Execute();
@@ -538,6 +542,7 @@ bool CommunicationIdleFunc()
    }
    return false;
 }
+#endif
 
 bool MainIdleFunc()
 {
@@ -1241,6 +1246,7 @@ void KeyS()
    SendExposeEvent();
 }
 
+#ifndef __EMSCRIPTEN__
 inline GL2PSvertex CreatePrintVtx(gl3::FeedbackVertex v)
 {
    return
@@ -1283,6 +1289,7 @@ void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
       gl2psText(entry.text.c_str(), "Times", 12);
    }
 }
+#endif
 
 void KeyCtrlP()
 {
@@ -1345,7 +1352,9 @@ void ThreadsPauseFunc(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
+#ifndef __EMSCRIPTEN__
       glvis_command->ToggleAutopause();
+#endif
    }
    else
    {

@@ -17,15 +17,16 @@
 #include <iomanip>
 #include <sstream>
 #include <limits>
-using namespace std;
 
 #include "vsdata.hpp"
 #include "aux_vis.hpp"
 #include "material.hpp"
 #include "palettes.hpp"
+#ifndef __EMSCRIPTEN__
 #include "threads.hpp"
+#endif
 
-#include "gl2ps.h"
+using namespace std;
 
 const char *strings_off_on[] = { "off", "on" };
 

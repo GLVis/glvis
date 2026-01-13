@@ -46,7 +46,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
                                           "GLVis [vector data]",
                                         };
 
-   const char *win_title = (window_title == string_default) ?
+   const char *win_title = (window_title == nullptr) ?
                            window_titles[(int)field_type] : window_title;
 
    internal.wnd.reset(InitVisualization(win_title, window_x, window_y, window_w,
@@ -57,6 +57,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
       return false;
    }
 
+#ifndef __EMSCRIPTEN__
    if (input_streams.size() > 0)
    {
       if (!headless)
@@ -68,6 +69,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
       internal.comm_thread.reset(new communication_thread(std::move(input_streams),
                                                           glvis_command.get(), headless));
    }
+#endif
 
    locwin = this;
 
@@ -181,12 +183,14 @@ void Window::GLVisStartVis()
    RunVisualization();
    internal.vs.reset();
    internal.wnd.reset();
+#ifndef __EMSCRIPTEN__
    if (glvis_command)
    {
       glvis_command->Terminate();
       internal.comm_thread.reset();
       internal.glvis_command.reset();
    }
+#endif
    std::cout << "GLVis window closed." << std::endl;
 }
 
