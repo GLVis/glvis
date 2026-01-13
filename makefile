@@ -255,7 +255,7 @@ ALL_SOURCE_FILES = \
  lib/coll_reader.cpp lib/data_state.cpp lib/file_reader.cpp             \
  lib/font.cpp lib/gl2ps.c lib/gltf.cpp lib/material.cpp                 \
  lib/openglvis.cpp lib/palettes_base.cpp lib/palettes.cpp               \
- lib/palettes_default.cpplib/sdl.cpp lib/script_controller.cpp          \
+ lib/palettes_default.cpp lib/sdl.cpp lib/script_controller.cpp         \
  lib/sdl_helper.cpp lib/sdl_main.cpp lib/sdl_windows.cpp                \
  lib/sdl_x11.cpp lib/stream_reader.cpp lib/threads.cpp lib/vsdata.cpp   \
  lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp               \
