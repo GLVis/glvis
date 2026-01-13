@@ -76,7 +76,7 @@ ifeq (,$(filter help clean distclean style,$(MAKECMDGOALS)))
    -include $(CONFIG_MK)
 endif
 
-# GLVis requires c++11 which is also required by MFEM version >= 4.0
+# GLVis requires c++17 which is also required by MFEM version >= 4.9
 CXX = $(MFEM_CXX)
 CPPFLAGS = $(MFEM_CPPFLAGS)
 CXXFLAGS = $(MFEM_CXXFLAGS)
@@ -93,7 +93,7 @@ GLVIS_OPTS ?=
 GLVIS_LDFLAGS ?=
 
 # emcc is used when building the wasm/js version
-EMCC      ?= emcc -std=c++11
+EMCC      ?= emcc -std=c++17
 FONT_FILE ?= OpenSans.ttf
 EMCC_OPTS ?= -s USE_SDL=2 -s USE_FREETYPE=1 -s USE_LIBPNG=1
 # NOTE: we don't want to have DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0
@@ -108,9 +108,9 @@ EMCC_LIBS ?= -s USE_SDL=2 --bind -s ALLOW_MEMORY_GROWTH=1 -s SINGLE_FILE=1 \
  -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0 --minify 0
 
 # Flags used when $(GLVIS_DEBUG) is not the same as $(MFEM_DEBUG)
-CXX11FLAG ?= -std=c++11
-OPTIM_OPTS ?= $(CXX11FLAG) -O3
-DEBUG_OPTS ?= $(CXX11FLAG) -g -Wall
+CXX_STD_FLAG ?= -std=c++17
+OPTIM_OPTS ?= $(CXX_STD_FLAG) -O3
+DEBUG_OPTS ?= $(CXX_STD_FLAG) -g -Wall
 GLVIS_DEBUG ?= $(MFEM_DEBUG)
 ifneq ($(GLVIS_DEBUG),$(MFEM_DEBUG))
    ifeq ($(GLVIS_DEBUG),YES)
@@ -266,10 +266,10 @@ ALL_SOURCE_FILES = \
  lib/aux_js.cpp lib/aux_vis.cpp lib/coll_reader.cpp lib/data_state.cpp  \
  lib/file_reader.cpp lib/font.cpp lib/gl2ps.c lib/gltf.cpp              \
  lib/glwindow.cpp lib/material.cpp lib/openglvis.cpp                    \
- lib/palettes_base.cpp lib/palettes.cpp lib/script_controller.cpp       \
- lib/stream_reader.cpp lib/threads.cpp lib/vsdata.cpp                   \
- lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp               \
- lib/vsvector3d.cpp lib/window.cpp
+ lib/palettes_base.cpp lib/palettes.cpp lib/palettes_default.cpp        \
+ lib/script_controller.cpp lib/stream_reader.cpp lib/threads.cpp        \
+ lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp                 \
+ lib/vsvector.cpp lib/vsvector3d.cpp lib/window.cpp
 OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl/sdl_mac.mm)
 DESKTOP_ONLY_SOURCE_FILES = \
  lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c                     \

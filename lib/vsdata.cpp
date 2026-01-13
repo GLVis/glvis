@@ -17,7 +17,6 @@
 #include <iomanip>
 #include <sstream>
 #include <limits>
-using namespace std;
 
 #include "vsdata.hpp"
 #include "aux_vis.hpp"
@@ -26,6 +25,8 @@ using namespace std;
 #ifndef __EMSCRIPTEN__
 #include "threads.hpp"
 #endif
+
+using namespace std;
 
 const char *strings_off_on[] = { "off", "on" };
 
