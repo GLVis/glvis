@@ -487,8 +487,9 @@ void DataState::SetQuadFunctionSolution(int qf_component)
 
 void DataState::SetComplexSolution(ComplexSolution cmplx_type)
 {
-   double (*cmplx_2_scalar)(double, double);
+   double (*cmplx_2_scalar)(double, double) = NULL;
    const char *str_cmplx_2_scalar;
+   GridFunction *gf = NULL;
 
    switch (cmplx_type)
    {
@@ -501,11 +502,11 @@ void DataState::SetComplexSolution(ComplexSolution cmplx_type)
          str_cmplx_2_scalar = "phase";
          break;
       case ComplexSolution::Real:
-         cmplx_2_scalar = [](double r, double i) { return r; };
+         gf = new GridFunction(cgrid_f->FESpace(), cgrid_f->real(), 0);
          str_cmplx_2_scalar = "real part";
          break;
       case ComplexSolution::Imag:
-         cmplx_2_scalar = [](double r, double i) { return i; };
+         gf = new GridFunction(cgrid_f->FESpace(), cgrid_f->imag(), 0);
          str_cmplx_2_scalar = "imaginary part";
          break;
       default:
@@ -514,12 +515,84 @@ void DataState::SetComplexSolution(ComplexSolution cmplx_type)
    }
 
    cout << "Representing complex function by: " << str_cmplx_2_scalar << endl;
-   GridFunction *gf = new GridFunction(cgrid_f->FESpace());
-   internal.grid_f.reset(gf);
-   for (int i = 0; i < gf->Size(); i++)
+   if (!gf)
    {
-      (*gf)(i) = cmplx_2_scalar(cgrid_f->real()(i), cgrid_f->imag()(i));
+      gf = new GridFunction(cgrid_f->FESpace());
+      const FiniteElementSpace *fes = cgrid_f->FESpace();
+      const Mesh *mesh = fes->GetMesh();
+      const int dim = mesh->Dimension();
+      if (cgrid_f->FESpace()->FEColl()->GetMapType(dim) == FiniteElement::VALUE)
+      {
+         for (int i = 0; i < gf->Size(); i++)
+         {
+            (*gf)(i) = cmplx_2_scalar(cgrid_f->real()(i), cgrid_f->imag()(i));
+         }
+      }
+      else
+      {
+         const int vdim = fes->GetVDim();
+         const int sdim = fes->GetVectorDim();
+         Array<int> vdofs;
+         ElementTransformation *Tr;
+         Vector r_data, i_data, z_data;
+         DenseMatrix r_vals, i_vals, z_vals;
+         Vector r_vec, i_vec, z_vec;
+         DenseMatrix vshape;
+         Vector shape;
+         for (int z = 0; z < mesh->GetNE(); z++)
+         {
+            fes->GetElementVDofs(z, vdofs);
+            cgrid_f->real().GetSubVector(vdofs, r_data);
+            cgrid_f->imag().GetSubVector(vdofs, i_data);
+            z_data.SetSize(vdofs.Size());
+
+            Tr = fes->GetElementTransformation(z);
+            const FiniteElement *fe = fes->GetFE(z);
+            const IntegrationRule &ir = fe->GetNodes();
+            const int nnp = ir.GetNPoints();
+            r_vals.Reset(r_data.GetData(), nnp, vdim);
+            i_vals.Reset(i_data.GetData(), nnp, vdim);
+            z_vals.Reset(z_data.GetData(), nnp, vdim);
+
+            if (fe->GetRangeType() == FiniteElement::SCALAR)
+            {
+               shape.SetSize(nnp);
+            }
+            else
+            {
+               vshape.SetSize(nnp, sdim);
+            }
+            for (int n = 0; n < nnp; n++)
+            {
+               const IntegrationPoint &ip = ir.IntPoint(n);
+               Tr->SetIntPoint(&ip);
+               double w;
+               if (fe->GetRangeType() == FiniteElement::SCALAR)
+               {
+                  fe->CalcPhysShape(*Tr, shape);
+                  w = shape(n);
+               }
+               else
+               {
+                  fe->CalcPhysVShape(*Tr, vshape);
+                  Vector vec(sdim);
+                  vshape.GetRow(n, vec);
+                  w = vec.Norml2();
+               }
+               for (int d = 0; d < vdim; d++)
+               {
+                  const double rval = r_vals(n,d) * w;
+                  const double ival = i_vals(n,d) * w;
+                  const double zval = cmplx_2_scalar(rval, ival);
+                  z_vals(n,d) = (w != 0.)?(zval / w):(0.);
+               }
+            }
+
+            gf->SetSubVector(vdofs, z_data);
+         }
+      }
    }
+   internal.grid_f.reset(gf);
 
    cmplx_sol = cmplx_type;
 }
