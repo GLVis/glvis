@@ -56,14 +56,7 @@ int FileReader::ReadSerial(FileReader::FileType ft, const char *mesh_file,
       {
          case FileType::GRID_FUNC:
          {
-            string buff;
-            auto pos = solin->tellg();
-            *solin >> ws;
-            getline(*solin, buff);
-            mfem::filter_dos(buff);
-            const bool cmplx = (buff == "ComplexGridFunction");
-            solin->seekg(pos);
-            if (cmplx)
+            if (CheckStreamIsComplex(*solin))
             {
                data.SetCmplxGridFunction(new ComplexGridFunction(data.mesh.get(), *solin),
                                          component);
@@ -135,6 +128,19 @@ int FileReader::ReadParallel(int np, FileType ft, const char *mesh_file,
    return read_err;
 }
 
+bool FileReader::CheckStreamIsComplex(std::istream &solin, bool parallel) const
+{
+   string buff;
+   auto pos = solin.tellg();
+   solin >> ws;
+   getline(solin, buff);
+   solin.seekg(pos);
+   mfem::filter_dos(buff);
+   const char *header = (parallel)?("ParComplexGridFunction"):
+                        ("ComplexGridFunction");
+   return (buff == header);
+}
+
 int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                                            const char *sol_prefix, int component)
 {
@@ -150,6 +156,7 @@ int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
 
    std::vector<Mesh *> mesh_array(np);
    std::vector<GridFunction *> gf_array(np);
+   std::vector<ComplexGridFunction *> cgf_array(np);
 
    int read_err = 0;
    for (int p = 0; p < np; p++)
@@ -195,12 +202,43 @@ int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                break;
             }
 
-            gf_array[p] = new GridFunction(mesh_array[p], solfile);
+            if (CheckStreamIsComplex(solfile, true))
+            {
+               solfile >> ws;
+               solfile.ignore(3);// ignore 'Par' prefix to load as serial
+               cgf_array[p] = new ComplexGridFunction(mesh_array[p], solfile);
+            }
+            else
+            {
+               gf_array[p] = new GridFunction(mesh_array[p], solfile);
+            }
          }
          else  // mesh and solution in the same file
          {
-            gf_array[p] = new GridFunction(mesh_array[p], meshfile);
+            if (CheckStreamIsComplex(meshfile))
+            {
+               cgf_array[p] = new ComplexGridFunction(mesh_array[p], meshfile);
+            }
+            else
+            {
+               gf_array[p] = new GridFunction(mesh_array[p], meshfile);
+            }
          }
+      }
+   }
+
+   if (!read_err)
+   {
+      bool bcmplx{}, breal{};
+      for (int p = 0; p < np; p++)
+      {
+         if (cgf_array[p]) { bcmplx = true; }
+         if (gf_array[p]) { breal = true; }
+      }
+      if (bcmplx && breal)
+      {
+         cerr << "Inconsistent input files" << endl;
+         read_err = 3;
       }
    }
 
@@ -210,8 +248,28 @@ int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
       data.SetMesh(new Mesh(mesh_array.data(), np));
       if (sol_prefix)
       {
-         data.SetGridFunction(new GridFunction(data.mesh.get(), gf_array.data(), np),
-                              component);
+         if (cgf_array[0])
+         {
+            std::vector<GridFunction *> r_array(np), i_array(np);
+            for (int p = 0; p < np; p++)
+            {
+               r_array[p] = &(cgf_array[p]->real());
+               i_array[p] = &(cgf_array[p]->imag());
+            }
+            GridFunction *rgf = new GridFunction(data.mesh.get(), r_array.data(), np);
+            GridFunction *igf = new GridFunction(data.mesh.get(), i_array.data(), np);
+            ComplexGridFunction *cgf = new ComplexGridFunction(rgf->FESpace());
+            cgf->MakeOwner(rgf->OwnFEC());
+            rgf->MakeOwner(NULL);
+            cgf->real() = *rgf;
+            cgf->imag() = *igf;
+            delete rgf;
+            delete igf;
+            data.SetCmplxGridFunction(cgf, component);
+         }
+         else
+            data.SetGridFunction(new GridFunction(data.mesh.get(), gf_array.data(), np),
+                                 component);
       }
       else
       {
@@ -222,6 +280,7 @@ int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    for (int p = 0; p < np; p++)
    {
       delete gf_array[np-1-p];
+      delete cgf_array[np-1-p];
       delete mesh_array[np-1-p];
    }
 
