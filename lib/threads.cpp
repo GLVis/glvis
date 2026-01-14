@@ -469,13 +469,7 @@ int GLVisCommand::Execute()
          double mesh_range = -1.0;
          if (!new_state.grid_f)
          {
-            if (!new_state.quad_f)
-            {
-               new_state.save_coloring = false;
-               new_state.SetMeshSolution();
-               mesh_range = new_state.grid_f->Max() + 1.0;
-            }
-            else
+            if (new_state.quad_f)
             {
                auto qs = win.data_state.GetQuadSolution();
                if (qs != DataState::QuadSolution::NONE)
@@ -487,6 +481,25 @@ int GLVisCommand::Execute()
                   new_state.SetQuadSolution();
                }
                new_state.ExtrudeMeshAndSolution();
+            }
+            else if (new_state.cgrid_f)
+            {
+               auto cs = win.data_state.GetComplexSolution();
+               if (cs != DataState::ComplexSolution::NONE)
+               {
+                  new_state.SetComplexSolution(cs);
+               }
+               else
+               {
+                  new_state.SetComplexSolution();
+               }
+               new_state.ExtrudeMeshAndSolution();
+            }
+            else
+            {
+               new_state.save_coloring = false;
+               new_state.SetMeshSolution();
+               mesh_range = new_state.grid_f->Max() + 1.0;
             }
          }
          if (win.SetNewMeshAndSolution(std::move(new_state)))

@@ -21,6 +21,7 @@ enum class Command
 {
    Mesh,
    Solution,
+   ComplexSolution,
    Quadrature,
    Fem2D,
    VFem2D,
@@ -68,6 +69,7 @@ StreamCommands::StreamCommands()
 {
    (*this)[Command::Mesh]                 = {"mesh", false, "<mesh>", "Visualize the mesh."};
    (*this)[Command::Solution]             = {"solution", false, "<mesh> <solution>", "Visualize the solution."};
+   (*this)[Command::ComplexSolution]      = {"csolution", false, "<mesh> <complex_solution>", "Visualize the complex solution."};
    (*this)[Command::Quadrature]           = {"quadrature", false, "<mesh> <quadrature>", "Visualize the quadrature."};
    (*this)[Command::Fem2D]                = {"fem2d_data", false, "<mesh> <data>", "Visualize the 2D scalar data."};
    (*this)[Command::VFem2D]               = {"vfem2d_data", false, "<mesh> <data_x> <data_y>", "Visualize the 2D vector data."};
@@ -155,6 +157,10 @@ int StreamReader::ReadStream(
       case Command::Solution:
          data.SetMesh(new Mesh(is, 1, 0, data.fix_elem_orient));
          data.SetGridFunction(new GridFunction(data.mesh.get(), is));
+         break;
+      case Command::ComplexSolution:
+         data.SetMesh(new Mesh(is, 1, 0, data.fix_elem_orient));
+         data.SetCmplxGridFunction(new ComplexGridFunction(data.mesh.get(), is));
          break;
       case Command::Quadrature:
          data.SetMesh(new Mesh(is, 1, 0, data.fix_elem_orient));
