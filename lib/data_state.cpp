@@ -40,6 +40,7 @@ DataState &DataState::operator=(DataState &&ss)
    internal = std::move(ss.internal);
 
    type = ss.type;
+   cmplx_sol = ss.cmplx_sol;
    quad_sol = ss.quad_sol;
 
    sol = std::move(ss.sol);
@@ -67,6 +68,7 @@ void DataState::SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh)
    internal.mesh = std::move(pmesh);
    internal.mesh_quad.reset();
    if (grid_f && grid_f->FESpace()->GetMesh() != mesh.get()) { SetGridFunction(NULL); }
+   if (cgrid_f && cgrid_f->FESpace()->GetMesh() != mesh.get()) { SetCmplxGridFunction(NULL); }
    if (quad_f && quad_f->GetSpace()->GetMesh() != mesh.get()) { SetQuadFunction(NULL); }
 }
 
@@ -80,9 +82,39 @@ void DataState::SetGridFunction(
    std::unique_ptr<mfem::GridFunction> &&pgf, int component)
 {
    internal.grid_f = std::move(pgf);
+   internal.cgrid_f.reset();
+   cmplx_sol = ComplexSolution::NONE;
    internal.quad_f.reset();
    quad_sol = QuadSolution::NONE;
    SetGridFunctionSolution(component);
+}
+
+void DataState::SetCmplxGridFunction(mfem::ComplexGridFunction *gf,
+                                     int component)
+{
+   if (cgrid_f.get() != gf)
+   {
+      internal.grid_f.reset();
+      cmplx_sol = ComplexSolution::NONE;
+   }
+   internal.cgrid_f.reset(gf);
+   internal.quad_f.reset();
+   quad_sol = QuadSolution::NONE;
+   SetComplexFunctionSolution(component);
+}
+
+void DataState::SetCmplxGridFunction(std::unique_ptr<mfem::ComplexGridFunction>
+                                     &&pgf, int component)
+{
+   if (cgrid_f.get() != pgf.get())
+   {
+      internal.grid_f.reset();
+      cmplx_sol = ComplexSolution::NONE;
+   }
+   internal.cgrid_f = std::move(pgf);
+   internal.quad_f.reset();
+   quad_sol = QuadSolution::NONE;
+   SetComplexFunctionSolution(component);
 }
 
 void DataState::SetQuadFunction(mfem::QuadratureFunction *qf, int component)
@@ -93,6 +125,7 @@ void DataState::SetQuadFunction(mfem::QuadratureFunction *qf, int component)
       quad_sol = QuadSolution::NONE;
    }
    internal.quad_f.reset(qf);
+   internal.cgrid_f.reset();
    SetQuadFunctionSolution(component);
 }
 
@@ -105,6 +138,7 @@ void DataState::SetQuadFunction(
       quad_sol = QuadSolution::NONE;
    }
    internal.quad_f = std::move(pqf);
+   internal.cgrid_f.reset();
    SetQuadFunctionSolution(component);
 }
 
@@ -369,6 +403,48 @@ void DataState::SetGridFunctionSolution(int gf_component)
    }
 }
 
+void DataState::SetComplexFunctionSolution(int gf_component)
+{
+   if (!cgrid_f)
+   {
+      type = (mesh)?(FieldType::MESH):(FieldType::UNKNOWN);
+      return;
+   }
+
+   if (gf_component != -1)
+   {
+      if (gf_component < 0 || gf_component >= cgrid_f->FESpace()->GetVDim())
+      {
+         cerr << "Invalid component " << gf_component << '.' << endl;
+         exit(1);
+      }
+      FiniteElementSpace *ofes = cgrid_f->FESpace();
+      FiniteElementCollection *fec =
+         FiniteElementCollection::New(ofes->FEColl()->Name());
+      FiniteElementSpace *fes = new FiniteElementSpace(mesh.get(), fec);
+      ComplexGridFunction *new_gf = new ComplexGridFunction(fes);
+      new_gf->MakeOwner(fec);
+      for (int i = 0; i < new_gf->real().Size(); i++)
+      {
+         (new_gf->real())(i) = (cgrid_f->real())(ofes->DofToVDof(i, gf_component));
+         (new_gf->imag())(i) = (cgrid_f->imag())(ofes->DofToVDof(i, gf_component));
+      }
+      SetCmplxGridFunction(new_gf);
+      return;
+   }
+
+   if (cgrid_f->VectorDim() == 1)
+   {
+      type = FieldType::SCALAR;
+   }
+   else
+   {
+      type = FieldType::VECTOR;
+   }
+
+   SetComplexSolution();
+}
+
 void DataState::SetQuadFunctionSolution(int qf_component)
 {
    if (!quad_f)
@@ -407,6 +483,51 @@ void DataState::SetQuadFunctionSolution(int qf_component)
    }
 
    SetQuadSolution();
+}
+
+void DataState::SetComplexSolution(ComplexSolution cmplx_type)
+{
+   double (*cmplx_2_scalar)(double, double);
+   const char *str_cmplx_2_scalar;
+
+   switch (cmplx_type)
+   {
+      case ComplexSolution::Magnitude:
+         cmplx_2_scalar = [](double r, double i) { return hypot(r,i); };
+         str_cmplx_2_scalar = "magnitude";
+         break;
+      case ComplexSolution::Phase:
+         cmplx_2_scalar = [](double r, double i) { return atan2(r,i); };
+         str_cmplx_2_scalar = "phase";
+         break;
+      case ComplexSolution::Real:
+         cmplx_2_scalar = [](double r, double i) { return r; };
+         str_cmplx_2_scalar = "real part";
+         break;
+      case ComplexSolution::Imag:
+         cmplx_2_scalar = [](double r, double i) { return i; };
+         str_cmplx_2_scalar = "imaginary part";
+         break;
+      default:
+         cout << "Unknown complex data representation" << endl;
+         return;
+   }
+
+   cout << "Representing complex function by: " << str_cmplx_2_scalar << endl;
+   GridFunction *gf = new GridFunction(cgrid_f->FESpace());
+   internal.grid_f.reset(gf);
+   for (int i = 0; i < gf->Size(); i++)
+   {
+      (*gf)(i) = cmplx_2_scalar(cgrid_f->real()(i), cgrid_f->imag()(i));
+   }
+
+   cmplx_sol = cmplx_type;
+}
+
+void DataState::SwitchComplexSolution(ComplexSolution cmplx_type)
+{
+   SetComplexSolution(cmplx_type);
+   ExtrudeMeshAndSolution();
 }
 
 void DataState::SetQuadSolution(QuadSolution quad_type)

@@ -12,6 +12,7 @@
 #include "file_reader.hpp"
 
 #include <vector>
+#include <general/text.hpp>
 
 using namespace std;
 using namespace mfem;
@@ -54,8 +55,25 @@ int FileReader::ReadSerial(FileReader::FileType ft, const char *mesh_file,
       switch (ft)
       {
          case FileType::GRID_FUNC:
-            data.SetGridFunction(new GridFunction(data.mesh.get(), *solin), component);
-            break;
+         {
+            string buff;
+            auto pos = solin->tellg();
+            *solin >> ws;
+            getline(*solin, buff);
+            mfem::filter_dos(buff);
+            const bool cmplx = (buff == "ComplexGridFunction");
+            solin->seekg(pos);
+            if (cmplx)
+            {
+               data.SetCmplxGridFunction(new ComplexGridFunction(data.mesh.get(), *solin),
+                                         component);
+            }
+            else
+            {
+               data.SetGridFunction(new GridFunction(data.mesh.get(), *solin), component);
+            }
+         }
+         break;
          case FileType::QUAD_FUNC:
             data.SetQuadFunction(new QuadratureFunction(data.mesh.get(), *solin),
                                  component);

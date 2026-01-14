@@ -44,6 +44,19 @@ struct DataState
       MAX
    };
 
+   enum class ComplexSolution
+   {
+      NONE = -1,
+      MIN = -1,
+      //----------
+      Magnitude,
+      Phase,
+      Real,
+      Imag,
+      //----------
+      MAX
+   };
+
 private:
    friend class StreamReader;
    friend class FileReader;
@@ -52,14 +65,17 @@ private:
       std::unique_ptr<mfem::Mesh> mesh;
       std::unique_ptr<mfem::Mesh> mesh_quad;
       std::unique_ptr<mfem::GridFunction> grid_f;
+      std::unique_ptr<mfem::ComplexGridFunction> cgrid_f;
       std::unique_ptr<mfem::QuadratureFunction> quad_f;
       std::unique_ptr<mfem::DataCollection> data_coll;
    } internal;
 
    FieldType type {FieldType::UNKNOWN};
+   ComplexSolution cmplx_sol {ComplexSolution::NONE};
    QuadSolution quad_sol {QuadSolution::NONE};
 
    void SetGridFunctionSolution(int component = -1);
+   void SetComplexFunctionSolution(int component = -1);
    void SetQuadFunctionSolution(int component = -1);
 
 public:
@@ -67,6 +83,7 @@ public:
    const std::unique_ptr<mfem::Mesh> &mesh{internal.mesh};
    const std::unique_ptr<mfem::Mesh> &mesh_quad{internal.mesh_quad};
    const std::unique_ptr<mfem::GridFunction> &grid_f{internal.grid_f};
+   const std::unique_ptr<mfem::ComplexGridFunction> &cgrid_f{internal.cgrid_f};
    const std::unique_ptr<mfem::QuadratureFunction> &quad_f{internal.quad_f};
    const std::unique_ptr<mfem::DataCollection> &data_coll{internal.data_coll};
 
@@ -101,6 +118,17 @@ public:
    /** Sets the grid function or its component (-1 means all components). */
    void SetGridFunction(std::unique_ptr<mfem::GridFunction> &&pgf,
                         int component = -1);
+
+   /// Set a complex grid function (plain pointer version)
+   /** Note that ownership is passed from the caller.
+       @see SetCmplxGridFunction(std::unique_ptr<mfem::ComplexGridFunction> &&, int ) */
+   void SetCmplxGridFunction(mfem::ComplexGridFunction *gf, int component = -1);
+
+   /// Set a complex grid function (unique pointer version)
+   /** Sets the complex grid function or its component (-1 means all
+       components). */
+   void SetCmplxGridFunction(std::unique_ptr<mfem::ComplexGridFunction> &&pgf,
+                             int component = -1);
 
    /// Set a quadrature function (plain pointer version)
    /** Note that ownership is passed from the caller.
@@ -140,6 +168,15 @@ public:
 
    /// Set a (checkerboard) solution when only the mesh is given
    void SetMeshSolution();
+
+   /// Set the complex function representation producing a proxy grid function
+   void SetComplexSolution(ComplexSolution type = ComplexSolution::Magnitude);
+
+   /// Switch the complex function representation
+   void SwitchComplexSolution(ComplexSolution type);
+
+   /// Get the current representation of complex solution
+   inline ComplexSolution GetComplexSolution() const { return cmplx_sol; }
 
    /// Set the quadrature function representation producing a proxy grid function
    void SetQuadSolution(QuadSolution type = QuadSolution::LOR_ClosedGL);

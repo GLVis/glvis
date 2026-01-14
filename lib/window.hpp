@@ -61,6 +61,9 @@ public:
    bool GLVisInitVis(StreamCollection input_streams);
    void GLVisStartVis();
 
+   /// Switch the complex function representation and update the visualization
+   void SwitchComplexSolution(DataState::ComplexSolution type);
+
    /// Switch the quadrature function representation and update the visualization
    void SwitchQuadSolution(DataState::QuadSolution type);
 
@@ -81,6 +84,9 @@ public:
 private:
    /// Thread-local singleton for key handlers
    static thread_local Window *locwin;
+
+   /// Switch representation of the complex function
+   static void SwitchComplexSolution();
 
    /// Switch representation of the quadrature function
    static void SwitchQuadSolution();

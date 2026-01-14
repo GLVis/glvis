@@ -73,7 +73,11 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
 
    locwin = this;
 
-   if (data_state.quad_f)
+   if (data_state.cgrid_f)
+   {
+      wnd->setOnKeyDown('Q', SwitchComplexSolution);
+   }
+   else if (data_state.quad_f)
    {
       wnd->setOnKeyDown('Q', SwitchQuadSolution);
    }
@@ -194,6 +198,12 @@ void Window::GLVisStartVis()
    std::cout << "GLVis window closed." << std::endl;
 }
 
+void Window::SwitchComplexSolution(DataState::ComplexSolution cmplx_type)
+{
+   data_state.SwitchComplexSolution(cmplx_type);
+   ResetMeshAndSolution(data_state);
+}
+
 void Window::SwitchQuadSolution(DataState::QuadSolution quad_type)
 {
    data_state.SwitchQuadSolution(quad_type);
@@ -259,6 +269,14 @@ void Window::ResetMeshAndSolution(DataState &ss)
 
 
 thread_local Window *Window::locwin = NULL;
+
+void Window::SwitchComplexSolution()
+{
+   int ics = ((int)locwin->data_state.GetComplexSolution()+1)
+             % ((int)DataState::ComplexSolution::MAX);
+   locwin->SwitchComplexSolution((DataState::ComplexSolution)ics);
+   SendExposeEvent();
+}
 
 void Window::SwitchQuadSolution()
 {
