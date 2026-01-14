@@ -11,19 +11,24 @@
 
 #ifndef GLVIS_EGL_MAIN_HPP
 #define GLVIS_EGL_MAIN_HPP
-#ifdef GLVIS_USE_EGL
+
+#if defined(GLVIS_USE_EGL) || defined(GLVIS_USE_CGL)
+
+#include <list>
+#include <future>
 
 #include "egl.hpp"
 
 class EglMainThread : public MainThread
 {
    using Handle = EglWindow::Handle;
-   EGLDisplay disp{EGL_NO_DISPLAY};
-
-   bool server_mode{false};
+#ifdef GLVIS_USE_EGL
+   EGLDisplay disp {EGL_NO_DISPLAY};
+#endif
+   bool server_mode {false};
 
    std::list<EglWindow*> windows;
-   int num_windows{-1};
+   int num_windows {-1};
 
    struct CreateWndCmd;
    struct ResizeWndCmd;
@@ -37,7 +42,18 @@ class EglMainThread : public MainThread
       Terminate,
    };
 
-   struct CtrlCmd;
+   struct CtrlCmd
+   {
+      CtrlCmdType type;
+      union
+      {
+         CreateWndCmd *create_cmd;
+         ResizeWndCmd *resize_cmd;
+         DeleteWndCmd *delete_cmd;
+      };
+
+      std::promise<void> finished;
+   };
 
    std::condition_variable events_available;
    std::mutex window_cmd_mtx;
@@ -56,7 +72,9 @@ public:
    ~EglMainThread();
 
    static EglMainThread& Get();
+#ifdef GLVIS_USE_EGL
    EGLDisplay GetDisplay() const { return disp; }
+#endif
 
    Handle CreateWindow(EglWindow *caller, int w, int h, bool legacy_gl);
    void ResizeWindow(Handle &hnd, int w, int h);
@@ -66,5 +84,5 @@ public:
    void MainLoop(bool server = false) override;
 };
 
-#endif //GLVIS_USE_EGL
-#endif //GLVIS_EGL_MAIN_HPP
+#endif // GLVIS_USE_EGL || GLVIS_USE_CGL
+#endif // GLVIS_EGL_MAIN_HPP

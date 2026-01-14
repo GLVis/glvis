@@ -11,7 +11,6 @@
 
 #include <iostream>
 #include <sstream>
-#include <fstream>
 #include <cmath>
 #include <chrono>
 #include <regex>
@@ -62,13 +61,12 @@ static bool wndUseHiDPI = true;
 
 MainThread& GetMainThread(bool headless)
 {
-#ifdef GLVIS_USE_EGL
+#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
    if (headless)
    {
       return EglMainThread::Get();
    }
 #endif
-
    return GetSdlMainThread();
 }
 
@@ -119,13 +117,16 @@ GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
                             bool headless)
 {
 #ifdef GLVIS_DEBUG
-   if (!headless)
-   {
-      cout << "OpenGL Visualization" << endl;
-   }
+   if (!headless) { cout << "OpenGL Visualization" << endl; }
    else
    {
+#if defined(GLVIS_USE_EGL)
       cout << "OpenGL+EGL Visualization" << endl;
+#elif defined(GLVIS_USE_CGL)
+      cout << "OpenGL+CGL Visualization" << endl;
+#else
+      cout << "Headless rendering requires EGL or CGL!" << endl;
+#endif
    }
 #endif
 
@@ -148,7 +149,7 @@ GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
    }
    else
    {
-#ifdef GLVIS_USE_EGL
+#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
       sdl_wnd = nullptr;
       if (!wnd)
       {
@@ -164,10 +165,10 @@ GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
       {
          wnd->clearEvents();
       }
-#else //GLVIS_USE_EGL
-      cerr << "EGL is required for headless rendering!" << endl;
+#else // GLVIS_USE_EGL || GLVIS_USE_CGL
+      cerr << "EGL or CGL are required for headless rendering!" << endl;
       return NULL;
-#endif //GLVIS_USE_EGL
+#endif // GLVIS_USE_EGL || GLVIS_USE_CGL
    }
 
 #ifdef GLVIS_DEBUG
@@ -1034,7 +1035,7 @@ int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi, bool with_alpha,
    }
 
    png_uint_32 ppi = is_hidpi ? 144 : 72; // pixels/inch
-   png_uint_32 ppm = ppi/0.0254 + 0.5;    // pixels/meter
+   auto ppm = static_cast<png_uint_32>(ppi/0.0254 + 0.5);    // pixels/meter
    png_set_pHYs(png_ptr, info_ptr, ppm, ppm, PNG_RESOLUTION_METER);
 
    png_init_io(png_ptr, fp);
