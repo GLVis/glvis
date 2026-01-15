@@ -250,22 +250,7 @@ int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
       {
          if (cgf_array[0])
          {
-            std::vector<GridFunction *> r_array(np), i_array(np);
-            for (int p = 0; p < np; p++)
-            {
-               r_array[p] = &(cgf_array[p]->real());
-               i_array[p] = &(cgf_array[p]->imag());
-            }
-            GridFunction *rgf = new GridFunction(data.mesh.get(), r_array.data(), np);
-            GridFunction *igf = new GridFunction(data.mesh.get(), i_array.data(), np);
-            ComplexGridFunction *cgf = new ComplexGridFunction(rgf->FESpace());
-            cgf->MakeOwner(rgf->OwnFEC());
-            rgf->MakeOwner(NULL);
-            cgf->real() = *rgf;
-            cgf->imag() = *igf;
-            delete rgf;
-            delete igf;
-            data.SetCmplxGridFunction(cgf, component);
+            data.SetCmplxGridFunction(cgf_array, component);
          }
          else
             data.SetGridFunction(new GridFunction(data.mesh.get(), gf_array.data(), np),

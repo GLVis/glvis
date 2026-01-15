@@ -130,6 +130,12 @@ public:
    void SetCmplxGridFunction(std::unique_ptr<mfem::ComplexGridFunction> &&pgf,
                              int component = -1);
 
+   /// Set a complex grid function from pieces
+   /** Serializes the pieces of a complex grid function and sets it or its
+       component (-1 means all components) */
+   void SetCmplxGridFunction(const std::vector<mfem::ComplexGridFunction*>
+                             &cgf_array, int component = -1);
+
    /// Set a quadrature function (plain pointer version)
    /** Note that ownership is passed from the caller.
        @see SetQuadFunction(std::unique_ptr<mfem::QuadFunction> &&, int ) */

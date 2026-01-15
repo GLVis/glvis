@@ -103,8 +103,8 @@ void DataState::SetCmplxGridFunction(mfem::ComplexGridFunction *gf,
    SetComplexFunctionSolution(component);
 }
 
-void DataState::SetCmplxGridFunction(std::unique_ptr<mfem::ComplexGridFunction>
-                                     &&pgf, int component)
+void DataState::SetCmplxGridFunction(
+   std::unique_ptr<mfem::ComplexGridFunction> &&pgf, int component)
 {
    if (cgrid_f.get() != pgf.get())
    {
@@ -115,6 +115,29 @@ void DataState::SetCmplxGridFunction(std::unique_ptr<mfem::ComplexGridFunction>
    internal.quad_f.reset();
    quad_sol = QuadSolution::NONE;
    SetComplexFunctionSolution(component);
+}
+
+void DataState::SetCmplxGridFunction(
+   const std::vector<mfem::ComplexGridFunction *> &cgf_array, int component)
+{
+   const int np = cgf_array.size();
+   std::vector<GridFunction *> r_array(np), i_array(np);
+   for (int p = 0; p < np; p++)
+   {
+      r_array[p] = &(cgf_array[p]->real());
+      i_array[p] = &(cgf_array[p]->imag());
+   }
+   GridFunction *rgf = new GridFunction(mesh.get(), r_array.data(), np);
+   GridFunction *igf = new GridFunction(mesh.get(), i_array.data(), np);
+   ComplexGridFunction *cgf = new ComplexGridFunction(rgf->FESpace());
+   // transfer ownership of the FES
+   cgf->MakeOwner(rgf->OwnFEC());
+   rgf->MakeOwner(NULL);
+   cgf->real() = *rgf;
+   cgf->imag() = *igf;
+   delete rgf;
+   delete igf;
+   SetCmplxGridFunction(cgf, component);
 }
 
 void DataState::SetQuadFunction(mfem::QuadratureFunction *qf, int component)

@@ -304,11 +304,13 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
    const int nproc = input_streams.size();
    std::vector<Mesh*> mesh_array(nproc);
    std::vector<GridFunction*> gf_array(nproc);
+   std::vector<ComplexGridFunction*> cgf_array(nproc);
    std::vector<QuadratureFunction*> qf_array(nproc);
 
    std::string data_type;
 
    int gf_count = 0;
+   int cgf_count = 0;
    int qf_count = 0;
 
    for (int p = 0; p < nproc; p++)
@@ -336,7 +338,14 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
          }
       }
       gf_array[p] = NULL;
-      if (data_type == "quadrature")
+      if (data_type == "csolution")
+      {
+         isock >> ws;
+         isock.ignore(3);// ignore 'Par' prefix to load as serial
+         cgf_array[p] = new ComplexGridFunction(mesh_array[p], isock);
+         cgf_count++;
+      }
+      else if (data_type == "quadrature")
       {
          qf_array[p] = new QuadratureFunction(mesh_array[p], isock);
          qf_count++;
@@ -352,6 +361,7 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
    }
 
    if ((gf_count > 0 && gf_count != nproc)
+       || (cgf_count > 0 && cgf_count != nproc)
        || (qf_count > 0 && qf_count != nproc))
    {
       mfem_error("Input streams contain a mixture of data types!");
@@ -361,6 +371,10 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
    if (gf_count > 0)
    {
       data.SetGridFunction(new GridFunction(data.mesh.get(), gf_array.data(), nproc));
+   }
+   else if (cgf_count > 0)
+   {
+      data.SetCmplxGridFunction(cgf_array);
    }
    else if (qf_count > 0)
    {
