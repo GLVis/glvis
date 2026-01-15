@@ -1464,7 +1464,7 @@ void CheckPhaseAnim()
       phase_anim = 0;
       RemoveIdleFunc(MainLoop);
    }
-   cout << "Phase rate: " << phase_rate << " radians / frame" << endl;
+   cout << "Phase rate: " << phase_rate << " period / frame" << endl;
 }
 
 void KeySemicolonPressed()
