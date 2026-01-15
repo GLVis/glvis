@@ -398,6 +398,12 @@ void StreamReader::WriteStream(std::ostream &os)
       }
       data.quad_f->Save(os);
    }
+   else if (data.cgrid_f)
+   {
+      os << "csolution\n";
+      data.mesh->Print(os);
+      data.cgrid_f->Save(os);
+   }
    else if (data.grid_f)
    {
       os << "solution\n";
