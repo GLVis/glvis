@@ -617,7 +617,7 @@ thread_local int constrained_spinning = 0;
 
 thread_local double phase_rate = 0.;
 thread_local int phase_anim = 0;
-const double phase_step = 0.01;
+const double phase_step = 0.001;
 
 void CheckMainIdleFunc()
 {
@@ -1454,7 +1454,7 @@ void KeyEnterPressed()
 
 void CheckPhaseAnim()
 {
-   if (fabs(phase_rate) < 1.e-2)
+   if (fabs(phase_rate) < phase_step)
    {
       phase_rate = 0.;
    }
