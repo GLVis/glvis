@@ -1454,7 +1454,7 @@ void KeyEnterPressed()
 
 void CheckPhaseAnim()
 {
-   if (fabs(phase_rate) < phase_step)
+   if (fabs(phase_rate) < phase_step / 2.)
    {
       phase_rate = 0.;
    }
