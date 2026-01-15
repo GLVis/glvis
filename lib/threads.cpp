@@ -467,40 +467,37 @@ int GLVisCommand::Execute()
       case NEW_MESH_AND_SOLUTION:
       {
          double mesh_range = -1.0;
-         if (!new_state.grid_f)
+         if (new_state.quad_f)
          {
-            if (new_state.quad_f)
+            auto qs = win.data_state.GetQuadSolution();
+            if (qs != DataState::QuadSolution::NONE)
             {
-               auto qs = win.data_state.GetQuadSolution();
-               if (qs != DataState::QuadSolution::NONE)
-               {
-                  new_state.SetQuadSolution(qs);
-               }
-               else
-               {
-                  new_state.SetQuadSolution();
-               }
-               new_state.ExtrudeMeshAndSolution();
-            }
-            else if (new_state.cgrid_f)
-            {
-               auto cs = win.data_state.GetComplexSolution();
-               if (cs != DataState::ComplexSolution::NONE)
-               {
-                  new_state.SetComplexSolution(cs);
-               }
-               else
-               {
-                  new_state.SetComplexSolution();
-               }
-               new_state.ExtrudeMeshAndSolution();
+               new_state.SetQuadSolution(qs);
             }
             else
             {
-               new_state.save_coloring = false;
-               new_state.SetMeshSolution();
-               mesh_range = new_state.grid_f->Max() + 1.0;
+               new_state.SetQuadSolution();
             }
+            new_state.ExtrudeMeshAndSolution();
+         }
+         else if (new_state.cgrid_f)
+         {
+            auto cs = win.data_state.GetComplexSolution();
+            if (cs != DataState::ComplexSolution::NONE)
+            {
+               new_state.SetComplexSolution(cs);
+            }
+            else
+            {
+               new_state.SetComplexSolution();
+            }
+            new_state.ExtrudeMeshAndSolution();
+         }
+         else if (!new_state.grid_f)
+         {
+            new_state.save_coloring = false;
+            new_state.SetMeshSolution();
+            mesh_range = new_state.grid_f->Max() + 1.0;
          }
          if (win.SetNewMeshAndSolution(std::move(new_state)))
          {
