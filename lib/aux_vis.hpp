@@ -53,6 +53,7 @@ void SetLegacyGLOnly(bool status);
 
 void AddIdleFunc(void (*Func)(void));
 void RemoveIdleFunc(void (*Func)(void));
+void CheckMainIdleFunc();
 
 void LeftButtonDown  (GLWindow::MouseEventInfo *event);
 void LeftButtonLoc   (GLWindow::MouseEventInfo *event);

@@ -619,6 +619,18 @@ thread_local double phase_rate = 0.;
 thread_local int phase_anim = 0;
 const double phase_step = 0.01;
 
+void CheckMainIdleFunc()
+{
+   if (locscene->spinning || phase_anim)
+   {
+      AddIdleFunc(MainLoop);
+   }
+   if (!locscene->spinning && !phase_anim)
+   {
+      RemoveIdleFunc(MainLoop);
+   }
+}
+
 void MainLoop()
 {
    static int p = 1;
@@ -683,7 +695,7 @@ inline void ComputeSphereAngles(int &newx, int &newy,
 void LeftButtonDown(GLWindow::MouseEventInfo *event)
 {
    locscene -> spinning = 0;
-   RemoveIdleFunc(MainLoop);
+   CheckMainIdleFunc();
 
    oldx = event->mouse_x;
    oldy = event->mouse_y;
@@ -1395,16 +1407,8 @@ void CheckSpin()
    {
       xang = 0.;
    }
-   if (xang != 0. || yang != 0.)
-   {
-      locscene->spinning = 1;
-      AddIdleFunc(MainLoop);
-   }
-   else
-   {
-      locscene->spinning = 0;
-      RemoveIdleFunc(MainLoop);
-   }
+   locscene->spinning = (xang != 0. || yang != 0.);
+   CheckMainIdleFunc();
    cout << "Spin angle: " << xang << " degrees / frame" << endl;
 }
 
@@ -1426,14 +1430,14 @@ void KeyDeletePressed()
    {
       xang = yang = 0.;
       locscene -> spinning = 0;
-      RemoveIdleFunc(MainLoop);
+      CheckMainIdleFunc();
       constrained_spinning = 1;
    }
    else
    {
       xang = xang_step;
       locscene -> spinning = 1;
-      AddIdleFunc(MainLoop);
+      CheckMainIdleFunc();
       constrained_spinning = 1;
    }
 }
@@ -1454,16 +1458,8 @@ void CheckPhaseAnim()
    {
       phase_rate = 0.;
    }
-   if (phase_rate != 0.)
-   {
-      phase_anim = 1;
-      AddIdleFunc(MainLoop);
-   }
-   else
-   {
-      phase_anim = 0;
-      RemoveIdleFunc(MainLoop);
-   }
+   phase_anim = (phase_rate != 0.);
+   CheckMainIdleFunc();
    cout << "Phase rate: " << phase_rate << " period / frame" << endl;
 }
 
