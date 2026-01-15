@@ -542,8 +542,8 @@ void DataState::SetComplexSolution(ComplexSolution cmplx_type)
    {
       gf = new GridFunction(cgrid_f->FESpace());
       const FiniteElementSpace *fes = cgrid_f->FESpace();
-      const Mesh *mesh = fes->GetMesh();
-      const int dim = mesh->Dimension();
+      const Mesh *msh = fes->GetMesh();
+      const int dim = msh->Dimension();
       if (cgrid_f->FESpace()->FEColl()->GetMapType(dim) == FiniteElement::VALUE)
       {
          for (int i = 0; i < gf->Size(); i++)
@@ -562,7 +562,7 @@ void DataState::SetComplexSolution(ComplexSolution cmplx_type)
          Vector r_vec, i_vec, z_vec;
          DenseMatrix vshape;
          Vector shape;
-         for (int z = 0; z < mesh->GetNE(); z++)
+         for (int z = 0; z < msh->GetNE(); z++)
          {
             fes->GetElementVDofs(z, vdofs);
             cgrid_f->real().GetSubVector(vdofs, r_data);
