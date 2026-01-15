@@ -158,6 +158,9 @@ int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    std::vector<GridFunction *> gf_array(np);
    std::vector<ComplexGridFunction *> cgf_array(np);
 
+   int gf_count = 0;
+   int cgf_count = 0;
+
    int read_err = 0;
    for (int p = 0; p < np; p++)
    {
@@ -207,10 +210,12 @@ int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                solfile >> ws;
                solfile.ignore(3);// ignore 'Par' prefix to load as serial
                cgf_array[p] = new ComplexGridFunction(mesh_array[p], solfile);
+               cgf_count++;
             }
             else
             {
                gf_array[p] = new GridFunction(mesh_array[p], solfile);
+               gf_count++;
             }
          }
          else  // mesh and solution in the same file
@@ -218,10 +223,12 @@ int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
             if (CheckStreamIsComplex(meshfile))
             {
                cgf_array[p] = new ComplexGridFunction(mesh_array[p], meshfile);
+               cgf_count++;
             }
             else
             {
                gf_array[p] = new GridFunction(mesh_array[p], meshfile);
+               gf_count++;
             }
          }
       }
@@ -229,15 +236,10 @@ int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
 
    if (!read_err)
    {
-      bool bcmplx{}, breal{};
-      for (int p = 0; p < np; p++)
+      if ((gf_count > 0 && gf_count != np)
+          || (cgf_count > 0 && cgf_count != np))
       {
-         if (cgf_array[p]) { bcmplx = true; }
-         if (gf_array[p]) { breal = true; }
-      }
-      if (bcmplx && breal)
-      {
-         cerr << "Inconsistent input files" << endl;
+         cerr << "Input files contain a mixture of data types!" << endl;
          read_err = 3;
       }
    }
