@@ -154,6 +154,11 @@ Key commands
   - piece-wise constant refined (LOR)
   - L2 element dof collocation (interpolation)
   - L2 element projection (L2 projection)
+- <kbd>Q</kbd> – Cycle between representations of the visualized *complex data*. The options are:
+  - magnitude
+  - phase
+  - real part
+  - imaginary part
 - <kbd>q</kbd> – Exit
 
 ## Advanced
@@ -199,6 +204,7 @@ Key commands
   - `on` (default): recompute both the bounding box and the value range
   - `value`: recompute only the value range
   - `mesh`: recompute only the bounding box
+- <kbd>;</kbd> / <kbd>:</kbd> - Increase/decrease the harmonic complex phase rate of animation
 
 ## 2D scalar data
 

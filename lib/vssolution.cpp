@@ -76,6 +76,8 @@ std::string VisualizationSceneSolution::GetHelpString() const
       << "| p/P  Cycle through color palettes  |" << endl
       << "| q -  Quits                         |" << endl
       << "| Q -  Cycle quadrature data mode    |" << endl
+      << "| Q -  Cycle complex data mode       |" << endl
+      << "| ;/: -  Inc/decrease phase freq.    |" << endl
       << "| r -  Reset the plot to 3D view     |" << endl
       << "| R -  Reset the plot to 2D view     |" << endl
       << "| s -  Turn on/off unit cube scaling |" << endl
