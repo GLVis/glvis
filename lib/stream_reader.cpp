@@ -13,6 +13,7 @@
 
 #include <array>
 #include <algorithm>
+#include <general/text.hpp>
 
 using namespace std;
 using namespace mfem;
@@ -21,7 +22,6 @@ enum class Command
 {
    Mesh,
    Solution,
-   ComplexSolution,
    Quadrature,
    Fem2D,
    VFem2D,
@@ -69,7 +69,6 @@ StreamCommands::StreamCommands()
 {
    (*this)[Command::Mesh]                 = {"mesh", false, "<mesh>", "Visualize the mesh."};
    (*this)[Command::Solution]             = {"solution", false, "<mesh> <solution>", "Visualize the solution."};
-   (*this)[Command::ComplexSolution]      = {"csolution", false, "<mesh> <complex_solution>", "Visualize the complex solution."};
    (*this)[Command::Quadrature]           = {"quadrature", false, "<mesh> <quadrature>", "Visualize the quadrature."};
    (*this)[Command::Fem2D]                = {"fem2d_data", false, "<mesh> <data>", "Visualize the 2D scalar data."};
    (*this)[Command::VFem2D]               = {"vfem2d_data", false, "<mesh> <data_x> <data_y>", "Visualize the 2D vector data."};
@@ -102,6 +101,21 @@ bool StreamReader::SupportsDataType(const string &data_type)
 {
    auto it = find(commands.begin(), commands.end(), data_type);
    return it != commands.end();
+}
+
+bool StreamReader::CheckStreamIsComplex(std::istream &solin,
+                                        bool parallel)
+{
+   string buff;
+   solin >> ws;
+   getline(solin, buff);
+   solin.unget();
+   const size_t len = buff.length();
+   for (size_t i = 0; i < len; i++) { solin.putback(buff[len-1-i]); }
+   mfem::filter_dos(buff);
+   const char *header = (parallel)?("ParComplexGridFunction"):
+                        ("ComplexGridFunction");
+   return (buff == header);
 }
 
 int StreamReader::ReadStream(
@@ -156,11 +170,14 @@ int StreamReader::ReadStream(
       case Command::VFem3D_GF_keys:
       case Command::Solution:
          data.SetMesh(new Mesh(is, 1, 0, data.fix_elem_orient));
-         data.SetGridFunction(new GridFunction(data.mesh.get(), is));
-         break;
-      case Command::ComplexSolution:
-         data.SetMesh(new Mesh(is, 1, 0, data.fix_elem_orient));
-         data.SetCmplxGridFunction(new ComplexGridFunction(data.mesh.get(), is));
+         if (CheckStreamIsComplex(is))
+         {
+            data.SetCmplxGridFunction(new ComplexGridFunction(data.mesh.get(), is));
+         }
+         else
+         {
+            data.SetGridFunction(new GridFunction(data.mesh.get(), is));
+         }
          break;
       case Command::Quadrature:
          data.SetMesh(new Mesh(is, 1, 0, data.fix_elem_orient));
@@ -338,22 +355,24 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
          }
       }
       gf_array[p] = NULL;
-      if (data_type == "csolution")
-      {
-         isock >> ws;
-         isock.ignore(3);// ignore 'Par' prefix to load as serial
-         cgf_array[p] = new ComplexGridFunction(mesh_array[p], isock);
-         cgf_count++;
-      }
-      else if (data_type == "quadrature")
+      if (data_type == "quadrature")
       {
          qf_array[p] = new QuadratureFunction(mesh_array[p], isock);
          qf_count++;
       }
       else if (data_type != "mesh")
       {
-         gf_array[p] = new GridFunction(mesh_array[p], isock);
-         gf_count++;
+         if (CheckStreamIsComplex(isock, true))
+         {
+            isock.ignore(3);// ignore 'Par' prefix to load as serial
+            cgf_array[p] = new ComplexGridFunction(mesh_array[p], isock);
+            cgf_count++;
+         }
+         else
+         {
+            gf_array[p] = new GridFunction(mesh_array[p], isock);
+            gf_count++;
+         }
       }
 #ifdef GLVIS_DEBUG
       cout << "done." << endl;

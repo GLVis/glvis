@@ -25,6 +25,8 @@ class StreamReader
 {
    DataState &data;
 
+   static bool CheckStreamIsComplex(std::istream &sol, bool parallel = false);
+
 public:
 
    StreamReader(DataState &data_): data(data_) { }

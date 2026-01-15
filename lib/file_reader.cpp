@@ -128,7 +128,7 @@ int FileReader::ReadParallel(int np, FileType ft, const char *mesh_file,
    return read_err;
 }
 
-bool FileReader::CheckStreamIsComplex(std::istream &solin, bool parallel) const
+bool FileReader::CheckStreamIsComplex(std::istream &solin, bool parallel)
 {
    string buff;
    auto pos = solin.tellg();
