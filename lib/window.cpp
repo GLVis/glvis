@@ -213,7 +213,10 @@ void Window::SwitchQuadSolution(DataState::QuadSolution quad_type)
 void Window::UpdateComplexPhase(double ph)
 {
    data_state.cmplx_phase += ph;
-   data_state.SwitchComplexSolution(data_state.GetComplexSolution(), false);
+   DataState::ComplexSolution cs = data_state.GetComplexSolution();
+   // check if magnitude is viewed, which remains the same
+   if (cs == DataState::ComplexSolution::Magnitude) { return; }
+   data_state.SwitchComplexSolution(cs, false);
    ResetMeshAndSolution(data_state);
 }
 
