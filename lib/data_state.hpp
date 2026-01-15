@@ -91,6 +91,7 @@ public:
    bool fix_elem_orient{false};
    bool save_coloring{false};
    bool keep_attr{false};
+   double cmplx_phase{};
 
    DataState() = default;
    DataState(DataState &&ss) { *this = std::move(ss); }
@@ -176,10 +177,11 @@ public:
    void SetMeshSolution();
 
    /// Set the complex function representation producing a proxy grid function
-   void SetComplexSolution(ComplexSolution type = ComplexSolution::Magnitude);
+   void SetComplexSolution(ComplexSolution type = ComplexSolution::Magnitude,
+                           bool print = true);
 
    /// Switch the complex function representation
-   void SwitchComplexSolution(ComplexSolution type);
+   void SwitchComplexSolution(ComplexSolution type, bool print = true);
 
    /// Get the current representation of complex solution
    inline ComplexSolution GetComplexSolution() const { return cmplx_sol; }

@@ -223,6 +223,8 @@ public:
 
    virtual gl3::SceneInfo GetSceneObjs();
 
+   virtual void UpdateComplexPhase(double ph) { win.UpdateComplexPhase(ph); }
+
    void ProcessUpdatedBufs(gl3::SceneInfo& scene);
 
    void glTF_ExportBox(glTF_Builder &bld,

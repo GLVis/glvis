@@ -210,6 +210,13 @@ void Window::SwitchQuadSolution(DataState::QuadSolution quad_type)
    ResetMeshAndSolution(data_state);
 }
 
+void Window::UpdateComplexPhase(double ph)
+{
+   data_state.cmplx_phase += ph;
+   data_state.SwitchComplexSolution(data_state.GetComplexSolution(), false);
+   ResetMeshAndSolution(data_state);
+}
+
 bool Window::SetNewMeshAndSolution(DataState new_state)
 {
    if (new_state.mesh->SpaceDimension() == data_state.mesh->SpaceDimension() &&

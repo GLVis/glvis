@@ -211,6 +211,8 @@ public:
    void Scale(double s);
    void Scale(double s1, double s2, double s3);
 
+   virtual void UpdateComplexPhase(double phase) { }
+
    void CenterObject();
    void CenterObject2D();
 

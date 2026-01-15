@@ -67,6 +67,9 @@ public:
    /// Switch the quadrature function representation and update the visualization
    void SwitchQuadSolution(DataState::QuadSolution type);
 
+   /// Update complex phase of the solution and update the visualization
+   void UpdateComplexPhase(double ph);
+
    /// Sets a new mesh and solution from another DataState object, and
    /// updates the VisualizationScene with the new data.
    ///

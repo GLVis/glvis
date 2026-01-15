@@ -88,6 +88,9 @@ void Key0Pressed();
 void KeyDeletePressed();
 void KeyEnterPressed();
 
+void KeySemicolonPressed();
+void KeyColonPressed();
+
 void KeyLeftPressed(GLenum);
 void KeyRightPressed(GLenum);
 void KeyUpPressed(GLenum);

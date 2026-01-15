@@ -229,6 +229,9 @@ GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
    wnd->setOnKeyDown (SDLK_PERIOD, KeyDeletePressed);
    wnd->setOnKeyDown (SDLK_RETURN, KeyEnterPressed);
 
+   wnd->setOnKeyDown (SDLK_SEMICOLON, KeySemicolonPressed);
+   wnd->setOnKeyDown (SDLK_COLON, KeyColonPressed);
+
    wnd->setOnKeyDown (SDLK_0, Key0Pressed);
    wnd->setOnKeyDown (SDLK_1, Key1Pressed);
    wnd->setOnKeyDown (SDLK_2, Key2Pressed);
@@ -612,6 +615,9 @@ thread_local GLint oldx, oldy, startx, starty;
 
 thread_local int constrained_spinning = 0;
 
+thread_local double phase_rate = 0.;
+thread_local int phase_anim = 0;
+const double phase_step = 0.01;
 
 void MainLoop()
 {
@@ -621,13 +627,19 @@ void MainLoop()
       if (!constrained_spinning)
       {
          locscene->Rotate(xang, yang);
-         SendExposeEvent();
       }
       else
       {
          locscene->PreRotate(xang, 0.0, 0.0, 1.0);
-         SendExposeEvent();
       }
+   }
+   if (phase_anim)
+   {
+      locscene->UpdateComplexPhase(phase_rate);
+   }
+   if (locscene->spinning || phase_anim)
+   {
+      SendExposeEvent();
       std::this_thread::sleep_for(std::chrono::milliseconds{10}); // sleep for 0.01 seconds
    }
    if (locscene->movie)
@@ -1434,6 +1446,45 @@ void KeyEnterPressed()
    }
    xang += xang_step;
    CheckSpin();
+}
+
+void CheckPhaseAnim()
+{
+   if (fabs(phase_rate) < 1.e-2)
+   {
+      phase_rate = 0.;
+   }
+   if (phase_rate != 0.)
+   {
+      phase_anim = 1;
+      AddIdleFunc(MainLoop);
+   }
+   else
+   {
+      phase_anim = 0;
+      RemoveIdleFunc(MainLoop);
+   }
+   cout << "Phase rate: " << phase_rate << " radians / frame" << endl;
+}
+
+void KeySemicolonPressed()
+{
+   if (!phase_anim)
+   {
+      phase_rate = 0.;
+   }
+   phase_rate += phase_step;
+   CheckPhaseAnim();
+}
+
+void KeyColonPressed()
+{
+   if (!phase_anim)
+   {
+      phase_rate = 0.;
+   }
+   phase_rate -= phase_step;
+   CheckPhaseAnim();
 }
 
 void Key7Pressed()
