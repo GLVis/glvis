@@ -645,19 +645,19 @@ bool ScriptController::ExecuteScriptCommand()
             cout << "Script: autoscale: " << word;
             if (word == "off")
             {
-               win.vs->SetAutoscale(0);
+               win.vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::None);
             }
             else if (word == "on")
             {
-               win.vs->SetAutoscale(1);
+               win.vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::MeshAndValue);
             }
             else if (word == "value")
             {
-               win.vs->SetAutoscale(2);
+               win.vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::Value);
             }
             else if (word == "mesh")
             {
-               win.vs->SetAutoscale(3);
+               win.vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::Mesh);
             }
             else
             {

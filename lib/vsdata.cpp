@@ -105,15 +105,15 @@ int VisualizationSceneScalarData::GetAutoRefineFactor()
 
 void VisualizationSceneScalarData::DoAutoscale(bool prepare)
 {
-   if (autoscale == 1)
+   if (autoscale == Autoscale::MeshAndValue)
    {
       FindNewBoxAndValueRange(prepare);
    }
-   else if (autoscale == 2)
+   else if (autoscale == Autoscale::Value)
    {
       FindNewValueRange(prepare);
    }
-   else if (autoscale == 3)
+   else if (autoscale == Autoscale::Mesh)
    {
       FindMeshBox(prepare);
    }
@@ -121,7 +121,7 @@ void VisualizationSceneScalarData::DoAutoscale(bool prepare)
 
 void VisualizationSceneScalarData::DoAutoscaleValue(bool prepare)
 {
-   if (autoscale == 1 || autoscale == 3)
+   if (autoscale == Autoscale::MeshAndValue || autoscale == Autoscale::Mesh)
    {
       FindNewBoxAndValueRange(prepare);
    }
@@ -666,11 +666,12 @@ void Key_Mod_a_Pressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
-      static const char *autoscale_modes[] = { "off", "on", "value", "mesh" };
-      int autoscale = vsdata->GetAutoscale();
-      autoscale = (autoscale + 1)%4;
+      constexpr int nmodes = (int) VisualizationSceneScalarData::Autoscale::Max;
+      static const char *autoscale_modes[nmodes] = { "off", "on", "value", "mesh" };
+      int autoscale = (int)vsdata->GetAutoscale();
+      autoscale = (autoscale + 1) % (nmodes);
       cout << "Autoscale: " << flush;
-      vsdata->SetAutoscale(autoscale);
+      vsdata->SetAutoscale((VisualizationSceneScalarData::Autoscale) autoscale);
       cout << autoscale_modes[autoscale] << endl;
       SendExposeEvent();
    }
@@ -1346,7 +1347,8 @@ void VisualizationSceneScalarData::ToggleTexture()
    }
 }
 
-void VisualizationSceneScalarData::SetAutoscale(int _autoscale, bool update)
+void VisualizationSceneScalarData::SetAutoscale(Autoscale _autoscale,
+                                                bool update)
 {
    if (autoscale != _autoscale)
    {
@@ -1473,7 +1475,7 @@ void VisualizationSceneScalarData::Init()
 
    PrepareRuler();
 
-   autoscale = 1;
+   autoscale = VisualizationSceneScalarData::Autoscale::MeshAndValue;
 }
 
 VisualizationSceneScalarData::~VisualizationSceneScalarData()

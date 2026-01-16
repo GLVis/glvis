@@ -459,7 +459,7 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
 
    VisualizationSceneSolution::NewMeshAndSolution(mesh, mesh_coarse, sol, &vgf);
 
-   if (autoscale)
+   if (autoscale != VisualizationSceneScalarData::Autoscale::None)
    {
       if (Vec2Scalar == VecLength)
       {

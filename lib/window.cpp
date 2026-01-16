@@ -167,7 +167,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
       if (mesh_range > 0.0)
       {
          vs->SetValueRange(-mesh_range, mesh_range);
-         vs->SetAutoscale(0);
+         vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::None);
       }
       if (data_state.mesh->SpaceDimension() == 2
           && field_type == DataState::FieldType::MESH)
@@ -201,7 +201,9 @@ void Window::GLVisStartVis()
 void Window::SwitchComplexSolution(DataState::ComplexSolution cmplx_type)
 {
    data_state.SwitchComplexSolution(cmplx_type);
-   int as = (cmplx_type == DataState::ComplexSolution::Magnitude ? 1 : 3);
+   auto as = (cmplx_type == DataState::ComplexSolution::Magnitude ?
+              VisualizationSceneScalarData::Autoscale::MeshAndValue :
+              VisualizationSceneScalarData::Autoscale::Mesh);
    vs->SetAutoscale(as, false);
    ResetMeshAndSolution(data_state);
    switch (cmplx_type)
@@ -235,8 +237,8 @@ void Window::UpdateComplexPhase(double ph)
    if (cs == DataState::ComplexSolution::Magnitude) { return; }
    data_state.SwitchComplexSolution(cs, false);
    // do not autoscale for animation
-   int as = vs->GetAutoscale();
-   vs->SetAutoscale(0);
+   auto as = vs->GetAutoscale();
+   vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::None);
    ResetMeshAndSolution(data_state);
    vs->SetAutoscale(as, false);
 }

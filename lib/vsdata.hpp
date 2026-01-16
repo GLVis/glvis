@@ -66,6 +66,20 @@ public:
       Max
    };
 
+   // autoscale controls the behavior when the mesh/solution are updated
+   enum class Autoscale
+   {
+      Invalid = -1,
+      Min = -1,
+      //---------
+      None, // do not change the bounding box and the value range
+      MeshAndValue, // recompute both the bounding box and the value range (default)
+      Value, // recompute only the value range
+      Mesh, // recompute only the bounding box
+      //---------
+      Max
+   };
+
 protected:
    Mesh   *mesh{}, *mesh_coarse{};
    Vector *sol{};
@@ -104,12 +118,7 @@ protected:
    int ruler_on;
    double ruler_x, ruler_y, ruler_z;
 
-   // autoscale controls the behavior when the mesh/solution are updated:
-   // 0 - do not change the bounding box and the value range
-   // 1 - recompute both the bounding box and the value range (default)
-   // 2 - recompute only the value range
-   // 3 - recompute only the bounding box
-   int autoscale;
+   Autoscale autoscale;
 
    bool logscale;
 
@@ -187,10 +196,10 @@ public:
    virtual void FindMeshBox(bool prepare) { FindNewBox(prepare); }
 
    // Perform autoscaling depending on the value of 'autoscale':
-   // 0 - do nothing
-   // 1 - call FindNewBoxAndValueRange
-   // 2 - call FindNewValueRange
-   // 3 - call FindMeshBox
+   // None - do nothing
+   // MeshAndValue - call FindNewBoxAndValueRange
+   // Value - call FindNewValueRange
+   // Mesh - call FindMeshBox
    void DoAutoscale(bool prepare);
    // Similar to the above but force recomputation of the value range
    void DoAutoscaleValue(bool prepare);
@@ -316,8 +325,8 @@ public:
 
    void Toggle2DView();
 
-   void SetAutoscale(int _autoscale, bool update = true);
-   int GetAutoscale() const { return autoscale; }
+   void SetAutoscale(Autoscale _autoscale, bool update = true);
+   Autoscale GetAutoscale() const { return autoscale; }
 
    /// Shrink the set of points towards attributes centers of gravity
    void ShrinkPoints(DenseMatrix &pointmat, int i, int fn, int di);
