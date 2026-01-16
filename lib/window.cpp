@@ -201,7 +201,23 @@ void Window::GLVisStartVis()
 void Window::SwitchComplexSolution(DataState::ComplexSolution cmplx_type)
 {
    data_state.SwitchComplexSolution(cmplx_type);
+   int as = (cmplx_type == DataState::ComplexSolution::Magnitude ? 1 : 3);
+   vs->SetAutoscale(as, false);
    ResetMeshAndSolution(data_state);
+   switch (cmplx_type)
+   {
+      case DataState::ComplexSolution::Magnitude:
+         break;
+      case DataState::ComplexSolution::Phase:
+         vs->SetValueRange(-M_PI, +M_PI);
+         break;
+      case DataState::ComplexSolution::Real:
+      case DataState::ComplexSolution::Imag:
+         vs->SetValueRange(-data_state.cmplx_mag_max, +data_state.cmplx_mag_max);
+         break;
+      default:
+         mfem_error("Unknown representation");
+   }
 }
 
 void Window::SwitchQuadSolution(DataState::QuadSolution quad_type)
@@ -218,7 +234,11 @@ void Window::UpdateComplexPhase(double ph)
    // check if magnitude is viewed, which remains the same
    if (cs == DataState::ComplexSolution::Magnitude) { return; }
    data_state.SwitchComplexSolution(cs, false);
+   // do not autoscale for animation
+   int as = vs->GetAutoscale();
+   vs->SetAutoscale(0);
    ResetMeshAndSolution(data_state);
+   vs->SetAutoscale(as, false);
 }
 
 bool Window::SetNewMeshAndSolution(DataState new_state)

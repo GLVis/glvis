@@ -92,6 +92,7 @@ public:
    bool save_coloring{false};
    bool keep_attr{false};
    double cmplx_phase{};
+   double cmplx_mag_max{0.};
 
    DataState() = default;
    DataState(DataState &&ss) { *this = std::move(ss); }

@@ -1346,12 +1346,15 @@ void VisualizationSceneScalarData::ToggleTexture()
    }
 }
 
-void VisualizationSceneScalarData::SetAutoscale(int _autoscale)
+void VisualizationSceneScalarData::SetAutoscale(int _autoscale, bool update)
 {
    if (autoscale != _autoscale)
    {
       autoscale = _autoscale;
-      DoAutoscale(true);
+      if (update)
+      {
+         DoAutoscale(true);
+      }
    }
 }
 

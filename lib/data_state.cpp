@@ -555,12 +555,16 @@ void DataState::SetComplexSolution(ComplexSolution cmplx_type, bool print)
       r = rph, i = iph;
    };
 
+   cmplx_mag_max = 0.;
+
    if (cgrid_f->FESpace()->FEColl()->GetMapType(dim) == FiniteElement::VALUE)
    {
       for (int i = 0; i < gf->Size(); i++)
       {
          double rval = cgrid_f->real()(i);
          double ival = cgrid_f->imag()(i);
+         double mag = hypot(rval, ival);
+         cmplx_mag_max = max(cmplx_mag_max, mag);
          rot_ph(rval, ival);
          (*gf)(i) = cmplx_2_scalar(rval, ival);
       }
@@ -620,6 +624,8 @@ void DataState::SetComplexSolution(ComplexSolution cmplx_type, bool print)
             {
                double rval = r_vals(n,d) * w;
                double ival = i_vals(n,d) * w;
+               double mag = hypot(rval, ival);
+               cmplx_mag_max = min(cmplx_mag_max, mag);
                rot_ph(rval, ival);
                const double zval = cmplx_2_scalar(rval, ival);
                z_vals(n,d) = (w != 0.)?(zval / w):(0.);

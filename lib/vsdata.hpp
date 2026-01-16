@@ -316,7 +316,7 @@ public:
 
    void Toggle2DView();
 
-   void SetAutoscale(int _autoscale);
+   void SetAutoscale(int _autoscale, bool update = true);
    int GetAutoscale() const { return autoscale; }
 
    /// Shrink the set of points towards attributes centers of gravity
