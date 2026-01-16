@@ -16,8 +16,8 @@ Unlike previous GLVis releases, this version requires a C++17 compiler.
 
 - Added headless (no GUI) visualization, relying on the EGL (Linux) or CGL
   (MacOS) interface. It is available through '-hl' command-line option or
-  'headless' script command (before the visualization commands). End of the
-  loaded stream or script file end the visualization in this mode. Note GLVis
+  'headless' script command (before the visualization commands). The end of the
+  loaded stream or script file ends the visualization in this mode. Note GLVis
   must be compiled with with EGL/CGL (see INSTALL).
 
 - Added non-persistent mode of the server, when the server terminates after all
