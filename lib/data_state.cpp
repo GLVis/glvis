@@ -539,7 +539,9 @@ void DataState::SetComplexSolution(ComplexSolution cmplx_type, bool print)
 
    if (print)
    {
-      cout << "Representing complex function by: " << str_cmplx_2_scalar << endl;
+      cout << "Representing complex function by: " << str_cmplx_2_scalar;
+      if (cmplx_type != ComplexSolution::Magnitude) { cout << " (+ animated harmonic phase)"; }
+      cout << endl;
    }
    GridFunction *gf = new GridFunction(cgrid_f->FESpace());
    const FiniteElementSpace *fes = cgrid_f->FESpace();
