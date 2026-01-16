@@ -627,7 +627,7 @@ void DataState::SetComplexSolution(ComplexSolution cmplx_type, bool print)
                double rval = r_vals(n,d) * w;
                double ival = i_vals(n,d) * w;
                double mag = hypot(rval, ival);
-               cmplx_mag_max = min(cmplx_mag_max, mag);
+               cmplx_mag_max = max(cmplx_mag_max, mag);
                rot_ph(rval, ival);
                const double zval = cmplx_2_scalar(rval, ival);
                z_vals(n,d) = (w != 0.)?(zval / w):(0.);
