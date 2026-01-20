@@ -725,6 +725,7 @@ void ScriptController::ExecuteScriptCommand()
             win.vs->palette.SetIndex(pal-1);
             MyExpose();
          }
+         break;
          case Command::PaletteRepeat:
          {
             int rpt_times;
