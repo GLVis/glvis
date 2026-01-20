@@ -820,6 +820,7 @@ enum class Command
    WindowTitle,
    Keys,
    Palette,
+   PaletteName,
    PaletteRepeat,
    Camera,
    PlotCaption,
@@ -871,6 +872,7 @@ ThreadCommands::ThreadCommands()
    (*this)[Command::WindowTitle]          = {"window_title", "'<title>'", "Set title of the window."};
    (*this)[Command::Keys]                 = {"keys", "<keys>", "Send the control key sequence."};
    (*this)[Command::Palette]              = {"palette", "<index>", "Set the palette index."};
+   (*this)[Command::PaletteName]          = {"palette_name", "<palette_name>", "Use palette with given name."};
    (*this)[Command::PaletteRepeat]        = {"palette_repeat", "<times>", "Set the repetition of the palette."};
    (*this)[Command::Camera]               = {"camera", "<cam[0]> ... <cam[2]> <dir[0]> ... <dir[2]> <up[0]> ... <up[2]>", "Set the camera position, direction and upward vector."};
    (*this)[Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
@@ -1405,6 +1407,34 @@ void communication_thread::execute()
             if (glvis_command->Palette(pal))
             {
                goto comm_terminate;
+            }
+         }
+         break;
+         case Command::PaletteName:
+         {
+            std::string palette_name, a;
+
+            *is[0] >> palette_name;
+
+            // all processors sent the command
+            for (size_t i = 1; i < is.size(); i++)
+            {
+               *is[i] >> ws >> ident; // 'palette_name'
+               *is[i] >> a;
+            }
+
+            int pal = BasePalettes.GetIndexByName(palette_name);
+
+            if (pal >= 0)
+            {
+               if (glvis_command->Palette(pal))
+               {
+                  goto comm_terminate;
+               }
+            }
+            else
+            {
+               cout << "Palette " << palette_name << " is not defined." << endl;
             }
          }
          break;
