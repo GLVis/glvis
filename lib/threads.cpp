@@ -1467,7 +1467,8 @@ void communication_thread::execute()
          {
             std::string filename, a;
 
-            *is[0] >> filename;
+            *is[0] >> ws;
+            std::getline(*is[0], filename);
 
             // all processors sent the command
             for (size_t i = 1; i < is.size(); i++)

@@ -733,7 +733,8 @@ void ScriptController::ExecuteScriptCommand()
          case Command::PaletteFile:
          {
             std::string palette_file;
-            scr >> palette_file;
+            scr >> ws;
+            std::getline(scr, palette_file);
             cout << "Script: palette_file: " << palette_file << endl;
             BasePalettes.Load(palette_file);
             win.vs->palette.GenerateTextures(true); // need to reinitialize
