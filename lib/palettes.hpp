@@ -29,6 +29,7 @@ public:
    int GetSmoothSetting() { return use_smooth; }
    /// Sets the palette texture to bind.
    void SetIndex(int num);
+   void SetByName(const std::string& palette_name);
    /// Use the default index if set
    bool UseDefaultIndex();
    /// If default index is not set, sets to this index.

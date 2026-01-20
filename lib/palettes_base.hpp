@@ -174,8 +174,6 @@ private:
    std::vector<std::unique_ptr<Palette>> palettes;
 
    int default_palette = -1; // index of the default palette
-   /// Find the index of a palette by name
-   int GetIndexByName(const std::string& name) const;
 
 public:
    /// Empty constructor
@@ -199,6 +197,9 @@ public:
 
    /// Get a palette pointer by name; if not found, returns last palette
    Palette* Get(const std::string& name) const;
+
+   /// Find the index of a palette by name
+   int GetIndexByName(const std::string& name) const;
 
    /// Set the index of the default palette by name
    void SetDefault(const std::string& name);
