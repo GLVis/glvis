@@ -47,7 +47,7 @@ private:
       SHADING = 11,
       VIEW_CENTER = 12,
       AUTOSCALE = 13,
-      PALETTE = 14,
+      PALETTE_FILE = 14,
       CAMERA = 15,
       AUTOPAUSE = 16,
       WINDOW_GEOMETRY = 17,
@@ -56,7 +56,9 @@ private:
       PALETTE_REPEAT = 20,
       LEVELLINES = 21,
       AXIS_NUMBERFORMAT = 22,
-      COLORBAR_NUMBERFORMAT = 23
+      COLORBAR_NUMBERFORMAT = 23,
+      PALETTE = 24,
+      PALETTE_NAME = 25
    };
 
    std::atomic<bool> command_ready{false};
@@ -83,6 +85,8 @@ private:
    double        view_center_x, view_center_y;
    std::string   autoscale_mode;
    int           palette, palette_repeat;
+   std::string   palette_name;
+   std::string   palette_file;
    double        lvl_min, lvl_max;
    int           lvl_num;
    double        camera[9];
@@ -123,6 +127,8 @@ public:
    int ViewCenter(double x, double y);
    int Autoscale(const char *mode);
    int Palette(int pal);
+   int PaletteName(std::string palname);
+   int PaletteFile(std::string filename);
    int PaletteRepeat(int n);
    int Levellines(double minv, double maxv, int number);
    int AxisNumberFormat(std::string formatting);

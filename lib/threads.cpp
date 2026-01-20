@@ -390,6 +390,36 @@ int GLVisCommand::Palette(int pal)
    return 0;
 }
 
+int GLVisCommand::PaletteName(std::string palname)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = PALETTE_NAME;
+   palette_name = palname;
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
+
+int GLVisCommand::PaletteFile(std::string filename)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = PALETTE_FILE;
+   palette_file = filename;
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
+
 int GLVisCommand::PaletteRepeat(int n)
 {
    if (lock() < 0)
@@ -707,6 +737,27 @@ int GLVisCommand::Execute()
          break;
       }
 
+      case PALETTE_NAME:
+      {
+         cout << "Command: palette_name: " << palette_name << endl;
+         win.vs->palette.SetByName(palette_name);
+         if (!GetUseTexture())
+         {
+            win.vs->EventUpdateColors();
+         }
+         MyExpose();
+         break;
+      }
+
+      case PALETTE_FILE:
+      {
+         cout << "Command: palette_file: " << palette_file << endl;
+         BasePalettes.Load(palette_file);
+         win.vs->palette.GenerateTextures(true); // need to reinitialize
+         MyExpose();
+         break;
+      }
+
       case PALETTE_REPEAT:
       {
          cout << "Command: palette_repeat: " << palette_repeat << endl;
@@ -821,6 +872,7 @@ enum class Command
    Keys,
    Palette,
    PaletteName,
+   PaletteFile,
    PaletteRepeat,
    Camera,
    PlotCaption,
@@ -872,6 +924,7 @@ ThreadCommands::ThreadCommands()
    (*this)[Command::WindowTitle]          = {"window_title", "'<title>'", "Set title of the window."};
    (*this)[Command::Keys]                 = {"keys", "<keys>", "Send the control key sequence."};
    (*this)[Command::Palette]              = {"palette", "<index>", "Set the palette index."};
+   (*this)[Command::PaletteFile]          = {"palette_file", "<filename>", "Load in a palette file."};
    (*this)[Command::PaletteName]          = {"palette_name", "<palette_name>", "Use palette with given name."};
    (*this)[Command::PaletteRepeat]        = {"palette_repeat", "<times>", "Set the repetition of the palette."};
    (*this)[Command::Camera]               = {"camera", "<cam[0]> ... <cam[2]> <dir[0]> ... <dir[2]> <up[0]> ... <up[2]>", "Set the camera position, direction and upward vector."};
@@ -1410,11 +1463,30 @@ void communication_thread::execute()
             }
          }
          break;
+         case Command::PaletteFile:
+         {
+            std::string filename, a;
+
+            *is[0] >> filename;
+
+            // all processors sent the command
+            for (size_t i = 1; i < is.size(); i++)
+            {
+               *is[i] >> ws >> ident; // 'palette_file'
+               *is[i] >> a;
+            }
+
+            if (glvis_command->PaletteFile(filename))
+            {
+               goto comm_terminate;
+            }
+         }
+         break;
          case Command::PaletteName:
          {
-            std::string palette_name, a;
+            std::string palname, a;
 
-            *is[0] >> palette_name;
+            *is[0] >> palname;
 
             // all processors sent the command
             for (size_t i = 1; i < is.size(); i++)
@@ -1423,18 +1495,9 @@ void communication_thread::execute()
                *is[i] >> a;
             }
 
-            int pal = BasePalettes.GetIndexByName(palette_name);
-
-            if (pal >= 0)
+            if (glvis_command->PaletteName(palname))
             {
-               if (glvis_command->Palette(pal))
-               {
-                  goto comm_terminate;
-               }
-            }
-            else
-            {
-               cout << "Palette " << palette_name << " is not defined." << endl;
+               goto comm_terminate;
             }
          }
          break;
