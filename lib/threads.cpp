@@ -728,7 +728,7 @@ int GLVisCommand::Execute()
       case PALETTE:
       {
          cout << "Command: palette: " << palette << endl;
-         win.vs->palette.SetIndex(palette);
+         win.vs->palette.SetIndex(palette-1);
          if (!GetUseTexture())
          {
             win.vs->EventUpdateColors();

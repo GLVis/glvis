@@ -726,7 +726,7 @@ void ScriptController::ExecuteScriptCommand()
             int pal;
             scr >> pal;
             cout << "Script: palette: " << pal << endl;
-            win.vs->palette.SetIndex(pal);
+            win.vs->palette.SetIndex(pal-1);
             MyExpose();
          }
          break;

@@ -170,11 +170,11 @@ void PaletteState::SetIndex(int num)
    if ((num >= 0) && (num < Palettes->NumPalettes()))
    {
       curr_palette = num;
-      cout << "Palette: " << num << ") " << Palettes->Get(curr_palette)->name << endl;
+      cout << "Palette: " << num+1 << ") " << Palettes->Get(curr_palette)->name << endl;
    }
    else
    {
-      cout << "Palette index " << num << " is out of bounds." << endl;
+      cout << "Palette index " << num+1 << " is out of bounds." << endl;
    }
 }
 
@@ -184,7 +184,7 @@ void PaletteState::SetByName(const std::string& palette_name)
    if ((num >= 0) && (num < Palettes->NumPalettes()))
    {
       curr_palette = num;
-      cout << "Palette: " << num << ") " << Palettes->Get(curr_palette)->name << endl;
+      cout << "Palette: " << num+1 << ") " << Palettes->Get(curr_palette)->name << endl;
    }
    else
    {
@@ -198,7 +198,7 @@ bool PaletteState::UseDefaultIndex()
    if ((num >= 0) && (num < Palettes->NumPalettes()))
    {
       curr_palette = num;
-      cout << "Palette: " << num << ") " << Palettes->Get(curr_palette)->name << endl;
+      cout << "Palette: " << num+1 << ") " << Palettes->Get(curr_palette)->name << endl;
       return true;
    }
    return false;
