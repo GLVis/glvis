@@ -10,9 +10,9 @@
 // CONTRIBUTING.md for details.
 
 #include "palettes_base.hpp"
-#include "palettes_default.cpp"
 #include "gl/renderer.hpp"
 
+using namespace std;
 
 void RGBAf::Print(ostream& os) const
 {

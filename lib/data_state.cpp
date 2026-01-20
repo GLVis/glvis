@@ -572,10 +572,8 @@ bool DataState::SetNewMeshAndSolution(DataState new_state,
    {
       ResetMeshAndSolution(new_state, vs);
 
-      internal.grid_f = std::move(new_state.internal.grid_f);
-      internal.mesh = std::move(new_state.internal.mesh);
-      internal.quad_f = std::move(new_state.internal.quad_f);
-      internal.mesh_quad = std::move(new_state.internal.mesh_quad);
+      // do not move 'sol' vector as it is updated directly
+      internal = std::move(new_state.internal);
 
       return true;
    }
@@ -593,8 +591,9 @@ void DataState::ResetMeshAndSolution(DataState &ss, VisualizationScene* vs)
       {
          VisualizationSceneSolution *vss =
             dynamic_cast<VisualizationSceneSolution *>(vs);
-         ss.grid_f->GetNodalValues(ss.sol);
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
+         // use the local vector as pointer is invalid after the move
+         ss.grid_f->GetNodalValues(sol);
+         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &sol,
                                  ss.grid_f.get());
       }
       else
@@ -610,8 +609,9 @@ void DataState::ResetMeshAndSolution(DataState &ss, VisualizationScene* vs)
       {
          VisualizationSceneSolution3d *vss =
             dynamic_cast<VisualizationSceneSolution3d *>(vs);
-         ss.grid_f->GetNodalValues(ss.sol);
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
+         // use the local vector as pointer is invalid after the move
+         ss.grid_f->GetNodalValues(sol);
+         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &sol,
                                  ss.grid_f.get());
       }
       else
