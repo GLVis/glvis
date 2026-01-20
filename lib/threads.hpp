@@ -31,40 +31,40 @@ private:
    int num_waiting;
    bool terminating;
 
-   enum
+   enum class Command
    {
-      NO_COMMAND = 0,
-      NEW_MESH_AND_SOLUTION = 1,
-      SCREENSHOT = 2,
-      KEY_COMMANDS = 3,
-      WINDOW_SIZE = 4,
-      WINDOW_TITLE = 5,
-      PAUSE = 6,
-      VIEW_ANGLES = 7,
-      ZOOM = 8,
-      SUBDIVISIONS = 9,
-      VALUE_RANGE = 10,
-      SHADING = 11,
-      VIEW_CENTER = 12,
-      AUTOSCALE = 13,
-      PALETTE_FILE = 14,
-      CAMERA = 15,
-      AUTOPAUSE = 16,
-      WINDOW_GEOMETRY = 17,
-      PLOT_CAPTION = 18,
-      AXIS_LABELS = 19,
-      PALETTE_REPEAT = 20,
-      LEVELLINES = 21,
-      AXIS_NUMBERFORMAT = 22,
-      COLORBAR_NUMBERFORMAT = 23,
-      PALETTE = 24,
-      PALETTE_NAME = 25
+      NO_COMMAND,
+      NEW_MESH_AND_SOLUTION,
+      SCREENSHOT,
+      KEY_COMMANDS,
+      WINDOW_SIZE,
+      WINDOW_TITLE,
+      PAUSE,
+      VIEW_ANGLES,
+      ZOOM,
+      SUBDIVISIONS,
+      VALUE_RANGE,
+      SHADING,
+      VIEW_CENTER,
+      AUTOSCALE,
+      PALETTE,
+      CAMERA,
+      AUTOPAUSE,
+      WINDOW_GEOMETRY,
+      PLOT_CAPTION,
+      AXIS_LABELS,
+      PALETTE_REPEAT,
+      LEVELLINES,
+      AXIS_NUMBERFORMAT,
+      COLORBAR_NUMBERFORMAT,
+      PALETTE_FILE,
+      PALETTE_NAME
    };
 
    std::atomic<bool> command_ready{false};
 
    // command to be executed
-   int command;
+   Command command;
 
    // command arguments
    DataState     new_state;
