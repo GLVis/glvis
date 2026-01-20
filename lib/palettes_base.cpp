@@ -469,7 +469,7 @@ void PaletteRegistry::Load(const std::string& palette_filename)
          // Add new palette
          AddPalette(palname);
          idx = GetIndexByName(palname);
-         cout << "Reading palette: (" << idx+1 << ") " << palname << endl;
+         cout << "Reading palette: (" << idx << ") " << palname << endl;
       }
       else if (channeltype == "RGBf" && idx != -1)
       {
