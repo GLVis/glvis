@@ -201,7 +201,7 @@ public:
    Palette* Get(const std::string& name) const;
 
    /// Set the index of the default palette by name
-   void SetDefault(const string& name);
+   void SetDefault(const std::string& name);
 
    /// Get the index of the default palette
    int GetDefault() const { return default_palette; };
