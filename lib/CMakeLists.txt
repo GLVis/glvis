@@ -25,6 +25,7 @@ list(APPEND SOURCES
   palettes.cpp
   palettes_base.cpp
   palettes_default.cpp
+  script_controller.cpp
   sdl.cpp
   sdl_helper.cpp
   sdl_main.cpp
@@ -33,7 +34,8 @@ list(APPEND SOURCES
   vssolution.cpp
   vssolution3d.cpp
   vsvector.cpp
-  vsvector3d.cpp)
+  vsvector3d.cpp
+  window.cpp)
 
 list(APPEND HEADERS
   gl/attr_traits.hpp
@@ -54,6 +56,7 @@ list(APPEND HEADERS
   openglvis.hpp
   palettes.hpp
   palettes_base.hpp
+  script_controller.hpp
   sdl.hpp
   sdl_helper.hpp
   sdl_main.hpp
@@ -64,7 +67,8 @@ list(APPEND HEADERS
   vssolution.hpp
   vssolution3d.hpp
   vsvector.hpp
-  vsvector3d.hpp)
+  vsvector3d.hpp
+  window.hpp)
 
 if(EMSCRIPTEN)
   # Emscripten build target

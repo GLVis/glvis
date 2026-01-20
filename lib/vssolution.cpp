@@ -26,7 +26,6 @@ using namespace std;
 
 
 thread_local VisualizationSceneSolution *vssol;
-extern thread_local VisualizationScene  *locscene;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 #ifdef GLVIS_ISFINITE
@@ -419,25 +418,29 @@ static void KeyF12Pressed()
    }
 }
 
-VisualizationSceneSolution::VisualizationSceneSolution()
-{
-   v_normals = NULL;
-}
-
 VisualizationSceneSolution::VisualizationSceneSolution(
-   Mesh &m, Vector &s, Mesh *mc, Vector *normals)
+   Window &win_, bool init) : VisualizationSceneScalarData(win_, false)
 {
-   mesh = &m;
-   mesh_coarse = mc;
-   sol = &s;
-   v_normals = normals;
+   v_normals = win.data_state.normals.get();
 
-   Init();
+   if (win.data_state.grid_f)
+   {
+      rsol = win.data_state.grid_f.get();
+      sol = new Vector(mesh->GetNV());
+   }
+
+   if (init)
+   {
+      if (rsol)
+      {
+         rsol->GetNodalValues(*sol);
+      }
+      Init();
+   }
 }
 
 void VisualizationSceneSolution::Init()
 {
-   rsol  = NULL;
    vssol = this;
 
    drawelems = 1;
@@ -523,6 +526,10 @@ void VisualizationSceneSolution::Init()
 
 VisualizationSceneSolution::~VisualizationSceneSolution()
 {
+   if (rsol)
+   {
+      delete sol;
+   }
 }
 
 void VisualizationSceneSolution::ToggleDrawElems()
@@ -549,11 +556,11 @@ void VisualizationSceneSolution::ToggleDrawElems()
 
    if (drawelems < 2)
    {
-      extra_caption.clear();
+      win.extra_caption.clear();
    }
    else
    {
-      extra_caption = modes[drawelems];
+      win.extra_caption = modes[drawelems];
    }
 
    if (drawelems == 0)
@@ -583,6 +590,19 @@ void VisualizationSceneSolution::ToggleDrawElems()
       PrepareLevelCurves();
       PrepareCP();
       PrepareNumbering();
+   }
+}
+
+void VisualizationSceneSolution::NewMeshAndSolution(const DataState &s)
+{
+   if (rsol && s.grid_f)
+   {
+      s.grid_f->GetNodalValues(*sol);
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), sol, s.grid_f.get());
+   }
+   else
+   {
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), s.sol.get());
    }
 }
 

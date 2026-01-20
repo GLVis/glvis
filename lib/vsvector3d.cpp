@@ -114,8 +114,8 @@ std::string VisualizationSceneVector3d::GetHelpString() const
    return os.str();
 }
 
-thread_local VisualizationSceneVector3d  *vsvector3d;
-extern thread_local VisualizationScene *locscene;
+static thread_local VisualizationSceneVector3d  *vsvector3d;
+static thread_local Window *window;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 static void KeyDPressed()
@@ -150,13 +150,13 @@ static void KeyBPressed()
 
 static void KeyrPressed()
 {
-   locscene -> spinning = 0;
+   window->vs -> spinning = 0;
    RemoveIdleFunc(MainLoop);
    vsvector3d -> CenterObject();
-   locscene -> ViewAngle = 45.0;
-   locscene -> ViewScale = 1.0;
-   locscene -> ViewCenterX = 0.0;
-   locscene -> ViewCenterY = 0.0;
+   window->vs -> ViewAngle = 45.0;
+   window->vs -> ViewScale = 1.0;
+   window->vs -> ViewCenterX = 0.0;
+   window->vs -> ViewCenterY = 0.0;
    vsvector3d -> ianim = vsvector3d -> ianimd = 0;
    vsvector3d -> Prepare();
    vsvector3d -> PrepareLines();
@@ -167,7 +167,7 @@ static void KeyrPressed()
 
 static void KeyRPressed()
 {
-   locscene->spinning = 0;
+   window->vs->spinning = 0;
    RemoveIdleFunc(MainLoop);
    vsvector3d -> ianim = vsvector3d -> ianimd = 0;
    vsvector3d -> Prepare();
@@ -330,7 +330,7 @@ void VisualizationSceneVector3d::SetScalarFunction()
             }
          break;
    }
-   extra_caption = scal_func_name[scal_func];
+   win.extra_caption = scal_func_name[scal_func];
 }
 
 void VisualizationSceneVector3d::ToggleScalarFunction()
@@ -341,56 +341,46 @@ void VisualizationSceneVector3d::ToggleScalarFunction()
    FindNewValueRange(true);
 }
 
-VisualizationSceneVector3d::VisualizationSceneVector3d(Mesh &m, Vector &sx,
-                                                       Vector &sy, Vector &sz, Mesh *mc)
+VisualizationSceneVector3d::VisualizationSceneVector3d(Window &win_)
+   : VisualizationSceneSolution3d(win_, false)
 {
-   mesh = &m;
-   mesh_coarse = mc;
-   solx = &sx;
-   soly = &sy;
-   solz = &sz;
-
-   sol = new Vector(mesh->GetNV());
-
-   sfes = NULL;
-   VecGridF = NULL;
-
-   Init();
-}
-
-VisualizationSceneVector3d::VisualizationSceneVector3d(GridFunction &vgf,
-                                                       Mesh *mc)
-{
-   FiniteElementSpace *fes = vgf.FESpace();
-   if (fes == NULL || fes->GetVDim() != 3)
+   if (win.data_state.grid_f)
    {
-      cout << "VisualizationSceneVector3d::VisualizationSceneVector3d" << endl;
-      exit(1);
+      FiniteElementSpace *fes = win.data_state.grid_f->FESpace();
+      if (fes == NULL || fes->GetVDim() != 3)
+      {
+         cout << "VisualizationSceneVector3d::VisualizationSceneVector3d" << endl;
+         exit(1);
+      }
+
+      VecGridF = win.data_state.grid_f.get();
+
+      sfes = new FiniteElementSpace(mesh, fes->FEColl(), 1, fes->GetOrdering());
+      GridF = new GridFunction(sfes);
+
+      solx = new Vector(mesh->GetNV());
+      soly = new Vector(mesh->GetNV());
+      solz = new Vector(mesh->GetNV());
+
+      VecGridF->GetNodalValues(*solx, 1);
+      VecGridF->GetNodalValues(*soly, 2);
+      VecGridF->GetNodalValues(*solz, 3);
    }
-
-   VecGridF = &vgf;
-
-   mesh = fes->GetMesh();
-   mesh_coarse = mc;
-
-   sfes = new FiniteElementSpace(mesh, fes->FEColl(), 1, fes->GetOrdering());
-   GridF = new GridFunction(sfes);
-
-   solx = new Vector(mesh->GetNV());
-   soly = new Vector(mesh->GetNV());
-   solz = new Vector(mesh->GetNV());
-
-   vgf.GetNodalValues(*solx, 1);
-   vgf.GetNodalValues(*soly, 2);
-   vgf.GetNodalValues(*solz, 3);
-
-   sol = new Vector(mesh->GetNV());
+   else
+   {
+      sol = new Vector(mesh->GetNV());
+      solx = win.data_state.solx.get();
+      soly = win.data_state.soly.get();
+      solz = win.data_state.solz.get();
+   }
 
    Init();
 }
 
 void VisualizationSceneVector3d::Init()
 {
+   window = &win;
+
    key_r_state = 0;
 
    drawdisp = 0;
@@ -460,8 +450,6 @@ int VisualizationSceneVector3d::GetFunctionAutoRefineFactor()
 
 VisualizationSceneVector3d::~VisualizationSceneVector3d()
 {
-   delete sol;
-
    if (VecGridF)
    {
       delete solz;
@@ -470,10 +458,29 @@ VisualizationSceneVector3d::~VisualizationSceneVector3d()
       delete GridF;
       delete sfes;
    }
+   else
+   {
+      delete sol;
+   }
+}
+
+void VisualizationSceneVector3d::NewMeshAndSolution(const DataState &s)
+{
+   if (VecGridF && s.grid_f)
+   {
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), solx, soly, solz,
+                         s.grid_f.get());
+   }
+   else
+   {
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), s.solx.get(), s.soly.get(),
+                         s.solz.get());
+   }
 }
 
 void VisualizationSceneVector3d::NewMeshAndSolution(
-   Mesh *new_m, Mesh *new_mc, GridFunction *new_v)
+   Mesh *new_m, Mesh *new_mc, Vector *new_sol_x, Vector *new_sol_y,
+   Vector *new_sol_z, GridFunction *new_v)
 {
    delete sol;
    if (VecGridF)
@@ -508,21 +515,30 @@ void VisualizationSceneVector3d::NewMeshAndSolution(
       }
    }
 
-   FiniteElementSpace *new_fes = new_v->FESpace();
 
    FindNodePos();
 
-   sfes = new FiniteElementSpace(mesh, new_fes->FEColl(), 1,
-                                 new_fes->GetOrdering());
-   GridF = new GridFunction(sfes);
+   if (new_v)
+   {
+      FiniteElementSpace *new_fes = new_v->FESpace();
+      sfes = new FiniteElementSpace(mesh, new_fes->FEColl(), 1,
+                                    new_fes->GetOrdering());
+      GridF = new GridFunction(sfes);
 
-   solx = new Vector(mesh->GetNV());
-   soly = new Vector(mesh->GetNV());
-   solz = new Vector(mesh->GetNV());
+      solx = new Vector(mesh->GetNV());
+      soly = new Vector(mesh->GetNV());
+      solz = new Vector(mesh->GetNV());
 
-   VecGridF->GetNodalValues(*solx, 1);
-   VecGridF->GetNodalValues(*soly, 2);
-   VecGridF->GetNodalValues(*solz, 3);
+      VecGridF->GetNodalValues(*solx, 1);
+      VecGridF->GetNodalValues(*soly, 2);
+      VecGridF->GetNodalValues(*solz, 3);
+   }
+   else
+   {
+      solx = new_sol_x;
+      soly = new_sol_y;
+      solz = new_sol_z;
+   }
 
    sol = new Vector(mesh->GetNV());
 

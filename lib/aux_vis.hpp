@@ -23,8 +23,11 @@
 
 void SDLMainLoop(bool server_mode = false);
 
+class GLVisCommand;
+void SetGLVisCommand(GLVisCommand *cmd);
+
 /// Initializes the visualization and some keys.
-int InitVisualization(const char name[], int x, int y, int w, int h);
+SdlWindow* InitVisualization(const char name[], int x, int y, int w, int h);
 
 void SetVisualizationScene(VisualizationScene * scene,
                            int view = 3, const char *keys = NULL);

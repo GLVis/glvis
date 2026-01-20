@@ -24,16 +24,12 @@
 #include <emscripten/val.h>
 
 // used in extern context
-thread_local std::string plot_caption;
-thread_local std::string extra_caption;
 thread_local mfem::GeometryRefiner GLVisGeometryRefiner;
-
-static VisualizationSceneScalarData * vs = nullptr;
 
 // either bitmap data or png bytes
 std::vector<unsigned char> * screen_state = nullptr;
 
-DataState stream_state;
+static Window win;
 
 int last_stream_nproc = 1;
 
@@ -44,14 +40,11 @@ namespace js
 
 using namespace mfem;
 
-/// Switch representation of the quadrature function
-void SwitchQuadSolution();
-
 /// Display a new stream
 void display(std::stringstream & commands, const int w, const int h)
 {
    // reset antialiasing
-   GetAppWindow()->getRenderer().setAntialiasing(0);
+   win.wnd->getRenderer().setAntialiasing(0);
 
    std::string word;
    double minv = 0.0, maxv = 0.0;
@@ -60,7 +53,7 @@ void display(std::stringstream & commands, const int w, const int h)
       if (word == "keys")
       {
          std::cout << "parsing 'keys'" << std::endl;
-         commands >> stream_state.keys;
+         commands >> win.data_state.keys;
       }
       else if (word == "valuerange")
       {
@@ -73,162 +66,19 @@ void display(std::stringstream & commands, const int w, const int h)
       }
    }
 
-   DataState::FieldType field_type = stream_state.GetType();
+   win.window_title = "glvis";
+   win.window_x = 0.;
+   win.window_y = 0.;
+   win.window_w = w;
+   win.window_h = h;
 
-   if (field_type <= DataState::FieldType::MIN
-       || field_type >= DataState::FieldType::MAX)
-   {
-      return;
-   }
+   win.GLVisInitVis({});
 
-   if (InitVisualization("glvis", 0, 0, w, h))
-   {
-      return;
-   }
-
-   delete vs;
-   vs = nullptr;
-
-   if (stream_state.quad_f)
-   {
-      GetAppWindow()->setOnKeyDown('Q', SwitchQuadSolution);
-   }
-
-   double mesh_range = -1.0;
-   if (field_type == DataState::FieldType::SCALAR
-       || field_type == DataState::FieldType::MESH)
-   {
-      if (stream_state.grid_f)
-      {
-         stream_state.grid_f->GetNodalValues(stream_state.sol);
-      }
-      if (stream_state.mesh->SpaceDimension() == 2)
-      {
-         VisualizationSceneSolution * vss;
-         if (stream_state.normals.Size() > 0)
-         {
-            vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
-                                                      stream_state.mesh_quad.get(), &stream_state.normals);
-         }
-         else
-         {
-            vs = vss = new VisualizationSceneSolution(*stream_state.mesh, stream_state.sol,
-                                                      stream_state.mesh_quad.get());
-         }
-         if (stream_state.grid_f)
-         {
-            vss->SetGridFunction(*stream_state.grid_f);
-         }
-         if (field_type == DataState::FieldType::MESH)
-         {
-            vs->OrthogonalProjection = 1;
-            vs->SetLight(0);
-            vs->Zoom(1.8);
-            // Use the 'bone' palette when visualizing a 2D mesh only (otherwise
-            // the 'jet-like' palette is used in 2D, see vssolution.cpp).
-            vs->palette.SetFallbackIndex(4);
-         }
-      }
-      else if (stream_state.mesh->SpaceDimension() == 3)
-      {
-         VisualizationSceneSolution3d * vss;
-         vs = vss = new VisualizationSceneSolution3d(*stream_state.mesh,
-                                                     stream_state.sol, stream_state.mesh_quad.get());
-         if (stream_state.grid_f)
-         {
-            vss->SetGridFunction(stream_state.grid_f.get());
-         }
-         if (field_type == DataState::FieldType::MESH)
-         {
-            if (stream_state.mesh->Dimension() == 3)
-            {
-               // Use the 'white' palette when visualizing a 3D volume mesh only
-               vs->palette.SetFallbackIndex(11);
-               vss->SetLightMatIdx(4);
-            }
-            else
-            {
-               // Use the 'bone' palette when visualizing a surface mesh only
-               vs->palette.SetFallbackIndex(4);
-            }
-            // Otherwise, the 'vivid' palette is used in 3D see vssolution3d.cpp
-
-            vss->ToggleDrawAxes();
-            vss->ToggleDrawMesh();
-         }
-      }
-      if (field_type == DataState::FieldType::MESH)
-      {
-         if (stream_state.grid_f)
-         {
-            mesh_range = stream_state.grid_f->Max() + 1.0;
-         }
-         else
-         {
-            mesh_range = stream_state.sol.Max() + 1.0;
-         }
-      }
-   }
-   else if (field_type == DataState::FieldType::VECTOR)
-   {
-      if (stream_state.mesh->SpaceDimension() == 2)
-      {
-         if (stream_state.grid_f)
-         {
-            vs = new VisualizationSceneVector(*stream_state.grid_f);
-         }
-         else
-         {
-            vs = new VisualizationSceneVector(*stream_state.mesh, stream_state.solu,
-                                              stream_state.solv, stream_state.mesh_quad.get());
-         }
-      }
-      else if (stream_state.mesh->SpaceDimension() == 3)
-      {
-         if (stream_state.grid_f)
-         {
-            stream_state.ProjectVectorFEGridFunction();
-            vs = new VisualizationSceneVector3d(*stream_state.grid_f,
-                                                stream_state.mesh_quad.get());
-         }
-         else
-         {
-            vs = new VisualizationSceneVector3d(*stream_state.mesh, stream_state.solu,
-                                                stream_state.solv, stream_state.solw,
-                                                stream_state.mesh_quad.get());
-         }
-      }
-   }
-
-   if (vs)
-   {
-      // increase the refinement factors if visualizing a GridFunction
-      if (stream_state.grid_f)
-      {
-         vs->AutoRefine();
-         vs->SetShading(VisualizationSceneScalarData::Shading::Noncomforming, true);
-      }
-      if (mesh_range > 0.0)
-      {
-         vs->SetValueRange(-mesh_range, mesh_range);
-         vs->SetAutoscale(0);
-      }
-      if (stream_state.mesh->SpaceDimension() == 2 &&
-          field_type == DataState::FieldType::MESH)
-      {
-         SetVisualizationScene(vs, 2);
-      }
-      else
-      {
-         SetVisualizationScene(vs, 3);
-      }
-   }
-
-   CallKeySequence(stream_state.keys.c_str());
+   CallKeySequence(win.data_state.keys.c_str());
 
    if (minv || maxv)
    {
-      vs->SetValueRange(minv, maxv);
+      win.vs->SetValueRange(minv, maxv);
    }
 
    SendExposeEvent();
@@ -282,7 +132,7 @@ void displayParallelStreams(const StringArray & streams, const int w,
                             const int h)
 {
    std::stringstream commands(streams[0]);
-   processParallelStreams(stream_state, streams, &commands);
+   processParallelStreams(win.data_state, streams, &commands);
 
    display(commands, w, h);
 }
@@ -293,7 +143,7 @@ void displayStream(const std::string & stream, const int w, const int h)
    std::string data_type;
    ss >> data_type;
 
-   StreamReader reader(stream_state);
+   StreamReader reader(win.data_state);
    reader.ReadStream(ss, data_type);
 
    display(ss, w, h);
@@ -306,11 +156,11 @@ int update(DataState & new_state)
 {
    double mesh_range = -1.0;
 
-   if (stream_state.SetNewMeshAndSolution(std::move(new_state), vs))
+   if (win.SetNewMeshAndSolution(std::move(new_state)))
    {
       if (mesh_range > 0.0)
       {
-         vs->SetValueRange(-mesh_range, mesh_range);
+         win.vs->SetValueRange(-mesh_range, mesh_range);
       }
 
       SendExposeEvent();
@@ -357,13 +207,13 @@ int updateParallelStreams(const StringArray & streams)
 //
 void iterVisualization()
 {
-   GetAppWindow()->mainIter();
+   win.wnd->mainIter();
 }
 
 void setCanvasId(const std::string & id)
 {
    std::cout << "glvis: setting canvas id to " << id << std::endl;
-   GetAppWindow()->setCanvasId(id);
+   win.wnd->setCanvasId(id);
 }
 
 void disableKeyHandling()
@@ -394,7 +244,7 @@ void processKey(int sym, bool ctrl=false, bool shift=false, bool alt=false)
    mod |= ctrl ? KMOD_CTRL : 0;
    mod |= shift ? KMOD_SHIFT : 0;
    mod |= alt ? KMOD_ALT : 0;
-   GetAppWindow()->callKeyDown(sym, mod);
+   win.wnd->callKeyDown(sym, mod);
 }
 
 void setupResizeEventCallback(const std::string & id)
@@ -424,9 +274,8 @@ std::string getHelpString()
 em::val getScreenBuffer(bool flip_y=false)
 {
    MyExpose();
-   auto * wnd = GetAppWindow();
    int w, h;
-   wnd->getGLDrawSize(w, h);
+   win.wnd->getGLDrawSize(w, h);
 
    // 4 bytes for rgba
    const size_t buffer_size = w*h*4;
@@ -463,25 +312,16 @@ em::val getScreenBuffer(bool flip_y=false)
                                         screen_state->data()));
 }
 
-void SwitchQuadSolution()
-{
-   int iqs = ((int)stream_state.GetQuadSolution()+1)
-             % ((int)DataState::QuadSolution::MAX);
-   stream_state.SwitchQuadSolution((DataState::QuadSolution)iqs, vs);
-   SendExposeEvent();
-}
-
 #ifdef GLVIS_USE_LIBPNG
 em::val getPNGByteArray()
 {
    constexpr const char * filename = "im.png";
-   auto * wnd = GetAppWindow();
    int w, h;
-   wnd->getGLDrawSize(w, h);
+   win.wnd->getGLDrawSize(w, h);
 
    MyExpose();
    // save to in-memory file
-   int status = SaveAsPNG(filename, w, h, wnd->isHighDpi(), true);
+   int status = SaveAsPNG(filename, w, h, win.wnd->isHighDpi(), true);
    if (status != 0)
    {
       fprintf(stderr, "unable to generate png\n");

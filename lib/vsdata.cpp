@@ -22,8 +22,9 @@
 #include "aux_vis.hpp"
 #include "material.hpp"
 #include "palettes.hpp"
-
-#include "gl2ps.h"
+#ifndef __EMSCRIPTEN__
+#include "threads.hpp"
+#endif
 
 using namespace std;
 
@@ -597,13 +598,13 @@ void VisualizationSceneScalarData::PrepareColorBar (double minval,
 // Draw a centered caption at the top (visible with the colorbar)
 void VisualizationSceneScalarData::PrepareCaption()
 {
-   bool empty = plot_caption.empty();
+   bool empty = win.plot_caption.empty();
    colorbar = (colorbar ? empty+1 : !empty);
 
-   string caption(plot_caption);
-   if (!extra_caption.empty())
+   string caption(win.plot_caption);
+   if (!win.extra_caption.empty())
    {
-      caption += " (" + extra_caption + ")";
+      caption += " (" + win.extra_caption + ")";
    }
 
    caption_buf.clear();
@@ -612,8 +613,8 @@ void VisualizationSceneScalarData::PrepareCaption()
    GetFont()->getObjectSize(caption, caption_w, caption_h);
 }
 
-thread_local VisualizationSceneScalarData * vsdata;
-extern thread_local VisualizationScene  * locscene;
+static thread_local VisualizationSceneScalarData *vsdata;
+static thread_local Window *window;
 
 void KeycPressed(GLenum state)
 {
@@ -644,7 +645,7 @@ void KeycPressed(GLenum state)
 void KeyCPressed()
 {
    cout << "Enter new caption: " << flush;
-   std::getline(cin, plot_caption);
+   std::getline(cin, window->plot_caption);
    vsdata->PrepareCaption(); // turn on or off the caption
    SendExposeEvent();
 }
@@ -716,22 +717,22 @@ void KeyLPressed()
 
 void KeyrPressed()
 {
-   locscene -> spinning = 0;
+   window->vs -> spinning = 0;
    RemoveIdleFunc(MainLoop);
    vsdata -> CenterObject();
 
-   locscene -> ViewAngle = 45.0;
-   locscene -> ViewScale = 1.0;
-   locscene -> ViewCenterX = 0.0;
-   locscene -> ViewCenterY = 0.0;
-   locscene->cam.Reset();
+   window->vs -> ViewAngle = 45.0;
+   window->vs -> ViewScale = 1.0;
+   window->vs -> ViewCenterX = 0.0;
+   window->vs -> ViewCenterY = 0.0;
+   window->vs->cam.Reset();
    vsdata -> key_r_state = 0;
    SendExposeEvent();
 }
 
 void KeyRPressed()
 {
-   locscene->spinning = 0;
+   window->vs->spinning = 0;
    RemoveIdleFunc(MainLoop);
    vsdata->Toggle2DView();
    SendExposeEvent();
@@ -745,14 +746,14 @@ void KeypPressed(GLenum state)
    }
    else
    {
-      locscene->palette.NextIndex();
+      window->vs->palette.NextIndex();
       SendExposeEvent();
    }
 }
 
 void KeyPPressed()
 {
-   locscene->palette.PrevIndex();
+   window->vs->palette.PrevIndex();
    SendExposeEvent();
 }
 
@@ -911,30 +912,30 @@ void KeyF2Pressed()
 
 void KeykPressed()
 {
-   locscene->matAlpha -= 0.05;
-   if (locscene->matAlpha < 0.0)
+   window->vs->matAlpha -= 0.05;
+   if (window->vs->matAlpha < 0.0)
    {
-      locscene->matAlpha = 0.0;
+      window->vs->matAlpha = 0.0;
    }
-   locscene->GenerateAlphaTexture();
+   window->vs->GenerateAlphaTexture();
    SendExposeEvent();
 }
 
 void KeyKPressed()
 {
-   locscene->matAlpha += 0.05;
-   if (locscene->matAlpha > 1.0)
+   window->vs->matAlpha += 0.05;
+   if (window->vs->matAlpha > 1.0)
    {
-      locscene->matAlpha = 1.0;
+      window->vs->matAlpha = 1.0;
    }
-   locscene->GenerateAlphaTexture();
+   window->vs->GenerateAlphaTexture();
    SendExposeEvent();
 }
 
 void KeyAPressed()
 {
-   bool curr_aa = GetAppWindow()->getRenderer().getAntialiasing();
-   GetAppWindow()->getRenderer().setAntialiasing(!curr_aa);
+   bool curr_aa = window->wnd->getRenderer().getAntialiasing();
+   window->wnd->getRenderer().setAntialiasing(!curr_aa);
 
    cout << "Multisampling/Antialiasing: "
         << strings_off_on[!curr_aa ? 1 : 0] << endl;
@@ -945,23 +946,23 @@ void KeyAPressed()
 
 void KeyCommaPressed()
 {
-   locscene->matAlphaCenter -= 0.25;
+   window->vs->matAlphaCenter -= 0.25;
    // vsdata -> EventUpdateColors();
-   locscene->GenerateAlphaTexture();
+   window->vs->GenerateAlphaTexture();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
-   cout << "MatAlphaCenter = " << locscene->matAlphaCenter << endl;
+   cout << "MatAlphaCenter = " << window->vs->matAlphaCenter << endl;
 #endif
 }
 
 void KeyLessPressed()
 {
-   locscene->matAlphaCenter += 0.25;
+   window->vs->matAlphaCenter += 0.25;
    // vsdata -> EventUpdateColors();
-   locscene->GenerateAlphaTexture();
+   window->vs->GenerateAlphaTexture();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
-   cout << "MatAlphaCenter = " << locscene->matAlphaCenter << endl;
+   cout << "MatAlphaCenter = " << window->vs->matAlphaCenter << endl;
 #endif
 }
 
@@ -1161,7 +1162,7 @@ void VisualizationSceneScalarData::Toggle2DView()
          break;
    }
 
-   // if (locscene -> view != 2) // make 'R' work the same in 2D and 3D
+   // if (window->vs -> view != 2) // make 'R' work the same in 2D and 3D
    key_r_state = (key_r_state+1)%6;
 
    rotmat = newrot.mtx;
@@ -1355,20 +1356,22 @@ void VisualizationSceneScalarData::SetAutoscale(int _autoscale)
 }
 
 VisualizationSceneScalarData::VisualizationSceneScalarData(
-   Mesh & m, Vector & s, Mesh *mc)
-   : a_label_x("x"), a_label_y("y"), a_label_z("z")
+   Window &win_, bool init) : VisualizationScene(*win_.wnd), win(win_)
 {
-   mesh = &m;
-   mesh_coarse = mc;
-   sol  = &s;
+   mesh = win.data_state.mesh.get();
+   mesh_coarse = win.data_state.mesh_quad.get();
+   sol  = win.data_state.sol.get();
 
-   Init();
+   if (init)
+   {
+      Init();
+   }
 }
 
 void VisualizationSceneScalarData::Init()
 {
    vsdata = this;
-   wnd = GetAppWindow();
+   window = &win;
 
    arrow_type = arrow_scaling_type = 0;
    scaling = 0;
@@ -1750,7 +1753,7 @@ void VisualizationSceneScalarData::SetLevelLines (
 
 void VisualizationSceneScalarData::PrintState()
 {
-   cout << "\nkeys: " << GetAppWindow()->getSavedKeys() << "\n"
+   cout << "\nkeys: " << wnd->getSavedKeys() << "\n"
         << "\nlight " << strings_off_on[use_light ? 1 : 0]
         << "\nperspective " << strings_off_on[OrthogonalProjection ? 0 : 1]
         << "\nviewcenter " << ViewCenterX << ' ' << ViewCenterY

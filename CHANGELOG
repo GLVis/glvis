@@ -14,6 +14,16 @@ Version 4.4.1 (development)
 
 Unlike previous GLVis releases, this version requires a C++17 compiler.
 
+- Refactored code base enabling automatic generation of the script and stream
+  command lists (shown as help when an unrecognized option is entered). Other
+  improvements include:
+  * Unified window initialization between the app and GLVis-js.
+  * Unified handling of streams and improved data storage, enabling animation
+    of all data types.
+  * Fixed the flag for real attributes of distributed meshes.
+  * Fixed setting of padding digits for data collections.
+  * Fixed cycling of the vector-to-scalar function in 2D with raw data.
+
 Version 4.4 released on May 1, 2025
 ===================================
 

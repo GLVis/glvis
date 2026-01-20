@@ -17,11 +17,9 @@
 #include "mfem.hpp"
 #include "openglvis.hpp"
 #include "aux_vis.hpp"
+#include "window.hpp"
 
 using namespace mfem;
-
-extern thread_local std::string plot_caption; // defined in glvis.cpp
-extern thread_local std::string extra_caption; // defined in glvis.cpp
 
 class Plane
 {
@@ -72,9 +70,11 @@ protected:
    Mesh   *mesh{}, *mesh_coarse{};
    Vector *sol{};
 
+   Window &win;
+
    double minv, maxv;
 
-   std::string a_label_x, a_label_y, a_label_z;
+   std::string a_label_x{"x"}, a_label_y{"y"}, a_label_z{"z"};
 
    int scaling, colorbar, drawaxes;
    Shading shading;
@@ -160,11 +160,12 @@ public:
    /// Shrink factor with respect to the element (material) attributes centers
    double shrinkmat;
 
-   VisualizationSceneScalarData()
-      : a_label_x("x"), a_label_y("y"), a_label_z("z") {}
-   VisualizationSceneScalarData (Mesh & m, Vector & s, Mesh *mc = NULL);
+   VisualizationSceneScalarData(Window &win, bool init = true);
 
    virtual ~VisualizationSceneScalarData();
+
+   /// Set a new mesh and solution from the given data state
+   virtual void NewMeshAndSolution(const DataState &s) = 0;
 
    virtual std::string GetHelpString() const { return ""; }
 
@@ -274,7 +275,7 @@ public:
       // colorbar states are: 0) no colorbar, no caption; 1) colorbar with
       // caption; 2) colorbar without caption.
       static const int next[2][3] = { { 1, 2, 0 }, { 2, 0, 0 } };
-      colorbar = next[plot_caption.empty()][colorbar];
+      colorbar = next[win.plot_caption.empty()][colorbar];
    }
 
    // Turn on or off the caption

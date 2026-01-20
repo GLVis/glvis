@@ -45,10 +45,10 @@ struct DataState
    };
 
 private:
-   friend class StreamReader;
-   friend class FileReader;
    struct
    {
+      std::unique_ptr<mfem::Vector> sol, solx, soly, solz;
+      std::unique_ptr<mfem::Vector> normals;
       std::unique_ptr<mfem::Mesh> mesh;
       std::unique_ptr<mfem::Mesh> mesh_quad;
       std::unique_ptr<mfem::GridFunction> grid_f;
@@ -62,14 +62,12 @@ private:
    void SetGridFunctionSolution(int component = -1);
    void SetQuadFunctionSolution(int component = -1);
 
-   /// Updates the given VisualizationScene pointer with the new data
-   /// of the given DataState object.
-   /// @note: Use with caution when the update is compatible
-   /// @see SetNewMeshAndSolution()
-   void ResetMeshAndSolution(DataState &ss, VisualizationScene* vs);
-
 public:
-   mfem::Vector sol, solu, solv, solw, normals;
+   const std::unique_ptr<mfem::Vector> &sol{internal.sol};
+   const std::unique_ptr<mfem::Vector> &solx{internal.solx};
+   const std::unique_ptr<mfem::Vector> &soly{internal.soly};
+   const std::unique_ptr<mfem::Vector> &solz{internal.solz};
+   const std::unique_ptr<mfem::Vector> &normals{internal.normals};
    const std::unique_ptr<mfem::Mesh> &mesh{internal.mesh};
    const std::unique_ptr<mfem::Mesh> &mesh_quad{internal.mesh_quad};
    const std::unique_ptr<mfem::GridFunction> &grid_f{internal.grid_f};
@@ -97,6 +95,18 @@ public:
    /** Sets the mesh and resets grid/quadrature functions if they do not use
        the same one. */
    void SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh);
+
+   /// Set scalar data
+   void SetScalarData(mfem::Vector sol);
+
+   /// Set normals
+   void SetNormals(mfem::Vector normals);
+
+   /// Set 2D vector data
+   void SetVectorData(mfem::Vector solx, mfem::Vector soly);
+
+   /// Set 3D vector data
+   void SetVectorData(mfem::Vector solx, mfem::Vector soly, mfem::Vector solz);
 
    /// Set a grid function (plain pointer version)
    /** Note that ownership is passed from the caller.
@@ -150,8 +160,8 @@ public:
    /// Set the quadrature function representation producing a proxy grid function
    void SetQuadSolution(QuadSolution type = QuadSolution::LOR_ClosedGL);
 
-   /// Switch the quadrature function representation and update the visualization
-   void SwitchQuadSolution(QuadSolution type, VisualizationScene* vs);
+   /// Switch the quadrature function representation
+   void SwitchQuadSolution(QuadSolution type);
 
    /// Get the current representation of quadrature solution
    inline QuadSolution GetQuadSolution() const { return quad_sol; }
@@ -164,16 +174,6 @@ public:
 
    void ProjectVectorFEGridFunction()
    { internal.grid_f = ProjectVectorFEGridFunction(std::move(internal.grid_f)); }
-
-   /// Sets a new mesh and solution from another DataState object, and
-   /// updates the given VisualizationScene pointer with the new data.
-   ///
-   /// Mesh space and grid function dimensions must both match the original
-   /// dimensions of the current DataState. If there is a mismatch in either
-   /// value, the function will return false, and the mesh/solution will not be
-   /// updated.
-   bool SetNewMeshAndSolution(DataState new_state,
-                              VisualizationScene* vs);
 };
 
 #endif // GLVIS_DATA_STATE_HPP
