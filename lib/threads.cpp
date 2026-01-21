@@ -19,38 +19,6 @@ using namespace std;
 
 extern const char *strings_off_on[]; // defined in vsdata.cpp
 
-enum class ThreadCommand
-{
-   Parallel,
-   Screenshot,
-   Viewcenter,
-   View,
-   Zoom,
-   Shading,
-   Subdivisions,
-   Valuerange,
-   Autoscale,
-   Levellines,
-   AxisNumberFormat,
-   ColorbarNumberFormat,
-   WindowSize,
-   WindowGeometry,
-   WindowTitle,
-   Keys,
-   Palette,
-   PaletteName,
-   PaletteFile,
-   PaletteRepeat,
-   Camera,
-   PlotCaption,
-   AxisLabels,
-   Pause,
-   Autopause,
-   //----------
-   Max
-};
-
-
 GLVisCommand::GLVisCommand(Window &win_)
    : win(win_)
 {
@@ -883,6 +851,36 @@ GLVisCommand::~GLVisCommand()
    }
 }
 
+enum class ThreadCommand
+{
+   Parallel,
+   Screenshot,
+   Viewcenter,
+   View,
+   Zoom,
+   Shading,
+   Subdivisions,
+   Valuerange,
+   Autoscale,
+   Levellines,
+   AxisNumberFormat,
+   ColorbarNumberFormat,
+   WindowSize,
+   WindowGeometry,
+   WindowTitle,
+   Keys,
+   Palette,
+   PaletteName,
+   PaletteFile,
+   PaletteRepeat,
+   Camera,
+   PlotCaption,
+   AxisLabels,
+   Pause,
+   Autopause,
+   //----------
+   Max
+};
 class ThreadCommands
 {
    struct CmdItem

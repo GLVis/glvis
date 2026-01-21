@@ -48,6 +48,8 @@ private:
       VIEW_CENTER,
       AUTOSCALE,
       PALETTE,
+      PALETTE_NAME,
+      PALETTE_FILE,
       CAMERA,
       AUTOPAUSE,
       WINDOW_GEOMETRY,
@@ -56,9 +58,7 @@ private:
       PALETTE_REPEAT,
       LEVELLINES,
       AXIS_NUMBERFORMAT,
-      COLORBAR_NUMBERFORMAT,
-      PALETTE_FILE,
-      PALETTE_NAME
+      COLORBAR_NUMBERFORMAT
    };
 
    std::atomic<bool> command_ready{false};
