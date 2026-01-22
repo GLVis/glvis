@@ -750,7 +750,7 @@ int GLVisCommand::Execute()
 
       case Command::PALETTE_FILE:
       {
-         cout << "Command: palettes: " << palette_file << endl;
+         cout << "Command: palette_file: " << palette_file << endl;
          BasePalettes.Load(palette_file);
          win.vs->palette.GenerateTextures(true); // need to reinitialize
          MyExpose();
@@ -922,7 +922,7 @@ ThreadCommands::ThreadCommands()
    (*this)[ThreadCommand::WindowTitle]          = {"window_title", "'<title>'", "Set title of the window."};
    (*this)[ThreadCommand::Keys]                 = {"keys", "<keys>", "Send the control key sequence."};
    (*this)[ThreadCommand::Palette]              = {"palette", "<index>", "Set the palette index."};
-   (*this)[ThreadCommand::PaletteFile]          = {"palettes", "<filename>", "Load in a palette file."};
+   (*this)[ThreadCommand::PaletteFile]          = {"palette_file", "<filename>", "Load in a palette file."};
    (*this)[ThreadCommand::PaletteName]          = {"palette_name", "<palette_name>", "Use palette with given name."};
    (*this)[ThreadCommand::PaletteRepeat]        = {"palette_repeat", "<times>", "Set the repetition of the palette."};
    (*this)[ThreadCommand::Camera]               = {"camera", "<cam[0]> ... <cam[2]> <dir[0]> ... <dir[2]> <up[0]> ... <up[2]>", "Set the camera position, direction and upward vector."};
@@ -1471,7 +1471,7 @@ void communication_thread::execute()
             // all processors sent the command
             for (size_t i = 1; i < is.size(); i++)
             {
-               *is[i] >> ws >> ident; // 'palettes'
+               *is[i] >> ws >> ident; // 'palette_file'
                *is[i] >> a;
             }
 

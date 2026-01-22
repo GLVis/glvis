@@ -29,7 +29,7 @@ Unlike previous GLVis releases, this version requires a C++17 compiler.
   streams using the keyword 'palette_name'.
 
 - Color palettes defined in an external file can now also be specified in
-  scripts and streams using the keyword 'palettes'.
+  scripts and streams using the keyword 'palette_file'.
 
 Version 4.4 released on May 1, 2025
 ===================================
