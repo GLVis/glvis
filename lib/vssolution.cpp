@@ -1836,12 +1836,7 @@ void VisualizationSceneSolution::PrepareElementNumbering()
    auto offset = [&](const int e)
    {
       if (!offsets) { return e; }
-      if (legacy_parallel_numbering)
-      {
-         // std::cout << "\x1b[31m[legacy_parallel_numbering]\x1b[m";
-         return e;
-      }
-      // std::cout << "\x1b[32m[legacy_parallel_numbering]\x1b[m";
+      if (legacy_parallel_numbering) { return e; }
       const int rank = mesh->GetAttribute(e) - 1;
       MFEM_VERIFY(rank >= 0 && rank < (int)offsets->size(),
                   "Invalid rank for element " + std::to_string(e));
@@ -1932,12 +1927,7 @@ void VisualizationSceneSolution::PrepareVertexNumbering()
    auto offset = [&](const int e, const int v)
    {
       if (!offsets) { return v; }
-      if (legacy_parallel_numbering)
-      {
-         // std::cout << "\x1b[31m[legacy_parallel_numbering]\x1b[m";
-         return v;
-      }
-      // std::cout << "\x1b[32m[legacy_parallel_numbering]\x1b[m";
+      if (legacy_parallel_numbering) { return v; }
       const int rank = mesh->GetAttribute(e) - 1;
       MFEM_VERIFY(rank >= 0 && rank < (int)offsets->size(),
                   "Invalid rank for element " + std::to_string(e));
@@ -2012,12 +2002,7 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
    {
       const int edge = edges[i];
       if (!offsets) { return edge; }
-      if (legacy_parallel_numbering)
-      {
-         // std::cout << "\x1b[31m[legacy_parallel_numbering]\x1b[m";
-         return edge;
-      }
-      // std::cout << "\x1b[32m[legacy_parallel_numbering]\x1b[m";
+      if (legacy_parallel_numbering) { return edge; }
       const int rank = mesh->GetAttribute(e) - 1;
       MFEM_VERIFY(rank >= 0 && rank < (int)offsets->size(),
                   "Invalid rank for element " + std::to_string(e));
@@ -2057,8 +2042,11 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
          mesh->GetElementEdges(e, edges, edges_ori);
          const auto dx = 0.05 * GetElementLengthScale(e);
          const auto geom = mesh->GetElementBaseGeometry(e);
-         MFEM_VERIFY(geom == Geometry::TRIANGLE || geom == Geometry::SQUARE,
-                     "Only TRIANGLE and SQUARE geometries are supported.");
+         if (geom != Geometry::TRIANGLE && geom != Geometry::SQUARE)
+         {
+            std::cerr  << "Only TRIANGLE and SQUARE geometries are supported." << std::endl;
+            return;
+         }
          const auto *RefG = GLVisGeometryRefiner.Refine(geom, 2, 2);
          GetRefinedValues(e, RefG->RefPts, vals, p);
          const int ij3[3] = { 1, 4, 3 }, ie3[3] = { 0, 1, 2 };
@@ -2085,46 +2073,61 @@ void VisualizationSceneSolution::PrepareDofNumbering()
 
    d_nums_buf.clear();
 
-   auto *rsol_fes = rsol->FESpace();
-   FiniteElementSpace rdof_fes(mesh, rsol_fes->FEColl());
-   H1_FECollection h1_fec(1, mesh->Dimension());
-   FiniteElementSpace h1_fes(mesh, &h1_fec);
-   MFEM_VERIFY(sol->Size() == h1_fes.GetNDofs(),
-               "Flat space does not match the solution size");
-   GridFunction h1_sol(&h1_fes, sol->GetData());
-   const bool non_conforming_shading = shading == Shading::Noncomforming;
-
    auto offset = [&](const int e, const int q)
    {
       if (!offsets) { return dofs[q]; }
-      if (legacy_parallel_numbering)
-      {
-         // std::cout << "\x1b[31m[legacy_parallel_numbering]\x1b[m";
-         return dofs[q];
-      }
-      // std::cout << "\x1b[32m[legacy_parallel_numbering]\x1b[m";
+      if (legacy_parallel_numbering) { return dofs[q]; }
       const int rank = mesh->GetAttribute(e) - 1;
       return (*offsets)[rank][ {e,q}];
    };
 
-   for (int e = 0; e < mesh->GetNE(); e++)
+   if (shading == Shading::Flat || shading == Shading::Smooth)
    {
-      if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
-      const auto dx = 0.05 * GetElementLengthScale(e);
-      const auto &ir = rsol_fes->GetFE(e)->GetNodes();
-      const bool do_shrink = non_conforming_shading;
-      GetRefinedValues(e, ir, vals, tr, do_shrink);
-      rdof_fes.GetElementDofs(e, dofs);
-      rdof_fes.AdjustVDofs(dofs);
+      H1_FECollection h1_fec(1, mesh->Dimension());
+      FiniteElementSpace h1_fes(mesh, &h1_fec);
+      MFEM_VERIFY(sol && sol->Size() == h1_fes.GetNDofs(),
+                  "Flat space does not match the solution size");
+      GridFunction h1_sol(&h1_fes, sol->GetData());
 
-      for (int q = 0; q < ir.GetNPoints(); q++)
+      for (int e = 0; e < mesh->GetNE(); e++)
       {
-         const real_t z = non_conforming_shading ? vals[q] :
-                          h1_sol.GetValue(e, ir.IntPoint(q));
-         const real_t x[3] = {tr(0,q), tr(1,q), z};
-         DrawNumberedMarker(d_nums_buf, x, dx, offset(e,q));
+         if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
+         const auto dx = 0.05 * GetElementLengthScale(e);
+         const auto &ir = h1_fes.GetFE(e)->GetNodes();
+         h1_fes.GetElementDofs(e, dofs);
+         h1_fes.AdjustVDofs(dofs);
+         for (int q = 0; q < ir.GetNPoints(); q++)
+         {
+            const real_t z = h1_sol.GetValue(e, ir.IntPoint(q));
+            const real_t x[3] = {tr(0,q), tr(1,q), z};
+            DrawNumberedMarker(d_nums_buf, x, dx, offset(e,q));
+         }
       }
    }
+   else if (shading == Shading::Noncomforming)
+   {
+      MFEM_VERIFY(rsol, "Solution required for Noncomforming dof numbering");
+      auto *rsol_fes = rsol->FESpace();
+      FiniteElementSpace rdof_fes(mesh, rsol_fes->FEColl());
+
+      for (int e = 0; e < mesh->GetNE(); e++)
+      {
+         if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
+         const auto dx = 0.05 * GetElementLengthScale(e);
+         const auto &ir = rsol_fes->GetFE(e)->GetNodes();
+         GetRefinedValues(e, ir, vals, tr, true);
+         rdof_fes.GetElementDofs(e, dofs);
+         rdof_fes.AdjustVDofs(dofs);
+
+         for (int q = 0; q < ir.GetNPoints(); q++)
+         {
+            const real_t z = vals[q];
+            const real_t x[3] = {tr(0,q), tr(1,q), z};
+            DrawNumberedMarker(d_nums_buf, x, dx, offset(e,q));
+         }
+      }
+   }
+   else { MFEM_ABORT("Shading not supported"); }
    updated_bufs.emplace_back(&d_nums_buf);
 }
 

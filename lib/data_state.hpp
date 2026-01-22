@@ -120,9 +120,6 @@ public:
        @see SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh) */
    void SetMesh(mfem::Mesh *mesh);
 
-   /// Compute the dofs offsets from the grid function vector
-   void ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array);
-
    /// Set a mesh (unique pointer version)
    /** Sets the mesh and resets grid/quadrature functions if they do not use
        the same one. */
@@ -164,6 +161,9 @@ public:
        @param component component of the field (-1 means all components) */
    void SetDataCollectionField(mfem::DataCollection *dc, int ti,
                                const char *field = NULL, bool quad = false, int component = -1);
+
+   /// Compute the dofs offsets from the grid function vector
+   void ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array);
 
    /// Helper function for visualizing 1D or 2D3V data
    void ExtrudeMeshAndSolution();
