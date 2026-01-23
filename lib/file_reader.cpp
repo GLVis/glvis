@@ -192,8 +192,7 @@ int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
       data.SetMesh(new Mesh(mesh_array.data(), np));
       if (sol_prefix)
       {
-         data.SetGridFunction(new GridFunction(data.mesh.get(), gf_array.data(), np),
-                              component);
+         data.SetGridFunction(gf_array, np, component);
       }
       else
       {

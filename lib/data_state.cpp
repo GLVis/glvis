@@ -88,9 +88,10 @@ void DataState::SetGridFunction(std::unique_ptr<GridFunction> &&pgf,
 }
 
 void DataState::SetGridFunction(std::vector<mfem::GridFunction*> &gf_array,
-                                int num_pieces)
+                                int num_pieces, int component)
 {
-   SetGridFunction(new GridFunction(mesh.get(), gf_array.data(), num_pieces));
+   SetGridFunction(new GridFunction(mesh.get(), gf_array.data(), num_pieces),
+                   component);
    if (!keep_attr) { ComputeDofsOffsets(gf_array); }
 }
 

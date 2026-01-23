@@ -138,8 +138,11 @@ public:
    void SetGridFunction(std::unique_ptr<mfem::GridFunction> &&pgf,
                         int component = -1);
 
+   /// Set a grid function from pieces
+   /** Serializes the pieces of a grid function and sets it or its
+       component (-1 means all components) */
    void SetGridFunction(std::vector<mfem::GridFunction*> &gf_array,
-                        int num_pieces);
+                        int num_pieces, int component = -1);
 
    /// Set a quadrature function (plain pointer version)
    /** Note that ownership is passed from the caller.
