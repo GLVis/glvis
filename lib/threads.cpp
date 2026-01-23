@@ -934,6 +934,7 @@ void communication_thread::execute()
             while (1);
 
             tmp.SetMesh(new Mesh(mesh_array.data(), nproc));
+            tmp.keep_attr = keep_attr;
             if (gf_array.size() > 0)
             {
                tmp.SetGridFunction(gf_array, nproc);
