@@ -71,7 +71,7 @@ void KeyCtrlP();
 void KeyS();
 void KeyQPressed();
 void ToggleThreads();
-void ThreadsPauseFunc(GLenum);
+void ThreadsPauseFunc(SDL_Keymod);
 void ThreadsStop();
 void ThreadsRun();
 
@@ -89,10 +89,10 @@ void Key0Pressed(SDL_Keymod);
 void KeyDeletePressed(SDL_Keymod);
 void KeyEnterPressed(SDL_Keymod);
 
-void KeyLeftPressed(GLenum);
-void KeyRightPressed(GLenum);
-void KeyUpPressed(GLenum);
-void KeyDownPressed(GLenum);
+void KeyLeftPressed(SDL_Keymod);
+void KeyRightPressed(SDL_Keymod);
+void KeyUpPressed(SDL_Keymod);
+void KeyDownPressed(SDL_Keymod);
 void KeyJPressed();
 void KeyMinusPressed();
 void KeyPlusPressed();

@@ -1369,7 +1369,7 @@ void ToggleThreads()
    }
 }
 
-void ThreadsPauseFunc(GLenum state)
+void ThreadsPauseFunc(SDL_Keymod state)
 {
    if (state & KMOD_CTRL)
    {
@@ -1573,7 +1573,7 @@ void ShiftView(double dx, double dy)
    locscene->ViewCenterY += dy/scale;
 }
 
-void KeyLeftPressed(GLenum state)
+void KeyLeftPressed(SDL_Keymod state)
 {
    if (state & KMOD_CTRL)
    {
@@ -1586,7 +1586,7 @@ void KeyLeftPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyRightPressed(GLenum state)
+void KeyRightPressed(SDL_Keymod state)
 {
    if (state & KMOD_CTRL)
    {
@@ -1599,7 +1599,7 @@ void KeyRightPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyUpPressed(GLenum state)
+void KeyUpPressed(SDL_Keymod state)
 {
    if (state & KMOD_CTRL)
    {
@@ -1612,7 +1612,7 @@ void KeyUpPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyDownPressed(GLenum state)
+void KeyDownPressed(SDL_Keymod state)
 {
    if (state & KMOD_CTRL)
    {
