@@ -87,6 +87,13 @@ void DataState::SetGridFunction(std::unique_ptr<GridFunction> &&pgf,
    SetGridFunctionSolution(component);
 }
 
+void DataState::SetGridFunction(std::vector<mfem::GridFunction*> &gf_array,
+                                int num_pieces)
+{
+   SetGridFunction(new GridFunction(mesh.get(), gf_array.data(), num_pieces));
+   if (!keep_attr) { _ComputeDofsOffsets(gf_array); }
+}
+
 void DataState::SetQuadFunction(QuadratureFunction *qf, int component)
 {
    if (quad_f.get() != qf)
@@ -169,54 +176,6 @@ void DataState::SetDataCollectionField(DataCollection *dc, int ti,
    else
    {
       SetMeshSolution();
-   }
-}
-
-void DataState::ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array)
-{
-   const int nprocs = static_cast<int>(gf_array.size());
-   MFEM_VERIFY(!gf_array.empty(), "No grid functions provided for offsets");
-
-   // only 2D meshes are supported for dofs offsets computation
-   if (gf_array[0]->FESpace()->GetMesh()->Dimension() != 2) { return; }
-
-   internal.offsets = std::make_unique<DataState::Offsets>(nprocs);
-
-   DenseMatrix pointmat;
-   Array<int> dofs, vertices;
-   for (int i = 0, g_e = 0; i < nprocs; i++)
-   {
-      const GridFunction *gf = gf_array[i];
-      const FiniteElementSpace *l_fes = gf->FESpace();
-      Mesh *l_mesh = l_fes->GetMesh();
-      // store the dofs numbers as they are fespace dependent
-      auto &offset = (*offsets)[i];
-      for (int l_e = 0; l_e < l_mesh->GetNE(); l_e++, g_e++)
-      {
-#ifdef GLVIS_DEBUG
-         // Store elements centers
-         l_mesh->GetPointMatrix(l_e, pointmat);
-         const int nv = pointmat.Width();
-         double xs = 0.0, ys = 0.0;
-         for (int j = 0; j < nv; j++)
-         {
-            xs += pointmat(0,j), ys += pointmat(1,j);
-         }
-         xs /= nv, ys /= nv;
-         offset.exy_map[ {l_e, i} ] = {xs, ys};
-#endif // end GLVIS_DEBUG
-         l_fes->GetElementDofs(l_e, dofs);
-         for (int k = 0; k < dofs.Size(); k++)
-         {
-            offset[ {g_e, k} ] = dofs[k];
-         }
-      }
-      if (i + 1 == nprocs) { continue; }
-      auto &next = (*offsets)[i+1];
-      // for NE, NV and NEdges, we accumulate the values
-      next.nelems = offset.nelems + l_mesh->GetNE();
-      next.nedges = offset.nedges + l_mesh->GetNEdges();
-      next.nverts = offset.nverts + l_mesh->GetNV();
    }
 }
 
@@ -670,6 +629,54 @@ void DataState::ResetMeshAndSolution(DataState &ss, VisualizationScene* vs)
          auto *vss = dynamic_cast<VisualizationSceneVector3d *>(vs);
          vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.grid_f.get());
       }
+   }
+}
+
+void DataState::_ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array)
+{
+   const int nprocs = static_cast<int>(gf_array.size());
+   MFEM_VERIFY(!gf_array.empty(), "No grid functions provided for offsets");
+
+   // only 2D meshes are supported for dofs offsets computation
+   if (gf_array[0]->FESpace()->GetMesh()->Dimension() != 2) { return; }
+
+   internal.offsets = std::make_unique<DataState::Offsets>(nprocs);
+
+   DenseMatrix pointmat;
+   Array<int> dofs, vertices;
+   for (int i = 0, g_e = 0; i < nprocs; i++)
+   {
+      const GridFunction *gf = gf_array[i];
+      const FiniteElementSpace *l_fes = gf->FESpace();
+      Mesh *l_mesh = l_fes->GetMesh();
+      // store the dofs numbers as they are fespace dependent
+      auto &offset = (*offsets)[i];
+      for (int l_e = 0; l_e < l_mesh->GetNE(); l_e++, g_e++)
+      {
+#ifdef GLVIS_DEBUG
+         // Store elements centers
+         l_mesh->GetPointMatrix(l_e, pointmat);
+         const int nv = pointmat.Width();
+         double xs = 0.0, ys = 0.0;
+         for (int j = 0; j < nv; j++)
+         {
+            xs += pointmat(0,j), ys += pointmat(1,j);
+         }
+         xs /= nv, ys /= nv;
+         offset.exy_map[ {l_e, i} ] = {xs, ys};
+#endif // end GLVIS_DEBUG
+         l_fes->GetElementDofs(l_e, dofs);
+         for (int k = 0; k < dofs.Size(); k++)
+         {
+            offset[ {g_e, k} ] = dofs[k];
+         }
+      }
+      if (i + 1 == nprocs) { continue; }
+      auto &next = (*offsets)[i+1];
+      // for NE, NV and NEdges, we accumulate the values
+      next.nelems = offset.nelems + l_mesh->GetNE();
+      next.nedges = offset.nedges + l_mesh->GetNEdges();
+      next.nverts = offset.nverts + l_mesh->GetNV();
    }
 }
 

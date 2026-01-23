@@ -94,6 +94,9 @@ private:
    /// @see SetNewMeshAndSolution()
    void ResetMeshAndSolution(DataState &ss, VisualizationScene* vs);
 
+   /// Compute the dofs offsets from the grid function vector
+   void _ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array);
+
 public:
    mfem::Vector sol, solu, solv, solw, normals;
    const std::unique_ptr<mfem::Mesh> &mesh{internal.mesh};
@@ -135,6 +138,9 @@ public:
    void SetGridFunction(std::unique_ptr<mfem::GridFunction> &&pgf,
                         int component = -1);
 
+   void SetGridFunction(std::vector<mfem::GridFunction*> &gf_array,
+                        int num_pieces);
+
    /// Set a quadrature function (plain pointer version)
    /** Note that ownership is passed from the caller.
        @see SetQuadFunction(std::unique_ptr<mfem::QuadFunction> &&, int ) */
@@ -161,9 +167,6 @@ public:
        @param component component of the field (-1 means all components) */
    void SetDataCollectionField(mfem::DataCollection *dc, int ti,
                                const char *field = NULL, bool quad = false, int component = -1);
-
-   /// Compute the dofs offsets from the grid function vector
-   void ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array);
 
    /// Helper function for visualizing 1D or 2D3V data
    void ExtrudeMeshAndSolution();
