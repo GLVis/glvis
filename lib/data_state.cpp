@@ -177,6 +177,9 @@ void DataState::ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array)
    const int nprocs = static_cast<int>(gf_array.size());
    MFEM_VERIFY(!gf_array.empty(), "No grid functions provided for offsets");
 
+   // only 2D meshes are supported for dofs offsets computation
+   if (gf_array[0]->FESpace()->GetMesh()->Dimension() != 2) { return; }
+
    internal.offsets = std::make_unique<DataState::Offsets>(nprocs);
 
    DenseMatrix pointmat;
@@ -203,7 +206,6 @@ void DataState::ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array)
          offset.exy_map[ {l_e, i} ] = {xs, ys};
 #endif // end GLVIS_DEBUG
          l_fes->GetElementDofs(l_e, dofs);
-         l_fes->AdjustVDofs(dofs);
          for (int k = 0; k < dofs.Size(); k++)
          {
             offset[ {g_e, k} ] = dofs[k];

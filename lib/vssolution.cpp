@@ -2095,7 +2095,6 @@ void VisualizationSceneSolution::PrepareDofNumbering()
          const auto dx = 0.05 * GetElementLengthScale(e);
          const auto &ir = h1_fes.GetFE(e)->GetNodes();
          h1_fes.GetElementDofs(e, dofs);
-         h1_fes.AdjustVDofs(dofs);
          for (int q = 0; q < ir.GetNPoints(); q++)
          {
             const real_t z = h1_sol.GetValue(e, ir.IntPoint(q));
@@ -2117,7 +2116,6 @@ void VisualizationSceneSolution::PrepareDofNumbering()
          const auto &ir = rsol_fes->GetFE(e)->GetNodes();
          GetRefinedValues(e, ir, vals, tr, true);
          rdof_fes.GetElementDofs(e, dofs);
-         rdof_fes.AdjustVDofs(dofs);
 
          for (int q = 0; q < ir.GetNPoints(); q++)
          {
