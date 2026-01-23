@@ -2083,56 +2083,27 @@ void VisualizationSceneSolution::PrepareDofNumbering()
 
    if (shading == Shading::Flat || shading == Shading::Smooth)
    {
-      if (!rsol)
+      H1_FECollection h1_fec(1, mesh->Dimension());
+      FiniteElementSpace h1_fes(mesh, &h1_fec);
+      MFEM_VERIFY(sol && sol->Size() == h1_fes.GetNDofs(),
+                  "Flat space does not match the solution size");
+      GridFunction h1_sol(&h1_fes, sol->GetData());
+      const auto *fes = rsol ? rsol->FESpace() : &h1_fes;
+
+      for (int e = 0; e < mesh->GetNE(); e++)
       {
-         H1_FECollection h1_fec(1, mesh->Dimension());
-         FiniteElementSpace h1_fes(mesh, &h1_fec);
-         MFEM_VERIFY(sol && sol->Size() == h1_fes.GetNDofs(),
-                     "Flat space does not match the solution size");
-         GridFunction h1_sol(&h1_fes, sol->GetData());
+         if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
+         const auto dx = 0.05 * GetElementLengthScale(e);
+         const auto &ir = fes->GetFE(e)->GetNodes();
+         mesh->GetElementTransformation(e)->Transform(ir, tr);
+         fes->GetElementDofs(e, dofs);
+         fes->AdjustVDofs(dofs);
 
-         for (int e = 0; e < mesh->GetNE(); e++)
+         for (int q = 0; q < ir.GetNPoints(); q++)
          {
-            if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
-            const auto dx = 0.05 * GetElementLengthScale(e);
-            const auto &ir = h1_fes.GetFE(e)->GetNodes();
-            mesh->GetElementTransformation(e)->Transform(ir, tr);
-            h1_fes.GetElementDofs(e, dofs);
-
-            for (int q = 0; q < ir.GetNPoints(); q++)
-            {
-               const real_t z = h1_sol.GetValue(e, ir.IntPoint(q));
-               const real_t x[3] = {tr(0,q), tr(1,q), z};
-               DrawNumberedMarker(d_nums_buf, x, dx, offset(e,q));
-            }
-         }
-      }
-      else
-      {
-         auto *rsol_fes = rsol->FESpace();
-         FiniteElementSpace rdof_fes(mesh, rsol_fes->FEColl());
-
-         H1_FECollection h1_fec(1, mesh->Dimension());
-         FiniteElementSpace h1_fes(mesh, &h1_fec);
-         MFEM_VERIFY(sol && sol->Size() == h1_fes.GetNDofs(),
-                     "Flat space does not match the solution size");
-         GridFunction h1_sol(&h1_fes, sol->GetData());
-
-         for (int e = 0; e < mesh->GetNE(); e++)
-         {
-            if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
-            const auto dx = 0.05 * GetElementLengthScale(e);
-            const auto &ir = rsol_fes->GetFE(e)->GetNodes();
-            GetRefinedValues(e, ir, vals, tr, true);
-            rdof_fes.GetElementDofs(e, dofs);
-            rdof_fes.AdjustVDofs(dofs);
-
-            for (int q = 0; q < ir.GetNPoints(); q++)
-            {
-               const real_t z = h1_sol.GetValue(e, ir.IntPoint(q));
-               const real_t x[3] = {tr(0,q), tr(1,q), z};
-               DrawNumberedMarker(d_nums_buf, x, dx, offset(e,q));
-            }
+            const real_t z = h1_sol.GetValue(e, ir.IntPoint(q));
+            const real_t x[3] = {tr(0,q), tr(1,q), z};
+            DrawNumberedMarker(d_nums_buf, x, dx, offset(e,q));
          }
       }
    }
