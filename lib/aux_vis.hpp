@@ -85,12 +85,9 @@ void Key7Pressed();
 void Key8Pressed();
 void Key9Pressed();
 
-void Key0Pressed();
-void KeyDeletePressed();
-void KeyEnterPressed();
-
-void KeySemicolonPressed();
-void KeyColonPressed();
+void Key0Pressed(SDL_Keymod);
+void KeyDeletePressed(SDL_Keymod);
+void KeyEnterPressed(SDL_Keymod);
 
 void KeyLeftPressed(GLenum);
 void KeyRightPressed(GLenum);

@@ -77,7 +77,6 @@ std::string VisualizationSceneSolution::GetHelpString() const
       << "| q -  Quits                         |" << endl
       << "| Q -  Cycle quadrature data mode    |" << endl
       << "| Q -  Cycle complex data mode       |" << endl
-      << "| ;/: -  Inc/decrease phase freq.    |" << endl
       << "| r -  Reset the plot to 3D view     |" << endl
       << "| R -  Reset the plot to 2D view     |" << endl
       << "| s -  Turn on/off unit cube scaling |" << endl
@@ -110,6 +109,8 @@ std::string VisualizationSceneSolution::GetHelpString() const
       << "| +/-  Change z-scaling              |" << endl
       << "| . -  Start/stop spinning           |" << endl
       << "| 0/Enter - Spinning speed and dir.  |" << endl
+      << "| Alt+. -  Start/stop phase anim.    |" << endl
+      << "| Alt+0/Enter - Phase anim. speed    |" << endl
       << "+------------------------------------+" << endl
       << "| Mouse                              |" << endl
       << "+------------------------------------+" << endl

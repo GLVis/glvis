@@ -229,9 +229,6 @@ GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
    wnd->setOnKeyDown (SDLK_PERIOD, KeyDeletePressed);
    wnd->setOnKeyDown (SDLK_RETURN, KeyEnterPressed);
 
-   wnd->setOnKeyDown (SDLK_SEMICOLON, KeySemicolonPressed);
-   wnd->setOnKeyDown (SDLK_COLON, KeyColonPressed);
-
    wnd->setOnKeyDown (SDLK_0, Key0Pressed);
    wnd->setOnKeyDown (SDLK_1, Key1Pressed);
    wnd->setOnKeyDown (SDLK_2, Key2Pressed);
@@ -609,6 +606,7 @@ void RemoveIdleFunc(void (*Func)(void))
 
 
 thread_local double xang = 0., yang = 0.;
+const double xang_step = 0.2; // angle in degrees
 thread_local gl3::GlMatrix srot;
 thread_local double sph_t, sph_u;
 thread_local GLint oldx, oldy, startx, starty;
@@ -1412,46 +1410,6 @@ void CheckSpin()
    cout << "Spin angle: " << xang << " degrees / frame" << endl;
 }
 
-const double xang_step = 0.2; // angle in degrees
-
-void Key0Pressed()
-{
-   if (!locscene -> spinning)
-   {
-      xang = 0;
-   }
-   xang -= xang_step;
-   CheckSpin();
-}
-
-void KeyDeletePressed()
-{
-   if (locscene -> spinning)
-   {
-      xang = yang = 0.;
-      locscene -> spinning = 0;
-      CheckMainIdleFunc();
-      constrained_spinning = 1;
-   }
-   else
-   {
-      xang = xang_step;
-      locscene -> spinning = 1;
-      CheckMainIdleFunc();
-      constrained_spinning = 1;
-   }
-}
-
-void KeyEnterPressed()
-{
-   if (!locscene -> spinning)
-   {
-      xang = 0;
-   }
-   xang += xang_step;
-   CheckSpin();
-}
-
 void CheckPhaseAnim()
 {
    if (fabs(phase_rate) < phase_step / 2.)
@@ -1463,24 +1421,80 @@ void CheckPhaseAnim()
    cout << "Phase rate: " << phase_rate << " period / frame" << endl;
 }
 
-void KeySemicolonPressed()
+void Key0Pressed(SDL_Keymod mod)
 {
-   if (!phase_anim)
+   if (mod & KMOD_ALT)
    {
-      phase_rate = 0.;
+      if (!phase_anim)
+      {
+         phase_rate = 0.;
+      }
+      phase_rate -= phase_step;
+      CheckPhaseAnim();
    }
-   phase_rate += phase_step;
-   CheckPhaseAnim();
+   else
+   {
+      if (!locscene -> spinning)
+      {
+         xang = 0;
+      }
+      xang -= xang_step;
+      CheckSpin();
+   }
 }
 
-void KeyColonPressed()
+void KeyDeletePressed(SDL_Keymod mod)
 {
-   if (!phase_anim)
+   if (mod & KMOD_ALT)
    {
-      phase_rate = 0.;
+      if (phase_anim)
+      {
+         phase_rate = 0.;
+         phase_anim = 0;
+      }
+      else
+      {
+         phase_rate = phase_step;
+         phase_anim = 1;
+      }
    }
-   phase_rate -= phase_step;
-   CheckPhaseAnim();
+   else
+   {
+      if (locscene -> spinning)
+      {
+         xang = yang = 0.;
+         locscene -> spinning = 0;
+      }
+      else
+      {
+         xang = xang_step;
+         locscene -> spinning = 1;
+      }
+      constrained_spinning = 1;
+   }
+   CheckMainIdleFunc();
+}
+
+void KeyEnterPressed(SDL_Keymod mod)
+{
+   if (mod & KMOD_ALT)
+   {
+      if (!phase_anim)
+      {
+         phase_rate = 0.;
+      }
+      phase_rate += phase_step;
+      CheckPhaseAnim();
+   }
+   else
+   {
+      if (!locscene -> spinning)
+      {
+         xang = 0;
+      }
+      xang += xang_step;
+      CheckSpin();
+   }
 }
 
 void Key7Pressed()
