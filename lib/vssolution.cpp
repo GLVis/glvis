@@ -2089,13 +2089,29 @@ void VisualizationSceneSolution::PrepareDofNumbering()
                   "Flat space does not match the solution size");
       GridFunction h1_sol(&h1_fes, sol->GetData());
       const auto *fes = rsol ? rsol->FESpace() : &h1_fes;
+      const int sdim = mesh->SpaceDimension();
+      IsoparametricTransformation Tr;
 
       for (int e = 0; e < mesh->GetNE(); e++)
       {
          if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
          const auto dx = 0.05 * GetElementLengthScale(e);
          const auto &ir = fes->GetFE(e)->GetNodes();
-         mesh->GetElementTransformation(e)->Transform(ir, tr);
+         const Element *el = mesh->GetElement(e);
+         const int nv = el->GetNVertices();
+         const int *verts = el->GetVertices();
+         DenseMatrix &pm = Tr.GetPointMat();
+         pm.SetSize(sdim, nv);
+         for (int v = 0; v < nv; v++)
+         {
+            const real_t *vert = mesh->GetVertex(verts[v]);
+            for (int d = 0; d < sdim; d++)
+            {
+               pm(d, v) = vert[d];
+            }
+         }
+         Tr.SetFE(mesh->GetTransformationFEforElementType(el->GetType()));
+         Tr.Transform(ir, tr);
          fes->GetElementDofs(e, dofs);
          fes->AdjustVDofs(dofs);
 
