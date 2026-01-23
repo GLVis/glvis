@@ -2110,10 +2110,9 @@ void VisualizationSceneSolution::PrepareDofNumbering()
    else if (shading == Shading::Noncomforming)
    {
       MFEM_VERIFY(rsol, "Solution required for Noncomforming dof numbering");
-      auto *rsol_fes = rsol->FESpace();
+      const auto *rsol_fes = rsol->FESpace();
       MFEM_VERIFY(rsol->Size() == rsol_fes->GetNDofs(),
                   "FE space does not match the rsol size");
-      FiniteElementSpace rdof_fes(mesh, rsol_fes->FEColl());
 
       for (int e = 0; e < mesh->GetNE(); e++)
       {
@@ -2121,8 +2120,8 @@ void VisualizationSceneSolution::PrepareDofNumbering()
          const auto dx = 0.05 * GetElementLengthScale(e);
          const auto &ir = rsol_fes->GetFE(e)->GetNodes();
          GetRefinedValues(e, ir, vals, tr, true);
-         rdof_fes.GetElementDofs(e, dofs);
-         rdof_fes.AdjustVDofs(dofs);
+         rsol->FESpace()->GetElementDofs(e, dofs);
+         rsol->FESpace()->AdjustVDofs(dofs);
 
          for (int q = 0; q < ir.GetNPoints(); q++)
          {
