@@ -95,7 +95,7 @@ private:
    void ResetMeshAndSolution(DataState &ss, VisualizationScene* vs);
 
    /// Compute the dofs offsets from the grid function vector
-   void _ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array);
+   void ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array);
 
 public:
    mfem::Vector sol, solu, solv, solw, normals;

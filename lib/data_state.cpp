@@ -91,7 +91,7 @@ void DataState::SetGridFunction(std::vector<mfem::GridFunction*> &gf_array,
                                 int num_pieces)
 {
    SetGridFunction(new GridFunction(mesh.get(), gf_array.data(), num_pieces));
-   if (!keep_attr) { _ComputeDofsOffsets(gf_array); }
+   if (!keep_attr) { ComputeDofsOffsets(gf_array); }
 }
 
 void DataState::SetQuadFunction(QuadratureFunction *qf, int component)
@@ -632,7 +632,7 @@ void DataState::ResetMeshAndSolution(DataState &ss, VisualizationScene* vs)
    }
 }
 
-void DataState::_ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array)
+void DataState::ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array)
 {
    const int nprocs = static_cast<int>(gf_array.size());
    MFEM_VERIFY(!gf_array.empty(), "No grid functions provided for offsets");
@@ -666,6 +666,7 @@ void DataState::_ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array)
          offset.exy_map[ {l_e, i} ] = {xs, ys};
 #endif // end GLVIS_DEBUG
          l_fes->GetElementDofs(l_e, dofs);
+         l_fes->AdjustVDofs(dofs);
          for (int k = 0; k < dofs.Size(); k++)
          {
             offset[ {g_e, k} ] = dofs[k];
