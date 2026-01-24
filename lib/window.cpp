@@ -82,10 +82,6 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
    if (field_type == DataState::FieldType::SCALAR
        || field_type == DataState::FieldType::MESH)
    {
-      if (data_state.grid_f)
-      {
-         data_state.grid_f->GetNodalValues(data_state.sol);
-      }
       if (data_state.mesh->SpaceDimension() == 2)
       {
          internal.vs.reset(new VisualizationSceneSolution(*this));
@@ -132,7 +128,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
          }
          else
          {
-            mesh_range = data_state.sol.Max() + 1.0;
+            mesh_range = data_state.sol->Max() + 1.0;
          }
       }
    }
@@ -203,7 +199,10 @@ void Window::SwitchQuadSolution(DataState::QuadSolution quad_type)
 bool Window::SetNewMeshAndSolution(DataState new_state)
 {
    if (new_state.mesh->SpaceDimension() == data_state.mesh->SpaceDimension() &&
-       new_state.grid_f->VectorDim() == data_state.grid_f->VectorDim())
+       new_state.GetType() == data_state.GetType() &&
+       (((new_state.grid_f && data_state.grid_f) &&
+         (new_state.grid_f->VectorDim() == data_state.grid_f->VectorDim()))
+        ||(!new_state.grid_f && !data_state.grid_f)))
    {
       ResetMeshAndSolution(new_state);
 
@@ -219,42 +218,13 @@ bool Window::SetNewMeshAndSolution(DataState new_state)
 
 void Window::ResetMeshAndSolution(DataState &ss)
 {
-   if (ss.mesh->SpaceDimension() == 2)
+   if (ss.mesh->SpaceDimension() == 3 &&
+       ss.GetType() == DataState::FieldType::VECTOR)
    {
-      if (ss.grid_f->VectorDim() == 1)
-      {
-         VisualizationSceneSolution *vss =
-            dynamic_cast<VisualizationSceneSolution *>(internal.vs.get());
-         ss.grid_f->GetNodalValues(ss.sol);
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
-                                 ss.grid_f.get());
-      }
-      else
-      {
-         VisualizationSceneVector *vsv =
-            dynamic_cast<VisualizationSceneVector *>(internal.vs.get());
-         vsv->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
-      }
+      ss.ProjectVectorFEGridFunction();
    }
-   else
-   {
-      if (ss.grid_f->VectorDim() == 1)
-      {
-         VisualizationSceneSolution3d *vss =
-            dynamic_cast<VisualizationSceneSolution3d *>(internal.vs.get());
-         ss.grid_f->GetNodalValues(ss.sol);
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &ss.sol,
-                                 ss.grid_f.get());
-      }
-      else
-      {
-         ss.ProjectVectorFEGridFunction();
 
-         VisualizationSceneVector3d *vss =
-            dynamic_cast<VisualizationSceneVector3d *>(internal.vs.get());
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.grid_f.get());
-      }
-   }
+   vs->NewMeshAndSolution(ss);
 }
 
 

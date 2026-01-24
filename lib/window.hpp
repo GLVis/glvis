@@ -73,17 +73,17 @@ public:
    /// updated.
    bool SetNewMeshAndSolution(DataState new_state);
 
-   /// Updates the VisualizationScene with the new data of the given DataState object.
-   /// @note: Use with caution when the update is compatible
-   /// @see SetNewMeshAndSolution()
-   void ResetMeshAndSolution(DataState &ss);
-
 private:
    /// Thread-local singleton for key handlers
    static thread_local Window *locwin;
 
    /// Switch representation of the quadrature function
    static void SwitchQuadSolution();
+
+   /// Updates the VisualizationScene with the new data of the given DataState object.
+   /// @note: Use with caution when the update is compatible
+   /// @see SetNewMeshAndSolution()
+   void ResetMeshAndSolution(DataState &ss);
 };
 
 #endif // GLVIS_WINDOW_HPP

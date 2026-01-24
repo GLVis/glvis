@@ -30,6 +30,9 @@ protected:
 
    void Init();
 
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol_x,
+                           Vector *new_sol_y, GridFunction *new_u = NULL);
+
    void GetRefinedValues(int i, const IntegrationRule &ir,
                          Vector &vals, DenseMatrix &tr) override;
    int GetRefinedValuesAndNormals(int i, const IntegrationRule &ir,
@@ -50,7 +53,7 @@ protected:
 public:
    VisualizationSceneVector(Window &win_);
 
-   void NewMeshAndSolution(GridFunction &vgf, Mesh *mc = NULL);
+   void NewMeshAndSolution(const DataState &s) override;
 
    virtual ~VisualizationSceneVector();
 

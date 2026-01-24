@@ -421,24 +421,26 @@ static void KeyF12Pressed()
 VisualizationSceneSolution::VisualizationSceneSolution(
    Window &win_, bool init) : VisualizationSceneScalarData(win_, false)
 {
-   if (win.data_state.normals.Size() > 0)
+   v_normals = win.data_state.normals.get();
+
+   if (win.data_state.grid_f)
    {
-      v_normals = &win.data_state.normals;
+      rsol = win.data_state.grid_f.get();
+      sol = new Vector(mesh->GetNV());
    }
 
    if (init)
    {
-      Init();
-      if (win.data_state.grid_f)
+      if (rsol)
       {
-         SetGridFunction(*win.data_state.grid_f);
+         rsol->GetNodalValues(*sol);
       }
+      Init();
    }
 }
 
 void VisualizationSceneSolution::Init()
 {
-   rsol  = NULL;
    vssol = this;
 
    drawelems = 1;
@@ -524,6 +526,10 @@ void VisualizationSceneSolution::Init()
 
 VisualizationSceneSolution::~VisualizationSceneSolution()
 {
+   if (rsol)
+   {
+      delete sol;
+   }
 }
 
 void VisualizationSceneSolution::ToggleDrawElems()
@@ -584,6 +590,19 @@ void VisualizationSceneSolution::ToggleDrawElems()
       PrepareLevelCurves();
       PrepareCP();
       PrepareNumbering();
+   }
+}
+
+void VisualizationSceneSolution::NewMeshAndSolution(const DataState &s)
+{
+   if (rsol && s.grid_f)
+   {
+      s.grid_f->GetNodalValues(*sol);
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), sol, s.grid_f.get());
+   }
+   else
+   {
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), s.sol.get());
    }
 }
 

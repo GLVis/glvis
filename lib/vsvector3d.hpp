@@ -31,6 +31,9 @@ protected:
 
    void Init();
 
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol_x,
+                           Vector *new_sol_y, Vector *new_sol_z, GridFunction *new_u = NULL);
+
    Array<int> vflevel;
    Array<double> dvflevel;
 
@@ -41,7 +44,7 @@ public:
 
    VisualizationSceneVector3d(Window &win);
 
-   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, GridFunction *new_v);
+   void NewMeshAndSolution(const DataState &s) override;
 
    virtual ~VisualizationSceneVector3d();
 

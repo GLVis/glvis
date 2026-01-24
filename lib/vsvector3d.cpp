@@ -368,12 +368,11 @@ VisualizationSceneVector3d::VisualizationSceneVector3d(Window &win_)
    }
    else
    {
-      solx = &win.data_state.solu;
-      soly = &win.data_state.solv;
-      solz = &win.data_state.solw;
+      sol = new Vector(mesh->GetNV());
+      solx = win.data_state.solx.get();
+      soly = win.data_state.soly.get();
+      solz = win.data_state.solz.get();
    }
-
-   sol = new Vector(mesh->GetNV());
 
    Init();
 }
@@ -451,8 +450,6 @@ int VisualizationSceneVector3d::GetFunctionAutoRefineFactor()
 
 VisualizationSceneVector3d::~VisualizationSceneVector3d()
 {
-   delete sol;
-
    if (VecGridF)
    {
       delete solz;
@@ -461,10 +458,29 @@ VisualizationSceneVector3d::~VisualizationSceneVector3d()
       delete GridF;
       delete sfes;
    }
+   else
+   {
+      delete sol;
+   }
+}
+
+void VisualizationSceneVector3d::NewMeshAndSolution(const DataState &s)
+{
+   if (VecGridF && s.grid_f)
+   {
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), solx, soly, solz,
+                         s.grid_f.get());
+   }
+   else
+   {
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), s.solx.get(), s.soly.get(),
+                         s.solz.get());
+   }
 }
 
 void VisualizationSceneVector3d::NewMeshAndSolution(
-   Mesh *new_m, Mesh *new_mc, GridFunction *new_v)
+   Mesh *new_m, Mesh *new_mc, Vector *new_sol_x, Vector *new_sol_y,
+   Vector *new_sol_z, GridFunction *new_v)
 {
    delete sol;
    if (VecGridF)
@@ -499,21 +515,30 @@ void VisualizationSceneVector3d::NewMeshAndSolution(
       }
    }
 
-   FiniteElementSpace *new_fes = new_v->FESpace();
 
    FindNodePos();
 
-   sfes = new FiniteElementSpace(mesh, new_fes->FEColl(), 1,
-                                 new_fes->GetOrdering());
-   GridF = new GridFunction(sfes);
+   if (new_v)
+   {
+      FiniteElementSpace *new_fes = new_v->FESpace();
+      sfes = new FiniteElementSpace(mesh, new_fes->FEColl(), 1,
+                                    new_fes->GetOrdering());
+      GridF = new GridFunction(sfes);
 
-   solx = new Vector(mesh->GetNV());
-   soly = new Vector(mesh->GetNV());
-   solz = new Vector(mesh->GetNV());
+      solx = new Vector(mesh->GetNV());
+      soly = new Vector(mesh->GetNV());
+      solz = new Vector(mesh->GetNV());
 
-   VecGridF->GetNodalValues(*solx, 1);
-   VecGridF->GetNodalValues(*soly, 2);
-   VecGridF->GetNodalValues(*solz, 3);
+      VecGridF->GetNodalValues(*solx, 1);
+      VecGridF->GetNodalValues(*soly, 2);
+      VecGridF->GetNodalValues(*solz, 3);
+   }
+   else
+   {
+      solx = new_sol_x;
+      soly = new_sol_y;
+      solz = new_sol_z;
+   }
 
    sol = new Vector(mesh->GetNV());
 

@@ -26,7 +26,7 @@ class VisualizationSceneSolution : public VisualizationSceneScalarData
 {
 protected:
    Vector *v_normals{};
-   GridFunction *rsol;
+   GridFunction *rsol{};
 
    int drawmesh, drawelems, drawnums, draworder;
    int drawbdr, draw_cp;
@@ -56,6 +56,9 @@ protected:
    gl3::GlDrawable order_noarrow_buf;
 
    void Init();
+
+   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
+                           GridFunction *new_u = NULL);
 
    void FindNewBox(double rx[], double ry[], double rval[]);
 
@@ -91,10 +94,7 @@ public:
 
    std::string GetHelpString() const override;
 
-   void SetGridFunction(GridFunction & u) { rsol = &u; }
-
-   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol,
-                           GridFunction *new_u = NULL);
+   void NewMeshAndSolution(const DataState &s) override;
 
    void SetNewScalingFromBox() override;
    void FindNewBox(bool prepare) override;

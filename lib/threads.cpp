@@ -467,27 +467,30 @@ int GLVisCommand::Execute()
       case NEW_MESH_AND_SOLUTION:
       {
          double mesh_range = -1.0;
-         if (!new_state.grid_f)
+         switch (new_state.GetType())
          {
-            if (!new_state.quad_f)
-            {
-               new_state.save_coloring = false;
-               new_state.SetMeshSolution();
+            case DataState::FieldType::MESH:
                mesh_range = new_state.grid_f->Max() + 1.0;
-            }
-            else
-            {
-               auto qs = win.data_state.GetQuadSolution();
-               if (qs != DataState::QuadSolution::NONE)
+               break;
+            case DataState::FieldType::SCALAR:
+            case DataState::FieldType::VECTOR:
+               if (new_state.quad_f)
                {
-                  new_state.SetQuadSolution(qs);
+                  auto qs = win.data_state.GetQuadSolution();
+                  if (qs != DataState::QuadSolution::NONE)
+                  {
+                     new_state.SetQuadSolution(qs);
+                  }
+                  else
+                  {
+                     new_state.SetQuadSolution();
+                  }
+                  new_state.ExtrudeMeshAndSolution();
                }
-               else
-               {
-                  new_state.SetQuadSolution();
-               }
-               new_state.ExtrudeMeshAndSolution();
-            }
+               break;
+            default:
+               cerr << "Unknown field type" << endl;
+               break;
          }
          if (win.SetNewMeshAndSolution(std::move(new_state)))
          {

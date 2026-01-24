@@ -164,6 +164,9 @@ public:
 
    virtual ~VisualizationSceneScalarData();
 
+   /// Set a new mesh and solution from the given data state
+   virtual void NewMeshAndSolution(const DataState &s) = 0;
+
    virtual std::string GetHelpString() const { return ""; }
 
    // Determine 'xscale', 'yscale', and 'zscale' using the current bounding
