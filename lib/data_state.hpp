@@ -58,10 +58,10 @@ struct DataState
    };
 
 private:
-   friend class StreamReader;
-   friend class FileReader;
    struct
    {
+      std::unique_ptr<mfem::Vector> sol, solx, soly, solz;
+      std::unique_ptr<mfem::Vector> normals;
       std::unique_ptr<mfem::Mesh> mesh;
       std::unique_ptr<mfem::Mesh> mesh_quad;
       std::unique_ptr<mfem::GridFunction> grid_f;
@@ -79,7 +79,11 @@ private:
    void SetQuadFunctionSolution(int component = -1);
 
 public:
-   mfem::Vector sol, solu, solv, solw, normals;
+   const std::unique_ptr<mfem::Vector> &sol{internal.sol};
+   const std::unique_ptr<mfem::Vector> &solx{internal.solx};
+   const std::unique_ptr<mfem::Vector> &soly{internal.soly};
+   const std::unique_ptr<mfem::Vector> &solz{internal.solz};
+   const std::unique_ptr<mfem::Vector> &normals{internal.normals};
    const std::unique_ptr<mfem::Mesh> &mesh{internal.mesh};
    const std::unique_ptr<mfem::Mesh> &mesh_quad{internal.mesh_quad};
    const std::unique_ptr<mfem::GridFunction> &grid_f{internal.grid_f};
@@ -110,6 +114,18 @@ public:
    /** Sets the mesh and resets grid/quadrature functions if they do not use
        the same one. */
    void SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh);
+
+   /// Set scalar data
+   void SetScalarData(mfem::Vector sol);
+
+   /// Set normals
+   void SetNormals(mfem::Vector normals);
+
+   /// Set 2D vector data
+   void SetVectorData(mfem::Vector solx, mfem::Vector soly);
+
+   /// Set 3D vector data
+   void SetVectorData(mfem::Vector solx, mfem::Vector soly, mfem::Vector solz);
 
    /// Set a grid function (plain pointer version)
    /** Note that ownership is passed from the caller.

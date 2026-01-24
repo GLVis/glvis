@@ -201,7 +201,9 @@ jobs:
         [[ ${{ matrix.target }} == "dbg" ]] && glvis_target="debug";
         use_egl="NO"
         [[ ${{ matrix.os }} == "ubuntu-latest" ]] && use_egl="YES"
-        cd glvis && make ${glvis_target} -j3 GLVIS_USE_EGL=${use_egl}
+        use_cgl="NO"
+        [[ ${{ matrix.os }} == "macos-latest" ]] && use_cgl="YES"
+        cd glvis && make ${glvis_target} -j3 GLVIS_USE_EGL=${use_egl} GLVIS_USE_CGL=${use_cgl}
 
     - name: build GLVis (cmake)
       if: matrix.build-system == 'cmake'
@@ -214,12 +216,15 @@ jobs:
           && toolchain_file="${VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
         use_egl="OFF"
         [[ ${{ matrix.os }} == "ubuntu-latest" ]] && use_egl="ON"
+        use_cgl="NO"
+        [[ ${{ matrix.os }} == "macos-latest" ]] && use_cgl="YES"
         cd glvis && mkdir build && cd build
         cmake \
           -D CMAKE_TOOLCHAIN_FILE:STRING=${toolchain_file} \
           -D CMAKE_BUILD_TYPE:STRING=${build_type} \
           -D ENABLE_TESTS:BOOL=TRUE \
           -D GLVIS_USE_EGL:BOOL=${use_egl} \
+          -D GLVIS_USE_CGL:BOOL=${use_cgl} \
           -D mfem_DIR:PATH=${GITHUB_WORKSPACE}/${MFEM_TOP_DIR}/build \
           -D GLVIS_BASELINE_SYS=${{ matrix.os }} \
           ..

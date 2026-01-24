@@ -76,19 +76,27 @@ int FileReader::ReadSerial(FileReader::FileType ft, const char *mesh_file,
             // get rid of NetGen's info line
             char buff[128];
             solin->getline(buff,128);
-            data.sol.Load(*solin, data.mesh->GetNV());
-            data.type = DataState::FieldType::SCALAR;
+            Vector sol;
+            sol.Load(*solin, data.mesh->GetNV());
+            data.SetScalarData(std::move(sol));
          }
          break;
          case FileType::VECTOR_SOL:
-            data.solu.Load(*solin, data.mesh->GetNV());
-            data.solv.Load(*solin, data.mesh->GetNV());
+         {
+            Vector solx, soly, solz;
+            solx.Load(*solin, data.mesh->GetNV());
+            soly.Load(*solin, data.mesh->GetNV());
             if (data.mesh->SpaceDimension() == 3)
             {
-               data.solw.Load(*solin, data.mesh->GetNV());
+               solz.Load(*solin, data.mesh->GetNV());
+               data.SetVectorData(std::move(solx), std::move(soly), std::move(solz));
             }
-            data.type = DataState::FieldType::VECTOR;
-            break;
+            else
+            {
+               data.SetVectorData(std::move(solx), std::move(soly));
+            }
+         }
+         break;
          default:
             cerr << "Unknown file type. Exit" << endl;
             exit(1);

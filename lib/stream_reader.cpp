@@ -136,30 +136,42 @@ int StreamReader::ReadStream(
    switch (cmd)
    {
       case Command::Fem2D:
-         data.type = DataState::FieldType::SCALAR;
+      {
+         Vector sol;
          data.SetMesh(new Mesh(is, 0, 0, data.fix_elem_orient));
-         data.sol.Load(is, data.mesh->GetNV());
-         break;
+         sol.Load(is, data.mesh->GetNV());
+         data.SetScalarData(std::move(sol));
+      }
+      break;
       case Command::VFem2D:
       case Command::VFem2D_keys:
-         data.type = DataState::FieldType::VECTOR;
+      {
+         Vector solx, soly;
          data.SetMesh(new Mesh(is, 0, 0, data.fix_elem_orient));
-         data.solu.Load(is, data.mesh->GetNV());
-         data.solv.Load(is, data.mesh->GetNV());
-         break;
+         solx.Load(is, data.mesh->GetNV());
+         soly.Load(is, data.mesh->GetNV());
+         data.SetVectorData(std::move(solx), std::move(soly));
+      }
+      break;
       case Command::Fem3D:
-         data.type = DataState::FieldType::SCALAR;
+      {
+         Vector sol;
          data.SetMesh(new Mesh(is, 0, 0, data.fix_elem_orient));
-         data.sol.Load(is, data.mesh->GetNV());
-         break;
+         sol.Load(is, data.mesh->GetNV());
+         data.SetScalarData(std::move(sol));
+      }
+      break;
       case Command::VFem3D:
       case Command::VFem3D_keys:
-         data.type = DataState::FieldType::VECTOR;
+      {
+         Vector solx, soly, solz;
          data.SetMesh(new Mesh(is, 0, 0, data.fix_elem_orient));
-         data.solu.Load(is, data.mesh->GetNV());
-         data.solv.Load(is, data.mesh->GetNV());
-         data.solw.Load(is, data.mesh->GetNV());
-         break;
+         solx.Load(is, data.mesh->GetNV());
+         soly.Load(is, data.mesh->GetNV());
+         solz.Load(is, data.mesh->GetNV());
+         data.SetVectorData(std::move(solx), std::move(soly), std::move(solz));
+      }
+      break;
       case Command::Fem2D_GF:
       case Command::Fem2D_GF_keys:
       case Command::VFem2D_GF:
@@ -243,8 +255,8 @@ int StreamReader::ReadStream(
          }
 
          data.SetMesh(new Mesh(2, tot_num_vert, tot_num_elem, 0));
-         data.sol.SetSize(tot_num_vert);
-         data.normals.SetSize(3*tot_num_vert);
+         Vector sol(tot_num_vert);
+         Vector normals(3*tot_num_vert);
 
          int v_off = 0;
          for (int i = 0; i < num_patches; i++)
@@ -254,10 +266,10 @@ int StreamReader::ReadStream(
             for (int j = 0; j < num_vert; j++)
             {
                data.mesh->AddVertex(&verts[6*j]);
-               data.sol(v_off) = verts[6*j+2];
-               data.normals(3*v_off+0) = verts[6*j+3];
-               data.normals(3*v_off+1) = verts[6*j+4];
-               data.normals(3*v_off+2) = verts[6*j+5];
+               sol(v_off) = verts[6*j+2];
+               normals(3*v_off+0) = verts[6*j+3];
+               normals(3*v_off+1) = verts[6*j+4];
+               normals(3*v_off+2) = verts[6*j+5];
                v_off++;
             }
 
@@ -300,7 +312,8 @@ int StreamReader::ReadStream(
             delete vertices[i];
          }
 
-         data.type = DataState::FieldType::SCALAR;
+         data.SetScalarData(std::move(sol));
+         data.SetNormals(std::move(normals));
       }
       break;
       case Command::Max: //dummy

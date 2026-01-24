@@ -1365,7 +1365,7 @@ VisualizationSceneScalarData::VisualizationSceneScalarData(
 {
    mesh = win.data_state.mesh.get();
    mesh_coarse = win.data_state.mesh_quad.get();
-   sol  = &win.data_state.sol;
+   sol  = win.data_state.sol.get();
 
    if (init)
    {
