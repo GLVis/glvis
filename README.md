@@ -204,7 +204,7 @@ Key commands
   - `on` (default): recompute both the bounding box and the value range
   - `value`: recompute only the value range
   - `mesh`: recompute only the bounding box
-- <kbd>Alt+.</kbd> – Start/stop harmonic complex phase animation (speed can be controlled with <kbd>Alt+0</kbd> / <kbd>Alt+Enter</kbd>)
+- <kbd>Alt</kbd> + <kbd>.</kbd> – Start/stop harmonic complex phase animation (speed can be controlled with <kbd>Alt</kbd> + <kbd>0</kbd> / <kbd>Alt</kbd> + <kbd>Enter</kbd>)
 
 ## 2D scalar data
 
