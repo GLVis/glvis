@@ -218,8 +218,10 @@ public:
    static std::unique_ptr<mfem::GridFunction>
    ProjectVectorFEGridFunction(std::unique_ptr<mfem::GridFunction> gf);
 
-   void ProjectVectorFEGridFunction()
-   { internal.grid_f = ProjectVectorFEGridFunction(std::move(internal.grid_f)); }
+   static std::unique_ptr<mfem::ComplexGridFunction>
+   ProjectVectorFEGridFunction(std::unique_ptr<mfem::ComplexGridFunction> gf);
+
+   void ProjectVectorFEGridFunction();
 };
 
 #endif // GLVIS_DATA_STATE_HPP

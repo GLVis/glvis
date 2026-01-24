@@ -856,6 +856,43 @@ DataState::ProjectVectorFEGridFunction(std::unique_ptr<GridFunction> gf)
    return gf;
 }
 
+std::unique_ptr<ComplexGridFunction>
+DataState::ProjectVectorFEGridFunction(std::unique_ptr<ComplexGridFunction> gf)
+{
+   if ((gf->VectorDim() == 3) && (gf->FESpace()->GetVDim() == 1))
+   {
+      int p = gf->FESpace()->GetOrder(0);
+      cout << "Switching to order " << p
+           << " discontinuous complex vector grid function..." << endl;
+      int dim = gf->FESpace()->GetMesh()->Dimension();
+      FiniteElementCollection *d_fec =
+         (p == 1 && dim == 3) ?
+         (FiniteElementCollection*)new LinearDiscont3DFECollection :
+         (FiniteElementCollection*)new L2_FECollection(p, dim, 1);
+      FiniteElementSpace *d_fespace =
+         new FiniteElementSpace(gf->FESpace()->GetMesh(), d_fec, 3);
+      ComplexGridFunction *d_gf = new ComplexGridFunction(d_fespace);
+      d_gf->MakeOwner(d_fec);
+      gf->real().ProjectVectorFieldOn(d_gf->real());
+      gf->imag().ProjectVectorFieldOn(d_gf->imag());
+      gf.reset(d_gf);
+   }
+   return gf;
+}
+
+void DataState::ProjectVectorFEGridFunction()
+{
+   if (cgrid_f)
+   {
+      internal.cgrid_f = ProjectVectorFEGridFunction(std::move(internal.cgrid_f));
+      SwitchComplexSolution(GetComplexSolution(), false);
+   }
+   else
+   {
+      internal.grid_f = ProjectVectorFEGridFunction(std::move(internal.grid_f));
+   }
+}
+
 void ::VectorExtrudeCoefficient::Eval(Vector &v, ElementTransformation &T,
                                       const IntegrationPoint &ip)
 {
