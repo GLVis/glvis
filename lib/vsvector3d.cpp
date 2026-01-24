@@ -14,8 +14,7 @@
 #include <cmath>
 #include <limits>
 
-#include "mfem.hpp"
-#include "visual.hpp"
+#include "vsvector3d.hpp"
 
 using namespace mfem;
 using namespace std;

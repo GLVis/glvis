@@ -19,6 +19,10 @@
 #include <cstdio>
 #include <cstring>
 #include <ctime>
+#include <vector>
+#include <memory>
+#include <thread>
+#include <utility>
 
 // SDL may redefine main() as SDL_main() ostensibly to ease portability.
 // (WinMain() instead of main() is used as the entry point in a non-console
@@ -31,8 +35,7 @@
 #define SDL_MAIN_HANDLED
 #endif
 
-#include "mfem.hpp"
-#include "lib/palettes.hpp"
+#include <mfem.hpp>
 #include "lib/visual.hpp"
 #include "lib/stream_reader.hpp"
 #include "lib/file_reader.hpp"
@@ -171,6 +174,8 @@ bool GLVisInitVis(StreamCollection input_streams)
             // the 'jet-like' palette is used in 2D, see vssolution.cpp).
             vs->palette.SetIndex(4);
          }
+         // Window structure with DataState could allow to remove this call
+         vs->SetDataOffsets(stream_state.offsets.get());
       }
       else if (stream_state.mesh->SpaceDimension() == 3)
       {
@@ -224,6 +229,8 @@ bool GLVisInitVis(StreamCollection input_streams)
             vs = new VisualizationSceneVector(*stream_state.mesh, stream_state.solu,
                                               stream_state.solv, stream_state.mesh_quad.get());
          }
+         // Window structure with DataState could allow to remove this call
+         vs->SetDataOffsets(stream_state.offsets.get());
       }
       else if (stream_state.mesh->SpaceDimension() == 3)
       {

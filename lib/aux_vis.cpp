@@ -11,16 +11,17 @@
 
 #include <iostream>
 #include <sstream>
-#include <fstream>
 #include <cmath>
 #include <chrono>
 #include <regex>
 
-#include "mfem.hpp"
-#include "sdl.hpp"
-#include "palettes.hpp"
-#include "visual.hpp"
+#include "gl/types.hpp"
 #include "gl2ps.h"
+#include "palettes.hpp"
+#include "sdl.hpp"
+#include "threads.hpp"
+
+#include <mfem.hpp>
 
 #if defined(GLVIS_USE_LIBTIFF)
 #include "tiffio.h"
@@ -38,7 +39,7 @@ using namespace std;
 
 thread_local int visualize = 0;
 thread_local VisualizationScene * locscene;
-thread_local GLVisCommand *glvis_command = NULL;
+thread_local GLVisCommand *glvis_command = nullptr;
 
 #ifdef GLVIS_MULTISAMPLE
 static int glvis_multisample = GLVIS_MULTISAMPLE;
@@ -436,7 +437,7 @@ void MyExpose()
 }
 
 
-thread_local Array<void (*)()> IdleFuncs;
+thread_local mfem::Array<void (*)()> IdleFuncs;
 thread_local int LastIdleFunc;
 thread_local bool use_idle = false;
 

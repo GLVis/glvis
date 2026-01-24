@@ -294,7 +294,7 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
    data.SetMesh(new Mesh(mesh_array.data(), nproc));
    if (gf_count > 0)
    {
-      data.SetGridFunction(new GridFunction(data.mesh.get(), gf_array.data(), nproc));
+      data.SetGridFunction(gf_array, nproc);
    }
    else if (qf_count > 0)
    {

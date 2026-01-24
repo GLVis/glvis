@@ -244,7 +244,7 @@ GL2PSDLL_API GLint gl2psDrawImageMap(GLsizei width, GLsizei height,
                                      const unsigned char *imagemap);
 GL2PSDLL_API const char *gl2psGetFileExtension(GLint format);
 GL2PSDLL_API const char *gl2psGetFormatDescription(GLint format);
-GL2PSDLL_API GLint gl2psGetFileFormat();
+GL2PSDLL_API GLint gl2psGetFileFormat(void);
 
 #if defined(__cplusplus)
 }

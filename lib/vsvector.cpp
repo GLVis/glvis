@@ -14,8 +14,8 @@
 #include <limits>
 #include <cmath>
 
-#include "mfem.hpp"
-#include "visual.hpp"
+#include <mfem.hpp>
+#include "vsvector.hpp"
 
 using namespace mfem;
 using namespace std;
@@ -532,8 +532,10 @@ VisualizationSceneVector::~VisualizationSceneVector()
    }
 }
 
-void VisualizationSceneVector::GetRefinedValues(
-   int i, const IntegrationRule &ir, Vector &vals, DenseMatrix &tr)
+void VisualizationSceneVector::GetRefinedValues(const int i,
+                                                const IntegrationRule &ir,
+                                                Vector &vals, DenseMatrix &tr,
+                                                const bool do_shrink)
 {
    if (drawelems < 2)
    {
@@ -638,7 +640,7 @@ void VisualizationSceneVector::GetRefinedValues(
          vals(j) = _LogVal(vals(j));
       }
 
-   if (shrink != 1.0 || shrinkmat != 1.0)
+   if (do_shrink && (shrink != 1.0 || shrinkmat != 1.0))
    {
       ShrinkPoints(tr, i, 0, 0);
    }
@@ -1020,14 +1022,23 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
    }
 
    // draw numberings
-   if (drawnums == 1)
+   if (drawnums == Numbering::ELEMENTS)
    {
       scene.queue.emplace_back(params, &e_nums_buf);
    }
-   else if (drawnums == 2)
+   else if (drawnums == Numbering::VERTICES)
    {
       scene.queue.emplace_back(params, &v_nums_buf);
    }
+   else if (drawnums == Numbering::EDGES)
+   {
+      scene.queue.emplace_back(params, &f_nums_buf);
+   }
+   else if (drawnums == Numbering::DOFS)
+   {
+      scene.queue.emplace_back(params, &d_nums_buf);
+   }
+   else { /* Numbering::NONE */ }
 
    if (drawvector == 1 || drawvector > 3)
    {

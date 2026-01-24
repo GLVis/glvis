@@ -11,8 +11,6 @@
 
 #include "coll_reader.hpp"
 
-#include <vector>
-
 using namespace std;
 using namespace mfem;
 

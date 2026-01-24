@@ -23,8 +23,8 @@ list(APPEND SOURCES
   material.cpp
   openglvis.cpp
   palettes.cpp
-  palettes_base.cpp
   palettes_default.cpp
+  palettes_base.cpp
   sdl.cpp
   sdl_helper.cpp
   sdl_main.cpp
