@@ -645,13 +645,13 @@ void DataState::ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array)
 
    DenseMatrix pointmat;
    Array<int> dofs, vertices;
-   for (int i = 0, g_e = 0; i < nprocs; i++)
+   for (int rank = 0, g_e = 0; rank < nprocs; rank++)
    {
-      const GridFunction *gf = gf_array[i];
+      const GridFunction *gf = gf_array[rank];
       const FiniteElementSpace *l_fes = gf->FESpace();
       Mesh *l_mesh = l_fes->GetMesh();
       // store the dofs numbers as they are fespace dependent
-      auto &offset = (*offsets)[i];
+      auto &offset = (*offsets)[rank];
       for (int l_e = 0; l_e < l_mesh->GetNE(); l_e++, g_e++)
       {
 #ifdef GLVIS_DEBUG
@@ -664,7 +664,7 @@ void DataState::ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array)
             xs += pointmat(0,j), ys += pointmat(1,j);
          }
          xs /= nv, ys /= nv;
-         offset.exy_map[ {l_e, i} ] = {xs, ys};
+         offset.exy_map[ {g_e, rank} ] = {xs, ys};
 #endif // end GLVIS_DEBUG
          l_fes->GetElementDofs(l_e, dofs);
          l_fes->AdjustVDofs(dofs);
@@ -673,8 +673,8 @@ void DataState::ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array)
             offset[ {g_e, k} ] = dofs[k];
          }
       }
-      if (i + 1 == nprocs) { continue; }
-      auto &next = (*offsets)[i+1];
+      if (rank + 1 == nprocs) { continue; }
+      auto &next = (*offsets)[rank+1];
       // for NE, NV and NEdges, we accumulate the values
       next.nelems = offset.nelems + l_mesh->GetNE();
       next.nedges = offset.nedges + l_mesh->GetNEdges();

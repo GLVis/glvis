@@ -1860,7 +1860,7 @@ void VisualizationSceneSolution::PrepareElementNumbering()
          if (!el_attr_to_show[mesh->GetAttribute(e)-1]) { continue; }
          center_ir.IntPoint(0) =
             Geometries.GetCenter(mesh->GetElementBaseGeometry(e));
-         GetRefinedValues (e, center_ir, values, pointmat);
+         GetRefinedValues(e, center_ir, values, pointmat);
          const double xc = pointmat(0,0), yc = pointmat(1,0), uc = values(0);
          const double dx = 0.05 * GetElementLengthScale(e);
          const double xx[3] = {xc, yc, uc};
@@ -1872,8 +1872,7 @@ void VisualizationSceneSolution::PrepareElementNumbering()
             const int rank = mesh->GetAttribute(e) - 1;
             MFEM_VERIFY(rank >= 0 && rank < (int)offsets->size(),
                         "Invalid rank");
-            const int l_e = offset(e);
-            const auto &xy = (*offsets)[rank].exy_map.at({l_e,rank});
+            const auto &xy = (*offsets)[rank].exy_map.at({e,rank});
             MFEM_VERIFY(fabs(xy.x - xc) < eps && fabs(xy.y - yc) < eps,
                         "Element center does not match expected position");
          }
@@ -1888,8 +1887,8 @@ void VisualizationSceneSolution::PrepareElementNumbering()
       for (int e = 0; e < mesh->GetNE(); e++)
       {
          if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }
-         mesh->GetPointMatrix (e, pointmat);
-         mesh->GetElementVertices (e, vertices);
+         mesh->GetPointMatrix(e, pointmat);
+         mesh->GetElementVertices(e, vertices);
          const int nv = vertices.Size();
          ShrinkPoints(pointmat, e, 0, 0);
          double xs = 0.0, ys = 0.0, us = 0.0;
@@ -1909,7 +1908,7 @@ void VisualizationSceneSolution::PrepareElementNumbering()
             const int rank = mesh->GetAttribute(e) - 1;
             MFEM_VERIFY(rank >= 0 && rank < (int)offsets->size(),
                         "Invalid rank");
-            const auto &xy = (*offsets)[rank].exy_map.at({offset(e), rank});
+            const auto &xy = (*offsets)[rank].exy_map.at({e, rank});
             MFEM_VERIFY(fabs(xy.x - xs) < eps && fabs(xy.y - ys) < eps,
                         "Element center does not match expected position");
          }
