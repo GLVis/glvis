@@ -36,4 +36,4 @@ public:
    virtual void SendEvent() = 0;
 };
 
-#endif
+#endif // GLVIS_SDL_HELPER_HPP

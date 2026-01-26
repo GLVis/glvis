@@ -12,10 +12,16 @@
 #ifndef GLVIS_SDL_MAIN_HPP
 #define GLVIS_SDL_MAIN_HPP
 
-#include <set>
 #include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <string>
+#include <vector>
+#include <unordered_map>
 
 #include "sdl.hpp"
+#include "sdl_helper.hpp"
 
 class SdlMainThread : public MainThread
 {
@@ -143,4 +149,4 @@ private:
    int title_height_offset {0};
 };
 
-#endif
+#endif // GLVIS_SDL_MAIN_HPP

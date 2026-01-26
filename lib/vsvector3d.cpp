@@ -14,7 +14,6 @@
 #include <cmath>
 #include <limits>
 
-#include "mfem.hpp"
 #include "visual.hpp"
 
 using namespace mfem;

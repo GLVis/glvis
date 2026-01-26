@@ -30,6 +30,11 @@ Unlike previous GLVis releases, this version requires a C++17 compiler.
   harmonic phase. To increase or decrease the phase frequency, use ';' or ':',
   respectively.
 
+- Implemented DOF numbering in 2D scalar mode, pressing the `n` or `N` key cycles
+  through: None → Elements → Edges → Vertices → DOFs. Parallel numbering is now by
+  default 'local' to each rank; 'global' vs. 'local' numbering can be toggled with
+  'Alt+n'.
+
 - Refactored code base enabling automatic generation of the script and stream
   command lists (shown as help when an unrecognized option is entered). Other
   improvements include:

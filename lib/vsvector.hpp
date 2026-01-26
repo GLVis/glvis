@@ -12,32 +12,33 @@
 #ifndef GLVIS_VSVECTOR_HPP
 #define GLVIS_VSVECTOR_HPP
 
-#include "mfem.hpp"
+#include <mfem.hpp>
 #include "gl/types.hpp"
 #include "vssolution.hpp"
-using namespace mfem;
 
 class VisualizationSceneVector : public VisualizationSceneSolution
 {
 protected:
 
-   Vector *solx, *soly;
+   mfem::Vector *solx, *soly;
    int drawdisp, drawvector;
 
    gl3::GlDrawable vector_buf;
    gl3::GlDrawable displine_buf;
-   GridFunction *VecGridF{};
+   mfem::GridFunction *VecGridF{};
 
    void Init();
 
-   void NewMeshAndSolution(Mesh *new_m, Mesh *new_mc, Vector *new_sol_x,
-                           Vector *new_sol_y, GridFunction *new_u = NULL);
+   void NewMeshAndSolution(mfem::Mesh *new_m, mfem::Mesh *new_mc,
+                           mfem::Vector *new_sol_x, mfem::Vector *new_sol_y,
+                           mfem::GridFunction *new_u = nullptr);
 
-   void GetRefinedValues(int i, const IntegrationRule &ir,
-                         Vector &vals, DenseMatrix &tr) override;
-   int GetRefinedValuesAndNormals(int i, const IntegrationRule &ir,
-                                  Vector &vals, DenseMatrix &tr,
-                                  DenseMatrix &normals) override;
+   void GetRefinedValues(const int i, const mfem::IntegrationRule &ir,
+                         mfem::Vector &vals, mfem::DenseMatrix &tr,
+                         const bool do_shrink = true) override;
+   int GetRefinedValuesAndNormals(int i, const mfem::IntegrationRule &ir,
+                                  mfem::Vector &vals,mfem::DenseMatrix &tr,
+                                  mfem::DenseMatrix &normals) override;
 
    double (*Vec2Scalar)(double, double);
 
@@ -45,8 +46,8 @@ protected:
 
    double maxlen;
 
-   Vector vc0;
-   IsoparametricTransformation T0;
+   mfem::Vector vc0;
+   mfem::IsoparametricTransformation T0;
 
    int GetFunctionAutoRefineFactor() override;
 

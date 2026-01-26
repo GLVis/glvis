@@ -9,9 +9,10 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#include "data_state.hpp"
-
 #include <cstdlib>
+
+#include "data_state.hpp"
+#include "visual.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -52,13 +53,13 @@ DataState &DataState::operator=(DataState &&ss)
    return *this;
 }
 
-void DataState::SetMesh(mfem::Mesh *mesh_)
+void DataState::SetMesh(Mesh *mesh_)
 {
    internal.mesh.reset(mesh_);
    SetMesh(std::move(internal.mesh));
 }
 
-void DataState::SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh)
+void DataState::SetMesh(std::unique_ptr<Mesh> &&pmesh)
 {
    internal.mesh = std::move(pmesh);
    internal.mesh_quad.reset();
@@ -67,7 +68,7 @@ void DataState::SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh)
    if (quad_f && quad_f->GetSpace()->GetMesh() != mesh.get()) { SetQuadFunction(NULL); }
 }
 
-void DataState::SetScalarData(mfem::Vector new_sol)
+void DataState::SetScalarData(Vector new_sol)
 {
    internal.grid_f.reset();
    internal.quad_f.reset();
@@ -83,7 +84,7 @@ void DataState::SetScalarData(mfem::Vector new_sol)
    type = DataState::FieldType::SCALAR;
 }
 
-void DataState::SetNormals(mfem::Vector new_normals)
+void DataState::SetNormals(Vector new_normals)
 {
    if (!normals)
    {
@@ -95,7 +96,7 @@ void DataState::SetNormals(mfem::Vector new_normals)
    }
 }
 
-void DataState::SetVectorData(mfem::Vector new_solx, mfem::Vector new_soly)
+void DataState::SetVectorData(Vector new_solx, Vector new_soly)
 {
    MFEM_VERIFY(mesh->SpaceDimension() == 2, "Incompatible space dimension");
 
@@ -115,8 +116,8 @@ void DataState::SetVectorData(mfem::Vector new_solx, mfem::Vector new_soly)
    type = DataState::FieldType::VECTOR;
 }
 
-void DataState::SetVectorData(mfem::Vector new_solx, mfem::Vector new_soly,
-                              mfem::Vector new_solz)
+void DataState::SetVectorData(Vector new_solx, Vector new_soly,
+                              Vector new_solz)
 {
    MFEM_VERIFY(mesh->SpaceDimension() == 3, "Incompatible space dimension");
 
@@ -138,14 +139,14 @@ void DataState::SetVectorData(mfem::Vector new_solx, mfem::Vector new_soly,
    type = DataState::FieldType::VECTOR;
 }
 
-void DataState::SetGridFunction(mfem::GridFunction *gf, int component)
+void DataState::SetGridFunction(GridFunction *gf, int component)
 {
    internal.grid_f.reset(gf);
    SetGridFunction(std::move(internal.grid_f), component);
 }
 
-void DataState::SetGridFunction(
-   std::unique_ptr<mfem::GridFunction> &&pgf, int component)
+void DataState::SetGridFunction(std::unique_ptr<GridFunction> &&pgf,
+                                int component)
 {
    internal.grid_f = std::move(pgf);
    internal.cgrid_f.reset();
@@ -155,7 +156,15 @@ void DataState::SetGridFunction(
    SetGridFunctionSolution(component);
 }
 
-void DataState::SetCmplxGridFunction(mfem::ComplexGridFunction *gf,
+void DataState::SetGridFunction(std::vector<GridFunction*> &gf_array,
+                                int num_pieces, int component)
+{
+   SetGridFunction(new GridFunction(mesh.get(), gf_array.data(), num_pieces),
+                   component);
+   if (!keep_attr) { ComputeDofsOffsets(gf_array); }
+}
+
+void DataState::SetCmplxGridFunction(ComplexGridFunction *gf,
                                      int component)
 {
    if (cgrid_f.get() != gf)
@@ -170,7 +179,7 @@ void DataState::SetCmplxGridFunction(mfem::ComplexGridFunction *gf,
 }
 
 void DataState::SetCmplxGridFunction(
-   std::unique_ptr<mfem::ComplexGridFunction> &&pgf, int component)
+   std::unique_ptr<ComplexGridFunction> &&pgf, int component)
 {
    if (cgrid_f.get() != pgf.get())
    {
@@ -184,7 +193,7 @@ void DataState::SetCmplxGridFunction(
 }
 
 void DataState::SetCmplxGridFunction(
-   const std::vector<mfem::ComplexGridFunction *> &cgf_array, int component)
+   const std::vector<ComplexGridFunction *> &cgf_array, int component)
 {
    const int np = cgf_array.size();
    std::vector<GridFunction *> r_array(np), i_array(np);
@@ -206,7 +215,7 @@ void DataState::SetCmplxGridFunction(
    SetCmplxGridFunction(cgf, component);
 }
 
-void DataState::SetQuadFunction(mfem::QuadratureFunction *qf, int component)
+void DataState::SetQuadFunction(QuadratureFunction *qf, int component)
 {
    if (quad_f.get() != qf)
    {
@@ -218,8 +227,8 @@ void DataState::SetQuadFunction(mfem::QuadratureFunction *qf, int component)
    SetQuadFunctionSolution(component);
 }
 
-void DataState::SetQuadFunction(
-   std::unique_ptr<mfem::QuadratureFunction> &&pqf, int component)
+void DataState::SetQuadFunction(std::unique_ptr<QuadratureFunction> &&pqf,
+                                int component)
 {
    if (quad_f.get() != pqf.get())
    {
@@ -231,8 +240,8 @@ void DataState::SetQuadFunction(
    SetQuadFunctionSolution(component);
 }
 
-void DataState::SetQuadFunction(
-   const std::vector<QuadratureFunction*> &qf_array, int component)
+void DataState::SetQuadFunction(const std::vector<QuadratureFunction*>
+                                &qf_array, int component)
 {
    // assume the same vdim
    const int vdim = qf_array[0]->GetVDim();
@@ -254,7 +263,7 @@ void DataState::SetQuadFunction(
    SetQuadFunction(qf, component);
 }
 
-void DataState::SetDataCollectionField(mfem::DataCollection *dc, int ti,
+void DataState::SetDataCollectionField(DataCollection *dc, int ti,
                                        const char *field, bool quad, int component)
 {
    internal.data_coll.reset(dc);
@@ -890,6 +899,55 @@ void DataState::ProjectVectorFEGridFunction()
    else
    {
       internal.grid_f = ProjectVectorFEGridFunction(std::move(internal.grid_f));
+   }
+}
+
+void DataState::ComputeDofsOffsets(std::vector<GridFunction*> &gf_array)
+{
+   const int nprocs = static_cast<int>(gf_array.size());
+   MFEM_VERIFY(!gf_array.empty(), "No grid functions provided for offsets");
+
+   // only 2D meshes are supported for dofs offsets computation
+   if (gf_array[0]->FESpace()->GetMesh()->Dimension() != 2) { return; }
+
+   internal.offsets = std::make_unique<DataState::Offsets>(nprocs);
+
+   DenseMatrix pointmat;
+   Array<int> dofs, vertices;
+   for (int rank = 0, g_e = 0; rank < nprocs; rank++)
+   {
+      const GridFunction *gf = gf_array[rank];
+      const FiniteElementSpace *l_fes = gf->FESpace();
+      Mesh *l_mesh = l_fes->GetMesh();
+      // store the dofs numbers as they are fespace dependent
+      auto &offset = (*offsets)[rank];
+      for (int l_e = 0; l_e < l_mesh->GetNE(); l_e++, g_e++)
+      {
+#ifdef GLVIS_DEBUG
+         // Store elements centers
+         l_mesh->GetPointMatrix(l_e, pointmat);
+         const int nv = pointmat.Width();
+         double xs = 0.0, ys = 0.0;
+         for (int j = 0; j < nv; j++)
+         {
+            xs += pointmat(0,j), ys += pointmat(1,j);
+         }
+         xs /= nv, ys /= nv;
+         offset.exy_map[ {g_e, rank} ] = {xs, ys};
+#endif // end GLVIS_DEBUG
+         l_fes->GetElementDofs(l_e, dofs);
+         l_fes->AdjustVDofs(dofs);
+         for (int k = 0; k < dofs.Size(); k++)
+         {
+            offset[ {g_e, k} ] = dofs[k];
+         }
+      }
+      if (rank + 1 == nprocs) { continue; }
+      auto &next = (*offsets)[rank+1];
+      // for NE, NV and NEdges, we accumulate the values
+      next.nelems = offset.nelems + l_mesh->GetNE();
+      next.nedges = offset.nedges + l_mesh->GetNEdges();
+      next.nverts = offset.nverts + l_mesh->GetNV();
    }
 }
 

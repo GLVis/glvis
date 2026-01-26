@@ -16,16 +16,18 @@
 #include <regex>
 #include <thread>
 
-#include "mfem.hpp"
 #include "sdl/sdl.hpp"
 #include "sdl/sdl_main.hpp"
 #include "egl/egl.hpp"
 #include "egl/egl_main.hpp"
+#include "gl/types.hpp"
 #include "palettes.hpp"
-#include "visual.hpp"
+#include "threads.hpp"
 #ifndef __EMSCRIPTEN__
 #include "gl2ps.h"
 #endif
+
+#include <mfem.hpp>
 
 #if defined(GLVIS_USE_LIBTIFF)
 #include "tiffio.h"
@@ -41,9 +43,9 @@
 using namespace mfem;
 using namespace std;
 
-static thread_local int visualize = 0;
-static thread_local VisualizationScene *locscene = NULL;
-static thread_local GLVisCommand *glvis_command = NULL;
+thread_local int visualize = 0;
+thread_local VisualizationScene * locscene = nullptr;
+thread_local GLVisCommand *glvis_command = nullptr;
 
 #ifdef GLVIS_MULTISAMPLE
 static int glvis_multisample = GLVIS_MULTISAMPLE;
@@ -510,7 +512,7 @@ void MyExpose()
 }
 
 
-thread_local Array<void (*)()> IdleFuncs;
+thread_local mfem::Array<void (*)()> IdleFuncs;
 thread_local int LastIdleFunc;
 thread_local bool use_idle = false;
 

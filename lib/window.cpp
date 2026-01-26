@@ -214,7 +214,7 @@ void Window::SwitchComplexSolution(DataState::ComplexSolution cmplx_type)
          vs->SetValueRange(-data_state.cmplx_mag_max, +data_state.cmplx_mag_max);
          break;
       default:
-         mfem_error("Unknown representation");
+         std::cerr << "Unknown representation" << std::endl;
    }
 }
 

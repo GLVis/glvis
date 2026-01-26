@@ -180,11 +180,8 @@ Key commands
 - <kbd>Alt</kbd> + <kbd>c</kbd> – Set colorbar number format
 - <kbd>Ctrl</kbd> + <kbd>←</kbd>, <kbd>→</kbd>, <kbd>↑</kbd>, <kbd>↓</kbd> – Translate the viewpoint
 - <kbd>Ctrl</kbd> + <kbd>o</kbd> – Toggle an element ordering curve
-- <kbd>n</kbd> / <kbd>N</kbd> – Cycle through numberings. The options are:
-  - none
-  - show element numbering
-  - show edge numbering
-  - show vertex numbering
+- <kbd>n</kbd> / <kbd>N</kbd> – Cycle through numbering: `None` → `Elements` → `Edges` → `Vertices` → `DOFs`
+- <kbd>Alt</kbd> + <kbd>n</kbd> – Toggle parallel numbering: `local` to each MPI rank (default) or `global`
 - <kbd>`</kbd> – Toggle a ruler, with initial origin at the center of the bounding box. The origin can be later moved with <kbd>~</kbd>. The options are:
   - none
   - coordinate axes lines
