@@ -684,6 +684,7 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
 
    // Detect if we are using a high-dpi display and resize the window unless it
    // was already resized by SDL's underlying backend.
+   if (GetUseHiDPI())
    {
       SdlWindow* wnd = cmd.wnd;
       int scr_w, scr_h, pix_w, pix_h, wdpi, hdpi;

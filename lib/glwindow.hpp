@@ -41,10 +41,10 @@ public:
       SDL_Keymod keymod;
    };
 
-   typedef bool (*IdleDelegate)();
-   typedef void (*Delegate)();
-   typedef std::function<void(SDL_Keymod)> KeyDelegate;
-   typedef void (*MouseDelegate)(MouseEventInfo*);
+   using IdleDelegate = bool (*)();
+   using Delegate = void (*)();
+   using KeyDelegate = std::function<void(SDL_Keymod)>;
+   using MouseDelegate = void (*)(MouseEventInfo*);
 
 protected:
    enum class RenderState

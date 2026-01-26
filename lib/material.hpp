@@ -28,4 +28,4 @@ struct Light
    std::array<float, 4> specular;
 };
 
-#endif
+#endif // GLVIS_MATERIAL_HPP
