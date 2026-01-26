@@ -91,6 +91,8 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
             // the 'jet-like' palette is used in 2D, see vssolution.cpp).
             vs->palette.SetIndex(4);
          }
+         // Window structure with DataState could allow to remove this call
+         vs->SetDataOffsets(data_state.offsets.get());
       }
       else if (data_state.mesh->SpaceDimension() == 3)
       {
@@ -133,6 +135,8 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
       if (data_state.mesh->SpaceDimension() == 2)
       {
          internal.vs.reset(new VisualizationSceneVector(*this));
+         // Window structure with DataState could allow to remove this call
+         vs->SetDataOffsets(data_state.offsets.get());
       }
       else if (data_state.mesh->SpaceDimension() == 3)
       {

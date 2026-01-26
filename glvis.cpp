@@ -19,6 +19,10 @@
 #include <cstdio>
 #include <cstring>
 #include <ctime>
+#include <vector>
+#include <memory>
+#include <thread>
+#include <utility>
 
 // SDL may redefine main() as SDL_main() ostensibly to ease portability.
 // (WinMain() instead of main() is used as the entry point in a non-console
@@ -31,8 +35,7 @@
 #define SDL_MAIN_HANDLED
 #endif
 
-#include "mfem.hpp"
-#include "lib/palettes.hpp"
+#include <mfem.hpp>
 #include "lib/visual.hpp"
 #include "lib/window.hpp"
 #include "lib/script_controller.hpp"

@@ -12,11 +12,14 @@
 #ifndef GLVIS_THREADS_HPP
 #define GLVIS_THREADS_HPP
 
-#include "window.hpp"
 #include <mfem.hpp>
 #include <thread>
 #include <atomic>
 #include <condition_variable>
+
+#include "window.hpp"
+#include "vsdata.hpp"
+#include "data_state.hpp"
 
 class GLVisCommand
 {
@@ -154,8 +157,8 @@ private:
    GLVisCommand* glvis_command;
 
    // data that may be dynamically allocated by the thread
-   std::unique_ptr<Mesh> new_m;
-   std::unique_ptr<GridFunction> new_g;
+   std::unique_ptr<mfem::Mesh> new_m;
+   std::unique_ptr<mfem::GridFunction> new_g;
    std::string ident;
 
    // thread object
@@ -172,4 +175,4 @@ public:
    ~communication_thread();
 };
 
-#endif
+#endif // GLVIS_THREADS_HPP

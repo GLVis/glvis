@@ -16,8 +16,8 @@
 class SdlCocoaPlatform final : public SdlNativePlatform
 {
 public:
-   void WaitEvent();
-   void SendEvent();
+   void WaitEvent() override;
+   void SendEvent() override;
 
    void ContextUpdate();
 
@@ -28,4 +28,4 @@ public:
    void SwapWindow();
 };
 
-#endif
+#endif // GLVIS_SDL_MAC_HPP

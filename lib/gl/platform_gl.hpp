@@ -21,4 +21,4 @@
 #include <SDL_opengl.h>
 #endif
 
-#endif
+#endif // GLVIS_PLATFORM_GL_HPP
