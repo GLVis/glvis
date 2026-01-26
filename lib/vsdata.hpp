@@ -222,11 +222,6 @@ public:
 
    mfem::Mesh *GetMesh() { return mesh; }
 
-   void SetDataOffsets(const DataState::Offsets *data_offsets)
-   {
-      offsets = data_offsets;
-   }
-
    gl3::SceneInfo GetSceneObjs() override;
 
    void ProcessUpdatedBufs(gl3::SceneInfo& scene);
