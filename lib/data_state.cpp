@@ -161,7 +161,15 @@ void DataState::SetGridFunction(std::vector<GridFunction*> &gf_array,
 {
    SetGridFunction(new GridFunction(mesh.get(), gf_array.data(), num_pieces),
                    component);
-   if (!keep_attr) { ComputeDofsOffsets(gf_array); }
+   if (!keep_attr)
+   {
+      std::vector<const FiniteElementSpace*> fespaces(gf_array.size());
+      for (size_t i = 0; i < gf_array.size(); i++)
+      {
+         fespaces[i] = gf_array[i]->FESpace();
+      }
+      ComputeDofsOffsets(fespaces);
+   }
 }
 
 void DataState::SetCmplxGridFunction(ComplexGridFunction *gf,
@@ -213,6 +221,15 @@ void DataState::SetCmplxGridFunction(
    delete rgf;
    delete igf;
    SetCmplxGridFunction(cgf, component);
+   if (!keep_attr)
+   {
+      std::vector<const FiniteElementSpace*> fespaces(cgf_array.size());
+      for (size_t i = 0; i < cgf_array.size(); i++)
+      {
+         fespaces[i] = cgf_array[i]->FESpace();
+      }
+      ComputeDofsOffsets(fespaces);
+   }
 }
 
 void DataState::SetQuadFunction(QuadratureFunction *qf, int component)
@@ -902,13 +919,14 @@ void DataState::ProjectVectorFEGridFunction()
    }
 }
 
-void DataState::ComputeDofsOffsets(std::vector<GridFunction*> &gf_array)
+void DataState::ComputeDofsOffsets(std::vector<const FiniteElementSpace*>
+                                   &fespaces)
 {
-   const int nprocs = static_cast<int>(gf_array.size());
-   MFEM_VERIFY(!gf_array.empty(), "No grid functions provided for offsets");
+   const int nprocs = static_cast<int>(fespaces.size());
+   MFEM_VERIFY(!fespaces.empty(), "No grid functions provided for offsets");
 
    // only 2D meshes are supported for dofs offsets computation
-   if (gf_array[0]->FESpace()->GetMesh()->Dimension() != 2) { return; }
+   if (fespaces[0]->GetMesh()->Dimension() != 2) { return; }
 
    internal.offsets = std::make_unique<DataState::Offsets>(nprocs);
 
@@ -916,8 +934,7 @@ void DataState::ComputeDofsOffsets(std::vector<GridFunction*> &gf_array)
    Array<int> dofs, vertices;
    for (int rank = 0, g_e = 0; rank < nprocs; rank++)
    {
-      const GridFunction *gf = gf_array[rank];
-      const FiniteElementSpace *l_fes = gf->FESpace();
+      const FiniteElementSpace *l_fes = fespaces[rank];
       Mesh *l_mesh = l_fes->GetMesh();
       // store the dofs numbers as they are fespace dependent
       auto &offset = (*offsets)[rank];

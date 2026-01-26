@@ -104,7 +104,7 @@ private:
    void SetQuadFunctionSolution(int component = -1);
 
    /// Compute the dofs offsets from the grid function vector
-   void ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array);
+   void ComputeDofsOffsets(std::vector<const mfem::FiniteElementSpace*> &fespaces);
 
 public:
    const std::unique_ptr<mfem::Vector> &sol{internal.sol};
