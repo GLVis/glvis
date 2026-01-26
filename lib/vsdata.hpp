@@ -233,7 +233,7 @@ public:
 
    gl3::SceneInfo GetSceneObjs() override;
 
-   virtual void UpdateComplexPhase(double ph) { win.UpdateComplexPhase(ph); }
+   void UpdateComplexPhase(double ph) override { win.UpdateComplexPhase(ph); }
 
    void ProcessUpdatedBufs(gl3::SceneInfo& scene);
 
