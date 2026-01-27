@@ -103,6 +103,12 @@ private:
    void SetComplexFunctionSolution(int component = -1);
    void SetQuadFunctionSolution(int component = -1);
 
+   static std::unique_ptr<mfem::GridFunction>
+   ProjectVectorFEGridFunction(std::unique_ptr<mfem::GridFunction> gf);
+
+   static std::unique_ptr<mfem::ComplexGridFunction>
+   ProjectVectorFEGridFunction(std::unique_ptr<mfem::ComplexGridFunction> gf);
+
    /// Compute the dofs offsets from the grid function vector
    void ComputeDofsOffsets(std::vector<const mfem::FiniteElementSpace*> &fespaces);
 
@@ -250,12 +256,6 @@ public:
    // Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec
    // or Raviart-Thomas space) with a discontinuous piece-wise polynomial Cartesian
    // product vector grid function of the same order.
-   static std::unique_ptr<mfem::GridFunction>
-   ProjectVectorFEGridFunction(std::unique_ptr<mfem::GridFunction> gf);
-
-   static std::unique_ptr<mfem::ComplexGridFunction>
-   ProjectVectorFEGridFunction(std::unique_ptr<mfem::ComplexGridFunction> gf);
-
    void ProjectVectorFEGridFunction();
 };
 
