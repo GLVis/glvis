@@ -560,6 +560,52 @@ void VisualizationSceneVector3d::NewMeshAndSolution(
    PrepareDisplacedMesh();
 }
 
+void VisualizationSceneVector3d::FindNewValueRange(bool prepare)
+{
+   function<double(const Vector &)> vec2scal;
+   switch (scal_func)
+   {
+      case ScalarFunction::Magnitude:
+         vec2scal = [](const Vector &v) { return v.Norml2(); };
+         break;
+      case ScalarFunction::Component_X:
+         vec2scal = [](const Vector &v) { return v(0); };
+         break;
+      case ScalarFunction::Component_Y:
+         vec2scal = [](const Vector &v) { return v(1); };
+         break;
+      case ScalarFunction::Component_Z:
+         vec2scal = [](const Vector &v) { return v(2); };
+         break;
+      default:
+         cerr << "Unknown scalar representation" << endl;
+         return;
+   }
+
+   win.data_state.FindValueRange(minv, maxv, vec2scal);
+
+   if (minv == 0. && maxv == 0.)
+   {
+      int map_type = (GridF) ?
+                     GridF->FESpace()->FEColl()->GetMapType(mesh->Dimension()) :
+                     FiniteElement::VALUE;
+
+      if (shading < Shading::Noncomforming || map_type != (int)FiniteElement::VALUE)
+      {
+         minv = sol->Min();
+         maxv = sol->Max();
+      }
+      else
+      {
+         minv = GridF->Min();
+         maxv = GridF->Max();
+      }
+      return;
+   }
+   FixValueRange();
+   UpdateValueRange(prepare);
+}
+
 void VisualizationSceneVector3d::PrepareFlat()
 {
    int i, j;

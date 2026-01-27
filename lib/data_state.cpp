@@ -657,7 +657,6 @@ void DataState::SetComplexSolution(ComplexSolution cmplx_type, bool print)
       ElementTransformation *Tr;
       Vector r_data, i_data, z_data;
       DenseMatrix r_vals, i_vals, z_vals;
-      Vector r_vec, i_vec, z_vec;
       DenseMatrix vshape;
       Vector shape;
       for (int z = 0; z < msh->GetNE(); z++)
@@ -1001,7 +1000,7 @@ void DataState::FindComplexValueRange(double &minv, double &maxv,
 }
 
 void DataState::FindComplexValueRange(double &minv, double &maxv,
-                                      std::function<double(double, double)> vec2scalar,
+                                      std::function<double(const Vector &)> vec2scalar,
                                       std::function<double(double)> scale) const
 {
    if (!cgrid_f)
@@ -1017,6 +1016,8 @@ void DataState::FindComplexValueRange(double &minv, double &maxv,
       return;
    }
 
+   const int dim = mesh->Dimension();
+
    // detect common symmetries
 
    enum class Symmetry { Unknown, Norm, Phase, Linear };
@@ -1025,8 +1026,11 @@ void DataState::FindComplexValueRange(double &minv, double &maxv,
 
    {
       double a, b;
-      a = vec2scalar(-1., -1.);
-      b = vec2scalar(+1., +1.);
+      Vector va(dim), vb(dim);
+      va = -1.;
+      vb = +1.;
+      a = vec2scalar(va);
+      b = vec2scalar(vb);
       if (a != 0. && b != 0.)
       {
          if (a == b) { sym = Symmetry::Norm; }
@@ -1053,21 +1057,24 @@ void DataState::FindComplexValueRange(double &minv, double &maxv,
    // complex phase
    if (cmplx_sol == ComplexSolution::Phase)
    {
-      minv = (sym == Symmetry::Norm)?(0.):(vec2scalar(-M_PI, -M_PI));
-      maxv = vec2scalar(+M_PI, +M_PI);
+      Vector va(dim), vb(dim);
+      va = -M_PI;
+      vb = +M_PI;
+      minv = (sym == Symmetry::Norm)?(0.):(vec2scalar(va));
+      maxv = vec2scalar(vb);
       return;
    }
 
    // real or imag components
 
-   function<void(double r_x, double i_x, double r_y, double i_y)> kernel;
+   function<void(const Vector &rd, const Vector &id)> kernel;
    if (sym == Symmetry::Norm)
    {
-      kernel = [&](double r_x, double i_x, double r_y, double i_y)
+      kernel = [&](const Vector &rd, const Vector &id)
       {
-         double m_x = hypot(r_x, i_x);
-         double m_y = hypot(r_y, i_y);
-         double scal = vec2scalar(m_x, m_y);
+         Vector md(dim);
+         for (int d = 0; d < dim; d++) { md(d) = hypot(rd(d), id(d)); }
+         double scal = vec2scalar(md);
          if (scale) { scal = scale(scal); }
          minv = min(minv, scal);
          maxv = max(maxv, scal);
@@ -1075,11 +1082,11 @@ void DataState::FindComplexValueRange(double &minv, double &maxv,
    }
    else
    {
-      kernel = [&](double r_x, double i_x, double r_y, double i_y)
+      kernel = [&](const Vector &rd, const Vector &id)
       {
-         double m_x = hypot(r_x, i_x);
-         double m_y = hypot(r_y, i_y);
-         double scal = vec2scalar(m_x, m_y);
+         Vector md(dim);
+         for (int d = 0; d < dim; d++) { md(d) = hypot(rd(d), id(d)); }
+         double scal = vec2scalar(md);
          if (scale) { scal = scale(scal); }
          maxv = max(maxv, scal);
       };
@@ -1089,23 +1096,21 @@ void DataState::FindComplexValueRange(double &minv, double &maxv,
    maxv = 0.;
 
    const FiniteElementSpace *fes = cgrid_f->FESpace();
-   const Mesh *msh = fes->GetMesh();
-   const int dim = msh->Dimension();
-   MFEM_VERIFY(fes->GetVectorDim() == 2, "Not a 2D vector function!");
 
    if (fes->FEColl()->GetMapType(dim) == FiniteElement::VALUE
        && fes->FEColl()->GetRangeType(dim) == FiniteElement::SCALAR)
    {
       const int ndofs = fes->GetNDofs();
+      Array<int> vdofs;
+      Vector rd, id;
       for (int i = 0; i < ndofs; i++)
       {
-         const int ix = fes->DofToVDof(i, 0);
-         const int iy = fes->DofToVDof(i, 1);
-         double rval_x = cgrid_f->real()(ix);
-         double ival_x = cgrid_f->imag()(ix);
-         double rval_y = cgrid_f->real()(iy);
-         double ival_y = cgrid_f->imag()(iy);
-         kernel(rval_x, ival_x, rval_y, ival_y);
+         vdofs.SetSize(1);
+         vdofs[0] = i;
+         fes->DofsToVDofs(vdofs);
+         cgrid_f->real().GetSubVector(vdofs, rd);
+         cgrid_f->imag().GetSubVector(vdofs, id);
+         kernel(rd, id);
       }
    }
    else
@@ -1113,15 +1118,11 @@ void DataState::FindComplexValueRange(double &minv, double &maxv,
       Array<int> vdofs;
       ElementTransformation *Tr;
       Vector r_data, i_data;
-      DenseMatrix r_vals, i_vals;
-      Vector r_vec, i_vec;
+      Vector r_vec(dim), i_vec(dim);
       DenseMatrix vshape;
       Vector shape;
 
-      const int vdim = fes->GetVDim();
-      const int sdim = msh->SpaceDimension();
-
-      for (int z = 0; z < msh->GetNE(); z++)
+      for (int z = 0; z < mesh->GetNE(); z++)
       {
          fes->GetElementVDofs(z, vdofs);
          cgrid_f->real().GetSubVector(vdofs, r_data);
@@ -1134,8 +1135,6 @@ void DataState::FindComplexValueRange(double &minv, double &maxv,
 
          if (fe->GetRangeType() == FiniteElement::SCALAR)
          {
-            r_vals.Reset(r_data.GetData(), nnp, vdim);
-            i_vals.Reset(i_data.GetData(), nnp, vdim);
             shape.SetSize(nnp);
 
             for (int n = 0; n < nnp; n++)
@@ -1144,26 +1143,28 @@ void DataState::FindComplexValueRange(double &minv, double &maxv,
                Tr->SetIntPoint(&ip);
                fe->CalcPhysShape(*Tr, shape);
                double w = shape(n);
-               double rval_x = r_vals(n,0) * w;
-               double ival_x = i_vals(n,0) * w;
-               double rval_y = r_vals(n,1) * w;
-               double ival_y = i_vals(n,1) * w;
-               kernel(rval_x, ival_x, rval_y, ival_y);
+               for (int d = 0; d < dim; d++)
+               {
+                  r_vec(d) = r_data(n+d*nnp) * w;
+                  i_vec(d) = i_data(n+d*nnp) * w;
+               }
+               kernel(r_vec, i_vec);
             }
          }
          else
          {
-            vshape.SetSize(nnp, sdim);
+            vshape.SetSize(nnp, dim);
             for (int n = 0; n < nnp; n++)
             {
                const IntegrationPoint &ip = ir.IntPoint(n);
                Tr->SetIntPoint(&ip);
                fe->CalcPhysVShape(*Tr, vshape);
-               double rval_x = r_data(n) * vshape(n,0);
-               double ival_x = i_data(n) * vshape(n,0);
-               double rval_y = r_data(n) * vshape(n,1);
-               double ival_y = i_data(n) * vshape(n,1);
-               kernel(rval_x, ival_x, rval_y, ival_y);
+               for (int d = 0; d < dim; d++)
+               {
+                  r_vec(d) = r_data(n) * vshape(n,d);
+                  i_vec(d) = i_data(n) * vshape(n,d);
+               }
+               kernel(r_vec, i_vec);
             }
          }
       }

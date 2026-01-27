@@ -1061,14 +1061,14 @@ void VisualizationSceneSolution3d::FindNewBox(bool prepare)
 
 void VisualizationSceneSolution3d::FindNewValueRange(bool prepare)
 {
-   int map_type = (GridF) ?
-                  GridF->FESpace()->FEColl()->GetMapType(mesh->Dimension()) :
-                  FiniteElement::VALUE;
-
    win.data_state.FindValueRange(minv, maxv);
 
    if (minv == 0. && maxv == 0.)
    {
+      int map_type = (GridF) ?
+                     GridF->FESpace()->FEColl()->GetMapType(mesh->Dimension()) :
+                     FiniteElement::VALUE;
+
       if (shading < Shading::Noncomforming || map_type != (int)FiniteElement::VALUE)
       {
          minv = sol->Min();

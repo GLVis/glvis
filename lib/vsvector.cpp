@@ -916,7 +916,8 @@ void VisualizationSceneVector::FindNewBox(bool prepare)
 {
    VisualizationSceneSolution::FindNewBox(bb.x, bb.y, bb.z);
 
-   win.data_state.FindValueRange(minv, maxv, Vec2Scalar,
+   win.data_state.FindValueRange(minv, maxv,
+   [this](const Vector &x) { return Vec2Scalar(x(0), x(1)); },
    [this](double v) { return LogVal(v); });
 
    if (minv == 0. && maxv == 0.)
@@ -936,7 +937,8 @@ void VisualizationSceneVector::FindNewBox(bool prepare)
 
 void VisualizationSceneVector::FindNewValueRange(bool prepare)
 {
-   win.data_state.FindValueRange(minv, maxv, Vec2Scalar,
+   win.data_state.FindValueRange(minv, maxv,
+   [this](const Vector &x) { return Vec2Scalar(x(0), x(1)); },
    [this](double v) { return LogVal(v); });
 
    if (minv == 0. && maxv == 0.)

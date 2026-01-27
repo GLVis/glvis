@@ -114,7 +114,7 @@ private:
                               std::function<double(double)> = {}) const;
 
    void FindComplexValueRange(double &minv, double &maxv,
-                              std::function<double(double, double)>,
+                              std::function<double(const mfem::Vector &)>,
                               std::function<double(double)> = {}) const;
 
    /// Compute the dofs offsets from the grid function vector
@@ -276,7 +276,7 @@ public:
    /** Returns @p minv = @p maxv = 0 if the range should be normally determined
        from the grid function representation. */
    void FindValueRange(double &minv, double &maxv,
-                       std::function<double(double, double)> vec2scal,
+                       std::function<double(const mfem::Vector &)> vec2scal,
                        std::function<double(double)> scale = {}) const
    { if (cgrid_f) { FindComplexValueRange(minv, maxv, vec2scal, scale); } else { minv = maxv = 0.; } }
 };
