@@ -21,7 +21,19 @@ class VisualizationSceneVector3d : public VisualizationSceneSolution3d
 protected:
 
    mfem::Vector *solx, *soly, *solz;
-   int drawvector, scal_func;
+   int drawvector;
+   enum class ScalarFunction
+   {
+      MIN = -1,
+      //----------
+      Magnitude,
+      Component_X,
+      Component_Y,
+      Component_Z,
+      //----------
+      MAX
+   } scal_func;
+   static const char *scal_func_name[];
    double mesh_volume;
    gl3::GlDrawable vector_buf;
    gl3::GlDrawable displine_buf;

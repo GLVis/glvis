@@ -277,8 +277,8 @@ void VisualizationSceneVector3d::ToggleVectorField(int i)
    PrepareVectorField();
 }
 
-static const char *scal_func_name[] =
-{"magnitude", "x-component", "y-component", "z-component"};
+const char *VisualizationSceneVector3d::scal_func_name[(int)ScalarFunction::MAX]
+   = {"magnitude", "x-component", "y-component", "z-component"};
 
 void VisualizationSceneVector3d::SetScalarFunction()
 {
@@ -286,7 +286,7 @@ void VisualizationSceneVector3d::SetScalarFunction()
 
    switch (scal_func)
    {
-      case 0: // magnitude
+      case ScalarFunction::Magnitude:
          for (int i = 0; i < sol->Size(); i++)
             (*sol)(i) = sqrt((*solx)(i) * (*solx)(i) +
                              (*soly)(i) * (*soly)(i) +
@@ -307,7 +307,7 @@ void VisualizationSceneVector3d::SetScalarFunction()
             }
          }
          break;
-      case 1: // x-component
+      case ScalarFunction::Component_X:
          *sol = *solx;
          if (GridF)
             for (int i = 0; i < GridF->Size(); i++)
@@ -315,7 +315,7 @@ void VisualizationSceneVector3d::SetScalarFunction()
                (*GridF)(i) = (*VecGridF)(fes->DofToVDof(i, 0));
             }
          break;
-      case 2: // y-component
+      case ScalarFunction::Component_Y:
          *sol = *soly;
          if (GridF)
             for (int i = 0; i < GridF->Size(); i++)
@@ -323,7 +323,7 @@ void VisualizationSceneVector3d::SetScalarFunction()
                (*GridF)(i) = (*VecGridF)(fes->DofToVDof(i, 1));
             }
          break;
-      case 3: // z-component
+      case ScalarFunction::Component_Z:
          *sol = *solz;
          if (GridF)
             for (int i = 0; i < GridF->Size(); i++)
@@ -331,14 +331,17 @@ void VisualizationSceneVector3d::SetScalarFunction()
                (*GridF)(i) = (*VecGridF)(fes->DofToVDof(i, 2));
             }
          break;
+      default:
+         cerr << "Unknown scalar representation" << endl;
+         return;
    }
-   win.extra_caption = scal_func_name[scal_func];
+   win.extra_caption = scal_func_name[(int)scal_func];
 }
 
 void VisualizationSceneVector3d::ToggleScalarFunction()
 {
-   scal_func = (scal_func + 1) % 4;
-   cout << "Displaying " << scal_func_name[scal_func] << endl;
+   scal_func = (ScalarFunction)(((int)scal_func + 1) % ((int)ScalarFunction::MAX));
+   cout << "Displaying " << scal_func_name[(int)scal_func] << endl;
    SetScalarFunction();
    FindNewValueRange(true);
 }
@@ -387,7 +390,7 @@ void VisualizationSceneVector3d::Init()
 
    drawdisp = 0;
    drawvector = 0;
-   scal_func = 0;
+   scal_func = ScalarFunction::Magnitude;
 
    ianim = ianimd = 0;
    ianimmax = 10;
