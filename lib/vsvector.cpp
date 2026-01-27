@@ -912,6 +912,46 @@ int VisualizationSceneVector::GetFunctionAutoRefineFactor()
    return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(*VecGridF);
 }
 
+void VisualizationSceneVector::FindNewBox(bool prepare)
+{
+   VisualizationSceneSolution::FindNewBox(bb.x, bb.y, bb.z);
+
+   win.data_state.FindValueRange(minv, maxv, Vec2Scalar,
+   [this](double v) { return LogVal(v); });
+
+   if (minv == 0. && maxv == 0.)
+   {
+      minv = bb.z[0];
+      maxv = bb.z[1];
+   }
+
+   FixValueRange();
+
+   bb.z[0] = minv;
+   bb.z[1] = maxv;
+
+   SetNewScalingFromBox(); // UpdateBoundingBox minus PrepareAxes
+   UpdateValueRange(prepare);
+}
+
+void VisualizationSceneVector::FindNewValueRange(bool prepare)
+{
+   win.data_state.FindValueRange(minv, maxv, Vec2Scalar,
+   [this](double v) { return LogVal(v); });
+
+   if (minv == 0. && maxv == 0.)
+   {
+      double rx[2], ry[2], rv[2];
+      VisualizationSceneSolution::FindNewBox(rx, ry, rv);
+      minv = rv[0];
+      maxv = rv[1];
+   }
+
+   FixValueRange();
+
+   UpdateValueRange(prepare);
+}
+
 void VisualizationSceneVector::PrepareVectorField()
 {
    int rerun;

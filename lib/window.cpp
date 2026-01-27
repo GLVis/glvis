@@ -197,25 +197,7 @@ void Window::GLVisStartVis()
 void Window::SwitchComplexSolution(DataState::ComplexSolution cmplx_type)
 {
    data_state.SwitchComplexSolution(cmplx_type);
-   auto as = (cmplx_type == DataState::ComplexSolution::Magnitude ?
-              VisualizationSceneScalarData::Autoscale::MeshAndValue :
-              VisualizationSceneScalarData::Autoscale::Mesh);
-   vs->SetAutoscale(as, false);
    ResetMeshAndSolution(data_state);
-   switch (cmplx_type)
-   {
-      case DataState::ComplexSolution::Magnitude:
-         break;
-      case DataState::ComplexSolution::Phase:
-         vs->SetValueRange(-M_PI, +M_PI);
-         break;
-      case DataState::ComplexSolution::Real:
-      case DataState::ComplexSolution::Imag:
-         vs->SetValueRange(-data_state.cmplx_mag_max, +data_state.cmplx_mag_max);
-         break;
-      default:
-         std::cerr << "Unknown representation" << std::endl;
-   }
 }
 
 void Window::SwitchQuadSolution(DataState::QuadSolution quad_type)

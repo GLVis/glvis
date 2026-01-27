@@ -639,16 +639,12 @@ void DataState::SetComplexSolution(ComplexSolution cmplx_type, bool print)
       r = rph, i = iph;
    };
 
-   cmplx_mag_max = 0.;
-
    if (cgrid_f->FESpace()->FEColl()->GetMapType(dim) == FiniteElement::VALUE)
    {
       for (int i = 0; i < gf->Size(); i++)
       {
          double rval = cgrid_f->real()(i);
          double ival = cgrid_f->imag()(i);
-         double mag = hypot(rval, ival);
-         cmplx_mag_max = max(cmplx_mag_max, mag);
          rot_ph(rval, ival);
          (*gf)(i) = cmplx_2_scalar(rval, ival);
       }
@@ -708,8 +704,6 @@ void DataState::SetComplexSolution(ComplexSolution cmplx_type, bool print)
             {
                double rval = r_vals(n,d) * w;
                double ival = i_vals(n,d) * w;
-               double mag = hypot(rval, ival);
-               cmplx_mag_max = max(cmplx_mag_max, mag);
                rot_ph(rval, ival);
                const double zval = cmplx_2_scalar(rval, ival);
                z_vals(n,d) = (w != 0.)?(zval / w):(0.);
@@ -917,6 +911,265 @@ void DataState::ProjectVectorFEGridFunction()
    {
       internal.grid_f = ProjectVectorFEGridFunction(std::move(internal.grid_f));
    }
+}
+
+void DataState::FindComplexValueRange(double &minv, double &maxv,
+                                      std::function<double(double)> scale) const
+{
+   if (!cgrid_f)
+   {
+      std::cerr << "Not a complex function" << std::endl;
+      return;
+   }
+
+   if (cmplx_sol == ComplexSolution::Magnitude)
+   {
+      // pass to the default routine
+      minv = maxv = 0.;
+      return;
+   }
+
+   if (cmplx_sol == ComplexSolution::Phase)
+   {
+      minv = -M_PI;
+      maxv = +M_PI;
+      return;
+   }
+
+   double cmplx_mag_max = 0.;
+
+   const FiniteElementSpace *fes = cgrid_f->FESpace();
+   const Mesh *msh = fes->GetMesh();
+   const int dim = msh->Dimension();
+   MFEM_VERIFY(fes->GetVectorDim() == 1, "Not a scalar function!");
+
+   if (fes->FEColl()->GetMapType(dim) == FiniteElement::VALUE)
+   {
+      for (int i = 0; i < fes->GetNDofs(); i++)
+      {
+         double rval = cgrid_f->real()(i);
+         double ival = cgrid_f->imag()(i);
+         double mag = hypot(rval, ival);
+         if (scale) { mag = scale(mag); }
+         cmplx_mag_max = max(cmplx_mag_max, mag);
+      }
+   }
+   else
+   {
+      Array<int> vdofs;
+      ElementTransformation *Tr;
+      Vector r_data, i_data;
+      Vector shape;
+      for (int z = 0; z < msh->GetNE(); z++)
+      {
+         fes->GetElementVDofs(z, vdofs);
+         cgrid_f->real().GetSubVector(vdofs, r_data);
+         cgrid_f->imag().GetSubVector(vdofs, i_data);
+
+         Tr = fes->GetElementTransformation(z);
+         const FiniteElement *fe = fes->GetFE(z);
+         const IntegrationRule &ir = fe->GetNodes();
+         const int nnp = ir.GetNPoints();
+         shape.SetSize(nnp);
+
+         for (int n = 0; n < nnp; n++)
+         {
+            const IntegrationPoint &ip = ir.IntPoint(n);
+            Tr->SetIntPoint(&ip);
+            fe->CalcPhysShape(*Tr, shape);
+            double w = shape(n);
+            double rval = r_data(n) * w;
+            double ival = i_data(n) * w;
+            double mag = hypot(rval, ival);
+            if (scale) { mag = scale(mag); }
+            cmplx_mag_max = max(cmplx_mag_max, mag);
+         }
+      }
+   }
+
+   switch (cmplx_sol)
+   {
+      case ComplexSolution::Real:
+      case ComplexSolution::Imag:
+         minv = -cmplx_mag_max;
+         maxv = +cmplx_mag_max;
+         break;
+      default:
+         std::cerr << "Unkown complex representation" << std::endl;
+         break;
+   }
+}
+
+void DataState::FindComplexValueRange(double &minv, double &maxv,
+                                      std::function<double(double, double)> vec2scalar,
+                                      std::function<double(double)> scale) const
+{
+   if (!cgrid_f)
+   {
+      std::cerr << "Not a complex function" << std::endl;
+      return;
+   }
+
+   if (cmplx_sol == ComplexSolution::Magnitude)
+   {
+      // pass to the default routine
+      minv = maxv = 0.;
+      return;
+   }
+
+   // detect common symmetries
+
+   enum class Symmetry { Unknown, Norm, Phase, Linear };
+
+   Symmetry sym = Symmetry::Unknown;
+
+   {
+      double a, b;
+      a = vec2scalar(-1., -1.);
+      b = vec2scalar(+1., +1.);
+      if (a != 0. && b != 0.)
+      {
+         if (a == b) { sym = Symmetry::Norm; }
+         else if (a == -b) { sym = Symmetry::Linear; }
+         else { sym = Symmetry::Phase; } // most likely
+      }
+   }
+
+   if (sym == Symmetry::Unknown)
+   {
+      // pass to the default routine
+      minv = maxv = 0.;
+      return;
+   }
+
+   // output phase
+   if (sym == Symmetry::Phase)
+   {
+      minv = -M_PI;
+      maxv = +M_PI;
+      return;
+   }
+
+   // complex phase
+   if (cmplx_sol == ComplexSolution::Phase)
+   {
+      minv = (sym == Symmetry::Norm)?(0.):(vec2scalar(-M_PI, -M_PI));
+      maxv = vec2scalar(+M_PI, +M_PI);
+      return;
+   }
+
+   // real or imag components
+
+   function<void(double r_x, double i_x, double r_y, double i_y)> kernel;
+   if (sym == Symmetry::Norm)
+   {
+      kernel = [&](double r_x, double i_x, double r_y, double i_y)
+      {
+         double m_x = hypot(r_x, i_x);
+         double m_y = hypot(r_y, i_y);
+         double scal = vec2scalar(m_x, m_y);
+         if (scale) { scal = scale(scal); }
+         minv = min(minv, scal);
+         maxv = max(maxv, scal);
+      };
+   }
+   else
+   {
+      kernel = [&](double r_x, double i_x, double r_y, double i_y)
+      {
+         double m_x = hypot(r_x, i_x);
+         double m_y = hypot(r_y, i_y);
+         double scal = vec2scalar(m_x, m_y);
+         if (scale) { scal = scale(scal); }
+         maxv = max(maxv, scal);
+      };
+   }
+
+   minv = INFINITY;
+   maxv = 0.;
+
+   const FiniteElementSpace *fes = cgrid_f->FESpace();
+   const Mesh *msh = fes->GetMesh();
+   const int dim = msh->Dimension();
+   MFEM_VERIFY(fes->GetVectorDim() == 2, "Not a 2D vector function!");
+
+   if (fes->FEColl()->GetMapType(dim) == FiniteElement::VALUE
+       && fes->FEColl()->GetRangeType(dim) == FiniteElement::SCALAR)
+   {
+      const int ndofs = fes->GetNDofs();
+      for (int i = 0; i < ndofs; i++)
+      {
+         const int ix = fes->DofToVDof(i, 0);
+         const int iy = fes->DofToVDof(i, 1);
+         double rval_x = cgrid_f->real()(ix);
+         double ival_x = cgrid_f->imag()(ix);
+         double rval_y = cgrid_f->real()(iy);
+         double ival_y = cgrid_f->imag()(iy);
+         kernel(rval_x, ival_x, rval_y, ival_y);
+      }
+   }
+   else
+   {
+      Array<int> vdofs;
+      ElementTransformation *Tr;
+      Vector r_data, i_data;
+      DenseMatrix r_vals, i_vals;
+      Vector r_vec, i_vec;
+      DenseMatrix vshape;
+      Vector shape;
+
+      const int vdim = fes->GetVDim();
+      const int sdim = msh->SpaceDimension();
+
+      for (int z = 0; z < msh->GetNE(); z++)
+      {
+         fes->GetElementVDofs(z, vdofs);
+         cgrid_f->real().GetSubVector(vdofs, r_data);
+         cgrid_f->imag().GetSubVector(vdofs, i_data);
+
+         Tr = fes->GetElementTransformation(z);
+         const FiniteElement *fe = fes->GetFE(z);
+         const IntegrationRule &ir = fe->GetNodes();
+         const int nnp = ir.GetNPoints();
+
+         if (fe->GetRangeType() == FiniteElement::SCALAR)
+         {
+            r_vals.Reset(r_data.GetData(), nnp, vdim);
+            i_vals.Reset(i_data.GetData(), nnp, vdim);
+            shape.SetSize(nnp);
+
+            for (int n = 0; n < nnp; n++)
+            {
+               const IntegrationPoint &ip = ir.IntPoint(n);
+               Tr->SetIntPoint(&ip);
+               fe->CalcPhysShape(*Tr, shape);
+               double w = shape(n);
+               double rval_x = r_vals(n,0) * w;
+               double ival_x = i_vals(n,0) * w;
+               double rval_y = r_vals(n,1) * w;
+               double ival_y = i_vals(n,1) * w;
+               kernel(rval_x, ival_x, rval_y, ival_y);
+            }
+         }
+         else
+         {
+            vshape.SetSize(nnp, sdim);
+            for (int n = 0; n < nnp; n++)
+            {
+               const IntegrationPoint &ip = ir.IntPoint(n);
+               Tr->SetIntPoint(&ip);
+               fe->CalcPhysVShape(*Tr, vshape);
+               double rval_x = r_data(n) * vshape(n,0);
+               double ival_x = i_data(n) * vshape(n,0);
+               double rval_y = r_data(n) * vshape(n,1);
+               double ival_y = i_data(n) * vshape(n,1);
+               kernel(rval_x, ival_x, rval_y, ival_y);
+            }
+         }
+      }
+   }
+
+   if (sym != Symmetry::Norm) { minv = -maxv; }
 }
 
 void DataState::ComputeDofsOffsets(std::vector<const FiniteElementSpace*>

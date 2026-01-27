@@ -1065,15 +1065,20 @@ void VisualizationSceneSolution3d::FindNewValueRange(bool prepare)
                   GridF->FESpace()->FEColl()->GetMapType(mesh->Dimension()) :
                   FiniteElement::VALUE;
 
-   if (shading < Shading::Noncomforming || map_type != (int)FiniteElement::VALUE)
+   win.data_state.FindValueRange(minv, maxv);
+
+   if (minv == 0. && maxv == 0.)
    {
-      minv = sol->Min();
-      maxv = sol->Max();
-   }
-   else
-   {
-      minv = GridF->Min();
-      maxv = GridF->Max();
+      if (shading < Shading::Noncomforming || map_type != (int)FiniteElement::VALUE)
+      {
+         minv = sol->Min();
+         maxv = sol->Max();
+      }
+      else
+      {
+         minv = GridF->Min();
+         maxv = GridF->Max();
+      }
    }
    FixValueRange();
    UpdateValueRange(prepare);

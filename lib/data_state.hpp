@@ -17,6 +17,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include <functional>
 
 #include <mfem.hpp>
 
@@ -109,6 +110,13 @@ private:
    static std::unique_ptr<mfem::ComplexGridFunction>
    ProjectVectorFEGridFunction(std::unique_ptr<mfem::ComplexGridFunction> gf);
 
+   void FindComplexValueRange(double &minv, double &maxv,
+                              std::function<double(double)> = {}) const;
+
+   void FindComplexValueRange(double &minv, double &maxv,
+                              std::function<double(double, double)>,
+                              std::function<double(double)> = {}) const;
+
    /// Compute the dofs offsets from the grid function vector
    void ComputeDofsOffsets(std::vector<const mfem::FiniteElementSpace*> &fespaces);
 
@@ -130,8 +138,7 @@ public:
    bool fix_elem_orient{false};
    bool save_coloring{false};
    bool keep_attr{false};
-   double cmplx_phase{};
-   double cmplx_mag_max{0.};
+   double cmplx_phase{0.};
 
    DataState() = default;
    DataState(DataState &&ss) { *this = std::move(ss); }
@@ -257,6 +264,21 @@ public:
    // or Raviart-Thomas space) with a discontinuous piece-wise polynomial Cartesian
    // product vector grid function of the same order.
    void ProjectVectorFEGridFunction();
+
+   /// Find value range of the scalar data for an intermediate representation
+   /** Returns @p minv = @p maxv = 0 if the range should be normally determined
+       from the grid function representation. */
+   void FindValueRange(double &minv, double &maxv,
+                       std::function<double(double)> scale = {}) const
+   { if (cgrid_f) { FindComplexValueRange(minv, maxv, scale); } else { minv = maxv = 0.; } }
+
+   /// Find value range of the vector data for an intermediate representation
+   /** Returns @p minv = @p maxv = 0 if the range should be normally determined
+       from the grid function representation. */
+   void FindValueRange(double &minv, double &maxv,
+                       std::function<double(double, double)> vec2scal,
+                       std::function<double(double)> scale = {}) const
+   { if (cgrid_f) { FindComplexValueRange(minv, maxv, vec2scal, scale); } else { minv = maxv = 0.; } }
 };
 
 #endif // GLVIS_DATA_STATE_HPP
