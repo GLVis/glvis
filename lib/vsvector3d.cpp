@@ -277,7 +277,7 @@ void VisualizationSceneVector3d::ToggleVectorField(int i)
    PrepareVectorField();
 }
 
-const char *VisualizationSceneVector3d::scal_func_name[(int)ScalarFunction::MAX]
+const char *VisualizationSceneVector3d::scal_func_name[(int)ScalarFunction::Max]
    = {"magnitude", "x-component", "y-component", "z-component"};
 
 void VisualizationSceneVector3d::SetScalarFunction()
@@ -340,7 +340,7 @@ void VisualizationSceneVector3d::SetScalarFunction()
 
 void VisualizationSceneVector3d::ToggleScalarFunction()
 {
-   scal_func = (ScalarFunction)(((int)scal_func + 1) % ((int)ScalarFunction::MAX));
+   scal_func = (ScalarFunction)(((int)scal_func + 1) % ((int)ScalarFunction::Max));
    cout << "Displaying " << scal_func_name[(int)scal_func] << endl;
    SetScalarFunction();
    FindNewValueRange(true);

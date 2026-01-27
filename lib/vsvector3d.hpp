@@ -22,18 +22,21 @@ protected:
 
    mfem::Vector *solx, *soly, *solz;
    int drawvector;
+
    enum class ScalarFunction
    {
-      MIN = -1,
+      Invalid = -1,
+      Min = -1,
       //----------
       Magnitude,
       Component_X,
       Component_Y,
       Component_Z,
       //----------
-      MAX
+      Max
    } scal_func;
    static const char *scal_func_name[];
+
    double mesh_volume;
    gl3::GlDrawable vector_buf;
    gl3::GlDrawable displine_buf;
