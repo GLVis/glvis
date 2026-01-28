@@ -13,6 +13,7 @@
 #include "palettes.hpp"
 #include "stream_reader.hpp"
 #include "visual.hpp"
+#include "glwindow.hpp"
 
 #ifdef GLVIS_USE_LIBPNG
 #include <png.h>
@@ -244,7 +245,7 @@ void processKey(int sym, bool ctrl=false, bool shift=false, bool alt=false)
    mod |= ctrl ? KMOD_CTRL : 0;
    mod |= shift ? KMOD_SHIFT : 0;
    mod |= alt ? KMOD_ALT : 0;
-   win.wnd->callKeyDown(sym, mod);
+   win.wnd->callKeyDown(sym, (SDL_Keymod)mod);
 }
 
 void setupResizeEventCallback(const std::string & id)

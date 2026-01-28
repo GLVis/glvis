@@ -23,6 +23,7 @@ Window &Window::operator=(Window &&w)
    window_w = w.window_w;
    window_h = w.window_h;
    window_title = w.window_title;
+   headless = w.headless;
    plot_caption = std::move(w.plot_caption);
    extra_caption = std::move(w.extra_caption);
 
@@ -49,7 +50,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
                            window_titles[(int)field_type] : window_title;
 
    internal.wnd.reset(InitVisualization(win_title, window_x, window_y, window_w,
-                                        window_h));
+                                        window_h, headless));
    if (!wnd)
    {
       std::cerr << "Initializing the visualization failed." << std::endl;
@@ -59,11 +60,14 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
 #ifndef __EMSCRIPTEN__
    if (input_streams.size() > 0)
    {
-      wnd->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
+      if (!headless)
+      {
+         wnd->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
+      }
       internal.glvis_command.reset(new GLVisCommand(*this));
       SetGLVisCommand(glvis_command.get());
       internal.comm_thread.reset(new communication_thread(std::move(input_streams),
-                                                          glvis_command.get()));
+                                                          glvis_command.get(), headless));
    }
 #endif
 
