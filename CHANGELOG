@@ -9,8 +9,8 @@
                              https://glvis.org
 
 
-Version 4.4.1 (development)
-===================================
+Version 4.5 released on Jan XX, 2026
+====================================
 
 Unlike previous GLVis releases, this version requires a C++17 compiler.
 
@@ -28,6 +28,7 @@ Unlike previous GLVis releases, this version requires a C++17 compiler.
   * Fixed the flag for real attributes of distributed meshes.
   * Fixed setting of padding digits for data collections.
   * Fixed cycling of the vector-to-scalar function in 2D with raw data.
+
 
 Version 4.4 released on May 1, 2025
 ===================================
