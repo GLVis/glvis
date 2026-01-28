@@ -25,7 +25,6 @@ using namespace mfem;
 
 extern const char *strings_off_on[]; // defined in vsdata.cpp
 
-
 GLVisCommand::GLVisCommand(Window &win_)
    : win(win_)
 {
@@ -34,7 +33,7 @@ GLVisCommand::GLVisCommand(Window &win_)
 
    num_waiting = 0;
    terminating = false;
-   command = NO_COMMAND;
+   command = Command::NO_COMMAND;
 
    autopause = 0;
 }
@@ -91,7 +90,7 @@ int GLVisCommand::NewMeshAndSolution(DataState &&ss)
    {
       return -1;
    }
-   command = NEW_MESH_AND_SOLUTION;
+   command = Command::NEW_MESH_AND_SOLUTION;
    new_state = std::move(ss);
    if (signal() < 0)
    {
@@ -106,7 +105,7 @@ int GLVisCommand::Screenshot(const char *filename)
    {
       return -1;
    }
-   command = SCREENSHOT;
+   command = Command::SCREENSHOT;
    screenshot_filename = filename;
    if (signal() < 0)
    {
@@ -121,7 +120,7 @@ int GLVisCommand::KeyCommands(const char *keys)
    {
       return -1;
    }
-   command = KEY_COMMANDS;
+   command = Command::KEY_COMMANDS;
    key_commands = keys;
    if (signal() < 0)
    {
@@ -136,7 +135,7 @@ int GLVisCommand::WindowSize(int w, int h)
    {
       return -1;
    }
-   command = WINDOW_SIZE;
+   command = Command::WINDOW_SIZE;
    window_w = w;
    window_h = h;
    if (signal() < 0)
@@ -152,7 +151,7 @@ int GLVisCommand::WindowGeometry(int x, int y, int w, int h)
    {
       return -1;
    }
-   command = WINDOW_GEOMETRY;
+   command = Command::WINDOW_GEOMETRY;
    window_x = x;
    window_y = y;
    window_w = w;
@@ -170,7 +169,7 @@ int GLVisCommand::WindowTitle(const char *title)
    {
       return -1;
    }
-   command = WINDOW_TITLE;
+   command = Command::WINDOW_TITLE;
    window_title = title;
    if (signal() < 0)
    {
@@ -185,7 +184,7 @@ int GLVisCommand::PlotCaption(const char *caption)
    {
       return -1;
    }
-   command = PLOT_CAPTION;
+   command = Command::PLOT_CAPTION;
    plot_caption = caption;
    if (signal() < 0)
    {
@@ -200,7 +199,7 @@ int GLVisCommand::AxisLabels(const char *a_x, const char *a_y, const char *a_z)
    {
       return -1;
    }
-   command = AXIS_LABELS;
+   command = Command::AXIS_LABELS;
    axis_label_x = a_x;
    axis_label_y = a_y;
    axis_label_z = a_z;
@@ -217,7 +216,7 @@ int GLVisCommand::AxisNumberFormat(string formatting)
    {
       return -1;
    }
-   command = AXIS_NUMBERFORMAT;
+   command = Command::AXIS_NUMBERFORMAT;
    axis_formatting = formatting;
    if (signal() < 0)
    {
@@ -232,7 +231,7 @@ int GLVisCommand::ColorbarNumberFormat(string formatting)
    {
       return -1;
    }
-   command = COLORBAR_NUMBERFORMAT;
+   command = Command::COLORBAR_NUMBERFORMAT;
    colorbar_formatting = formatting;
    if (signal() < 0)
    {
@@ -247,7 +246,7 @@ int GLVisCommand::Pause()
    {
       return -1;
    }
-   command = PAUSE;
+   command = Command::PAUSE;
    if (signal() < 0)
    {
       return -2;
@@ -261,7 +260,7 @@ int GLVisCommand::ViewAngles(double theta, double phi)
    {
       return -1;
    }
-   command = VIEW_ANGLES;
+   command = Command::VIEW_ANGLES;
    view_ang_theta = theta;
    view_ang_phi   = phi;
    if (signal() < 0)
@@ -277,7 +276,7 @@ int GLVisCommand::Zoom(double factor)
    {
       return -1;
    }
-   command = ZOOM;
+   command = Command::ZOOM;
    zoom_factor = factor;
    if (signal() < 0)
    {
@@ -292,7 +291,7 @@ int GLVisCommand::Subdivisions(int tot, int bdr)
    {
       return -1;
    }
-   command = SUBDIVISIONS;
+   command = Command::SUBDIVISIONS;
    subdiv_tot = tot;
    subdiv_bdr = bdr;
    if (signal() < 0)
@@ -308,7 +307,7 @@ int GLVisCommand::ValueRange(double minv, double maxv)
    {
       return -1;
    }
-   command = VALUE_RANGE;
+   command = Command::VALUE_RANGE;
    val_min = minv;
    val_max = maxv;
    if (signal() < 0)
@@ -324,7 +323,7 @@ int GLVisCommand::Levellines(double minv, double maxv, int number)
    {
       return -1;
    }
-   command = LEVELLINES;
+   command = Command::LEVELLINES;
    lvl_min = minv;
    lvl_max = maxv;
    lvl_num = number;
@@ -341,7 +340,7 @@ int GLVisCommand::SetShading(const char *shd)
    {
       return -1;
    }
-   command = SHADING;
+   command = Command::SHADING;
    shading = shd;
    if (signal() < 0)
    {
@@ -356,7 +355,7 @@ int GLVisCommand::ViewCenter(double x, double y)
    {
       return -1;
    }
-   command = VIEW_CENTER;
+   command = Command::VIEW_CENTER;
    view_center_x = x;
    view_center_y = y;
    if (signal() < 0)
@@ -372,7 +371,7 @@ int GLVisCommand::Autoscale(const char *mode)
    {
       return -1;
    }
-   command = AUTOSCALE;
+   command = Command::AUTOSCALE;
    autoscale_mode = mode;
    if (signal() < 0)
    {
@@ -387,8 +386,38 @@ int GLVisCommand::Palette(int pal)
    {
       return -1;
    }
-   command = PALETTE;
+   command = Command::PALETTE;
    palette = pal;
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
+
+int GLVisCommand::PaletteName(std::string palname)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = Command::PALETTE_NAME;
+   palette_name = palname;
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
+
+int GLVisCommand::PaletteFile(std::string filename)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = Command::PALETTE_FILE;
+   palette_file = filename;
    if (signal() < 0)
    {
       return -2;
@@ -402,7 +431,7 @@ int GLVisCommand::PaletteRepeat(int n)
    {
       return -1;
    }
-   command = PALETTE_REPEAT;
+   command = Command::PALETTE_REPEAT;
    palette_repeat = n;
    if (signal() < 0)
    {
@@ -417,7 +446,7 @@ int GLVisCommand::Camera(const double cam[])
    {
       return -1;
    }
-   command = CAMERA;
+   command = Command::CAMERA;
    for (int i = 0; i < 9; i++)
    {
       camera[i] = cam[i];
@@ -435,7 +464,7 @@ int GLVisCommand::Autopause(const char *mode)
    {
       return -1;
    }
-   command = AUTOPAUSE;
+   command = Command::AUTOPAUSE;
    autopause_mode = mode;
    if (signal() < 0)
    {
@@ -453,10 +482,10 @@ int GLVisCommand::Execute()
 
    switch (command)
    {
-      case NO_COMMAND:
+      case Command::NO_COMMAND:
          break;
 
-      case NEW_MESH_AND_SOLUTION:
+      case Command::NEW_MESH_AND_SOLUTION:
       {
          double mesh_range = -1.0;
          switch (new_state.GetType())
@@ -504,7 +533,7 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case SCREENSHOT:
+      case Command::SCREENSHOT:
       {
          cout << "Command: screenshot -> " << screenshot_filename << endl;
          // Allow SdlWindow to handle the expose and screenshot action, in case
@@ -513,7 +542,7 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case KEY_COMMANDS:
+      case Command::KEY_COMMANDS:
       {
          cout << "Command: keys: '" << key_commands << "'" << endl;
          // SendKeySequence(key_commands.c_str());
@@ -522,14 +551,14 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case WINDOW_SIZE:
+      case Command::WINDOW_SIZE:
       {
          cout << "Command: window_size: " << window_w << " x " << window_h << endl;
          ResizeWindow(window_w, window_h);
          break;
       }
 
-      case WINDOW_GEOMETRY:
+      case Command::WINDOW_GEOMETRY:
       {
          cout << "Command: window_geometry: "
               << "@(" << window_x << "," << window_y << ") "
@@ -538,14 +567,14 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case WINDOW_TITLE:
+      case Command::WINDOW_TITLE:
       {
          cout << "Command: window_title: " << window_title << endl;
          SetWindowTitle(window_title.c_str());
          break;
       }
 
-      case PLOT_CAPTION:
+      case Command::PLOT_CAPTION:
       {
          cout << "Command: plot_caption: " << plot_caption << endl;
          win.plot_caption = plot_caption;
@@ -554,7 +583,7 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case AXIS_LABELS:
+      case Command::AXIS_LABELS:
       {
          cout << "Command: axis_labels: '" << axis_label_x << "' '"
               << axis_label_y << "' '" << axis_label_z << "'" << endl;
@@ -564,7 +593,7 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case AXIS_NUMBERFORMAT:
+      case Command::AXIS_NUMBERFORMAT:
       {
          cout << "Command: axis_numberformat: '"
               << axis_formatting << "'" << endl;
@@ -573,7 +602,7 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case COLORBAR_NUMBERFORMAT:
+      case Command::COLORBAR_NUMBERFORMAT:
       {
          cout << "Command: colorbar_numberformat: '"
               << colorbar_formatting << "'" << endl;
@@ -582,14 +611,14 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case PAUSE:
+      case Command::PAUSE:
       {
          cout << "Command: pause: ";
          ToggleThreads();
          break;
       }
 
-      case VIEW_ANGLES:
+      case Command::VIEW_ANGLES:
       {
          cout << "Command: view: " << view_ang_theta << ' ' << view_ang_phi
               << endl;
@@ -598,7 +627,7 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case ZOOM:
+      case Command::ZOOM:
       {
          cout << "Command: zoom: " << zoom_factor << endl;
          win.vs->Zoom(zoom_factor);
@@ -606,7 +635,7 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case SUBDIVISIONS:
+      case Command::SUBDIVISIONS:
       {
          cout << "Command: subdivisions: " << flush;
          win.vs->SetRefineFactors(subdiv_tot, subdiv_bdr);
@@ -615,7 +644,7 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case VALUE_RANGE:
+      case Command::VALUE_RANGE:
       {
          cout << "Command: valuerange: " << flush;
          win.vs->SetValueRange(val_min, val_max);
@@ -624,7 +653,7 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case LEVELLINES:
+      case Command::LEVELLINES:
       {
          cout << "Command: levellines: " << flush;
          win.vs->SetLevelLines(lvl_min, lvl_max, lvl_num);
@@ -634,7 +663,7 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case SHADING:
+      case Command::SHADING:
       {
          cout << "Command: shading: " << flush;
          VisualizationSceneScalarData::Shading s =
@@ -664,7 +693,7 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case VIEW_CENTER:
+      case Command::VIEW_CENTER:
       {
          cout << "Command: viewcenter: "
               << view_center_x << ' ' << view_center_y << endl;
@@ -674,7 +703,7 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case AUTOSCALE:
+      case Command::AUTOSCALE:
       {
          cout << "Command: autoscale: " << autoscale_mode;
          if (autoscale_mode == "off")
@@ -701,7 +730,7 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case PALETTE:
+      case Command::PALETTE:
       {
          cout << "Command: palette: " << palette << endl;
          win.vs->palette.SetIndex(palette-1);
@@ -713,7 +742,28 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case PALETTE_REPEAT:
+      case Command::PALETTE_NAME:
+      {
+         cout << "Command: palette_name: " << palette_name << endl;
+         win.vs->palette.SetByName(palette_name);
+         if (!GetUseTexture())
+         {
+            win.vs->EventUpdateColors();
+         }
+         MyExpose();
+         break;
+      }
+
+      case Command::PALETTE_FILE:
+      {
+         cout << "Command: palette_file: " << palette_file << endl;
+         BasePalettes.Load(palette_file);
+         win.vs->palette.GenerateTextures(true); // need to reinitialize
+         MyExpose();
+         break;
+      }
+
+      case Command::PALETTE_REPEAT:
       {
          cout << "Command: palette_repeat: " << palette_repeat << endl;
          win.vs->palette.SetRepeatTimes(palette_repeat);
@@ -727,7 +777,7 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case CAMERA:
+      case Command::CAMERA:
       {
          cout << "Command: camera: ";
          for (int i = 0; i < 9; i++)
@@ -740,7 +790,7 @@ int GLVisCommand::Execute()
          break;
       }
 
-      case AUTOPAUSE:
+      case Command::AUTOPAUSE:
       {
          if (autopause_mode == "off" || autopause_mode == "0")
          {
@@ -764,7 +814,7 @@ int GLVisCommand::Execute()
 
    }
 
-   command = NO_COMMAND;
+   command = Command::NO_COMMAND;
    unlock();
    return 0;
 }
@@ -807,7 +857,7 @@ GLVisCommand::~GLVisCommand()
    }
 }
 
-enum class Command
+enum class ThreadCommand
 {
    Parallel,
    Screenshot,
@@ -826,6 +876,8 @@ enum class Command
    WindowTitle,
    Keys,
    Palette,
+   PaletteName,
+   PaletteFile,
    PaletteRepeat,
    Camera,
    PlotCaption,
@@ -835,7 +887,6 @@ enum class Command
    //----------
    Max
 };
-
 class ThreadCommands
 {
    struct CmdItem
@@ -846,43 +897,45 @@ class ThreadCommands
 
       bool operator==(const string &key) const { return key == keyword; }
    };
-   array<CmdItem,(size_t)Command::Max> commands;
+   array<CmdItem,(size_t)ThreadCommand::Max> commands;
 
 public:
    ThreadCommands();
 
    decltype(commands)::const_iterator begin() const { return commands.begin(); }
    decltype(commands)::const_iterator end() const { return commands.end(); }
-   CmdItem& operator[](Command cmd) { return commands[(size_t)cmd]; }
-   const CmdItem& operator[](Command cmd) const { return commands[(size_t)cmd]; }
+   CmdItem& operator[](ThreadCommand cmd) { return commands[(size_t)cmd]; }
+   const CmdItem& operator[](ThreadCommand cmd) const { return commands[(size_t)cmd]; }
 };
 static const ThreadCommands commands;
 
 ThreadCommands::ThreadCommands()
 {
-   (*this)[Command::Parallel]             = {"parallel", "<num proc> <proc>", "Prefix for distributed mesh/solution/quadrature."};
-   (*this)[Command::Screenshot]           = {"screenshot", "<file>", "Take a screenshot, saving it to the file."};
-   (*this)[Command::Viewcenter]           = {"viewcenter", "<x> <y>", "Change the viewcenter."};
-   (*this)[Command::View]                 = {"view", "<theta> <phi>", "Change the solid angle of view."};
-   (*this)[Command::Zoom]                 = {"zoom", "<zoom>", "Change the zoom factor."};
-   (*this)[Command::Shading]              = {"shading", "<flat/smooth/cool>", "Change the shading algorithm."};
-   (*this)[Command::Subdivisions]         = {"subdivisions", "<times> <dummy>", "Change the refinement level."};
-   (*this)[Command::Valuerange]           = {"valuerange", "<min> <max>", "Change the value range."};
-   (*this)[Command::Autoscale]            = {"autoscale", "<off/on/value/mesh>", "Change the autoscale algorithm."};
-   (*this)[Command::Levellines]           = {"levellines", "<min> <max> <num>", "Set the level lines."};
-   (*this)[Command::AxisNumberFormat]     = {"axis_numberformat", "'<format>'", "Set the axis number format."};
-   (*this)[Command::ColorbarNumberFormat] = {"colorbar_numberformat", "'<format>'", "Set the colorbar number format."};
-   (*this)[Command::WindowSize]           = {"window_size", "<w> <h>", "Set the size of the window."};
-   (*this)[Command::WindowGeometry]       = {"window_geometry", "<x> <y> <w> <h>", "Set the position and size of the window."};
-   (*this)[Command::WindowTitle]          = {"window_title", "'<title>'", "Set title of the window."};
-   (*this)[Command::Keys]                 = {"keys", "<keys>", "Send the control key sequence."};
-   (*this)[Command::Palette]              = {"palette", "<index>", "Set the palette index."};
-   (*this)[Command::PaletteRepeat]        = {"palette_repeat", "<times>", "Set the repetition of the palette."};
-   (*this)[Command::Camera]               = {"camera", "<cam[0]> ... <cam[2]> <dir[0]> ... <dir[2]> <up[0]> ... <up[2]>", "Set the camera position, direction and upward vector."};
-   (*this)[Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
-   (*this)[Command::AxisLabels]           = {"axis_labels", "'<x label>' '<y label>' '<z label>'", "Set labels of the axes."};
-   (*this)[Command::Pause]                = {"pause", "", "Stop the stream until space is pressed."};
-   (*this)[Command::Autopause]            = {"autopause", "<0/off/1/on>", "Turns off or on autopause."};
+   (*this)[ThreadCommand::Parallel]             = {"parallel", "<num proc> <proc>", "Prefix for distributed mesh/solution/quadrature."};
+   (*this)[ThreadCommand::Screenshot]           = {"screenshot", "<file>", "Take a screenshot, saving it to the file."};
+   (*this)[ThreadCommand::Viewcenter]           = {"viewcenter", "<x> <y>", "Change the viewcenter."};
+   (*this)[ThreadCommand::View]                 = {"view", "<theta> <phi>", "Change the solid angle of view."};
+   (*this)[ThreadCommand::Zoom]                 = {"zoom", "<zoom>", "Change the zoom factor."};
+   (*this)[ThreadCommand::Shading]              = {"shading", "<flat/smooth/cool>", "Change the shading algorithm."};
+   (*this)[ThreadCommand::Subdivisions]         = {"subdivisions", "<times> <dummy>", "Change the refinement level."};
+   (*this)[ThreadCommand::Valuerange]           = {"valuerange", "<min> <max>", "Change the value range."};
+   (*this)[ThreadCommand::Autoscale]            = {"autoscale", "<off/on/value/mesh>", "Change the autoscale algorithm."};
+   (*this)[ThreadCommand::Levellines]           = {"levellines", "<min> <max> <num>", "Set the level lines."};
+   (*this)[ThreadCommand::AxisNumberFormat]     = {"axis_numberformat", "'<format>'", "Set the axis number format."};
+   (*this)[ThreadCommand::ColorbarNumberFormat] = {"colorbar_numberformat", "'<format>'", "Set the colorbar number format."};
+   (*this)[ThreadCommand::WindowSize]           = {"window_size", "<w> <h>", "Set the size of the window."};
+   (*this)[ThreadCommand::WindowGeometry]       = {"window_geometry", "<x> <y> <w> <h>", "Set the position and size of the window."};
+   (*this)[ThreadCommand::WindowTitle]          = {"window_title", "'<title>'", "Set title of the window."};
+   (*this)[ThreadCommand::Keys]                 = {"keys", "<keys>", "Send the control key sequence."};
+   (*this)[ThreadCommand::Palette]              = {"palette", "<index>", "Set the palette index."};
+   (*this)[ThreadCommand::PaletteFile]          = {"palette_file", "<filename>", "Load in a palette file."};
+   (*this)[ThreadCommand::PaletteName]          = {"palette_name", "<palette_name>", "Use palette with given name."};
+   (*this)[ThreadCommand::PaletteRepeat]        = {"palette_repeat", "<times>", "Set the repetition of the palette."};
+   (*this)[ThreadCommand::Camera]               = {"camera", "<cam[0]> ... <cam[2]> <dir[0]> ... <dir[2]> <up[0]> ... <up[2]>", "Set the camera position, direction and upward vector."};
+   (*this)[ThreadCommand::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
+   (*this)[ThreadCommand::AxisLabels]           = {"axis_labels", "'<x label>' '<y label>' '<z label>'", "Set labels of the axes."};
+   (*this)[ThreadCommand::Pause]                = {"pause", "", "Stop the stream until space is pressed."};
+   (*this)[ThreadCommand::Autopause]            = {"autopause", "<0/off/1/on>", "Turns off or on autopause."};
 }
 
 communication_thread::communication_thread(StreamCollection _is,
@@ -967,10 +1020,10 @@ void communication_thread::execute()
          goto comm_terminate;
       }
 
-      const Command cmd = (Command)(it - commands.begin());
+      const ThreadCommand cmd = (ThreadCommand)(it - commands.begin());
       switch (cmd)
       {
-         case Command::Parallel:
+         case ThreadCommand::Parallel:
          {
             unsigned int proc, nproc, np = 0;
             do
@@ -1022,7 +1075,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::Screenshot:
+         case ThreadCommand::Screenshot:
          {
             string filename;
 
@@ -1041,7 +1094,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::Keys:
+         case ThreadCommand::Keys:
          {
             string keys;
 
@@ -1060,7 +1113,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::WindowSize:
+         case ThreadCommand::WindowSize:
          {
             int w, h, t;
 
@@ -1079,7 +1132,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::WindowGeometry:
+         case ThreadCommand::WindowGeometry:
          {
             int x, y, w, h, t;
 
@@ -1098,7 +1151,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::WindowTitle:
+         case ThreadCommand::WindowTitle:
          {
             char c;
             string title;
@@ -1122,7 +1175,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::PlotCaption:
+         case ThreadCommand::PlotCaption:
          {
             char c;
             string caption;
@@ -1146,7 +1199,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::AxisLabels:
+         case ThreadCommand::AxisLabels:
          {
             char c;
             string label_x, label_y, label_z;
@@ -1180,7 +1233,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::Pause:
+         case ThreadCommand::Pause:
          {
             // all processors sent the command
             for (size_t i = 1; i < is.size(); i++)
@@ -1194,7 +1247,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::View:
+         case ThreadCommand::View:
          {
             double theta, phi, a;
 
@@ -1213,7 +1266,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::Zoom:
+         case ThreadCommand::Zoom:
          {
             double factor, a;
 
@@ -1232,7 +1285,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::Subdivisions:
+         case ThreadCommand::Subdivisions:
          {
             int tot, bdr, a;
 
@@ -1251,7 +1304,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::Valuerange:
+         case ThreadCommand::Valuerange:
          {
             double minv, maxv, a;
 
@@ -1270,7 +1323,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::Levellines:
+         case ThreadCommand::Levellines:
          {
             double minv, maxv, a;
             int num, b;
@@ -1290,7 +1343,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::AxisNumberFormat:
+         case ThreadCommand::AxisNumberFormat:
          {
             char c;
             string formatting;
@@ -1314,7 +1367,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::ColorbarNumberFormat:
+         case ThreadCommand::ColorbarNumberFormat:
          {
             char c;
             string formatting;
@@ -1338,7 +1391,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::Shading:
+         case ThreadCommand::Shading:
          {
             string shd;
 
@@ -1357,7 +1410,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::Viewcenter:
+         case ThreadCommand::Viewcenter:
          {
             double x, y, a;
 
@@ -1376,7 +1429,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::Autoscale:
+         case ThreadCommand::Autoscale:
          {
             string mode;
 
@@ -1395,7 +1448,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::Palette:
+         case ThreadCommand::Palette:
          {
             int pal, a;
 
@@ -1414,7 +1467,46 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::PaletteRepeat:
+         case ThreadCommand::PaletteFile:
+         {
+            std::string filename, a;
+
+            *is[0] >> ws;
+            std::getline(*is[0], filename);
+
+            // all processors sent the command
+            for (size_t i = 1; i < is.size(); i++)
+            {
+               *is[i] >> ws >> ident; // 'palette_file'
+               *is[i] >> a;
+            }
+
+            if (glvis_command->PaletteFile(filename))
+            {
+               goto comm_terminate;
+            }
+         }
+         break;
+         case ThreadCommand::PaletteName:
+         {
+            std::string palname, a;
+
+            *is[0] >> palname;
+
+            // all processors sent the command
+            for (size_t i = 1; i < is.size(); i++)
+            {
+               *is[i] >> ws >> ident; // 'palette_name'
+               *is[i] >> a;
+            }
+
+            if (glvis_command->PaletteName(palname))
+            {
+               goto comm_terminate;
+            }
+         }
+         break;
+         case ThreadCommand::PaletteRepeat:
          {
             int n, a;
 
@@ -1433,7 +1525,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::Camera:
+         case ThreadCommand::Camera:
          {
             double cam[9], a;
 
@@ -1458,7 +1550,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::Autopause:
+         case ThreadCommand::Autopause:
          {
             string mode;
 
@@ -1477,7 +1569,7 @@ void communication_thread::execute()
             }
          }
          break;
-         case Command::Max: //dummy
+         case ThreadCommand::Max: //dummy
             break;
       }
    }

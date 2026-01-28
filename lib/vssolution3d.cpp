@@ -758,7 +758,7 @@ void VisualizationSceneSolution3d::Init()
 
    node_pos = new double[mesh->GetNV()];
 
-   palette.SetIndex(12); // use the 'vivid' palette in 3D
+   palette.SetFallbackIndex(12); // use the 'vivid' palette in 3D
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
    CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*bb.x[0]+(0.5+eps)*bb.x[1]);
