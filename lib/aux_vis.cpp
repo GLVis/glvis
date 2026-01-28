@@ -14,12 +14,15 @@
 #include <cmath>
 #include <chrono>
 #include <regex>
+#include <thread>
 
 #include "gl/types.hpp"
-#include "gl2ps.h"
 #include "palettes.hpp"
 #include "sdl.hpp"
 #include "threads.hpp"
+#ifndef __EMSCRIPTEN__
+#include "gl2ps.h"
+#endif
 
 #include <mfem.hpp>
 
@@ -38,7 +41,7 @@ using namespace mfem;
 using namespace std;
 
 thread_local int visualize = 0;
-thread_local VisualizationScene * locscene;
+thread_local VisualizationScene * locscene = nullptr;
 thread_local GLVisCommand *glvis_command = nullptr;
 
 #ifdef GLVIS_MULTISAMPLE
@@ -47,15 +50,21 @@ static int glvis_multisample = GLVIS_MULTISAMPLE;
 static int glvis_multisample = -1;
 #endif
 
-float line_w = 1.f;
-float line_w_aa = gl3::LINE_WIDTH_AA;
+static float line_w = 1.f;
+static float line_w_aa = gl3::LINE_WIDTH_AA;
 
-thread_local SdlWindow * wnd = nullptr;
-bool wndLegacyGl = false;
-bool wndUseHiDPI = true;
+static thread_local SdlWindow * wnd = nullptr;
+static bool wndLegacyGl = false;
+bool wndUseHiDPI = true; // shared with sdl_main.cpp
+
 void SDLMainLoop(bool server_mode)
 {
    SdlWindow::StartSDL(server_mode);
+}
+
+void SetGLVisCommand(GLVisCommand *cmd)
+{
+   glvis_command = cmd;
 }
 
 SdlWindow * GetAppWindow()
@@ -81,7 +90,7 @@ void SetUseHiDPI(bool status)
 void MyExpose(GLsizei w, GLsizei h);
 void MyExpose();
 
-int InitVisualization (const char name[], int x, int y, int w, int h)
+SdlWindow* InitVisualization(const char name[], int x, int y, int w, int h)
 {
 
 #ifdef GLVIS_DEBUG
@@ -92,7 +101,9 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
       wnd = new SdlWindow();
       if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
       {
-         return 1;
+         delete wnd;
+         wnd = nullptr;
+         return NULL;
       }
    }
    else
@@ -195,7 +206,7 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
 #endif
    locscene = nullptr;
 
-   return 0;
+   return wnd;
 }
 
 void SendKeySequence(const char *seq)
@@ -365,8 +376,7 @@ void RunVisualization()
    wnd->mainLoop();
 #endif
    InitIdleFuncs();
-   delete locscene;
-   delete wnd;
+   visualize = 0;
    wnd = nullptr;
 }
 
@@ -453,6 +463,7 @@ void InitIdleFuncs()
    }
 }
 
+#ifndef __EMSCRIPTEN__
 bool CommunicationIdleFunc()
 {
    int status = glvis_command->Execute();
@@ -468,6 +479,7 @@ bool CommunicationIdleFunc()
    }
    return false;
 }
+#endif
 
 bool MainIdleFunc()
 {
@@ -1171,6 +1183,7 @@ void KeyS()
    SendExposeEvent();
 }
 
+#ifndef __EMSCRIPTEN__
 inline GL2PSvertex CreatePrintVtx(gl3::FeedbackVertex v)
 {
    return
@@ -1213,6 +1226,7 @@ void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
       gl2psText(entry.text.c_str(), "Times", 12);
    }
 }
+#endif
 
 void KeyCtrlP()
 {
@@ -1275,7 +1289,9 @@ void ThreadsPauseFunc(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
+#ifndef __EMSCRIPTEN__
       glvis_command->ToggleAutopause();
+#endif
    }
    else
    {

@@ -15,7 +15,7 @@
 #include <cmath>
 
 #include <mfem.hpp>
-#include "vsvector.hpp"
+#include "visual.hpp"
 
 using namespace mfem;
 using namespace std;
@@ -102,9 +102,7 @@ std::string VisualizationSceneVector::GetHelpString() const
    return os.str();
 }
 
-thread_local VisualizationSceneVector  * vsvector;
-extern thread_local VisualizationScene * locscene;
-extern thread_local VisualizationSceneSolution * vssol;
+static thread_local VisualizationSceneVector  * vsvector;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 thread_local int ianim = 0;
@@ -256,56 +254,46 @@ const char *Vec2ScalarNames[7] =
    "curl", "anisotropy"
 };
 
-VisualizationSceneVector::VisualizationSceneVector(Mesh & m,
-                                                   Vector & sx, Vector & sy, Mesh *mc)
+VisualizationSceneVector::VisualizationSceneVector(Window &win_)
+   : VisualizationSceneSolution(win_, false)
 {
-   mesh = &m;
-   mesh_coarse = mc;
-   solx = &sx;
-   soly = &sy;
-
-   sol  = new Vector(mesh -> GetNV());
-
-   VecGridF = NULL;
-
-   Init();
-}
-
-VisualizationSceneVector::VisualizationSceneVector(GridFunction &vgf)
-{
-   FiniteElementSpace *fes = vgf.FESpace();
-   if (fes == NULL || vgf.VectorDim() != 2)
+   if (win.data_state.grid_f)
    {
-      cout << "VisualizationSceneVector::VisualizationSceneVector" << endl;
-      exit(1);
-   }
+      FiniteElementSpace *fes = win.data_state.grid_f->FESpace();
+      if (fes == NULL || win.data_state.grid_f->VectorDim() != 2)
+      {
+         cout << "VisualizationSceneVector::VisualizationSceneVector" << endl;
+         exit(1);
+      }
 
-   VecGridF = &vgf;
+      VecGridF = win.data_state.grid_f.get();
 
-   mesh = fes->GetMesh();
+      solx = new Vector(mesh -> GetNV());
+      soly = new Vector(mesh -> GetNV());
 
-   solx = new Vector(mesh -> GetNV());
-   soly = new Vector(mesh -> GetNV());
-
-   vgf.GetNodalValues (*solx, 1);
-   vgf.GetNodalValues (*soly, 2);
-
-   sol = new Vector(mesh -> GetNV());
-
-   //  VisualizationSceneSolution::Init()  sets rsol = NULL !
-   {
-      Init();
-      SetGridFunction(vgf);
-   }
-
-   mesh->GetNodes(vc0);
-   if (vc0.Size() != vgf.Size())
-   {
-      vc0.Destroy();
+      VecGridF->GetNodalValues(*solx, 1);
+      VecGridF->GetNodalValues(*soly, 2);
    }
    else
    {
-      vc0 += vgf;
+      sol  = new Vector(mesh -> GetNV());
+      solx = win.data_state.solx.get();
+      soly = win.data_state.soly.get();
+   }
+
+   Init();
+
+   if (VecGridF)
+   {
+      mesh->GetNodes(vc0);
+      if (vc0.Size() != VecGridF->Size())
+      {
+         vc0.Destroy();
+      }
+      else
+      {
+         vc0 += *VecGridF;
+      }
    }
 }
 
@@ -357,7 +345,7 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
    for (i = 0; Vec2Scalar != Vec2ScalarFunctions[i]; i++)
       ;
 
-   if (VecGridF->FESpace()->GetVDim() == 1)
+   if (VecGridF && VecGridF->FESpace()->GetVDim() == 1)
    {
       if (dynamic_cast<const ND_FECollection*>(VecGridF->FESpace()->FEColl()))
       {
@@ -370,9 +358,13 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
          i = (i + 1) % 5;
       }
    }
-   else
+   else if (VecGridF)
    {
       i = (i + 1) % 7;
+   }
+   else
+   {
+      i = (i + 1) % 4;
    }
 
    if (print)
@@ -381,7 +373,7 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
    }
 
    Vec2Scalar = Vec2ScalarFunctions[i];
-   extra_caption = Vec2ScalarNames[i];
+   win.extra_caption = Vec2ScalarNames[i];
 
    for (i = 0; i < mesh->GetNV(); i++)
    {
@@ -408,7 +400,21 @@ void VisualizationSceneVector::CycleVec2Scalar(int print)
    }
 }
 
-void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
+void VisualizationSceneVector::NewMeshAndSolution(const DataState &s)
+{
+   if (VecGridF && s.grid_f)
+   {
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), solx, soly, s.grid_f.get());
+   }
+   else
+   {
+      NewMeshAndSolution(s.mesh.get(), s.mesh_quad.get(), s.solx.get(), s.soly.get());
+   }
+}
+
+void VisualizationSceneVector::NewMeshAndSolution(
+   Mesh *new_m, Mesh *new_mc, Vector *new_sol_x, Vector *new_sol_y,
+   GridFunction *vgf)
 {
    delete sol;
 
@@ -419,10 +425,9 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
    }
 
    Mesh *old_m = mesh;
-   Mesh *new_mesh = vgf.FESpace()->GetMesh();
-   mesh = new_mesh;
-   mesh_coarse = mc;
-   VecGridF = &vgf;
+   mesh = new_m;
+   mesh_coarse = new_mc;
+   VecGridF = vgf;
 
    // If the number of elements changes, recompute the refinement factor
    if (mesh->GetNE() != old_m->GetNE())
@@ -441,20 +446,28 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
       }
    }
 
-   solx = new Vector(mesh->GetNV());
-   soly = new Vector(mesh->GetNV());
-
-   vgf.GetNodalValues(*solx, 1);
-   vgf.GetNodalValues(*soly, 2);
-
-   mesh->GetNodes(vc0);
-   if (vc0.Size() != vgf.Size())
+   if (vgf)
    {
-      vc0.Destroy();
+      solx = new Vector(mesh->GetNV());
+      soly = new Vector(mesh->GetNV());
+
+      vgf->GetNodalValues(*solx, 1);
+      vgf->GetNodalValues(*soly, 2);
+
+      mesh->GetNodes(vc0);
+      if (vc0.Size() != vgf->Size())
+      {
+         vc0.Destroy();
+      }
+      else
+      {
+         vc0 += *vgf;
+      }
    }
    else
    {
-      vc0 += vgf;
+      solx = new_sol_x;
+      soly = new_sol_y;
    }
 
    sol = new Vector(mesh->GetNV());
@@ -463,7 +476,7 @@ void VisualizationSceneVector::NewMeshAndSolution(GridFunction &vgf, Mesh *mc)
       (*sol)(i) = Vec2Scalar((*solx)(i), (*soly)(i));
    }
 
-   VisualizationSceneSolution::NewMeshAndSolution(mesh, mesh_coarse, sol, &vgf);
+   VisualizationSceneSolution::NewMeshAndSolution(mesh, mesh_coarse, sol, vgf);
 
    if (autoscale)
    {
@@ -488,7 +501,7 @@ void VisualizationSceneVector::Init()
    ArrowScale = 1.0;
    RefineFactor = 1;
    Vec2Scalar = VecLength;
-   extra_caption = Vec2ScalarNames[0];
+   win.extra_caption = Vec2ScalarNames[0];
 
    for (int i = 0; i < mesh->GetNV(); i++)
    {
@@ -523,12 +536,14 @@ void VisualizationSceneVector::Init()
 
 VisualizationSceneVector::~VisualizationSceneVector()
 {
-   delete sol;
-
    if (VecGridF)
    {
       delete soly;
       delete solx;
+   }
+   else
+   {
+      delete sol;
    }
 }
 

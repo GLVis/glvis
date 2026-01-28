@@ -22,8 +22,8 @@
 class VisualizationSceneSolution : public VisualizationSceneScalarData
 {
 protected:
-   mfem::Vector *v_normals;
-   mfem::GridFunction *rsol;
+   mfem::Vector *v_normals{};
+   mfem::GridFunction *rsol{};
 
    int drawmesh, drawelems, draworder;
    enum class Numbering { NONE, ELEMENTS, EDGES, VERTICES, DOFS, MAX };
@@ -55,6 +55,10 @@ protected:
 
    void Init();
 
+   void NewMeshAndSolution(mfem::Mesh *new_m, mfem::Mesh *new_mc,
+                           mfem::Vector *new_sol,
+                           mfem::GridFunction *new_u = nullptr);
+
    void FindNewBox(double rx[], double ry[], double rval[]);
 
    void DrawCPLine(gl3::GlBuilder& bld,
@@ -85,20 +89,13 @@ public:
    int attr_to_show, bdr_attr_to_show;
    mfem::Array<int> el_attr_to_show, bdr_el_attr_to_show;
 
-   VisualizationSceneSolution();
-   VisualizationSceneSolution(mfem::Mesh &m, mfem::Vector &s,
-                              mfem::Mesh *mc = nullptr,
-                              mfem::Vector *normals = nullptr);
+   VisualizationSceneSolution(Window &win, bool init = true);
 
    virtual ~VisualizationSceneSolution();
 
    std::string GetHelpString() const override;
 
-   void SetGridFunction(mfem::GridFunction & u) { rsol = &u; }
-
-   void NewMeshAndSolution(mfem::Mesh *new_m, mfem::Mesh *new_mc,
-                           mfem::Vector *new_sol,
-                           mfem::GridFunction *new_u = nullptr);
+   void NewMeshAndSolution(const DataState &s) override;
 
    void SetNewScalingFromBox() override;
    void FindNewBox(bool prepare) override;

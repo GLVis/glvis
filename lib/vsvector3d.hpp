@@ -26,10 +26,14 @@ protected:
    gl3::GlDrawable vector_buf;
    gl3::GlDrawable displine_buf;
 
-   mfem::GridFunction *VecGridF;
-   mfem::FiniteElementSpace *sfes;
+   mfem::GridFunction *VecGridF{};
+   mfem::FiniteElementSpace *sfes{};
 
    void Init();
+
+   void NewMeshAndSolution(mfem::Mesh *new_m, mfem::Mesh *new_mc,
+                           mfem::Vector *new_sol_x, mfem::Vector *new_sol_y, mfem::Vector *new_sol_z,
+                           mfem::GridFunction *new_u = nullptr);
 
    mfem::Array<int> vflevel;
    mfem::Array<double> dvflevel;
@@ -39,13 +43,9 @@ protected:
 public:
    int ianim, ianimd, ianimmax, drawdisp;
 
-   VisualizationSceneVector3d(mfem::Mesh & m, mfem::Vector & sx, mfem::Vector & sy,
-                              mfem::Vector & sz,
-                              mfem::Mesh *mc = nullptr);
-   VisualizationSceneVector3d(mfem::GridFunction &vgf, mfem::Mesh *mc = nullptr);
+   VisualizationSceneVector3d(Window &win);
 
-   void NewMeshAndSolution(mfem::Mesh *new_m, mfem::Mesh *new_mc,
-                           mfem::GridFunction *new_v);
+   void NewMeshAndSolution(const DataState &s) override;
 
    virtual ~VisualizationSceneVector3d();
 

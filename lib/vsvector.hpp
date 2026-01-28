@@ -25,9 +25,13 @@ protected:
 
    gl3::GlDrawable vector_buf;
    gl3::GlDrawable displine_buf;
-   mfem::GridFunction *VecGridF;
+   mfem::GridFunction *VecGridF{};
 
    void Init();
+
+   void NewMeshAndSolution(mfem::Mesh *new_m, mfem::Mesh *new_mc,
+                           mfem::Vector *new_sol_x, mfem::Vector *new_sol_y,
+                           mfem::GridFunction *new_u = nullptr);
 
    void GetRefinedValues(const int i, const mfem::IntegrationRule &ir,
                          mfem::Vector &vals, mfem::DenseMatrix &tr,
@@ -48,11 +52,9 @@ protected:
    int GetFunctionAutoRefineFactor() override;
 
 public:
-   VisualizationSceneVector(mfem::Mesh &m, mfem::Vector &sx, mfem::Vector &sy,
-                            mfem::Mesh *mc = nullptr);
-   VisualizationSceneVector(mfem::GridFunction &vgf);
+   VisualizationSceneVector(Window &win_);
 
-   void NewMeshAndSolution(mfem::GridFunction &vgf, mfem::Mesh *mc = nullptr);
+   void NewMeshAndSolution(const DataState &s) override;
 
    virtual ~VisualizationSceneVector();
 

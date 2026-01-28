@@ -41,9 +41,13 @@ protected:
    int nlevels;
    mfem::Array<double> levels;
 
-   mfem::GridFunction *GridF;
+   mfem::GridFunction *GridF{};
 
    void Init();
+
+   void NewMeshAndSolution(mfem::Mesh *new_m, mfem::Mesh *new_mc,
+                           mfem::Vector *new_sol,
+                           mfem::GridFunction *new_u = nullptr);
 
    void GetFaceNormals(const int FaceNo, const int side,
                        const mfem::IntegrationRule &ir, mfem::DenseMatrix &normals);
@@ -118,14 +122,9 @@ public:
 
    mfem::Array<int> bdr_attr_to_show;
 
-   VisualizationSceneSolution3d();
-   VisualizationSceneSolution3d(mfem::Mesh & m, mfem::Vector & s, mfem::Mesh *mc);
+   VisualizationSceneSolution3d(Window &win, bool init = true);
 
-   void SetGridFunction(mfem::GridFunction *gf) { GridF = gf; }
-
-   void NewMeshAndSolution(mfem::Mesh *new_m, mfem::Mesh *new_mc,
-                           mfem::Vector *new_sol,
-                           mfem::GridFunction *new_u = nullptr);
+   void NewMeshAndSolution(const DataState &s) override;
 
    virtual ~VisualizationSceneSolution3d();
 

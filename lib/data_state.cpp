@@ -12,8 +12,7 @@
 #include <cstdlib>
 
 #include "data_state.hpp"
-#include "vsvector.hpp"
-#include "vsvector3d.hpp"
+#include "visual.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -43,12 +42,6 @@ DataState &DataState::operator=(DataState &&ss)
 
    type = ss.type;
    quad_sol = ss.quad_sol;
-
-   sol = std::move(ss.sol);
-   solu = std::move(ss.solu);
-   solv = std::move(ss.solv);
-   solw = std::move(ss.solw);
-   normals = std::move(ss.normals);
    keys = std::move(ss.keys);
 
    fix_elem_orient = ss.fix_elem_orient;
@@ -72,6 +65,77 @@ void DataState::SetMesh(std::unique_ptr<Mesh> &&pmesh)
    if (quad_f && quad_f->GetSpace()->GetMesh() != mesh.get()) { SetQuadFunction(NULL); }
 }
 
+void DataState::SetScalarData(Vector new_sol)
+{
+   internal.grid_f.reset();
+   internal.quad_f.reset();
+
+   if (!sol)
+   {
+      internal.sol.reset(new Vector(std::move(new_sol)));
+   }
+   else
+   {
+      *sol = std::move(new_sol);
+   }
+   type = DataState::FieldType::SCALAR;
+}
+
+void DataState::SetNormals(Vector new_normals)
+{
+   if (!normals)
+   {
+      internal.sol.reset(new Vector(std::move(new_normals)));
+   }
+   else
+   {
+      *sol = std::move(new_normals);
+   }
+}
+
+void DataState::SetVectorData(Vector new_solx, Vector new_soly)
+{
+   MFEM_VERIFY(mesh->SpaceDimension() == 2, "Incompatible space dimension");
+
+   internal.grid_f.reset();
+   internal.quad_f.reset();
+
+   if (!solx || !soly)
+   {
+      internal.solx.reset(new Vector(std::move(new_solx)));
+      internal.soly.reset(new Vector(std::move(new_soly)));
+   }
+   else
+   {
+      *solx = std::move(new_solx);
+      *soly = std::move(new_soly);
+   }
+   type = DataState::FieldType::VECTOR;
+}
+
+void DataState::SetVectorData(Vector new_solx, Vector new_soly,
+                              Vector new_solz)
+{
+   MFEM_VERIFY(mesh->SpaceDimension() == 3, "Incompatible space dimension");
+
+   internal.grid_f.reset();
+   internal.quad_f.reset();
+
+   if (!solx || !soly || !solz)
+   {
+      internal.solx.reset(new Vector(std::move(new_solx)));
+      internal.soly.reset(new Vector(std::move(new_soly)));
+      internal.solz.reset(new Vector(std::move(new_solz)));
+   }
+   else
+   {
+      *solx = std::move(new_solx);
+      *soly = std::move(new_soly);
+      *solz = std::move(new_solz);
+   }
+   type = DataState::FieldType::VECTOR;
+}
+
 void DataState::SetGridFunction(GridFunction *gf, int component)
 {
    internal.grid_f.reset(gf);
@@ -87,7 +151,7 @@ void DataState::SetGridFunction(std::unique_ptr<GridFunction> &&pgf,
    SetGridFunctionSolution(component);
 }
 
-void DataState::SetGridFunction(std::vector<mfem::GridFunction*> &gf_array,
+void DataState::SetGridFunction(std::vector<GridFunction*> &gf_array,
                                 int num_pieces, int component)
 {
    SetGridFunction(new GridFunction(mesh.get(), gf_array.data(), num_pieces),
@@ -239,14 +303,14 @@ void DataState::Extrude1DMeshAndSolution()
 
       internal.grid_f.reset(grid_f_2d);
    }
-   else if (sol.Size() == mesh->GetNV())
+   else if (sol)
    {
       Vector sol2d(mesh2d->GetNV());
       for (int i = 0; i < mesh->GetNV(); i++)
       {
-         sol2d(2*i+0) = sol2d(2*i+1) = sol(i);
+         sol2d(2*i+0) = sol2d(2*i+1) = (*sol)(i);
       }
-      sol = sol2d;
+      *sol = std::move(sol2d);
    }
 
    if (!mesh_quad) { internal.mesh.swap(internal.mesh_quad); }
@@ -321,7 +385,6 @@ void DataState::SetMeshSolution()
          }
          cout << "Number of colors: " << grid_f->Max() + 1 << endl;
       }
-      grid_f->GetNodalValues(sol);
       if (save_coloring)
       {
          const char col_fname[] = "GLVis_coloring.gf";
@@ -333,8 +396,8 @@ void DataState::SetMeshSolution()
    }
    else // zero solution
    {
-      sol.SetSize (mesh -> GetNV());
-      sol = 0.0;
+      internal.sol.reset(new Vector(mesh->GetNV()));
+      *sol = 0.0;
    }
    type = FieldType::MESH;
 }
@@ -368,15 +431,7 @@ void DataState::SetGridFunctionSolution(int gf_component)
       return;
    }
 
-   if (grid_f->VectorDim() == 1)
-   {
-      grid_f->GetNodalValues(sol);
-      type = FieldType::SCALAR;
-   }
-   else
-   {
-      type = FieldType::VECTOR;
-   }
+   type = (grid_f->VectorDim() == 1) ? FieldType::SCALAR : FieldType::VECTOR;
 }
 
 void DataState::SetQuadFunctionSolution(int qf_component)
@@ -532,8 +587,7 @@ void DataState::SetQuadSolution(QuadSolution quad_type)
    quad_sol = quad_type;
 }
 
-void DataState::SwitchQuadSolution(QuadSolution quad_type,
-                                   VisualizationScene *vs)
+void DataState::SwitchQuadSolution(QuadSolution quad_type)
 {
    unique_ptr<Mesh> old_mesh;
    // we must backup the refined mesh to prevent its deleting
@@ -544,7 +598,6 @@ void DataState::SwitchQuadSolution(QuadSolution quad_type,
    }
    SetQuadSolution(quad_type);
    ExtrudeMeshAndSolution();
-   ResetMeshAndSolution(*this, vs);
 }
 
 // Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec
@@ -573,67 +626,7 @@ DataState::ProjectVectorFEGridFunction(std::unique_ptr<GridFunction> gf)
    return gf;
 }
 
-bool DataState::SetNewMeshAndSolution(DataState new_state,
-                                      VisualizationScene* vs)
-{
-   if (new_state.mesh->SpaceDimension() == mesh->SpaceDimension() &&
-       new_state.grid_f->VectorDim() == grid_f->VectorDim())
-   {
-      ResetMeshAndSolution(new_state, vs);
-
-      // do not move 'sol' vector as it is updated directly
-      internal = std::move(new_state.internal);
-
-      return true;
-   }
-   else
-   {
-      return false;
-   }
-}
-
-void DataState::ResetMeshAndSolution(DataState &ss, VisualizationScene* vs)
-{
-   if (ss.mesh->SpaceDimension() == 2)
-   {
-      if (ss.grid_f->VectorDim() == 1)
-      {
-         auto *vss = dynamic_cast<VisualizationSceneSolution *>(vs);
-         // use the local vector as pointer is invalid after the move
-         ss.grid_f->GetNodalValues(sol);
-         // update the offsets before the mesh and solution
-         vss->SetDataOffsets(ss.offsets.get());
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &sol,
-                                 ss.grid_f.get());
-      }
-      else
-      {
-         auto *vsv = dynamic_cast<VisualizationSceneVector *>(vs);
-         vsv->SetDataOffsets(ss.offsets.get());
-         vsv->NewMeshAndSolution(*ss.grid_f, ss.mesh_quad.get());
-      }
-   }
-   else
-   {
-      if (ss.grid_f->VectorDim() == 1)
-      {
-         auto *vss = dynamic_cast<VisualizationSceneSolution3d *>(vs);
-         // use the local vector as pointer is invalid after the move
-         ss.grid_f->GetNodalValues(sol);
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), &sol,
-                                 ss.grid_f.get());
-      }
-      else
-      {
-         ss.ProjectVectorFEGridFunction();
-
-         auto *vss = dynamic_cast<VisualizationSceneVector3d *>(vs);
-         vss->NewMeshAndSolution(ss.mesh.get(), ss.mesh_quad.get(), ss.grid_f.get());
-      }
-   }
-}
-
-void DataState::ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array)
+void DataState::ComputeDofsOffsets(std::vector<GridFunction*> &gf_array)
 {
    const int nprocs = static_cast<int>(gf_array.size());
    MFEM_VERIFY(!gf_array.empty(), "No grid functions provided for offsets");
