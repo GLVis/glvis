@@ -12,16 +12,10 @@
 #ifndef GLVIS_VSDATA_HPP
 #define GLVIS_VSDATA_HPP
 
-#include <array>
-
-#include "mfem.hpp"
+#include <mfem.hpp>
 #include "openglvis.hpp"
 #include "aux_vis.hpp"
-
-using namespace mfem;
-
-extern thread_local std::string plot_caption; // defined in glvis.cpp
-extern thread_local std::string extra_caption; // defined in glvis.cpp
+#include "window.hpp"
 
 class Plane
 {
@@ -69,16 +63,20 @@ public:
    };
 
 protected:
-   Mesh   *mesh{}, *mesh_coarse{};
-   Vector *sol{};
+   mfem::Mesh   *mesh{}, *mesh_coarse{};
+   mfem::Vector *sol{};
+   const DataState::Offsets *offsets{};
+
+   Window &win;
 
    double minv, maxv;
 
-   std::string a_label_x, a_label_y, a_label_z;
+   std::string a_label_x{"x"}, a_label_y{"y"}, a_label_z{"z"};
 
    int scaling, colorbar, drawaxes;
    Shading shading;
    int auto_ref_max, auto_ref_min_surf_vert, auto_ref_max_surf_vert;
+   bool legacy_parallel_numbering = false;
 
    // Formatter for axes & colorbar numbers. Set defaults.
    std::function<std::string(double)> axis_formatter
@@ -99,7 +97,7 @@ protected:
    int arrow_type, arrow_scaling_type;
 
    int nl;
-   Array<double> level;
+   mfem::Array<double> level;
 
    int ruler_on;
    double ruler_x, ruler_y, ruler_z;
@@ -145,7 +143,7 @@ protected:
 
    void FixValueRange();
 
-   static int GetFunctionAutoRefineFactor(GridFunction &gf);
+   static int GetFunctionAutoRefineFactor(mfem::GridFunction &gf);
    virtual int GetFunctionAutoRefineFactor() = 0;
    virtual int GetAutoRefineFactor();
 
@@ -160,11 +158,12 @@ public:
    /// Shrink factor with respect to the element (material) attributes centers
    double shrinkmat;
 
-   VisualizationSceneScalarData()
-      : a_label_x("x"), a_label_y("y"), a_label_z("z") {}
-   VisualizationSceneScalarData (Mesh & m, Vector & s, Mesh *mc = NULL);
+   VisualizationSceneScalarData(Window &win, bool init = true);
 
    virtual ~VisualizationSceneScalarData();
+
+   /// Set a new mesh and solution from the given data state
+   virtual void NewMeshAndSolution(const DataState &s) = 0;
 
    virtual std::string GetHelpString() const { return ""; }
 
@@ -217,13 +216,13 @@ public:
       auto_ref_max_surf_vert = max_surf_vert;
    }
    virtual void AutoRefine() = 0;
-   virtual void ToggleAttributes(Array<int> &attr_list) = 0;
+   virtual void ToggleAttributes(mfem::Array<int> &attr_list) = 0;
 
    virtual void PrintState();
 
-   Mesh *GetMesh() { return mesh; }
+   mfem::Mesh *GetMesh() { return mesh; }
 
-   virtual gl3::SceneInfo GetSceneObjs();
+   gl3::SceneInfo GetSceneObjs() override;
 
    void ProcessUpdatedBufs(gl3::SceneInfo& scene);
 
@@ -264,7 +263,7 @@ public:
                double cval = HUGE_VAL);
 
    void DrawPolygonLevelLines(gl3::GlBuilder& builder, double *point, int n,
-                              Array<double> &level, bool log_vals);
+                              mfem::Array<double> &level, bool log_vals);
 
    void ToggleLight() { use_light = !use_light; }
    void SetLight(bool light_set) { use_light = light_set; }
@@ -274,7 +273,7 @@ public:
       // colorbar states are: 0) no colorbar, no caption; 1) colorbar with
       // caption; 2) colorbar without caption.
       static const int next[2][3] = { { 1, 2, 0 }, { 2, 0, 0 } };
-      colorbar = next[plot_caption.empty()][colorbar];
+      colorbar = next[win.plot_caption.empty()][colorbar];
    }
 
    // Turn on or off the caption
@@ -284,8 +283,8 @@ public:
    void SetColorbarNumberFormat(std::string formatting);
 
    void PrepareColorBar(double minval, double maxval,
-                        Array<double> * level = NULL,
-                        Array<double> * levels = NULL);
+                        mfem::Array<double> * level = nullptr,
+                        mfem::Array<double> * levels = nullptr);
 
    void SetAxisLabels(const char * a_x, const char * a_y, const char * a_z);
 
@@ -320,9 +319,9 @@ public:
    int GetAutoscale() const { return autoscale; }
 
    /// Shrink the set of points towards attributes centers of gravity
-   void ShrinkPoints(DenseMatrix &pointmat, int i, int fn, int di);
+   void ShrinkPoints(mfem::DenseMatrix &pointmat, int i, int fn, int di);
    // Centers of gravity based on the boundary/element attributes
-   DenseMatrix bdrc, matc;
+   mfem::DenseMatrix bdrc, matc;
    /// Compute the center of gravity for each boundary attribute
    void ComputeBdrAttrCenter();
    /// Compute the center of gravity for each element attribute

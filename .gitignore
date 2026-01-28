@@ -26,3 +26,12 @@ compile_commands.json
 # OS-specific: Mac
 *.dSYM
 .DS_Store
+
+# Typical build directory
+/build/
+
+# Visual Studio Code
+/.vscode/
+
+# CMake user configuration files
+user.cmake

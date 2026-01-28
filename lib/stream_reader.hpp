@@ -16,7 +16,6 @@
 #include <vector>
 #include <iostream>
 #include <memory>
-#include "mfem.hpp"
 #include "data_state.hpp"
 
 using StreamCollection = std::vector<std::unique_ptr<std::istream>>;
@@ -26,7 +25,14 @@ class StreamReader
    DataState &data;
 
 public:
-   StreamReader(DataState &data_) : data(data_) { }
+
+   StreamReader(DataState &data_): data(data_) { }
+
+   /// Prints available commands
+   static void PrintCommands();
+
+   /// Tests if the data type is supported
+   static bool SupportsDataType(const std::string &data_type);
 
    /// Read the content of an input stream (e.g. from socket/file)
    int ReadStream(std::istream &is, const std::string &data_type);

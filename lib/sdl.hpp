@@ -20,7 +20,6 @@
 #include <condition_variable>
 #include <deque>
 #include "gl/renderer.hpp"
-#include "sdl_helper.hpp"
 
 struct EventInfo
 {
@@ -29,12 +28,12 @@ struct EventInfo
    SDL_Keymod keymod;
 };
 
-typedef void (*TouchDelegate)(SDL_MultiGestureEvent&);
-typedef void (*MouseDelegate)(EventInfo*);
-typedef std::function<void(GLenum)> KeyDelegate;
-typedef void (*WindowDelegate)(int, int);
-typedef void (*Delegate)();
-typedef bool (*IdleDelegate)();
+using TouchDelegate = void (*)(SDL_MultiGestureEvent&);
+using MouseDelegate = void (*)(EventInfo*);
+using KeyDelegate = std::function<void(GLenum)>;
+using WindowDelegate = void (*)(int, int);
+using Delegate = void (*)();
+using IdleDelegate = bool (*)();
 
 class SdlMainThread;
 SdlMainThread& GetMainThread();

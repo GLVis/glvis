@@ -12,7 +12,6 @@
 #ifndef GLVIS_AUX_VIS_HPP
 #define GLVIS_AUX_VIS_HPP
 
-#include "gl/platform_gl.hpp"
 #include "gl/types.hpp"
 
 #include "openglvis.hpp"
@@ -23,8 +22,11 @@
 
 void SDLMainLoop(bool server_mode = false);
 
+class GLVisCommand;
+void SetGLVisCommand(GLVisCommand *cmd);
+
 /// Initializes the visualization and some keys.
-int InitVisualization(const char name[], int x, int y, int w, int h);
+SdlWindow* InitVisualization(const char name[], int x, int y, int w, int h);
 
 void SetVisualizationScene(VisualizationScene * scene,
                            int view = 3, const char *keys = NULL);
@@ -187,4 +189,4 @@ std::function<bool(T)> validator = [](T) { return true; })
    return input;
 }
 
-#endif
+#endif // GLVIS_AUX_VIS_HPP

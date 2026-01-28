@@ -12,10 +12,14 @@
 #ifndef GLVIS_DATA_STATE_HPP
 #define GLVIS_DATA_STATE_HPP
 
+#include <map>
 #include <string>
-#include <vector>
 #include <memory>
-#include "mfem.hpp"
+#include <vector>
+#include <utility>
+
+#include <mfem.hpp>
+
 #include "openglvis.hpp"
 
 struct DataState
@@ -44,16 +48,37 @@ struct DataState
       MAX
    };
 
+   // Class used for storing offsets and map of DOFs for each rank
+   class Offset
+   {
+      std::map<std::pair<int, int>, int> dof;
+   public:
+      int nelems, nedges, nverts;
+#ifdef GLVIS_DEBUG
+      // in debug mode, we store the element centers
+      // to be able to compare them with the ones of the global mesh,
+      // as it could depend on the way the global mesh is constructed
+      // from the array of 'local' ones.
+      struct xy {double x,y;};
+      std::map<std::pair<int, int>, xy> exy_map;
+#endif
+      Offset() = default;
+      int& operator[](const std::pair<int, int> &key) { return dof[key]; }
+      const int& operator[](const std::pair<int, int> &key) const { return dof.at(key); }
+   };
+   using Offsets = std::vector<Offset>;
+
 private:
-   friend class StreamReader;
-   friend class FileReader;
    struct
    {
+      std::unique_ptr<mfem::Vector> sol, solx, soly, solz;
+      std::unique_ptr<mfem::Vector> normals;
       std::unique_ptr<mfem::Mesh> mesh;
       std::unique_ptr<mfem::Mesh> mesh_quad;
       std::unique_ptr<mfem::GridFunction> grid_f;
       std::unique_ptr<mfem::QuadratureFunction> quad_f;
       std::unique_ptr<mfem::DataCollection> data_coll;
+      std::unique_ptr<Offsets> offsets;
    } internal;
 
    FieldType type {FieldType::UNKNOWN};
@@ -62,19 +87,21 @@ private:
    void SetGridFunctionSolution(int component = -1);
    void SetQuadFunctionSolution(int component = -1);
 
-   /// Updates the given VisualizationScene pointer with the new data
-   /// of the given DataState object.
-   /// @note: Use with caution when the update is compatible
-   /// @see SetNewMeshAndSolution()
-   void ResetMeshAndSolution(DataState &ss, VisualizationScene* vs);
+   /// Compute the dofs offsets from the grid function vector
+   void ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array);
 
 public:
-   mfem::Vector sol, solu, solv, solw, normals;
+   const std::unique_ptr<mfem::Vector> &sol{internal.sol};
+   const std::unique_ptr<mfem::Vector> &solx{internal.solx};
+   const std::unique_ptr<mfem::Vector> &soly{internal.soly};
+   const std::unique_ptr<mfem::Vector> &solz{internal.solz};
+   const std::unique_ptr<mfem::Vector> &normals{internal.normals};
    const std::unique_ptr<mfem::Mesh> &mesh{internal.mesh};
    const std::unique_ptr<mfem::Mesh> &mesh_quad{internal.mesh_quad};
    const std::unique_ptr<mfem::GridFunction> &grid_f{internal.grid_f};
    const std::unique_ptr<mfem::QuadratureFunction> &quad_f{internal.quad_f};
    const std::unique_ptr<mfem::DataCollection> &data_coll{internal.data_coll};
+   const std::unique_ptr<Offsets> &offsets{internal.offsets};
 
    std::string keys;
    bool fix_elem_orient{false};
@@ -98,6 +125,18 @@ public:
        the same one. */
    void SetMesh(std::unique_ptr<mfem::Mesh> &&pmesh);
 
+   /// Set scalar data
+   void SetScalarData(mfem::Vector sol);
+
+   /// Set normals
+   void SetNormals(mfem::Vector normals);
+
+   /// Set 2D vector data
+   void SetVectorData(mfem::Vector solx, mfem::Vector soly);
+
+   /// Set 3D vector data
+   void SetVectorData(mfem::Vector solx, mfem::Vector soly, mfem::Vector solz);
+
    /// Set a grid function (plain pointer version)
    /** Note that ownership is passed from the caller.
        @see SetGridFunction(std::unique_ptr<mfem::GridFunction> &&, int ) */
@@ -107,6 +146,12 @@ public:
    /** Sets the grid function or its component (-1 means all components). */
    void SetGridFunction(std::unique_ptr<mfem::GridFunction> &&pgf,
                         int component = -1);
+
+   /// Set a grid function from pieces
+   /** Serializes the pieces of a grid function and sets it or its
+       component (-1 means all components) */
+   void SetGridFunction(std::vector<mfem::GridFunction*> &gf_array,
+                        int num_pieces, int component = -1);
 
    /// Set a quadrature function (plain pointer version)
    /** Note that ownership is passed from the caller.
@@ -150,8 +195,8 @@ public:
    /// Set the quadrature function representation producing a proxy grid function
    void SetQuadSolution(QuadSolution type = QuadSolution::LOR_ClosedGL);
 
-   /// Switch the quadrature function representation and update the visualization
-   void SwitchQuadSolution(QuadSolution type, VisualizationScene* vs);
+   /// Switch the quadrature function representation
+   void SwitchQuadSolution(QuadSolution type);
 
    /// Get the current representation of quadrature solution
    inline QuadSolution GetQuadSolution() const { return quad_sol; }
@@ -164,16 +209,6 @@ public:
 
    void ProjectVectorFEGridFunction()
    { internal.grid_f = ProjectVectorFEGridFunction(std::move(internal.grid_f)); }
-
-   /// Sets a new mesh and solution from another DataState object, and
-   /// updates the given VisualizationScene pointer with the new data.
-   ///
-   /// Mesh space and grid function dimensions must both match the original
-   /// dimensions of the current DataState. If there is a mismatch in either
-   /// value, the function will return false, and the mesh/solution will not be
-   /// updated.
-   bool SetNewMeshAndSolution(DataState new_state,
-                              VisualizationScene* vs);
 };
 
 #endif // GLVIS_DATA_STATE_HPP
