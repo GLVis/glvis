@@ -65,10 +65,16 @@ std::string VisualizationSceneSolution::GetHelpString() const
       << "| o -  (De)refine elem. (NC shading) |" << endl
       << "| O -  Switch 'o' func. (NC shading) |" << endl
       << "| p/P  Cycle through color palettes  |" << endl
-      << "| q -  Quits                         |" << endl
-      << "| Q -  Cycle quadrature data mode    |" << endl
-      << "| Q -  Cycle complex data mode       |" << endl
-      << "| r -  Reset the plot to 3D view     |" << endl
+      << "| q -  Quits                         |" << endl;
+   if (win.data_state.quad_f)
+   {
+      os << "| Q -  Cycle quadrature data mode    |" << endl;
+   }
+   else if (win.data_state.cgrid_f)
+   {
+      os << "| Q -  Cycle complex data mode       |" << endl;
+   }
+   os << "| r -  Reset the plot to 3D view     |" << endl
       << "| R -  Reset the plot to 2D view     |" << endl
       << "| s -  Turn on/off unit cube scaling |" << endl
       << "| S -  Take snapshot/Record a movie  |" << endl
@@ -100,10 +106,13 @@ std::string VisualizationSceneSolution::GetHelpString() const
       << "| *,/  Scale up/down                 |" << endl
       << "| +/-  Change z-scaling              |" << endl
       << "| . -  Start/stop spinning           |" << endl
-      << "| 0/Enter - Spinning speed and dir.  |" << endl
-      << "| Alt+. -  Start/stop phase anim.    |" << endl
-      << "| Alt+0/Enter - Phase anim. speed    |" << endl
-      << "+------------------------------------+" << endl
+      << "| 0/Enter - Spinning speed and dir.  |" << endl;
+   if (win.data_state.cgrid_f)
+   {
+      os << "| Alt+. -  Start/stop phase anim.    |" << endl
+         << "| Alt+0/Enter - Phase anim. speed    |" << endl;
+   }
+   os << "+------------------------------------+" << endl
       << "| Mouse                              |" << endl
       << "+------------------------------------+" << endl
       << "| left   btn    - Rotation           |" << endl
