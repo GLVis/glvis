@@ -377,6 +377,7 @@ int main (int argc, char *argv[])
    const char *stream_file   = string_none;
    const char *script_file   = string_none;
    const char *palette_file  = string_none;
+   const char *palette_name  = string_none;
    const char *window_title  = string_default;
    const char *font_name     = string_default;
    int         portnum       = 19916;
@@ -431,6 +432,8 @@ int main (int argc, char *argv[])
                   "Run a GLVis script file.");
    args.AddOption(&palette_file, "-pal", "--palettes",
                   "Palette file.");
+   args.AddOption(&palette_name, "-pname", "--palette-name",
+                  "Palette name.");
    args.AddOption(&arg_keys, "-k", "--keys",
                   "Execute key shortcut commands in the GLVis window.");
    args.AddOption(&win.data_state.fix_elem_orient, "-fo", "--fix-orientations",
@@ -590,6 +593,11 @@ int main (int argc, char *argv[])
    if (palette_file != string_none)
    {
       BasePalettes.Load(palette_file);
+   }
+
+   if (palette_name != string_none)
+   {
+      BasePalettes.SetDefault(palette_name);
    }
 
    GLVisGeometryRefiner.SetType(geom_ref_type);
