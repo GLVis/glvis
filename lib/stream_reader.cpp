@@ -443,7 +443,7 @@ void StreamReader::WriteStream(std::ostream &os)
    }
    else if (data.cgrid_f)
    {
-      os << "csolution\n";
+      os << "solution\n";
       data.mesh->Print(os);
       data.cgrid_f->Save(os);
    }
