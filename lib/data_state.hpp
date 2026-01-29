@@ -245,9 +245,6 @@ public:
    void SetComplexSolution(ComplexSolution type = ComplexSolution::Magnitude,
                            bool print = true);
 
-   /// Switch the complex function representation
-   void SwitchComplexSolution(ComplexSolution type, bool print = true);
-
    /// Get the current representation of complex solution
    inline ComplexSolution GetComplexSolution() const { return cmplx_sol; }
 

@@ -196,7 +196,7 @@ void Window::GLVisStartVis()
 
 void Window::SwitchComplexSolution(DataState::ComplexSolution cmplx_type)
 {
-   data_state.SwitchComplexSolution(cmplx_type);
+   data_state.SetComplexSolution(cmplx_type);
    ResetMeshAndSolution(data_state);
 }
 
@@ -213,7 +213,7 @@ void Window::UpdateComplexPhase(double ph)
    DataState::ComplexSolution cs = data_state.GetComplexSolution();
    // check if magnitude is viewed, which remains the same
    if (cs == DataState::ComplexSolution::Magnitude) { return; }
-   data_state.SwitchComplexSolution(cs, false);
+   data_state.SetComplexSolution(cs, false);
    // do not autoscale for animation
    auto as = vs->GetAutoscale();
    vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::None);

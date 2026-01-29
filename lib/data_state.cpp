@@ -350,7 +350,29 @@ void DataState::Extrude1DMeshAndSolution()
 
    Mesh *mesh2d = Extrude1D(mesh.get(), 1, 0.1*(xmax - xmin));
 
-   if (grid_f)
+   if (cgrid_f)
+   {
+      if (cgrid_f->VectorDim() > 1)
+      {
+         ProjectVectorFEGridFunction();
+      }
+
+      FiniteElementCollection *fec2d = new L2_FECollection(
+         cgrid_f->FESpace()->FEColl()->GetOrder(), 2);
+      FiniteElementSpace *fes2d = new FiniteElementSpace(mesh2d, fec2d,
+                                                         cgrid_f->FESpace()->GetVDim());
+      ComplexGridFunction *cgrid_f_2d = new ComplexGridFunction(fes2d);
+      cgrid_f_2d->MakeOwner(fec2d);
+      VectorGridFunctionCoefficient vcsol_r(&cgrid_f->real());
+      VectorGridFunctionCoefficient vcsol_i(&cgrid_f->imag());
+      ::VectorExtrudeCoefficient vc2d_r(mesh.get(), vcsol_r, 1);
+      ::VectorExtrudeCoefficient vc2d_i(mesh.get(), vcsol_i, 1);
+      cgrid_f_2d->real().ProjectCoefficient(vc2d_r);
+      cgrid_f_2d->imag().ProjectCoefficient(vc2d_i);
+
+      internal.cgrid_f.reset(cgrid_f_2d);
+   }
+   else if (grid_f)
    {
       if (grid_f->VectorDim() > 1)
       {
@@ -394,7 +416,9 @@ void DataState::Extrude1DMeshAndSolution()
 
 void DataState::Extrude2D3VMeshAndSolution()
 {
-   if (mesh->SpaceDimension() == 3 || !grid_f || grid_f->VectorDim() < 3) { return; }
+   if (mesh->SpaceDimension() == 3) { return; }
+   if (cgrid_f && cgrid_f->VectorDim() < 3) { return; }
+   if (!grid_f || grid_f->VectorDim() < 3) { return; }
 
    // not all vector elements can be embedded in 3D, so conversion to L2 elements
    // is performed already here
@@ -414,14 +438,25 @@ void DataState::Extrude2D3VMeshAndSolution()
       mesh3d->SetCurvature(1, false, 3);
    }
 
-   FiniteElementSpace *fes2d = grid_f->FESpace();
+   FiniteElementSpace *fes2d = (cgrid_f)?(cgrid_f->FESpace()):(grid_f->FESpace());
    FiniteElementSpace *fes3d = new FiniteElementSpace(*fes2d, mesh3d);
-   GridFunction *gf3d = new GridFunction(fes3d);
-   *gf3d = *grid_f;
-   grid_f->MakeOwner(NULL);
-   gf3d->MakeOwner(const_cast<FiniteElementCollection*>(fes2d->FEColl()));
+   if (cgrid_f)
+   {
+      ComplexGridFunction *cgf3d = new ComplexGridFunction(fes3d);
+      (Vector&)*cgf3d = (const Vector&)*cgrid_f;
+      cgrid_f->MakeOwner(NULL);
+      cgf3d->MakeOwner(const_cast<FiniteElementCollection*>(fes2d->FEColl()));
+      SetCmplxGridFunction(cgf3d);
+   }
+   else
+   {
+      GridFunction *gf3d = new GridFunction(fes3d);
+      *gf3d = *grid_f;
+      grid_f->MakeOwner(NULL);
+      gf3d->MakeOwner(const_cast<FiniteElementCollection*>(fes2d->FEColl()));
+      SetGridFunction(gf3d);
+   }
 
-   SetGridFunction(gf3d);
    delete fes2d;
    SetMesh(mesh3d);
 }
@@ -785,12 +820,6 @@ void DataState::SetComplexSolution(ComplexSolution cmplx_type, bool print)
    cmplx_sol = cmplx_type;
 }
 
-void DataState::SwitchComplexSolution(ComplexSolution cmplx_type, bool print)
-{
-   SetComplexSolution(cmplx_type, print);
-   ExtrudeMeshAndSolution();
-}
-
 void DataState::SetQuadSolution(QuadSolution quad_type)
 {
    // assume identical order
@@ -972,7 +1001,7 @@ void DataState::ProjectVectorFEGridFunction()
    if (cgrid_f)
    {
       internal.cgrid_f = ProjectVectorFEGridFunction(std::move(internal.cgrid_f));
-      SwitchComplexSolution(GetComplexSolution(), false);
+      SetComplexSolution(GetComplexSolution(), false);
    }
    else
    {
