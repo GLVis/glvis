@@ -106,16 +106,13 @@ bool StreamReader::SupportsDataType(const string &data_type)
 bool StreamReader::CheckStreamIsComplex(std::istream &solin,
                                         bool parallel)
 {
-   string buff;
-   solin >> ws;
-   getline(solin, buff);
-   solin.unget();
-   const size_t len = buff.length();
-   for (size_t i = 0; i < len; i++) { solin.putback(buff[len-1-i]); }
-   mfem::filter_dos(buff);
    const char *header = (parallel)?("ParComplexGridFunction"):
                         ("ComplexGridFunction");
-   return (buff == header);
+   solin >> ws;
+   // Returning of the characters to stream(buffer) does not work reliably,
+   // so compare only the initial character, which fortunately does not
+   // conincide with the header of FiniteElementSpace.
+   return (solin.peek() == header[0]);
 }
 
 int StreamReader::ReadStream(
