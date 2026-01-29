@@ -157,7 +157,6 @@ private:
    StreamCollection is;
 
    GLVisCommand* glvis_command;
-   bool is_multithread;
 
    // thread object
    std::thread tid;
@@ -166,6 +165,9 @@ private:
 
    // flag for closing the window at the end of stream
    bool end_quit;
+
+   // flag for parallel commands execution thread
+   bool is_multithread;
 
    static void print_commands();
    bool execute_one(std::string word);
