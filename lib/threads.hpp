@@ -34,38 +34,40 @@ private:
    int num_waiting;
    bool terminating;
 
-   enum
+   enum class Command
    {
-      NO_COMMAND = 0,
-      NEW_MESH_AND_SOLUTION = 1,
-      SCREENSHOT = 2,
-      KEY_COMMANDS = 3,
-      WINDOW_SIZE = 4,
-      WINDOW_TITLE = 5,
-      PAUSE = 6,
-      VIEW_ANGLES = 7,
-      ZOOM = 8,
-      SUBDIVISIONS = 9,
-      VALUE_RANGE = 10,
-      SHADING = 11,
-      VIEW_CENTER = 12,
-      AUTOSCALE = 13,
-      PALETTE = 14,
-      CAMERA = 15,
-      AUTOPAUSE = 16,
-      WINDOW_GEOMETRY = 17,
-      PLOT_CAPTION = 18,
-      AXIS_LABELS = 19,
-      PALETTE_REPEAT = 20,
-      LEVELLINES = 21,
-      AXIS_NUMBERFORMAT = 22,
-      COLORBAR_NUMBERFORMAT = 23
+      NO_COMMAND,
+      NEW_MESH_AND_SOLUTION,
+      SCREENSHOT,
+      KEY_COMMANDS,
+      WINDOW_SIZE,
+      WINDOW_TITLE,
+      PAUSE,
+      VIEW_ANGLES,
+      ZOOM,
+      SUBDIVISIONS,
+      VALUE_RANGE,
+      SHADING,
+      VIEW_CENTER,
+      AUTOSCALE,
+      PALETTE,
+      PALETTE_NAME,
+      PALETTE_FILE,
+      CAMERA,
+      AUTOPAUSE,
+      WINDOW_GEOMETRY,
+      PLOT_CAPTION,
+      AXIS_LABELS,
+      PALETTE_REPEAT,
+      LEVELLINES,
+      AXIS_NUMBERFORMAT,
+      COLORBAR_NUMBERFORMAT
    };
 
    std::atomic<bool> command_ready{false};
 
    // command to be executed
-   int command;
+   Command command;
 
    // command arguments
    DataState     new_state;
@@ -86,6 +88,8 @@ private:
    double        view_center_x, view_center_y;
    std::string   autoscale_mode;
    int           palette, palette_repeat;
+   std::string   palette_name;
+   std::string   palette_file;
    double        lvl_min, lvl_max;
    int           lvl_num;
    double        camera[9];
@@ -126,6 +130,8 @@ public:
    int ViewCenter(double x, double y);
    int Autoscale(const char *mode);
    int Palette(int pal);
+   int PaletteName(std::string palname);
+   int PaletteFile(std::string filename);
    int PaletteRepeat(int n);
    int Levellines(double minv, double maxv, int number);
    int AxisNumberFormat(std::string formatting);

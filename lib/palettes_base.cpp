@@ -27,7 +27,7 @@ void RGBAf::Print(ostream& os) const
 }
 
 template <size_t N>
-Palette::Palette(const string& name,
+Palette::Palette(const std::string& name,
                  const array<array<float,3>,N>& arr) : name(name)
 {
    colors.resize(N);
@@ -38,7 +38,7 @@ Palette::Palette(const string& name,
 }
 
 template <size_t N>
-Palette::Palette(const string& name,
+Palette::Palette(const std::string& name,
                  const array<array<float,4>,N>& arr) : name(name)
 {
    colors.resize(N);
@@ -320,7 +320,7 @@ void Texture::Generate()
    }
 }
 
-int PaletteRegistry::GetIndexByName(const string& name) const
+int PaletteRegistry::GetIndexByName(const std::string& name) const
 {
    for (int i = 0; i < NumPalettes(); i++)
    {
@@ -348,7 +348,7 @@ void PaletteRegistry::AddPalette(Palette& palette)
    }
 }
 
-void PaletteRegistry::AddPalette(const string& name)
+void PaletteRegistry::AddPalette(const std::string& name)
 {
    if (IsNameUnique(name))
    {
@@ -356,7 +356,7 @@ void PaletteRegistry::AddPalette(const string& name)
    }
 }
 
-bool PaletteRegistry::IsNameUnique(const string& name) const
+bool PaletteRegistry::IsNameUnique(const std::string& name) const
 {
    // palette name is unique || container is empty
    if (GetIndexByName(name) == -1 || palettes.empty())
@@ -382,7 +382,7 @@ Palette* PaletteRegistry::Get(int index) const
    return palettes.back().get();
 }
 
-Palette* PaletteRegistry::Get(const string& name) const
+Palette* PaletteRegistry::Get(const std::string& name) const
 {
    int idx = GetIndexByName(name);
    if (idx != -1)
@@ -393,6 +393,23 @@ Palette* PaletteRegistry::Get(const string& name) const
         endl;
    this->PrintSummary();
    return palettes.back().get();
+}
+
+void PaletteRegistry::SetDefault(const std::string& name)
+{
+   const int idx = GetIndexByName(name);
+   if (idx < 0)
+   {
+      cout << "Palette (name = " << name << ") not found. Available palettes:"
+           << endl;
+      PrintSummary();
+   }
+   else
+   {
+      default_palette = idx;
+      cout << "Default palette set to: " << default_palette << ") "
+           << Get(default_palette)->name << endl;
+   }
 }
 
 void PaletteRegistry::PrintSummary(ostream& os) const
@@ -417,7 +434,7 @@ void PaletteRegistry::PrintAll(ostream& os) const
    }
 }
 
-void PaletteRegistry::Load(const string& palette_filename)
+void PaletteRegistry::Load(const std::string& palette_filename)
 {
    ifstream pfile(palette_filename);
    if (!pfile)
@@ -425,7 +442,7 @@ void PaletteRegistry::Load(const string& palette_filename)
       cout << "Could not open palette file: " << palette_filename << endl;
       return;
    }
-   string word, palname, channeltype;
+   std::string word, palname, channeltype;
    int idx = -1;
 
    // read initializing commands
