@@ -41,12 +41,14 @@ DataState &DataState::operator=(DataState &&ss)
    internal = std::move(ss.internal);
 
    type = ss.type;
+   cmplx_sol = ss.cmplx_sol;
    quad_sol = ss.quad_sol;
    keys = std::move(ss.keys);
 
    fix_elem_orient = ss.fix_elem_orient;
    save_coloring = ss.save_coloring;
    keep_attr = ss.keep_attr;
+   cmplx_phase = ss.cmplx_phase;
 
    return *this;
 }
@@ -62,6 +64,7 @@ void DataState::SetMesh(std::unique_ptr<Mesh> &&pmesh)
    internal.mesh = std::move(pmesh);
    internal.mesh_quad.reset();
    if (grid_f && grid_f->FESpace()->GetMesh() != mesh.get()) { SetGridFunction(NULL); }
+   if (cgrid_f && cgrid_f->FESpace()->GetMesh() != mesh.get()) { SetCmplxGridFunction(NULL); }
    if (quad_f && quad_f->GetSpace()->GetMesh() != mesh.get()) { SetQuadFunction(NULL); }
 }
 
@@ -146,6 +149,8 @@ void DataState::SetGridFunction(std::unique_ptr<GridFunction> &&pgf,
                                 int component)
 {
    internal.grid_f = std::move(pgf);
+   internal.cgrid_f.reset();
+   cmplx_sol = ComplexSolution::NONE;
    internal.quad_f.reset();
    quad_sol = QuadSolution::NONE;
    SetGridFunctionSolution(component);
@@ -156,7 +161,75 @@ void DataState::SetGridFunction(std::vector<GridFunction*> &gf_array,
 {
    SetGridFunction(new GridFunction(mesh.get(), gf_array.data(), num_pieces),
                    component);
-   if (!keep_attr) { ComputeDofsOffsets(gf_array); }
+   if (!keep_attr)
+   {
+      std::vector<const FiniteElementSpace*> fespaces(gf_array.size());
+      for (size_t i = 0; i < gf_array.size(); i++)
+      {
+         fespaces[i] = gf_array[i]->FESpace();
+      }
+      ComputeDofsOffsets(fespaces);
+   }
+}
+
+void DataState::SetCmplxGridFunction(ComplexGridFunction *gf,
+                                     int component)
+{
+   if (cgrid_f.get() != gf)
+   {
+      internal.grid_f.reset();
+      cmplx_sol = ComplexSolution::NONE;
+   }
+   internal.cgrid_f.reset(gf);
+   internal.quad_f.reset();
+   quad_sol = QuadSolution::NONE;
+   SetComplexFunctionSolution(component);
+}
+
+void DataState::SetCmplxGridFunction(
+   std::unique_ptr<ComplexGridFunction> &&pgf, int component)
+{
+   if (cgrid_f.get() != pgf.get())
+   {
+      internal.grid_f.reset();
+      cmplx_sol = ComplexSolution::NONE;
+   }
+   internal.cgrid_f = std::move(pgf);
+   internal.quad_f.reset();
+   quad_sol = QuadSolution::NONE;
+   SetComplexFunctionSolution(component);
+}
+
+void DataState::SetCmplxGridFunction(
+   const std::vector<ComplexGridFunction *> &cgf_array, int component)
+{
+   const int np = cgf_array.size();
+   std::vector<GridFunction *> r_array(np), i_array(np);
+   for (int p = 0; p < np; p++)
+   {
+      r_array[p] = &(cgf_array[p]->real());
+      i_array[p] = &(cgf_array[p]->imag());
+   }
+   GridFunction *rgf = new GridFunction(mesh.get(), r_array.data(), np);
+   GridFunction *igf = new GridFunction(mesh.get(), i_array.data(), np);
+   ComplexGridFunction *cgf = new ComplexGridFunction(rgf->FESpace());
+   // transfer ownership of the FES
+   cgf->MakeOwner(rgf->OwnFEC());
+   rgf->MakeOwner(NULL);
+   cgf->real() = *rgf;
+   cgf->imag() = *igf;
+   delete rgf;
+   delete igf;
+   SetCmplxGridFunction(cgf, component);
+   if (!keep_attr)
+   {
+      std::vector<const FiniteElementSpace*> fespaces(cgf_array.size());
+      for (size_t i = 0; i < cgf_array.size(); i++)
+      {
+         fespaces[i] = cgf_array[i]->FESpace();
+      }
+      ComputeDofsOffsets(fespaces);
+   }
 }
 
 void DataState::SetQuadFunction(QuadratureFunction *qf, int component)
@@ -167,6 +240,7 @@ void DataState::SetQuadFunction(QuadratureFunction *qf, int component)
       quad_sol = QuadSolution::NONE;
    }
    internal.quad_f.reset(qf);
+   internal.cgrid_f.reset();
    SetQuadFunctionSolution(component);
 }
 
@@ -179,6 +253,7 @@ void DataState::SetQuadFunction(std::unique_ptr<QuadratureFunction> &&pqf,
       quad_sol = QuadSolution::NONE;
    }
    internal.quad_f = std::move(pqf);
+   internal.cgrid_f.reset();
    SetQuadFunctionSolution(component);
 }
 
@@ -275,7 +350,29 @@ void DataState::Extrude1DMeshAndSolution()
 
    Mesh *mesh2d = Extrude1D(mesh.get(), 1, 0.1*(xmax - xmin));
 
-   if (grid_f)
+   if (cgrid_f)
+   {
+      if (cgrid_f->VectorDim() > 1)
+      {
+         ProjectVectorFEGridFunction();
+      }
+
+      FiniteElementCollection *fec2d = new L2_FECollection(
+         cgrid_f->FESpace()->FEColl()->GetOrder(), 2);
+      FiniteElementSpace *fes2d = new FiniteElementSpace(mesh2d, fec2d,
+                                                         cgrid_f->FESpace()->GetVDim());
+      ComplexGridFunction *cgrid_f_2d = new ComplexGridFunction(fes2d);
+      cgrid_f_2d->MakeOwner(fec2d);
+      VectorGridFunctionCoefficient vcsol_r(&cgrid_f->real());
+      VectorGridFunctionCoefficient vcsol_i(&cgrid_f->imag());
+      ::VectorExtrudeCoefficient vc2d_r(mesh.get(), vcsol_r, 1);
+      ::VectorExtrudeCoefficient vc2d_i(mesh.get(), vcsol_i, 1);
+      cgrid_f_2d->real().ProjectCoefficient(vc2d_r);
+      cgrid_f_2d->imag().ProjectCoefficient(vc2d_i);
+
+      internal.cgrid_f.reset(cgrid_f_2d);
+   }
+   else if (grid_f)
    {
       if (grid_f->VectorDim() > 1)
       {
@@ -319,7 +416,9 @@ void DataState::Extrude1DMeshAndSolution()
 
 void DataState::Extrude2D3VMeshAndSolution()
 {
-   if (mesh->SpaceDimension() == 3 || !grid_f || grid_f->VectorDim() < 3) { return; }
+   if (mesh->SpaceDimension() == 3) { return; }
+   if (cgrid_f && cgrid_f->VectorDim() < 3) { return; }
+   if (!grid_f || grid_f->VectorDim() < 3) { return; }
 
    // not all vector elements can be embedded in 3D, so conversion to L2 elements
    // is performed already here
@@ -339,14 +438,25 @@ void DataState::Extrude2D3VMeshAndSolution()
       mesh3d->SetCurvature(1, false, 3);
    }
 
-   FiniteElementSpace *fes2d = grid_f->FESpace();
+   FiniteElementSpace *fes2d = (cgrid_f)?(cgrid_f->FESpace()):(grid_f->FESpace());
    FiniteElementSpace *fes3d = new FiniteElementSpace(*fes2d, mesh3d);
-   GridFunction *gf3d = new GridFunction(fes3d);
-   *gf3d = *grid_f;
-   grid_f->MakeOwner(NULL);
-   gf3d->MakeOwner(const_cast<FiniteElementCollection*>(fes2d->FEColl()));
+   if (cgrid_f)
+   {
+      ComplexGridFunction *cgf3d = new ComplexGridFunction(fes3d);
+      (Vector&)*cgf3d = (const Vector&)*cgrid_f;
+      cgrid_f->MakeOwner(NULL);
+      cgf3d->MakeOwner(const_cast<FiniteElementCollection*>(fes2d->FEColl()));
+      SetCmplxGridFunction(cgf3d);
+   }
+   else
+   {
+      GridFunction *gf3d = new GridFunction(fes3d);
+      *gf3d = *grid_f;
+      grid_f->MakeOwner(NULL);
+      gf3d->MakeOwner(const_cast<FiniteElementCollection*>(fes2d->FEColl()));
+      SetGridFunction(gf3d);
+   }
 
-   SetGridFunction(gf3d);
    delete fes2d;
    SetMesh(mesh3d);
 }
@@ -434,6 +544,48 @@ void DataState::SetGridFunctionSolution(int gf_component)
    type = (grid_f->VectorDim() == 1) ? FieldType::SCALAR : FieldType::VECTOR;
 }
 
+void DataState::SetComplexFunctionSolution(int gf_component)
+{
+   if (!cgrid_f)
+   {
+      type = (mesh)?(FieldType::MESH):(FieldType::UNKNOWN);
+      return;
+   }
+
+   if (gf_component != -1)
+   {
+      if (gf_component < 0 || gf_component >= cgrid_f->FESpace()->GetVDim())
+      {
+         cerr << "Invalid component " << gf_component << '.' << endl;
+         exit(1);
+      }
+      FiniteElementSpace *ofes = cgrid_f->FESpace();
+      FiniteElementCollection *fec =
+         FiniteElementCollection::New(ofes->FEColl()->Name());
+      FiniteElementSpace *fes = new FiniteElementSpace(mesh.get(), fec);
+      ComplexGridFunction *new_gf = new ComplexGridFunction(fes);
+      new_gf->MakeOwner(fec);
+      for (int i = 0; i < new_gf->real().Size(); i++)
+      {
+         (new_gf->real())(i) = (cgrid_f->real())(ofes->DofToVDof(i, gf_component));
+         (new_gf->imag())(i) = (cgrid_f->imag())(ofes->DofToVDof(i, gf_component));
+      }
+      SetCmplxGridFunction(new_gf);
+      return;
+   }
+
+   if (cgrid_f->VectorDim() == 1)
+   {
+      type = FieldType::SCALAR;
+   }
+   else
+   {
+      type = FieldType::VECTOR;
+   }
+
+   SetComplexSolution();
+}
+
 void DataState::SetQuadFunctionSolution(int qf_component)
 {
    if (!quad_f)
@@ -472,6 +624,200 @@ void DataState::SetQuadFunctionSolution(int qf_component)
    }
 
    SetQuadSolution();
+}
+
+void DataState::SetComplexSolution(ComplexSolution cmplx_type, bool print)
+{
+   double (*cmplx_2_scalar)(double, double);
+   const char *str_cmplx_2_scalar;
+   bool linear;
+
+   switch (cmplx_type)
+   {
+      case ComplexSolution::Magnitude:
+         cmplx_2_scalar = [](double r, double i) { return hypot(r,i); };
+         str_cmplx_2_scalar = "magnitude";
+         linear = false;
+         break;
+      case ComplexSolution::Phase:
+         cmplx_2_scalar = [](double r, double i) { return atan2(r,i); };
+         str_cmplx_2_scalar = "phase";
+         linear = false;
+         break;
+      case ComplexSolution::Real:
+         cmplx_2_scalar = [](double r, double i) { return r; };
+         str_cmplx_2_scalar = "real part";
+         linear = true;
+         break;
+      case ComplexSolution::Imag:
+         cmplx_2_scalar = [](double r, double i) { return i; };
+         str_cmplx_2_scalar = "imaginary part";
+         linear = true;
+         break;
+      default:
+         cout << "Unknown complex data representation" << endl;
+         return;
+   }
+
+   if (print)
+   {
+      cout << "Representing complex function by: " << str_cmplx_2_scalar;
+      if (cmplx_type != ComplexSolution::Magnitude) { cout << " (+ animated harmonic phase)"; }
+      cout << endl;
+   }
+
+   FiniteElementSpace *fes = cgrid_f->FESpace();
+   const int dim = mesh->Dimension();
+   const int vdim = fes->GetVectorDim();
+
+   const bool scal_fes = (fes->FEColl()->GetMapType(dim) == FiniteElement::VALUE
+                          && fes->FEColl()->GetRangeType(dim) == FiniteElement::SCALAR);
+
+   const double cos_ph = cos(2. * M_PI * cmplx_phase);
+   const double sin_ph = sin(2. * M_PI * cmplx_phase);
+   auto rot_ph = [cos_ph, sin_ph](double &r, double &i)
+   {
+      double rph = +r * cos_ph - i * sin_ph;
+      double iph = +r * sin_ph + i * cos_ph;
+      r = rph, i = iph;
+   };
+
+   GridFunction *gf{};
+   if (scal_fes || linear)
+   {
+      gf = new GridFunction(fes);
+   }
+   else
+   {
+      FiniteElementCollection *l2_fec = new L2_FECollection(fes->FEColl()->GetOrder(),
+                                                            dim);
+      FiniteElementSpace *l2_fes = new FiniteElementSpace(mesh.get(), l2_fec, vdim);
+      gf = new GridFunction(l2_fes);
+      gf->MakeOwner(l2_fec);
+   }
+
+   if (scal_fes)
+   {
+      for (int i = 0; i < fes->GetVSize(); i++)
+      {
+         double rval = cgrid_f->real()(i);
+         double ival = cgrid_f->imag()(i);
+         rot_ph(rval, ival);
+         (*gf)(i) = cmplx_2_scalar(rval, ival);
+      }
+   }
+   else
+   {
+      Array<int> vdofs;
+      Vector r_data, i_data, z_data;
+      DenseMatrix r_vals, i_vals, z_vals;
+
+      if (linear)
+      {
+         // pointwise projection at DOFs
+         DenseMatrix vshape;
+         Vector shape;
+
+         auto kernel = [&](double rdof, double idof, double w)
+         {
+            double rval = rdof * w;
+            double ival = idof * w;
+            rot_ph(rval, ival);
+            const double zval = cmplx_2_scalar(rval, ival);
+            return (w != 0.)?(zval / w):(0.);
+         };
+
+         for (int z = 0; z < mesh->GetNE(); z++)
+         {
+            fes->GetElementVDofs(z, vdofs);
+            cgrid_f->real().GetSubVector(vdofs, r_data);
+            cgrid_f->imag().GetSubVector(vdofs, i_data);
+            z_data.SetSize(vdofs.Size());
+
+            ElementTransformation *Tr = fes->GetElementTransformation(z);
+            const FiniteElement *fe = fes->GetFE(z);
+            const IntegrationRule &ir = fe->GetNodes();
+            const int nnp = ir.GetNPoints();
+
+            if (fe->GetRangeType() == FiniteElement::SCALAR)
+            {
+               shape.SetSize(nnp);
+               r_vals.Reset(r_data.GetData(), nnp, vdim);
+               i_vals.Reset(i_data.GetData(), nnp, vdim);
+               z_vals.Reset(z_data.GetData(), nnp, vdim);
+
+               for (int n = 0; n < nnp; n++)
+               {
+                  const IntegrationPoint &ip = ir.IntPoint(n);
+                  Tr->SetIntPoint(&ip);
+                  fe->CalcPhysShape(*Tr, shape);
+                  const double w = shape(n);
+                  for (int d = 0; d < vdim; d++)
+                  {
+                     z_vals(n,d) = kernel(r_vals(n,d), i_vals(n,d), w);
+                  }
+               }
+            }
+            else
+            {
+               vshape.SetSize(nnp, vdim);
+
+               for (int n = 0; n < nnp; n++)
+               {
+                  const IntegrationPoint &ip = ir.IntPoint(n);
+                  Tr->SetIntPoint(&ip);
+                  fe->CalcPhysVShape(*Tr, vshape);
+                  Vector vec(vdim);
+                  vshape.GetRow(n, vec);
+                  const double w = vec.Norml2();
+                  z_data(n) = kernel(r_data(n), i_data(n), w);
+               }
+            }
+
+            gf->SetSubVector(vdofs, z_data);
+         }
+      }
+      else
+      {
+         // pointwise projection to L2
+
+         const FiniteElementSpace *l2_fes = gf->FESpace();
+         Vector r_vec, i_vec;
+
+         for (int z = 0; z < mesh->GetNE(); z++)
+         {
+            l2_fes->GetElementVDofs(z, vdofs);
+
+            ElementTransformation *Tr = fes->GetElementTransformation(z);
+            const FiniteElement *fe = l2_fes->GetFE(z);
+            const IntegrationRule &ir = fe->GetNodes();
+            const int nnp = ir.GetNPoints();
+            cgrid_f->real().GetVectorValues(*Tr, ir, r_vals);
+            cgrid_f->imag().GetVectorValues(*Tr, ir, i_vals);
+            z_data.SetSize(nnp * vdim);
+            z_vals.Reset(z_data.GetData(), nnp, vdim);
+
+            for (int n = 0; n < nnp; n++)
+            {
+               r_vals.GetColumnReference(n, r_vec);
+               i_vals.GetColumnReference(n, i_vec);
+
+               for (int d = 0; d < vdim; d++)
+               {
+                  double rval = r_vec(d);
+                  double ival = i_vec(d);
+                  rot_ph(rval, ival);
+                  z_vals(n,d) = cmplx_2_scalar(rval, ival);
+               }
+            }
+
+            gf->SetSubVector(vdofs, z_data);
+         }
+      }
+   }
+   internal.grid_f.reset(gf);
+
+   cmplx_sol = cmplx_type;
 }
 
 void DataState::SetQuadSolution(QuadSolution quad_type)
@@ -626,13 +972,313 @@ DataState::ProjectVectorFEGridFunction(std::unique_ptr<GridFunction> gf)
    return gf;
 }
 
-void DataState::ComputeDofsOffsets(std::vector<GridFunction*> &gf_array)
+std::unique_ptr<ComplexGridFunction>
+DataState::ProjectVectorFEGridFunction(std::unique_ptr<ComplexGridFunction> gf)
 {
-   const int nprocs = static_cast<int>(gf_array.size());
-   MFEM_VERIFY(!gf_array.empty(), "No grid functions provided for offsets");
+   if ((gf->VectorDim() == 3) && (gf->FESpace()->GetVDim() == 1))
+   {
+      int p = gf->FESpace()->GetOrder(0);
+      cout << "Switching to order " << p
+           << " discontinuous complex vector grid function..." << endl;
+      int dim = gf->FESpace()->GetMesh()->Dimension();
+      FiniteElementCollection *d_fec =
+         (p == 1 && dim == 3) ?
+         (FiniteElementCollection*)new LinearDiscont3DFECollection :
+         (FiniteElementCollection*)new L2_FECollection(p, dim, 1);
+      FiniteElementSpace *d_fespace =
+         new FiniteElementSpace(gf->FESpace()->GetMesh(), d_fec, 3);
+      ComplexGridFunction *d_gf = new ComplexGridFunction(d_fespace);
+      d_gf->MakeOwner(d_fec);
+      gf->real().ProjectVectorFieldOn(d_gf->real());
+      gf->imag().ProjectVectorFieldOn(d_gf->imag());
+      gf.reset(d_gf);
+   }
+   return gf;
+}
+
+void DataState::ProjectVectorFEGridFunction()
+{
+   if (cgrid_f)
+   {
+      internal.cgrid_f = ProjectVectorFEGridFunction(std::move(internal.cgrid_f));
+      SetComplexSolution(GetComplexSolution(), false);
+   }
+   else
+   {
+      internal.grid_f = ProjectVectorFEGridFunction(std::move(internal.grid_f));
+   }
+}
+
+void DataState::FindComplexValueRange(double &minv, double &maxv,
+                                      std::function<double(double)> scale) const
+{
+   if (!cgrid_f)
+   {
+      std::cerr << "Not a complex function" << std::endl;
+      return;
+   }
+
+   if (cmplx_sol == ComplexSolution::Magnitude)
+   {
+      // pass to the default routine
+      minv = maxv = 0.;
+      return;
+   }
+
+   if (cmplx_sol == ComplexSolution::Phase)
+   {
+      minv = -M_PI;
+      maxv = +M_PI;
+      return;
+   }
+
+   double cmplx_mag_max = 0.;
+
+   const FiniteElementSpace *fes = cgrid_f->FESpace();
+   const Mesh *msh = fes->GetMesh();
+   const int dim = msh->Dimension();
+   MFEM_VERIFY(fes->GetVectorDim() == 1, "Not a scalar function!");
+
+   if (fes->FEColl()->GetMapType(dim) == FiniteElement::VALUE)
+   {
+      for (int i = 0; i < fes->GetNDofs(); i++)
+      {
+         double rval = cgrid_f->real()(i);
+         double ival = cgrid_f->imag()(i);
+         double mag = hypot(rval, ival);
+         if (scale) { mag = scale(mag); }
+         cmplx_mag_max = max(cmplx_mag_max, mag);
+      }
+   }
+   else
+   {
+      Array<int> vdofs;
+      ElementTransformation *Tr;
+      Vector r_data, i_data;
+      Vector shape;
+      for (int z = 0; z < msh->GetNE(); z++)
+      {
+         fes->GetElementVDofs(z, vdofs);
+         cgrid_f->real().GetSubVector(vdofs, r_data);
+         cgrid_f->imag().GetSubVector(vdofs, i_data);
+
+         Tr = fes->GetElementTransformation(z);
+         const FiniteElement *fe = fes->GetFE(z);
+         const IntegrationRule &ir = fe->GetNodes();
+         const int nnp = ir.GetNPoints();
+         shape.SetSize(nnp);
+
+         for (int n = 0; n < nnp; n++)
+         {
+            const IntegrationPoint &ip = ir.IntPoint(n);
+            Tr->SetIntPoint(&ip);
+            fe->CalcPhysShape(*Tr, shape);
+            double w = shape(n);
+            double rval = r_data(n) * w;
+            double ival = i_data(n) * w;
+            double mag = hypot(rval, ival);
+            if (scale) { mag = scale(mag); }
+            cmplx_mag_max = max(cmplx_mag_max, mag);
+         }
+      }
+   }
+
+   switch (cmplx_sol)
+   {
+      case ComplexSolution::Real:
+      case ComplexSolution::Imag:
+         minv = -cmplx_mag_max;
+         maxv = +cmplx_mag_max;
+         break;
+      default:
+         std::cerr << "Unkown complex representation" << std::endl;
+         break;
+   }
+}
+
+void DataState::FindComplexValueRange(double &minv, double &maxv,
+                                      std::function<double(const Vector &)> vec2scalar,
+                                      std::function<double(double)> scale) const
+{
+   if (!cgrid_f)
+   {
+      std::cerr << "Not a complex function" << std::endl;
+      return;
+   }
+
+   if (cmplx_sol == ComplexSolution::Magnitude)
+   {
+      // pass to the default routine
+      minv = maxv = 0.;
+      return;
+   }
+
+   const int dim = mesh->Dimension();
+   const int vdim = cgrid_f->VectorDim();
+
+   // detect common symmetries
+
+   enum class Symmetry { Unknown, Norm, Phase, Linear };
+
+   Symmetry sym = Symmetry::Unknown;
+
+   {
+      double a, b;
+      Vector va(vdim), vb(vdim);
+      va = -1.;
+      vb = +1.;
+      a = vec2scalar(va);
+      b = vec2scalar(vb);
+      if (a != 0. && b != 0.)
+      {
+         if (a == b) { sym = Symmetry::Norm; }
+         else if (a == -b) { sym = Symmetry::Linear; }
+         else { sym = Symmetry::Phase; } // most likely
+      }
+   }
+
+   if (sym == Symmetry::Unknown)
+   {
+      // pass to the default routine
+      minv = maxv = 0.;
+      return;
+   }
+
+   // output phase
+   if (sym == Symmetry::Phase)
+   {
+      minv = -M_PI;
+      maxv = +M_PI;
+      return;
+   }
+
+   // complex phase
+   if (cmplx_sol == ComplexSolution::Phase)
+   {
+      Vector va(vdim), vb(vdim);
+      va = -M_PI;
+      vb = +M_PI;
+      minv = (sym == Symmetry::Norm)?(0.):(vec2scalar(va));
+      maxv = vec2scalar(vb);
+      return;
+   }
+
+   // real or imag components
+
+   function<void(const Vector &rd, const Vector &id)> kernel;
+   if (sym == Symmetry::Norm)
+   {
+      kernel = [&](const Vector &rd, const Vector &id)
+      {
+         Vector md(vdim);
+         for (int d = 0; d < vdim; d++) { md(d) = hypot(rd(d), id(d)); }
+         double scal = vec2scalar(md);
+         if (scale) { scal = scale(scal); }
+         minv = min(minv, scal);
+         maxv = max(maxv, scal);
+      };
+   }
+   else
+   {
+      kernel = [&](const Vector &rd, const Vector &id)
+      {
+         Vector md(vdim);
+         for (int d = 0; d < vdim; d++) { md(d) = hypot(rd(d), id(d)); }
+         double scal = vec2scalar(md);
+         if (scale) { scal = scale(scal); }
+         maxv = max(maxv, scal);
+      };
+   }
+
+   minv = INFINITY;
+   maxv = 0.;
+
+   const FiniteElementSpace *fes = cgrid_f->FESpace();
+
+   if (fes->FEColl()->GetMapType(dim) == FiniteElement::VALUE
+       && fes->FEColl()->GetRangeType(dim) == FiniteElement::SCALAR)
+   {
+      const int ndofs = fes->GetNDofs();
+      Array<int> vdofs;
+      Vector rd, id;
+      for (int i = 0; i < ndofs; i++)
+      {
+         vdofs.SetSize(1);
+         vdofs[0] = i;
+         fes->DofsToVDofs(vdofs);
+         cgrid_f->real().GetSubVector(vdofs, rd);
+         cgrid_f->imag().GetSubVector(vdofs, id);
+         kernel(rd, id);
+      }
+   }
+   else
+   {
+      Array<int> vdofs;
+      ElementTransformation *Tr;
+      Vector r_data, i_data;
+      Vector r_vec(vdim), i_vec(vdim);
+      DenseMatrix vshape;
+      Vector shape;
+
+      for (int z = 0; z < mesh->GetNE(); z++)
+      {
+         fes->GetElementVDofs(z, vdofs);
+         cgrid_f->real().GetSubVector(vdofs, r_data);
+         cgrid_f->imag().GetSubVector(vdofs, i_data);
+
+         Tr = fes->GetElementTransformation(z);
+         const FiniteElement *fe = fes->GetFE(z);
+         const IntegrationRule &ir = fe->GetNodes();
+         const int nnp = ir.GetNPoints();
+
+         if (fe->GetRangeType() == FiniteElement::SCALAR)
+         {
+            shape.SetSize(nnp);
+
+            for (int n = 0; n < nnp; n++)
+            {
+               const IntegrationPoint &ip = ir.IntPoint(n);
+               Tr->SetIntPoint(&ip);
+               fe->CalcPhysShape(*Tr, shape);
+               double w = shape(n);
+               for (int d = 0; d < vdim; d++)
+               {
+                  r_vec(d) = r_data(n+d*nnp) * w;
+                  i_vec(d) = i_data(n+d*nnp) * w;
+               }
+               kernel(r_vec, i_vec);
+            }
+         }
+         else
+         {
+            vshape.SetSize(nnp, vdim);
+            for (int n = 0; n < nnp; n++)
+            {
+               const IntegrationPoint &ip = ir.IntPoint(n);
+               Tr->SetIntPoint(&ip);
+               fe->CalcPhysVShape(*Tr, vshape);
+               for (int d = 0; d < vdim; d++)
+               {
+                  r_vec(d) = r_data(n) * vshape(n,d);
+                  i_vec(d) = i_data(n) * vshape(n,d);
+               }
+               kernel(r_vec, i_vec);
+            }
+         }
+      }
+   }
+
+   if (sym != Symmetry::Norm) { minv = -maxv; }
+}
+
+void DataState::ComputeDofsOffsets(std::vector<const FiniteElementSpace*>
+                                   &fespaces)
+{
+   const int nprocs = static_cast<int>(fespaces.size());
+   MFEM_VERIFY(!fespaces.empty(), "No grid functions provided for offsets");
 
    // only 2D meshes are supported for dofs offsets computation
-   if (gf_array[0]->FESpace()->GetMesh()->Dimension() != 2) { return; }
+   if (fespaces[0]->GetMesh()->Dimension() != 2) { return; }
 
    internal.offsets = std::make_unique<DataState::Offsets>(nprocs);
 
@@ -640,8 +1286,7 @@ void DataState::ComputeDofsOffsets(std::vector<GridFunction*> &gf_array)
    Array<int> dofs, vertices;
    for (int rank = 0, g_e = 0; rank < nprocs; rank++)
    {
-      const GridFunction *gf = gf_array[rank];
-      const FiniteElementSpace *l_fes = gf->FESpace();
+      const FiniteElementSpace *l_fes = fespaces[rank];
       Mesh *l_mesh = l_fes->GetMesh();
       // store the dofs numbers as they are fespace dependent
       auto &offset = (*offsets)[rank];

@@ -9,9 +9,10 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#include <vector>
-
 #include "file_reader.hpp"
+
+#include <vector>
+#include <general/text.hpp>
 
 using namespace std;
 using namespace mfem;
@@ -54,8 +55,18 @@ int FileReader::ReadSerial(FileReader::FileType ft, const char *mesh_file,
       switch (ft)
       {
          case FileType::GRID_FUNC:
-            data.SetGridFunction(new GridFunction(data.mesh.get(), *solin), component);
-            break;
+         {
+            if (CheckStreamIsComplex(*solin))
+            {
+               data.SetCmplxGridFunction(new ComplexGridFunction(data.mesh.get(), *solin),
+                                         component);
+            }
+            else
+            {
+               data.SetGridFunction(new GridFunction(data.mesh.get(), *solin), component);
+            }
+         }
+         break;
          case FileType::QUAD_FUNC:
             data.SetQuadFunction(new QuadratureFunction(data.mesh.get(), *solin),
                                  component);
@@ -125,6 +136,19 @@ int FileReader::ReadParallel(int np, FileType ft, const char *mesh_file,
    return read_err;
 }
 
+bool FileReader::CheckStreamIsComplex(std::istream &solin, bool parallel)
+{
+   string buff;
+   auto pos = solin.tellg();
+   solin >> ws;
+   getline(solin, buff);
+   solin.seekg(pos);
+   mfem::filter_dos(buff);
+   const char *header = (parallel)?("ParComplexGridFunction"):
+                        ("ComplexGridFunction");
+   return (buff == header);
+}
+
 int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                                            const char *sol_prefix, int component)
 {
@@ -140,6 +164,10 @@ int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
 
    std::vector<Mesh *> mesh_array(np);
    std::vector<GridFunction *> gf_array(np);
+   std::vector<ComplexGridFunction *> cgf_array(np);
+
+   int gf_count = 0;
+   int cgf_count = 0;
 
    int read_err = 0;
    for (int p = 0; p < np; p++)
@@ -185,12 +213,42 @@ int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                break;
             }
 
-            gf_array[p] = new GridFunction(mesh_array[p], solfile);
+            if (CheckStreamIsComplex(solfile, true))
+            {
+               solfile >> ws;
+               solfile.ignore(3);// ignore 'Par' prefix to load as serial
+               cgf_array[p] = new ComplexGridFunction(mesh_array[p], solfile);
+               cgf_count++;
+            }
+            else
+            {
+               gf_array[p] = new GridFunction(mesh_array[p], solfile);
+               gf_count++;
+            }
          }
          else  // mesh and solution in the same file
          {
-            gf_array[p] = new GridFunction(mesh_array[p], meshfile);
+            if (CheckStreamIsComplex(meshfile))
+            {
+               cgf_array[p] = new ComplexGridFunction(mesh_array[p], meshfile);
+               cgf_count++;
+            }
+            else
+            {
+               gf_array[p] = new GridFunction(mesh_array[p], meshfile);
+               gf_count++;
+            }
          }
+      }
+   }
+
+   if (!read_err)
+   {
+      if ((gf_count > 0 && gf_count != np)
+          || (cgf_count > 0 && cgf_count != np))
+      {
+         cerr << "Input files contain a mixture of data types!" << endl;
+         read_err = 3;
       }
    }
 
@@ -200,7 +258,14 @@ int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
       data.SetMesh(new Mesh(mesh_array.data(), np));
       if (sol_prefix)
       {
-         data.SetGridFunction(gf_array, np, component);
+         if (cgf_array[0])
+         {
+            data.SetCmplxGridFunction(cgf_array, component);
+         }
+         else
+         {
+            data.SetGridFunction(gf_array, np, component);
+         }
       }
       else
       {
@@ -211,6 +276,7 @@ int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
    for (int p = 0; p < np; p++)
    {
       delete gf_array[np-1-p];
+      delete cgf_array[np-1-p];
       delete mesh_array[np-1-p];
    }
 

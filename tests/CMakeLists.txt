@@ -33,6 +33,8 @@ set(stream_tests
     "ex5"
     "ex6-dofs-numbering"
     "ex9"
+    "ex22-scalar"
+    "ex22-vector"
     "klein-bottle"
     "laghos"
     "mesh-explorer"

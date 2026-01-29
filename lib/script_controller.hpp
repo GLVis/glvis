@@ -47,7 +47,7 @@ class ScriptController
    static void ScriptControl();
 
    static void PrintCommands();
-   void ExecuteScriptCommand();
+   bool ExecuteScriptCommand();
 
 public:
    ScriptController(Window win_) : win(std::move(win_)) { }

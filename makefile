@@ -241,6 +241,22 @@ else
    # no flag --> SDL screenshots
 endif
 
+# EGL headless rendering
+GLVIS_USE_EGL ?= NO
+EGL_OPTS = -DGLVIS_USE_EGL
+EGL_LIBS = -lEGL
+ifeq ($(GLVIS_USE_EGL),YES)
+	GLVIS_FLAGS += $(EGL_OPTS)
+	GLVIS_LIBS  += $(EGL_LIBS)
+endif
+
+# CGL headless rendering
+GLVIS_USE_CGL ?= $(if $(NOTMAC),NO,YES)
+CGL_OPTS = -DGLVIS_USE_CGL
+ifeq ($(GLVIS_USE_CGL),YES)
+	GLVIS_FLAGS += $(CGL_OPTS)
+endif
+
 PTHREAD_LIB = -lpthread
 GLVIS_LIBS += $(PTHREAD_LIB)
 
@@ -248,40 +264,42 @@ LIBS = $(strip $(GLVIS_LIBS) $(GLVIS_LDFLAGS))
 CCC  = $(strip $(CXX) $(GLVIS_FLAGS))
 Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
-# generated with 'echo lib/gl/*.c* lib/*.c*', does not include lib/*.m (Obj-C)
+# generated with 'echo lib/egl/*.c* lib/gl/*.c* lib/sdl/*.c* lib/*.c*', does not include lib/*.m (Obj-C)
 ALL_SOURCE_FILES = \
- lib/gl/renderer.cpp lib/gl/renderer_core.cpp lib/gl/renderer_ff.cpp    \
- lib/gl/shader.cpp lib/gl/types.cpp lib/aux_js.cpp lib/aux_vis.cpp      \
- lib/coll_reader.cpp lib/data_state.cpp lib/file_reader.cpp             \
- lib/font.cpp lib/gl2ps.c lib/gltf.cpp lib/material.cpp                 \
- lib/openglvis.cpp lib/palettes_base.cpp lib/palettes.cpp               \
- lib/palettes_default.cpp lib/script_controller.cpp lib/sdl.cpp         \
- lib/sdl_helper.cpp lib/sdl_main.cpp lib/sdl_windows.cpp                \
- lib/sdl_x11.cpp lib/stream_reader.cpp lib/threads.cpp lib/vsdata.cpp   \
- lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp               \
- lib/vsvector3d.cpp lib/window.cpp
-OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl_mac.mm)
+ lib/egl/egl.cpp lib/egl/egl_main.cpp lib/gl/renderer_core.cpp          \
+ lib/gl/renderer.cpp lib/gl/renderer_ff.cpp lib/gl/shader.cpp           \
+ lib/gl/types.cpp lib/sdl/sdl.cpp lib/sdl/sdl_helper.cpp                \
+ lib/sdl/sdl_main.cpp lib/sdl/sdl_windows.cpp lib/sdl/sdl_x11.cpp       \
+ lib/aux_js.cpp lib/aux_vis.cpp lib/coll_reader.cpp lib/data_state.cpp  \
+ lib/file_reader.cpp lib/font.cpp lib/gl2ps.c lib/gltf.cpp              \
+ lib/glwindow.cpp lib/material.cpp lib/openglvis.cpp                    \
+ lib/palettes_base.cpp lib/palettes.cpp lib/palettes_default.cpp        \
+ lib/script_controller.cpp lib/stream_reader.cpp lib/threads.cpp        \
+ lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp                 \
+ lib/vsvector.cpp lib/vsvector3d.cpp lib/window.cpp
+OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl/sdl_mac.mm)
 DESKTOP_ONLY_SOURCE_FILES = \
  lib/gl/renderer_ff.cpp lib/threads.cpp lib/gl2ps.c                     \
- lib/script_controller.cpp lib/sdl_x11.cpp
+ lib/script_controller.cpp lib/sdl/sdl_x11.cpp
 WEB_ONLY_SOURCE_FILES = lib/aux_js.cpp
 LOGO_FILE = share/logo.rgba
 LOGO_FILE_CPP = $(LOGO_FILE).bin.cpp
 COMMON_SOURCE_FILES = $(filter-out \
  $(DESKTOP_ONLY_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES),$(ALL_SOURCE_FILES))
 
-# generated with 'echo lib/gl/*.h* lib/*.h*'
+# generated with 'echo lib/egl/*.h* lib/gl/*.h* lib/sdl/*.h* lib/*.h*'
 HEADER_FILES = \
- lib/gl/attr_traits.hpp lib/gl/platform_gl.hpp lib/gl/renderer.hpp      \
- lib/gl/shader.hpp lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp      \
- lib/gl/types.hpp lib/aux_vis.hpp lib/coll_reader.hpp                   \
- lib/data_state.hpp lib/file_reader.hpp lib/font.hpp                    \
- lib/geom_utils.hpp lib/gl2ps.h lib/gltf.hpp lib/logo.hpp               \
- lib/material.hpp lib/openglvis.hpp lib/palettes_base.hpp               \
- lib/palettes.hpp lib/script_controller.hpp lib/sdl_helper.hpp          \
- lib/sdl.hpp lib/sdl_mac.hpp lib/sdl_main.hpp lib/sdl_windows.hpp       \
- lib/sdl_x11.hpp lib/stream_reader.hpp lib/threads.hpp lib/visual.hpp   \
- lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp                 \
+ lib/egl/egl.hpp lib/egl/egl_main.hpp lib/gl/attr_traits.hpp            \
+ lib/gl/platform_gl.hpp lib/gl/renderer_core.hpp lib/gl/renderer_ff.hpp \
+ lib/gl/renderer.hpp lib/gl/shader.hpp lib/gl/types.hpp                 \
+ lib/sdl/sdl_helper.hpp lib/sdl/sdl.hpp lib/sdl/sdl_mac.hpp             \
+ lib/sdl/sdl_main.hpp lib/sdl/sdl_windows.hpp lib/sdl/sdl_x11.hpp       \
+ lib/aux_vis.hpp lib/coll_reader.hpp lib/data_state.hpp                 \
+ lib/file_reader.hpp lib/font.hpp lib/geom_utils.hpp lib/gl2ps.h        \
+ lib/gltf.hpp lib/glwindow.hpp lib/logo.hpp lib/material.hpp            \
+ lib/openglvis.hpp lib/palettes_base.hpp lib/palettes.hpp               \
+ lib/script_controller.hpp lib/stream_reader.hpp lib/threads.hpp        \
+ lib/visual.hpp lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp  \
  lib/vsvector.hpp lib/vsvector3d.hpp lib/window.hpp
 
 DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) $(DESKTOP_ONLY_SOURCE_FILES) $(LOGO_FILE_CPP)
@@ -337,7 +355,7 @@ lib/libglvis.js: $(BYTECODE_FILES) $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(EMCC) $(EMCC_OPTS) -o $@ $(BYTECODE_FILES) $(EMCC_LIBS) --embed-file $(FONT_FILE)
 
 clean:
-	rm -rf lib/*.o lib/*.bc lib/gl/*.o lib/gl/*.bc lib/*~ *~ glvis
+	rm -rf lib/*.o lib/*.bc lib/egl/*.o lib/egl/*.bc lib/gl/*.o lib/gl/*.bc lib/sdl/*.o lib/sdl/*.bc lib/*~ *~ glvis
 	rm -rf $(LOGO_FILE_CPP) share/*.o
 	rm -rf lib/libglvis.a lib/libglvis.js *.dSYM
 	rm -rf GLVis.app

@@ -17,6 +17,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include <functional>
 
 #include <mfem.hpp>
 
@@ -44,6 +45,19 @@ struct DataState
       LOR_ClosedGL,
       HO_L2_collocated,
       HO_L2_projected,
+      //----------
+      MAX
+   };
+
+   enum class ComplexSolution
+   {
+      NONE = -1,
+      MIN = -1,
+      //----------
+      Magnitude,
+      Phase,
+      Real,
+      Imag,
       //----------
       MAX
    };
@@ -76,19 +90,35 @@ private:
       std::unique_ptr<mfem::Mesh> mesh;
       std::unique_ptr<mfem::Mesh> mesh_quad;
       std::unique_ptr<mfem::GridFunction> grid_f;
+      std::unique_ptr<mfem::ComplexGridFunction> cgrid_f;
       std::unique_ptr<mfem::QuadratureFunction> quad_f;
       std::unique_ptr<mfem::DataCollection> data_coll;
       std::unique_ptr<Offsets> offsets;
    } internal;
 
    FieldType type {FieldType::UNKNOWN};
+   ComplexSolution cmplx_sol {ComplexSolution::NONE};
    QuadSolution quad_sol {QuadSolution::NONE};
 
    void SetGridFunctionSolution(int component = -1);
+   void SetComplexFunctionSolution(int component = -1);
    void SetQuadFunctionSolution(int component = -1);
 
+   static std::unique_ptr<mfem::GridFunction>
+   ProjectVectorFEGridFunction(std::unique_ptr<mfem::GridFunction> gf);
+
+   static std::unique_ptr<mfem::ComplexGridFunction>
+   ProjectVectorFEGridFunction(std::unique_ptr<mfem::ComplexGridFunction> gf);
+
+   void FindComplexValueRange(double &minv, double &maxv,
+                              std::function<double(double)> = {}) const;
+
+   void FindComplexValueRange(double &minv, double &maxv,
+                              std::function<double(const mfem::Vector &)>,
+                              std::function<double(double)> = {}) const;
+
    /// Compute the dofs offsets from the grid function vector
-   void ComputeDofsOffsets(std::vector<mfem::GridFunction*> &gf_array);
+   void ComputeDofsOffsets(std::vector<const mfem::FiniteElementSpace*> &fespaces);
 
 public:
    const std::unique_ptr<mfem::Vector> &sol{internal.sol};
@@ -99,6 +129,7 @@ public:
    const std::unique_ptr<mfem::Mesh> &mesh{internal.mesh};
    const std::unique_ptr<mfem::Mesh> &mesh_quad{internal.mesh_quad};
    const std::unique_ptr<mfem::GridFunction> &grid_f{internal.grid_f};
+   const std::unique_ptr<mfem::ComplexGridFunction> &cgrid_f{internal.cgrid_f};
    const std::unique_ptr<mfem::QuadratureFunction> &quad_f{internal.quad_f};
    const std::unique_ptr<mfem::DataCollection> &data_coll{internal.data_coll};
    const std::unique_ptr<Offsets> &offsets{internal.offsets};
@@ -107,6 +138,7 @@ public:
    bool fix_elem_orient{false};
    bool save_coloring{false};
    bool keep_attr{false};
+   double cmplx_phase{0.};
 
    DataState() = default;
    DataState(DataState &&ss) { *this = std::move(ss); }
@@ -153,6 +185,23 @@ public:
    void SetGridFunction(std::vector<mfem::GridFunction*> &gf_array,
                         int num_pieces, int component = -1);
 
+   /// Set a complex grid function (plain pointer version)
+   /** Note that ownership is passed from the caller.
+       @see SetCmplxGridFunction(std::unique_ptr<mfem::ComplexGridFunction> &&, int ) */
+   void SetCmplxGridFunction(mfem::ComplexGridFunction *gf, int component = -1);
+
+   /// Set a complex grid function (unique pointer version)
+   /** Sets the complex grid function or its component (-1 means all
+       components). */
+   void SetCmplxGridFunction(std::unique_ptr<mfem::ComplexGridFunction> &&pgf,
+                             int component = -1);
+
+   /// Set a complex grid function from pieces
+   /** Serializes the pieces of a complex grid function and sets it or its
+       component (-1 means all components) */
+   void SetCmplxGridFunction(const std::vector<mfem::ComplexGridFunction*>
+                             &cgf_array, int component = -1);
+
    /// Set a quadrature function (plain pointer version)
    /** Note that ownership is passed from the caller.
        @see SetQuadFunction(std::unique_ptr<mfem::QuadFunction> &&, int ) */
@@ -192,6 +241,13 @@ public:
    /// Set a (checkerboard) solution when only the mesh is given
    void SetMeshSolution();
 
+   /// Set the complex function representation producing a proxy grid function
+   void SetComplexSolution(ComplexSolution type = ComplexSolution::Magnitude,
+                           bool print = true);
+
+   /// Get the current representation of complex solution
+   inline ComplexSolution GetComplexSolution() const { return cmplx_sol; }
+
    /// Set the quadrature function representation producing a proxy grid function
    void SetQuadSolution(QuadSolution type = QuadSolution::LOR_ClosedGL);
 
@@ -204,11 +260,22 @@ public:
    // Replace a given VectorFiniteElement-based grid function (e.g. from a Nedelec
    // or Raviart-Thomas space) with a discontinuous piece-wise polynomial Cartesian
    // product vector grid function of the same order.
-   static std::unique_ptr<mfem::GridFunction>
-   ProjectVectorFEGridFunction(std::unique_ptr<mfem::GridFunction> gf);
+   void ProjectVectorFEGridFunction();
 
-   void ProjectVectorFEGridFunction()
-   { internal.grid_f = ProjectVectorFEGridFunction(std::move(internal.grid_f)); }
+   /// Find value range of the scalar data for an intermediate representation
+   /** Returns @p minv = @p maxv = 0 if the range should be normally determined
+       from the grid function representation. */
+   void FindValueRange(double &minv, double &maxv,
+                       std::function<double(double)> scale = {}) const
+   { if (cgrid_f) { FindComplexValueRange(minv, maxv, scale); } else { minv = maxv = 0.; } }
+
+   /// Find value range of the vector data for an intermediate representation
+   /** Returns @p minv = @p maxv = 0 if the range should be normally determined
+       from the grid function representation. */
+   void FindValueRange(double &minv, double &maxv,
+                       std::function<double(const mfem::Vector &)> vec2scal,
+                       std::function<double(double)> scale = {}) const
+   { if (cgrid_f) { FindComplexValueRange(minv, maxv, vec2scal, scale); } else { minv = maxv = 0.; } }
 };
 
 #endif // GLVIS_DATA_STATE_HPP

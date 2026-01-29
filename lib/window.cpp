@@ -23,6 +23,7 @@ Window &Window::operator=(Window &&w)
    window_w = w.window_w;
    window_h = w.window_h;
    window_title = w.window_title;
+   headless = w.headless;
    plot_caption = std::move(w.plot_caption);
    extra_caption = std::move(w.extra_caption);
 
@@ -49,7 +50,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
                            window_titles[(int)field_type] : window_title;
 
    internal.wnd.reset(InitVisualization(win_title, window_x, window_y, window_w,
-                                        window_h));
+                                        window_h, headless));
    if (!wnd)
    {
       std::cerr << "Initializing the visualization failed." << std::endl;
@@ -59,17 +60,24 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
 #ifndef __EMSCRIPTEN__
    if (input_streams.size() > 0)
    {
-      wnd->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
+      if (!headless)
+      {
+         wnd->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
+      }
       internal.glvis_command.reset(new GLVisCommand(*this));
       SetGLVisCommand(glvis_command.get());
       internal.comm_thread.reset(new communication_thread(std::move(input_streams),
-                                                          glvis_command.get()));
+                                                          glvis_command.get(), headless));
    }
 #endif
 
    locwin = this;
 
-   if (data_state.quad_f)
+   if (data_state.cgrid_f)
+   {
+      wnd->setOnKeyDown('Q', SwitchComplexSolution);
+   }
+   else if (data_state.quad_f)
    {
       wnd->setOnKeyDown('Q', SwitchQuadSolution);
    }
@@ -155,7 +163,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
       if (mesh_range > 0.0)
       {
          vs->SetValueRange(-mesh_range, mesh_range);
-         vs->SetAutoscale(0);
+         vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::None);
       }
       if (data_state.mesh->SpaceDimension() == 2
           && field_type == DataState::FieldType::MESH)
@@ -186,10 +194,31 @@ void Window::GLVisStartVis()
    std::cout << "GLVis window closed." << std::endl;
 }
 
+void Window::SwitchComplexSolution(DataState::ComplexSolution cmplx_type)
+{
+   data_state.SetComplexSolution(cmplx_type);
+   ResetMeshAndSolution(data_state);
+}
+
 void Window::SwitchQuadSolution(DataState::QuadSolution quad_type)
 {
    data_state.SwitchQuadSolution(quad_type);
    ResetMeshAndSolution(data_state);
+}
+
+void Window::UpdateComplexPhase(double ph)
+{
+   data_state.cmplx_phase += ph;
+   data_state.cmplx_phase -= floor(data_state.cmplx_phase);
+   DataState::ComplexSolution cs = data_state.GetComplexSolution();
+   // check if magnitude is viewed, which remains the same
+   if (cs == DataState::ComplexSolution::Magnitude) { return; }
+   data_state.SetComplexSolution(cs, false);
+   // do not autoscale for animation
+   auto as = vs->GetAutoscale();
+   vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::None);
+   ResetMeshAndSolution(data_state);
+   vs->SetAutoscale(as, false);
 }
 
 bool Window::SetNewMeshAndSolution(DataState new_state)
@@ -225,6 +254,14 @@ void Window::ResetMeshAndSolution(DataState &ss)
 
 
 thread_local Window *Window::locwin = NULL;
+
+void Window::SwitchComplexSolution()
+{
+   int ics = ((int)locwin->data_state.GetComplexSolution()+1)
+             % ((int)DataState::ComplexSolution::MAX);
+   locwin->SwitchComplexSolution((DataState::ComplexSolution)ics);
+   SendExposeEvent();
+}
 
 void Window::SwitchQuadSolution()
 {

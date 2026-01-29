@@ -16,7 +16,7 @@
 #include "material.hpp"
 #include "palettes.hpp"
 #include "geom_utils.hpp"
-#include "sdl.hpp"
+#include "glwindow.hpp"
 #include "gltf.hpp"
 
 // Visualization header file
@@ -63,7 +63,7 @@ protected:
    // How to scale the visualized object(s)
    double xscale, yscale, zscale;
 
-   SdlWindow * wnd;
+   GLWindow *wnd;
 
    glm::mat4 proj_mtx;
 
@@ -169,7 +169,7 @@ protected:
                 const gl3::GlDrawable &gl_drawable);
 
 public:
-   VisualizationScene(SdlWindow &wnd);
+   VisualizationScene(GLWindow &wnd);
    virtual ~VisualizationScene();
 
    int spinning, OrthogonalProjection, print, movie;
@@ -208,6 +208,8 @@ public:
    void Translate(double x, double y, double z = 0.0);
    void Scale(double s);
    void Scale(double s1, double s2, double s3);
+
+   virtual void UpdateComplexPhase(double phase) { }
 
    void CenterObject();
    void CenterObject2D();

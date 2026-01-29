@@ -56,6 +56,9 @@ public:
 
    void NewMeshAndSolution(const DataState &s) override;
 
+   void FindNewBox(bool prepare) override;
+   void FindNewValueRange(bool prepare) override;
+
    virtual ~VisualizationSceneVector();
 
    std::string GetHelpString() const override;
