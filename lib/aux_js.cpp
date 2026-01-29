@@ -55,7 +55,7 @@ void display(StreamCollection streams, const int w, const int h)
 
    win.GLVisInitVis(std::move(streams));
 
-   win.comm_thread->process_one();
+   //win.comm_thread->process_one();
 }
 
 //
