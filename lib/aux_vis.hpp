@@ -68,6 +68,7 @@ void TouchPinch(SDL_MultiGestureEvent & e);
 
 void KeyCtrlP();
 void KeyS();
+void KeyqPressed();
 void KeyQPressed();
 void ToggleThreads();
 void ThreadsPauseFunc(SDL_Keymod);

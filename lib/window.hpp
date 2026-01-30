@@ -79,6 +79,9 @@ public:
    /// updated.
    bool SetNewMeshAndSolution(DataState new_state);
 
+   /// Switch representation of the solution
+   static void SwitchSolution();
+
 private:
    /// Thread-local singleton for key handlers
    static thread_local Window *locwin;

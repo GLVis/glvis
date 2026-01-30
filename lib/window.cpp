@@ -73,15 +73,6 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
 
    locwin = this;
 
-   if (data_state.cgrid_f)
-   {
-      wnd->setOnKeyDown('Q', SwitchComplexSolution);
-   }
-   else if (data_state.quad_f)
-   {
-      wnd->setOnKeyDown('Q', SwitchQuadSolution);
-   }
-
    double mesh_range = -1.0;
    if (field_type == DataState::FieldType::SCALAR
        || field_type == DataState::FieldType::MESH)
@@ -252,8 +243,19 @@ void Window::ResetMeshAndSolution(DataState &ss)
    vs->NewMeshAndSolution(ss);
 }
 
-
 thread_local Window *Window::locwin = NULL;
+
+void Window::SwitchSolution()
+{
+   if (locwin->data_state.cgrid_f)
+   {
+      SwitchComplexSolution();
+   }
+   else if (locwin->data_state.quad_f)
+   {
+      SwitchQuadSolution();
+   }
+}
 
 void Window::SwitchComplexSolution()
 {

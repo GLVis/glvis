@@ -204,8 +204,8 @@ GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
    wnd->setOnKeyDown (SDLK_s, KeyS);
    wnd->setOnKeyDown ('S', KeyS);
 
-   wnd->setOnKeyDown (SDLK_q, KeyQPressed);
-   // wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
+   wnd->setOnKeyDown (SDLK_q, KeyqPressed);
+   wnd->setOnKeyDown ('Q', KeyQPressed);
 
    wnd->setOnKeyDown (SDLK_LEFT, KeyLeftPressed);
    wnd->setOnKeyDown (SDLK_RIGHT, KeyRightPressed);
@@ -1356,10 +1356,15 @@ void KeyCtrlP()
 #endif
 }
 
-void KeyQPressed()
+void KeyqPressed()
 {
    wnd->signalQuit();
    visualize = 0;
+}
+
+void KeyQPressed()
+{
+   Window::SwitchSolution();
 }
 
 void ToggleThreads()
