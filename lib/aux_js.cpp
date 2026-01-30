@@ -45,7 +45,10 @@ using namespace mfem;
 void display(std::stringstream & commands, const int w, const int h)
 {
    // reset antialiasing
-   win.wnd->getRenderer().setAntialiasing(0);
+   if (win.wnd)
+   {
+      win.wnd->getRenderer().setAntialiasing(0);
+   }
 
    std::string word;
    double minv = 0.0, maxv = 0.0;
