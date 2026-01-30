@@ -100,7 +100,8 @@ public:
       onKeyDown[key] = [func](SDL_Keymod) { func(SDL_GetModState()); };
    }
 
-   void setOnKeyDown(SDL_Keycode key, Delegate func) { 
+   void setOnKeyDown(SDL_Keycode key, Delegate func)
+   {
       onKeyDown[key] = [func](SDL_Keymod) { func(); };
    }
 
