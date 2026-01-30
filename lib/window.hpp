@@ -93,6 +93,10 @@ private:
    /// @note: Use with caution when the update is compatible
    /// @see SetNewMeshAndSolution()
    void ResetMeshAndSolution(DataState &ss);
+
+public:
+   /// Switch the function representation for key handlers
+   static void SwitchSolution();
 };
 
 #endif // GLVIS_WINDOW_HPP

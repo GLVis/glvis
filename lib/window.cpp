@@ -270,3 +270,9 @@ void Window::SwitchQuadSolution()
    locwin->SwitchQuadSolution((DataState::QuadSolution)iqs);
    SendExposeEvent();
 }
+
+void Window::SwitchSolution()
+{
+   if (locwin->data_state.cgrid_f) { SwitchComplexSolution(); }
+   if (locwin->data_state.quad_f) { SwitchQuadSolution(); }
+}

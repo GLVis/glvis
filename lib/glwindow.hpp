@@ -95,11 +95,14 @@ public:
    void setOnIdle(IdleDelegate func) { onIdle = func; }
    void setOnExpose(Delegate func) { onExpose = func; }
 
-   void setOnKeyDown(SDL_Keycode key, Delegate func)
+   void setOnKeyDown(SDL_Keycode key, KeyDelegate func)
    {
+      onKeyDown[key] = [func](SDL_Keymod) { func(SDL_GetModState()); };
+   }
+
+   void setOnKeyDown(SDL_Keycode key, Delegate func) { 
       onKeyDown[key] = [func](SDL_Keymod) { func(); };
    }
-   void setOnKeyDown(SDL_Keycode key, KeyDelegate func) { onKeyDown[key] = func; }
 
    void setOnMouseDown(SDL_Mousebutton btn, MouseDelegate func) { onMouseDown[btn] = func; }
    void setOnMouseUp(SDL_Mousebutton btn, MouseDelegate func) { onMouseUp[btn] = func; }

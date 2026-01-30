@@ -1356,8 +1356,9 @@ void KeyCtrlP()
 #endif
 }
 
-void KeyQPressed()
+void KeyQPressed(SDL_Keymod state)
 {
+   if (state & KMOD_SHIFT) { return Window::SwitchSolution(); }
    wnd->signalQuit();
    visualize = 0;
 }
