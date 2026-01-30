@@ -38,6 +38,13 @@ Unlike previous GLVis releases, this version requires a C++17 compiler.
   * Fixed setting of padding digits for data collections.
   * Fixed cycling of the vector-to-scalar function in 2D with raw data.
 
+- Added the option to choose palettes by name using the command line argument
+  '-pname' or '--palette-name'. This option is also available in scripts and
+  streams using the keyword 'palette_name'.
+
+- Color palettes defined in an external file can now also be specified in
+  scripts and streams using the keyword 'palette_file'.
+
 Version 4.4 released on May 1, 2025
 ===================================
 

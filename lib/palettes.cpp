@@ -165,8 +165,41 @@ void PaletteState::GenerateAlphaTexture(float matAlpha, float matAlphaCenter)
 
 void PaletteState::SetIndex(int num)
 {
-   curr_palette = num;
-   cout << "Palette: " << num << ") " << Palettes->Get(curr_palette)->name << endl;
+   if ((num >= 0) && (num < Palettes->NumPalettes()))
+   {
+      curr_palette = num;
+      cout << "Palette: " << num+1 << ") " << Palettes->Get(curr_palette)->name << endl;
+   }
+   else
+   {
+      cout << "Palette index " << num+1 << " is out of bounds." << endl;
+   }
+}
+
+void PaletteState::SetByName(const std::string& palette_name)
+{
+   int num = Palettes->GetIndexByName(palette_name);
+   if ((num >= 0) && (num < Palettes->NumPalettes()))
+   {
+      curr_palette = num;
+      cout << "Palette: " << num+1 << ") " << Palettes->Get(curr_palette)->name << endl;
+   }
+   else
+   {
+      cout << "Palette " << palette_name << " is not defined." << endl;
+   }
+}
+
+bool PaletteState::UseDefaultIndex()
+{
+   int num = Palettes->GetDefault();
+   if ((num >= 0) && (num < Palettes->NumPalettes()))
+   {
+      curr_palette = num;
+      cout << "Palette: " << num+1 << ") " << Palettes->Get(curr_palette)->name << endl;
+      return true;
+   }
+   return false;
 }
 
 void PaletteState::NextIndex()

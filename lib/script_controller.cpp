@@ -52,6 +52,8 @@ enum class Command
    Window,
    Keys,
    Palette,
+   PaletteFile,
+   PaletteName,
    PaletteRepeat,
    ToggleAttributes,
    Rotmat,
@@ -114,6 +116,8 @@ ScriptCommands::ScriptCommands()
    (*this)[Command::Window]               = {"window", "<x> <y> <w> <h>", "Set the position and size of the window."};
    (*this)[Command::Keys]                 = {"keys", "<keys>", "Send the control key sequence."};
    (*this)[Command::Palette]              = {"palette", "<index>", "Set the palette index."};
+   (*this)[Command::PaletteFile]          = {"palette_file", "<filename>", "Load in a palette file."};
+   (*this)[Command::PaletteName]          = {"palette_name", "<palette_name>", "Use palette with given name."};
    (*this)[Command::PaletteRepeat]        = {"palette_repeat", "<times>", "Set the repetition of the palette."};
    (*this)[Command::ToggleAttributes]     = {"toggle_attributes", "<1/0> [[<1/0>] ...];", "Toggle visibility of the attributes."};
    (*this)[Command::Rotmat]               = {"rotmat", "<[0,0]> <[1,0]> ... <[3,3]>", "Set the rotation matrix."};
@@ -728,6 +732,27 @@ bool ScriptController::ExecuteScriptCommand()
             win.vs->palette.SetIndex(pal-1);
             MyExpose();
          }
+         break;
+         case Command::PaletteFile:
+         {
+            std::string palette_file;
+            scr >> ws;
+            std::getline(scr, palette_file);
+            cout << "Script: palette_file: " << palette_file << endl;
+            BasePalettes.Load(palette_file);
+            win.vs->palette.GenerateTextures(true); // need to reinitialize
+            MyExpose();
+         }
+         break;
+         case Command::PaletteName:
+         {
+            std::string palette_name;
+            scr >> palette_name;
+            cout << "Script: palette_name: " << palette_name << endl;
+            win.vs->palette.SetByName(palette_name);
+            MyExpose();
+         }
+         break;
          case Command::PaletteRepeat:
          {
             int rpt_times;
