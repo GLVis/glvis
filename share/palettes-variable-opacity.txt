@@ -4,6 +4,38 @@
 # These variable opacity palettes (and transparent palettes in general) tend to
 # display better with a black background (g) and lighting off (l)
 
+palette black-alpha RGBAf
+   0  0  0  0
+   0  0  0  1
+
+palette white-alpha RGBAf
+   1  1  1  0
+   1  1  1  1
+
+palette red-alpha RGBAf
+   1  0  0  0
+   1  0  0  1
+
+palette green-alpha RGBAf
+   0  1  0  0
+   0  1  0  1
+
+palette blue-alpha RGBAf
+   0  0  1  0
+   0  0  1  1
+
+palette yellow-alpha RGBAf
+   1  1  0  0
+   1  1  0  1
+
+palette cyan-alpha RGBAf
+   0  1  1  0
+   0  1  1  1
+
+palette pink-alpha RGBAf
+   1  0  1  0
+   1  0  1  1
+
 palette 5-color-alpha RGBAf
    0  0  1  0.15
    0  1  1  0.25
