@@ -51,6 +51,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
 
    GLWindow *new_wnd = InitVisualization(win_title, window_x, window_y, window_w,
                                          window_h, headless);
+   std::cout << "old window: " << wnd.get() << " new: " << new_wnd << std::endl;
    if (new_wnd != wnd.get()) { internal.wnd.reset(new_wnd); }
    if (!wnd)
    {
@@ -76,6 +77,8 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
       internal.comm_thread.reset(new communication_thread(std::move(input_streams),
                                                           glvis_command.get(), headless, multithreaded));
    }
+
+   std::cout << "init of vis scenes" << std::endl;
 
    locwin = this;
 
