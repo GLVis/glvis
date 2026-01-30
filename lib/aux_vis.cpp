@@ -263,11 +263,6 @@ GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
 #ifndef __EMSCRIPTEN__
    wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
    wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
-
-   if (locscene)
-   {
-      delete locscene;
-   }
 #endif
    locscene = nullptr;
 
