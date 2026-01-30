@@ -49,8 +49,9 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
    const char *win_title = (window_title == nullptr) ?
                            window_titles[(int)field_type] : window_title;
 
-   internal.wnd.reset(InitVisualization(win_title, window_x, window_y, window_w,
-                                        window_h, headless));
+   GLWindow *new_wnd = InitVisualization(win_title, window_x, window_y, window_w,
+                                         window_h, headless);
+   if (new_wnd != wnd.get()) { internal.wnd.reset(new_wnd); }
    if (!wnd)
    {
       std::cerr << "Initializing the visualization failed." << std::endl;
