@@ -241,6 +241,8 @@ em::val getScreenBuffer(bool flip_y=false)
    int w, h;
    win.wnd->getGLDrawSize(w, h);
 
+   cout << "GL draw size: " << w << " " << h << endl;
+
    // 4 bytes for rgba
    const size_t buffer_size = w*h*4;
    if (screen_state == nullptr)
