@@ -45,7 +45,10 @@ using namespace mfem;
 void display(StreamCollection streams, const int w, const int h)
 {
    // reset antialiasing
-   win.wnd->getRenderer().setAntialiasing(0);
+   if (win.wnd)
+   {
+      win.wnd->getRenderer().setAntialiasing(0);
+   }
 
    win.window_title = "glvis";
    win.window_x = 0.;
