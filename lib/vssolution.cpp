@@ -9,9 +9,7 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#include "vssolution.hpp"
-
-#include "threads.hpp"
+#include "visual.hpp"
 #include "palettes.hpp"
 #include "gltf.hpp"
 

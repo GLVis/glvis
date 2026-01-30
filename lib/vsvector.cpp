@@ -9,14 +9,13 @@
 // terms of the BSD-3 license. We welcome feedback and contributions, see file
 // CONTRIBUTING.md for details.
 
-#include "vsvector.hpp"
-
 #include <cstdlib>
 #include <iostream>
 #include <limits>
 #include <cmath>
 
-#include "threads.hpp"
+#include <mfem.hpp>
+#include "visual.hpp"
 
 using namespace mfem;
 using namespace std;
