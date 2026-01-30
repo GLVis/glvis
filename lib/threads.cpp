@@ -971,8 +971,10 @@ communication_thread::communication_thread(StreamCollection _is,
 
 bool communication_thread::process_one()
 {
+   if (!is[0]->good()) { return false; }
    std::string word;
    *is[0] >> ws;
+   if (!is[0]->good()) { return false; }
    *is[0] >> word;
    return execute_one(word);
 }
