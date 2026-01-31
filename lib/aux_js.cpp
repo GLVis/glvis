@@ -58,7 +58,14 @@ void display(StreamCollection streams, const int w, const int h)
 
    if (!win.GLVisInitVis(std::move(streams))) { return; }
 
-   while (win.comm_thread->process_one());
+   while (win.comm_thread->process_one())
+   {
+      if (win.glvis_command->Execute() < 0)
+      {
+         // GLVisCommand signalled exit!
+         break;
+      }
+   }
 
    SendExposeEvent();
 }
