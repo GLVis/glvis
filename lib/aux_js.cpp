@@ -56,9 +56,11 @@ void display(StreamCollection streams, const int w, const int h)
    win.window_w = w;
    win.window_h = h;
 
-   win.GLVisInitVis(std::move(streams));
+   if (!win.GLVisInitVis(std::move(streams))) { return; }
 
    win.comm_thread->process_one();
+
+   SendExposeEvent();
 }
 
 //
