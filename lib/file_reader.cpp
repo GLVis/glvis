@@ -12,7 +12,6 @@
 #include "file_reader.hpp"
 
 #include <vector>
-#include <general/text.hpp>
 
 using namespace std;
 using namespace mfem;
@@ -143,7 +142,10 @@ bool FileReader::CheckStreamIsComplex(std::istream &solin, bool parallel)
    solin >> ws;
    getline(solin, buff);
    solin.seekg(pos);
-   mfem::filter_dos(buff);
+   if (!buff.empty() && *buff.rbegin() == '\r')
+   {
+      buff.resize(buff.size()-1);
+   }
    const char *header = (parallel)?("ParComplexGridFunction"):
                         ("ComplexGridFunction");
    return (buff == header);
