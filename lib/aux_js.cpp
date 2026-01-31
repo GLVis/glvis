@@ -76,7 +76,7 @@ void display(std::stringstream & commands, const int w, const int h)
    win.window_w = w;
    win.window_h = h;
 
-   win.GLVisInitVis({});
+   if (!win.GLVisInitVis({})) { return; }
 
    CallKeySequence(win.data_state.keys.c_str());
 
