@@ -78,8 +78,6 @@ void display(std::stringstream & commands, const int w, const int h)
 
    if (!win.GLVisInitVis({})) { return; }
 
-   CallKeySequence(win.data_state.keys.c_str());
-
    if (minv || maxv)
    {
       win.vs->SetValueRange(minv, maxv);
