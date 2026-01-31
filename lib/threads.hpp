@@ -164,11 +164,6 @@ private:
 
    GLVisCommand* glvis_command;
 
-   // data that may be dynamically allocated by the thread
-   std::unique_ptr<mfem::Mesh> new_m;
-   std::unique_ptr<mfem::GridFunction> new_g;
-   std::string ident;
-
    // thread object
    std::thread tid;
    // signal for thread cancellation
@@ -177,12 +172,18 @@ private:
    // flag for closing the window at the end of stream
    bool end_quit;
 
+   // flag for parallel commands execution thread
+   bool is_multithread;
+
    static void print_commands();
+   bool execute_one(std::string word);
    void execute();
 
 public:
    communication_thread(StreamCollection _is, GLVisCommand* cmd,
-                        bool end_quit = false);
+                        bool end_quit = false, bool mulithread = true);
+
+   bool process_one();
 
    ~communication_thread();
 };

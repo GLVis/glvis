@@ -19,9 +19,7 @@
 #include "aux_vis.hpp"
 #include "material.hpp"
 #include "palettes.hpp"
-#ifndef __EMSCRIPTEN__
 #include "threads.hpp"
-#endif
 
 using namespace std;
 using namespace mfem;
