@@ -50,14 +50,14 @@ void display(std::stringstream & commands, const int w, const int h)
       win.wnd->getRenderer().setAntialiasing(0);
    }
 
-   std::string word;
+   std::string word, keys;
    double minv = 0.0, maxv = 0.0;
    while (commands >> word)
    {
       if (word == "keys")
       {
          std::cout << "parsing 'keys'" << std::endl;
-         commands >> win.data_state.keys;
+         commands >> keys;
       }
       else if (word == "valuerange")
       {
@@ -77,6 +77,8 @@ void display(std::stringstream & commands, const int w, const int h)
    win.window_h = h;
 
    if (!win.GLVisInitVis({})) { return; }
+
+   CallKeySequence(keys.c_str());
 
    if (minv || maxv)
    {
