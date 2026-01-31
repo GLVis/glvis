@@ -45,7 +45,10 @@ using namespace mfem;
 void display(StreamCollection streams, const int w, const int h)
 {
    // reset antialiasing
-   win.wnd->getRenderer().setAntialiasing(0);
+   if (win.wnd)
+   {
+      win.wnd->getRenderer().setAntialiasing(0);
+   }
 
    win.window_title = "glvis";
    win.window_x = 0.;
@@ -53,9 +56,11 @@ void display(StreamCollection streams, const int w, const int h)
    win.window_w = w;
    win.window_h = h;
 
-   win.GLVisInitVis(std::move(streams));
+   if (!win.GLVisInitVis(std::move(streams))) { return; }
 
    win.comm_thread->process_one();
+
+   SendExposeEvent();
 }
 
 //
