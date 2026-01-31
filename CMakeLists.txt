@@ -68,6 +68,14 @@ option(GLVIS_USE_LIBPNG
   "Use libpng for taking screenshots internally"
   ON)
 
+option(GLVIS_USE_EGL
+  "Use EGL for headless rendering"
+  OFF)
+
+option(GLVIS_USE_CGL
+  "Use CGL for headless rendering"
+  APPLE)
+
 #
 # Handle a few other definitions
 #
@@ -236,6 +244,23 @@ if (NOT EMSCRIPTEN)
     message(STATUS "Fontconfig not found. Please set FONTCONFIG_DIR.")
     message(FATAL_ERROR "Fontconfig not found.")
   endif (FONTCONFIG_LIBRARY)
+
+  # Find EGL
+  if (GLVIS_USE_EGL)
+    find_package(OpenGL OPTIONAL_COMPONENTS EGL)
+    if (OpenGL_EGL_FOUND)
+      list(APPEND _glvis_compile_defs "GLVIS_USE_EGL")
+      list(APPEND _glvis_libraries OpenGL::EGL)
+    else()
+      message(WARNING "EGL library not found. EGL disabled.")
+      set(GLVIS_USE_EGL OFF)
+    endif (OpenGL_EGL_FOUND)
+  endif (GLVIS_USE_EGL)
+
+  # Find CGL
+  if (GLVIS_USE_CGL)
+    list(APPEND _glvis_compile_defs "GLVIS_USE_CGL")
+  endif (GLVIS_USE_CGL)
 
   # Find threading library
   find_package(Threads REQUIRED)

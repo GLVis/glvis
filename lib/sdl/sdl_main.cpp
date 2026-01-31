@@ -15,7 +15,7 @@
 
 #include "sdl_main.hpp"
 #include "sdl_helper.hpp"
-#include "logo.hpp"
+#include "../logo.hpp"
 
 #ifdef SDL_VIDEO_DRIVER_COCOA
 #include "sdl_mac.hpp"
@@ -28,7 +28,7 @@
 #endif
 
 extern int GetMultisample();
-extern bool wndUseHiDPI;
+extern bool GetUseHiDPI();
 
 using namespace std;
 
@@ -618,7 +618,7 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
 #ifndef __EMSCRIPTEN__
    win_flags |= SDL_WINDOW_RESIZABLE;
 #endif
-   if (wndUseHiDPI)
+   if (GetUseHiDPI())
    {
       win_flags |= SDL_WINDOW_ALLOW_HIGHDPI;
    }
@@ -645,7 +645,11 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
 
 #ifndef __EMSCRIPTEN__
    SDL_GL_SetSwapInterval(0);
+#ifdef SDL_VIDEO_DRIVER_COCOA
+   if (GLEW_KHR_debug) { glEnable(GL_DEBUG_OUTPUT); }
+#else
    glEnable(GL_DEBUG_OUTPUT);
+#endif
 #endif
 
    // Register window internally in the main thread so it can receive events
@@ -680,7 +684,7 @@ void SdlMainThread::createWindowImpl(CreateWindowCmd& cmd)
 
    // Detect if we are using a high-dpi display and resize the window unless it
    // was already resized by SDL's underlying backend.
-   if (wndUseHiDPI)
+   if (GetUseHiDPI())
    {
       SdlWindow* wnd = cmd.wnd;
       int scr_w, scr_h, pix_w, pix_h, wdpi, hdpi;

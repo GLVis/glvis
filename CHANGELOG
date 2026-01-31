@@ -14,6 +14,15 @@ Version 4.4.1 (development)
 
 Unlike previous GLVis releases, this version requires a C++17 compiler.
 
+- Added headless (no GUI) visualization, relying on the EGL (Linux) or CGL
+  (MacOS) interface. It is available through '-hl' command-line option or
+  'headless' script command (before the visualization commands). The end of the
+  loaded stream or script file ends the visualization in this mode. Note GLVis
+  must be compiled with with EGL/CGL (see INSTALL).
+
+- Added non-persistent mode of the server, when the server terminates after all
+  visualization windows are closed.
+
 - Implemented DOF numbering in 2D scalar mode, pressing the `n` or `N` key cycles
   through: None → Elements → Edges → Vertices → DOFs. Parallel numbering is now by
   default 'local' to each rank; 'global' vs. 'local' numbering can be toggled with

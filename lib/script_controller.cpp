@@ -14,6 +14,8 @@
 #include "coll_reader.hpp"
 #include "stream_reader.hpp"
 #include "visual.hpp"
+#include "sdl/sdl.hpp"
+#include "egl/egl.hpp"
 
 #include <array>
 #include <algorithm>
@@ -59,6 +61,7 @@ enum class Command
    Scale,
    Translate,
    PlotCaption,
+   Headless,
    //----------
    Max
 };
@@ -122,6 +125,7 @@ ScriptCommands::ScriptCommands()
    (*this)[Command::Scale]                = {"scale", "<scale>", "Set the scaling factor."};
    (*this)[Command::Translate]            = {"translate", "<x> <y> <z>", "Set the translation coordinates."};
    (*this)[Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
+   (*this)[Command::Headless]             = {"headless", "", "Change the session to headless."};
 }
 
 int ScriptController::ScriptReadSolution(istream &scr, DataState &state)
@@ -353,12 +357,12 @@ void ScriptController::PrintCommands()
    }
 }
 
-void ScriptController::ExecuteScriptCommand()
+bool ScriptController::ExecuteScriptCommand()
 {
    if (!script)
    {
       cout << "No script stream defined! (Bug?)" << endl;
-      return;
+      return false;
    }
 
    istream &scr = *script;
@@ -371,7 +375,11 @@ void ScriptController::ExecuteScriptCommand()
       {
          cout << "End of script." << endl;
          scr_level = 0;
-         return;
+         if (win.headless)
+         {
+            win.wnd->signalQuit();
+         }
+         return false;
       }
       if (scr.peek() == '#')
       {
@@ -399,7 +407,7 @@ void ScriptController::ExecuteScriptCommand()
       {
          cout << "Unknown command in script: " << word << endl;
          PrintCommands();
-         break;
+         return false;
       }
 
       const Command cmd = (Command)(it - commands.begin());
@@ -504,15 +512,10 @@ void ScriptController::ExecuteScriptCommand()
          {
             scr >> ws >> word;
 
-            cout << "Script: screenshot: " << flush;
-
-            if (Screenshot(word.c_str(), true))
-            {
-               cout << "Screenshot(" << word << ") failed." << endl;
-               done_one_command = 1;
-               continue;
-            }
-            cout << "-> " << word << endl;
+            cout << "Script: screenshot: -> " << word << endl;
+            // Allow GlWindow to handle the expose and screenshot action, in case
+            // any actions need to be taken before MyExpose().
+            win.wnd->screenshot(word, true);
 
             if (scr_min_val > win.vs->GetMinV())
             {
@@ -840,12 +843,16 @@ void ScriptController::ExecuteScriptCommand()
             MyExpose();
          }
          break;
+         case Command::Headless:
+            cout << "The session cannot become headless after initialization" << endl;
+            break;
          case Command::Max: //dummy
             break;
       }
 
       done_one_command = 1;
    }
+   return true;
 }
 
 thread_local ScriptController *ScriptController::script_ctrl = NULL;
@@ -853,7 +860,7 @@ thread_local ScriptController *ScriptController::script_ctrl = NULL;
 void ScriptController::ScriptIdleFunc()
 {
    script_ctrl->ExecuteScriptCommand();
-   if (script_ctrl->scr_level == 0)
+   if (script_ctrl->scr_level == 0 && !script_ctrl->win.headless)
    {
       ScriptControl();
    }
@@ -913,6 +920,9 @@ void ScriptController::PlayScript(Window win, istream &scr)
          case Command::Window:
             scr >> script.win.window_x >> script.win.window_y >> script.win.window_w >>
                 script.win.window_h;
+            break;
+         case Command::Headless:
+            script.win.headless = true;
             break;
          case Command::DataCollCycle:
             scr >> script.dc_cycle;
@@ -986,9 +996,12 @@ void ScriptController::PlayScript(Window win, istream &scr)
    script.script = &scr;
    script.win.data_state.keys.clear();
 
-   // Make sure the singleton object returned by GetMainThread() is
+   // backup the headless flag as the window is moved
+   const bool headless = script.win.headless;
+
+   // Make sure the returned singleton object is
    // initialized from the main thread.
-   GetMainThread();
+   GetMainThread(headless);
 
    std::thread worker_thread
    {
@@ -997,13 +1010,21 @@ void ScriptController::PlayScript(Window win, istream &scr)
          script_ctrl = &local_script;
          if (local_script.win.GLVisInitVis({}))
          {
-            local_script.win.wnd->setOnKeyDown(SDLK_SPACE, ScriptControl);
+            if (!local_script.win.headless)
+            {
+               local_script.win.wnd->setOnKeyDown(SDLK_SPACE, ScriptControl);
+            }
+            else
+            {
+               // execute all commands, updating the scene every time
+               ScriptControl();
+            }
             local_script.win.GLVisStartVis();
          }
       },
       std::move(script)
    };
 
-   SDLMainLoop();
+   MainThreadLoop(headless);
    worker_thread.join();
 }

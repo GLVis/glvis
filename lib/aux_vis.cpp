@@ -16,9 +16,12 @@
 #include <regex>
 #include <thread>
 
+#include "sdl/sdl.hpp"
+#include "sdl/sdl_main.hpp"
+#include "egl/egl.hpp"
+#include "egl/egl_main.hpp"
 #include "gl/types.hpp"
 #include "palettes.hpp"
-#include "sdl.hpp"
 #include "threads.hpp"
 #ifndef __EMSCRIPTEN__
 #include "gl2ps.h"
@@ -53,13 +56,25 @@ static int glvis_multisample = -1;
 static float line_w = 1.f;
 static float line_w_aa = gl3::LINE_WIDTH_AA;
 
-static thread_local SdlWindow * wnd = nullptr;
+static thread_local GLWindow *wnd = nullptr;
+static thread_local SdlWindow *sdl_wnd = nullptr;
 static bool wndLegacyGl = false;
-bool wndUseHiDPI = true; // shared with sdl_main.cpp
+static bool wndUseHiDPI = true;
 
-void SDLMainLoop(bool server_mode)
+MainThread& GetMainThread(bool headless)
 {
-   SdlWindow::StartSDL(server_mode);
+#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
+   if (headless)
+   {
+      return EglMainThread::Get();
+   }
+#endif
+   return GetSdlMainThread();
+}
+
+void MainThreadLoop(bool headless, bool server_mode)
+{
+   GetMainThread(headless).MainLoop(server_mode);
 }
 
 void SetGLVisCommand(GLVisCommand *cmd)
@@ -67,7 +82,12 @@ void SetGLVisCommand(GLVisCommand *cmd)
    glvis_command = cmd;
 }
 
-SdlWindow * GetAppWindow()
+SdlWindow * GetSdlWindow()
+{
+   return sdl_wnd;
+}
+
+GLWindow *GetAppWindow()
 {
    return wnd;
 }
@@ -87,28 +107,70 @@ void SetUseHiDPI(bool status)
    wndUseHiDPI = status;
 }
 
+bool GetUseHiDPI()
+{
+   return wndUseHiDPI;
+}
+
 void MyExpose(GLsizei w, GLsizei h);
 void MyExpose();
 
-SdlWindow* InitVisualization(const char name[], int x, int y, int w, int h)
+GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
+                            bool headless)
 {
-
 #ifdef GLVIS_DEBUG
-   cout << "OpenGL Visualization" << endl;
-#endif
-   if (!wnd)
+   if (!headless) { cout << "OpenGL Visualization" << endl; }
+   else
    {
-      wnd = new SdlWindow();
-      if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
+#if defined(GLVIS_USE_EGL)
+      cout << "OpenGL+EGL Visualization" << endl;
+#elif defined(GLVIS_USE_CGL)
+      cout << "OpenGL+CGL Visualization" << endl;
+#else
+      cout << "Headless rendering requires EGL or CGL!" << endl;
+#endif
+   }
+#endif
+
+   if (!headless)
+   {
+      if (!sdl_wnd)
       {
-         delete wnd;
-         wnd = nullptr;
-         return NULL;
+         wnd = sdl_wnd = new SdlWindow();
+         if (!sdl_wnd->createWindow(name, x, y, w, h, wndLegacyGl))
+         {
+            delete wnd;
+            wnd = sdl_wnd = nullptr;
+            return NULL;
+         }
+      }
+      else
+      {
+         sdl_wnd->clearEvents();
       }
    }
    else
    {
-      wnd->clearEvents();
+#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
+      sdl_wnd = nullptr;
+      if (!wnd)
+      {
+         wnd = new EglWindow();
+         if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
+         {
+            delete wnd;
+            wnd = nullptr;
+            return NULL;
+         }
+      }
+      else
+      {
+         wnd->clearEvents();
+      }
+#else // GLVIS_USE_EGL || GLVIS_USE_CGL
+      cerr << "EGL or CGL are required for headless rendering!" << endl;
+      return NULL;
+#endif // GLVIS_USE_EGL || GLVIS_USE_CGL
    }
 
 #ifdef GLVIS_DEBUG
@@ -133,7 +195,10 @@ SdlWindow* InitVisualization(const char name[], int x, int y, int w, int h)
    wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
    wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
 
-   wnd->setTouchPinchCallback(TouchPinch);
+   if (sdl_wnd)
+   {
+      sdl_wnd->setTouchPinchCallback(TouchPinch);
+   }
 
    // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
    wnd->setOnKeyDown (SDLK_s, KeyS);
@@ -198,11 +263,6 @@ SdlWindow* InitVisualization(const char name[], int x, int y, int w, int h)
 #ifndef __EMSCRIPTEN__
    wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
    wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
-
-   if (locscene)
-   {
-      delete locscene;
-   }
 #endif
    locscene = nullptr;
 
@@ -377,7 +437,7 @@ void RunVisualization()
 #endif
    InitIdleFuncs();
    visualize = 0;
-   wnd = nullptr;
+   wnd = sdl_wnd = nullptr;
 }
 
 void SendExposeEvent()
@@ -606,7 +666,7 @@ inline void ComputeSphereAngles(int &newx, int &newy,
    new_sph_t = atan2(y, x);
 }
 
-void LeftButtonDown (EventInfo *event)
+void LeftButtonDown(GLWindow::MouseEventInfo *event)
 {
    locscene -> spinning = 0;
    RemoveIdleFunc(MainLoop);
@@ -624,7 +684,7 @@ void LeftButtonDown (EventInfo *event)
    starty = oldy;
 }
 
-void LeftButtonLoc (EventInfo *event)
+void LeftButtonLoc(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -682,7 +742,7 @@ void LeftButtonLoc (EventInfo *event)
    }
 }
 
-void LeftButtonUp (EventInfo *event)
+void LeftButtonUp(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -708,13 +768,13 @@ void LeftButtonUp (EventInfo *event)
    }
 }
 
-void MiddleButtonDown (EventInfo *event)
+void MiddleButtonDown(GLWindow::MouseEventInfo *event)
 {
    startx = oldx = event->mouse_x;
    starty = oldy = event->mouse_y;
 }
 
-void MiddleButtonLoc (EventInfo *event)
+void MiddleButtonLoc(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -782,16 +842,16 @@ void MiddleButtonLoc (EventInfo *event)
    oldy = newy;
 }
 
-void MiddleButtonUp (EventInfo*)
+void MiddleButtonUp(GLWindow::MouseEventInfo*)
 {}
 
-void RightButtonDown (EventInfo *event)
+void RightButtonDown(GLWindow::MouseEventInfo *event)
 {
    startx = oldx = event->mouse_x;
    starty = oldy = event->mouse_y;
 }
 
-void RightButtonLoc (EventInfo *event)
+void RightButtonLoc(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -839,7 +899,7 @@ void RightButtonLoc (EventInfo *event)
    oldy = newy;
 }
 
-void RightButtonUp (EventInfo*)
+void RightButtonUp(GLWindow::MouseEventInfo*)
 {}
 
 void TouchPinch(SDL_MultiGestureEvent & e)
@@ -972,7 +1032,7 @@ int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi, bool with_alpha,
    }
 
    png_uint_32 ppi = is_hidpi ? 144 : 72; // pixels/inch
-   png_uint_32 ppm = ppi/0.0254 + 0.5;    // pixels/meter
+   auto ppm = static_cast<png_uint_32>(ppi/0.0254 + 0.5);    // pixels/meter
    png_set_pHYs(png_ptr, info_ptr, ppm, ppm, PNG_RESOLUTION_METER);
 
    png_init_io(png_ptr, fp);

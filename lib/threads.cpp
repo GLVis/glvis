@@ -473,6 +473,20 @@ int GLVisCommand::Autopause(const char *mode)
    return 0;
 }
 
+int GLVisCommand::Quit()
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = Command::QUIT;
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
+
 int GLVisCommand::Execute()
 {
    if (!command_ready)
@@ -536,7 +550,7 @@ int GLVisCommand::Execute()
       case Command::SCREENSHOT:
       {
          cout << "Command: screenshot -> " << screenshot_filename << endl;
-         // Allow SdlWindow to handle the expose and screenshot action, in case
+         // Allow GlWindow to handle the expose and screenshot action, in case
          // any actions need to be taken before MyExpose().
          thread_wnd->screenshot(screenshot_filename, true);
          break;
@@ -812,6 +826,11 @@ int GLVisCommand::Execute()
          break;
       }
 
+      case Command::QUIT:
+      {
+         thread_wnd->signalQuit();
+         break;
+      }
    }
 
    command = Command::NO_COMMAND;
@@ -939,8 +958,9 @@ ThreadCommands::ThreadCommands()
 }
 
 communication_thread::communication_thread(StreamCollection _is,
-                                           GLVisCommand* cmd)
-   : is(std::move(_is)), glvis_command(cmd)
+                                           GLVisCommand* cmd,
+                                           bool end_quit_)
+   : is(std::move(_is)), glvis_command(cmd), end_quit(end_quit_)
 {
    new_m = NULL;
    new_g = NULL;
@@ -1575,6 +1595,11 @@ void communication_thread::execute()
    }
 
    cout << "Stream: end of input." << endl;
+
+   if (end_quit)
+   {
+      glvis_command->Quit();
+   }
 
 comm_terminate:
    for (size_t i = 0; i < is.size(); i++)

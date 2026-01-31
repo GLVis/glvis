@@ -10,9 +10,7 @@
 // CONTRIBUTING.md for details.
 
 #include <iostream>
-#include "aux_vis.hpp"
-#include "gl/renderer_core.hpp"
-#include "gl/renderer_ff.hpp"
+#include "../aux_vis.hpp"
 #include "sdl.hpp"
 #include "sdl_main.hpp"
 
@@ -67,13 +65,13 @@ SdlWindow::Handle::~Handle()
    }
 }
 
-SdlMainThread& GetMainThread()
+SdlMainThread& GetSdlMainThread()
 {
    static SdlMainThread inst;
    return inst;
 }
 
-bool SdlWindow::isGlInitialized()
+bool SdlWindow::isGlInitialized() const
 {
    return (handle.gl_ctx != 0);
 }
@@ -82,7 +80,7 @@ SdlWindow::SdlWindow() {}
 
 void SdlWindow::StartSDL(bool server_mode)
 {
-   GetMainThread().MainLoop(server_mode);
+   GetSdlMainThread().MainLoop(server_mode);
 }
 
 const int default_dpi = 72;
@@ -94,7 +92,7 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
    is_multithreaded = false;
 #endif
    // create a new SDL window
-   handle = GetMainThread().GetHandle(this, title, x, y, w, h, legacyGlOnly);
+   handle = GetSdlMainThread().GetHandle(this, title, x, y, w, h, legacyGlOnly);
 
    // at this point, window should be up
    if (!handle.isInitialized())
@@ -104,88 +102,13 @@ bool SdlWindow::createWindow(const char* title, int x, int y, int w, int h,
 
    window_id = SDL_GetWindowID(handle.hwnd);
 
-   GLenum err = glewInit();
-#ifdef GLEW_ERROR_NO_GLX_DISPLAY
-   // NOTE: Hacky workaround for Wayland initialization failure
-   // See https://github.com/nigels-com/glew/issues/172
-   if (err == GLEW_ERROR_NO_GLX_DISPLAY)
-   {
-      cerr << "GLEW: No GLX display found. If you are using Wayland this can "
-           << "be ignored." << endl;
-      err = GLEW_OK;
-   }
-#endif
-   if (err != GLEW_OK)
-   {
-      cerr << "FATAL: Failed to initialize GLEW: "
-           << glewGetErrorString(err) << endl;
-      return false;
-   }
-
-   // print versions
-   PRINT_DEBUG("Using GLEW " << glewGetString(GLEW_VERSION) << std::endl);
-   PRINT_DEBUG("Using GL " << glGetString(GL_VERSION) << std::endl);
-
-   renderer.reset(new gl3::MeshRenderer);
-   renderer->setSamplesMSAA(GetMultisample());
-#ifndef __EMSCRIPTEN__
-   if (!GLEW_VERSION_1_1)
-   {
-      cerr << "FATAL: Minimum of OpenGL 1.1 is required." << endl;
-      return false;
-   }
-   if (!GLEW_VERSION_1_3)
-   {
-      // Multitexturing was introduced into the core OpenGL specification in
-      // version 1.3; for versions before, we need to load the functions from
-      // the ARB_multitexture extension.
-      if (GLEW_ARB_multitexture)
-      {
-         glActiveTexture = glActiveTextureARB;
-         glClientActiveTexture = glClientActiveTextureARB;
-         glMultiTexCoord2f = glMultiTexCoord2fARB;
-      }
-      else
-      {
-         cerr << "FATAL: Missing OpenGL multitexture support." << endl;
-         return false;
-      }
-   }
-   if (!GLEW_VERSION_3_0 && GLEW_EXT_transform_feedback)
-   {
-      glBindBufferBase            = glBindBufferBaseEXT;
-      // Use an explicit typecast to suppress an error from inconsistent types
-      // that are present in older versions of GLEW.
-      glTransformFeedbackVaryings =
-         (PFNGLTRANSFORMFEEDBACKVARYINGSPROC)glTransformFeedbackVaryingsEXT;
-      glBeginTransformFeedback    = glBeginTransformFeedbackEXT;
-      glEndTransformFeedback      = glEndTransformFeedbackEXT;
-   }
-   if (!legacyGlOnly && (GLEW_VERSION_3_0
-                         || (GLEW_VERSION_2_0 && GLEW_EXT_transform_feedback)))
-   {
-      // We require both shaders and transform feedback EXT_transform_feedback
-      // was made core in OpenGL 3.0
-      PRINT_DEBUG("Loading CoreGLDevice..." << endl);
-      renderer->setDevice<gl3::CoreGLDevice>();
-   }
-   else
-   {
-      PRINT_DEBUG("Shader support missing, loading FFGLDevice..." << endl);
-      renderer->setDevice<gl3::FFGLDevice>();
-   }
-
-#else
-   renderer->setDevice<gl3::CoreGLDevice>();
-#endif
-
-   return true;
+   return initGLEW(legacyGlOnly);
 }
 
 SdlWindow::~SdlWindow()
 {
    // Let the main SDL thread delete the handles
-   GetMainThread().DeleteHandle(std::move(handle));
+   GetSdlMainThread().DeleteHandle(std::move(handle));
 }
 
 void SdlWindow::windowEvent(SDL_WindowEvent& ew)
@@ -213,7 +136,7 @@ void SdlWindow::windowEvent(SDL_WindowEvent& ew)
 
 void SdlWindow::motionEvent(SDL_MouseMotionEvent& em)
 {
-   EventInfo info =
+   MouseEventInfo info =
    {
       em.x, em.y,
       SDL_GetModState()
@@ -245,7 +168,7 @@ void SdlWindow::mouseEventDown(SDL_MouseButtonEvent& eb)
 {
    if (onMouseDown[eb.button])
    {
-      EventInfo info =
+      MouseEventInfo info =
       {
          eb.x, eb.y,
          SDL_GetModState()
@@ -258,7 +181,7 @@ void SdlWindow::mouseEventUp(SDL_MouseButtonEvent& eb)
 {
    if (onMouseUp[eb.button])
    {
-      EventInfo info =
+      MouseEventInfo info =
       {
          eb.x, eb.y,
          SDL_GetModState()
@@ -278,7 +201,7 @@ void SdlWindow::keyDownEvent(SDL_Keysym& ks)
        && (ks.mod & (KMOD_CTRL | KMOD_LALT | KMOD_GUI)) == 0)
    {
       lastKeyDownProcessed = false;
-      lastKeyDownMods = ks.mod;
+      lastKeyDownMods = (SDL_Keymod)ks.mod;
       lastKeyDownChar = ks.sym;
       return;
    }
@@ -288,23 +211,9 @@ void SdlWindow::keyDownEvent(SDL_Keysym& ks)
    lastKeyDownProcessed = true;
    if (onKeyDown[ks.sym])
    {
-      onKeyDown[ks.sym](ks.mod);
+      onKeyDown[ks.sym]((SDL_Keymod)ks.mod);
 
-      // Record the key in 'saved_keys':
-      bool isAlt = ks.mod & (KMOD_ALT);
-      bool isCtrl = ks.mod & (KMOD_CTRL);
-      saved_keys += "[";
-      if (isCtrl) { saved_keys += "C-"; }
-      if (isAlt) { saved_keys += "Alt-"; }
-      if (ks.sym >= 32 && ks.sym < 127)
-      {
-         saved_keys += (char)(ks.sym);
-      }
-      else
-      {
-         saved_keys += SDL_GetKeyName(ks.sym);
-      }
-      saved_keys += "]";
+      recordKey(ks.sym, (SDL_Keymod)ks.mod);
    }
 }
 
@@ -322,22 +231,10 @@ void SdlWindow::textInputEvent(const SDL_TextInputEvent &tie)
    }
    if (onKeyDown[c])
    {
-      onKeyDown[c](lastKeyDownMods & ~(KMOD_CAPS | KMOD_LSHIFT | KMOD_RSHIFT));
+      onKeyDown[c]((SDL_Keymod)(lastKeyDownMods & ~(KMOD_CAPS | KMOD_LSHIFT |
+                                                    KMOD_RSHIFT)));
 
-      // Record the key in 'saved_keys':
-      bool isAlt = lastKeyDownMods & (KMOD_ALT);
-      bool isCtrl = lastKeyDownMods & (KMOD_CTRL);
-      if (isAlt || isCtrl)
-      {
-         saved_keys += "[";
-      }
-      if (isCtrl) { saved_keys += "C-"; }
-      if (isAlt) { saved_keys += "Alt-"; }
-      saved_keys += c;
-      if (isAlt || isCtrl)
-      {
-         saved_keys += "]";
-      }
+      recordKey(c, lastKeyDownMods);
    }
 }
 
@@ -361,8 +258,8 @@ void SdlWindow::mainIter()
 {
    if (!is_multithreaded)
    {
-      // Pull events from GetMainThread() object
-      GetMainThread().DispatchSDLEvents();
+      // Pull events from GetSdlMainThread() object
+      GetSdlMainThread().DispatchSDLEvents();
    }
    bool events_pending = false;
    bool sleep = false;
@@ -468,7 +365,7 @@ void SdlWindow::mainIter()
          // To avoid this issue, we just call [NSOpenGLContext update]
          // immediately before the expose event.
          SdlCocoaPlatform* platform =
-            dynamic_cast<SdlCocoaPlatform*>(GetMainThread().GetPlatform());
+            dynamic_cast<SdlCocoaPlatform*>(GetSdlMainThread().GetPlatform());
          if (platform)
          {
             platform->ContextUpdate();
@@ -514,7 +411,7 @@ void SdlWindow::mainLoop()
          // TODO: Temporary workaround - after merge, everyone should update to
          // latest SDL
          SdlCocoaPlatform* mac_platform
-            = dynamic_cast<SdlCocoaPlatform*>(GetMainThread().GetPlatform());
+            = dynamic_cast<SdlCocoaPlatform*>(GetSdlMainThread().GetPlatform());
          if (mac_platform && mac_platform->UseThreadWorkaround())
          {
             mac_platform->SwapWindow();
@@ -542,20 +439,20 @@ void SdlWindow::signalLoop()
    events_available.notify_all();
 }
 
-void SdlWindow::getWindowSize(int& w, int& h)
+void SdlWindow::getWindowSize(int& w, int& h) const
 {
    w = 0;
    h = 0;
    if (handle.isInitialized())
    {
 #ifdef __EMSCRIPTEN__
-      if (canvas_id_.empty())
+      if (canvas_id.empty())
       {
-         std::cerr << "error: id is undefined: " << canvas_id_ << std::endl;
+         std::cerr << "error: id is undefined: " << canvas_id << std::endl;
          return;
       }
       double dw, dh;
-      auto err = emscripten_get_element_css_size(canvas_id_.c_str(), &dw, &dh);
+      auto err = emscripten_get_element_css_size(canvas_id.c_str(), &dw, &dh);
       w = int(dw);
       h = int(dh);
       if (err != EMSCRIPTEN_RESULT_SUCCESS)
@@ -571,12 +468,12 @@ void SdlWindow::getWindowSize(int& w, int& h)
    }
 }
 
-void SdlWindow::getGLDrawSize(int& w, int& h)
+void SdlWindow::getGLDrawSize(int& w, int& h) const
 {
    SDL_GL_GetDrawableSize(handle.hwnd, &w, &h);
 }
 
-void SdlWindow::getDpi(int& w, int& h)
+void SdlWindow::getDpi(int& w, int& h) const
 {
    w = default_dpi;
    h = default_dpi;
@@ -609,19 +506,19 @@ void SdlWindow::getDpi(int& w, int& h)
    }
 }
 
-void SdlWindow::setWindowTitle(std::string& title)
+void SdlWindow::setWindowTitle(const std::string& title)
 {
    setWindowTitle(title.c_str());
 }
 
 void SdlWindow::setWindowTitle(const char * title)
 {
-   GetMainThread().SetWindowTitle(handle, title);
+   GetSdlMainThread().SetWindowTitle(handle, title);
 }
 
 void SdlWindow::setWindowSize(int w, int h)
 {
-   GetMainThread().SetWindowSize(handle, pixel_scale_x*w, pixel_scale_y*h);
+   GetSdlMainThread().SetWindowSize(handle, pixel_scale_x*w, pixel_scale_y*h);
    update_before_expose = true;
 
 }
@@ -632,9 +529,9 @@ void SdlWindow::setWindowPos(int x, int y)
                SDL_WINDOWPOS_ISCENTERED(x);
    bool uc_y = SDL_WINDOWPOS_ISUNDEFINED(y) ||
                SDL_WINDOWPOS_ISCENTERED(y);
-   GetMainThread().SetWindowPosition(handle,
-                                     uc_x ? x : pixel_scale_x*x,
-                                     uc_y ? y : pixel_scale_y*y);
+   GetSdlMainThread().SetWindowPosition(handle,
+                                        uc_x ? x : pixel_scale_x*x,
+                                        uc_y ? y : pixel_scale_y*y);
    update_before_expose = true;
 }
 
