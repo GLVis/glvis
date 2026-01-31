@@ -23,6 +23,13 @@ Unlike previous GLVis releases, this version requires a C++17 compiler.
 - Added non-persistent mode of the server, when the server terminates after all
   visualization windows are closed.
 
+- Added visualization of complex function data originating from
+  '(Par)ComplexGridFunction' class in MFEM. The complex values are represented
+  by their magnitude, phase, real part or imaginary part, which can be switched
+  by 'Q' key. Additionally, the complex function can be animated by an added
+  harmonic phase. To increase or decrease the phase frequency, use ';' or ':',
+  respectively.
+
 - Implemented DOF numbering in 2D scalar mode, pressing the `n` or `N` key cycles
   through: None → Elements → Edges → Vertices → DOFs. Parallel numbering is now by
   default 'local' to each rank; 'global' vs. 'local' numbering can be toggled with

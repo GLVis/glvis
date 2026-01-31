@@ -204,8 +204,8 @@ GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
    wnd->setOnKeyDown (SDLK_s, KeyS);
    wnd->setOnKeyDown ('S', KeyS);
 
-   wnd->setOnKeyDown (SDLK_q, KeyQPressed);
-   // wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
+   wnd->setOnKeyDown (SDLK_q, KeyqPressed);
+   wnd->setOnKeyDown ('Q', KeyQPressed);
 
    wnd->setOnKeyDown (SDLK_LEFT, KeyLeftPressed);
    wnd->setOnKeyDown (SDLK_RIGHT, KeyRightPressed);
@@ -604,12 +604,28 @@ void RemoveIdleFunc(void (*Func)(void))
 
 
 thread_local double xang = 0., yang = 0.;
+const double xang_step = 0.2; // angle in degrees
 thread_local gl3::GlMatrix srot;
 thread_local double sph_t, sph_u;
 thread_local GLint oldx, oldy, startx, starty;
 
 thread_local int constrained_spinning = 0;
 
+thread_local double phase_rate = 0.;
+thread_local int phase_anim = 0;
+const double phase_step = 0.001;
+
+void CheckMainIdleFunc()
+{
+   if (locscene->spinning || phase_anim)
+   {
+      AddIdleFunc(MainLoop);
+   }
+   if (!locscene->spinning && !phase_anim)
+   {
+      RemoveIdleFunc(MainLoop);
+   }
+}
 
 void MainLoop()
 {
@@ -619,13 +635,19 @@ void MainLoop()
       if (!constrained_spinning)
       {
          locscene->Rotate(xang, yang);
-         SendExposeEvent();
       }
       else
       {
          locscene->PreRotate(xang, 0.0, 0.0, 1.0);
-         SendExposeEvent();
       }
+   }
+   if (phase_anim)
+   {
+      locscene->UpdateComplexPhase(phase_rate);
+   }
+   if (locscene->spinning || phase_anim)
+   {
+      SendExposeEvent();
       std::this_thread::sleep_for(std::chrono::milliseconds{10}); // sleep for 0.01 seconds
    }
    if (locscene->movie)
@@ -669,7 +691,7 @@ inline void ComputeSphereAngles(int &newx, int &newy,
 void LeftButtonDown(GLWindow::MouseEventInfo *event)
 {
    locscene -> spinning = 0;
-   RemoveIdleFunc(MainLoop);
+   CheckMainIdleFunc();
 
    oldx = event->mouse_x;
    oldy = event->mouse_y;
@@ -1329,10 +1351,15 @@ void KeyCtrlP()
 #endif
 }
 
-void KeyQPressed()
+void KeyqPressed()
 {
    wnd->signalQuit();
    visualize = 0;
+}
+
+void KeyQPressed()
+{
+   Window::SwitchSolution();
 }
 
 void ToggleThreads()
@@ -1345,7 +1372,7 @@ void ToggleThreads()
    }
 }
 
-void ThreadsPauseFunc(GLenum state)
+void ThreadsPauseFunc(SDL_Keymod state)
 {
    if (state & KMOD_CTRL)
    {
@@ -1381,57 +1408,96 @@ void CheckSpin()
    {
       xang = 0.;
    }
-   if (xang != 0. || yang != 0.)
-   {
-      locscene->spinning = 1;
-      AddIdleFunc(MainLoop);
-   }
-   else
-   {
-      locscene->spinning = 0;
-      RemoveIdleFunc(MainLoop);
-   }
+   locscene->spinning = (xang != 0. || yang != 0.);
+   CheckMainIdleFunc();
    cout << "Spin angle: " << xang << " degrees / frame" << endl;
 }
 
-const double xang_step = 0.2; // angle in degrees
-
-void Key0Pressed()
+void CheckPhaseAnim()
 {
-   if (!locscene -> spinning)
+   if (fabs(phase_rate) < phase_step / 2.)
    {
-      xang = 0;
+      phase_rate = 0.;
    }
-   xang -= xang_step;
-   CheckSpin();
+   phase_anim = (phase_rate != 0.);
+   CheckMainIdleFunc();
+   cout << "Phase rate: " << phase_rate << " period / frame" << endl;
 }
 
-void KeyDeletePressed()
+void Key0Pressed(SDL_Keymod mod)
 {
-   if (locscene -> spinning)
+   if (mod & KMOD_ALT)
    {
-      xang = yang = 0.;
-      locscene -> spinning = 0;
-      RemoveIdleFunc(MainLoop);
-      constrained_spinning = 1;
+      if (!phase_anim)
+      {
+         phase_rate = 0.;
+      }
+      phase_rate -= phase_step;
+      CheckPhaseAnim();
    }
    else
    {
-      xang = xang_step;
-      locscene -> spinning = 1;
-      AddIdleFunc(MainLoop);
-      constrained_spinning = 1;
+      if (!locscene -> spinning)
+      {
+         xang = 0;
+      }
+      xang -= xang_step;
+      CheckSpin();
    }
 }
 
-void KeyEnterPressed()
+void KeyDeletePressed(SDL_Keymod mod)
 {
-   if (!locscene -> spinning)
+   if (mod & KMOD_ALT)
    {
-      xang = 0;
+      if (phase_anim)
+      {
+         phase_rate = 0.;
+         phase_anim = 0;
+      }
+      else
+      {
+         phase_rate = phase_step;
+         phase_anim = 1;
+      }
    }
-   xang += xang_step;
-   CheckSpin();
+   else
+   {
+      if (locscene -> spinning)
+      {
+         xang = yang = 0.;
+         locscene -> spinning = 0;
+      }
+      else
+      {
+         xang = xang_step;
+         locscene -> spinning = 1;
+      }
+      constrained_spinning = 1;
+   }
+   CheckMainIdleFunc();
+}
+
+void KeyEnterPressed(SDL_Keymod mod)
+{
+   if (mod & KMOD_ALT)
+   {
+      if (!phase_anim)
+      {
+         phase_rate = 0.;
+      }
+      phase_rate += phase_step;
+      CheckPhaseAnim();
+   }
+   else
+   {
+      if (!locscene -> spinning)
+      {
+         xang = 0;
+      }
+      xang += xang_step;
+      CheckSpin();
+   }
 }
 
 void Key7Pressed()
@@ -1510,7 +1576,7 @@ void ShiftView(double dx, double dy)
    locscene->ViewCenterY += dy/scale;
 }
 
-void KeyLeftPressed(GLenum state)
+void KeyLeftPressed(SDL_Keymod state)
 {
    if (state & KMOD_CTRL)
    {
@@ -1523,7 +1589,7 @@ void KeyLeftPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyRightPressed(GLenum state)
+void KeyRightPressed(SDL_Keymod state)
 {
    if (state & KMOD_CTRL)
    {
@@ -1536,7 +1602,7 @@ void KeyRightPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyUpPressed(GLenum state)
+void KeyUpPressed(SDL_Keymod state)
 {
    if (state & KMOD_CTRL)
    {
@@ -1549,7 +1615,7 @@ void KeyUpPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyDownPressed(GLenum state)
+void KeyDownPressed(SDL_Keymod state)
 {
    if (state & KMOD_CTRL)
    {

@@ -50,9 +50,16 @@ std::string VisualizationSceneVector::GetHelpString() const
       << "| o -  (De)refine elem. (NC shading) |" << endl
       << "| O -  Switch 'o' func. (NC shading) |" << endl
       << "| p/P  Cycle through color palettes  |" << endl
-      << "| q -  Quits                         |" << endl
-      << "| Q -  Cycle quadrature data mode    |" << endl
-      << "| r -  Reset the plot to 3D view     |" << endl
+      << "| q -  Quits                         |" << endl;
+   if (win.data_state.quad_f)
+   {
+      os << "| Q -  Cycle quadrature data mode    |" << endl;
+   }
+   else if (win.data_state.cgrid_f)
+   {
+      os << "| Q -  Cycle complex data mode       |" << endl;
+   }
+   os << "| r -  Reset the plot to 3D view     |" << endl
       << "| R -  Reset the plot to 2D view     |" << endl
       << "| s -  Turn on/off unit cube scaling |" << endl
       << "| S -  Take snapshot/Record a movie  |" << endl
@@ -84,8 +91,13 @@ std::string VisualizationSceneVector::GetHelpString() const
       << "| *,/  Scale up/down                 |" << endl
       << "| +/-  Change z-scaling              |" << endl
       << "| . -  Start/stop spinning           |" << endl
-      << "| 0/Enter - Spinning speed and dir.  |" << endl
-      << "+------------------------------------+" << endl
+      << "| 0/Enter - Spinning speed and dir.  |" << endl;
+   if (win.data_state.cgrid_f)
+   {
+      os << "| Alt+. -  Start/stop phase anim.    |" << endl
+         << "| Alt+0/Enter - Phase anim. speed    |" << endl;
+   }
+   os << "+------------------------------------+" << endl
       << "| Mouse                              |" << endl
       << "+------------------------------------+" << endl
       << "| left   btn    - Rotation           |" << endl
@@ -478,7 +490,7 @@ void VisualizationSceneVector::NewMeshAndSolution(
 
    VisualizationSceneSolution::NewMeshAndSolution(mesh, mesh_coarse, sol, vgf);
 
-   if (autoscale)
+   if (autoscale != VisualizationSceneScalarData::Autoscale::None)
    {
       if (Vec2Scalar == VecLength)
       {
@@ -907,6 +919,48 @@ int VisualizationSceneVector::GetFunctionAutoRefineFactor()
    if (!VecGridF) { return 1;}
 
    return VisualizationSceneScalarData::GetFunctionAutoRefineFactor(*VecGridF);
+}
+
+void VisualizationSceneVector::FindNewBox(bool prepare)
+{
+   VisualizationSceneSolution::FindNewBox(bb.x, bb.y, bb.z);
+
+   win.data_state.FindValueRange(minv, maxv,
+   [this](const Vector &x) { return Vec2Scalar(x(0), x(1)); },
+   [this](double v) { return LogVal(v); });
+
+   if (minv == 0. && maxv == 0.)
+   {
+      minv = bb.z[0];
+      maxv = bb.z[1];
+   }
+
+   FixValueRange();
+
+   bb.z[0] = minv;
+   bb.z[1] = maxv;
+
+   SetNewScalingFromBox(); // UpdateBoundingBox minus PrepareAxes
+   UpdateValueRange(prepare);
+}
+
+void VisualizationSceneVector::FindNewValueRange(bool prepare)
+{
+   win.data_state.FindValueRange(minv, maxv,
+   [this](const Vector &x) { return Vec2Scalar(x(0), x(1)); },
+   [this](double v) { return LogVal(v); });
+
+   if (minv == 0. && maxv == 0.)
+   {
+      double rx[2], ry[2], rv[2];
+      VisualizationSceneSolution::FindNewBox(rx, ry, rv);
+      minv = rv[0];
+      maxv = rv[1];
+   }
+
+   FixValueRange();
+
+   UpdateValueRange(prepare);
 }
 
 void VisualizationSceneVector::PrepareVectorField()

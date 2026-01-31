@@ -13,6 +13,7 @@
 
 #include <array>
 #include <algorithm>
+#include <general/text.hpp>
 
 using namespace std;
 using namespace mfem;
@@ -102,6 +103,18 @@ bool StreamReader::SupportsDataType(const string &data_type)
    return it != commands.end();
 }
 
+bool StreamReader::CheckStreamIsComplex(std::istream &solin,
+                                        bool parallel)
+{
+   const char *header = (parallel)?("ParComplexGridFunction"):
+                        ("ComplexGridFunction");
+   solin >> ws;
+   // Returning of the characters to stream(buffer) does not work reliably,
+   // so compare only the initial character, which fortunately does not
+   // conincide with the header of FiniteElementSpace.
+   return (solin.peek() == header[0]);
+}
+
 int StreamReader::ReadStream(
    istream &is, const string &data_type)
 {
@@ -166,7 +179,14 @@ int StreamReader::ReadStream(
       case Command::VFem3D_GF_keys:
       case Command::Solution:
          data.SetMesh(new Mesh(is, 1, 0, data.fix_elem_orient));
-         data.SetGridFunction(new GridFunction(data.mesh.get(), is));
+         if (CheckStreamIsComplex(is))
+         {
+            data.SetCmplxGridFunction(new ComplexGridFunction(data.mesh.get(), is));
+         }
+         else
+         {
+            data.SetGridFunction(new GridFunction(data.mesh.get(), is));
+         }
          break;
       case Command::Quadrature:
          data.SetMesh(new Mesh(is, 1, 0, data.fix_elem_orient));
@@ -311,11 +331,13 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
    const int nproc = input_streams.size();
    std::vector<Mesh*> mesh_array(nproc);
    std::vector<GridFunction*> gf_array(nproc);
+   std::vector<ComplexGridFunction*> cgf_array(nproc);
    std::vector<QuadratureFunction*> qf_array(nproc);
 
    std::string data_type;
 
    int gf_count = 0;
+   int cgf_count = 0;
    int qf_count = 0;
 
    for (int p = 0; p < nproc; p++)
@@ -350,8 +372,17 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
       }
       else if (data_type != "mesh")
       {
-         gf_array[p] = new GridFunction(mesh_array[p], isock);
-         gf_count++;
+         if (CheckStreamIsComplex(isock, true))
+         {
+            isock.ignore(3);// ignore 'Par' prefix to load as serial
+            cgf_array[p] = new ComplexGridFunction(mesh_array[p], isock);
+            cgf_count++;
+         }
+         else
+         {
+            gf_array[p] = new GridFunction(mesh_array[p], isock);
+            gf_count++;
+         }
       }
 #ifdef GLVIS_DEBUG
       cout << "done." << endl;
@@ -359,6 +390,7 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
    }
 
    if ((gf_count > 0 && gf_count != nproc)
+       || (cgf_count > 0 && cgf_count != nproc)
        || (qf_count > 0 && qf_count != nproc))
    {
       mfem_error("Input streams contain a mixture of data types!");
@@ -368,6 +400,10 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
    if (gf_count > 0)
    {
       data.SetGridFunction(gf_array, nproc);
+   }
+   else if (cgf_count > 0)
+   {
+      data.SetCmplxGridFunction(cgf_array);
    }
    else if (qf_count > 0)
    {
@@ -404,6 +440,12 @@ void StreamReader::WriteStream(std::ostream &os)
          data.mesh->Print(os);
       }
       data.quad_f->Save(os);
+   }
+   else if (data.cgrid_f)
+   {
+      os << "solution\n";
+      data.mesh->Print(os);
+      data.cgrid_f->Save(os);
    }
    else if (data.grid_f)
    {
