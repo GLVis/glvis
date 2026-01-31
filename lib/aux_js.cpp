@@ -171,6 +171,7 @@ int updateParallelStreams(const StringArray & streams)
 //
 void iterVisualization()
 {
+   std::cout << "main iter" << std::endl;
    win.wnd->mainIter();
 }
 
@@ -284,6 +285,8 @@ em::val getPNGByteArray()
    constexpr const char * filename = "im.png";
    int w, h;
    win.wnd->getGLDrawSize(w, h);
+
+   std::cout << "GL draw size: " << w << " " << h << std::endl;
 
    MyExpose();
    // save to in-memory file

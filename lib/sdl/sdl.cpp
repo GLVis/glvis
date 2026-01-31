@@ -280,6 +280,7 @@ void SdlWindow::mainIter()
             waiting_events.pop_front();
             events_pending = !waiting_events.empty();
          }
+         std::cout << "processing event: " << e.type << std::endl;
          keep_going = false;
          switch (e.type)
          {
@@ -373,6 +374,7 @@ void SdlWindow::mainIter()
          update_before_expose = false;
       }
 #endif
+      std::cout << "expose" << std::endl;
       onExpose();
       wnd_state = RenderState::SwapPending;
    }
