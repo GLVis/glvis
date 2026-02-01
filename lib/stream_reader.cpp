@@ -13,7 +13,6 @@
 
 #include <array>
 #include <algorithm>
-#include <general/text.hpp>
 
 using namespace std;
 using namespace mfem;
