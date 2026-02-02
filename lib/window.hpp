@@ -17,7 +17,7 @@
 #include "data_state.hpp"
 #include "stream_reader.hpp"
 
-class SdlWindow;
+class GLWindow;
 class VisualizationSceneScalarData;
 class communication_thread;
 class GLVisCommand;
@@ -27,7 +27,7 @@ struct Window
 private:
    struct
    {
-      std::unique_ptr<SdlWindow> wnd;
+      std::unique_ptr<GLWindow> wnd;
       std::unique_ptr<VisualizationSceneScalarData> vs;
 #ifndef __EMSCRIPTEN__
       std::unique_ptr<communication_thread> comm_thread;
@@ -37,7 +37,7 @@ private:
 
 public:
    DataState data_state;
-   const std::unique_ptr<SdlWindow> &wnd{internal.wnd};
+   const std::unique_ptr<GLWindow> &wnd{internal.wnd};
    const std::unique_ptr<VisualizationSceneScalarData> &vs{internal.vs};
 #ifndef __EMSCRIPTEN__
    const std::unique_ptr<communication_thread> &comm_thread {internal.comm_thread};
@@ -49,6 +49,7 @@ public:
    int         window_w        = 400;
    int         window_h        = 350;
    const char *window_title    = nullptr;
+   bool        headless        = false;
    std::string plot_caption;
    std::string extra_caption;
 
@@ -60,8 +61,14 @@ public:
    bool GLVisInitVis(StreamCollection input_streams);
    void GLVisStartVis();
 
+   /// Switch the complex function representation and update the visualization
+   void SwitchComplexSolution(DataState::ComplexSolution type);
+
    /// Switch the quadrature function representation and update the visualization
    void SwitchQuadSolution(DataState::QuadSolution type);
+
+   /// Update complex phase of the solution and update the visualization
+   void UpdateComplexPhase(double ph);
 
    /// Sets a new mesh and solution from another DataState object, and
    /// updates the VisualizationScene with the new data.
@@ -72,9 +79,15 @@ public:
    /// updated.
    bool SetNewMeshAndSolution(DataState new_state);
 
+   /// Switch representation of the solution
+   static void SwitchSolution();
+
 private:
    /// Thread-local singleton for key handlers
    static thread_local Window *locwin;
+
+   /// Switch representation of the complex function
+   static void SwitchComplexSolution();
 
    /// Switch representation of the quadrature function
    static void SwitchQuadSolution();

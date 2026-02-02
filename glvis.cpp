@@ -42,6 +42,8 @@
 #include "lib/stream_reader.hpp"
 #include "lib/file_reader.hpp"
 #include "lib/coll_reader.hpp"
+#include "lib/sdl/sdl.hpp"
+#include "lib/egl/egl.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -77,11 +79,13 @@ class Session
 public:
    Session(bool fix_elem_orient,
            bool save_coloring,
-           string plot_caption)
+           string plot_caption,
+           bool headless)
    {
       win.data_state.fix_elem_orient = fix_elem_orient;
       win.data_state.save_coloring = save_coloring;
       win.plot_caption = plot_caption;
+      win.headless = headless;
    }
 
    Session(Window other_win)
@@ -154,7 +158,7 @@ public:
 };
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
-                 bool save_coloring, string plot_caption)
+                 bool save_coloring, string plot_caption, bool headless = false)
 {
    std::vector<Session> current_sessions;
    string data_type;
@@ -304,7 +308,7 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          while (1);
       }
 
-      Session new_session(fix_elem_orient, save_coloring, plot_caption);
+      Session new_session(fix_elem_orient, save_coloring, plot_caption, headless);
 
       constexpr int tmp_filename_size = 50;
       char tmp_file[tmp_filename_size];
@@ -381,6 +385,7 @@ int main (int argc, char *argv[])
    const char *window_title  = string_default;
    const char *font_name     = string_default;
    int         portnum       = 19916;
+   bool        persistent    = true;
    int         multisample   = GetMultisample();
    double      line_width    = GetLineWidth();
    double      ms_line_width = GetLineWidthMS();
@@ -451,6 +456,9 @@ int main (int argc, char *argv[])
                   "Save the mesh coloring generated when opening only a mesh.");
    args.AddOption(&portnum, "-p", "--listen-port",
                   "Specify the port number on which to accept connections.");
+   args.AddOption(&persistent, "-pr", "--persistent",
+                  "-no-pr", "--no-persistent",
+                  "Keep server running after all windows are closed.");
    args.AddOption(&secure, "-sec", "--secure-sockets",
                   "-no-sec", "--standard-sockets",
                   "Enable or disable GnuTLS secure sockets.");
@@ -466,6 +474,9 @@ int main (int argc, char *argv[])
                   "Set the window height.");
    args.AddOption(&window_title, "-wt", "--window-title",
                   "Set the window title.");
+   args.AddOption(&win.headless, "-hl", "--headless",
+                  "-no-hl", "--no-headless",
+                  "Start headless (no GUI) visualization.");
    args.AddOption(&c_plot_caption, "-c", "--plot-caption",
                   "Set the plot caption (visible when colorbar is visible).");
    args.AddOption(&font_name, "-fn", "--font",
@@ -607,20 +618,21 @@ int main (int argc, char *argv[])
    // check for saved stream file
    if (stream_file != string_none)
    {
+      // backup the headless flag as the window is moved
+      const bool headless = win.headless;
+
       // Make sure the singleton object returned by GetMainThread() is
       // initialized from the main thread.
-      GetMainThread();
+      GetMainThread(headless);
 
-      Session stream_session(win.data_state.fix_elem_orient,
-                             win.data_state.save_coloring,
-                             win.plot_caption);
+      Session stream_session(std::move(win));
 
       if (!stream_session.StartSavedSession(stream_file))
       {
          return 1;
       }
 
-      SDLMainLoop();
+      MainThreadLoop(headless);
       return 0;
    }
 
@@ -676,17 +688,16 @@ int main (int argc, char *argv[])
    {
       // Make sure the singleton object returned by GetMainThread() is
       // initialized from the main thread.
-      GetMainThread();
+      GetMainThread(win.headless);
 
       // Run server in new thread
       std::thread serverThread{GLVisServer, portnum, save_stream,
                                win.data_state.fix_elem_orient,
                                win.data_state.save_coloring,
-                               win.plot_caption};
+                               win.plot_caption, win.headless};
 
-      // Start SDL in main thread
-      SDLMainLoop(true);
-
+      // Start message loop in main thread
+      MainThreadLoop(win.headless, persistent);
       serverThread.detach();
    }
    else  // input != 1, non-server mode
@@ -792,14 +803,17 @@ int main (int argc, char *argv[])
          if (ierr) { exit(ierr); }
       }
 
+      // backup the headless flag as the window is moved
+      const bool headless = win.headless;
+
       // Make sure the singleton object returned by GetMainThread() is
       // initialized from the main thread.
-      GetMainThread();
+      GetMainThread(headless);
 
       Session single_session(std::move(win));
       single_session.StartSession();
 
-      SDLMainLoop();
+      MainThreadLoop(headless);
    }
 
    cout << "Thank you for using GLVis." << endl;

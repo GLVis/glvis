@@ -16,9 +16,12 @@
 #include <regex>
 #include <thread>
 
+#include "sdl/sdl.hpp"
+#include "sdl/sdl_main.hpp"
+#include "egl/egl.hpp"
+#include "egl/egl_main.hpp"
 #include "gl/types.hpp"
 #include "palettes.hpp"
-#include "sdl.hpp"
 #include "threads.hpp"
 #ifndef __EMSCRIPTEN__
 #include "gl2ps.h"
@@ -53,13 +56,25 @@ static int glvis_multisample = -1;
 static float line_w = 1.f;
 static float line_w_aa = gl3::LINE_WIDTH_AA;
 
-static thread_local SdlWindow * wnd = nullptr;
+static thread_local GLWindow *wnd = nullptr;
+static thread_local SdlWindow *sdl_wnd = nullptr;
 static bool wndLegacyGl = false;
-bool wndUseHiDPI = true; // shared with sdl_main.cpp
+static bool wndUseHiDPI = true;
 
-void SDLMainLoop(bool server_mode)
+MainThread& GetMainThread(bool headless)
 {
-   SdlWindow::StartSDL(server_mode);
+#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
+   if (headless)
+   {
+      return EglMainThread::Get();
+   }
+#endif
+   return GetSdlMainThread();
+}
+
+void MainThreadLoop(bool headless, bool server_mode)
+{
+   GetMainThread(headless).MainLoop(server_mode);
 }
 
 void SetGLVisCommand(GLVisCommand *cmd)
@@ -67,7 +82,12 @@ void SetGLVisCommand(GLVisCommand *cmd)
    glvis_command = cmd;
 }
 
-SdlWindow * GetAppWindow()
+SdlWindow * GetSdlWindow()
+{
+   return sdl_wnd;
+}
+
+GLWindow *GetAppWindow()
 {
    return wnd;
 }
@@ -87,28 +107,70 @@ void SetUseHiDPI(bool status)
    wndUseHiDPI = status;
 }
 
+bool GetUseHiDPI()
+{
+   return wndUseHiDPI;
+}
+
 void MyExpose(GLsizei w, GLsizei h);
 void MyExpose();
 
-SdlWindow* InitVisualization(const char name[], int x, int y, int w, int h)
+GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
+                            bool headless)
 {
-
 #ifdef GLVIS_DEBUG
-   cout << "OpenGL Visualization" << endl;
-#endif
-   if (!wnd)
+   if (!headless) { cout << "OpenGL Visualization" << endl; }
+   else
    {
-      wnd = new SdlWindow();
-      if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
+#if defined(GLVIS_USE_EGL)
+      cout << "OpenGL+EGL Visualization" << endl;
+#elif defined(GLVIS_USE_CGL)
+      cout << "OpenGL+CGL Visualization" << endl;
+#else
+      cout << "Headless rendering requires EGL or CGL!" << endl;
+#endif
+   }
+#endif
+
+   if (!headless)
+   {
+      if (!sdl_wnd)
       {
-         delete wnd;
-         wnd = nullptr;
-         return NULL;
+         wnd = sdl_wnd = new SdlWindow();
+         if (!sdl_wnd->createWindow(name, x, y, w, h, wndLegacyGl))
+         {
+            delete wnd;
+            wnd = sdl_wnd = nullptr;
+            return NULL;
+         }
+      }
+      else
+      {
+         sdl_wnd->clearEvents();
       }
    }
    else
    {
-      wnd->clearEvents();
+#if defined(GLVIS_USE_EGL) or defined(GLVIS_USE_CGL)
+      sdl_wnd = nullptr;
+      if (!wnd)
+      {
+         wnd = new EglWindow();
+         if (!wnd->createWindow(name, x, y, w, h, wndLegacyGl))
+         {
+            delete wnd;
+            wnd = nullptr;
+            return NULL;
+         }
+      }
+      else
+      {
+         wnd->clearEvents();
+      }
+#else // GLVIS_USE_EGL || GLVIS_USE_CGL
+      cerr << "EGL or CGL are required for headless rendering!" << endl;
+      return NULL;
+#endif // GLVIS_USE_EGL || GLVIS_USE_CGL
    }
 
 #ifdef GLVIS_DEBUG
@@ -133,14 +195,17 @@ SdlWindow* InitVisualization(const char name[], int x, int y, int w, int h)
    wnd->setOnMouseUp(SDL_BUTTON_RIGHT, RightButtonUp);
    wnd->setOnMouseMove(SDL_BUTTON_RIGHT, RightButtonLoc);
 
-   wnd->setTouchPinchCallback(TouchPinch);
+   if (sdl_wnd)
+   {
+      sdl_wnd->setTouchPinchCallback(TouchPinch);
+   }
 
    // auxKeyFunc (AUX_p, KeyCtrlP); // handled in vsdata.cpp
    wnd->setOnKeyDown (SDLK_s, KeyS);
    wnd->setOnKeyDown ('S', KeyS);
 
-   wnd->setOnKeyDown (SDLK_q, KeyQPressed);
-   // wnd->setOnKeyDown (SDLK_Q, KeyQPressed);
+   wnd->setOnKeyDown (SDLK_q, KeyqPressed);
+   wnd->setOnKeyDown ('Q', KeyQPressed);
 
    wnd->setOnKeyDown (SDLK_LEFT, KeyLeftPressed);
    wnd->setOnKeyDown (SDLK_RIGHT, KeyRightPressed);
@@ -198,11 +263,6 @@ SdlWindow* InitVisualization(const char name[], int x, int y, int w, int h)
 #ifndef __EMSCRIPTEN__
    wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
    wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
-
-   if (locscene)
-   {
-      delete locscene;
-   }
 #endif
    locscene = nullptr;
 
@@ -377,7 +437,7 @@ void RunVisualization()
 #endif
    InitIdleFuncs();
    visualize = 0;
-   wnd = nullptr;
+   wnd = sdl_wnd = nullptr;
 }
 
 void SendExposeEvent()
@@ -544,12 +604,28 @@ void RemoveIdleFunc(void (*Func)(void))
 
 
 thread_local double xang = 0., yang = 0.;
+const double xang_step = 0.2; // angle in degrees
 thread_local gl3::GlMatrix srot;
 thread_local double sph_t, sph_u;
 thread_local GLint oldx, oldy, startx, starty;
 
 thread_local int constrained_spinning = 0;
 
+thread_local double phase_rate = 0.;
+thread_local int phase_anim = 0;
+const double phase_step = 0.001;
+
+void CheckMainIdleFunc()
+{
+   if (locscene->spinning || phase_anim)
+   {
+      AddIdleFunc(MainLoop);
+   }
+   if (!locscene->spinning && !phase_anim)
+   {
+      RemoveIdleFunc(MainLoop);
+   }
+}
 
 void MainLoop()
 {
@@ -559,13 +635,19 @@ void MainLoop()
       if (!constrained_spinning)
       {
          locscene->Rotate(xang, yang);
-         SendExposeEvent();
       }
       else
       {
          locscene->PreRotate(xang, 0.0, 0.0, 1.0);
-         SendExposeEvent();
       }
+   }
+   if (phase_anim)
+   {
+      locscene->UpdateComplexPhase(phase_rate);
+   }
+   if (locscene->spinning || phase_anim)
+   {
+      SendExposeEvent();
       std::this_thread::sleep_for(std::chrono::milliseconds{10}); // sleep for 0.01 seconds
    }
    if (locscene->movie)
@@ -606,10 +688,10 @@ inline void ComputeSphereAngles(int &newx, int &newy,
    new_sph_t = atan2(y, x);
 }
 
-void LeftButtonDown (EventInfo *event)
+void LeftButtonDown(GLWindow::MouseEventInfo *event)
 {
    locscene -> spinning = 0;
-   RemoveIdleFunc(MainLoop);
+   CheckMainIdleFunc();
 
    oldx = event->mouse_x;
    oldy = event->mouse_y;
@@ -624,7 +706,7 @@ void LeftButtonDown (EventInfo *event)
    starty = oldy;
 }
 
-void LeftButtonLoc (EventInfo *event)
+void LeftButtonLoc(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -682,7 +764,7 @@ void LeftButtonLoc (EventInfo *event)
    }
 }
 
-void LeftButtonUp (EventInfo *event)
+void LeftButtonUp(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -708,13 +790,13 @@ void LeftButtonUp (EventInfo *event)
    }
 }
 
-void MiddleButtonDown (EventInfo *event)
+void MiddleButtonDown(GLWindow::MouseEventInfo *event)
 {
    startx = oldx = event->mouse_x;
    starty = oldy = event->mouse_y;
 }
 
-void MiddleButtonLoc (EventInfo *event)
+void MiddleButtonLoc(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -782,16 +864,16 @@ void MiddleButtonLoc (EventInfo *event)
    oldy = newy;
 }
 
-void MiddleButtonUp (EventInfo*)
+void MiddleButtonUp(GLWindow::MouseEventInfo*)
 {}
 
-void RightButtonDown (EventInfo *event)
+void RightButtonDown(GLWindow::MouseEventInfo *event)
 {
    startx = oldx = event->mouse_x;
    starty = oldy = event->mouse_y;
 }
 
-void RightButtonLoc (EventInfo *event)
+void RightButtonLoc(GLWindow::MouseEventInfo *event)
 {
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
@@ -839,7 +921,7 @@ void RightButtonLoc (EventInfo *event)
    oldy = newy;
 }
 
-void RightButtonUp (EventInfo*)
+void RightButtonUp(GLWindow::MouseEventInfo*)
 {}
 
 void TouchPinch(SDL_MultiGestureEvent & e)
@@ -972,7 +1054,7 @@ int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi, bool with_alpha,
    }
 
    png_uint_32 ppi = is_hidpi ? 144 : 72; // pixels/inch
-   png_uint_32 ppm = ppi/0.0254 + 0.5;    // pixels/meter
+   auto ppm = static_cast<png_uint_32>(ppi/0.0254 + 0.5);    // pixels/meter
    png_set_pHYs(png_ptr, info_ptr, ppm, ppm, PNG_RESOLUTION_METER);
 
    png_init_io(png_ptr, fp);
@@ -1269,10 +1351,15 @@ void KeyCtrlP()
 #endif
 }
 
-void KeyQPressed()
+void KeyqPressed()
 {
    wnd->signalQuit();
    visualize = 0;
+}
+
+void KeyQPressed()
+{
+   Window::SwitchSolution();
 }
 
 void ToggleThreads()
@@ -1285,7 +1372,7 @@ void ToggleThreads()
    }
 }
 
-void ThreadsPauseFunc(GLenum state)
+void ThreadsPauseFunc(SDL_Keymod state)
 {
    if (state & KMOD_CTRL)
    {
@@ -1321,57 +1408,96 @@ void CheckSpin()
    {
       xang = 0.;
    }
-   if (xang != 0. || yang != 0.)
-   {
-      locscene->spinning = 1;
-      AddIdleFunc(MainLoop);
-   }
-   else
-   {
-      locscene->spinning = 0;
-      RemoveIdleFunc(MainLoop);
-   }
+   locscene->spinning = (xang != 0. || yang != 0.);
+   CheckMainIdleFunc();
    cout << "Spin angle: " << xang << " degrees / frame" << endl;
 }
 
-const double xang_step = 0.2; // angle in degrees
-
-void Key0Pressed()
+void CheckPhaseAnim()
 {
-   if (!locscene -> spinning)
+   if (fabs(phase_rate) < phase_step / 2.)
    {
-      xang = 0;
+      phase_rate = 0.;
    }
-   xang -= xang_step;
-   CheckSpin();
+   phase_anim = (phase_rate != 0.);
+   CheckMainIdleFunc();
+   cout << "Phase rate: " << phase_rate << " period / frame" << endl;
 }
 
-void KeyDeletePressed()
+void Key0Pressed(SDL_Keymod mod)
 {
-   if (locscene -> spinning)
+   if (mod & KMOD_ALT)
    {
-      xang = yang = 0.;
-      locscene -> spinning = 0;
-      RemoveIdleFunc(MainLoop);
-      constrained_spinning = 1;
+      if (!phase_anim)
+      {
+         phase_rate = 0.;
+      }
+      phase_rate -= phase_step;
+      CheckPhaseAnim();
    }
    else
    {
-      xang = xang_step;
-      locscene -> spinning = 1;
-      AddIdleFunc(MainLoop);
-      constrained_spinning = 1;
+      if (!locscene -> spinning)
+      {
+         xang = 0;
+      }
+      xang -= xang_step;
+      CheckSpin();
    }
 }
 
-void KeyEnterPressed()
+void KeyDeletePressed(SDL_Keymod mod)
 {
-   if (!locscene -> spinning)
+   if (mod & KMOD_ALT)
    {
-      xang = 0;
+      if (phase_anim)
+      {
+         phase_rate = 0.;
+         phase_anim = 0;
+      }
+      else
+      {
+         phase_rate = phase_step;
+         phase_anim = 1;
+      }
    }
-   xang += xang_step;
-   CheckSpin();
+   else
+   {
+      if (locscene -> spinning)
+      {
+         xang = yang = 0.;
+         locscene -> spinning = 0;
+      }
+      else
+      {
+         xang = xang_step;
+         locscene -> spinning = 1;
+      }
+      constrained_spinning = 1;
+   }
+   CheckMainIdleFunc();
+}
+
+void KeyEnterPressed(SDL_Keymod mod)
+{
+   if (mod & KMOD_ALT)
+   {
+      if (!phase_anim)
+      {
+         phase_rate = 0.;
+      }
+      phase_rate += phase_step;
+      CheckPhaseAnim();
+   }
+   else
+   {
+      if (!locscene -> spinning)
+      {
+         xang = 0;
+      }
+      xang += xang_step;
+      CheckSpin();
+   }
 }
 
 void Key7Pressed()
@@ -1450,7 +1576,7 @@ void ShiftView(double dx, double dy)
    locscene->ViewCenterY += dy/scale;
 }
 
-void KeyLeftPressed(GLenum state)
+void KeyLeftPressed(SDL_Keymod state)
 {
    if (state & KMOD_CTRL)
    {
@@ -1463,7 +1589,7 @@ void KeyLeftPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyRightPressed(GLenum state)
+void KeyRightPressed(SDL_Keymod state)
 {
    if (state & KMOD_CTRL)
    {
@@ -1476,7 +1602,7 @@ void KeyRightPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyUpPressed(GLenum state)
+void KeyUpPressed(SDL_Keymod state)
 {
    if (state & KMOD_CTRL)
    {
@@ -1489,7 +1615,7 @@ void KeyUpPressed(GLenum state)
    SendExposeEvent();
 }
 
-void KeyDownPressed(GLenum state)
+void KeyDownPressed(SDL_Keymod state)
 {
    if (state & KMOD_CTRL)
    {

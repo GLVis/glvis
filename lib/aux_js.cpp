@@ -13,6 +13,7 @@
 #include "palettes.hpp"
 #include "stream_reader.hpp"
 #include "visual.hpp"
+#include "glwindow.hpp"
 
 #ifdef GLVIS_USE_LIBPNG
 #include <png.h>
@@ -44,16 +45,19 @@ using namespace mfem;
 void display(std::stringstream & commands, const int w, const int h)
 {
    // reset antialiasing
-   win.wnd->getRenderer().setAntialiasing(0);
+   if (win.wnd)
+   {
+      win.wnd->getRenderer().setAntialiasing(0);
+   }
 
-   std::string word;
+   std::string word, keys;
    double minv = 0.0, maxv = 0.0;
    while (commands >> word)
    {
       if (word == "keys")
       {
          std::cout << "parsing 'keys'" << std::endl;
-         commands >> win.data_state.keys;
+         commands >> keys;
       }
       else if (word == "valuerange")
       {
@@ -72,9 +76,9 @@ void display(std::stringstream & commands, const int w, const int h)
    win.window_w = w;
    win.window_h = h;
 
-   win.GLVisInitVis({});
+   if (!win.GLVisInitVis({})) { return; }
 
-   CallKeySequence(win.data_state.keys.c_str());
+   CallKeySequence(keys.c_str());
 
    if (minv || maxv)
    {
@@ -244,7 +248,7 @@ void processKey(int sym, bool ctrl=false, bool shift=false, bool alt=false)
    mod |= ctrl ? KMOD_CTRL : 0;
    mod |= shift ? KMOD_SHIFT : 0;
    mod |= alt ? KMOD_ALT : 0;
-   win.wnd->callKeyDown(sym, mod);
+   win.wnd->callKeyDown(sym, (SDL_Keymod)mod);
 }
 
 void setupResizeEventCallback(const std::string & id)

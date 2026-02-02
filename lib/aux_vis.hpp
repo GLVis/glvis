@@ -15,18 +15,20 @@
 #include "gl/types.hpp"
 
 #include "openglvis.hpp"
-#include "sdl.hpp"
+#include "glwindow.hpp"
 #include "font.hpp"
 
 #include <functional>
 
-void SDLMainLoop(bool server_mode = false);
+MainThread& GetMainThread(bool headless = false);
+void MainThreadLoop(bool headless = false, bool server_mode = false);
 
 class GLVisCommand;
 void SetGLVisCommand(GLVisCommand *cmd);
 
 /// Initializes the visualization and some keys.
-SdlWindow* InitVisualization(const char name[], int x, int y, int w, int h);
+GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
+                            bool headless = false);
 
 void SetVisualizationScene(VisualizationScene * scene,
                            int view = 3, const char *keys = NULL);
@@ -41,31 +43,35 @@ void MyExpose();
 
 void MainLoop();
 
-SdlWindow * GetAppWindow();
+class SdlWindow;
+SdlWindow* GetSdlWindow();
+GLWindow* GetAppWindow();
 VisualizationScene * GetVisualizationScene();
 
 void SetLegacyGLOnly(bool status);
 
 void AddIdleFunc(void (*Func)(void));
 void RemoveIdleFunc(void (*Func)(void));
+void CheckMainIdleFunc();
 
-void LeftButtonDown  (EventInfo *event);
-void LeftButtonLoc   (EventInfo *event);
-void LeftButtonUp    (EventInfo *event);
-void MiddleButtonDown(EventInfo *event);
-void MiddleButtonLoc (EventInfo *event);
-void MiddleButtonUp  (EventInfo *event);
-void RightButtonDown (EventInfo *event);
-void RightButtonLoc  (EventInfo *event);
-void RightButtonUp   (EventInfo *event);
+void LeftButtonDown  (GLWindow::MouseEventInfo *event);
+void LeftButtonLoc   (GLWindow::MouseEventInfo *event);
+void LeftButtonUp    (GLWindow::MouseEventInfo *event);
+void MiddleButtonDown(GLWindow::MouseEventInfo *event);
+void MiddleButtonLoc (GLWindow::MouseEventInfo *event);
+void MiddleButtonUp  (GLWindow::MouseEventInfo *event);
+void RightButtonDown (GLWindow::MouseEventInfo *event);
+void RightButtonLoc  (GLWindow::MouseEventInfo *event);
+void RightButtonUp   (GLWindow::MouseEventInfo *event);
 
 void TouchPinch(SDL_MultiGestureEvent & e);
 
 void KeyCtrlP();
 void KeyS();
+void KeyqPressed();
 void KeyQPressed();
 void ToggleThreads();
-void ThreadsPauseFunc(GLenum);
+void ThreadsPauseFunc(SDL_Keymod);
 void ThreadsStop();
 void ThreadsRun();
 
@@ -79,14 +85,14 @@ void Key7Pressed();
 void Key8Pressed();
 void Key9Pressed();
 
-void Key0Pressed();
-void KeyDeletePressed();
-void KeyEnterPressed();
+void Key0Pressed(SDL_Keymod);
+void KeyDeletePressed(SDL_Keymod);
+void KeyEnterPressed(SDL_Keymod);
 
-void KeyLeftPressed(GLenum);
-void KeyRightPressed(GLenum);
-void KeyUpPressed(GLenum);
-void KeyDownPressed(GLenum);
+void KeyLeftPressed(SDL_Keymod);
+void KeyRightPressed(SDL_Keymod);
+void KeyUpPressed(SDL_Keymod);
+void KeyDownPressed(SDL_Keymod);
 void KeyJPressed();
 void KeyMinusPressed();
 void KeyPlusPressed();
@@ -137,6 +143,7 @@ bool SetFont(const std::vector<std::string>& patterns, int height);
 void SetFont(const std::string& fn);
 
 void SetUseHiDPI(bool status);
+bool GetUseHiDPI();
 
 std::function<std::string(double)> NumberFormatter(int precision=4,
                                                    char format='d', bool showsign=false);

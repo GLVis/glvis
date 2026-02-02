@@ -19,6 +19,8 @@ class FileReader
    DataState &data;
    int pad_digits;
 
+   static bool CheckStreamIsComplex(std::istream &sol, bool parallel = false);
+
    int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
                                   const char *sol_prefix, int component = -1);
    int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,

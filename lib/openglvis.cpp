@@ -113,7 +113,7 @@ void Camera::Print()
              << std::endl;
 }
 
-VisualizationScene::VisualizationScene(SdlWindow &wnd_)
+VisualizationScene::VisualizationScene(GLWindow &wnd_)
 {
    wnd = &wnd_;
 

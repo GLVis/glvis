@@ -21,7 +21,22 @@ class VisualizationSceneVector3d : public VisualizationSceneSolution3d
 protected:
 
    mfem::Vector *solx, *soly, *solz;
-   int drawvector, scal_func;
+   int drawvector;
+
+   enum class ScalarFunction
+   {
+      Invalid = -1,
+      Min = -1,
+      //----------
+      Magnitude,
+      Component_X,
+      Component_Y,
+      Component_Z,
+      //----------
+      Max
+   } scal_func;
+   static const char *scal_func_name[];
+
    double mesh_volume;
    gl3::GlDrawable vector_buf;
    gl3::GlDrawable displine_buf;
@@ -46,6 +61,8 @@ public:
    VisualizationSceneVector3d(Window &win);
 
    void NewMeshAndSolution(const DataState &s) override;
+
+   void FindNewValueRange(bool prepare) override;
 
    virtual ~VisualizationSceneVector3d();
 
