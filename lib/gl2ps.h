@@ -1,38 +1,40 @@
 /*
  * GL2PS, an OpenGL to PostScript Printing Library
- * Copyright (C) 1999-2025 C. Geuzaine
+ * Copyright (C) 1999-2017 C. Geuzaine
  *
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of either:
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of either:
  *
- * a) the GNU Library General Public License as published by the Free Software
- * Foundation, either version 2 of the License, or (at your option) any later
- * version; or
+ * a) the GNU Library General Public License as published by the Free
+ * Software Foundation, either version 2 of the License, or (at your
+ * option) any later version; or
  *
- * b) the GL2PS License as published by Christophe Geuzaine, either version 2 of
- * the License, or (at your option) any later version.
+ * b) the GL2PS License as published by Christophe Geuzaine, either
+ * version 2 of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See either the GNU Library General Public License
- * or the GL2PS License for more details.
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See either
+ * the GNU Library General Public License or the GL2PS License for
+ * more details.
  *
- * You should have received a copy of the GNU Library General Public License
- * along with this library in the file named "COPYING.LGPL"; if not, write to
- * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301, USA.
+ * You should have received a copy of the GNU Library General Public
+ * License along with this library in the file named "COPYING.LGPL";
+ * if not, write to the Free Software Foundation, Inc., 51 Franklin
+ * Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * You should have received a copy of the GL2PS License with this library in the
- * file named "COPYING.GL2PS"; if not, I will be glad to provide one.
+ * You should have received a copy of the GL2PS License with this
+ * library in the file named "COPYING.GL2PS"; if not, I will be glad
+ * to provide one.
  *
- * For the latest info about gl2ps and a full list of contributors, see
- * https://geuz.org/gl2ps/.
+ * For the latest info about gl2ps and a full list of contributors,
+ * see http://www.geuz.org/gl2ps/.
  *
- * Please report all issues on https://gitlab.onelab.info/gl2ps/gl2ps/issues.
+ * Please report all bugs and problems to <gl2ps@geuz.org>.
  */
 
-#ifndef GL2PS_H
-#define GL2PS_H
+#ifndef __GL2PS_H__
+#define __GL2PS_H__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,9 +47,7 @@
 #    pragma warning(disable:4127)
 #    pragma warning(disable:4996)
 #  endif
-#  if !defined(NOMINMAX)
-#    define NOMINMAX
-#  endif
+#  define NOMINMAX
 #  include <windows.h>
 #  undef NOMINMAX
 #  if defined(GL2PSDLL)
@@ -87,14 +87,14 @@
 
 #define GL2PS_MAJOR_VERSION 1
 #define GL2PS_MINOR_VERSION 4
-#define GL2PS_PATCH_VERSION 3
+#define GL2PS_PATCH_VERSION 0
 #define GL2PS_EXTRA_VERSION ""
 
 #define GL2PS_VERSION (GL2PS_MAJOR_VERSION + \
                        0.01 * GL2PS_MINOR_VERSION + \
                        0.0001 * GL2PS_PATCH_VERSION)
 
-#define GL2PS_COPYRIGHT "(C) 1999-2020 C. Geuzaine"
+#define GL2PS_COPYRIGHT "(C) 1999-2017 C. Geuzaine"
 
 /* Output file formats (the values and the ordering are important!) */
 
@@ -138,8 +138,6 @@
 #define GL2PS_NO_BLENDING          (1<<11)
 #define GL2PS_TIGHT_BOUNDING_BOX   (1<<12)
 #define GL2PS_NO_OPENGL_CONTEXT    (1<<13)
-#define GL2PS_NO_TEX_FONTSIZE      (1<<14)
-#define GL2PS_SQUARE_POINTS        (1<<15)
 
 /* Arguments for gl2psEnable/gl2psDisable */
 
@@ -147,6 +145,7 @@
 #define GL2PS_POLYGON_BOUNDARY    2
 #define GL2PS_LINE_STIPPLE        3
 #define GL2PS_BLEND               4
+
 
 /* Arguments for gl2psLineCap/Join */
 
@@ -217,9 +216,6 @@ GL2PSDLL_API GLint gl2psTextOpt(const char *str, const char *fontname,
 GL2PSDLL_API GLint gl2psTextOptColor(const char *str, const char *fontname,
                                      GLshort fontsize, GLint align, GLfloat angle,
                                      GL2PSrgba color);
-GL2PSDLL_API GLint gl2psTextOptColorBL(const char *str, const char *fontname,
-                                       GLshort fontsize, GLint align, GLfloat angle,
-                                       GL2PSrgba color, GLfloat blx, GLfloat bly);
 GL2PSDLL_API GLint gl2psSpecial(GLint format, const char *str);
 GL2PSDLL_API GLint gl2psSpecialColor(GLint format, const char *str, GL2PSrgba rgba);
 GL2PSDLL_API GLint gl2psDrawPixels(GLsizei width, GLsizei height,
@@ -232,7 +228,6 @@ GL2PSDLL_API GLint gl2psLineCap(GLint value);
 GL2PSDLL_API GLint gl2psLineJoin(GLint value);
 GL2PSDLL_API GLint gl2psLineWidth(GLfloat value);
 GL2PSDLL_API GLint gl2psBlendFunc(GLenum sfactor, GLenum dfactor);
-GL2PSDLL_API GLint gl2psSorting(GLint mode);
 
 /* referenced in the documentation, but not fully documented */
 GL2PSDLL_API GLint gl2psForceRasterPos(GL2PSvertex *vert);
@@ -250,10 +245,9 @@ GL2PSDLL_API GLint gl2psDrawImageMap(GLsizei width, GLsizei height,
 GL2PSDLL_API const char *gl2psGetFileExtension(GLint format);
 GL2PSDLL_API const char *gl2psGetFormatDescription(GLint format);
 GL2PSDLL_API GLint gl2psGetFileFormat(void);
-GL2PSDLL_API GLint gl2psSetTexScaling(GLfloat scaling);
 
 #if defined(__cplusplus)
 }
 #endif
 
-#endif
+#endif /* __GL2PS_H__ */
