@@ -121,7 +121,6 @@ private:
    bool terminating {false};
    std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> bg_wnd{nullptr, SDL_DestroyWindow};
 
-   // -------------------------------------------------------------------------
    // Objects for handling passing of window control commands to the main event
    // loop.
 
@@ -130,7 +129,6 @@ private:
 
    int num_windows {-1}; // -1: waiting for window to be created
 
-   // -------------------------------------------------------------------------
    // Objects for handling dispatching events from the main event loop to
    // worker threads.
 

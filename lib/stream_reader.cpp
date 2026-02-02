@@ -110,7 +110,7 @@ bool StreamReader::CheckStreamIsComplex(std::istream &solin,
    solin >> ws;
    // Returning of the characters to stream(buffer) does not work reliably,
    // so compare only the initial character, which fortunately does not
-   // conincide with the header of FiniteElementSpace.
+   // coincide with the header of FiniteElementSpace.
    return (solin.peek() == header[0]);
 }
 

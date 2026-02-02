@@ -2007,8 +2007,8 @@ void VisualizationSceneSolution::PrepareVertexNumbering()
    }
    else
    {
-      // Draw the vertices for each element. This is redundant,
-      // except when the elements or domains are shrunk.
+      // Draw the vertices for each element. This is redundant, except when the
+      // elements or domains are shrunk.
       for (int e = 0; e < mesh->GetNE(); e++)
       {
          if (!el_attr_to_show[mesh->GetAttribute(e) - 1]) { continue; }

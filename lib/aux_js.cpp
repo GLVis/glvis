@@ -88,13 +88,11 @@ void display(std::stringstream & commands, const int w, const int h)
    SendExposeEvent();
 }
 
-//
 // StreamReader::ReadStream requires a list of unique_ptr to istream and since
 // we cannot directly pass a list of string we need to repack the strings into
 // a new list.
 //
-// each string in streams must start with `parallel <nproc> <rank>'
-//
+// Each string in streams must start with `parallel <nproc> <rank>'
 using StringArray = std::vector<std::string>;
 void processParallelStreams(DataState & state,
                             const StringArray & streams,
@@ -153,9 +151,8 @@ void displayStream(const std::string & stream, const int w, const int h)
    display(ss, w, h);
 }
 
-//
 // update the existing stream
-//
+
 int update(DataState & new_state)
 {
    double mesh_range = -1.0;
@@ -206,9 +203,8 @@ int updateParallelStreams(const StringArray & streams)
    return update(new_state);
 }
 
-//
 // other methods
-//
+
 void iterVisualization()
 {
    win.wnd->mainIter();
