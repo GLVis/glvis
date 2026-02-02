@@ -52,6 +52,10 @@ Unlike previous GLVis releases, this version requires a C++17 compiler.
 - Color palettes defined in an external file can now also be specified in
   scripts and streams using the keyword 'palette_file'.
 
+- Generalized and unified processing of stream commands for glvis-js to support
+  all commands.
+
+
 Version 4.4 released on May 1, 2025
 ===================================
 
