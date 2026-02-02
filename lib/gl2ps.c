@@ -4433,7 +4433,7 @@ static int gl2psPrintPDFShaderStreamDataCoord(GL2PSvertex *vertex,
   int offs = 0;
   unsigned long imap;
   GLfloat diff;
-  double dmax = ~1UL;
+  double dmax = (double) ~1UL;
   char edgeflag = 0;
 
   /* FIXME: temp bux fix for 64 bit archs: */
@@ -4476,7 +4476,7 @@ static int gl2psPrintPDFShaderStreamDataRGB(GL2PSvertex *vertex,
 {
   int offs = 0;
   unsigned long imap;
-  double dmax = ~1UL;
+  double dmax = (double) ~1UL;
   GLfloat tmp;
 
   /* FIXME: temp bux fix for 64 bit archs: */
@@ -4517,7 +4517,7 @@ static int gl2psPrintPDFShaderStreamDataAlpha(GL2PSvertex *vertex,
 {
   int offs = 0;
   unsigned long imap;
-  double dmax = ~1UL;
+  double dmax = (double) ~1UL;
   GLfloat tmp;
 
   /* FIXME: temp bux fix for 64 bit archs: */
@@ -6631,7 +6631,7 @@ GL2PSDLL_API const char *gl2psGetFormatDescription(GLint format)
     return "Unknown format";
 }
 
-GL2PSDLL_API GLint gl2psGetFileFormat()
+GL2PSDLL_API GLint gl2psGetFileFormat(void)
 {
   if(!gl2ps) {
     return GL2PS_UNINITIALIZED;
