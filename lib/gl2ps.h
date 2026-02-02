@@ -64,6 +64,7 @@
 #endif
 
 #if defined(__APPLE__) || defined(HAVE_OPENGL_GL_H)
+#  define GL_SILENCE_DEPRECATION
 #  include <OpenGL/gl.h>
 #else
 #  include <GL/gl.h>
