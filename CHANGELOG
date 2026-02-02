@@ -50,6 +50,9 @@ Unlike previous GLVis releases, this version requires a C++17 compiler.
 - Color palettes defined in an external file can now also be specified in
   scripts and streams using the keyword 'palette_file'.
 
+- Added single-color palettes with a linear gradient of opacity to
+  share/palettes-variable-opacity.txt.
+
 
 Version 4.4 released on May 1, 2025
 ===================================
