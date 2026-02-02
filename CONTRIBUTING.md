@@ -89,8 +89,10 @@ The GLVis source code has the following structure:
 ```
   .
   ├── lib
-  │   └── gl
-  │       └── shaders
+  │   ├── egl
+  │   ├── gl
+  │   │   └── shaders
+  │   └── sdl
   ├── share
   └── tests
 ```
