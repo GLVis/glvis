@@ -6,7 +6,6 @@
 <a href="https://github.com/GLVis/glvis/releases/latest"><img alt="Release" src="https://img.shields.io/badge/release-v4.5-success.svg"></a>
 <a href="https://github.com/GLVis/glvis/actions/workflows/builds.yml"><img alt="Build" src="https://github.com/GLVis/glvis/actions/workflows/builds.yml/badge.svg"></a>
 <a href="https://github.com/glvis/glvis/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-BSD-success.svg"></a>
-<a href="https://glvis.github.io/doxygen/html/index.html"><img alt="Doxygen" src="https://img.shields.io/badge/code-documented-success.svg"></a>
 <a href="https://glvis.github.io/releases/glvis-macOS.dmg"><img alt="License" src="https://img.shields.io/badge/Download-Mac-success.svg"></a>
 <a href="https://glvis.github.io/releases/glvis-Windows.zip"><img alt="License" src="https://img.shields.io/badge/Download-Windows-success.svg"></a>
 </p>
@@ -204,8 +203,8 @@ Before you can start, you need a GitHub account, here are a few suggestions:
     change the code by default.
 
 - Code specifics
-  - All significant new classes, methods and functions have Doxygen-style
-    documentation in source comments.
+  - All significant new classes, methods and functions have (preferably
+    Doxygen-style) documentation in source comments.
   - Consistent code styling is enforced with `make style` in the top-level
     directory. This requires [Artistic Style](http://astyle.sourceforge.net)
     version 3.1 and MFEM's style configuration file, typically located in
@@ -267,10 +266,9 @@ Before a PR can be merged, it should satisfy the following:
     - [ ] Check if `make distclean; git status` shows any files that were generated from the source by the project (not an IDE) but we don't want to track in the repository.
     - [ ] Add new patterns (just for the new files above) and re-run the above test.
 - [ ] New capability:
-   - [ ] All significant new classes, methods and functions have Doxygen-style documentation in source comments.
+   - [ ] All significant new classes, methods and functions have (preferably Doxygen-style) documentation in source comments.
    - [ ] Consider saving cool simulation pictures with the new capability in the Confluence gallery (LLNL only) or submitting them, via pull request, to the gallery section of the `glvis/web` repo.
    - [ ] If this is a major new feature, consider mentioning it in the short summary inside `README` *(rare)*.
-   - [ ] List major new classes in `doc/CodeDocumentation.dox` *(rare)*.
 - [ ] Update this checklist, if the new pull request affects it.
 
 
@@ -312,7 +310,6 @@ Before a PR can be merged, it should satisfy the following:
   ```
 - [ ] Create the release tarball and push to `glvis/releases`.
 - [ ] Recreate the `next` branch as described in previous section.
-- [ ] Update and push documentation  to `glvis/doxygen`.
 - [ ] Update URL shortlinks:
     - [ ] Create a shortlink at [http://bit.ly/](http://bit.ly/) for the release tarball, e.g. https://glvis.github.io/releases/glvis-3.1.tgz.
     - [ ] (LLNL only) Add and commit the new shortlink in the `links` and `links-glvis` files of the internal `glvis/downloads` repo.
