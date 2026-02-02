@@ -61,9 +61,16 @@ std::string VisualizationSceneVector3d::GetHelpString() const
       << "| n -  Displacements step forward    |" << endl
       << "| o/O  (De)refine elem, disc shading |" << endl
       << "| p/P  Cycle through color palettes  |" << endl
-      << "| q -  Quits                         |" << endl
-      << "| Q -  Cycle quadrature data mode    |" << endl
-      << "| r -  Reset the plot to 3D view     |" << endl
+      << "| q -  Quits                         |" << endl;
+   if (win.data_state.quad_f)
+   {
+      os << "| Q -  Cycle quadrature data mode    |" << endl;
+   }
+   else if (win.data_state.cgrid_f)
+   {
+      os << "| Q -  Cycle complex data mode       |" << endl;
+   }
+   os << "| r -  Reset the plot to 3D view     |" << endl
       << "| R -  Reset the plot to 2D view     |" << endl
       << "| s -  Turn on/off unit cube scaling |" << endl
       << "| S -  Take snapshot/Record a movie  |" << endl
@@ -97,8 +104,13 @@ std::string VisualizationSceneVector3d::GetHelpString() const
       << "| *,/  Scale up/down                 |" << endl
       << "| +/-  Change z-scaling              |" << endl
       << "| . -  Start/stop spinning           |" << endl
-      << "| 0/Enter - Spinning speed and dir.  |" << endl
-      << "+------------------------------------+" << endl
+      << "| 0/Enter - Spinning speed and dir.  |" << endl;
+   if (win.data_state.cgrid_f)
+   {
+      os << "| Alt+. -  Start/stop phase anim.    |" << endl
+         << "| Alt+0/Enter - Phase anim. speed    |" << endl;
+   }
+   os << "+------------------------------------+" << endl
       << "| Mouse                              |" << endl
       << "+------------------------------------+" << endl
       << "| left   btn    - Rotation           |" << endl
@@ -276,8 +288,8 @@ void VisualizationSceneVector3d::ToggleVectorField(int i)
    PrepareVectorField();
 }
 
-static const char *scal_func_name[] =
-{"magnitude", "x-component", "y-component", "z-component"};
+const char *VisualizationSceneVector3d::scal_func_name[(int)ScalarFunction::Max]
+   = {"magnitude", "x-component", "y-component", "z-component"};
 
 void VisualizationSceneVector3d::SetScalarFunction()
 {
@@ -285,7 +297,7 @@ void VisualizationSceneVector3d::SetScalarFunction()
 
    switch (scal_func)
    {
-      case 0: // magnitude
+      case ScalarFunction::Magnitude:
          for (int i = 0; i < sol->Size(); i++)
             (*sol)(i) = sqrt((*solx)(i) * (*solx)(i) +
                              (*soly)(i) * (*soly)(i) +
@@ -306,7 +318,7 @@ void VisualizationSceneVector3d::SetScalarFunction()
             }
          }
          break;
-      case 1: // x-component
+      case ScalarFunction::Component_X:
          *sol = *solx;
          if (GridF)
             for (int i = 0; i < GridF->Size(); i++)
@@ -314,7 +326,7 @@ void VisualizationSceneVector3d::SetScalarFunction()
                (*GridF)(i) = (*VecGridF)(fes->DofToVDof(i, 0));
             }
          break;
-      case 2: // y-component
+      case ScalarFunction::Component_Y:
          *sol = *soly;
          if (GridF)
             for (int i = 0; i < GridF->Size(); i++)
@@ -322,7 +334,7 @@ void VisualizationSceneVector3d::SetScalarFunction()
                (*GridF)(i) = (*VecGridF)(fes->DofToVDof(i, 1));
             }
          break;
-      case 3: // z-component
+      case ScalarFunction::Component_Z:
          *sol = *solz;
          if (GridF)
             for (int i = 0; i < GridF->Size(); i++)
@@ -330,14 +342,17 @@ void VisualizationSceneVector3d::SetScalarFunction()
                (*GridF)(i) = (*VecGridF)(fes->DofToVDof(i, 2));
             }
          break;
+      default:
+         cerr << "Unknown scalar representation" << endl;
+         return;
    }
-   win.extra_caption = scal_func_name[scal_func];
+   win.extra_caption = scal_func_name[(int)scal_func];
 }
 
 void VisualizationSceneVector3d::ToggleScalarFunction()
 {
-   scal_func = (scal_func + 1) % 4;
-   cout << "Displaying " << scal_func_name[scal_func] << endl;
+   scal_func = (ScalarFunction)(((int)scal_func + 1) % ((int)ScalarFunction::Max));
+   cout << "Displaying " << scal_func_name[(int)scal_func] << endl;
    SetScalarFunction();
    FindNewValueRange(true);
 }
@@ -386,7 +401,7 @@ void VisualizationSceneVector3d::Init()
 
    drawdisp = 0;
    drawvector = 0;
-   scal_func = 0;
+   scal_func = ScalarFunction::Magnitude;
 
    ianim = ianimd = 0;
    ianimmax = 10;
@@ -554,6 +569,52 @@ void VisualizationSceneVector3d::NewMeshAndSolution(
 
    PrepareVectorField();
    PrepareDisplacedMesh();
+}
+
+void VisualizationSceneVector3d::FindNewValueRange(bool prepare)
+{
+   function<double(const Vector &)> vec2scal;
+   switch (scal_func)
+   {
+      case ScalarFunction::Magnitude:
+         vec2scal = [](const Vector &v) { return v.Norml2(); };
+         break;
+      case ScalarFunction::Component_X:
+         vec2scal = [](const Vector &v) { return v(0); };
+         break;
+      case ScalarFunction::Component_Y:
+         vec2scal = [](const Vector &v) { return v(1); };
+         break;
+      case ScalarFunction::Component_Z:
+         vec2scal = [](const Vector &v) { return v(2); };
+         break;
+      default:
+         cerr << "Unknown scalar representation" << endl;
+         return;
+   }
+
+   win.data_state.FindValueRange(minv, maxv, vec2scal);
+
+   if (minv == 0. && maxv == 0.)
+   {
+      int map_type = (GridF) ?
+                     GridF->FESpace()->FEColl()->GetMapType(mesh->Dimension()) :
+                     FiniteElement::VALUE;
+
+      if (shading < Shading::Noncomforming || map_type != (int)FiniteElement::VALUE)
+      {
+         minv = sol->Min();
+         maxv = sol->Max();
+      }
+      else
+      {
+         minv = GridF->Min();
+         maxv = GridF->Max();
+      }
+      return;
+   }
+   FixValueRange();
+   UpdateValueRange(prepare);
 }
 
 void VisualizationSceneVector3d::PrepareFlat()

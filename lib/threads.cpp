@@ -522,6 +522,19 @@ int GLVisCommand::Execute()
                   }
                   new_state.ExtrudeMeshAndSolution();
                }
+               else if (new_state.cgrid_f)
+               {
+                  auto cs = win.data_state.GetComplexSolution();
+                  if (cs != DataState::ComplexSolution::NONE)
+                  {
+                     new_state.SetComplexSolution(cs);
+                  }
+                  else
+                  {
+                     new_state.SetComplexSolution();
+                  }
+                  new_state.ExtrudeMeshAndSolution();
+               }
                break;
             default:
                cerr << "Unknown field type" << endl;
@@ -722,19 +735,19 @@ int GLVisCommand::Execute()
          cout << "Command: autoscale: " << autoscale_mode;
          if (autoscale_mode == "off")
          {
-            win.vs->SetAutoscale(0);
+            win.vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::None);
          }
          else if (autoscale_mode == "on")
          {
-            win.vs->SetAutoscale(1);
+            win.vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::MeshAndValue);
          }
          else if (autoscale_mode == "value")
          {
-            win.vs->SetAutoscale(2);
+            win.vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::Value);
          }
          else if (autoscale_mode == "mesh")
          {
-            win.vs->SetAutoscale(3);
+            win.vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::Mesh);
          }
          else
          {

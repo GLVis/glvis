@@ -79,11 +79,6 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
 
    locwin = this;
 
-   if (data_state.quad_f)
-   {
-      wnd->setOnKeyDown('Q', SwitchQuadSolution);
-   }
-
    double mesh_range = -1.0;
    if (field_type == DataState::FieldType::SCALAR
        || field_type == DataState::FieldType::MESH)
@@ -165,7 +160,7 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
       if (mesh_range > 0.0)
       {
          vs->SetValueRange(-mesh_range, mesh_range);
-         vs->SetAutoscale(0);
+         vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::None);
       }
       if (data_state.mesh->SpaceDimension() == 2
           && field_type == DataState::FieldType::MESH)
@@ -194,10 +189,31 @@ void Window::GLVisStartVis()
    std::cout << "GLVis window closed." << std::endl;
 }
 
+void Window::SwitchComplexSolution(DataState::ComplexSolution cmplx_type)
+{
+   data_state.SetComplexSolution(cmplx_type);
+   ResetMeshAndSolution(data_state);
+}
+
 void Window::SwitchQuadSolution(DataState::QuadSolution quad_type)
 {
    data_state.SwitchQuadSolution(quad_type);
    ResetMeshAndSolution(data_state);
+}
+
+void Window::UpdateComplexPhase(double ph)
+{
+   data_state.cmplx_phase += ph;
+   data_state.cmplx_phase -= floor(data_state.cmplx_phase);
+   DataState::ComplexSolution cs = data_state.GetComplexSolution();
+   // check if magnitude is viewed, which remains the same
+   if (cs == DataState::ComplexSolution::Magnitude) { return; }
+   data_state.SetComplexSolution(cs, false);
+   // do not autoscale for animation
+   auto as = vs->GetAutoscale();
+   vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::None);
+   ResetMeshAndSolution(data_state);
+   vs->SetAutoscale(as, false);
 }
 
 bool Window::SetNewMeshAndSolution(DataState new_state)
@@ -231,8 +247,27 @@ void Window::ResetMeshAndSolution(DataState &ss)
    vs->NewMeshAndSolution(ss);
 }
 
-
 thread_local Window *Window::locwin = NULL;
+
+void Window::SwitchSolution()
+{
+   if (locwin->data_state.cgrid_f)
+   {
+      SwitchComplexSolution();
+   }
+   else if (locwin->data_state.quad_f)
+   {
+      SwitchQuadSolution();
+   }
+}
+
+void Window::SwitchComplexSolution()
+{
+   int ics = ((int)locwin->data_state.GetComplexSolution()+1)
+             % ((int)DataState::ComplexSolution::MAX);
+   locwin->SwitchComplexSolution((DataState::ComplexSolution)ics);
+   SendExposeEvent();
+}
 
 void Window::SwitchQuadSolution()
 {
