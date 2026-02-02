@@ -64,7 +64,6 @@
 #endif
 
 #if defined(__APPLE__) || defined(HAVE_OPENGL_GL_H)
-#  define GL_SILENCE_DEPRECATION
 #  include <OpenGL/gl.h>
 #else
 #  include <GL/gl.h>
@@ -178,10 +177,9 @@
 typedef GLfloat GL2PSrgba[4];
 typedef GLfloat GL2PSxyz[3];
 
-typedef struct
-{
-   GL2PSxyz xyz;
-   GL2PSrgba rgba;
+typedef struct {
+  GL2PSxyz xyz;
+  GL2PSrgba rgba;
 } GL2PSvertex;
 
 /* Primitive types */
@@ -223,8 +221,7 @@ GL2PSDLL_API GLint gl2psTextOptColorBL(const char *str, const char *fontname,
                                        GLshort fontsize, GLint align, GLfloat angle,
                                        GL2PSrgba color, GLfloat blx, GLfloat bly);
 GL2PSDLL_API GLint gl2psSpecial(GLint format, const char *str);
-GL2PSDLL_API GLint gl2psSpecialColor(GLint format, const char *str,
-                                     GL2PSrgba rgba);
+GL2PSDLL_API GLint gl2psSpecialColor(GLint format, const char *str, GL2PSrgba rgba);
 GL2PSDLL_API GLint gl2psDrawPixels(GLsizei width, GLsizei height,
                                    GLint xorig, GLint yorig,
                                    GLenum format, GLenum type, const void *pixels);
