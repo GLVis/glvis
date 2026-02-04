@@ -17,7 +17,8 @@ Unlike previous GLVis releases, this version requires a C++17 compiler.
 - Added visualization of the finite element DOF numbering in 2D scalar mode,
   with the 'n'/'N' keys that now cycles through: None → Elements → Edges →
   Vertices → DOFs. In parallel, the default numbering is the "local" one for
-  each rank. This can be switched to "global" parallel numbering with Alt+n.
+  each rank. This can be switched to the "global" parallel numbering with
+  'Alt+n' (the former numbering method).
 
 - Added visualization of complex data for grid functions from MFEM's class
   (Par)ComplexGridFunction. The complex values are represented by their
