@@ -23,11 +23,14 @@ Unlike previous GLVis releases, this version requires a C++17 compiler.
   (Par)ComplexGridFunction. The complex values are represented by their
   magnitude, phase, real part or imaginary part, which can be cycled with the
   'Q' key. Additionally, complex functions can be animated by an added harmonic
-  phase. The phase frequency, can be increased/decreased with keys ';'/':'.
+  phase. The phase frequency can be increased/decreased with keys ';'/':'.
 
 - Added the option to choose palettes by name using the command line argument
   -pname or --palette-name. This option is also available in scripts and streams
   using the keyword "palette_name".
+
+- Color palettes defined in an external file can now also be specified in
+  scripts and streams using the keyword 'palette_file'.
 
 - Added headless (no GUI) visualization, relying on the EGL (Linux) or CGL
   (macOS) interface. It is available through '-hl' command-line option or the
@@ -46,9 +49,6 @@ Unlike previous GLVis releases, this version requires a C++17 compiler.
 
 - Added non-persistent mode for the GLVis server, where the server terminates
   after all visualization windows are closed.
-
-- Color palettes defined in an external file can now also be specified in
-  scripts and streams using the keyword 'palette_file'.
 
 - Added single-color palettes with a linear gradient of opacity to
   share/palettes-variable-opacity.txt.
