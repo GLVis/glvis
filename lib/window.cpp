@@ -58,19 +58,24 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
       return false;
    }
 
-#ifndef __EMSCRIPTEN__
    if (input_streams.size() > 0)
    {
+#ifndef __EMSCRIPTEN__
       if (!headless)
       {
          wnd->setOnKeyDown(SDLK_SPACE, ThreadsPauseFunc);
       }
+#endif
       internal.glvis_command.reset(new GLVisCommand(*this));
       SetGLVisCommand(glvis_command.get());
-      internal.comm_thread.reset(new communication_thread(std::move(input_streams),
-                                                          glvis_command.get(), headless));
-   }
+#ifndef __EMSCRIPTEN__
+      constexpr bool multithreaded = true;
+#else
+      constexpr bool multithreaded = false;
 #endif
+      internal.comm_thread.reset(new communication_thread(std::move(input_streams),
+                                                          glvis_command.get(), headless, multithreaded));
+   }
 
    locwin = this;
 
@@ -175,14 +180,12 @@ void Window::GLVisStartVis()
    RunVisualization();
    internal.vs.reset();
    internal.wnd.reset();
-#ifndef __EMSCRIPTEN__
    if (glvis_command)
    {
       glvis_command->Terminate();
       internal.comm_thread.reset();
       internal.glvis_command.reset();
    }
-#endif
    std::cout << "GLVis window closed." << std::endl;
 }
 
