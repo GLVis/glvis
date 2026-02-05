@@ -258,9 +258,9 @@ if (NOT EMSCRIPTEN)
   endif (GLVIS_USE_EGL)
 
   # Find CGL
-  if (GLVIS_USE_CGL)
+  if (GLVIS_USE_CGL AND NOT EMSCRIPTEN)
     list(APPEND _glvis_compile_defs "GLVIS_USE_CGL")
-  endif (GLVIS_USE_CGL)
+  endif (GLVIS_USE_CGL AND NOT EMSCRIPTEN)
 
   # Find threading library
   find_package(Threads REQUIRED)

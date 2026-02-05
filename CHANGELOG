@@ -55,6 +55,10 @@ Unlike previous GLVis releases, this version requires a C++17 compiler.
   share/palettes-variable-opacity.txt.
 
 
+- Generalized and unified processing of stream commands for glvis-js to support
+  all commands.
+
+
 Version 4.4 released on May 1, 2025
 ===================================
 

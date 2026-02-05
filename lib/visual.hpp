@@ -22,9 +22,7 @@
 #include "vssolution3d.hpp"
 #include "vsvector.hpp"
 #include "vsvector3d.hpp"
-#ifndef __EMSCRIPTEN__
 #include "threads.hpp"
-#endif
 #include "gl/types.hpp"
 
 #endif // GLVIS_VISUAL_HPP
