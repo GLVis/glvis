@@ -74,7 +74,7 @@ option(GLVIS_USE_EGL
 
 option(GLVIS_USE_CGL
   "Use CGL for headless rendering"
-  APPLE)
+  APPLE AND NOT EMSCRIPTEN)
 
 #
 # Handle a few other definitions

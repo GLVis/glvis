@@ -321,7 +321,7 @@ BYTECODE_FILES       = $(WEB_SOURCE_FILES:.cpp=.bc)
 	$(CCC) -o $@ -c $<
 
 %.bc: %.cpp
-	$(EMCC) $(EMCC_OPTS) $(GLVIS_FLAGS) -c $< -o $@
+	$(EMCC) $(EMCC_OPTS) $(filter-out ${CGL_OPTS},${GLVIS_FLAGS}) -c $< -o $@
 
 glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)
 	$(CCC) -o glvis glvis.cpp -Llib -lglvis $(LIBS)
