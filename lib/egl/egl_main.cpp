@@ -421,7 +421,7 @@ EglMainThread::Handle EglMainThread::CreateWindow(EglWindow *caller, int w,
 
       return out_hnd;
    }
-#endif //GLVIS_USE_EGL
+#endif // GLVIS_USE_EGL
 #ifdef GLVIS_USE_CGL
    if (!out_hnd.isInitialized()) { return out_hnd; }
    CGLError err = CGLSetCurrentContext(out_hnd.ctx.get());

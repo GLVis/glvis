@@ -11,7 +11,7 @@
 GLVis is a multiplatform OpenGL application and can be built on Linux/Unix
 systems, including Mac OS X, and under Windows.
 
-Besides a C++ compiler, GLVis depends on the following external packages:
+Besides a C++17 compiler, GLVis depends on the following external packages:
 
 - the MFEM library (use the latest release) plus any libraries that MFEM was
   built to depend on

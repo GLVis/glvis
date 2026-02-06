@@ -147,7 +147,7 @@ public:
    /// Set window position
    virtual void setWindowPos(int x, int y) { }
 
-   /// Returns true if the window has been succesfully initialized
+   /// Returns true if the window has been successfully initialized
    virtual bool isWindowInitialized() const { return false; }
 
    /// Returns true if the OpenGL context was successfully initialized

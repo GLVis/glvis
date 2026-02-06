@@ -1076,7 +1076,7 @@ bool communication_thread::execute_one(std::string ident)
             {
                break;
             }
-            *is[np] >> ident >> ws; // "parallel"
+            *is[np] >> ident >> ws; // 'parallel'
             if (ident != "parallel")
             {
                cout << "Expected keyword \"parallel\", got \"" << ident

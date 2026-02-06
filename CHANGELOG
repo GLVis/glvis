@@ -9,48 +9,51 @@
                              https://glvis.org
 
 
-Version 4.4.1 (development)
+Version 4.5 released on Feb X, 2026
 ===================================
 
 Unlike previous GLVis releases, this version requires a C++17 compiler.
 
+- Added visualization of the finite element DOF numbering in 2D scalar mode,
+  with the 'n'/'N' keys that now cycles through: None → Elements → Edges →
+  Vertices → DOFs. In parallel, the default numbering is the "local" one for
+  each rank. This can be switched to the "global" parallel numbering with
+  'Alt+n' (the former numbering method).
+
+- Added visualization of complex data for grid functions from MFEM's class
+  (Par)ComplexGridFunction. The complex values are represented by their
+  magnitude, phase, real part or imaginary part, which can be cycled with the
+  'Q' key. Additionally, complex functions can be animated by an added harmonic
+  phase. The phase frequency can be increased/decreased with keys ';'/':'.
+
+- Added the option to choose palettes by name using the command line argument
+  -pname or --palette-name. This option is also available in scripts and streams
+  using the keyword "palette_name".
+
+- Color palettes defined in an external file can now also be specified in
+  scripts and streams using the keyword 'palette_file'.
+
 - Added headless (no GUI) visualization, relying on the EGL (Linux) or CGL
-  (MacOS) interface. It is available through '-hl' command-line option or
-  'headless' script command (before the visualization commands). The end of the
-  loaded stream or script file ends the visualization in this mode. Note GLVis
-  must be compiled with with EGL/CGL (see INSTALL).
+  (macOS) interface. It is available through '-hl' command-line option or the
+  'headless' script command (before the visualization commands). In this mode,
+  visualization ends at the end of the stream or script file. Note that GLVis
+  must be compiled with EGL/CGL (see INSTALL).
 
-- Added non-persistent mode of the server, when the server terminates after all
-  visualization windows are closed.
-
-- Added visualization of complex function data originating from
-  '(Par)ComplexGridFunction' class in MFEM. The complex values are represented
-  by their magnitude, phase, real part or imaginary part, which can be switched
-  by 'Q' key. Additionally, the complex function can be animated by an added
-  harmonic phase. To increase or decrease the phase frequency, use ';' or ':',
-  respectively.
-
-- Implemented DOF numbering in 2D scalar mode, pressing the `n` or `N` key cycles
-  through: None → Elements → Edges → Vertices → DOFs. Parallel numbering is now by
-  default 'local' to each rank; 'global' vs. 'local' numbering can be toggled with
-  'Alt+n'.
-
-- Refactored code base enabling automatic generation of the script and stream
-  command lists (shown as help when an unrecognized option is entered). Other
-  improvements include:
-  * Unified window initialization between the app and GLVis-js.
+- Refactored the code base to enable automatic generation of the script and
+  stream command lists. Other improvements include:
+  * Unified window initialization between the app and glvis-js.
   * Unified handling of streams and improved data storage, enabling animation
     of all data types.
   * Fixed the flag for real attributes of distributed meshes.
   * Fixed setting of padding digits for data collections.
   * Fixed cycling of the vector-to-scalar function in 2D with raw data.
 
-- Added the option to choose palettes by name using the command line argument
-  '-pname' or '--palette-name'. This option is also available in scripts and
-  streams using the keyword 'palette_name'.
+- Added non-persistent mode for the GLVis server, where the server terminates
+  after all visualization windows are closed.
 
-- Color palettes defined in an external file can now also be specified in
-  scripts and streams using the keyword 'palette_file'.
+- Added single-color palettes with a linear gradient of opacity to
+  share/palettes-variable-opacity.txt.
+
 
 - Generalized and unified processing of stream commands for glvis-js to support
   all commands.

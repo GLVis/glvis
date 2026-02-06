@@ -9,8 +9,6 @@
 # terms of the BSD-3 license. We welcome feedback and contributions, see file
 # CONTRIBUTING.md for details.
 
-# GLVis - an OpenGL visualization server based on the MFEM library
-
 name: builds
 
 on:
