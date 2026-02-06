@@ -9,7 +9,7 @@
                              https://glvis.org
 
 
-Version 4.5 released on Feb X, 2026
+Version 4.5 released on Feb 6, 2026
 ===================================
 
 Unlike previous GLVis releases, this version requires a C++17 compiler.
@@ -53,7 +53,6 @@ Unlike previous GLVis releases, this version requires a C++17 compiler.
 
 - Added single-color palettes with a linear gradient of opacity to
   share/palettes-variable-opacity.txt.
-
 
 - Generalized and unified processing of stream commands for glvis-js to support
   all commands.

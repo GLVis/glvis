@@ -266,3 +266,7 @@ cd SDL2-2.0.12
 make -j 4
 make install
 cd ..
+
+In some cases SDL2 may try to build with Wayland support which may fail. In this
+case one can use the configure option '--disable-video-wayland' to disable
+Wayland support.
