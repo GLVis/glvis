@@ -24,7 +24,8 @@ Unlike previous GLVis releases, this version requires a C++17 compiler.
   (Par)ComplexGridFunction. The complex values are represented by their
   magnitude, phase, real part or imaginary part, which can be cycled with the
   'Q' key. Additionally, complex functions can be animated by an added harmonic
-  phase. The phase frequency can be increased/decreased with keys ';'/':'.
+  phase. The phase frequency can be increased/decreased with keys 'Alt+Enter'/
+  'Alt+0'.
 
 - Added the option to choose palettes by name using the command line argument
   -pname or --palette-name. This option is also available in scripts and streams
