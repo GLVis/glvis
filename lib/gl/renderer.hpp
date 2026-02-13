@@ -100,6 +100,9 @@ protected:
 
    std::array<float, 4> static_color;
 
+   float line_w;
+   bool msaa_enabled;
+
 protected:
    resource::TextureHandle passthrough_texture;
 
@@ -135,7 +138,9 @@ public:
    void disableBlend() { glDisable(GL_BLEND); }
    void enableDepthWrite() { glDepthMask(GL_TRUE); }
    void disableDepthWrite() { glDepthMask(GL_FALSE); }
-   void setLineWidth(float w) { glLineWidth(w); }
+   void setLineWidth(float w) { line_w = w; glLineWidth(w); }
+   // Update MSAA state for conditional line rendering
+   void setMSAAEnabled(bool enabled) { msaa_enabled = enabled; }
 
    virtual void init();
    virtual DeviceType getType() = 0;
@@ -195,6 +200,8 @@ class MeshRenderer
    bool msaa_enable;
    int msaa_samples;
    GLuint color_tex, alpha_tex, font_tex;
+   // Separate line widths for non-MSAA (line_w) and MSAA (line_w_aa) modes
+   // Allows different defaults: 1.0 for GL_LINES, 1.5 for shader-expanded
    float line_w, line_w_aa;
    PaletteState* palette;
 
@@ -213,7 +220,8 @@ public:
       device.reset(new TDevice());
       device->setLineWidth(line_w);
       device->init();
-      msaa_enable = false;
+      // Synchronize device's MSAA state with renderer's state
+      device->setMSAAEnabled(msaa_enable);
    }
 
    template<typename TDevice>
@@ -248,8 +256,10 @@ public:
    }
    int getSamplesMSAA() { return msaa_samples; }
 
+   // Line width for non-MSAA mode (GL_LINES)
    void setLineWidth(float w);
    float getLineWidth() { return line_w; }
+   // Line width for MSAA mode (shader-expanded triangles)
    void setLineWidthMS(float w);
    float getLineWidthMS() { return line_w_aa; }
 

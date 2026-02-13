@@ -174,7 +174,9 @@ enum array_layout
    LAYOUT_VTX_TEXTURE0,
    LAYOUT_VTX_NORMAL_COLOR,
    LAYOUT_VTX_NORMAL_TEXTURE0,
-   NUM_LAYOUTS
+   NUM_LAYOUTS,
+   LAYOUT_EXT_LINE_VTX,
+   LAYOUT_EXT_LINE_VTX_COLOR
 };
 
 inline std::array<uint8_t, 4> ColorU8(float rgba[])
