@@ -49,6 +49,11 @@ void MeshRenderer::setAntialiasing(bool aa_status)
    if (msaa_enable != aa_status)
    {
       msaa_enable = aa_status;
+      // Update device's MSAA state for conditional line rendering
+      if (device)
+      {
+         device->setMSAAEnabled(aa_status);
+      }
       if (msaa_enable)
       {
          if (!feat_use_fbo_antialias)
@@ -398,6 +403,9 @@ void MeshRenderer::buffer(GlDrawable* buf)
 
 void GLDevice::init()
 {
+   // Initialize line width
+   line_w = 1.0f;
+   msaa_enabled = false;
    // enable depth testing
    glDepthFunc(GL_LEQUAL);
    glEnable(GL_DEPTH_TEST);

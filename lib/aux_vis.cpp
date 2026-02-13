@@ -258,6 +258,8 @@ GLWindow* InitVisualization(const char name[], int x, int y, int w, int h,
 
    wnd->setOnKeyDown (SDLK_LEFTBRACKET, ScaleDown);
    wnd->setOnKeyDown (SDLK_RIGHTBRACKET, ScaleUp);
+   wnd->setOnKeyDown (SDLK_SEMICOLON, DecreaseLineWidth);
+   wnd->setOnKeyDown (SDLK_QUOTE, IncreaseLineWidth);
    wnd->setOnKeyDown (SDLK_AT, LookAt);
 
 #ifndef __EMSCRIPTEN__
@@ -1647,6 +1649,26 @@ void ScaleUp()
 void ScaleDown()
 {
    locscene->Scale(1.0/1.025);
+   SendExposeEvent();
+}
+
+void IncreaseLineWidth()
+{
+   float new_w = GetLineWidth() + 0.25f;
+   float new_w_aa = GetLineWidthMS() + 0.25f;
+   SetLineWidth(new_w);
+   SetLineWidthMS(new_w_aa);
+   cout << "Line width: " << new_w << " (antialiased: " << new_w_aa << ")" << endl;
+   SendExposeEvent();
+}
+
+void DecreaseLineWidth()
+{
+   float new_w = std::max(0.25f, GetLineWidth() - 0.25f);
+   float new_w_aa = std::max(0.25f, GetLineWidthMS() - 0.25f);
+   SetLineWidth(new_w);
+   SetLineWidthMS(new_w_aa);
+   cout << "Line width: " << new_w << " (antialiased: " << new_w_aa << ")" << endl;
    SendExposeEvent();
 }
 

@@ -49,6 +49,10 @@ const std::vector<std::string> CoreGLDevice::unif_list =
    "useClipPlane",
    "clipPlane",
    "containsText",
+   "expandLines",
+   "lineWidth",
+   "aspectRatio",
+   "useLineAA",
    "modelViewMatrix",
    "projectionMatrix",
    "textProjMatrix",
@@ -68,6 +72,98 @@ const std::vector<std::string> CoreGLDevice::unif_list =
    "lights[2].specular",
    "colorTex",
    "alphaTex"
+};
+
+// Extended vertex format for shader-expanded lines (MSAA mode). Each line
+// segment is converted to 2 triangles (4 vertices) orientation: ±1 indicates
+// which side of the line centerline prev/next: neighboring vertices for
+// computing line direction and joins.
+struct alignas(16) CoreGLDevice::LineVertex
+{
+   std::array<float, 3> vtx;
+   float orientation;
+   std::array<float, 3> prev;
+   std::array<float, 3> next;
+
+   static constexpr array_layout layout = LAYOUT_EXT_LINE_VTX;
+
+   static void Setup()
+   {
+      constexpr LineVertex base{};
+      const size_t vtx_offset = (size_t)(&base.vtx) - (size_t)(&base);
+      const size_t orient_offset = (size_t)(&base.orientation) - (size_t)(&base);
+      const size_t prev_offset = (size_t)(&base.prev) - (size_t)(&base);
+      const size_t next_offset = (size_t)(&base.next) - (size_t)(&base);
+
+      glEnableVertexAttribArray(CoreGLDevice::ATTR_VERTEX);
+      glEnableVertexAttribArray(CoreGLDevice::ATTR_LINE_ORIENT);
+      glEnableVertexAttribArray(CoreGLDevice::ATTR_LINE_PREV);
+      glEnableVertexAttribArray(CoreGLDevice::ATTR_LINE_NEXT);
+
+      glVertexAttribPointer(CoreGLDevice::ATTR_VERTEX, 3, GL_FLOAT, false,
+                            sizeof(LineVertex), (void*)vtx_offset);
+      glVertexAttribPointer(CoreGLDevice::ATTR_LINE_ORIENT, 1, GL_FLOAT, false,
+                            sizeof(LineVertex), (void*)orient_offset);
+      glVertexAttribPointer(CoreGLDevice::ATTR_LINE_PREV, 3, GL_FLOAT, false,
+                            sizeof(LineVertex), (void*)prev_offset);
+      glVertexAttribPointer(CoreGLDevice::ATTR_LINE_NEXT, 3, GL_FLOAT, false,
+                            sizeof(LineVertex), (void*)next_offset);
+   }
+
+   static void Finish()
+   {
+      glDisableVertexAttribArray(CoreGLDevice::ATTR_VERTEX);
+      glDisableVertexAttribArray(CoreGLDevice::ATTR_LINE_ORIENT);
+      glDisableVertexAttribArray(CoreGLDevice::ATTR_LINE_PREV);
+      glDisableVertexAttribArray(CoreGLDevice::ATTR_LINE_NEXT);
+   }
+};
+
+// LineVertex with per-vertex color
+struct alignas(16) CoreGLDevice::LineColorVertex
+{
+   std::array<float, 3> vtx;
+   std::array<uint8_t, 4> color;
+   float orientation;
+   std::array<float, 3> prev;
+   std::array<float, 3> next;
+
+   static constexpr array_layout layout = LAYOUT_EXT_LINE_VTX_COLOR;
+
+   static void Setup()
+   {
+      constexpr LineColorVertex base{};
+      const size_t vtx_offset = (size_t)(&base.vtx) - (size_t)(&base);
+      const size_t color_offset = (size_t)(&base.color) - (size_t)(&base);
+      const size_t orient_offset = (size_t)(&base.orientation) - (size_t)(&base);
+      const size_t prev_offset = (size_t)(&base.prev) - (size_t)(&base);
+      const size_t next_offset = (size_t)(&base.next) - (size_t)(&base);
+      glEnableVertexAttribArray(CoreGLDevice::ATTR_VERTEX);
+      glEnableVertexAttribArray(CoreGLDevice::ATTR_COLOR);
+      glEnableVertexAttribArray(CoreGLDevice::ATTR_LINE_ORIENT);
+      glEnableVertexAttribArray(CoreGLDevice::ATTR_LINE_PREV);
+      glEnableVertexAttribArray(CoreGLDevice::ATTR_LINE_NEXT);
+
+      glVertexAttribPointer(CoreGLDevice::ATTR_VERTEX, 3, GL_FLOAT, false,
+                            sizeof(LineColorVertex), (void*)vtx_offset);
+      glVertexAttribPointer(CoreGLDevice::ATTR_COLOR, 4, GL_UNSIGNED_BYTE, true,
+                            sizeof(LineColorVertex), (void*)color_offset);
+      glVertexAttribPointer(CoreGLDevice::ATTR_LINE_ORIENT, 1, GL_FLOAT, false,
+                            sizeof(LineColorVertex), (void*)orient_offset);
+      glVertexAttribPointer(CoreGLDevice::ATTR_LINE_PREV, 3, GL_FLOAT, false,
+                            sizeof(LineColorVertex), (void*)prev_offset);
+      glVertexAttribPointer(CoreGLDevice::ATTR_LINE_NEXT, 3, GL_FLOAT, false,
+                            sizeof(LineColorVertex), (void*)next_offset);
+   }
+
+   static void Finish()
+   {
+      glDisableVertexAttribArray(CoreGLDevice::ATTR_VERTEX);
+      glDisableVertexAttribArray(CoreGLDevice::ATTR_COLOR);
+      glDisableVertexAttribArray(CoreGLDevice::ATTR_LINE_ORIENT);
+      glDisableVertexAttribArray(CoreGLDevice::ATTR_LINE_PREV);
+      glDisableVertexAttribArray(CoreGLDevice::ATTR_LINE_NEXT);
+   }
 };
 
 template<typename TVtx>
@@ -100,7 +196,10 @@ bool CoreGLDevice::compileShaders()
       { CoreGLDevice::ATTR_TEXT_VERTEX, "textVertex"},
       { CoreGLDevice::ATTR_NORMAL, "normal"},
       { CoreGLDevice::ATTR_COLOR, "color"},
-      { CoreGLDevice::ATTR_TEXCOORD0, "texCoord0"}
+      { CoreGLDevice::ATTR_TEXCOORD0, "texCoord0"},
+      { CoreGLDevice::ATTR_LINE_ORIENT, "line_orientation"},
+      { CoreGLDevice::ATTR_LINE_PREV, "line_prev_vtx"},
+      { CoreGLDevice::ATTR_LINE_NEXT, "line_next_vtx"}
    };
 
    if (!default_prgm.create(DEFAULT_VS, DEFAULT_FS, attribMap, 1))
@@ -163,6 +262,8 @@ void CoreGLDevice::initializeShaderState(const ShaderProgram& prog)
 #endif
    glUniform1i(uniforms["colorTex"], 0);
    glUniform1i(uniforms["alphaTex"], 1);
+   glUniform1i(uniforms["expandLines"], false);
+   glUniform1i(uniforms["useLineAA"], false);
    use_clip_plane = false;
 }
 
@@ -250,22 +351,176 @@ void CoreGLDevice::setClipPlaneEqn(const std::array<double, 4> &eqn)
 
 void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
 {
-   if (buf.getHandle() == 0)
+   // Special handling for lines: convert to triangles with extended vertex
+   // data. Only do this when MSAA is enabled (for configurable width with good
+   // quality) When MSAA is disabled, use original GL_LINES approach.
+   bool use_shader_lines = msaa_enabled &&
+                           buf.getShape() == GL_LINES &&
+                           (layout == Vertex::layout || layout == VertexColor::layout);
+
+   if (use_shader_lines)
    {
+      array_layout ext_layout;
+      if (layout == Vertex::layout) { ext_layout = LineVertex::layout; }
+      else if (layout == VertexColor::layout) { ext_layout = LineColorVertex::layout; }
+
+      if (buf.getHandle() == 0)
+      {
+         if (buf.count() == 0) { return; }
+         GLuint handle[2];
+         glGenBuffers(2, &handle[0]);
+         buf.setHandle(vbos.size());
+         vbos.emplace_back(VBOData{handle[0], handle[1], GL_TRIANGLES, 0, ext_layout});
+      }
+      else
+      {
+         // Update existing VBO metadata to shader-expanded format
+         vbos[buf.getHandle()].layout = ext_layout;
+         vbos[buf.getHandle()].shape = GL_TRIANGLES;
+
+         // Create element buffer if it doesn't exist (converting from GL_LINES to triangles)
+         if (vbos[buf.getHandle()].elem_buf == 0)
+         {
+            GLuint elem_handle;
+            glGenBuffers(1, &elem_handle);
+            vbos[buf.getHandle()].elem_buf = elem_handle;
+         }
+      }
+      glBindBuffer(GL_ARRAY_BUFFER, vbos[buf.getHandle()].vert_buf);
+      glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
       if (buf.count() == 0) { return; }
-      GLuint handle;
-      glGenBuffers(1, &handle);
-      buf.setHandle(vbos.size());
-      vbos.emplace_back(VBOData{handle, 0, buf.getShape(), buf.count(), layout});
+
+      // Create extended vertex data for generating shader-expanded lines
+      if (layout == Vertex::layout)
+      {
+         std::vector<LineVertex> ext_data(buf.count() * 2);
+         auto pts = static_cast<VertexBuffer<Vertex>&>(buf).begin();
+         for (size_t i = 0; i < buf.count(); i++)
+         {
+            const Vertex& pt = *(pts + i);
+            ext_data[2*i].vtx = pt.coord;
+            ext_data[2*i].orientation = 1;
+            ext_data[2*i+1].vtx = pt.coord;
+            ext_data[2*i+1].orientation = -1;
+            if (i % 2 == 0)
+            {
+               // first node in the segment
+               ext_data[2*(i+1)].prev = pt.coord;
+               ext_data[2*(i+1) + 1].prev = pt.coord;
+               ext_data[2*i].prev = pt.coord;
+               ext_data[2*i+1].prev = pt.coord;
+            }
+            else
+            {
+               // last node in the segment
+               ext_data[2*(i-1)].next = pt.coord;
+               ext_data[2*(i-1) + 1].next = pt.coord;
+               ext_data[2*i].next = pt.coord;
+               ext_data[2*i+1].next = pt.coord;
+            }
+         }
+         glBufferData(GL_ARRAY_BUFFER, ext_data.size() * sizeof(LineVertex),
+                      ext_data.data(), GL_STATIC_DRAW);
+
+         // Create index buffer for triangles (2 triangles per line segment)
+         std::vector<GLuint> indices;
+         for (size_t i = 0; i < buf.count() / 2; i++)
+         {
+            GLuint base = 4 * i;
+            indices.push_back(base);
+            indices.push_back(base + 1);
+            indices.push_back(base + 2);
+            indices.push_back(base + 2);
+            indices.push_back(base + 1);
+            indices.push_back(base + 3);
+         }
+         vbos[buf.getHandle()].count = indices.size();
+         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos[buf.getHandle()].elem_buf);
+         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint),
+                      indices.data(), GL_STATIC_DRAW);
+      }
+      else if (layout == VertexColor::layout)
+      {
+         std::vector<LineColorVertex> ext_data(buf.count() * 2);
+         auto pts = static_cast<VertexBuffer<VertexColor>&>(buf).begin();
+         for (size_t i = 0; i < buf.count(); i++)
+         {
+            const VertexColor& pt = *(pts + i);
+            ext_data[2*i].vtx = pt.coord;
+            ext_data[2*i].color = pt.color;
+            ext_data[2*i].orientation = 1;
+            ext_data[2*i+1].vtx = pt.coord;
+            ext_data[2*i+1].color = pt.color;
+            ext_data[2*i+1].orientation = -1;
+            if (i % 2 == 0)
+            {
+               // first node in the segment
+               ext_data[2*(i+1)].prev = pt.coord;
+               ext_data[2*(i+1) + 1].prev = pt.coord;
+               ext_data[2*i].prev = pt.coord;
+               ext_data[2*i+1].prev = pt.coord;
+            }
+            else
+            {
+               // last node in the segment
+               ext_data[2*(i-1)].next = pt.coord;
+               ext_data[2*(i-1) + 1].next = pt.coord;
+               ext_data[2*i].next = pt.coord;
+               ext_data[2*i+1].next = pt.coord;
+            }
+         }
+         glBufferData(GL_ARRAY_BUFFER, ext_data.size() * sizeof(LineColorVertex),
+                      ext_data.data(), GL_STATIC_DRAW);
+
+         // Create index buffer for triangles
+         std::vector<GLuint> indices;
+         for (size_t i = 0; i < buf.count() / 2; i++)
+         {
+            GLuint base = 4 * i;
+            indices.push_back(base);
+            indices.push_back(base + 1);
+            indices.push_back(base + 2);
+            indices.push_back(base + 2);
+            indices.push_back(base + 1);
+            indices.push_back(base + 3);
+         }
+         vbos[buf.getHandle()].count = indices.size();
+         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos[buf.getHandle()].elem_buf);
+         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint),
+                      indices.data(), GL_STATIC_DRAW);
+      }
    }
    else
    {
-      vbos[buf.getHandle()].count = buf.count();
+      // Original code for non-line geometries
+      if (buf.getHandle() == 0)
+      {
+         if (buf.count() == 0) { return; }
+         GLuint handle;
+         glGenBuffers(1, &handle);
+         buf.setHandle(vbos.size());
+         vbos.emplace_back(VBOData{handle, 0, buf.getShape(), buf.count(), layout});
+      }
+      else
+      {
+         vbos[buf.getHandle()].count = buf.count();
+         // Update layout and shape in case we're switching from shader-expanded back to regular
+         vbos[buf.getHandle()].layout = layout;
+         vbos[buf.getHandle()].shape = buf.getShape();
+
+         // Delete element buffer if switching from triangles back to GL_LINES
+         if (buf.getShape() == GL_LINES && vbos[buf.getHandle()].elem_buf != 0)
+         {
+            GLuint elem_buf = vbos[buf.getHandle()].elem_buf;
+            glDeleteBuffers(1, &elem_buf);
+            vbos[buf.getHandle()].elem_buf = 0;
+         }
+      }
+      glBindBuffer(GL_ARRAY_BUFFER, vbos[buf.getHandle()].vert_buf);
+      glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
+      glBufferData(GL_ARRAY_BUFFER, buf.count() * buf.getStride(),
+                   buf.getData(), GL_STATIC_DRAW);
    }
-   glBindBuffer(GL_ARRAY_BUFFER, vbos[buf.getHandle()].vert_buf);
-   glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
-   glBufferData(GL_ARRAY_BUFFER, buf.count() * buf.getStride(),
-                buf.getData(), GL_STATIC_DRAW);
 }
 
 void CoreGLDevice::bufferToDevice(array_layout layout, IIndexedBuffer& buf)
@@ -376,34 +631,104 @@ void CoreGLDevice::drawDeviceBuffer(int hnd)
       indexed = true;
    }
    if (vbos[hnd].layout == Vertex::layout
-       || vbos[hnd].layout == VertexNorm::layout)
+       || vbos[hnd].layout == VertexNorm::layout
+       || vbos[hnd].layout == LineVertex::layout)
    {
       glVertexAttrib4fv(ATTR_COLOR, static_color.data());
    }
    GLenum shape = vbos[hnd].shape;
    int count = vbos[hnd].count;
-   switch (vbos[hnd].layout)
+   array_layout type = vbos[hnd].layout;
+
+   // Special handling for line expansion
+   if (type == LineVertex::layout || type == LineColorVertex::layout)
    {
-      case Vertex::layout:
-         drawDeviceBufferImpl<Vertex>(shape, count, indexed);
-         break;
-      case VertexColor::layout:
-         drawDeviceBufferImpl<VertexColor>(shape, count, indexed);
-         break;
-      case VertexTex::layout:
-         drawDeviceBufferImpl<VertexTex>(shape, count, indexed);
-         break;
-      case VertexNorm::layout:
-         drawDeviceBufferImpl<VertexNorm>(shape, count, indexed);
-         break;
-      case VertexNormColor::layout:
-         drawDeviceBufferImpl<VertexNormColor>(shape, count, indexed);
-         break;
-      case VertexNormTex::layout:
-         drawDeviceBufferImpl<VertexNormTex>(shape, count, indexed);
-         break;
-      default:
-         cerr << "WARNING: Unhandled vertex layout " << vbos[hnd].layout << endl;
+      // Always enable fragment shader AA for shader-expanded lines
+      // When combined with MSAA, gives "double-AA" for ultra-smooth quality
+      bool use_line_aa = true;
+
+      // Disable polygon offset for lines to prevent z-fighting
+      glPolygonOffset(0, 0);
+
+      // Fragment shader AA requires blending and no depth write
+      GLboolean depthWriteEnabled = GL_TRUE;
+      bool blendWasEnabled = glIsEnabled(GL_BLEND);
+      if (!blendWasEnabled)
+      {
+         glEnable(GL_BLEND);
+      }
+      glGetBooleanv(GL_DEPTH_WRITEMASK, &depthWriteEnabled);
+      if (depthWriteEnabled)
+      {
+         glDepthMask(GL_FALSE);
+      }
+
+      glUniform1i(uniforms["expandLines"], true);
+      glUniform1i(uniforms["useLineAA"], use_line_aa);
+      glUniform1f(uniforms["lineWidth"], 2 * line_w / vp_width);
+      glUniform1f(uniforms["aspectRatio"], (float)vp_width / vp_height);
+      // Set up attributes
+      glVertexAttrib3f(CoreGLDevice::ATTR_NORMAL, 0.f, 0.f, 1.f);
+      if (type == LineVertex::layout)
+      {
+         LineVertex::Setup();
+      }
+      else if (type == LineColorVertex::layout)
+      {
+         LineColorVertex::Setup();
+      }
+      glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, (void*)0);
+      if (type == LineVertex::layout)
+      {
+         LineVertex::Finish();
+      }
+      else if (type == LineColorVertex::layout)
+      {
+         LineColorVertex::Finish();
+      }
+      glUniform1i(uniforms["expandLines"], false);
+
+      // Restore state
+      if (depthWriteEnabled)
+      {
+         glDepthMask(GL_TRUE);
+      }
+      if (!blendWasEnabled)
+      {
+         glDisable(GL_BLEND);
+      }
+
+      // Reset polygon offset to default value
+      glPolygonOffset(1, 1);
+   }
+   else
+   {
+      // Ensure expandLines is disabled for non-line buffers
+      glUniform1i(uniforms["expandLines"], false);
+
+      switch (vbos[hnd].layout)
+      {
+         case Vertex::layout:
+            drawDeviceBufferImpl<Vertex>(shape, count, indexed);
+            break;
+         case VertexColor::layout:
+            drawDeviceBufferImpl<VertexColor>(shape, count, indexed);
+            break;
+         case VertexTex::layout:
+            drawDeviceBufferImpl<VertexTex>(shape, count, indexed);
+            break;
+         case VertexNorm::layout:
+            drawDeviceBufferImpl<VertexNorm>(shape, count, indexed);
+            break;
+         case VertexNormColor::layout:
+            drawDeviceBufferImpl<VertexNormColor>(shape, count, indexed);
+            break;
+         case VertexNormTex::layout:
+            drawDeviceBufferImpl<VertexNormTex>(shape, count, indexed);
+            break;
+         default:
+            cerr << "WARNING: Unhandled vertex layout " << vbos[hnd].layout << endl;
+      }
    }
 }
 void CoreGLDevice::drawDeviceBuffer(const TextBuffer& t_buf)
