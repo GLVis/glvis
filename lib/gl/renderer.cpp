@@ -10,11 +10,22 @@
 // CONTRIBUTING.md for details.
 
 #include "renderer.hpp"
+#include "renderer_core.hpp"
 
 namespace gl3
 {
 
 using namespace resource;
+
+namespace
+{
+const std::string kOITFullscreenVs =
+#include "shaders/oit_fullscreen.vert"
+   ;
+const std::string kOITFinalizeFs =
+#include "shaders/oit_finalize.frag"
+   ;
+}
 
 // Beginning in OpenGL 3.0, there were two changes in texture format support:
 // - The older single-channel internal format GL_ALPHA was deprecated in favor
@@ -108,6 +119,234 @@ void MeshRenderer::init()
 #endif
 }
 
+bool MeshRenderer::canUseOIT(const RenderQueue& queue) const
+{
+   if (!oit_enable || !device || !feat_use_fbo_antialias)
+   {
+      return false;
+   }
+   if (device->getType() != GLDevice::CORE_DEVICE)
+   {
+      return false;
+   }
+   return std::any_of(queue.begin(), queue.end(),
+                      [](const RenderQueue::value_type& q)
+   {
+      return q.first.contains_translucent;
+   });
+}
+
+bool MeshRenderer::ensureOITTargets(int width, int height)
+{
+   if (!oit_support_checked)
+   {
+      oit_support = probeOITSupport();
+      oit_support_checked = true;
+      if (!oit_support)
+      {
+         std::cerr <<
+                   "OIT: Disabled (float color-buffer render targets are not supported "
+                   "by this OpenGL/WebGL context)." << std::endl;
+      }
+   }
+   if (!oit_support)
+   {
+      return false;
+   }
+
+   if (width <= 0 || height <= 0)
+   {
+      return false;
+   }
+
+   const bool size_changed = (width != oit_width) || (height != oit_height);
+   const bool msaa_changed = (oit_msaa_samples != (msaa_enable ? msaa_samples :
+                                                   0));
+   const bool need_realloc =
+      size_changed || msaa_changed ||
+      !oit_scene_color_tex || !oit_scene_depth_rb || !oit_scene_fb ||
+      !oit_accum_tex || !oit_reveal_tex || !oit_accum_fb || !oit_reveal_fb;
+
+   if (!need_realloc)
+   {
+      return true;
+   }
+
+   oit_width = width;
+   oit_height = height;
+
+   auto createTexture2D = [&](resource::TextureHandle& tex,
+                              GLint internal_fmt,
+                              GLenum fmt,
+                              GLenum type,
+                              GLint min_filter,
+                              GLint mag_filter) -> void
+   {
+      GLuint tex_id = 0;
+      glGenTextures(1, &tex_id);
+      tex = TextureHandle(tex_id);
+      glBindTexture(GL_TEXTURE_2D, tex);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexImage2D(GL_TEXTURE_2D, 0, internal_fmt, width, height, 0, fmt,
+                   type, nullptr);
+      glBindTexture(GL_TEXTURE_2D, 0);
+   };
+
+   auto createDepthRenderbuffer = [&](resource::RenderBufHandle& rb,
+                                      GLenum depth_fmt) -> void
+   {
+      GLuint rb_id = 0;
+      glGenRenderbuffers(1, &rb_id);
+      rb = RenderBufHandle(rb_id);
+      glBindRenderbuffer(GL_RENDERBUFFER, rb);
+      glRenderbufferStorage(GL_RENDERBUFFER, depth_fmt, width, height);
+      glBindRenderbuffer(GL_RENDERBUFFER, 0);
+   };
+
+   auto createFramebuffer = [&](
+                               resource::FBOHandle& fb,
+                               const resource::TextureHandle& color_tex,
+                               const resource::RenderBufHandle& depth_rb) -> bool
+   {
+      GLuint fb_id = 0;
+      glGenFramebuffers(1, &fb_id);
+      fb = FBOHandle(fb_id);
+      glBindFramebuffer(GL_FRAMEBUFFER, fb);
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                             color_tex, 0);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                GL_RENDERBUFFER, depth_rb);
+      const bool ok = (glCheckFramebufferStatus(GL_FRAMEBUFFER)
+                       == GL_FRAMEBUFFER_COMPLETE);
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      return ok;
+   };
+
+   // Scene color target (opaque render target)
+   createTexture2D(oit_scene_color_tex, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE,
+                   GL_LINEAR, GL_LINEAR);
+
+   // Shared depth buffer for opaque + OIT passes
+   createDepthRenderbuffer(oit_scene_depth_rb, GL_DEPTH_COMPONENT24);
+
+   // Scene framebuffer
+   if (!createFramebuffer(oit_scene_fb, oit_scene_color_tex, oit_scene_depth_rb))
+   {
+      return false;
+   }
+
+   // Accumulation + revealage textures
+#ifdef __EMSCRIPTEN__
+   const GLenum kOITAccumType = GL_HALF_FLOAT;
+#else
+   const GLenum kOITAccumType = GL_FLOAT;
+#endif
+   createTexture2D(oit_accum_tex, GL_RGBA16F, GL_RGBA, kOITAccumType,
+                   GL_NEAREST, GL_NEAREST);
+   createTexture2D(oit_reveal_tex, GL_R8, GL_RED, GL_UNSIGNED_BYTE,
+                   GL_NEAREST, GL_NEAREST);
+
+   // Accumulation framebuffer
+   if (!createFramebuffer(oit_accum_fb, oit_accum_tex, oit_scene_depth_rb))
+   {
+      return false;
+   }
+
+   // Revealage framebuffer
+   if (!createFramebuffer(oit_reveal_fb, oit_reveal_tex, oit_scene_depth_rb))
+   {
+      return false;
+   }
+
+   // Optional MSAA framebuffer for the opaque pass
+   oit_msaa_fb = FBOHandle(0);
+   oit_msaa_samples = 0;
+   if (msaa_enable && msaa_samples > 0)
+   {
+      GLuint color_rb = 0, depth_rb = 0, fb_id = 0;
+      glGenRenderbuffers(1, &color_rb);
+      glGenRenderbuffers(1, &depth_rb);
+      oit_msaa_color_rb = RenderBufHandle(color_rb);
+      oit_msaa_depth_rb = RenderBufHandle(depth_rb);
+
+      glGenFramebuffers(1, &fb_id);
+      oit_msaa_fb = FBOHandle(fb_id);
+
+      glBindRenderbuffer(GL_RENDERBUFFER, oit_msaa_color_rb);
+      glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_samples,
+                                       GL_RGBA8, width, height);
+      glBindRenderbuffer(GL_RENDERBUFFER, oit_msaa_depth_rb);
+      glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_samples,
+                                       GL_DEPTH_COMPONENT24, width, height);
+      glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+      glBindFramebuffer(GL_FRAMEBUFFER, oit_msaa_fb);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                GL_RENDERBUFFER, oit_msaa_color_rb);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                GL_RENDERBUFFER, oit_msaa_depth_rb);
+      if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+      {
+         oit_msaa_fb = FBOHandle(0);
+         oit_msaa_samples = 0;
+      }
+      else
+      {
+         oit_msaa_samples = msaa_samples;
+      }
+   }
+
+   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+   return true;
+}
+
+bool MeshRenderer::probeOITSupport()
+{
+   // Probe whether GL_RGBA16F textures are color-renderable in this context.
+   // This is required for the OIT accumulation buffer.
+   GLuint tex_id = 0;
+   glGenTextures(1, &tex_id);
+   TextureHandle tex(tex_id);
+   glBindTexture(GL_TEXTURE_2D, tex);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+#ifdef __EMSCRIPTEN__
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 1, 1, 0, GL_RGBA,
+                GL_HALF_FLOAT, nullptr);
+#else
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 1, 1, 0, GL_RGBA,
+                GL_FLOAT, nullptr);
+#endif
+   glBindTexture(GL_TEXTURE_2D, 0);
+
+   GLuint depth_id = 0;
+   glGenRenderbuffers(1, &depth_id);
+   RenderBufHandle depth(depth_id);
+   glBindRenderbuffer(GL_RENDERBUFFER, depth);
+   glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, 1, 1);
+   glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+   GLuint fb_id = 0;
+   glGenFramebuffers(1, &fb_id);
+   FBOHandle fb(fb_id);
+   glBindFramebuffer(GL_FRAMEBUFFER, fb);
+   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex,
+                          0);
+   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER,
+                             depth);
+
+   const bool ok = (glCheckFramebufferStatus(GL_FRAMEBUFFER) ==
+                    GL_FRAMEBUFFER_COMPLETE);
+   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+   return ok;
+}
+
 void MeshRenderer::render(const RenderQueue& queue)
 {
    // elements containing opaque objects should be rendered first
@@ -117,6 +356,270 @@ void MeshRenderer::render(const RenderQueue& queue)
    {
       return !renderPair.first.contains_translucent;
    });
+
+   struct DrawableBuffers
+   {
+      std::vector<int> tex_bufs;
+      std::vector<int> no_tex_bufs;
+      TextBuffer* text_buf = nullptr;
+   };
+
+   auto collectBuffers = [&](GlDrawable* drawable) -> DrawableBuffers
+   {
+      DrawableBuffers out;
+      for (int i = 0; i < NUM_LAYOUTS; i++)
+      {
+         for (size_t j = 0; j < GlDrawable::NUM_SHAPES; j++)
+         {
+            if (drawable->buffers[i][j])
+            {
+               if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0)
+               {
+                  out.tex_bufs.emplace_back(drawable->buffers[i][j].get()->getHandle());
+               }
+               else
+               {
+                  out.no_tex_bufs.emplace_back(drawable->buffers[i][j].get()->getHandle());
+               }
+            }
+            if (drawable->indexed_buffers[i][j])
+            {
+               if (i == LAYOUT_VTX_TEXTURE0 || i == LAYOUT_VTX_NORMAL_TEXTURE0)
+               {
+                  out.tex_bufs.emplace_back(
+                     drawable->indexed_buffers[i][j].get()->getHandle());
+               }
+               else
+               {
+                  out.no_tex_bufs.emplace_back(
+                     drawable->indexed_buffers[i][j].get()->getHandle());
+               }
+            }
+         }
+      }
+      out.text_buf = &drawable->text_buffer;
+      return out;
+   };
+
+   CoreGLDevice* core_dev = dynamic_cast<CoreGLDevice*>(device.get());
+   if (canUseOIT(sorted_queue) && core_dev && core_dev->hasOITPrograms())
+   {
+      int vp[4];
+      device->getViewport(vp);
+      int width = vp[2];
+      int height = vp[3];
+
+      if (!ensureOITTargets(width, height))
+      {
+         std::cerr << "OIT: Unable to create render targets, falling back to legacy "
+                   "transparency." << std::endl;
+         bool prev_oit = oit_enable;
+         oit_enable = false;
+         render(queue);
+         oit_enable = prev_oit;
+         return;
+      }
+
+      auto setRenderParams = [&](const RenderParams& params)
+      {
+         device->setTransformMatrices(params.model_view.mtx, params.projection.mtx);
+         device->setMaterial(params.mesh_material);
+         device->setNumLights(params.num_pt_lights);
+         for (int i = 0; i < params.num_pt_lights; i++)
+         {
+            device->setPointLight(i, params.lights[i]);
+         }
+         device->setAmbientLight(params.light_amb_scene);
+         device->setStaticColor(params.static_color);
+         device->setClipPlaneUse(params.use_clip_plane);
+         device->setClipPlaneEqn(params.clip_plane_eqn);
+      };
+
+      auto drawDrawableGeometry = [&](GlDrawable* drawable)
+      {
+         DrawableBuffers bufs = collectBuffers(drawable);
+         device->attachTexture(GLDevice::SAMPLER_COLOR, color_tex);
+         device->attachTexture(GLDevice::SAMPLER_ALPHA, alpha_tex);
+         for (auto buf : bufs.tex_bufs)
+         {
+            device->drawDeviceBuffer(buf);
+         }
+         device->detachTexture(GLDevice::SAMPLER_COLOR);
+         device->detachTexture(GLDevice::SAMPLER_ALPHA);
+         for (auto buf : bufs.no_tex_bufs)
+         {
+            device->drawDeviceBuffer(buf);
+         }
+      };
+
+      auto drawDrawableText = [&](const RenderParams& params, GlDrawable* drawable)
+      {
+         DrawableBuffers bufs = collectBuffers(drawable);
+         device->setTransformMatrices(params.model_view.mtx, params.projection.mtx);
+         device->setClipPlaneUse(params.use_clip_plane);
+         device->setClipPlaneEqn(params.clip_plane_eqn);
+         device->drawDeviceBuffer(*bufs.text_buf);
+      };
+
+      // === Opaque pass (optionally MSAA-resolved into oit_scene_fb) ===
+      glBindFramebuffer(GL_FRAMEBUFFER, oit_msaa_fb ? (GLuint)oit_msaa_fb
+                        : (GLuint)oit_scene_fb);
+#ifndef __EMSCRIPTEN__
+      if (oit_msaa_fb) { glEnable(GL_MULTISAMPLE); }
+#endif
+      glClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      core_dev->bindDefaultProgram();
+      glDisable(GL_BLEND);
+      device->enableDepthWrite();
+      for (auto& q_elem : sorted_queue)
+      {
+         const RenderParams& params = q_elem.first;
+         if (params.contains_translucent)
+         {
+            continue;
+         }
+         setRenderParams(params);
+         drawDrawableGeometry(q_elem.second);
+      }
+
+      if (oit_msaa_fb)
+      {
+         glBindFramebuffer(GL_READ_FRAMEBUFFER, oit_msaa_fb);
+         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, oit_scene_fb);
+         glBlitFramebuffer(0, 0, width, height,
+                           0, 0, width, height,
+                           GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT,
+                           GL_NEAREST);
+#ifndef __EMSCRIPTEN__
+         glDisable(GL_MULTISAMPLE);
+#endif
+      }
+
+      // === Accumulation pass ===
+      glBindFramebuffer(GL_FRAMEBUFFER, oit_accum_fb);
+      glClearColor(0.f, 0.f, 0.f, 0.f);
+      glClear(GL_COLOR_BUFFER_BIT);
+      glEnable(GL_DEPTH_TEST);
+      device->disableDepthWrite();
+      glEnable(GL_BLEND);
+      glBlendEquation(GL_FUNC_ADD);
+      glBlendFunc(GL_ONE, GL_ONE);
+      core_dev->bindOITAccumProgram();
+      for (auto& q_elem : sorted_queue)
+      {
+         const RenderParams& params = q_elem.first;
+         if (!params.contains_translucent)
+         {
+            continue;
+         }
+         setRenderParams(params);
+         drawDrawableGeometry(q_elem.second);
+      }
+
+      // === Revealage pass ===
+      glBindFramebuffer(GL_FRAMEBUFFER, oit_reveal_fb);
+      glClearColor(1.f, 1.f, 1.f, 1.f);
+      glClear(GL_COLOR_BUFFER_BIT);
+      glEnable(GL_DEPTH_TEST);
+      device->disableDepthWrite();
+      glEnable(GL_BLEND);
+      glBlendEquation(GL_FUNC_ADD);
+      glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+      core_dev->bindOITRevealProgram();
+      for (auto& q_elem : sorted_queue)
+      {
+         const RenderParams& params = q_elem.first;
+         if (!params.contains_translucent)
+         {
+            continue;
+         }
+         setRenderParams(params);
+         drawDrawableGeometry(q_elem.second);
+      }
+
+      // === Composite to default framebuffer ===
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      glDisable(GL_BLEND);
+      glDisable(GL_DEPTH_TEST);
+
+      if (!oit_finalize_ready)
+      {
+         if (!oit_finalize_prgm.create(kOITFullscreenVs, kOITFinalizeFs, {}, 1))
+         {
+            std::cerr << "OIT: Failed to compile composite shader, falling back to "
+                      "legacy transparency." << std::endl;
+            glEnable(GL_DEPTH_TEST);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
+            glActiveTexture(GL_TEXTURE0);
+            bool prev_oit = oit_enable;
+            oit_enable = false;
+            render(queue);
+            oit_enable = prev_oit;
+            return;
+         }
+         oit_finalize_prgm.bind();
+         glUniform1i(oit_finalize_prgm.uniform("sceneTex"), 0);
+         glUniform1i(oit_finalize_prgm.uniform("accumTex"), 1);
+         glUniform1i(oit_finalize_prgm.uniform("revealTex"), 2);
+         oit_finalize_ready = true;
+      }
+
+      if (!oit_finalize_vao && (GLEW_VERSION_3_0 || GLEW_ARB_vertex_array_object))
+      {
+         GLuint vao_id;
+         glGenVertexArrays(1, &vao_id);
+         oit_finalize_vao = VtxArrayHandle(vao_id);
+      }
+      if (oit_finalize_vao)
+      {
+         glBindVertexArray(oit_finalize_vao);
+      }
+
+      oit_finalize_prgm.bind();
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, oit_scene_color_tex);
+      glActiveTexture(GL_TEXTURE1);
+      glBindTexture(GL_TEXTURE_2D, oit_accum_tex);
+      glActiveTexture(GL_TEXTURE2);
+      glBindTexture(GL_TEXTURE_2D, oit_reveal_tex);
+      glDrawArrays(GL_TRIANGLES, 0, 3);
+
+      glActiveTexture(GL_TEXTURE2);
+      glBindTexture(GL_TEXTURE_2D, 0);
+      glActiveTexture(GL_TEXTURE1);
+      glBindTexture(GL_TEXTURE_2D, 0);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, 0);
+
+      // Restore expected baseline state for the rest of GLVis.
+      glEnable(GL_DEPTH_TEST);
+      glBlendEquation(GL_FUNC_ADD);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      glClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
+      glActiveTexture(GL_TEXTURE0);
+
+      // === Text overlay pass ===
+      core_dev->bindDefaultProgram();
+      device->enableBlend();
+      device->disableDepthWrite();
+      device->attachTexture(1, font_tex);
+      device->setNumLights(0);
+      for (auto& q_elem : sorted_queue)
+      {
+         drawDrawableText(q_elem.first, q_elem.second);
+      }
+      device->enableDepthWrite();
+      device->disableBlend();
+
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      glActiveTexture(GL_TEXTURE0);
+      glClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
+      return;
+   }
+
    RenderBufHandle renderBufs[2];
    FBOHandle msaaFb;
    if (feat_use_fbo_antialias && msaa_enable)
