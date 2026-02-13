@@ -239,11 +239,15 @@ public:
       , oit_width(0)
       , oit_height(0)
       , oit_msaa_samples(0)
+      , color_tex(0)
+      , alpha_tex(0)
+      , font_tex(0)
+      , line_w(1.f)
+      , line_w_aa(LINE_WIDTH_AA)
+      , palette(nullptr)
       , clear_color{0.f, 0.f, 0.f, 1.f}
       , oit_support_checked(false)
-      , oit_support(false)
-      , line_w(1.f)
-      , line_w_aa(LINE_WIDTH_AA) { init(); }
+      , oit_support(false) { init(); }
 
    template<typename TDevice>
    void setDevice()
