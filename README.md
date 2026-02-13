@@ -177,6 +177,7 @@ Key commands
 - <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>, <kbd>5</kbd>, <kbd>6</kbd>, <kbd>7</kbd>, <kbd>8</kbd>, <kbd>9</kbd> – Manual rotation along coordinate axes
 - <kbd>Alt</kbd> + <kbd>a</kbd> – Set axes number format
 - <kbd>Alt</kbd> + <kbd>c</kbd> – Set colorbar number format
+- <kbd>Alt</kbd> + <kbd>o</kbd> – Toggle order-independent transparency (OIT) for translucent objects (when supported)
 - <kbd>Ctrl</kbd> + <kbd>←</kbd>, <kbd>→</kbd>, <kbd>↑</kbd>, <kbd>↓</kbd> – Translate the viewpoint
 - <kbd>Ctrl</kbd> + <kbd>o</kbd> – Toggle an element ordering curve
 - <kbd>n</kbd> / <kbd>N</kbd> – Cycle through numbering: `None` → `Elements` → `Edges` → `Vertices` → `DOFs`
