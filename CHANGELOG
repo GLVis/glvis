@@ -14,7 +14,7 @@ Version 4.5.1 (development)
 - Added configurable line width for mesh edges and element boundaries when MSAA
   is enabled. Line width can be adjusted at runtime using ';' (decrease) and '''
   (increase) keys in 0.25 pixel increments (minimum 0.25, no maximum). Default
-  line width now is 1.5 pixels.
+  line width is platform-dependent (1.5 pixels on macOS, 1.4 pixels elsewhere).
 
 - Without antialiasing, the original GL_LINES rendering is still used. With
   antialiasing, lines are rendered using shader-expanded triangles and hardware

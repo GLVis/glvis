@@ -174,7 +174,7 @@ enum array_layout
    LAYOUT_VTX_TEXTURE0,
    LAYOUT_VTX_NORMAL_COLOR,
    LAYOUT_VTX_NORMAL_TEXTURE0,
-   NUM_LAYOUTS,
+   NUM_LAYOUTS, // Only counts drawable layouts; extended layouts must be > NUM_LAYOUTS
    LAYOUT_EXT_LINE_VTX,
    LAYOUT_EXT_LINE_VTX_COLOR
 };

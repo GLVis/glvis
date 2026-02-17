@@ -388,7 +388,16 @@ void CoreGLDevice::bufferToDevice(array_layout layout, IVertexBuffer &buf)
       }
       glBindBuffer(GL_ARRAY_BUFFER, vbos[buf.getHandle()].vert_buf);
       glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
-      if (buf.count() == 0) { return; }
+      if (buf.count() == 0)
+      {
+         vbos[buf.getHandle()].count = 0;
+         if (vbos[buf.getHandle()].elem_buf != 0)
+         {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos[buf.getHandle()].elem_buf);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
+         }
+         return;
+      }
 
       // Create extended vertex data for generating shader-expanded lines
       if (layout == Vertex::layout)
@@ -703,8 +712,9 @@ void CoreGLDevice::drawDeviceBuffer(int hnd)
    }
    else
    {
-      // Ensure expandLines is disabled for non-line buffers
+      // Ensure expandLines and useLineAA are disabled for non-line buffers
       glUniform1i(uniforms["expandLines"], false);
+      glUniform1i(uniforms["useLineAA"], false);
 
       switch (vbos[hnd].layout)
       {
