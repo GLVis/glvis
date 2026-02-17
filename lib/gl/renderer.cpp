@@ -125,6 +125,10 @@ bool MeshRenderer::canUseOIT(const RenderQueue& queue) const
    {
       return false;
    }
+   if (oit_support_checked && !oit_support)
+   {
+      return false;
+   }
    if (device->getType() != GLDevice::CORE_DEVICE)
    {
       return false;
@@ -263,6 +267,8 @@ bool MeshRenderer::ensureOITTargets(int width, int height)
 
    // Optional MSAA framebuffer for the opaque pass
    oit_msaa_fb = FBOHandle(0);
+   oit_msaa_color_rb = RenderBufHandle(0);
+   oit_msaa_depth_rb = RenderBufHandle(0);
    oit_msaa_samples = 0;
    if (msaa_enable && msaa_samples > 0)
    {
@@ -291,6 +297,8 @@ bool MeshRenderer::ensureOITTargets(int width, int height)
       if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
       {
          oit_msaa_fb = FBOHandle(0);
+         oit_msaa_color_rb = RenderBufHandle(0);
+         oit_msaa_depth_rb = RenderBufHandle(0);
          oit_msaa_samples = 0;
       }
       else
