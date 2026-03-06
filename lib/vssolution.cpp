@@ -491,7 +491,7 @@ void VisualizationSceneSolution::Init()
    palette.SetFallbackIndex(2); // use the 'jet-like' palette in 2D
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
-   CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*bb.x[0]+(0.5+eps)*bb.x[1]);
+   CuttingPlane = new Plane({-1.0,0.0,0.0,(0.5-eps)*bb.x[0]+(0.5+eps)*bb.x[1]},bb);
    draw_cp = 0;
 
    // static int init = 0;

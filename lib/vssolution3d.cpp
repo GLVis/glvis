@@ -774,7 +774,7 @@ void VisualizationSceneSolution3d::Init()
    palette.SetFallbackIndex(12); // use the 'vivid' palette in 3D
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
-   CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*bb.x[0]+(0.5+eps)*bb.x[1]);
+   CuttingPlane = new Plane({-1.0,0.0,0.0,(0.5-eps)*bb.x[0]+(0.5+eps)*bb.x[1]},bb);
 
    nlevels = 1;
 

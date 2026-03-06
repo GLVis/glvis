@@ -31,7 +31,7 @@ private:
    double phi_step, theta_step, rho_step;
 
 public:
-   Plane(double A,double B,double C,double D);
+   Plane(const double (&eqn_)[4], const VisualizationScene::Box &bb);
    inline double * Equation() { return eqn; }
    inline double Transform(double x, double y, double z)
    { return eqn[0]*x+eqn[1]*y+eqn[2]*z+eqn[3]; }

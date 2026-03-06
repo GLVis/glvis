@@ -1900,18 +1900,15 @@ void VisualizationSceneScalarData::ComputeElemAttrCenter()
 }
 
 
-Plane::Plane(double A,double B,double C,double D)
+Plane::Plane(const double (&eqn_)[4], const VisualizationScene::Box &bb)
 {
-   eqn[0] = A;
-   eqn[1] = B;
-   eqn[2] = C;
-   eqn[3] = D;
+   for (int i = 0; i < 4; i++) { eqn[i] = eqn_[i]; }
 
    CartesianToSpherical();
 
-   double x[2] = {window->vs -> bb.x[0], window->vs -> bb.x[1]};
-   double y[2] = {window->vs -> bb.y[0], window->vs -> bb.y[1]};
-   double z[2] = {window->vs -> bb.z[0], window->vs -> bb.z[1]};
+   double x[2] = {bb.x[0], bb.x[1]};
+   double y[2] = {bb.y[0], bb.y[1]};
+   double z[2] = {bb.z[0], bb.z[1]};
    bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
                       (y[1]-y[0])*(y[1]-y[0]) +
                       (z[1]-z[0])*(z[1]-z[0]) );
