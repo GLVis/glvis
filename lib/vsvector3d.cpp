@@ -127,17 +127,17 @@ std::string VisualizationSceneVector3d::GetHelpString() const
    return os.str();
 }
 
-static thread_local VisualizationSceneVector3d  *vsvector3d;
-static thread_local Window *window;
+thread_local VisualizationSceneVector3d
+*VisualizationSceneVector3d::vsvector3d;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
-static void KeyDPressed()
+void VisualizationSceneVector3d::KeyDPressed()
 {
    vsvector3d -> ToggleDisplacements();
    SendExposeEvent();
 }
 
-static void KeyNPressed()
+void VisualizationSceneVector3d::KeyNPressed()
 {
    if (vsvector3d -> drawdisp)
       vsvector3d -> ianimd =( (vsvector3d ->ianimd + 1) %
@@ -148,7 +148,7 @@ static void KeyNPressed()
    vsvector3d -> NPressed();
 }
 
-static void KeyBPressed()
+void VisualizationSceneVector3d::KeyBPressed()
 {
    if (vsvector3d -> drawdisp)
       vsvector3d ->ianimd = ((vsvector3d ->ianimd +
@@ -161,15 +161,15 @@ static void KeyBPressed()
    vsvector3d -> NPressed();
 }
 
-static void KeyrPressed()
+void VisualizationSceneVector3d::KeyrPressed()
 {
-   window->vs -> spinning = 0;
+   vsvector3d -> spinning = 0;
    RemoveIdleFunc(MainLoop);
    vsvector3d -> CenterObject();
-   window->vs -> ViewAngle = 45.0;
-   window->vs -> ViewScale = 1.0;
-   window->vs -> ViewCenterX = 0.0;
-   window->vs -> ViewCenterY = 0.0;
+   vsvector3d -> ViewAngle = 45.0;
+   vsvector3d -> ViewScale = 1.0;
+   vsvector3d -> ViewCenterX = 0.0;
+   vsvector3d -> ViewCenterY = 0.0;
    vsvector3d -> ianim = vsvector3d -> ianimd = 0;
    vsvector3d -> Prepare();
    vsvector3d -> PrepareLines();
@@ -178,9 +178,9 @@ static void KeyrPressed()
    SendExposeEvent();
 }
 
-static void KeyRPressed()
+void VisualizationSceneVector3d::KeyRPressed()
 {
-   window->vs->spinning = 0;
+   vsvector3d -> spinning = 0;
    RemoveIdleFunc(MainLoop);
    vsvector3d -> ianim = vsvector3d -> ianimd = 0;
    vsvector3d -> Prepare();
@@ -205,13 +205,13 @@ void VisualizationSceneVector3d::NPressed()
    SendExposeEvent();
 }
 
-static void KeyuPressed()
+void VisualizationSceneVector3d::KeyuPressed()
 {
    vsvector3d -> ToggleVectorFieldLevel(+1);
    SendExposeEvent();
 }
 
-static void KeyUPressed()
+void VisualizationSceneVector3d::KeyUPressed()
 {
    vsvector3d -> ToggleVectorFieldLevel(-1);
    SendExposeEvent();
@@ -236,13 +236,13 @@ void VisualizationSceneVector3d::ToggleVectorFieldLevel(int v)
    vsvector3d -> PrepareVectorField();
 }
 
-static void KeywPressed()
+void VisualizationSceneVector3d::KeywPressed()
 {
    vsvector3d -> AddVectorFieldLevel();
    SendExposeEvent();
 }
 
-static void KeyWPressed()
+void VisualizationSceneVector3d::KeyWPressed()
 {
    vsvector3d -> RemoveVectorFieldLevel();
    SendExposeEvent();
@@ -264,19 +264,19 @@ void VisualizationSceneVector3d::RemoveVectorFieldLevel()
    vsvector3d -> PrepareVectorField();
 }
 
-static void KeyvPressed()
+void VisualizationSceneVector3d::KeyvPressed()
 {
    vsvector3d -> ToggleVectorField(1);
    SendExposeEvent();
 }
 
-static void KeyVPressed()
+void VisualizationSceneVector3d::KeyVPressed()
 {
    vsvector3d -> ToggleVectorField(-1);
    SendExposeEvent();
 }
 
-static void VectorKeyFPressed()
+void VisualizationSceneVector3d::VectorKeyFPressed()
 {
    vsvector3d->ToggleScalarFunction();
    SendExposeEvent();
@@ -395,8 +395,6 @@ VisualizationSceneVector3d::VisualizationSceneVector3d(Window &win_)
 
 void VisualizationSceneVector3d::Init()
 {
-   window = &win;
-
    key_r_state = 0;
 
    drawdisp = 0;

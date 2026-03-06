@@ -609,10 +609,10 @@ void VisualizationSceneScalarData::PrepareCaption()
    GetFont()->getObjectSize(caption, caption_w, caption_h);
 }
 
-static thread_local VisualizationSceneScalarData *vsdata;
+thread_local VisualizationSceneScalarData *VisualizationSceneScalarData::vsdata;
 static thread_local Window *window;
 
-void KeycPressed(GLenum state)
+void VisualizationSceneScalarData::KeycPressed(GLenum state)
 {
    if (state & KMOD_ALT)
    {
@@ -638,7 +638,7 @@ void KeycPressed(GLenum state)
    }
 }
 
-void KeyCPressed()
+void VisualizationSceneScalarData::KeyCPressed()
 {
    cout << "Enter new caption: " << flush;
    std::getline(cin, window->plot_caption);
@@ -646,19 +646,19 @@ void KeyCPressed()
    SendExposeEvent();
 }
 
-void KeySPressed()
+void VisualizationSceneScalarData::KeySPressed()
 {
    vsdata -> ToggleScaling();
    SendExposeEvent();
 }
 
-void KeyaPressed()
+void VisualizationSceneScalarData::KeyaPressed()
 {
    vsdata -> ToggleDrawAxes();
    SendExposeEvent();
 }
 
-void Key_Mod_a_Pressed(GLenum state)
+void VisualizationSceneScalarData::Key_Mod_a_Pressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
@@ -695,47 +695,47 @@ void Key_Mod_a_Pressed(GLenum state)
    }
 }
 
-void KeyHPressed()
+void VisualizationSceneScalarData::KeyHPressed()
 {
    cout << vsdata->GetHelpString() << flush;
 }
 
-void KeylPressed()
+void VisualizationSceneScalarData::KeylPressed()
 {
    vsdata -> ToggleLight();
    SendExposeEvent();
 }
 
-void KeyLPressed()
+void VisualizationSceneScalarData::KeyLPressed()
 {
    vsdata->ToggleLogscale(true);
    SendExposeEvent();
 }
 
-void KeyrPressed()
+void VisualizationSceneScalarData::KeyrPressed()
 {
-   window->vs -> spinning = 0;
+   vsdata -> spinning = 0;
    RemoveIdleFunc(MainLoop);
    vsdata -> CenterObject();
 
-   window->vs -> ViewAngle = 45.0;
-   window->vs -> ViewScale = 1.0;
-   window->vs -> ViewCenterX = 0.0;
-   window->vs -> ViewCenterY = 0.0;
-   window->vs->cam.Reset();
+   vsdata -> ViewAngle = 45.0;
+   vsdata -> ViewScale = 1.0;
+   vsdata -> ViewCenterX = 0.0;
+   vsdata -> ViewCenterY = 0.0;
+   vsdata->cam.Reset();
    vsdata -> key_r_state = 0;
    SendExposeEvent();
 }
 
-void KeyRPressed()
+void VisualizationSceneScalarData::KeyRPressed()
 {
-   window->vs->spinning = 0;
+   vsdata->spinning = 0;
    RemoveIdleFunc(MainLoop);
    vsdata->Toggle2DView();
    SendExposeEvent();
 }
 
-void KeypPressed(GLenum state)
+void VisualizationSceneScalarData::KeypPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
@@ -743,18 +743,18 @@ void KeypPressed(GLenum state)
    }
    else
    {
-      window->vs->palette.NextIndex();
+      vsdata->palette.NextIndex();
       SendExposeEvent();
    }
 }
 
-void KeyPPressed()
+void VisualizationSceneScalarData::KeyPPressed()
 {
-   window->vs->palette.PrevIndex();
+   vsdata->palette.PrevIndex();
    SendExposeEvent();
 }
 
-static void KeyF5Pressed()
+void VisualizationSceneScalarData::KeyF5Pressed()
 {
    int n;
    double min, max;
@@ -772,7 +772,7 @@ static void KeyF5Pressed()
    SendExposeEvent();
 }
 
-void KeyF6Pressed()
+void VisualizationSceneScalarData::KeyF6Pressed()
 {
    int RepeatPaletteTimes = vsdata->palette.GetRepeatTimes();
    cout << "Palette is repeated " << RepeatPaletteTimes << " times.\n"
@@ -808,7 +808,7 @@ void KeyF6Pressed()
    SendExposeEvent();
 }
 
-void KeyF7Pressed(GLenum state)
+void VisualizationSceneScalarData::KeyF7Pressed(GLenum state)
 {
    if (state & KMOD_SHIFT)
    {
@@ -851,7 +851,7 @@ void KeyF7Pressed(GLenum state)
    }
 }
 
-void KeyBackslashPressed()
+void VisualizationSceneScalarData::KeyBackslashPressed()
 {
    float x, y, z, w;
 
@@ -871,7 +871,7 @@ void KeyBackslashPressed()
    SendExposeEvent();
 }
 
-void KeyTPressed()
+void VisualizationSceneScalarData::KeyTPressed()
 {
    int ml;
 
@@ -881,7 +881,7 @@ void KeyTPressed()
    cout << "New material/light : " << ml << endl;
 }
 
-void KeygPressed()
+void VisualizationSceneScalarData::KeygPressed()
 {
    vsdata->ToggleBackground();
    vsdata->PrepareAxes();
@@ -889,17 +889,17 @@ void KeygPressed()
    SendExposeEvent();
 }
 
-void KeyGPressed()
+void VisualizationSceneScalarData::KeyGPressed()
 {
    vsdata->glTF_Export();
 }
 
-void KeyF1Pressed()
+void VisualizationSceneScalarData::KeyF1Pressed()
 {
    vsdata->PrintState();
 }
 
-void KeyF2Pressed()
+void VisualizationSceneScalarData::KeyF2Pressed()
 {
    vsdata -> EventUpdateColors();
    vsdata -> PrepareLines();
@@ -907,29 +907,29 @@ void KeyF2Pressed()
    SendExposeEvent();
 }
 
-void KeykPressed()
+void VisualizationSceneScalarData::KeykPressed()
 {
-   window->vs->matAlpha -= 0.05;
-   if (window->vs->matAlpha < 0.0)
+   vsdata->matAlpha -= 0.05;
+   if (vsdata->matAlpha < 0.0)
    {
-      window->vs->matAlpha = 0.0;
+      vsdata->matAlpha = 0.0;
    }
-   window->vs->GenerateAlphaTexture();
+   vsdata->GenerateAlphaTexture();
    SendExposeEvent();
 }
 
-void KeyKPressed()
+void VisualizationSceneScalarData::KeyKPressed()
 {
-   window->vs->matAlpha += 0.05;
-   if (window->vs->matAlpha > 1.0)
+   vsdata->matAlpha += 0.05;
+   if (vsdata->matAlpha > 1.0)
    {
-      window->vs->matAlpha = 1.0;
+      vsdata->matAlpha = 1.0;
    }
-   window->vs->GenerateAlphaTexture();
+   vsdata->GenerateAlphaTexture();
    SendExposeEvent();
 }
 
-void KeyAPressed()
+void VisualizationSceneScalarData::KeyAPressed()
 {
    bool curr_aa = window->wnd->getRenderer().getAntialiasing();
    window->wnd->getRenderer().setAntialiasing(!curr_aa);
@@ -941,41 +941,41 @@ void KeyAPressed()
    SendExposeEvent();
 }
 
-void KeyCommaPressed()
+void VisualizationSceneScalarData::KeyCommaPressed()
 {
-   window->vs->matAlphaCenter -= 0.25;
+   vsdata->matAlphaCenter -= 0.25;
    // vsdata -> EventUpdateColors();
-   window->vs->GenerateAlphaTexture();
+   vsdata->GenerateAlphaTexture();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
-   cout << "MatAlphaCenter = " << window->vs->matAlphaCenter << endl;
+   cout << "MatAlphaCenter = " << vsdata->matAlphaCenter << endl;
 #endif
 }
 
-void KeyLessPressed()
+void VisualizationSceneScalarData::KeyLessPressed()
 {
-   window->vs->matAlphaCenter += 0.25;
+   vsdata->matAlphaCenter += 0.25;
    // vsdata -> EventUpdateColors();
-   window->vs->GenerateAlphaTexture();
+   vsdata->GenerateAlphaTexture();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
-   cout << "MatAlphaCenter = " << window->vs->matAlphaCenter << endl;
+   cout << "MatAlphaCenter = " << vsdata->matAlphaCenter << endl;
 #endif
 }
 
-void KeyGravePressed()
+void VisualizationSceneScalarData::KeyGravePressed()
 {
    vsdata->ToggleRuler();
    SendExposeEvent();
 }
 
-void KeyTildePressed()
+void VisualizationSceneScalarData::KeyTildePressed()
 {
    vsdata->RulerPosition();
    SendExposeEvent();
 }
 
-void KeyToggleTexture()
+void VisualizationSceneScalarData::KeyToggleTexture()
 {
    vsdata->ToggleTexture();
    SendExposeEvent();
@@ -1159,7 +1159,7 @@ void VisualizationSceneScalarData::Toggle2DView()
          break;
    }
 
-   // if (window->vs -> view != 2) // make 'R' work the same in 2D and 3D
+   // if (vsdata -> view != 2) // make 'R' work the same in 2D and 3D
    key_r_state = (key_r_state+1)%6;
 
    rotmat = newrot.mtx;
@@ -1909,9 +1909,9 @@ Plane::Plane(double A,double B,double C,double D)
 
    CartesianToSpherical();
 
-   double x[2] = {vsdata -> bb.x[0], vsdata -> bb.x[1]};
-   double y[2] = {vsdata -> bb.y[0], vsdata -> bb.y[1]};
-   double z[2] = {vsdata -> bb.z[0], vsdata -> bb.z[1]};
+   double x[2] = {window->vs -> bb.x[0], window->vs -> bb.x[1]};
+   double y[2] = {window->vs -> bb.y[0], window->vs -> bb.y[1]};
+   double z[2] = {window->vs -> bb.z[0], window->vs -> bb.z[1]};
    bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
                       (y[1]-y[0])*(y[1]-y[0]) +
                       (z[1]-z[0])*(z[1]-z[0]) );

@@ -55,8 +55,26 @@ protected:
 
    int GetFunctionAutoRefineFactor() override;
 
-public:
+   // key handlers
+   static thread_local VisualizationSceneVector3d  *vsvector3d;
    int ianim, ianimd, ianimmax, drawdisp;
+
+   static void KeyDPressed();
+   static void KeyNPressed();
+   static void KeyBPressed();
+   static void KeyrPressed();
+   static void KeyRPressed();
+   static void KeyuPressed();
+   static void KeyUPressed();
+   static void KeywPressed();
+   static void KeyWPressed();
+   static void KeyvPressed();
+   static void KeyVPressed();
+   static void VectorKeyFPressed();
+
+   void NPressed();
+
+public:
 
    VisualizationSceneVector3d(Window &win);
 
@@ -68,7 +86,6 @@ public:
 
    std::string GetHelpString() const override;
 
-   void NPressed();
    void PrepareFlat() override;
    void Prepare() override;
    void PrepareLines() override;
