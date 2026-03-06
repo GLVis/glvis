@@ -38,6 +38,8 @@ protected:
    static const char *scal_func_name[];
 
    double mesh_volume;
+   double vector_h, vector_hh;
+   int arrows_nl;
    gl3::GlDrawable vector_buf;
    gl3::GlDrawable displine_buf;
 
@@ -54,6 +56,10 @@ protected:
    mfem::Array<double> dvflevel;
 
    int GetFunctionAutoRefineFactor() override;
+
+   void ArrowsDrawOrNot(mfem::Array<int> l[], int nv, mfem::Vector & sol, int nl,
+                        mfem::Array<double> & level);
+   int ArrowDrawOrNot(double v, int nl, mfem::Array<double> & level);
 
    // key handlers
    static thread_local VisualizationSceneVector3d  *vsvector3d;

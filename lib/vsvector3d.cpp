@@ -395,12 +395,13 @@ VisualizationSceneVector3d::VisualizationSceneVector3d(Window &win_)
 
 void VisualizationSceneVector3d::Init()
 {
-   key_r_state = 0;
-
    drawdisp = 0;
    drawvector = 0;
    scal_func = ScalarFunction::Magnitude;
 
+   arrows_nl = -1;
+
+   key_r_state = 0;
    ianim = ianimd = 0;
    ianimmax = 10;
 
@@ -1352,20 +1353,16 @@ void VisualizationSceneVector3d::PrepareDisplacedMesh()
    updated_bufs.emplace_back(&displine_buf);
 }
 
-void ArrowsDrawOrNot (Array<int> l[], int nv, Vector & sol,
-                      int nl, Array<double> & level)
+void VisualizationSceneVector3d::ArrowsDrawOrNot(
+   Array<int> l[], int nv, Vector & sol, int nl, Array<double> & level)
 {
-   static int first_time = 1;
-   static int nll = nl;
-
-   if (!first_time && nll == nl)
+   if (arrows_nl == nl)
    {
       return;
    }
    else
    {
-      first_time = 1;
-      nll = nl;
+      arrows_nl = nl;
    }
 
    int i,j;
@@ -1395,7 +1392,8 @@ void ArrowsDrawOrNot (Array<int> l[], int nv, Vector & sol,
    }
 }
 
-int ArrowDrawOrNot (double v, int nl, Array<double> & level)
+int VisualizationSceneVector3d::ArrowDrawOrNot(
+   double v, int nl, Array<double> & level)
 {
    double eps = (level[nl] - level[0])/10;
    for (int i = 0; i <= nl; i++)
@@ -1417,11 +1415,8 @@ void VisualizationSceneVector3d::DrawVector(gl3::GlDrawable& buf,
                                             double v2, double sx, double sy,
                                             double sz, double s)
 {
-   static int nv = mesh -> GetNV();
-   static double bb_vol = (bb.x[1]-bb.x[0])*(bb.y[1]-bb.y[0])*(bb.z[1]-bb.z[0]);
-   static double volume = std::max(bb_vol, mesh_volume);
-   static double h      = pow(volume/nv, 0.333);
-   static double hh     = pow(volume, 0.333) / 10;
+   const double &h = vector_h;
+   const double &hh = vector_hh;
 
    switch (type)
    {
@@ -1468,6 +1463,11 @@ void VisualizationSceneVector3d::PrepareVectorField()
    double *vertex;
 
    vector_buf.clear();
+
+   const double bb_vol = (bb.x[1]-bb.x[0])*(bb.y[1]-bb.y[0])*(bb.z[1]-bb.z[0]);
+   const double volume = std::max(bb_vol, mesh_volume);
+   vector_h      = pow(volume/nv, 0.333);
+   vector_hh     = pow(volume, 0.333) / 10;
 
    switch (drawvector)
    {
