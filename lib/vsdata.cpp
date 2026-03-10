@@ -700,9 +700,16 @@ void KeyHPressed()
    cout << vsdata->GetHelpString() << flush;
 }
 
-void KeylPressed()
+void KeylPressed(GLenum state)
 {
-   vsdata -> ToggleLight();
+   if (state & KMOD_CTRL)
+   {
+      vsdata->TogglePointLine();
+   }
+   else
+   {
+      vsdata -> ToggleLight();
+   }
    SendExposeEvent();
 }
 
@@ -1018,6 +1025,18 @@ void VisualizationSceneScalarData::ToggleRuler()
 {
    ruler_on = (ruler_on + 1) % 3;
    PrepareRuler();
+}
+
+void VisualizationSceneScalarData::TogglePointLine()
+{
+   if (win.data_state.point_coords.empty())
+   {
+      cout << "No points loaded. Use -pts <file> to load coordinates." << endl;
+      return;
+   }
+   show_point_line = !show_point_line;
+   cout << "Point line: " << (show_point_line ? "ON" : "OFF") << endl;
+   PreparePointLine();
 }
 
 void VisualizationSceneScalarData::RulerPosition()
@@ -1667,6 +1686,56 @@ void VisualizationSceneScalarData::PrepareAxes()
    coord_cross_buf.addText(0.0f, len, 0.0f, a_label_y);
    coord_cross_buf.addText(0.0f, 0.0f, len, a_label_z);
    updated_bufs.emplace_back(&coord_cross_buf);
+}
+
+void VisualizationSceneScalarData::PreparePointLine()
+{
+   point_line_buf.clear();
+   if (!show_point_line || win.data_state.point_coords.empty())
+   {
+      return;
+   }
+
+   const auto& points = win.data_state.point_coords;
+   // in 2D, elevate the point line above the surface using the value range
+   // in 3D, use the z-coordinates from the points file.
+   const bool is_2d = (mesh->SpaceDimension() == 2);
+   float z_offset = 0.0f;
+   if (is_2d)
+   {
+      const float range = (float)(maxv - minv);
+      const float dz = (range > 0.0f) ? (0.02f * range)
+                       : (0.02f * (float)std::max(1.0, fabs(maxv)));
+      z_offset = (float)maxv + dz;
+   }
+
+   std::vector<gl3::Vertex> line_vertices;
+   line_vertices.reserve((points.size()-1)*2);
+   for (size_t i = 0; i + 1 < points.size(); i++)
+   {
+      float x0 = (float)points[i][0];
+      float y0 = (float)points[i][1];
+      float x1 = (float)points[i+1][0];
+      float y1 = (float)points[i+1][1];
+      float z = is_2d ? z_offset : (float)points[i][2];
+      float z_next = is_2d ? z_offset : (float)points[i+1][2];
+      line_vertices.push_back({x0, y0, z});
+      line_vertices.push_back({x1, y1, z_next});
+   }
+   point_line_buf.addLines<gl3::Vertex>(line_vertices);
+   updated_bufs.emplace_back(&point_line_buf);
+}
+
+void VisualizationSceneScalarData::AddPointLineToScene(
+   gl3::SceneInfo& scene, const gl3::RenderParams& base_params)
+{
+   if (!show_point_line || win.data_state.point_coords.empty()) { return; }
+   gl3::RenderParams params = base_params; // use local parameters
+   params.static_color = {1.0f, 0.0f, 0.0f, 1.0f}; // point line is red
+   params.use_clip_plane = false;
+   params.num_pt_lights = 0;
+   params.contains_translucent = false;
+   scene.queue.emplace_back(params, &point_line_buf);
 }
 
 void VisualizationSceneScalarData::DrawPolygonLevelLines(

@@ -12,6 +12,7 @@
 #ifndef GLVIS_THREADS_HPP
 #define GLVIS_THREADS_HPP
 
+#include <array>
 #include <mfem.hpp>
 #include <thread>
 #include <atomic>
@@ -62,6 +63,7 @@ private:
       LEVELLINES,
       AXIS_NUMBERFORMAT,
       COLORBAR_NUMBERFORMAT,
+      POINT_LINE,
       QUIT
    };
 
@@ -97,6 +99,7 @@ private:
    std::string   autopause_mode;
    std::string   axis_formatting;
    std::string   colorbar_formatting;
+   std::vector<std::array<double,3>> point_coords;
 
    // internal variables
    int autopause;
@@ -137,6 +140,7 @@ public:
    int Levellines(double minv, double maxv, int number);
    int AxisNumberFormat(std::string formatting);
    int ColorbarNumberFormat(std::string formatting);
+   int PointLine(std::vector<std::array<double, 3>> points);
    int Camera(const double cam[]);
    int Autopause(const char *mode);
    int Quit();
