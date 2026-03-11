@@ -19,6 +19,11 @@ using namespace mfem;
 
 enum class Command
 {
+   // Settings
+   FixOrientation,
+   SaveColoring,
+   KeepAttributes,
+   // Solution
    Mesh,
    Solution,
    Quadrature,
@@ -66,6 +71,11 @@ static const StreamCommands commands;
 
 StreamCommands::StreamCommands()
 {
+   // Settings
+   (*this)[Command::FixOrientation]       = {"fix_orientations", false, "<0/off/1/on>", "Turn off/on fix of the orientations for inverted elements."};
+   (*this)[Command::SaveColoring]         = {"save_coloring", false, "<0/off/1/on>", "Turn off/on saving of the mesh coloring generated when opening only a mesh."};
+   (*this)[Command::KeepAttributes]       = {"keep_attributes", false, "<proc/real>", "Toggles between processor rank and real attributes when loading a parallel solution."};
+   // Solution
    (*this)[Command::Mesh]                 = {"mesh", false, "<mesh>", "Visualize the mesh."};
    (*this)[Command::Solution]             = {"solution", false, "<mesh> <solution>", "Visualize the solution."};
    (*this)[Command::Quadrature]           = {"quadrature", false, "<mesh> <quadrature>", "Visualize the quadrature."};
@@ -120,6 +130,25 @@ int StreamReader::ReadStream(
    data.SetMesh(NULL);
    data.keys.clear();
 
+   string str_cmd = data_type;
+
+   while (true)
+   {
+      int err = ReadStreamOne(is, str_cmd);
+      if (err) { return err; }
+
+      if (data.mesh) { break; }
+
+      // load next command
+      is >> ws >> str_cmd;
+   }
+
+   data.ExtrudeMeshAndSolution();
+   return 0;
+}
+
+int StreamReader::ReadStreamOne(istream &is, const string &data_type)
+{
    auto it = find(commands.begin(), commands.end(), data_type);
    if (it == commands.end())
    {
@@ -131,6 +160,27 @@ int StreamReader::ReadStream(
    Command cmd = (Command)(it - commands.begin());
    switch (cmd)
    {
+      case Command::FixOrientation:
+      {
+         string mode;
+         is >> ws >> mode;
+         data.fix_elem_orient = (mode != "off" && mode != "0");
+      }
+      break;
+      case Command::SaveColoring:
+      {
+         string mode;
+         is >> ws >> mode;
+         data.save_coloring = (mode != "off" && mode != "0");
+      }
+      break;
+      case Command::KeepAttributes:
+      {
+         string mode;
+         is >> ws >> mode;
+         data.keep_attr = (mode != "proc");
+      }
+      break;
       case Command::Fem2D:
       {
          Vector sol;
@@ -313,7 +363,7 @@ int StreamReader::ReadStream(
       }
       break;
       case Command::Max: //dummy
-         break;
+         return 1;
    }
 
    if (commands[cmd].keys)
@@ -321,7 +371,6 @@ int StreamReader::ReadStream(
       is >> data.keys;
    }
 
-   data.ExtrudeMeshAndSolution();
    return 0;
 }
 
@@ -332,8 +381,6 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
    std::vector<GridFunction*> gf_array(nproc);
    std::vector<ComplexGridFunction*> cgf_array(nproc);
    std::vector<QuadratureFunction*> qf_array(nproc);
-
-   std::string data_type;
 
    int gf_count = 0;
    int cgf_count = 0;
@@ -346,10 +393,45 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
 #endif
       istream &isock = *input_streams[p];
       // assuming the "parallel nproc p" part of the stream has been read
-      isock >> ws >> data_type >> ws; // "*_data" / "mesh" / "solution"
+      bool load_data = false;
+      Command cmd;
+      while (!load_data)
+      {
+         std::string data_type;
+         isock >> ws >> data_type;
+
+         auto it = find(commands.begin(), commands.end(), data_type);
+         if (it == commands.end())
+         {
+            cerr << "Unknown data format " << data_type << endl;
+            PrintCommands();
+            return 1;
+         }
+
+         cmd = (Command)(it - commands.begin());
+         switch (cmd)
+         {
+            case Command::FixOrientation:
+            case Command::SaveColoring:
+            case Command::KeepAttributes:
+               // process on root
+               ReadStreamOne(isock, data_type);
+               break;
+            case Command::Mesh:
+            case Command::Solution:
+            case Command::Quadrature:
 #ifdef GLVIS_DEBUG
-      cout << " type " << data_type << " ... " << flush;
+               cout << " type " << data_type << " ... " << flush;
 #endif
+               load_data = true;
+               break;
+            default:
+               cerr << "Command not available in parallel";
+               return 1;
+         }
+      }
+
+      isock >> ws;
       mesh_array[p] = new Mesh(isock, 1, 0, data.fix_elem_orient);
       if (!data.keep_attr)
       {
@@ -364,12 +446,12 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
          }
       }
       gf_array[p] = NULL;
-      if (data_type == "quadrature")
+      if (cmd == Command::Quadrature)
       {
          qf_array[p] = new QuadratureFunction(mesh_array[p], isock);
          qf_count++;
       }
-      else if (data_type != "mesh")
+      else if (cmd != Command::Mesh)
       {
          if (CheckStreamIsComplex(isock, true))
          {
