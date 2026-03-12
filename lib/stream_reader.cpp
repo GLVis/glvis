@@ -134,8 +134,8 @@ int StreamReader::ReadStream(
 
    while (true)
    {
-      int err = ReadStreamOne(is, str_cmd);
-      if (err) { return err; }
+      int ierr = ReadStreamOne(is, str_cmd);
+      if (ierr) { return ierr; }
 
       if (data.mesh) { break; }
 
