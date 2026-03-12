@@ -77,14 +77,14 @@ class Session
 
 public:
    Session(bool fix_elem_orient,
-           bool keep_attr,
            bool save_coloring,
+           bool keep_attr,
            string plot_caption,
            bool headless)
    {
       win.data_state.fix_elem_orient = fix_elem_orient;
-      win.data_state.keep_attr = keep_attr;
       win.data_state.save_coloring = save_coloring;
+      win.data_state.keep_attr = keep_attr;
       win.plot_caption = plot_caption;
       win.headless = headless;
    }
@@ -159,7 +159,7 @@ public:
 };
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
-                 bool keep_attr, bool save_coloring, string plot_caption,
+                 bool save_coloring, bool keep_attr, string plot_caption,
                  bool headless = false)
 {
    std::vector<Session> current_sessions;
@@ -310,8 +310,8 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          while (1);
       }
 
-      Session new_session(fix_elem_orient, keep_attr,
-                          save_coloring, plot_caption, headless);
+      Session new_session(fix_elem_orient, save_coloring,
+                          keep_attr, plot_caption, headless);
 
       constexpr int tmp_filename_size = 50;
       char tmp_file[tmp_filename_size];
@@ -696,8 +696,8 @@ int main (int argc, char *argv[])
       // Run server in new thread
       std::thread serverThread{GLVisServer, portnum, save_stream,
                                win.data_state.fix_elem_orient,
-                               win.data_state.keep_attr,
                                win.data_state.save_coloring,
+                               win.data_state.keep_attr,
                                win.plot_caption, win.headless};
 
       // Start message loop in main thread
