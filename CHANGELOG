@@ -14,7 +14,7 @@ Version 4.5.1 (development)
 - Added an optional point line overlay (useful e.g. for reference curves), which
   can be toggled with 'Ctrl+l'. Points can be loaded from a file with the '-pts'
   option, sent via socket with the 'pointline' command, or specified in a GLVis
-  scripts. The overlay appears as a red line connecting the given points. The
+  script. The overlay appears as a red line connecting the given points. The
   points line format is: number of points, followed by x y z coordinates.
 
 
