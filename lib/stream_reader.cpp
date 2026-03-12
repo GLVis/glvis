@@ -20,7 +20,7 @@ using namespace mfem;
 enum class Command
 {
    // Settings
-   FixOrientation,
+   FixOrientations,
    SaveColoring,
    KeepAttributes,
    // Solution
@@ -72,9 +72,9 @@ static const StreamCommands commands;
 StreamCommands::StreamCommands()
 {
    // Settings
-   (*this)[Command::FixOrientation]       = {"fix_orientations", false, "<0/off/1/on>", "Turn off/on fix of the orientations for inverted elements."};
+   (*this)[Command::FixOrientations]      = {"fix_orientations", false, "<0/off/1/on>", "Turn off/on fix of the orientations for inverted elements."};
    (*this)[Command::SaveColoring]         = {"save_coloring", false, "<0/off/1/on>", "Turn off/on saving of the mesh coloring generated when opening only a mesh."};
-   (*this)[Command::KeepAttributes]       = {"keep_attributes", false, "<proc/real>", "Toggles between processor rank and real attributes when loading a parallel solution."};
+   (*this)[Command::KeepAttributes]       = {"keep_attributes", false, "<proc/0/off/real/1/on>", "Toggles between processor rank and real attributes when loading a parallel solution."};
    // Solution
    (*this)[Command::Mesh]                 = {"mesh", false, "<mesh>", "Visualize the mesh."};
    (*this)[Command::Solution]             = {"solution", false, "<mesh> <solution>", "Visualize the solution."};
@@ -160,7 +160,7 @@ int StreamReader::ReadStreamOne(istream &is, const string &data_type)
    Command cmd = (Command)(it - commands.begin());
    switch (cmd)
    {
-      case Command::FixOrientation:
+      case Command::FixOrientations:
       {
          string mode;
          is >> ws >> mode;
@@ -178,7 +178,7 @@ int StreamReader::ReadStreamOne(istream &is, const string &data_type)
       {
          string mode;
          is >> ws >> mode;
-         data.keep_attr = (mode != "proc");
+         data.keep_attr = (mode != "proc" && mode != "off" && mode != "0");
       }
       break;
       case Command::Fem2D:
@@ -411,10 +411,10 @@ int StreamReader::ReadStreams(const StreamCollection &input_streams)
          cmd = (Command)(it - commands.begin());
          switch (cmd)
          {
-            case Command::FixOrientation:
+            case Command::FixOrientations:
             case Command::SaveColoring:
             case Command::KeepAttributes:
-               // process on root
+               // assume the options are the same on all ranks
                ReadStreamOne(isock, data_type);
                break;
             case Command::Mesh:
