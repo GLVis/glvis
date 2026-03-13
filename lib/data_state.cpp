@@ -39,14 +39,15 @@ public:
 QuadratureFunction* Extrude1DQuadFunction(Mesh *mesh, Mesh *mesh2d,
                                           QuadratureFunction *qf, int ny);
 
-/// Helper to read a point line file (num_points, followed by x y z coordinates)
-/// that is called in glvis.cpp and the 'pointline' commands in threads.cpp and
-/// script_controller.cpp.
-int ReadPointLine(std::istream &in, int num_points,
+
+int ReadPointLine(std::istream &in,
                   std::vector<std::array<double,3>> &points,
                   std::ostream &warn)
 {
    points.clear();
+
+   int num_points;
+   in >> num_points;
 
    if (num_points > 0)
    {

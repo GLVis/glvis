@@ -11,6 +11,7 @@
 
 #include <array>
 #include <algorithm>
+#include <sstream>
 #include <thread>
 #include <vector>
 
@@ -1625,24 +1626,17 @@ bool communication_thread::execute_one(std::string ident)
       case ThreadCommand::PointLine:
       {
          // in parallel, use the point line data from rank 0
-         int num_points;
-         *is[0] >> num_points;
-
          std::vector<std::array<double,3>> points;
-         num_points = ReadPointLine(*is[0], num_points, points, cerr);
+         int num_points = ReadPointLine(*is[0], points, cerr);
 
-         // assuming that all ranks have sent point data, reads on the remaining
-         // ranks to sync parallel streams
+         // assuming that all ranks have sent the same point data, perform dummy
+         // reads on the remaining ranks to sync parallel streams
+         std::vector<std::array<double,3>> dummy_points;
+         std::ostringstream dummy_stream;
          for (size_t i = 1; i < is.size(); i++)
          {
             *is[i] >> ws >> ident; // 'pointline'
-            int np;
-            *is[i] >> np;
-            for (int j = 0; j < np; j++)
-            {
-               double x, y, z;
-               *is[i] >> x >> y >> z; // ignore
-            }
+            ReadPointLine(*is[i], dummy_points, dummy_stream);
          }
 
          glvis_command->PointLine(std::move(points));

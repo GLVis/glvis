@@ -632,12 +632,8 @@ int main (int argc, char *argv[])
       }
       else
       {
-         int num_points;
-         ifs >> num_points;
-         num_points = ReadPointLine(ifs, num_points,
-                                    win.data_state.point_coords, cerr);
-         cout << "Loaded " << num_points << " points from " << points_file
-              << endl;
+         int num_points = ReadPointLine(ifs, win.data_state.point_coords, cerr);
+         cout << "Loaded " << num_points << " points from " << points_file << endl;
       }
    }
 

@@ -847,12 +847,7 @@ bool ScriptController::ExecuteScriptCommand()
          break;
          case Command::PointLine:
          {
-            int num_points;
-            scr >> num_points;
-
-            num_points = ReadPointLine(scr, num_points,
-                                       win.data_state.point_coords,
-                                       cerr);
+            int num_points = ReadPointLine(scr, win.data_state.point_coords, cerr);
 
             win.vs->SetPointLineVisible(true);
             win.vs->PreparePointLine();
