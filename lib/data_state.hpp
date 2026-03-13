@@ -17,7 +17,6 @@
 #include <memory>
 #include <array>
 #include <vector>
-#include <iosfwd>
 #include <utility>
 #include <functional>
 

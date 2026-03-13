@@ -207,10 +207,6 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
    if (server.good())
    {
       cout << "Waiting for data on port " << portnum << " ..." << endl;
-      if (!point_coords.empty())
-      {
-         cout << point_coords.size() << " points loaded (Ctrl+l to toggle)" << endl;
-      }
    }
    else
    {
