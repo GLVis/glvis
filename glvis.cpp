@@ -219,7 +219,7 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
       cout << "Waiting for data on port " << portnum << " ..." << endl;
       if (!exclusive)
       {
-         cout << "GLVIS_SERVER_PORT=" << portnum << endl;
+         cerr << "GLVIS_SERVER_PORT=" << portnum << endl;
       }
    }
    else
