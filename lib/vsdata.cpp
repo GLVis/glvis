@@ -1009,6 +1009,7 @@ void VisualizationSceneScalarData::ToggleLogscale(bool print)
       SetLevelLines(minv, maxv, nl);
       UpdateLevelLines();
       EventUpdateColors();
+      PreparePointLine();
       if (print)
       {
          PrintLogscale(false);

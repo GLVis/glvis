@@ -2438,6 +2438,7 @@ void VisualizationSceneSolution::UpdateValueRange(bool prepare)
    bb.z[0] = minv;
    bb.z[1] = maxv;
    PrepareAxes();
+   PreparePointLine();
    if (prepare)
    {
       UpdateLevelLines();
