@@ -157,7 +157,8 @@ public:
 };
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
-                 bool save_coloring, string plot_caption, bool headless = false)
+                 bool save_coloring, string plot_caption, bool headless = false,
+                 bool exclusive = true)
 {
    std::vector<Session> current_sessions;
    string data_type;
@@ -200,10 +201,26 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
 #endif
 
    const int backlog = 128;
-   socketserver server(portnum, backlog);
-   if (server.good())
+   unique_ptr<socketserver> server;
+   if (!exclusive)
+   {
+      for (;; portnum++)
+      {
+         server = make_unique<socketserver>(portnum, backlog);
+         if (server->good()) { break; }
+      }
+   }
+   else
+   {
+      server = make_unique<socketserver>(portnum, backlog);
+   }
+   if (server->good())
    {
       cout << "Waiting for data on port " << portnum << " ..." << endl;
+      if (!exclusive)
+      {
+         cout << "GLVIS_SERVER_PORT=" << portnum << endl;
+      }
    }
    else
    {
@@ -220,7 +237,7 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
       isock.reset(secure ? new socketstream(*params) : new socketstream(false));
 #endif
       vector<unique_ptr<istream>> input_streams;
-      while (server.accept(*isock) < 0)
+      while (server->accept(*isock) < 0)
       {
 #ifdef GLVIS_DEBUG
          cout << "GLVis: server.accept(...) failed." << endl;
@@ -290,7 +307,7 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
                break;
             }
             // read next available socket stream
-            while (server.accept(*isock) < 0)
+            while (server->accept(*isock) < 0)
             {
 #ifdef GLVIS_DEBUG
                cout << "GLVis: server.accept(...) failed." << endl;
@@ -385,6 +402,7 @@ int main (int argc, char *argv[])
    const char *font_name     = string_default;
    int         portnum       = 19916;
    bool        persistent    = true;
+   bool        exclusive     = true;
    int         multisample   = GetMultisample();
    double      line_width    = GetLineWidth();
    double      ms_line_width = GetLineWidthMS();
@@ -458,6 +476,9 @@ int main (int argc, char *argv[])
    args.AddOption(&persistent, "-pr", "--persistent",
                   "-no-pr", "--no-persistent",
                   "Keep server running after all windows are closed.");
+   args.AddOption(&exclusive, "-ex", "--exclusive",
+                  "-no-ex", "--no-exclusive",
+                  "Exclusively block the given port or take the next available.");
    args.AddOption(&secure, "-sec", "--secure-sockets",
                   "-no-sec", "--standard-sockets",
                   "Enable or disable GnuTLS secure sockets.");
@@ -693,7 +714,8 @@ int main (int argc, char *argv[])
       std::thread serverThread{GLVisServer, portnum, save_stream,
                                win.data_state.fix_elem_orient,
                                win.data_state.save_coloring,
-                               win.plot_caption, win.headless};
+                               win.plot_caption, win.headless,
+                               exclusive};
 
       // Start message loop in main thread
       MainThreadLoop(win.headless, persistent);
