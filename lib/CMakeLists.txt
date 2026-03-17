@@ -10,7 +10,6 @@
 # CONTRIBUTING.md for details.
 
 list(APPEND SOURCES
-  ../glvis.cpp
   egl/egl.cpp
   egl/egl_main.cpp
   gl/renderer.cpp
@@ -33,6 +32,7 @@ list(APPEND SOURCES
   palettes_default.cpp
   palettes_base.cpp
   script_controller.cpp
+  session.cpp
   stream_reader.cpp
   vsdata.cpp
   vssolution.cpp
@@ -68,6 +68,7 @@ list(APPEND HEADERS
   palettes.hpp
   palettes_base.hpp
   script_controller.hpp
+  session.hpp
   stream_reader.hpp
   visual.hpp
   vsdata.hpp
