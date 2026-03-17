@@ -52,6 +52,6 @@ public:
 
    int StartStreamSession(StreamCollection &&streams);
 
-   int StartSerialStreamSession(std::unique_ptr<std::istream> &&stream,
+   int StartSerialStreamSession(std::istream &stream,
                                 const std::string &data_type);
 };

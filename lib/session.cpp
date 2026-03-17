@@ -82,39 +82,28 @@ int Session::StartStreamSession(StreamCollection &&streams)
    return 0;
 }
 
-int Session::StartSerialStreamSession(std::unique_ptr<std::istream> &&stream,
+int Session::StartSerialStreamSession(std::istream &stream,
                                       const std::string &data_type)
 {
-   dbg("data_type: '{}'", data_type);
    StreamReader reader(win.data_state);
-   int ierr = reader.ReadStream(*stream, data_type);
+   int ierr = reader.ReadStream(stream, data_type);
    if (ierr) { dbg("❌ ERROR ❌"); return ierr; }
-
-   input_streams.emplace_back(std::move(stream));
    StartSession();
    return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int GLVisLibWindow(//void *win_ptr,
-   bool fix_elem_orient,
-   bool save_coloring, bool headless,
-   const std::string &plot_caption,
-   std::unique_ptr<std::istream> &&stream,
-   const std::string &data_type)
+int GLVisLibWindow(bool fix_elem_orient,
+                   bool save_coloring, bool headless,
+                   const std::string &plot_caption,
+                   std::istream &stream,
+                   std::string data_type)
 {
+   dbg();
    const int geom_ref_type = mfem::Quadrature1D::ClosedUniform;
    const bool enable_hidpi = true;
 
-#ifdef _WIN32
-   // Call needed to avoid SDL_Init failure when not substituting main() for
-   // SDL_main().
-   SDL_SetMainReady();
-#endif
-
    Window win;
-   dbg();
-   // std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
    std::cout << std::endl
              << "       _/_/_/  _/      _/      _/  _/"          << std::endl
@@ -127,32 +116,15 @@ int GLVisLibWindow(//void *win_ptr,
    SetUseHiDPI(enable_hidpi);
    GLVisGeometryRefiner.SetType(geom_ref_type);
 
-   dbg("Main Window structure");
-   //    auto *win = static_cast<Window*>(win_ptr);
+   GetMainThread(false);
+
+   Session new_session(fix_elem_orient, save_coloring, plot_caption, headless);
+   new_session.StartSerialStreamSession(stream, data_type);
 
    std::vector<Session> current_sessions;
-
-   dbg("Get main thread");
-   GetMainThread(win.headless);
-
-
-   dbg("StartStreamSession");
-   Session new_session(fix_elem_orient, save_coloring, plot_caption, headless);
-
-   new_session.StartSerialStreamSession(std::move(stream), data_type);
    current_sessions.emplace_back(std::move(new_session));
 
+   MainThreadLoop(false, false);
 
-   dbg("Starting message loop in main thread");
-   MainThreadLoop();
-
-   dbg("EXIT_SUCCESS");
    return EXIT_SUCCESS;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void *GLVisLibGetWindow()
-{
-   static Window win;
-   return (void*) &win;
 }
