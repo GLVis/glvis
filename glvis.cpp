@@ -47,6 +47,15 @@
 using namespace std;
 using namespace mfem;
 
+///////////////////////////////////////////////////////////////////////////////
+#ifdef NVTX_DBG_HPP
+#undef NVTX_COLOR
+#define NVTX_COLOR ::nvtx::kGold
+#include NVTX_DBG_HPP
+#else
+#define dbg(...)
+#endif
+
 const char *string_none    = "(none)";
 const char *string_default = "(default)";
 
@@ -145,6 +154,7 @@ public:
 
    int StartStreamSession(StreamCollection &&streams)
    {
+      dbg();
       StreamReader reader(win.data_state);
       int ierr = reader.ReadStreams(streams);
       if (ierr) { return ierr; }
@@ -154,6 +164,18 @@ public:
       return 0;
    }
 
+   int StartSerialStreamSession(std::unique_ptr<std::istream> &&stream,
+                                const std::string &data_type)
+   {
+      dbg("data_type: '{}'", data_type);
+      StreamReader reader(win.data_state);
+      int ierr = reader.ReadStream(*stream, data_type);
+      if (ierr) { dbg("❌ ERROR ❌"); return ierr; }
+
+      input_streams.emplace_back(std::move(stream));
+      StartSession();
+      return 0;
+   }
 };
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
@@ -345,6 +367,44 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
       }
       current_sessions.emplace_back(std::move(new_session));
    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void *GLVisLibGetWindow()
+{
+   static Window win;
+   return (void*) &win;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+int GLVisLibWindow(void *win_ptr, bool fix_elem_orient,
+                   bool save_coloring, bool headless,
+                   const std::string &plot_caption,
+                   std::unique_ptr<std::istream> &&stream,
+                   const std::string &data_type)
+{
+   dbg();
+   // std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+   dbg("Main Window structure");
+   auto *win = static_cast<Window*>(win_ptr);
+
+   std::vector<Session> current_sessions;
+
+   dbg("Get main thread");
+   GetMainThread(win->headless);
+
+   dbg("StartStreamSession");
+   Session new_session(fix_elem_orient, save_coloring, plot_caption, headless);
+
+   new_session.StartSerialStreamSession(std::move(stream), data_type);
+   current_sessions.emplace_back(std::move(new_session));
+
+   dbg("Starting message loop in main thread");
+   MainThreadLoop();
+
+   dbg("EXIT_SUCCESS");
+   return EXIT_SUCCESS;
 }
 
 int main (int argc, char *argv[])

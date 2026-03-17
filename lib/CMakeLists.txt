@@ -10,6 +10,7 @@
 # CONTRIBUTING.md for details.
 
 list(APPEND SOURCES
+  ../glvis.cpp
   egl/egl.cpp
   egl/egl_main.cpp
   gl/renderer.cpp
@@ -113,4 +114,15 @@ else()
   if (APPLE)
     target_link_libraries(glvis PUBLIC "-framework Cocoa")
   endif()
+  message(STATUS "[🔵 DEFS   🔵] ${_glvis_compile_defs}")
+  message(STATUS "[🔵 OPTS   🔵] ${_glvis_compile_opts}")
+  message(STATUS "[🔵 INCS   🔵] ${_glvis_include_dirs}")
+  message(STATUS "[🔵 LIBS   🔵] ${_glvis_libraries}")
+
+  get_target_property(_link_libs glvis LINK_LIBRARIES)
+  get_target_property(_link_dirs glvis LINK_DIRECTORIES)
+  get_target_property(_link_opts glvis LINK_OPTIONS)
+  message(STATUS "[🔵 LINK LIBS 🔵] ${_link_libs}")
+  message(STATUS "[🔵 LINK DIRS 🔵] ${_link_dirs}")
+  message(STATUS "[🔵 LINK OPTS 🔵] ${_link_opts}")
 endif(EMSCRIPTEN)
