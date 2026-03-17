@@ -24,6 +24,8 @@
 #define dbg(...)
 #endif
 
+extern thread_local mfem::GeometryRefiner GLVisGeometryRefiner;
+
 void Session::StartSession()
 {
    auto funcThread = [](Window w, StreamCollection is)
@@ -103,8 +105,6 @@ int GLVisLibWindow(//void *win_ptr,
 {
    const int geom_ref_type = mfem::Quadrature1D::ClosedUniform;
    const bool enable_hidpi = true;
-
-   thread_local mfem::GeometryRefiner GLVisGeometryRefiner;
 
 #ifdef _WIN32
    // Call needed to avoid SDL_Init failure when not substituting main() for
