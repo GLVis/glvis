@@ -10,21 +10,10 @@
 // CONTRIBUTING.md for details.
 
 #include "threads.hpp" // IWYU pragma: keep for GLVisCommand
-#include "aux_vis.hpp" // SetUseHiDPI
+
+#include <memory>
 
 #include "session.hpp"
-
-#include <fem/geom.hpp>
-
-#ifdef NVTX_DBG_HPP
-#undef NVTX_COLOR
-#define NVTX_COLOR ::nvtx::kGold
-#include NVTX_DBG_HPP
-#else
-#define dbg(...)
-#endif
-
-extern thread_local mfem::GeometryRefiner GLVisGeometryRefiner;
 
 void Session::StartSession()
 {
@@ -72,7 +61,6 @@ int Session::StartStreamSession(std::unique_ptr<mfem::socketstream> &&stream,
 
 int Session::StartStreamSession(StreamCollection &&streams)
 {
-   dbg();
    StreamReader reader(win.data_state);
    int ierr = reader.ReadStreams(streams);
    if (ierr) { return ierr; }
@@ -80,87 +68,4 @@ int Session::StartStreamSession(StreamCollection &&streams)
 
    StartSession();
    return 0;
-}
-
-int Session::StartSerialStreamSession(std::istream &stream,
-                                      const std::string &data_type)
-{
-   StreamReader reader(win.data_state);
-   int ierr = reader.ReadStream(stream, data_type);
-   if (ierr) { dbg("❌ ERROR ❌"); return ierr; }
-   StartSession();
-   return 0;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-int GLVisLibWindow(bool fix_elem_orient,
-                   bool save_coloring, bool headless,
-                   std::istream &stream,
-                   std::string data_type)
-{
-   dbg();
-   const int geom_ref_type = mfem::Quadrature1D::ClosedUniform;
-   const bool enable_hidpi = true;
-
-   Window win;
-
-   std::cout << std::endl
-             << "       _/_/_/  _/      _/      _/  _/"          << std::endl
-             << "    _/        _/      _/      _/        _/_/_/" << std::endl
-             << "   _/  _/_/  _/      _/      _/  _/  _/_/"      << std::endl
-             << "  _/    _/  _/        _/  _/    _/      _/_/"   << std::endl
-             << "   _/_/_/  _/_/_/_/    _/      _/  _/_/_/"      << std::endl
-             << std::endl;
-
-   SetUseHiDPI(enable_hidpi);
-   GLVisGeometryRefiner.SetType(geom_ref_type);
-
-   GetMainThread(false);
-
-   const std::string plot_caption {};
-   Session new_session(fix_elem_orient, save_coloring, plot_caption, headless);
-   new_session.StartSerialStreamSession(stream, data_type);
-
-   std::vector<Session> current_sessions;
-   current_sessions.emplace_back(std::move(new_session));
-
-   MainThreadLoop(false, false);
-
-   return EXIT_SUCCESS;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-int GLVisLibWindow(bool fix_elem_orient,
-                   bool save_coloring, bool headless,
-                   StreamCollection &&streams)
-{
-   dbg();
-   const int geom_ref_type = mfem::Quadrature1D::ClosedUniform;
-   const bool enable_hidpi = true;
-
-   Window win;
-
-   std::cout << std::endl
-             << "       _/_/_/  _/      _/      _/  _/"          << std::endl
-             << "    _/        _/      _/      _/        _/_/_/" << std::endl
-             << "   _/  _/_/  _/      _/      _/  _/  _/_/"      << std::endl
-             << "  _/    _/  _/        _/  _/    _/      _/_/"   << std::endl
-             << "   _/_/_/  _/_/_/_/    _/      _/  _/_/_/"      << std::endl
-             << std::endl;
-
-   SetUseHiDPI(enable_hidpi);
-   GLVisGeometryRefiner.SetType(geom_ref_type);
-
-   GetMainThread(false);
-
-   const std::string plot_caption {};
-   Session new_session(fix_elem_orient, save_coloring, plot_caption, headless);
-   new_session.StartStreamSession(std::move(streams));
-
-   std::vector<Session> current_sessions;
-   current_sessions.emplace_back(std::move(new_session));
-
-   MainThreadLoop(false, false);
-
-   return EXIT_SUCCESS;
 }

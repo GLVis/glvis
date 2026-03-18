@@ -34,6 +34,7 @@ list(APPEND SOURCES
   script_controller.cpp
   session.cpp
   stream_reader.cpp
+  stream_session.cpp
   vsdata.cpp
   vssolution.cpp
   vssolution3d.cpp

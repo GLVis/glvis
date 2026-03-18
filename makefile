@@ -276,7 +276,8 @@ ALL_SOURCE_FILES = \
  lib/palettes_base.cpp lib/palettes.cpp lib/palettes_default.cpp        \
  lib/script_controller.cpp lib/stream_reader.cpp lib/threads.cpp        \
  lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp                 \
- lib/vsvector.cpp lib/vsvector3d.cpp lib/window.cpp lib/session.cpp
+ lib/vsvector.cpp lib/vsvector3d.cpp lib/window.cpp 					\
+ lib/session.cpp lib/stream_session.cpp
 OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl/sdl_mac.mm)
 DESKTOP_ONLY_SOURCE_FILES = \
  lib/gl/renderer_ff.cpp lib/gl2ps.c lib/script_controller.cpp           \
