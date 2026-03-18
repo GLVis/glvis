@@ -69,3 +69,15 @@ int Session::StartStreamSession(StreamCollection &&streams)
    StartSession();
    return 0;
 }
+
+int Session::StartStreamSession(std::unique_ptr<std::istream> &&stream,
+                                const std::string &data_type)
+{
+   StreamReader reader(win.data_state);
+   int ierr = reader.ReadStream(*stream, data_type);
+   if (ierr) { return ierr; }
+   input_streams.emplace_back(std::move(stream));
+
+   StartSession();
+   return 0;
+}

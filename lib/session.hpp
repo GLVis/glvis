@@ -50,8 +50,12 @@ public:
    int StartStreamSession(std::unique_ptr<mfem::socketstream> &&stream,
                           const std::string &data_type);
 
+   int StartStreamSession(std::unique_ptr<std::istream> &&stream,
+                          const std::string &data_type);
+
    int StartStreamSession(StreamCollection &&streams);
 
    int StartSerialStreamSession(std::istream &stream,
                                 const std::string &data_type);
+
 };

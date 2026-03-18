@@ -22,6 +22,7 @@ int GLVisStreamSession(const bool fix_elem_orient,
                        const bool save_coloring,
                        const bool headless,
                        const std::string &plot_caption,
+                       const std::string &data_type,
                        StreamCollection &&streams)
 {
    const int geom_ref_type = mfem::Quadrature1D::ClosedUniform;
@@ -43,7 +44,14 @@ int GLVisStreamSession(const bool fix_elem_orient,
    GetMainThread(false);
 
    Session new_session(fix_elem_orient, save_coloring, plot_caption, headless);
-   new_session.StartStreamSession(std::move(streams));
+   if (streams.size() == 1 && data_type == "solution")
+   {
+      new_session.StartStreamSession(std::move(streams[0]), data_type);
+   }
+   else
+   {
+      new_session.StartStreamSession(std::move(streams));
+   }
 
    std::vector<Session> current_sessions;
    current_sessions.emplace_back(std::move(new_session));
