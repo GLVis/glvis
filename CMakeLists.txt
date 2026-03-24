@@ -328,6 +328,10 @@ message(STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
 add_subdirectory(lib)
 add_subdirectory(share)
 
+if (GLVIS_BUILD_LIB_ONLY)
+    return()
+endif()
+
 if(NOT EMSCRIPTEN)
 
   # Setup the GLVis executable
@@ -392,7 +396,6 @@ if(NOT EMSCRIPTEN)
       execute_process(COMMAND codesign --force --sign - ${CMAKE_INSTALL_PREFIX}/GLVis.app)
     ]] COMPONENT RUNTIME)
   endif(APPLE)
-
 endif(NOT EMSCRIPTEN)
 
 if(ENABLE_TESTS)
