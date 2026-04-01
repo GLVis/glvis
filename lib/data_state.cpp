@@ -10,6 +10,9 @@
 // CONTRIBUTING.md for details.
 
 #include <cstdlib>
+#include <istream>
+#include <ostream>
+#include <string>
 
 #include "data_state.hpp"
 #include "visual.hpp"
@@ -36,6 +39,51 @@ public:
 QuadratureFunction* Extrude1DQuadFunction(Mesh *mesh, Mesh *mesh2d,
                                           QuadratureFunction *qf, int ny);
 
+
+int ReadPointLine(std::istream &in,
+                  std::vector<std::array<double,3>> &points,
+                  std::ostream &warn)
+{
+   points.clear();
+
+   int num_points;
+   in >> num_points;
+
+   if (num_points > 0)
+   {
+      points.reserve(num_points);
+   }
+
+   for (int j = 0; num_points < 0 || j < num_points; j++)
+   {
+      double x, y, z;
+      if (in >> x >> y >> z)
+      {
+         points.push_back({x, y, z});
+      }
+      else
+      {
+         warn << "Warning: failed reading point " << j << std::endl;
+         break;
+      }
+   }
+
+   const int read_points = (int) points.size();
+   if (read_points < 2)
+   {
+      warn << "Warning: ReadPointLine needs at least 2 points (got "
+           << read_points << ")" << std::endl;
+   }
+   else if (read_points < num_points)
+   {
+      warn << "Warning: ReadPointLine expected " << num_points
+           << " (got " << read_points << ")" << std::endl;
+   }
+
+   return read_points;
+}
+
+
 DataState &DataState::operator=(DataState &&ss)
 {
    internal = std::move(ss.internal);
@@ -49,6 +97,7 @@ DataState &DataState::operator=(DataState &&ss)
    save_coloring = ss.save_coloring;
    keep_attr = ss.keep_attr;
    cmplx_phase = ss.cmplx_phase;
+   point_coords = std::move(ss.point_coords);
 
    return *this;
 }

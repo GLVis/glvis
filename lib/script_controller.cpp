@@ -61,6 +61,7 @@ enum class Command
    Scale,
    Translate,
    PlotCaption,
+   PointLine,
    Headless,
    //----------
    Max
@@ -125,6 +126,7 @@ ScriptCommands::ScriptCommands()
    (*this)[Command::Scale]                = {"scale", "<scale>", "Set the scaling factor."};
    (*this)[Command::Translate]            = {"translate", "<x> <y> <z>", "Set the translation coordinates."};
    (*this)[Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
+   (*this)[Command::PointLine]            = {"pointline", "<num_points> <x y z>...", "Set point line overlay coordinates."};
    (*this)[Command::Headless]             = {"headless", "", "Change the session to headless."};
 }
 
@@ -841,6 +843,17 @@ bool ScriptController::ExecuteScriptCommand()
             getline(scr, win.plot_caption, delim);
             win.vs->PrepareCaption(); // turn on or off the caption
             MyExpose();
+         }
+         break;
+         case Command::PointLine:
+         {
+            int num_points = ReadPointLine(scr, win.data_state.point_coords, cerr);
+
+            win.vs->SetPointLineVisible(true);
+            win.vs->PreparePointLine();
+            MyExpose();
+
+            cout << "Script: pointline: " << num_points << " points" << endl;
          }
          break;
          case Command::Headless:

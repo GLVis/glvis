@@ -84,6 +84,7 @@ std::string VisualizationSceneVector3d::GetHelpString() const
       << "| \\ -  Set light source position     |" << endl
       << "| Alt+a  - Axes number format        |" << endl
       << "| Alt+c  - Colorbar number format    |" << endl
+      << "| Ctrl+l - Toggle point line         |" << endl
       << "| Ctrl+p - Print to a PDF file       |" << endl
       << "+------------------------------------+" << endl
       << "| Function keys                      |" << endl
@@ -1790,6 +1791,7 @@ gl3::SceneInfo VisualizationSceneVector3d::GetSceneObjs()
       params.use_clip_plane = false;
       scene.queue.emplace_back(params, &cplines_buf);
    }
+   AddPointLineToScene(scene, params); // point line overlay
    ProcessUpdatedBufs(scene);
    return scene;
 }

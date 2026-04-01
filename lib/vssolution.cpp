@@ -87,6 +87,7 @@ std::string VisualizationSceneSolution::GetHelpString() const
       << "| Alt+a  - Axes number format        |" << endl
       << "| Alt+c  - Colorbar number format    |" << endl
       << "| Alt+n  - Numberings method         |" << endl
+      << "| Ctrl+l - Toggle point line         |" << endl
       << "| Ctrl+o - Element ordering curve    |" << endl
       << "| Ctrl+p - Print to a PDF file       |" << endl
       << "+------------------------------------+" << endl
@@ -2437,6 +2438,7 @@ void VisualizationSceneSolution::UpdateValueRange(bool prepare)
    bb.z[0] = minv;
    bb.z[1] = maxv;
    PrepareAxes();
+   PreparePointLine();
    if (prepare)
    {
       UpdateLevelLines();
@@ -2760,6 +2762,7 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &order_buf);
    }
+   AddPointLineToScene(scene, params); // point line overlay
    ProcessUpdatedBufs(scene);
 
    return scene;

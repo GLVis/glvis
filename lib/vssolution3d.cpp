@@ -87,6 +87,7 @@ std::string VisualizationSceneSolution3d::GetHelpString() const
       << "| \\ -  Set light source position     |" << endl
       << "| Alt+a  - Axes number format        |" << endl
       << "| Alt+c  - Colorbar number format    |" << endl
+      << "| Ctrl+l - Toggle point line         |" << endl
       << "| Ctrl+o - Element ordering curve    |" << endl
       << "| Ctrl+p - Print to a PDF file       |" << endl
       << "+------------------------------------+" << endl
@@ -4284,6 +4285,7 @@ gl3::SceneInfo VisualizationSceneSolution3d::GetSceneObjs()
    {
       scene.queue.emplace_back(params, &order_buf);
    }
+   AddPointLineToScene(scene, params); // point line overlay
    ProcessUpdatedBufs(scene);
    return scene;
 }

@@ -11,6 +11,7 @@
 
 #include <array>
 #include <algorithm>
+#include <sstream>
 #include <thread>
 #include <vector>
 
@@ -233,6 +234,21 @@ int GLVisCommand::ColorbarNumberFormat(string formatting)
    }
    command = Command::COLORBAR_NUMBERFORMAT;
    colorbar_formatting = formatting;
+   if (signal() < 0)
+   {
+      return -2;
+   }
+   return 0;
+}
+
+int GLVisCommand::PointLine(std::vector<std::array<double,3>> points)
+{
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   command = Command::POINT_LINE;
+   point_coords = std::move(points);
    if (signal() < 0)
    {
       return -2;
@@ -839,6 +855,17 @@ int GLVisCommand::Execute()
          break;
       }
 
+      case Command::POINT_LINE:
+      {
+         cout << "Command: pointline: " << point_coords.size()
+              << " points" << endl;
+         win.data_state.point_coords = std::move(point_coords);
+         win.vs->SetPointLineVisible(true);
+         win.vs->PreparePointLine();
+         MyExpose();
+         break;
+      }
+
       case Command::QUIT:
       {
          thread_wnd->signalQuit();
@@ -916,6 +943,7 @@ enum class ThreadCommand
    AxisLabels,
    Pause,
    Autopause,
+   PointLine,
    //----------
    Max
 };
@@ -968,6 +996,7 @@ ThreadCommands::ThreadCommands()
    (*this)[ThreadCommand::AxisLabels]           = {"axis_labels", "'<x label>' '<y label>' '<z label>'", "Set labels of the axes."};
    (*this)[ThreadCommand::Pause]                = {"pause", "", "Stop the stream until space is pressed."};
    (*this)[ThreadCommand::Autopause]            = {"autopause", "<0/off/1/on>", "Turns off or on autopause."};
+   (*this)[ThreadCommand::PointLine]            = {"pointline", "<num_points> <x y z>...", "Set point line overlay coordinates."};
 }
 
 communication_thread::communication_thread(StreamCollection _is,
@@ -1592,6 +1621,27 @@ bool communication_thread::execute_one(std::string ident)
          {
             return false;
          }
+      }
+      break;
+      case ThreadCommand::PointLine:
+      {
+         // in parallel, use the point line data from rank 0
+         std::vector<std::array<double,3>> points;
+         int num_points = ReadPointLine(*is[0], points, cerr);
+
+         // assuming that all ranks have sent the same point data, perform dummy
+         // reads on the remaining ranks to sync parallel streams
+         std::vector<std::array<double,3>> dummy_points;
+         std::ostringstream dummy_stream;
+         for (size_t i = 1; i < is.size(); i++)
+         {
+            *is[i] >> ws >> ident; // 'pointline'
+            ReadPointLine(*is[i], dummy_points, dummy_stream);
+         }
+
+         glvis_command->PointLine(std::move(points));
+
+         cout << "Received " << num_points << " points" << endl;
       }
       break;
       case ThreadCommand::Max: //dummy
