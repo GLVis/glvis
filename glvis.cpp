@@ -157,7 +157,7 @@ public:
 };
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
-                 bool save_coloring, string plot_caption, bool headless = false)
+                 bool save_coloring, string plot_caption, bool secure, bool headless = false)
 {
    std::vector<Session> current_sessions;
    string data_type;
@@ -693,7 +693,7 @@ int main (int argc, char *argv[])
       std::thread serverThread{GLVisServer, portnum, save_stream,
                                win.data_state.fix_elem_orient,
                                win.data_state.save_coloring,
-                               win.plot_caption, win.headless};
+                               win.plot_caption, secure, win.headless};
 
       // Start message loop in main thread
       MainThreadLoop(win.headless, persistent);
