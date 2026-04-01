@@ -115,32 +115,32 @@ std::string VisualizationSceneVector::GetHelpString() const
    return os.str();
 }
 
-static thread_local VisualizationSceneVector  * vsvector;
+thread_local VisualizationSceneVector  *VisualizationSceneVector::vsvector;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
-thread_local int ianim = 0;
-thread_local int ianimmax = 10;
-
-void KeyDPressed()
+void VisualizationSceneVector::KeyDPressed()
 {
-   vsvector -> ToggleDisplacements();
+   vsvector->ToggleDisplacements();
    SendExposeEvent();
 }
 
-void KeyNPressed()
+void VisualizationSceneVector::KeyNPressed()
 {
-   ianim = (ianim + 1) % (ianimmax + 1);
-   vsvector -> NPressed();
+   vsvector->ChangeDisplacement(+1);
+   SendExposeEvent();
 }
 
-void KeyBPressed()
+void VisualizationSceneVector::KeyBPressed()
 {
-   ianim = (ianim + ianimmax) % (ianimmax + 1);
-   vsvector -> NPressed();
+   vsvector->ChangeDisplacement(-1);
+   SendExposeEvent();
 }
 
-void VisualizationSceneVector::NPressed()
+void VisualizationSceneVector::ChangeDisplacement(int idiff)
 {
+   while (idiff < 0) { idiff += ianimmax + 1; }
+   ianim = (ianim + idiff) % (ianimmax + 1);
+
    if (drawdisp == 0)
    {
       drawdisp = 1;
@@ -148,32 +148,28 @@ void VisualizationSceneVector::NPressed()
    }
 
    PrepareDisplacedMesh();
-
-   SendExposeEvent();
 }
 
-void KeyvPressed()
+void VisualizationSceneVector::KeyvPressed()
 {
-   vsvector -> ToggleVectorField();
+   vsvector->ToggleVectorField();
    SendExposeEvent();
 }
 
-void KeyVPressed()
+void VisualizationSceneVector::KeyVPressed()
 {
    cout << "New arrow scale: " << flush;
-   cin >> vsvector -> ArrowScale;
-   cout << "New arrow scale = " << vsvector -> ArrowScale << endl;
-   vsvector -> PrepareVectorField();
+   cin >> vsvector->ArrowScale;
+   cout << "New arrow scale = " << vsvector->ArrowScale << endl;
+   vsvector->PrepareVectorField();
    SendExposeEvent();
 }
 
-int key_u_func = 0;
-
-void KeyuPressed()
+void VisualizationSceneVector::KeyuPressed()
 {
    int update = 1;
 
-   switch (key_u_func)
+   switch (vsvector->key_u_func)
    {
       case 0:
          vsvector->RefineFactor++;
@@ -196,7 +192,7 @@ void KeyuPressed()
          break;
    }
 
-   switch (key_u_func)
+   switch (vsvector->key_u_func)
    {
       case 0:
       case 1:
@@ -215,11 +211,11 @@ void KeyuPressed()
    }
 }
 
-void KeyUPressed()
+void VisualizationSceneVector::KeyUPressed()
 {
-   key_u_func = (key_u_func+1)%3;
+   vsvector->key_u_func = (vsvector->key_u_func + 1) % 3;
    cout << "Key 'u' will: ";
-   switch (key_u_func)
+   switch (vsvector->key_u_func)
    {
       case 0:
          cout << "Increase vector subdivision factor" << endl;
@@ -515,6 +511,10 @@ void VisualizationSceneVector::Init()
    RefineFactor = 1;
    Vec2Scalar = VecLength;
    win.extra_caption = Vec2ScalarNames[0];
+
+   ianim = 0;
+   ianimmax = 10;
+   key_u_func = 0;
 
    for (int i = 0; i < mesh->GetNV(); i++)
    {

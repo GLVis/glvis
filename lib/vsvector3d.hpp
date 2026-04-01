@@ -38,6 +38,8 @@ protected:
    static const char *scal_func_name[];
 
    double mesh_volume;
+   double vector_h, vector_hh;
+   int arrows_nl;
    gl3::GlDrawable vector_buf;
    gl3::GlDrawable displine_buf;
 
@@ -55,8 +57,30 @@ protected:
 
    int GetFunctionAutoRefineFactor() override;
 
-public:
+   void ArrowsDrawOrNot(mfem::Array<int> l[], int nv, mfem::Vector & sol, int nl,
+                        mfem::Array<double> & level);
+   int ArrowDrawOrNot(double v, int nl, mfem::Array<double> & level);
+
+   // key handlers
+   static thread_local VisualizationSceneVector3d  *vsvector3d;
    int ianim, ianimd, ianimmax, drawdisp;
+
+   static void KeyDPressed();
+   static void KeyNPressed();
+   static void KeyBPressed();
+   static void KeyrPressed();
+   static void KeyRPressed();
+   static void KeyuPressed();
+   static void KeyUPressed();
+   static void KeywPressed();
+   static void KeyWPressed();
+   static void KeyvPressed();
+   static void KeyVPressed();
+   static void VectorKeyFPressed();
+
+   void NPressed();
+
+public:
 
    VisualizationSceneVector3d(Window &win);
 
@@ -68,7 +92,6 @@ public:
 
    std::string GetHelpString() const override;
 
-   void NPressed();
    void PrepareFlat() override;
    void Prepare() override;
    void PrepareLines() override;
