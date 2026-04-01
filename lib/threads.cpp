@@ -1630,12 +1630,14 @@ void communication_thread::execute()
       }
    }
 
-   for (size_t i = 0; i < is.size(); i++)
-   {
-      socketstream *isock = dynamic_cast<socketstream *>(is[i].get());
-      if (isock)
-      {
-         isock->close();
-      }
-   }
+   // avoid 'typeinfo for mfem::socketstream' rtti error
+   // until two stage compilation
+   // for (size_t i = 0; i < is.size(); i++)
+   // {
+   //    socketstream *isock = dynamic_cast<socketstream *>(is[i].get());
+   //    if (isock)
+   //    {
+   //       isock->close();
+   //    }
+   // }
 }

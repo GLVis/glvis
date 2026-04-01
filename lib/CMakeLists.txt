@@ -32,7 +32,9 @@ list(APPEND SOURCES
   palettes_default.cpp
   palettes_base.cpp
   script_controller.cpp
+  session.cpp
   stream_reader.cpp
+  stream_session.cpp
   vsdata.cpp
   vssolution.cpp
   vssolution3d.cpp
@@ -67,6 +69,7 @@ list(APPEND HEADERS
   palettes.hpp
   palettes_base.hpp
   script_controller.hpp
+  session.hpp
   stream_reader.hpp
   visual.hpp
   vsdata.hpp
