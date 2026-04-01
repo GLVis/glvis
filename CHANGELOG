@@ -9,6 +9,14 @@
                              https://glvis.org
 
 
+Version 4.5.1 (development)
+===========================
+- Added optional order-independent transparency (OIT) rendering for translucent
+  objects, toggled with 'Alt+o'. OIT is enabled only when supported by the
+  current OpenGL/WebGL context (requires float color-buffer render targets) and
+  falls back to legacy blending otherwise.
+
+
 Version 4.5 released on Feb 6, 2026
 ===================================
 

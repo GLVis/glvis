@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "platform_gl.hpp"
+#include "shader.hpp"
 #include "types.hpp"
 #include "../material.hpp"
 #include "../palettes.hpp"
@@ -194,18 +195,59 @@ class MeshRenderer
    std::unique_ptr<GLDevice> device;
    bool msaa_enable;
    int msaa_samples;
+
+   // Order-independent transparency (OIT) rendering is implemented using an
+   // off-screen accumulation/revealage pass and a final compositing pass. It is
+   // enabled per-context only when float color-buffer render targets are
+   // supported.
+   bool oit_enable;
+   ShaderProgram oit_finalize_prgm;
+   resource::VtxArrayHandle oit_finalize_vao;
+   bool oit_finalize_ready;
+   int oit_width;
+   int oit_height;
+   int oit_msaa_samples;
+   resource::TextureHandle oit_scene_color_tex;
+   resource::RenderBufHandle oit_scene_depth_rb;
+   resource::FBOHandle oit_scene_fb;
+   resource::TextureHandle oit_accum_tex;
+   resource::TextureHandle oit_reveal_tex;
+   resource::FBOHandle oit_accum_fb;
+   resource::FBOHandle oit_reveal_fb;
+   resource::RenderBufHandle oit_msaa_color_rb;
+   resource::RenderBufHandle oit_msaa_depth_rb;
+   resource::FBOHandle oit_msaa_fb;
    GLuint color_tex, alpha_tex, font_tex;
    float line_w, line_w_aa;
    PaletteState* palette;
+   std::array<float, 4> clear_color;
+   bool oit_support_checked;
+   bool oit_support;
 
    bool feat_use_fbo_antialias;
+   bool canUseOIT(const RenderQueue& queued) const;
+   // Probe if OIT render targets are supported (e.g. RGBA16F is color-renderable).
+   bool probeOITSupport();
+   bool ensureOITTargets(int width, int height);
    void init();
 public:
    MeshRenderer()
       : msaa_enable(false)
       , msaa_samples(0)
+      , oit_enable(false)
+      , oit_finalize_ready(false)
+      , oit_width(0)
+      , oit_height(0)
+      , oit_msaa_samples(0)
+      , color_tex(0)
+      , alpha_tex(0)
+      , font_tex(0)
       , line_w(1.f)
-      , line_w_aa(LINE_WIDTH_AA) { init(); }
+      , line_w_aa(LINE_WIDTH_AA)
+      , palette(nullptr)
+      , clear_color{0.f, 0.f, 0.f, 1.f}
+      , oit_support_checked(false)
+      , oit_support(false) { init(); }
 
    template<typename TDevice>
    void setDevice()
@@ -232,6 +274,9 @@ public:
 
    void setAntialiasing(bool aa_status);
    bool getAntialiasing() { return msaa_enable; }
+   // Enables/disables OIT (when supported by the current OpenGL/WebGL context).
+   void setOrderIndependentTransparency(bool enable) { oit_enable = enable; }
+   bool getOrderIndependentTransparency() const { return oit_enable; }
    void setSamplesMSAA(int samples)
    {
       if (msaa_samples < samples)
@@ -253,7 +298,11 @@ public:
    void setLineWidthMS(float w);
    float getLineWidthMS() { return line_w_aa; }
 
-   void setClearColor(float r, float g, float b, float a) { glClearColor(r, g, b, a); }
+   void setClearColor(float r, float g, float b, float a)
+   {
+      clear_color = {r, g, b, a};
+      glClearColor(r, g, b, a);
+   }
    void setViewport(GLsizei w, GLsizei h) { device->setViewport(w, h); }
 
    void render(const RenderQueue& queued);

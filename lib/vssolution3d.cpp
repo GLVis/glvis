@@ -87,6 +87,7 @@ std::string VisualizationSceneSolution3d::GetHelpString() const
       << "| \\ -  Set light source position     |" << endl
       << "| Alt+a  - Axes number format        |" << endl
       << "| Alt+c  - Colorbar number format    |" << endl
+      << "| Alt+o  - Toggle OIT transparency   |" << endl
       << "| Ctrl+o - Element ordering curve    |" << endl
       << "| Ctrl+p - Print to a PDF file       |" << endl
       << "+------------------------------------+" << endl
@@ -353,7 +354,15 @@ static void KeyFPressed()
 
 static void KeyoPressed(GLenum state)
 {
-   if (state & KMOD_CTRL)
+   if (state & KMOD_ALT)
+   {
+      const bool enable =
+         !GetAppWindow()->getRenderer().getOrderIndependentTransparency();
+      GetAppWindow()->getRenderer().setOrderIndependentTransparency(enable);
+      cout << "Order-independent transparency: " << (enable ? "on" : "off") << endl;
+      SendExposeEvent();
+   }
+   else if (state & KMOD_CTRL)
    {
       vssol3d -> ToggleDrawOrdering();
       vssol3d -> PrepareOrderingCurve();

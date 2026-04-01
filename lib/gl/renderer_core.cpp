@@ -31,6 +31,14 @@ const std::string DEFAULT_FS =
    BLINN_PHONG_FS +
 #include "shaders/default.frag"
    ;
+const std::string OIT_ACCUM_FS =
+   BLINN_PHONG_FS +
+#include "shaders/oit_accum.frag"
+   ;
+const std::string OIT_REVEAL_FS =
+   BLINN_PHONG_FS +
+#include "shaders/oit_reveal.frag"
+   ;
 const std::string PRINTING_VS =
    BLINN_PHONG_FS +
 #include "shaders/printing.vert"
@@ -107,6 +115,18 @@ bool CoreGLDevice::compileShaders()
    {
       std::cerr << "Failed to create the default shader program." <<
                 std::endl;
+      return false;
+   }
+
+   if (!oit_accum_prgm.create(DEFAULT_VS, OIT_ACCUM_FS, attribMap, 1))
+   {
+      std::cerr << "Failed to create the OIT accumulation shader program." <<
+                std::endl;
+      return false;
+   }
+   if (!oit_reveal_prgm.create(DEFAULT_VS, OIT_REVEAL_FS, attribMap, 1))
+   {
+      std::cerr << "Failed to create the OIT revealage shader program." << std::endl;
       return false;
    }
 
