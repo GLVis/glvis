@@ -937,7 +937,14 @@ void KeyAPressed()
    cout << "Multisampling/Antialiasing: "
         << strings_off_on[!curr_aa ? 1 : 0] << endl;
 
-   // vsdata -> EventUpdateColors();
+   // Force scene update to re-upload buffers with correct line format
+   // (shader-expanded when MSAA on, regular GL_LINES when MSAA off)
+   if (window->vs)
+   {
+      window->vs->PrepareLines();
+      window->vs->Prepare();
+   }
+
    SendExposeEvent();
 }
 
