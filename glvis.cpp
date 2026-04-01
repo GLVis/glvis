@@ -157,7 +157,8 @@ public:
 };
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
-                 bool save_coloring, string plot_caption, bool secure, bool headless = false)
+                 bool save_coloring, string plot_caption, bool secure,
+                 bool headless = false)
 {
    std::vector<Session> current_sessions;
    string data_type;
@@ -197,6 +198,8 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          return;
       }
    }
+#else
+   MFEM_CONTRACT_VAR(secure);
 #endif
 
    const int backlog = 128;
