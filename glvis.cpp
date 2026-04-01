@@ -158,7 +158,7 @@ public:
 };
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
-                 bool save_coloring, string plot_caption,
+                 bool save_coloring, string plot_caption, bool secure,
                  std::vector<std::array<double,3>> point_coords,
                  bool headless = false)
 {
@@ -200,6 +200,8 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          return;
       }
    }
+#else
+   MFEM_CONTRACT_VAR(secure);
 #endif
 
    const int backlog = 128;
@@ -714,7 +716,7 @@ int main (int argc, char *argv[])
       std::thread serverThread{GLVisServer, portnum, save_stream,
                                win.data_state.fix_elem_orient,
                                win.data_state.save_coloring,
-                               win.plot_caption,
+                               win.plot_caption, secure,
                                std::move(win.data_state.point_coords),
                                win.headless};
 
