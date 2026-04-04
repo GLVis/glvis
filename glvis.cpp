@@ -157,8 +157,8 @@ public:
 };
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
-                 bool save_coloring, string plot_caption, bool headless = false,
-                 bool exclusive = true)
+                 bool save_coloring, string plot_caption, bool secure,
+                 bool headless = false, bool exclusive = true)
 {
    std::vector<Session> current_sessions;
    string data_type;
@@ -198,6 +198,8 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          return;
       }
    }
+#else
+   MFEM_CONTRACT_VAR(secure);
 #endif
 
    const int backlog = 128;
@@ -714,7 +716,7 @@ int main (int argc, char *argv[])
       std::thread serverThread{GLVisServer, portnum, save_stream,
                                win.data_state.fix_elem_orient,
                                win.data_state.save_coloring,
-                               win.plot_caption, win.headless,
+                               win.plot_caption, secure, win.headless,
                                exclusive};
 
       // Start message loop in main thread
