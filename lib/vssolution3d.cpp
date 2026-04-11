@@ -181,6 +181,12 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve1(gl3::GlDrawable& buf,
    DenseMatrix pointmat1;
    Array<int> vertices1;
 
+   const auto shrink_save = shrink;
+   // If shrink != 1, ShrinkPoints() expects a bdr element index for its second
+   // parameter when dim == 3. Since in the loop below we call ShrinkPoints()
+   // with an element index, we temporarily set shrink to 1.
+   if (mesh->Dimension() == 3) { shrink = 1.0; }
+
    int ne = mesh->GetNE();
    for (int k = 0; k < ne-1; k++)
    {
@@ -223,7 +229,7 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve1(gl3::GlDrawable& buf,
       double dx = xs1-xs;
       double dy = ys1-ys;
       double dz = zs1-zs;
-      double ds = sqrt(dx*dx+dy*dy+dz*dz);
+      double ds = hypot(dx, dy, dz); // sqrt(dx*dx+dy*dy+dz*dz);
 
       double cval = HUGE_VAL;
       if (color)
@@ -246,6 +252,8 @@ void VisualizationSceneSolution3d::PrepareOrderingCurve1(gl3::GlDrawable& buf,
                 ds,0.0,cval);
       }
    }
+
+   if (mesh->Dimension() == 3) { shrink = shrink_save; }
 
    if (GetMultisample() > 0)
    {
