@@ -48,6 +48,8 @@ protected:
 
    void Init();
 
+   void UpdatedMesh();
+
    void NewMeshAndSolution(mfem::Mesh *new_m, mfem::Mesh *new_mc,
                            mfem::Vector *new_sol_x, mfem::Vector *new_sol_y, mfem::Vector *new_sol_z,
                            mfem::GridFunction *new_u = nullptr);

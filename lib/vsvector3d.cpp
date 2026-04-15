@@ -409,14 +409,7 @@ void VisualizationSceneVector3d::Init()
 
    VisualizationSceneSolution3d::Init();
 
-   mesh_volume = 0.0;
-   if (mesh)
-   {
-      for (int i=0; i<mesh->GetNE(); i++)
-      {
-         mesh_volume += mesh->GetElementVolume(i);
-      }
-   }
+   UpdatedMesh();
 
    PrepareVectorField();
    PrepareDisplacedMesh();
@@ -453,6 +446,18 @@ void VisualizationSceneVector3d::Init()
       wnd->setOnKeyDown('V', KeyVPressed); // VisualizationSceneSolution3d
 
       wnd->setOnKeyDown('F', VectorKeyFPressed);
+   }
+}
+
+void VisualizationSceneVector3d::UpdatedMesh()
+{
+   mesh_volume = 0.0;
+   if (mesh)
+   {
+      for (int i=0; i<mesh->GetNE(); i++)
+      {
+         mesh_volume += mesh->GetElementVolume(i);
+      }
    }
 }
 
@@ -530,6 +535,7 @@ void VisualizationSceneVector3d::NewMeshAndSolution(
       }
    }
 
+   UpdatedMesh();
 
    FindNodePos();
 
