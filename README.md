@@ -171,6 +171,7 @@ Key commands
 - <kbd>*</kbd> / <kbd>/</kbd> – Zoom in/out
 - <kbd>+</kbd> / <kbd>-</kbd> – Stretch/compress in `z`-direction
 - <kbd>[</kbd> / <kbd>]</kbd> – Shrink/enlarge the bounding box (relative to the colorbar)
+- <kbd>;</kbd> / <kbd>'</kbd> – Decrease/increase line width
 - <kbd>(</kbd> / <kbd>)</kbd> – Shrink/enlarge the visualization window
 - <kbd>.</kbd> – Start/stop `z`-spinning (speed/direction can be controlled with <kbd>0</kbd> / <kbd>Enter</kbd>)
 - <kbd>←</kbd>, <kbd>→</kbd>, <kbd>↑</kbd>, <kbd>↓</kbd> – Manual rotation
