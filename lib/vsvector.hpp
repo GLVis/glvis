@@ -45,11 +45,24 @@ protected:
    void DrawVector(double, double, double, double, double);
 
    double maxlen;
+   double ArrowScale;
 
    mfem::Vector vc0;
    mfem::IsoparametricTransformation T0;
 
    int GetFunctionAutoRefineFactor() override;
+
+   // key handlers
+   static thread_local VisualizationSceneVector  *vsvector;
+   int ianim, ianimmax, key_u_func;
+
+   static void KeyDPressed();
+   static void KeyNPressed();
+   static void KeyBPressed();
+   static void KeyvPressed();
+   static void KeyVPressed();
+   static void KeyuPressed();
+   static void KeyUPressed();
 
 public:
    VisualizationSceneVector(Window &win_);
@@ -63,7 +76,6 @@ public:
 
    std::string GetHelpString() const override;
 
-   void NPressed();
    void PrepareDisplacedMesh();
    void PrepareLines() override
    { VisualizationSceneSolution::PrepareLines(); PrepareDisplacedMesh(); }
@@ -81,6 +93,7 @@ public:
          PrepareDisplacedMesh();
       }
    }
+   void ChangeDisplacement(int idiff);
 
    gl3::SceneInfo GetSceneObjs() override;
 
@@ -90,8 +103,6 @@ public:
 
    // refinement factor for the vectors
    int RefineFactor;
-
-   double ArrowScale;
 
    void CycleVec2Scalar(int print = 0);
 };
