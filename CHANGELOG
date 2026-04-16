@@ -9,6 +9,12 @@
                              https://glvis.org
 
 
+Version 4.5.1 (development)
+===========================
+
+- Added the option ('-no-ex') to run GLVis in non-exclusive setting when the
+  server starts listening on the next available port instead of aborting.
+
 Version 4.5 released on Feb 6, 2026
 ===================================
 
