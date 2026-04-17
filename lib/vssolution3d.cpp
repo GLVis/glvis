@@ -22,7 +22,8 @@
 using namespace std;
 using namespace mfem;
 
-static thread_local VisualizationSceneSolution3d *vssol3d;
+thread_local VisualizationSceneSolution3d
+*VisualizationSceneSolution3d::vssol3d;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 // Reference geometries with a cut in the middle, based on subdivision of
@@ -132,13 +133,13 @@ std::string VisualizationSceneSolution3d::GetHelpString() const
    return os.str();
 }
 
-static void KeyiPressed()
+void VisualizationSceneSolution3d::KeyiPressed()
 {
    vssol3d -> ToggleCuttingPlane();
    SendExposeEvent();
 }
 
-static void KeyIPressed()
+void VisualizationSceneSolution3d::KeyIPressed()
 {
    vssol3d -> ToggleCPAlgorithm();
    SendExposeEvent();
@@ -281,7 +282,7 @@ void VisualizationSceneSolution3d::CPMoved()
    }
 }
 
-static void KeyxPressed()
+void VisualizationSceneSolution3d::KeyxPressed()
 {
    vssol3d -> CuttingPlane -> IncreasePhi();
    vssol3d -> FindNodePos();
@@ -289,7 +290,7 @@ static void KeyxPressed()
    SendExposeEvent();
 }
 
-static void KeyXPressed()
+void VisualizationSceneSolution3d::KeyXPressed()
 {
    vssol3d -> CuttingPlane -> DecreasePhi();
    vssol3d -> FindNodePos();
@@ -297,7 +298,7 @@ static void KeyXPressed()
    SendExposeEvent();
 }
 
-static void KeyyPressed()
+void VisualizationSceneSolution3d::KeyyPressed()
 {
    vssol3d -> CuttingPlane -> IncreaseTheta();
    vssol3d -> FindNodePos();
@@ -305,7 +306,7 @@ static void KeyyPressed()
    SendExposeEvent();
 }
 
-static void KeyYPressed()
+void VisualizationSceneSolution3d::KeyYPressed()
 {
    vssol3d -> CuttingPlane -> DecreaseTheta();
    vssol3d -> FindNodePos();
@@ -313,7 +314,7 @@ static void KeyYPressed()
    SendExposeEvent();
 }
 
-static void KeyzPressed()
+void VisualizationSceneSolution3d::KeyzPressed()
 {
    vssol3d -> CuttingPlane -> IncreaseDistance();
    vssol3d -> FindNodePos();
@@ -321,7 +322,7 @@ static void KeyzPressed()
    SendExposeEvent();
 }
 
-static void KeyZPressed()
+void VisualizationSceneSolution3d::KeyZPressed()
 {
    vssol3d -> CuttingPlane -> DecreaseDistance();
    vssol3d -> FindNodePos();
@@ -329,37 +330,37 @@ static void KeyZPressed()
    SendExposeEvent();
 }
 
-static void KeymPressed()
+void VisualizationSceneSolution3d::KeymPressed()
 {
    vssol3d -> ToggleDrawMesh();
    SendExposeEvent();
 }
 
-static void KeyePressed()
+void VisualizationSceneSolution3d::KeyePressed()
 {
    vssol3d -> ToggleDrawElems();
    SendExposeEvent();
 }
 
-static void KeyMPressed()
+void VisualizationSceneSolution3d::KeyMPressed()
 {
    vssol3d -> ToggleCPDrawMesh();
    SendExposeEvent();
 }
 
-static void KeyEPressed()
+void VisualizationSceneSolution3d::KeyEPressed()
 {
    vssol3d -> ToggleCPDrawElems();
    SendExposeEvent();
 }
 
-static void KeyFPressed()
+void VisualizationSceneSolution3d::KeyFPressed()
 {
    vssol3d -> ToggleShading();
    SendExposeEvent();
 }
 
-static void KeyoPressed(GLenum state)
+void VisualizationSceneSolution3d::KeyoPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
@@ -386,7 +387,7 @@ static void KeyoPressed(GLenum state)
    }
 }
 
-static void KeyOPressed()
+void VisualizationSceneSolution3d::KeyOPressed()
 {
    if (vssol3d -> TimesToRefine > 1)
    {
@@ -404,7 +405,7 @@ static void KeyOPressed()
    }
 }
 
-static void KeywPressed()
+void VisualizationSceneSolution3d::KeywPressed()
 {
    if (vssol3d -> GetShading() ==
        VisualizationSceneScalarData::Shading::Noncomforming)
@@ -422,7 +423,7 @@ static void KeywPressed()
    }
 }
 
-static void KeyWPressed()
+void VisualizationSceneSolution3d::KeyWPressed()
 {
    if (vssol3d -> GetShading() ==
        VisualizationSceneScalarData::Shading::Noncomforming)
@@ -440,37 +441,36 @@ static void KeyWPressed()
    }
 }
 
-static void KeyuPressed()
+void VisualizationSceneSolution3d::KeyuPressed()
 {
    vssol3d -> MoveLevelSurf(+1);
    SendExposeEvent();
 }
 
-static void KeyUPressed()
+void VisualizationSceneSolution3d::KeyUPressed()
 {
    vssol3d -> MoveLevelSurf(-1);
    SendExposeEvent();
 }
 
-static void KeyvPressed()
+void VisualizationSceneSolution3d::KeyvPressed()
 {
    vssol3d -> NumberOfLevelSurf(+1);
    SendExposeEvent();
 }
 
-static void KeyVPressed()
+void VisualizationSceneSolution3d::KeyVPressed()
 {
    vssol3d -> NumberOfLevelSurf(-1);
    SendExposeEvent();
 }
 
-static int magic_key_pressed = 0;
-void ToggleMagicKey()
+void VisualizationSceneSolution3d::ToggleMagicKey()
 {
-   magic_key_pressed = 1-magic_key_pressed;
+   vssol3d->magic_key_pressed = 1 - vssol3d->magic_key_pressed;
 }
 
-static void KeyF3Pressed(GLenum state)
+void VisualizationSceneSolution3d::KeyF3Pressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
@@ -500,7 +500,7 @@ static void KeyF3Pressed(GLenum state)
             vssol3d->ComputeElemAttrCenter();
          }
          vssol3d->shrink *= 0.9;
-         if (magic_key_pressed)
+         if (vssol3d->magic_key_pressed)
          {
             vssol3d -> Scale(1.11111111111111111111111);
          }
@@ -512,7 +512,7 @@ static void KeyF3Pressed(GLenum state)
    }
 }
 
-static void KeyF4Pressed(GLenum state)
+void VisualizationSceneSolution3d::KeyF4Pressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
@@ -542,7 +542,7 @@ static void KeyF4Pressed(GLenum state)
             vssol3d->ComputeElemAttrCenter();
          }
          vssol3d->shrink *= 1.11111111111111111111111;
-         if (magic_key_pressed)
+         if (vssol3d->magic_key_pressed)
          {
             vssol3d -> Scale(0.9);
          }
@@ -553,7 +553,7 @@ static void KeyF4Pressed(GLenum state)
    }
 }
 
-static void KeyF11Pressed()
+void VisualizationSceneSolution3d::KeyF11Pressed()
 {
    if (vssol3d->GetShading() ==
        VisualizationSceneScalarData::Shading::Noncomforming)
@@ -563,7 +563,7 @@ static void KeyF11Pressed()
          vssol3d->ComputeElemAttrCenter();
       }
       vssol3d->shrinkmat *= 0.9;
-      if (magic_key_pressed)
+      if (vssol3d->magic_key_pressed)
       {
          vssol3d -> Scale(1.11111111111111111111111);
       }
@@ -573,7 +573,7 @@ static void KeyF11Pressed()
    }
 }
 
-static void KeyF12Pressed()
+void VisualizationSceneSolution3d::KeyF12Pressed()
 {
    if (vssol3d->GetShading() ==
        VisualizationSceneScalarData::Shading::Noncomforming)
@@ -583,7 +583,7 @@ static void KeyF12Pressed()
          vssol3d->ComputeElemAttrCenter();
       }
       vssol3d->shrinkmat *= 1.11111111111111111111111;
-      if (magic_key_pressed)
+      if (vssol3d->magic_key_pressed)
       {
          vssol3d -> Scale(0.9);
       }
@@ -593,7 +593,7 @@ static void KeyF12Pressed()
    }
 }
 
-static void KeyF8Pressed()
+void VisualizationSceneSolution3d::KeyF8Pressed()
 {
    Mesh &mesh = *vssol3d->GetMesh();
    int dim = mesh.Dimension();
@@ -617,7 +617,7 @@ static void KeyF8Pressed()
    SendExposeEvent();
 }
 
-static void KeyF9Pressed()
+void VisualizationSceneSolution3d::KeyF9Pressed()
 {
    Mesh &mesh = *vssol3d->GetMesh();
    int dim = mesh.Dimension();
@@ -662,7 +662,7 @@ static void KeyF9Pressed()
    SendExposeEvent();
 }
 
-static void KeyF10Pressed()
+void VisualizationSceneSolution3d::KeyF10Pressed()
 {
    Mesh &mesh = *vssol3d->GetMesh();
    int dim = mesh.Dimension();
@@ -751,6 +751,7 @@ void VisualizationSceneSolution3d::Init()
 
    TimesToRefine = 1;
    FaceShiftScale = 0.0;
+   magic_key_pressed = 0;
 
    if (mesh->Dimension() == 3)
    {
@@ -781,7 +782,7 @@ void VisualizationSceneSolution3d::Init()
    palette.SetFallbackIndex(12); // use the 'vivid' palette in 3D
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
-   CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*bb.x[0]+(0.5+eps)*bb.x[1]);
+   CuttingPlane = new Plane({-1.0,0.0,0.0,(0.5-eps)*bb.x[0]+(0.5+eps)*bb.x[1]},bb);
 
    nlevels = 1;
 
