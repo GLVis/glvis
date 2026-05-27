@@ -2523,9 +2523,21 @@ void VisualizationSceneSolution::PrepareBoundary()
             T->Loc2.Transform(ir, eir);
             GetRefinedValues(T->Elem2No, eir, vals, pointmat);
             bl.glBegin(GL_LINE_STRIP);
-            for (j = 0; j < vals.Size(); j++)
+            if (drawbdr == 2)
             {
-               bl.glVertex3d(pointmat(0, j), pointmat(1, j), vals(j));
+               const double val = mesh->GetBdrAttribute(i);
+               MySetColor(bl, val, minv, maxv);
+               for (j = 0; j < vals.Size(); j++)
+               {
+                  bl.glVertex3d(pointmat(0, j), pointmat(1, j), val);
+               }
+            }
+            else
+            {
+               for (j = 0; j < vals.Size(); j++)
+               {
+                  bl.glVertex3d(pointmat(0, j), pointmat(1, j), vals(j));
+               }
             }
             bl.glEnd();
          }
