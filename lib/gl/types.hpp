@@ -56,6 +56,10 @@ public:
    {
       if (this != &other)
       {
+         if (hnd)
+         {
+            GLFinalizer(hnd);
+         }
          hnd = other.hnd;
          other.hnd = 0;
       }

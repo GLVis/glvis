@@ -43,6 +43,8 @@ public:
 
 private:
    ShaderProgram default_prgm;
+   ShaderProgram oit_accum_prgm;
+   ShaderProgram oit_reveal_prgm;
    ShaderProgram feedback_prgm;
    resource::VtxArrayHandle global_vao;
 
@@ -114,10 +116,22 @@ public:
    }
    void bindExternalProgram(const ShaderProgram& prog)
    {
+      // Core profile rendering requires a VAO to be bound.
+      if (global_vao)
+      {
+         glBindVertexArray(global_vao);
+      }
       glDisable(GL_RASTERIZER_DISCARD);
       initializeShaderState(prog);
       glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
    }
+   bool hasOITPrograms() const
+   {
+      return oit_accum_prgm.isCompiled() && oit_reveal_prgm.isCompiled();
+   }
+   void bindOITAccumProgram() { bindExternalProgram(oit_accum_prgm); }
+   void bindOITRevealProgram() { bindExternalProgram(oit_reveal_prgm); }
+   void bindDefaultProgram() { bindExternalProgram(default_prgm); }
    void captureXfbBuffer(PaletteState& pal, CaptureBuffer& cbuf, int hnd) override;
 };
 
