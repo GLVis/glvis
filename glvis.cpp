@@ -160,8 +160,8 @@ public:
 };
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
-                 bool save_coloring, bool keep_attr, string plot_caption, bool secure,
-                 std::vector<std::array<double,3>> point_coords,
+                 bool save_coloring, bool keep_attr, string plot_caption,
+                 bool secure, std::vector<std::array<double,3>> point_coords,
                  bool headless = false)
 {
    std::vector<Session> current_sessions;
@@ -314,7 +314,8 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          while (1);
       }
 
-      Session new_session(fix_elem_orient, save_coloring, keep_attr, plot_caption, headless);
+      Session new_session(fix_elem_orient, save_coloring, keep_attr,
+                          plot_caption, headless);
       if (!point_coords.empty()) { new_session.GetState().point_coords = point_coords; }
 
       constexpr int tmp_filename_size = 50;

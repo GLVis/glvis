@@ -1704,10 +1704,9 @@ void VisualizationSceneScalarData::PreparePointLine()
    float z_offset = 0.0f;
    if (is_2d)
    {
-     const auto range = maxv - minv;
-     const float dz = (range > 0.0) ? (0.02 * range)
+      const auto range = maxv - minv;
+      const float dz = (range > 0.0) ? (0.02 * range)
                        : (0.02 * std::max(1.0, std::abs(maxv)));
-
       z_offset = (float)maxv + dz;
    }
 
@@ -1721,10 +1720,6 @@ void VisualizationSceneScalarData::PreparePointLine()
       float y1 = points[i+1][1];
       float z = is_2d ? z_offset : points[i][2];
       float z_next = is_2d ? z_offset : points[i+1][2];
-      line_vertices.push_back({x0, y0, z});
-      line_vertices.push_back({x1, y1, z_next});
-      float z = is_2d ? z_offset : (float)points[i][2];
-      float z_next = is_2d ? z_offset : (float)points[i+1][2];
       line_vertices.push_back({x0, y0, z});
       line_vertices.push_back({x1, y1, z_next});
    }

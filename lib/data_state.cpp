@@ -46,15 +46,25 @@ int ReadPointLine(std::istream &in,
 {
    points.clear();
 
-   int num_points;
-   in >> num_points;
+   int num_points = 0;
+   if (!(in >> num_points))
+   {
+      warn << "Warning: ReadPointLine missing number of points" << std::endl;
+      return 0;
+   }
+
+   if (num_points < 2)
+   {
+      warn << "Warning: ReadPointLine needs at least 2 points" << std::endl;
+      return 0;
+   }
 
    if (num_points > 0)
    {
       points.reserve(num_points);
    }
 
-   for (int j = 0; num_points < 0 || j < num_points; j++)
+   for (int j = 0; j < num_points; j++)
    {
       double x, y, z;
       if (in >> x >> y >> z)
