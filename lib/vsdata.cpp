@@ -1714,10 +1714,14 @@ void VisualizationSceneScalarData::PreparePointLine()
    line_vertices.reserve((points.size()-1)*2);
    for (size_t i = 0; i + 1 < points.size(); i++)
    {
-      float x0 = (float)points[i][0];
-      float y0 = (float)points[i][1];
-      float x1 = (float)points[i+1][0];
-      float y1 = (float)points[i+1][1];
+      float x0 = points[i][0];
+      float y0 = points[i][1];
+      float x1 = points[i+1][0];
+      float y1 = points[i+1][1];
+      float z = is_2d ? z_offset : points[i][2];
+      float z_next = is_2d ? z_offset : points[i+1][2];
+      line_vertices.push_back({x0, y0, z});
+      line_vertices.push_back({x1, y1, z_next});
       float z = is_2d ? z_offset : (float)points[i][2];
       float z_next = is_2d ? z_offset : (float)points[i+1][2];
       line_vertices.push_back({x0, y0, z});
