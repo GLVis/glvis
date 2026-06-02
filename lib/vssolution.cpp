@@ -18,7 +18,7 @@
 using namespace std;
 using namespace mfem;
 
-thread_local VisualizationSceneSolution *vssol;
+thread_local VisualizationSceneSolution *VisualizationSceneSolution::vssol;
 extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 #ifdef GLVIS_ISFINITE
@@ -132,7 +132,7 @@ std::string VisualizationSceneSolution::GetHelpString() const
    return os.str();
 }
 
-static void KeyF8Pressed()
+void VisualizationSceneSolution::KeyF8Pressed()
 {
    int attr;
    Array<int> attr_list(&attr, 1);
@@ -152,9 +152,9 @@ static void KeyF8Pressed()
    SendExposeEvent();
 }
 
-static void SwitchAttribute(int increment, int &attribute,
-                            Array<int> &attribute_marker,
-                            bool bdr)
+void VisualizationSceneSolution::SwitchAttribute(int increment, int &attribute,
+                                                 Array<int> &attribute_marker,
+                                                 bool bdr)
 {
    const char *attr_type = bdr ? "bdr" : "element";
    if (attribute_marker.Size() == 0)
@@ -193,40 +193,40 @@ static void SwitchAttribute(int increment, int &attribute,
    }
    if (bdr)
    {
-      vssol->PrepareBoundary();
+      PrepareBoundary();
    }
    else
    {
-      vssol->PrepareNumbering();
-      vssol->PrepareLines();
-      vssol->Prepare();
+      PrepareNumbering();
+      PrepareLines();
+      Prepare();
    }
    SendExposeEvent();
 }
 
-static void KeyF9Pressed(GLenum state)
+void VisualizationSceneSolution::KeyF9Pressed(GLenum state)
 {
    if (!(state & KMOD_SHIFT))
    {
-      SwitchAttribute(+1, vssol->attr_to_show, vssol->el_attr_to_show, false);
+      vssol->SwitchAttribute(+1, vssol->attr_to_show, vssol->el_attr_to_show, false);
    }
    else
    {
-      SwitchAttribute(+1, vssol->bdr_attr_to_show, vssol->bdr_el_attr_to_show,
-                      true);
+      vssol->SwitchAttribute(+1, vssol->bdr_attr_to_show, vssol->bdr_el_attr_to_show,
+                             true);
    }
 }
 
-static void KeyF10Pressed(GLenum state)
+void VisualizationSceneSolution::KeyF10Pressed(GLenum state)
 {
    if (!(state & KMOD_SHIFT))
    {
-      SwitchAttribute(-1, vssol->attr_to_show, vssol->el_attr_to_show, false);
+      vssol->SwitchAttribute(-1, vssol->attr_to_show, vssol->el_attr_to_show, false);
    }
    else
    {
-      SwitchAttribute(-1, vssol->bdr_attr_to_show, vssol->bdr_el_attr_to_show,
-                      true);
+      vssol->SwitchAttribute(-1, vssol->bdr_attr_to_show, vssol->bdr_el_attr_to_show,
+                             true);
    }
 }
 
@@ -274,19 +274,19 @@ void VisualizationSceneSolution::ToggleDrawBdr()
    }
 }
 
-static void KeyBPressed()
+void VisualizationSceneSolution::KeyBPressed()
 {
    vssol -> ToggleDrawBdr();
    SendExposeEvent();
 }
 
-static void KeyMPressed()
+void VisualizationSceneSolution::KeyMPressed()
 {
    vssol -> ToggleDrawMesh();
    SendExposeEvent();
 }
 
-static void KeyNPressed(GLenum state)
+void VisualizationSceneSolution::KeyNPressed(GLenum state)
 {
    if (state & KMOD_ALT)
    {
@@ -303,7 +303,7 @@ static void KeyNPressed(GLenum state)
    SendExposeEvent();
 }
 
-static void KeyoPressed(GLenum state)
+void VisualizationSceneSolution::KeyoPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
@@ -317,64 +317,64 @@ static void KeyoPressed(GLenum state)
    }
 }
 
-static void KeyOPressed(GLenum state)
+void VisualizationSceneSolution::KeyOPressed(GLenum state)
 {
    (void)state;
    vssol->ToggleRefinementFunction();
 }
 
-static void KeyEPressed()
+void VisualizationSceneSolution::KeyEPressed()
 {
    vssol -> ToggleDrawElems();
    SendExposeEvent();
 }
 
-static void KeyFPressed()
+void VisualizationSceneSolution::KeyFPressed()
 {
    vssol -> ToggleShading();
    SendExposeEvent();
 }
 
-void KeyiPressed()
+void VisualizationSceneSolution::KeyiPressed()
 {
    vssol->ToggleDrawCP();
    SendExposeEvent();
 }
 
-void KeyIPressed()
+void VisualizationSceneSolution::KeyIPressed()
 {
    // no-op, available
 }
 
-static void KeyyPressed()
+void VisualizationSceneSolution::KeyyPressed()
 {
    vssol->CuttingPlane->IncreaseTheta();
    vssol->PrepareCP();
    SendExposeEvent();
 }
 
-static void KeyYPressed()
+void VisualizationSceneSolution::KeyYPressed()
 {
    vssol->CuttingPlane->DecreaseTheta();
    vssol->PrepareCP();
    SendExposeEvent();
 }
 
-static void KeyzPressed()
+void VisualizationSceneSolution::KeyzPressed()
 {
    vssol->CuttingPlane->IncreaseDistance();
    vssol->PrepareCP();
    SendExposeEvent();
 }
 
-static void KeyZPressed()
+void VisualizationSceneSolution::KeyZPressed()
 {
    vssol->CuttingPlane->DecreaseDistance();
    vssol->PrepareCP();
    SendExposeEvent();
 }
 
-static void KeyF3Pressed()
+void VisualizationSceneSolution::KeyF3Pressed()
 {
    if (vssol->GetShading() == VisualizationSceneScalarData::Shading::Noncomforming)
    {
@@ -388,7 +388,7 @@ static void KeyF3Pressed()
    }
 }
 
-static void KeyF4Pressed()
+void VisualizationSceneSolution::KeyF4Pressed()
 {
    if (vssol->GetShading() == VisualizationSceneScalarData::Shading::Noncomforming)
    {
@@ -401,7 +401,7 @@ static void KeyF4Pressed()
    }
 }
 
-static void KeyF11Pressed()
+void VisualizationSceneSolution::KeyF11Pressed()
 {
    if (vssol->GetShading() == VisualizationSceneScalarData::Shading::Noncomforming)
    {
@@ -419,7 +419,7 @@ static void KeyF11Pressed()
    }
 }
 
-static void KeyF12Pressed()
+void VisualizationSceneSolution::KeyF12Pressed()
 {
    if (vssol->GetShading() == VisualizationSceneScalarData::Shading::Noncomforming)
    {
@@ -492,7 +492,7 @@ void VisualizationSceneSolution::Init()
    palette.SetFallbackIndex(2); // use the 'jet-like' palette in 2D
 
    double eps = 1e-6; // move the cutting plane a bit to avoid artifacts
-   CuttingPlane = new Plane(-1.0,0.0,0.0,(0.5-eps)*bb.x[0]+(0.5+eps)*bb.x[1]);
+   CuttingPlane = new Plane({-1.0,0.0,0.0,(0.5-eps)*bb.x[0]+(0.5+eps)*bb.x[1]},bb);
    draw_cp = 0;
 
    // static int init = 0;
@@ -2525,9 +2525,21 @@ void VisualizationSceneSolution::PrepareBoundary()
             T->Loc2.Transform(ir, eir);
             GetRefinedValues(T->Elem2No, eir, vals, pointmat);
             bl.glBegin(GL_LINE_STRIP);
-            for (j = 0; j < vals.Size(); j++)
+            if (drawbdr == 2)
             {
-               bl.glVertex3d(pointmat(0, j), pointmat(1, j), vals(j));
+               const double val = mesh->GetBdrAttribute(i);
+               MySetColor(bl, val, minv, maxv);
+               for (j = 0; j < vals.Size(); j++)
+               {
+                  bl.glVertex3d(pointmat(0, j), pointmat(1, j), val);
+               }
+            }
+            else
+            {
+               for (j = 0; j < vals.Size(); j++)
+               {
+                  bl.glVertex3d(pointmat(0, j), pointmat(1, j), vals(j));
+               }
             }
             bl.glEnd();
          }
