@@ -1704,9 +1704,10 @@ void VisualizationSceneScalarData::PreparePointLine()
    float z_offset = 0.0f;
    if (is_2d)
    {
-      const float range = (float)(maxv - minv);
-      const float dz = (range > 0.0f) ? (0.02f * range)
-                       : (0.02f * (float)std::max(1.0, fabs(maxv)));
+     const auto range = maxv - minv;
+     const float dz = (range > 0.0) ? (0.02 * range)
+                       : (0.02 * std::max(1.0, std::abs(maxv)));
+
       z_offset = (float)maxv + dz;
    }
 
