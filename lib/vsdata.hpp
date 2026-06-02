@@ -177,7 +177,7 @@ protected:
    static void KeyaPressed();
    static void Key_Mod_a_Pressed(GLenum state);
    static void KeyHPressed();
-   static void KeylPressed();
+   static void KeylPressed(GLenum state);
    static void KeyLPressed();
    static void KeyrPressed();
    static void KeyRPressed();
