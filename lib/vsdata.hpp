@@ -104,6 +104,7 @@ protected:
    gl3::GlDrawable color_bar;
    gl3::GlDrawable ruler_buf;
    gl3::GlDrawable caption_buf;
+   gl3::GlDrawable point_line_buf;
    int caption_w, caption_h;
 
    void Init();
@@ -126,6 +127,7 @@ protected:
    Autoscale autoscale;
 
    bool logscale;
+   bool show_point_line{false};
 
    bool LogscaleRange() { return (minv > 0.0 && maxv > minv); }
    void PrintLogscale(bool warn);
@@ -175,7 +177,7 @@ protected:
    static void KeyaPressed();
    static void Key_Mod_a_Pressed(GLenum state);
    static void KeyHPressed();
-   static void KeylPressed();
+   static void KeylPressed(GLenum state);
    static void KeyLPressed();
    static void KeyrPressed();
    static void KeyRPressed();
@@ -345,6 +347,13 @@ public:
          PrepareAxes();
       }
    }
+
+   void PreparePointLine();
+   void TogglePointLine();
+   void SetPointLineVisible(bool visible) { show_point_line = visible; }
+   /// Helper for adding point line overlay in derived classes
+   void AddPointLineToScene(gl3::SceneInfo& scene,
+                            const gl3::RenderParams& params);
 
    void ToggleScaling()
    { scaling = !scaling; SetNewScalingFromBox(); }

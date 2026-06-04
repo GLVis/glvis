@@ -15,6 +15,7 @@
 #include <map>
 #include <string>
 #include <memory>
+#include <array>
 #include <vector>
 #include <utility>
 #include <functional>
@@ -139,6 +140,7 @@ public:
    bool save_coloring{false};
    bool keep_attr{false};
    double cmplx_phase{0.};
+   std::vector<std::array<double,3>> point_coords; // point line (from -pts)
 
    DataState() = default;
    DataState(DataState &&ss) { *this = std::move(ss); }
@@ -277,5 +279,12 @@ public:
                        std::function<double(double)> scale = {}) const
    { if (cgrid_f) { FindComplexValueRange(minv, maxv, vec2scal, scale); } else { minv = maxv = 0.; } }
 };
+
+/// Helper to read a point line file (num_points, followed by x y z coordinates)
+/// that is called in glvis.cpp and the 'pointline' commands in threads.cpp and
+/// script_controller.cpp.
+int ReadPointLine(std::istream &in,
+                  std::vector<std::array<double,3>> &points,
+                  std::ostream &warn);
 
 #endif // GLVIS_DATA_STATE_HPP
