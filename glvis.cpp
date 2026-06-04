@@ -12,6 +12,7 @@
 // GLVis - an OpenGL visualization server based on the MFEM library
 
 #include <limits>
+#include <array>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -77,14 +78,14 @@ class Session
 
 public:
    Session(bool fix_elem_orient,
-           bool keep_attr,
            bool save_coloring,
+           bool keep_attr,
            string plot_caption,
            bool headless)
    {
       win.data_state.fix_elem_orient = fix_elem_orient;
-      win.data_state.keep_attr = keep_attr;
       win.data_state.save_coloring = save_coloring;
+      win.data_state.keep_attr = keep_attr;
       win.plot_caption = plot_caption;
       win.headless = headless;
    }
@@ -159,7 +160,8 @@ public:
 };
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
-                 bool keep_attr, bool save_coloring, string plot_caption,
+                 bool save_coloring, bool keep_attr, string plot_caption,
+                 bool secure, std::vector<std::array<double,3>> point_coords,
                  bool headless = false)
 {
    std::vector<Session> current_sessions;
@@ -200,6 +202,8 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          return;
       }
    }
+#else
+   MFEM_CONTRACT_VAR(secure);
 #endif
 
    const int backlog = 128;
@@ -310,8 +314,9 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          while (1);
       }
 
-      Session new_session(fix_elem_orient, keep_attr,
-                          save_coloring, plot_caption, headless);
+      Session new_session(fix_elem_orient, save_coloring, keep_attr,
+                          plot_caption, headless);
+      if (!point_coords.empty()) { new_session.GetState().point_coords = point_coords; }
 
       constexpr int tmp_filename_size = 50;
       char tmp_file[tmp_filename_size];
@@ -387,6 +392,7 @@ int main (int argc, char *argv[])
    const char *palette_name  = string_none;
    const char *window_title  = string_default;
    const char *font_name     = string_default;
+   const char *points_file   = string_none;
    int         portnum       = 19916;
    bool        persistent    = true;
    int         multisample   = GetMultisample();
@@ -497,6 +503,8 @@ int main (int argc, char *argv[])
    args.AddOption(&enable_hidpi, "-hidpi", "--high-dpi",
                   "-nohidpi", "--no-high-dpi",
                   "Enable/disable support for HiDPI at runtime, if supported.");
+   args.AddOption(&points_file, "-pts", "--points-file",
+                  "Points file: number of points, followed by x y z coordinates.");
 
    cout << endl
         << "       _/_/_/  _/      _/      _/  _/"          << endl
@@ -616,6 +624,21 @@ int main (int argc, char *argv[])
 
    GLVisGeometryRefiner.SetType(geom_ref_type);
 
+   // Load points file if specified (Ctrl+l to toggle)
+   if (points_file != string_none)
+   {
+      ifstream ifs(points_file);
+      if (!ifs)
+      {
+         cout << "Cannot open points file: " << points_file << endl;
+      }
+      else
+      {
+         int num_points = ReadPointLine(ifs, win.data_state.point_coords, cerr);
+         cout << "Loaded " << num_points << " points from " << points_file << endl;
+      }
+   }
+
    string data_type;
 
    // check for saved stream file
@@ -696,9 +719,11 @@ int main (int argc, char *argv[])
       // Run server in new thread
       std::thread serverThread{GLVisServer, portnum, save_stream,
                                win.data_state.fix_elem_orient,
-                               win.data_state.keep_attr,
                                win.data_state.save_coloring,
-                               win.plot_caption, win.headless};
+                               win.data_state.keep_attr,
+                               win.plot_caption, secure,
+                               std::move(win.data_state.point_coords),
+                               win.headless};
 
       // Start message loop in main thread
       MainThreadLoop(win.headless, persistent);
