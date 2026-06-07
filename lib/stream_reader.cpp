@@ -72,7 +72,7 @@ static const StreamCommands commands;
 StreamCommands::StreamCommands()
 {
    // Settings
-   (*this)[Command::FixOrientations]      = {"fix_orientations", false, "<0/off/1/on>", "Turn off/on fix of the orientations for inverted elements."};
+   (*this)[Command::FixOrientations]      = {"fix_orientations", false, "<0/off/1/on>", "Turn on/off automatic fixing of orientations for inverted elements."};
    (*this)[Command::SaveColoring]         = {"save_coloring", false, "<0/off/1/on>", "Turn on/off saving of the mesh coloring generated when loading only a mesh."};
    (*this)[Command::KeepAttributes]       = {"keep_attributes", false, "<proc/0/off/real/1/on>", "When loading a parallel solution, toggle between processor ranks and the original (real) attributes."};
    // Solution
