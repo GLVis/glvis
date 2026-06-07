@@ -17,12 +17,11 @@ Version 4.5.1 (development)
   script. The overlay appears as a red line connecting the given points. The
   points line format is: number of points, followed by x y z coordinates.
 
-- Added stream options to set up the parameters for loading the data. There are
-  'fix_orientations', 'save_coloring' and 'keep_attributes' commands for the
-  corresponding options. These commands (to have an effect) must send before the
-  'solution' command. However, they can be send only after the parallel streams
-  have been initialized by 'parallel' command (if used).
-
+- Added stream options to configure parameters for loading data. The new
+  commands are 'fix_orientations', 'save_coloring', and 'keep_attributes'.
+  These commands must be sent before the 'solution' command to take effect.
+  They can only be issued after parallel streams have been initialized with
+  the 'parallel' command (if used).
 
 Version 4.5 released on Feb 6, 2026
 ===================================
