@@ -27,6 +27,7 @@ int GLVisStreamSession(const bool fix_elem_orient,
 {
    const int geom_ref_type = mfem::Quadrature1D::ClosedUniform;
    const bool enable_hidpi = true;
+   const bool keep_attr = true;
 
    Window win;
 
@@ -43,7 +44,8 @@ int GLVisStreamSession(const bool fix_elem_orient,
 
    GetMainThread(false);
 
-   Session new_session(fix_elem_orient, save_coloring, plot_caption, headless);
+   Session new_session(fix_elem_orient, save_coloring, keep_attr, plot_caption,
+                       headless);
    if (streams.size() == 1 && data_type == "solution")
    {
       new_session.StartStreamSession(std::move(streams[0]), data_type);

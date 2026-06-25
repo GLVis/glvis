@@ -24,11 +24,13 @@ class Session
 public:
    Session(bool fix_elem_orient,
            bool save_coloring,
+           bool keep_attr,
            std::string plot_caption,
            bool headless)
    {
       win.data_state.fix_elem_orient = fix_elem_orient;
       win.data_state.save_coloring = save_coloring;
+      win.data_state.keep_attr = keep_attr;
       win.plot_caption = plot_caption;
       win.headless = headless;
    }
