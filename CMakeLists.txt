@@ -355,6 +355,10 @@ if(NOT EMSCRIPTEN)
   # Install the executable
   install(TARGETS glvis-exe RUNTIME DESTINATION bin)
 
+  # Install the stream_session.hpp header file
+  set_target_properties(glvis PROPERTIES PUBLIC_HEADER stream_session.hpp)
+  install(TARGETS glvis PUBLIC_HEADER DESTINATION include/glvis)
+
   # Install the gnutls helper script
   if (MFEM_USE_GNUTLS)
     install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/glvis-keygen.sh

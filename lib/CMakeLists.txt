@@ -71,6 +71,7 @@ list(APPEND HEADERS
   script_controller.hpp
   session.hpp
   stream_reader.hpp
+  stream_session.hpp
   visual.hpp
   vsdata.hpp
   vssolution.hpp
