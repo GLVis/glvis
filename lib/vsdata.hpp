@@ -31,7 +31,7 @@ private:
    double phi_step, theta_step, rho_step;
 
 public:
-   Plane(double A,double B,double C,double D);
+   Plane(const double (&eqn_)[4], const VisualizationScene::Box &bb);
    inline double * Equation() { return eqn; }
    inline double Transform(double x, double y, double z)
    { return eqn[0]*x+eqn[1]*y+eqn[2]*z+eqn[3]; }
@@ -104,6 +104,7 @@ protected:
    gl3::GlDrawable color_bar;
    gl3::GlDrawable ruler_buf;
    gl3::GlDrawable caption_buf;
+   gl3::GlDrawable point_line_buf;
    int caption_w, caption_h;
 
    void Init();
@@ -116,9 +117,17 @@ protected:
    int ruler_on;
    double ruler_x, ruler_y, ruler_z;
 
+   Plane *CuttingPlane;
+   /** Shrink factor with respect to the center of each element (2D) or the
+       center of each boundary attribute (3D) */
+   double shrink;
+   /// Shrink factor with respect to the element (material) attributes centers
+   double shrinkmat;
+
    Autoscale autoscale;
 
    bool logscale;
+   bool show_point_line{false};
 
    bool LogscaleRange() { return (minv > 0.0 && maxv > minv); }
    void PrintLogscale(bool warn);
@@ -158,14 +167,41 @@ protected:
 
    void Cone(gl3::GlDrawable& buf, glm::mat4 transform, double cval);
 
-public:
-   Plane *CuttingPlane;
+   // key handlers
+   static thread_local VisualizationSceneScalarData *vsdata;
    int key_r_state;
-   /** Shrink factor with respect to the center of each element (2D) or the
-       center of each boundary attribute (3D) */
-   double shrink;
-   /// Shrink factor with respect to the element (material) attributes centers
-   double shrinkmat;
+
+   static void KeycPressed(GLenum state);
+   static void KeyCPressed();
+   static void KeySPressed();
+   static void KeyaPressed();
+   static void Key_Mod_a_Pressed(GLenum state);
+   static void KeyHPressed();
+   static void KeylPressed(GLenum state);
+   static void KeyLPressed();
+   static void KeyrPressed();
+   static void KeyRPressed();
+   static void KeypPressed(GLenum state);
+   static void KeyPPressed();
+   static void KeyF5Pressed();
+   static void KeyF6Pressed();
+   static void KeyF7Pressed(GLenum state);
+   static void KeyBackslashPressed();
+   static void KeyTPressed();
+   static void KeygPressed();
+   static void KeyGPressed();
+   static void KeyF1Pressed();
+   static void KeyF2Pressed();
+   static void KeykPressed();
+   static void KeyKPressed();
+   static void KeyAPressed();
+   static void KeyCommaPressed();
+   static void KeyLessPressed();
+   static void KeyGravePressed();
+   static void KeyTildePressed();
+   static void KeyToggleTexture();
+
+public:
 
    VisualizationSceneScalarData(Window &win, bool init = true);
 
@@ -311,6 +347,13 @@ public:
          PrepareAxes();
       }
    }
+
+   void PreparePointLine();
+   void TogglePointLine();
+   void SetPointLineVisible(bool visible) { show_point_line = visible; }
+   /// Helper for adding point line overlay in derived classes
+   void AddPointLineToScene(gl3::SceneInfo& scene,
+                            const gl3::RenderParams& params);
 
    void ToggleScaling()
    { scaling = !scaling; SetNewScalingFromBox(); }

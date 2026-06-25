@@ -116,11 +116,44 @@ protected:
       return (n < vertices.Size());
    }
 
-public:
+   // key handlers
+   static thread_local VisualizationSceneSolution3d *vssol3d;
    int TimesToRefine;
    double FaceShiftScale;
-
+   int magic_key_pressed;
    mfem::Array<int> bdr_attr_to_show;
+
+   static void KeyiPressed();
+   static void KeyIPressed();
+   static void KeyxPressed();
+   static void KeyXPressed();
+   static void KeyyPressed();
+   static void KeyYPressed();
+   static void KeyzPressed();
+   static void KeyZPressed();
+   static void KeymPressed();
+   static void KeyePressed();
+   static void KeyMPressed();
+   static void KeyEPressed();
+   static void KeyFPressed();
+   static void KeyoPressed(GLenum state);
+   static void KeyOPressed();
+   static void KeywPressed();
+   static void KeyWPressed();
+   static void KeyuPressed();
+   static void KeyUPressed();
+   static void KeyvPressed();
+   static void KeyVPressed();
+   static void ToggleMagicKey();
+   static void KeyF3Pressed(GLenum state);
+   static void KeyF4Pressed(GLenum state);
+   static void KeyF11Pressed();
+   static void KeyF12Pressed();
+   static void KeyF8Pressed();
+   static void KeyF9Pressed();
+   static void KeyF10Pressed();
+
+public:
 
    VisualizationSceneSolution3d(Window &win, bool init = true);
 

@@ -85,9 +85,37 @@ protected:
    // Used for drawing markers for element and vertex numbering
    double GetElementLengthScale(int k);
 
-public:
+   // key handlers
+   static thread_local VisualizationSceneSolution *vssol;
    int attr_to_show, bdr_attr_to_show;
    mfem::Array<int> el_attr_to_show, bdr_el_attr_to_show;
+
+   static void KeyF8Pressed();
+   static void KeyF9Pressed(GLenum state);
+   static void KeyF10Pressed(GLenum state);
+   static void KeyBPressed();
+   static void KeyMPressed();
+   static void KeyNPressed(GLenum state);
+   static void KeyoPressed(GLenum state);
+   static void KeyOPressed(GLenum state);
+   static void KeyEPressed();
+   static void KeyFPressed();
+   static void KeyiPressed();
+   static void KeyIPressed();
+   static void KeyyPressed();
+   static void KeyYPressed();
+   static void KeyzPressed();
+   static void KeyZPressed();
+   static void KeyF3Pressed();
+   static void KeyF4Pressed();
+   static void KeyF11Pressed();
+   static void KeyF12Pressed();
+
+   void SwitchAttribute(int increment, int &attribute,
+                        mfem::Array<int> &attribute_marker,
+                        bool bdr);
+
+public:
 
    VisualizationSceneSolution(Window &win, bool init = true);
 

@@ -162,6 +162,11 @@ bool Window::GLVisInitVis(StreamCollection input_streams)
          vs->SetValueRange(-mesh_range, mesh_range);
          vs->SetAutoscale(VisualizationSceneScalarData::Autoscale::None);
       }
+      if (!data_state.point_coords.empty())
+      {
+         vs->SetPointLineVisible(true);
+         vs->PreparePointLine();
+      }
       if (data_state.mesh->SpaceDimension() == 2
           && field_type == DataState::FieldType::MESH)
       {
