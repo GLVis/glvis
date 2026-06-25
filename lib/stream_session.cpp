@@ -20,6 +20,7 @@ extern thread_local mfem::GeometryRefiner GLVisGeometryRefiner;
 
 int GLVisStreamSession(const bool fix_elem_orient,
                        const bool save_coloring,
+                       const bool keep_attr,
                        const bool headless,
                        const std::string &plot_caption,
                        const std::string &data_type,
@@ -27,7 +28,6 @@ int GLVisStreamSession(const bool fix_elem_orient,
 {
    const int geom_ref_type = mfem::Quadrature1D::ClosedUniform;
    const bool enable_hidpi = true;
-   const bool keep_attr = true;
 
    Window win;
 
