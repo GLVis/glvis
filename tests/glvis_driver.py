@@ -34,6 +34,9 @@ def compare_images(
         return False
 
     # Try to open baseline image
+    if not os.path.isfile(baseline_file):
+        print("[IGNORE] No baseline exists to compare against.")
+        return True
     baseline_img = imread(baseline_file)
     if baseline_img is None:
         print("[IGNORE] No baseline exists to compare against.")
@@ -153,6 +156,9 @@ def test_stream(
 
     if baseline:
         baseline_name = f"{baseline}/test.{test_name}.saved.png"
+        if not os.path.isfile(baseline_name):
+            print("[IGNORE] No baseline exists to compare against.")
+            return True
         test_baseline = compare_images(baseline_name, output_name)
         generate_image_diffs(baseline_name, output_name, absdiff_name, reldiff_name)
         # Generate an interactive html plot, only if the test fails
