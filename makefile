@@ -276,7 +276,8 @@ ALL_SOURCE_FILES = \
  lib/palettes_base.cpp lib/palettes.cpp lib/palettes_default.cpp        \
  lib/script_controller.cpp lib/stream_reader.cpp lib/threads.cpp        \
  lib/vsdata.cpp lib/vssolution.cpp lib/vssolution3d.cpp                 \
- lib/vsvector.cpp lib/vsvector3d.cpp lib/window.cpp
+ lib/vsvector.cpp lib/vsvector3d.cpp lib/window.cpp 					\
+ lib/session.cpp lib/stream_session.cpp
 OBJC_SOURCE_FILES = $(if $(NOTMAC),,lib/sdl/sdl_mac.mm)
 DESKTOP_ONLY_SOURCE_FILES = \
  lib/gl/renderer_ff.cpp lib/gl2ps.c lib/script_controller.cpp           \
@@ -300,7 +301,7 @@ HEADER_FILES = \
  lib/openglvis.hpp lib/palettes_base.hpp lib/palettes.hpp               \
  lib/script_controller.hpp lib/stream_reader.hpp lib/threads.hpp        \
  lib/visual.hpp lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp  \
- lib/vsvector.hpp lib/vsvector3d.hpp lib/window.hpp
+ lib/vsvector.hpp lib/vsvector3d.hpp lib/window.hpp lib/session.hpp
 
 DESKTOP_SOURCE_FILES = $(COMMON_SOURCE_FILES) $(DESKTOP_ONLY_SOURCE_FILES) $(LOGO_FILE_CPP)
 WEB_SOURCE_FILES     = $(COMMON_SOURCE_FILES) $(WEB_ONLY_SOURCE_FILES)

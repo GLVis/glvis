@@ -36,6 +36,7 @@
 #endif
 
 #include <mfem.hpp>
+#include "lib/session.hpp"
 #include "lib/visual.hpp"
 #include "lib/window.hpp"
 #include "lib/script_controller.hpp"
@@ -70,94 +71,6 @@ thread_local GeometryRefiner GLVisGeometryRefiner;
 
 void PrintSampleUsage(ostream &out);
 
-class Session
-{
-   StreamCollection input_streams;
-   Window win;
-   std::thread handler;
-
-public:
-   Session(bool fix_elem_orient,
-           bool save_coloring,
-           bool keep_attr,
-           string plot_caption,
-           bool headless)
-   {
-      win.data_state.fix_elem_orient = fix_elem_orient;
-      win.data_state.save_coloring = save_coloring;
-      win.data_state.keep_attr = keep_attr;
-      win.plot_caption = plot_caption;
-      win.headless = headless;
-   }
-
-   Session(Window other_win)
-      : win(std::move(other_win))
-   { }
-
-   ~Session() = default;
-
-   Session(Session&& from) = default;
-   Session& operator= (Session&& from) = default;
-
-   inline DataState& GetState() { return win.data_state; }
-   inline const DataState& GetState() const { return win.data_state; }
-
-   void StartSession()
-   {
-      auto funcThread = [](Window w, StreamCollection is)
-      {
-         if (w.GLVisInitVis(std::move(is)))
-         {
-            w.GLVisStartVis();
-         }
-      };
-      handler = std::thread {funcThread,
-                             std::move(win), std::move(input_streams)};
-      handler.detach();
-   }
-
-   bool StartSavedSession(std::string stream_file)
-   {
-      unique_ptr<ifstream> ifs(new ifstream(stream_file));
-      if (!(*ifs))
-      {
-         cout << "Can not open stream file: " << stream_file << endl;
-         return false;
-      }
-      string data_type;
-      *ifs >> data_type >> ws;
-      StreamReader reader(win.data_state);
-      reader.ReadStream(*ifs, data_type);
-      input_streams.emplace_back(std::move(ifs));
-
-      StartSession();
-      return true;
-   }
-
-   int StartStreamSession(std::unique_ptr<mfem::socketstream> &&stream,
-                          const std::string &data_type)
-   {
-      StreamReader reader(win.data_state);
-      int ierr = reader.ReadStream(*stream, data_type);
-      if (ierr) { return ierr; }
-      input_streams.emplace_back(std::move(stream));
-
-      StartSession();
-      return 0;
-   }
-
-   int StartStreamSession(StreamCollection &&streams)
-   {
-      StreamReader reader(win.data_state);
-      int ierr = reader.ReadStreams(streams);
-      if (ierr) { return ierr; }
-      input_streams = std::move(streams);
-
-      StartSession();
-      return 0;
-   }
-
-};
 
 void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
                  bool save_coloring, bool keep_attr, string plot_caption,

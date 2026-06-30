@@ -328,6 +328,10 @@ message(STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
 add_subdirectory(lib)
 add_subdirectory(share)
 
+if (GLVIS_BUILD_LIB_ONLY)
+    return()
+endif()
+
 if(NOT EMSCRIPTEN)
 
   # Setup the GLVis executable
@@ -350,6 +354,10 @@ if(NOT EMSCRIPTEN)
 
   # Install the executable
   install(TARGETS glvis-exe RUNTIME DESTINATION bin)
+
+  # Install the stream_session.hpp header file
+  set_target_properties(glvis PROPERTIES PUBLIC_HEADER stream_session.hpp)
+  install(TARGETS glvis PUBLIC_HEADER DESTINATION include/glvis)
 
   # Install the gnutls helper script
   if (MFEM_USE_GNUTLS)
@@ -392,7 +400,6 @@ if(NOT EMSCRIPTEN)
       execute_process(COMMAND codesign --force --sign - ${CMAKE_INSTALL_PREFIX}/GLVis.app)
     ]] COMPONENT RUNTIME)
   endif(APPLE)
-
 endif(NOT EMSCRIPTEN)
 
 if(ENABLE_TESTS)
