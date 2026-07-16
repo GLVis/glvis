@@ -131,7 +131,7 @@ ScriptCommands::ScriptCommands()
    (*this)[Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
    (*this)[Command::PointLine]            = {"pointline", "<num_points> <x y z>...", "Set point line overlay coordinates."};
    (*this)[Command::Headless]             = {"headless", "", "Change the session to headless."};
-   (*this)[Command::CuttingPlane]         = {"cutting_plane", "<phi> <theta> <translation> <kind:optional> <alg:optional>", "Set the cutting plane orientation (degrees), translation, kind, and algorithm."};
+   (*this)[Command::CuttingPlane]         = {"cutting_plane", "<phi> <theta> <translation> <kind:optional, default 1> <alg:optional>", "Set the cutting plane orientation (degrees), translation, kind, and algorithm."};
 }
 
 int ScriptController::ScriptReadSolution(istream &scr, DataState &state)
@@ -868,7 +868,7 @@ bool ScriptController::ExecuteScriptCommand()
             double phi_deg, theta_deg, translation;
             scr >> phi_deg >> theta_deg >> translation;
 
-            int kind = -1, algo = -1;
+            int kind = 1, algo = -1;
             scr >> ws;
             if (isdigit((unsigned char)scr.peek()) || scr.peek() == '-')
             {
@@ -881,8 +881,7 @@ bool ScriptController::ExecuteScriptCommand()
             }
 
             cout << "Script: cutting_plane: " << phi_deg << ' ' << theta_deg
-                 << ' ' << translation;
-            if (kind != -1) { cout << ' ' << kind; }
+                 << ' ' << translation << ' ' << kind;
             if (algo != -1) { cout << ' ' << algo; }
             cout << endl;
 
