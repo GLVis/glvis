@@ -870,14 +870,29 @@ bool ScriptController::ExecuteScriptCommand()
 
             int kind = 1, algo = -1;
             scr >> ws;
-            if (isdigit((unsigned char)scr.peek()) || scr.peek() == '-')
+            int ch = scr.peek();
+            if (ch != std::char_traits<char>::eof() && (isdigit(ch) || ch == '-'))
             {
                scr >> kind;
                scr >> ws;
-               if (isdigit((unsigned char)scr.peek()) || scr.peek() == '-')
+               ch = scr.peek();
+               if (ch != std::char_traits<char>::eof() && (isdigit(ch) || ch == '-'))
                {
                   scr >> algo;
                }
+            }
+
+            if (kind < -1 || kind > 2)
+            {
+               cerr << "Script: cutting_plane: invalid kind " << kind
+                    << " (expected -1..2)" << endl;
+               kind = 1;
+            }
+            if (algo != -1 && (algo < 0 || algo > 1))
+            {
+               cerr << "Script: cutting_plane: invalid alg " << algo
+                    << " (expected 0 or 1)" << endl;
+               algo = -1;
             }
 
             cout << "Script: cutting_plane: " << phi_deg << ' ' << theta_deg
