@@ -1986,6 +1986,7 @@ Plane::Plane(const double (&eqn_)[4], const VisualizationScene::Box &bb)
    x0 = (x[0]+x[1])/2.0;
    y0 = (y[0]+y[1])/2.0;
    z0 = (z[0]+z[1])/2.0;
+   cx = x0; cy = y0; cz = z0;
 
    phi_step = M_PI / 36;
    theta_step = M_PI / 36;
@@ -2049,4 +2050,20 @@ void Plane::DecreaseDistance()
    z0 += eqn[2] * k;
    eqn[3] -= rho_step;
    CartesianToSpherical();
+}
+
+void Plane::SetPlane(double phi_, double theta_, double translation)
+{
+   phi = phi_;
+   theta = theta_;
+   rho = 1.0;
+
+   double nx = cos(phi) * cos(theta);
+   double ny = cos(phi) * sin(theta);
+   double nz = sin(phi);
+   x0 = cx + translation * nx;
+   y0 = cy + translation * ny;
+   z0 = cz + translation * nz;
+
+   SphericalToCartesian();
 }

@@ -1192,6 +1192,36 @@ void VisualizationSceneSolution3d::ToggleCPAlgorithm()
    }
 }
 
+void VisualizationSceneSolution3d::SetCuttingPlane(double phi, double theta,
+                                                   double translation,
+                                                   int kind, int algo)
+{
+   CuttingPlane->SetPlane(phi, theta, translation);
+   FindNodePos();
+
+   if (kind != -1 && kind != cplane)
+   {
+      if (cplane == 2 && cp_drawmesh == 3)
+      {
+         cp_drawmesh = 2;
+      }
+      cplane = kind;
+   }
+
+   if (algo != -1)
+   {
+      cp_algo = algo;
+   }
+
+   CPPrepare();
+   if (cplane == 0 || cplane == 2)
+   {
+      Prepare();
+      PrepareLines();
+      PrepareOrderingCurve();
+   }
+}
+
 void VisualizationSceneSolution3d::MoveLevelSurf(int move)
 {
    drawlsurf += move;

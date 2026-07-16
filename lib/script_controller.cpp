@@ -20,6 +20,8 @@
 #include <array>
 #include <algorithm>
 #include <thread>
+#include <cmath>
+#include <cctype>
 
 using namespace std;
 using namespace mfem;
@@ -63,6 +65,7 @@ enum class Command
    PlotCaption,
    PointLine,
    Headless,
+   CuttingPlane,
    //----------
    Max
 };
@@ -128,6 +131,7 @@ ScriptCommands::ScriptCommands()
    (*this)[Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
    (*this)[Command::PointLine]            = {"pointline", "<num_points> <x y z>...", "Set point line overlay coordinates."};
    (*this)[Command::Headless]             = {"headless", "", "Change the session to headless."};
+   (*this)[Command::CuttingPlane]         = {"cutting_plane", "<phi> <theta> <translation> <kind:optional> <alg:optional>", "Set the cutting plane orientation (degrees), translation, kind, and algorithm."};
 }
 
 int ScriptController::ScriptReadSolution(istream &scr, DataState &state)
@@ -859,6 +863,35 @@ bool ScriptController::ExecuteScriptCommand()
          case Command::Headless:
             cout << "The session cannot become headless after initialization" << endl;
             break;
+         case Command::CuttingPlane:
+         {
+            double phi_deg, theta_deg, translation;
+            scr >> phi_deg >> theta_deg >> translation;
+
+            int kind = -1, algo = -1;
+            scr >> ws;
+            if (isdigit((unsigned char)scr.peek()) || scr.peek() == '-')
+            {
+               scr >> kind;
+               scr >> ws;
+               if (isdigit((unsigned char)scr.peek()) || scr.peek() == '-')
+               {
+                  scr >> algo;
+               }
+            }
+
+            cout << "Script: cutting_plane: " << phi_deg << ' ' << theta_deg
+                 << ' ' << translation;
+            if (kind != -1) { cout << ' ' << kind; }
+            if (algo != -1) { cout << ' ' << algo; }
+            cout << endl;
+
+            win.vs->SetCuttingPlane(phi_deg * M_PI / 180.0,
+                                    theta_deg * M_PI / 180.0,
+                                    translation, kind, algo);
+            MyExpose();
+         }
+         break;
          case Command::Max: //dummy
             break;
       }

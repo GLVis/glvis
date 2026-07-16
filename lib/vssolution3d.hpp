@@ -218,6 +218,8 @@ public:
    void ToggleCPDrawElems();
    void ToggleCPDrawMesh();
    void ToggleCPAlgorithm();
+   void SetCuttingPlane(double phi, double theta, double translation,
+                        int kind, int algo) override;
    void MoveLevelSurf(int);
    void NumberOfLevelSurf(int);
    void EventUpdateColors() override;

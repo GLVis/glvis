@@ -23,6 +23,7 @@ private:
    double eqn[4];
    double phi, theta, rho;
    double x0,y0,z0;
+   double cx, cy, cz; // fixed mesh bounding-box center
    void CartesianToSpherical();
    void SphericalToCartesian();
 
@@ -44,6 +45,7 @@ public:
    void DecreaseTheta();
    void IncreaseDistance();
    void DecreaseDistance();
+   void SetPlane(double phi_, double theta_, double translation);
 };
 
 
@@ -262,6 +264,12 @@ public:
    }
    virtual void AutoRefine() = 0;
    virtual void ToggleAttributes(mfem::Array<int> &attr_list) = 0;
+
+   // Set the cutting-plane orientation (radians), translation, kind, and
+   // algorithm in one shot. No-op by default; only meaningful for 3D scenes.
+   // kind == -1 / algo == -1 mean "leave unchanged".
+   virtual void SetCuttingPlane(double phi, double theta, double translation,
+                                int kind, int algo) { }
 
    virtual void PrintState();
 
