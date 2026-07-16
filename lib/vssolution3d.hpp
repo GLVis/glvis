@@ -43,6 +43,15 @@ protected:
 
    mfem::GridFunction *GridF{};
 
+   // Reference geometries with a cut in the middle, based on subdivision of
+   // geom_refiner in 3-4 quads. Updated when cut_lambda is updated, see
+   // keys Ctrl+F3/F4. We need these variables because the geom_refiner
+   // caches its RefinedGeometry objects.
+   mfem::IntegrationRule cut_QuadPts;
+   mfem::Array<int> cut_QuadGeoms;
+   mfem::IntegrationRule cut_TriPts;
+   mfem::Array<int> cut_TriGeoms;
+
    void Init();
 
    void NewMeshAndSolution(mfem::Mesh *new_m, mfem::Mesh *new_mc,

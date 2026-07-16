@@ -21,14 +21,6 @@
 using namespace mfem;
 using namespace std;
 
-// Reference geometry with a cut in the middle, which subdivides GeometryRefiner
-// when cut_lambda is updated, see keys Ctrl+F3/F4. These variables are defined
-// in lib/vssolution3d.cpp.
-extern thread_local IntegrationRule cut_QuadPts;
-extern thread_local Array<int> cut_QuadGeoms;
-extern thread_local IntegrationRule cut_TriPts;
-extern thread_local Array<int> cut_TriGeoms;
-
 std::string VisualizationSceneVector3d::GetHelpString() const
 {
    std::stringstream os;
