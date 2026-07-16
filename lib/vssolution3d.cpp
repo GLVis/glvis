@@ -1801,10 +1801,10 @@ void VisualizationSceneSolution3d::CutReferenceTriangle(
 // Call CutReferenceTriangle and CutReferenceSquare to update the global
 // variables cut_TriPts, cut_TriGeoms, cut_QuadPts, cut_QuadGeoms.
 void VisualizationSceneSolution3d::CutReferenceElements(
-   int TimesToRefine, double lambda)
+   int TimesToRefine_, double lambda)
 {
    RefinedGeometry *RefG =
-      geom_refiner.Refine(Geometry::SQUARE, TimesToRefine);
+      geom_refiner.Refine(Geometry::SQUARE, TimesToRefine_);
    CutReferenceTriangle(RefG, lambda, cut_TriPts, cut_TriGeoms);
    CutReferenceSquare(RefG, lambda, cut_QuadPts, cut_QuadGeoms);
 }
