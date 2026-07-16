@@ -24,9 +24,6 @@
 #include <emscripten/html5.h>
 #include <emscripten/val.h>
 
-// used in extern context
-thread_local mfem::GeometryRefiner GLVisGeometryRefiner;
-
 // either bitmap data or png bytes
 std::vector<unsigned char> * screen_state = nullptr;
 

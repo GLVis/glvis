@@ -106,6 +106,7 @@ DataState &DataState::operator=(DataState &&ss)
    fix_elem_orient = ss.fix_elem_orient;
    save_coloring = ss.save_coloring;
    keep_attr = ss.keep_attr;
+   geom_ref_type = ss.geom_ref_type;
    cmplx_phase = ss.cmplx_phase;
    point_coords = std::move(ss.point_coords);
 

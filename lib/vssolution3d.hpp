@@ -72,6 +72,13 @@ protected:
                             mfem::Array<int> *idxs = NULL);
    void LiftRefinedSurf (int n, mfem::DenseMatrix &pointmat,
                          mfem::Vector &values, int *RG);
+
+   static void CutReferenceSquare(mfem::RefinedGeometry *RefG, double lambda,
+                                  mfem::IntegrationRule &RefPts, mfem::Array<int> &RefGeoms);
+   static void CutReferenceTriangle(mfem::RefinedGeometry *RefG, double lambda,
+                                    mfem::IntegrationRule &RefPts, mfem::Array<int> &RefGeoms);
+   void CutReferenceElements(int TimesToRefine, double lambda);
+
    void DrawTetLevelSurf(gl3::GlDrawable& target, const mfem::DenseMatrix &verts,
                          const mfem::Vector &vals,
                          const int *ind, const mfem::Array<double> &levels,

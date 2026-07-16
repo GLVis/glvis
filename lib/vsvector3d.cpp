@@ -28,8 +28,6 @@ extern thread_local IntegrationRule cut_QuadPts;
 extern thread_local Array<int> cut_QuadGeoms;
 extern thread_local IntegrationRule cut_TriPts;
 extern thread_local Array<int> cut_TriGeoms;
-extern void CutReferenceElements(int TimesToRefine, double lambda);
-
 
 std::string VisualizationSceneVector3d::GetHelpString() const
 {
@@ -130,7 +128,6 @@ std::string VisualizationSceneVector3d::GetHelpString() const
 
 thread_local VisualizationSceneVector3d
 *VisualizationSceneVector3d::vsvector3d;
-extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 void VisualizationSceneVector3d::KeyDPressed()
 {
@@ -771,8 +768,8 @@ void VisualizationSceneVector3d::PrepareFlat2()
       if (dim == 3)
       {
          mesh -> GetBdrElementFace (i, &fn, &fo);
-         RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceGeometry (fn),
-                                            TimesToRefine);
+         RefG = geom_refiner.Refine(mesh -> GetFaceGeometry (fn),
+                                    TimesToRefine);
          if (!cut_updated)
          {
             // Update the cut version of the reference geometries
@@ -807,8 +804,8 @@ void VisualizationSceneVector3d::PrepareFlat2()
       }
       else // dim < 3
       {
-         RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                            TimesToRefine);
+         RefG = geom_refiner.Refine(mesh->GetElementBaseGeometry(i),
+                                    TimesToRefine);
          if (!cut_updated)
          {
             // Update the cut version of the reference geometries
@@ -1171,8 +1168,8 @@ void VisualizationSceneVector3d::PrepareLines2()
       if (dim == 3)
       {
          mesh -> GetBdrElementFace (i, &fn, &fo);
-         RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceGeometry (fn),
-                                            TimesToRefine);
+         RefG = geom_refiner.Refine(mesh -> GetFaceGeometry (fn),
+                                    TimesToRefine);
          // di = GridF->GetFaceValues(fn, 2, RefG->RefPts, values, pointmat);
          di = fo % 2;
          if (di == 1 && !mesh->FaceIsInterior(fn))
@@ -1190,8 +1187,8 @@ void VisualizationSceneVector3d::PrepareLines2()
       }
       else
       {
-         RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                            TimesToRefine);
+         RefG = geom_refiner.Refine(mesh->GetElementBaseGeometry(i),
+                                    TimesToRefine);
          GridF->GetValues(i, RefG->RefPts, values, pointmat);
          VecGridF->GetVectorValues(i, RefG->RefPts, vec_vals, pointmat);
          if (ianim > 0)

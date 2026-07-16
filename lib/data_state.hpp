@@ -139,6 +139,7 @@ public:
    bool fix_elem_orient{false};
    bool save_coloring{false};
    bool keep_attr{false};
+   int geom_ref_type{mfem::Quadrature1D::ClosedUniform}; // geometry refiner type
    double cmplx_phase{0.};
    std::vector<std::array<double,3>> point_coords; // point line (from -pts)
 

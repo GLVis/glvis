@@ -66,8 +66,6 @@ enum InputOptions
 };
 int input = INPUT_SERVER_MODE;
 
-thread_local GeometryRefiner GLVisGeometryRefiner;
-
 void PrintSampleUsage(ostream &out);
 
 class Session
@@ -387,7 +385,6 @@ int main (int argc, char *argv[])
    int         multisample   = GetMultisample();
    double      line_width    = GetLineWidth();
    double      ms_line_width = GetLineWidthMS();
-   int         geom_ref_type = Quadrature1D::ClosedUniform;
    bool        legacy_gl_ctx = false;
    bool        enable_hidpi  = true;
 
@@ -446,7 +443,7 @@ int main (int argc, char *argv[])
                   "-ap", "--processor-attributes",
                   "When opening a parallel mesh, use the real mesh attributes"
                   " or replace them with the processor rank.");
-   args.AddOption(&geom_ref_type, "-grt", "--geometry-refiner-type",
+   args.AddOption(&win.data_state.geom_ref_type, "-grt", "--geometry-refiner-type",
                   "Set of points to use when refining geometry:"
                   " 3 = uniform, 1 = Gauss-Lobatto, (see mfem::Quadrature1D).");
    args.AddOption(&win.data_state.save_coloring, "-sc", "--save-coloring",
@@ -610,8 +607,6 @@ int main (int argc, char *argv[])
    {
       BasePalettes.SetDefault(palette_name);
    }
-
-   GLVisGeometryRefiner.SetType(geom_ref_type);
 
    // Load points file if specified (Ctrl+l to toggle)
    if (points_file != string_none)
