@@ -144,8 +144,9 @@ public:
    std::vector<std::array<double,3>> point_coords; // point line (from -pts)
 
    DataState() = default;
-   DataState(DataState &&ss) { *this = std::move(ss); }
-   DataState& operator=(DataState &&ss);
+   DataState(DataState &&ds) { *this = std::move(ds); }
+   DataState& operator=(DataState &&ds);
+   DataState CloneEmpty() const;
 
    /// Get type of the contained data
    inline FieldType GetType() const { return type; }

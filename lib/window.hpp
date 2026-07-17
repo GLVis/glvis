@@ -52,6 +52,7 @@ public:
    Window() = default;
    Window(Window &&w) { *this = std::move(w); }
    Window& operator=(Window &&w);
+   Window CloneEmpty() const;
 
    /// Visualize the data in the global variables mesh, sol/grid_f, etc
    bool GLVisInitVis(StreamCollection input_streams);

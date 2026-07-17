@@ -75,13 +75,6 @@ class Session
    std::thread handler;
 
 public:
-   Session(string plot_caption,
-           bool headless)
-   {
-      win.plot_caption = plot_caption;
-      win.headless = headless;
-   }
-
    Session(Window other_win)
       : win(std::move(other_win))
    { }
@@ -303,7 +296,7 @@ void GLVisServer(int portnum, bool save_stream, bool secure, Window win)
          while (1);
       }
 
-      Session new_session(std::move(win));
+      Session new_session(win.CloneEmpty());
 
       constexpr int tmp_filename_size = 50;
       char tmp_file[tmp_filename_size];

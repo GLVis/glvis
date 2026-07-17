@@ -30,6 +30,24 @@ Window &Window::operator=(Window &&w)
    return *this;
 }
 
+Window Window::CloneEmpty() const
+{
+   Window w;
+
+   w.data_state = data_state.CloneEmpty();
+
+   w.window_x = window_x;
+   w.window_y = window_y;
+   w.window_w = window_w;
+   w.window_h = window_h;
+   w.window_title = window_title;
+   w.headless = headless;
+   w.plot_caption = plot_caption;
+   w.extra_caption = extra_caption;
+
+   return w;
+}
+
 // Visualize the data in the global variables mesh, sol/grid_f, etc
 bool Window::GLVisInitVis(StreamCollection input_streams)
 {

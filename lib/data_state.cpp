@@ -94,23 +94,41 @@ int ReadPointLine(std::istream &in,
 }
 
 
-DataState &DataState::operator=(DataState &&ss)
+DataState &DataState::operator=(DataState &&ds)
 {
-   internal = std::move(ss.internal);
+   internal = std::move(ds.internal);
 
-   type = ss.type;
-   cmplx_sol = ss.cmplx_sol;
-   quad_sol = ss.quad_sol;
-   keys = std::move(ss.keys);
+   type = ds.type;
+   cmplx_sol = ds.cmplx_sol;
+   quad_sol = ds.quad_sol;
+   keys = std::move(ds.keys);
 
-   fix_elem_orient = ss.fix_elem_orient;
-   save_coloring = ss.save_coloring;
-   keep_attr = ss.keep_attr;
-   geom_ref_type = ss.geom_ref_type;
-   cmplx_phase = ss.cmplx_phase;
-   point_coords = std::move(ss.point_coords);
+   fix_elem_orient = ds.fix_elem_orient;
+   save_coloring = ds.save_coloring;
+   keep_attr = ds.keep_attr;
+   geom_ref_type = ds.geom_ref_type;
+   cmplx_phase = ds.cmplx_phase;
+   point_coords = std::move(ds.point_coords);
 
    return *this;
+}
+
+DataState DataState::CloneEmpty() const
+{
+   DataState ds;
+   ds.type = type;
+   ds.cmplx_sol = cmplx_sol;
+   ds.quad_sol = quad_sol;
+   ds.keys = keys;
+
+   ds.fix_elem_orient = fix_elem_orient;
+   ds.save_coloring = save_coloring;
+   ds.keep_attr = keep_attr;
+   ds.geom_ref_type = geom_ref_type;
+   ds.cmplx_phase = cmplx_phase;
+   ds.point_coords = point_coords;
+
+   return ds;
 }
 
 void DataState::SetMesh(Mesh *mesh_)
