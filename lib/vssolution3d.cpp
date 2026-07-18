@@ -1196,6 +1196,8 @@ void VisualizationSceneSolution3d::SetCuttingPlane(double phi, double theta,
                                                    double translation,
                                                    int kind, int algo)
 {
+   const int old_cplane = cplane;
+
    CuttingPlane->SetPlane(phi, theta, translation);
    FindNodePos();
 
@@ -1214,11 +1216,15 @@ void VisualizationSceneSolution3d::SetCuttingPlane(double phi, double theta,
    }
 
    CPPrepare();
-   if (cplane == 0 || cplane == 2)
+   if (old_cplane == 2 || cplane == 2)
    {
       Prepare();
       PrepareLines();
-      PrepareOrderingCurve();
+
+      if (cplane != old_cplane)
+      {
+         PrepareOrderingCurve();
+      }
    }
 }
 
