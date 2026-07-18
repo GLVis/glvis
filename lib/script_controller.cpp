@@ -871,12 +871,12 @@ bool ScriptController::ExecuteScriptCommand()
             int kind = 1, algo = -1;
             scr >> ws;
             int ch = scr.peek();
-            if (ch != std::char_traits<char>::eof() && (isdigit(ch) || ch == '-'))
+            if (isdigit(ch) || ch == '-')
             {
                scr >> kind;
                scr >> ws;
                ch = scr.peek();
-               if (ch != std::char_traits<char>::eof() && (isdigit(ch) || ch == '-'))
+               if (isdigit(ch) || ch == '-')
                {
                   scr >> algo;
                }
