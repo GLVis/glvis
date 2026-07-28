@@ -888,10 +888,10 @@ bool ScriptController::ExecuteScriptCommand()
                     << " (expected -1..2)" << endl;
                kind = 1;
             }
-            if (algo != -1 && (algo < 0 || algo > 1))
+            if (algo < -1 || algo > 1)
             {
                cerr << "Script: cutting_plane: invalid alg " << algo
-                    << " (expected 0 or 1)" << endl;
+                    << " (expected -1 (keep current), 0, or 1)" << endl;
                algo = -1;
             }
 
