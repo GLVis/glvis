@@ -131,7 +131,7 @@ ScriptCommands::ScriptCommands()
    (*this)[Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
    (*this)[Command::PointLine]            = {"pointline", "<num_points> <x y z>...", "Set point line overlay coordinates."};
    (*this)[Command::Headless]             = {"headless", "", "Change the session to headless."};
-   (*this)[Command::CuttingPlane]         = {"cutting_plane", "<phi> <theta> <translation> <kind:optional, default 1> <alg:optional>", "Set the cutting plane orientation (degrees), translation, kind, and algorithm."};
+   (*this)[Command::CuttingPlane]         = {"cutting_plane", "<phi> <theta> <translation> [<kind> [<alg>]]", "Set the cutting plane orientation (degrees), translation, kind (default: 1), and algorithm."};
 }
 
 int ScriptController::ScriptReadSolution(istream &scr, DataState &state)
