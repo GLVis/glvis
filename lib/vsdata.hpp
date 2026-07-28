@@ -265,9 +265,16 @@ public:
    virtual void AutoRefine() = 0;
    virtual void ToggleAttributes(mfem::Array<int> &attr_list) = 0;
 
-   // Set the cutting-plane orientation (radians), translation, kind, and
-   // algorithm in one shot. No-op by default; only meaningful for 3D scenes.
-   // kind == -1 / algo == -1 mean "leave unchanged".
+   /// @brief Set the cutting-plane orientation, translation, kind, and
+   /// algorithm in one shot.
+   ///
+   /// No-op by default; only meaningful for 3D scenes.
+   ///
+   /// @param phi Orientation angle, in radians.
+   /// @param theta Orientation angle, in radians.
+   /// @param translation Plane translation.
+   /// @param kind Cutting-plane kind, or -1 to leave unchanged.
+   /// @param algo Cutting-plane algorithm, or -1 to leave unchanged.
    virtual void SetCuttingPlane(double phi, double theta, double translation,
                                 int kind = -1, int algo = -1) { }
 
