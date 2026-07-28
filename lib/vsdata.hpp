@@ -269,7 +269,7 @@ public:
    // algorithm in one shot. No-op by default; only meaningful for 3D scenes.
    // kind == -1 / algo == -1 mean "leave unchanged".
    virtual void SetCuttingPlane(double phi, double theta, double translation,
-                                int kind, int algo) { }
+                                int kind = -1, int algo = -1) { }
 
    virtual void PrintState();
 
