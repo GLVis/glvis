@@ -43,6 +43,15 @@ protected:
 
    mfem::GridFunction *GridF{};
 
+   // Reference geometries with a cut in the middle, based on subdivision of
+   // geom_refiner in 3-4 quads. Updated when cut_lambda is updated, see
+   // keys Ctrl+F3/F4. We need these variables because the geom_refiner
+   // caches its RefinedGeometry objects.
+   mfem::IntegrationRule cut_QuadPts;
+   mfem::Array<int> cut_QuadGeoms;
+   mfem::IntegrationRule cut_TriPts;
+   mfem::Array<int> cut_TriGeoms;
+
    void Init();
 
    void NewMeshAndSolution(mfem::Mesh *new_m, mfem::Mesh *new_mc,
@@ -72,6 +81,13 @@ protected:
                             mfem::Array<int> *idxs = NULL);
    void LiftRefinedSurf (int n, mfem::DenseMatrix &pointmat,
                          mfem::Vector &values, int *RG);
+
+   static void CutReferenceSquare(mfem::RefinedGeometry *RefG, double lambda,
+                                  mfem::IntegrationRule &RefPts, mfem::Array<int> &RefGeoms);
+   static void CutReferenceTriangle(mfem::RefinedGeometry *RefG, double lambda,
+                                    mfem::IntegrationRule &RefPts, mfem::Array<int> &RefGeoms);
+   void CutReferenceElements(int TimesToRefine, double lambda);
+
    void DrawTetLevelSurf(gl3::GlDrawable& target, const mfem::DenseMatrix &verts,
                          const mfem::Vector &vals,
                          const int *ind, const mfem::Array<double> &levels,
