@@ -11,6 +11,10 @@
 
 Version 4.5.1 (development)
 ===========================
+- Added a 'cutting_plane' script command to set the cutting plane orientation
+  (phi, theta in degrees), translation, kind, and algorithm in a single
+  command: 'cutting_plane <phi> <theta> <translation> [<kind> [<alg>]]'.
+
 - Added an optional point line overlay (useful e.g. for reference curves), which
   can be toggled with 'Ctrl+l'. Points can be loaded from a file with the '-pts'
   option, sent via socket with the 'pointline' command, or specified in a GLVis
