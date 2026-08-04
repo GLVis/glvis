@@ -20,6 +20,8 @@
 #include <array>
 #include <algorithm>
 #include <thread>
+#include <cmath>
+#include <cctype>
 
 using namespace std;
 using namespace mfem;
@@ -61,7 +63,9 @@ enum class Command
    Scale,
    Translate,
    PlotCaption,
+   PointLine,
    Headless,
+   CuttingPlane,
    //----------
    Max
 };
@@ -125,7 +129,9 @@ ScriptCommands::ScriptCommands()
    (*this)[Command::Scale]                = {"scale", "<scale>", "Set the scaling factor."};
    (*this)[Command::Translate]            = {"translate", "<x> <y> <z>", "Set the translation coordinates."};
    (*this)[Command::PlotCaption]          = {"plot_caption", "'<caption>'", "Set the plot caption."};
+   (*this)[Command::PointLine]            = {"pointline", "<num_points> <x y z>...", "Set point line overlay coordinates."};
    (*this)[Command::Headless]             = {"headless", "", "Change the session to headless."};
+   (*this)[Command::CuttingPlane]         = {"cutting_plane", "<phi> <theta> <translation> [<kind> [<alg>]]", "Set the cutting plane orientation (degrees), translation, kind (default: 1), and algorithm."};
 }
 
 int ScriptController::ScriptReadSolution(istream &scr, DataState &state)
@@ -843,9 +849,63 @@ bool ScriptController::ExecuteScriptCommand()
             MyExpose();
          }
          break;
+         case Command::PointLine:
+         {
+            int num_points = ReadPointLine(scr, win.data_state.point_coords, cerr);
+
+            win.vs->SetPointLineVisible(true);
+            win.vs->PreparePointLine();
+            MyExpose();
+
+            cout << "Script: pointline: " << num_points << " points" << endl;
+         }
+         break;
          case Command::Headless:
             cout << "The session cannot become headless after initialization" << endl;
             break;
+         case Command::CuttingPlane:
+         {
+            double phi_deg, theta_deg, translation;
+            scr >> phi_deg >> theta_deg >> translation;
+
+            int kind = 1, algo = -1;
+            scr >> ws;
+            int ch = scr.peek();
+            if (isdigit(ch) || ch == '-')
+            {
+               scr >> kind;
+               scr >> ws;
+               ch = scr.peek();
+               if (isdigit(ch) || ch == '-')
+               {
+                  scr >> algo;
+               }
+            }
+
+            if (kind < -1 || kind > 2)
+            {
+               cerr << "Script: cutting_plane: invalid kind " << kind
+                    << " (expected -1..2)" << endl;
+               kind = 1;
+            }
+            if (algo < -1 || algo > 1)
+            {
+               cerr << "Script: cutting_plane: invalid alg " << algo
+                    << " (expected -1 (keep current), 0, or 1)" << endl;
+               algo = -1;
+            }
+
+            cout << "Script: cutting_plane: " << phi_deg << ' ' << theta_deg
+                 << ' ' << translation << ' ' << kind;
+            if (algo != -1) { cout << ' ' << algo; }
+            cout << endl;
+
+            win.vs->SetCuttingPlane(phi_deg * M_PI / 180.0,
+                                    theta_deg * M_PI / 180.0,
+                                    translation, kind, algo);
+            MyExpose();
+         }
+         break;
          case Command::Max: //dummy
             break;
       }

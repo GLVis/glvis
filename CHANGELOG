@@ -21,6 +21,21 @@ Version 4.5.1 (development)
   MSAA with fragment shader techniques. The line rendering format switches
   automatically when toggling MSAA with the 'A' key.
 
+- Added a 'cutting_plane' script command to set the cutting plane orientation
+  (phi, theta in degrees), translation, kind, and algorithm in a single
+  command: 'cutting_plane <phi> <theta> <translation> [<kind> [<alg>]]'.
+
+- Added an optional point line overlay (useful e.g. for reference curves), which
+  can be toggled with 'Ctrl+l'. Points can be loaded from a file with the '-pts'
+  option, sent via socket with the 'pointline' command, or specified in a GLVis
+  script. The overlay appears as a red line connecting the given points. The
+  points line format is: number of points, followed by x y z coordinates.
+
+- Added stream options to configure parameters for loading data. The new
+  commands are 'fix_orientations', 'save_coloring', and 'keep_attributes'.
+  These commands must be sent before the 'solution' command to take effect.
+  They can only be issued after parallel streams have been initialized with
+  the 'parallel' command (if used).
 
 Version 4.5 released on Feb 6, 2026
 ===================================

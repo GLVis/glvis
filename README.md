@@ -146,6 +146,7 @@ Key commands
   GLVis will use `SDL` to take screenshots in `bmp` format, which it will then
   convert to `png` if ImageMagick's `convert` tool is available.
 - <kbd>G</kbd> – 3D scene export to [glTF format](https://www.khronos.org/gltf)
+- <kbd>Ctrl</kbd> + <kbd>l</kbd> – Toggle point line (see `-pts` option)
 - <kbd>Ctrl</kbd> + <kbd>p</kbd> – Print to a PDF file using `gl2ps`. Other
   vector formats (SVG, EPS) are also possible, but keep in mind that the
   printing takes a while and the generated files are big.

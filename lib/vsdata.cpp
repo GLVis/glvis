@@ -609,10 +609,10 @@ void VisualizationSceneScalarData::PrepareCaption()
    GetFont()->getObjectSize(caption, caption_w, caption_h);
 }
 
-static thread_local VisualizationSceneScalarData *vsdata;
+thread_local VisualizationSceneScalarData *VisualizationSceneScalarData::vsdata;
 static thread_local Window *window;
 
-void KeycPressed(GLenum state)
+void VisualizationSceneScalarData::KeycPressed(GLenum state)
 {
    if (state & KMOD_ALT)
    {
@@ -638,7 +638,7 @@ void KeycPressed(GLenum state)
    }
 }
 
-void KeyCPressed()
+void VisualizationSceneScalarData::KeyCPressed()
 {
    cout << "Enter new caption: " << flush;
    std::getline(cin, window->plot_caption);
@@ -646,19 +646,19 @@ void KeyCPressed()
    SendExposeEvent();
 }
 
-void KeySPressed()
+void VisualizationSceneScalarData::KeySPressed()
 {
    vsdata -> ToggleScaling();
    SendExposeEvent();
 }
 
-void KeyaPressed()
+void VisualizationSceneScalarData::KeyaPressed()
 {
    vsdata -> ToggleDrawAxes();
    SendExposeEvent();
 }
 
-void Key_Mod_a_Pressed(GLenum state)
+void VisualizationSceneScalarData::Key_Mod_a_Pressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
@@ -695,47 +695,54 @@ void Key_Mod_a_Pressed(GLenum state)
    }
 }
 
-void KeyHPressed()
+void VisualizationSceneScalarData::KeyHPressed()
 {
    cout << vsdata->GetHelpString() << flush;
 }
 
-void KeylPressed()
+void VisualizationSceneScalarData::KeylPressed(GLenum state)
 {
-   vsdata -> ToggleLight();
+   if (state & KMOD_CTRL)
+   {
+      vsdata->TogglePointLine();
+   }
+   else
+   {
+      vsdata -> ToggleLight();
+   }
    SendExposeEvent();
 }
 
-void KeyLPressed()
+void VisualizationSceneScalarData::KeyLPressed()
 {
    vsdata->ToggleLogscale(true);
    SendExposeEvent();
 }
 
-void KeyrPressed()
+void VisualizationSceneScalarData::KeyrPressed()
 {
-   window->vs -> spinning = 0;
+   vsdata -> spinning = 0;
    RemoveIdleFunc(MainLoop);
    vsdata -> CenterObject();
 
-   window->vs -> ViewAngle = 45.0;
-   window->vs -> ViewScale = 1.0;
-   window->vs -> ViewCenterX = 0.0;
-   window->vs -> ViewCenterY = 0.0;
-   window->vs->cam.Reset();
+   vsdata -> ViewAngle = 45.0;
+   vsdata -> ViewScale = 1.0;
+   vsdata -> ViewCenterX = 0.0;
+   vsdata -> ViewCenterY = 0.0;
+   vsdata->cam.Reset();
    vsdata -> key_r_state = 0;
    SendExposeEvent();
 }
 
-void KeyRPressed()
+void VisualizationSceneScalarData::KeyRPressed()
 {
-   window->vs->spinning = 0;
+   vsdata->spinning = 0;
    RemoveIdleFunc(MainLoop);
    vsdata->Toggle2DView();
    SendExposeEvent();
 }
 
-void KeypPressed(GLenum state)
+void VisualizationSceneScalarData::KeypPressed(GLenum state)
 {
    if (state & KMOD_CTRL)
    {
@@ -743,18 +750,18 @@ void KeypPressed(GLenum state)
    }
    else
    {
-      window->vs->palette.NextIndex();
+      vsdata->palette.NextIndex();
       SendExposeEvent();
    }
 }
 
-void KeyPPressed()
+void VisualizationSceneScalarData::KeyPPressed()
 {
-   window->vs->palette.PrevIndex();
+   vsdata->palette.PrevIndex();
    SendExposeEvent();
 }
 
-static void KeyF5Pressed()
+void VisualizationSceneScalarData::KeyF5Pressed()
 {
    int n;
    double min, max;
@@ -772,7 +779,7 @@ static void KeyF5Pressed()
    SendExposeEvent();
 }
 
-void KeyF6Pressed()
+void VisualizationSceneScalarData::KeyF6Pressed()
 {
    int RepeatPaletteTimes = vsdata->palette.GetRepeatTimes();
    cout << "Palette is repeated " << RepeatPaletteTimes << " times.\n"
@@ -808,7 +815,7 @@ void KeyF6Pressed()
    SendExposeEvent();
 }
 
-void KeyF7Pressed(GLenum state)
+void VisualizationSceneScalarData::KeyF7Pressed(GLenum state)
 {
    if (state & KMOD_SHIFT)
    {
@@ -851,7 +858,7 @@ void KeyF7Pressed(GLenum state)
    }
 }
 
-void KeyBackslashPressed()
+void VisualizationSceneScalarData::KeyBackslashPressed()
 {
    float x, y, z, w;
 
@@ -871,7 +878,7 @@ void KeyBackslashPressed()
    SendExposeEvent();
 }
 
-void KeyTPressed()
+void VisualizationSceneScalarData::KeyTPressed()
 {
    int ml;
 
@@ -881,7 +888,7 @@ void KeyTPressed()
    cout << "New material/light : " << ml << endl;
 }
 
-void KeygPressed()
+void VisualizationSceneScalarData::KeygPressed()
 {
    vsdata->ToggleBackground();
    vsdata->PrepareAxes();
@@ -889,17 +896,17 @@ void KeygPressed()
    SendExposeEvent();
 }
 
-void KeyGPressed()
+void VisualizationSceneScalarData::KeyGPressed()
 {
    vsdata->glTF_Export();
 }
 
-void KeyF1Pressed()
+void VisualizationSceneScalarData::KeyF1Pressed()
 {
    vsdata->PrintState();
 }
 
-void KeyF2Pressed()
+void VisualizationSceneScalarData::KeyF2Pressed()
 {
    vsdata -> EventUpdateColors();
    vsdata -> PrepareLines();
@@ -907,29 +914,29 @@ void KeyF2Pressed()
    SendExposeEvent();
 }
 
-void KeykPressed()
+void VisualizationSceneScalarData::KeykPressed()
 {
-   window->vs->matAlpha -= 0.05;
-   if (window->vs->matAlpha < 0.0)
+   vsdata->matAlpha -= 0.05;
+   if (vsdata->matAlpha < 0.0)
    {
-      window->vs->matAlpha = 0.0;
+      vsdata->matAlpha = 0.0;
    }
-   window->vs->GenerateAlphaTexture();
+   vsdata->GenerateAlphaTexture();
    SendExposeEvent();
 }
 
-void KeyKPressed()
+void VisualizationSceneScalarData::KeyKPressed()
 {
-   window->vs->matAlpha += 0.05;
-   if (window->vs->matAlpha > 1.0)
+   vsdata->matAlpha += 0.05;
+   if (vsdata->matAlpha > 1.0)
    {
-      window->vs->matAlpha = 1.0;
+      vsdata->matAlpha = 1.0;
    }
-   window->vs->GenerateAlphaTexture();
+   vsdata->GenerateAlphaTexture();
    SendExposeEvent();
 }
 
-void KeyAPressed()
+void VisualizationSceneScalarData::KeyAPressed()
 {
    bool curr_aa = window->wnd->getRenderer().getAntialiasing();
    window->wnd->getRenderer().setAntialiasing(!curr_aa);
@@ -948,41 +955,41 @@ void KeyAPressed()
    SendExposeEvent();
 }
 
-void KeyCommaPressed()
+void VisualizationSceneScalarData::KeyCommaPressed()
 {
-   window->vs->matAlphaCenter -= 0.25;
+   vsdata->matAlphaCenter -= 0.25;
    // vsdata -> EventUpdateColors();
-   window->vs->GenerateAlphaTexture();
+   vsdata->GenerateAlphaTexture();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
-   cout << "MatAlphaCenter = " << window->vs->matAlphaCenter << endl;
+   cout << "MatAlphaCenter = " << vsdata->matAlphaCenter << endl;
 #endif
 }
 
-void KeyLessPressed()
+void VisualizationSceneScalarData::KeyLessPressed()
 {
-   window->vs->matAlphaCenter += 0.25;
+   vsdata->matAlphaCenter += 0.25;
    // vsdata -> EventUpdateColors();
-   window->vs->GenerateAlphaTexture();
+   vsdata->GenerateAlphaTexture();
    SendExposeEvent();
 #ifdef GLVIS_DEBUG
-   cout << "MatAlphaCenter = " << window->vs->matAlphaCenter << endl;
+   cout << "MatAlphaCenter = " << vsdata->matAlphaCenter << endl;
 #endif
 }
 
-void KeyGravePressed()
+void VisualizationSceneScalarData::KeyGravePressed()
 {
    vsdata->ToggleRuler();
    SendExposeEvent();
 }
 
-void KeyTildePressed()
+void VisualizationSceneScalarData::KeyTildePressed()
 {
    vsdata->RulerPosition();
    SendExposeEvent();
 }
 
-void KeyToggleTexture()
+void VisualizationSceneScalarData::KeyToggleTexture()
 {
    vsdata->ToggleTexture();
    SendExposeEvent();
@@ -1009,6 +1016,7 @@ void VisualizationSceneScalarData::ToggleLogscale(bool print)
       SetLevelLines(minv, maxv, nl);
       UpdateLevelLines();
       EventUpdateColors();
+      PreparePointLine();
       if (print)
       {
          PrintLogscale(false);
@@ -1025,6 +1033,18 @@ void VisualizationSceneScalarData::ToggleRuler()
 {
    ruler_on = (ruler_on + 1) % 3;
    PrepareRuler();
+}
+
+void VisualizationSceneScalarData::TogglePointLine()
+{
+   if (win.data_state.point_coords.empty())
+   {
+      cout << "No points loaded. Use -pts <file> to load coordinates." << endl;
+      return;
+   }
+   show_point_line = !show_point_line;
+   cout << "Point line: " << (show_point_line ? "ON" : "OFF") << endl;
+   PreparePointLine();
 }
 
 void VisualizationSceneScalarData::RulerPosition()
@@ -1166,7 +1186,7 @@ void VisualizationSceneScalarData::Toggle2DView()
          break;
    }
 
-   // if (window->vs -> view != 2) // make 'R' work the same in 2D and 3D
+   // if (vsdata -> view != 2) // make 'R' work the same in 2D and 3D
    key_r_state = (key_r_state+1)%6;
 
    rotmat = newrot.mtx;
@@ -1676,6 +1696,56 @@ void VisualizationSceneScalarData::PrepareAxes()
    updated_bufs.emplace_back(&coord_cross_buf);
 }
 
+void VisualizationSceneScalarData::PreparePointLine()
+{
+   point_line_buf.clear();
+   if (!show_point_line || win.data_state.point_coords.empty())
+   {
+      return;
+   }
+
+   const auto& points = win.data_state.point_coords;
+   // in 2D, elevate the point line above the surface using the value range
+   // in 3D, use the z-coordinates from the points file.
+   const bool is_2d = (mesh->SpaceDimension() == 2);
+   float z_offset = 0.0f;
+   if (is_2d)
+   {
+      const auto range = maxv - minv;
+      const float dz = (range > 0.0) ? (0.02 * range)
+                       : (0.02 * std::max(1.0, std::abs(maxv)));
+      z_offset = (float)maxv + dz;
+   }
+
+   std::vector<gl3::Vertex> line_vertices;
+   line_vertices.reserve((points.size()-1)*2);
+   for (size_t i = 0; i + 1 < points.size(); i++)
+   {
+      float x0 = points[i][0];
+      float y0 = points[i][1];
+      float x1 = points[i+1][0];
+      float y1 = points[i+1][1];
+      float z = is_2d ? z_offset : points[i][2];
+      float z_next = is_2d ? z_offset : points[i+1][2];
+      line_vertices.push_back({x0, y0, z});
+      line_vertices.push_back({x1, y1, z_next});
+   }
+   point_line_buf.addLines<gl3::Vertex>(line_vertices);
+   updated_bufs.emplace_back(&point_line_buf);
+}
+
+void VisualizationSceneScalarData::AddPointLineToScene(
+   gl3::SceneInfo& scene, const gl3::RenderParams& base_params)
+{
+   if (!show_point_line || win.data_state.point_coords.empty()) { return; }
+   gl3::RenderParams params = base_params; // use local parameters
+   params.static_color = {1.0f, 0.0f, 0.0f, 1.0f}; // point line is red
+   params.use_clip_plane = false;
+   params.num_pt_lights = 0;
+   params.contains_translucent = false;
+   scene.queue.emplace_back(params, &point_line_buf);
+}
+
 void VisualizationSceneScalarData::DrawPolygonLevelLines(
    gl3::GlBuilder& builder, double * point, int n, Array<double> &mesh_level,
    bool log_vals)
@@ -1907,18 +1977,15 @@ void VisualizationSceneScalarData::ComputeElemAttrCenter()
 }
 
 
-Plane::Plane(double A,double B,double C,double D)
+Plane::Plane(const double (&eqn_)[4], const VisualizationScene::Box &bb)
 {
-   eqn[0] = A;
-   eqn[1] = B;
-   eqn[2] = C;
-   eqn[3] = D;
+   for (int i = 0; i < 4; i++) { eqn[i] = eqn_[i]; }
 
    CartesianToSpherical();
 
-   double x[2] = {vsdata -> bb.x[0], vsdata -> bb.x[1]};
-   double y[2] = {vsdata -> bb.y[0], vsdata -> bb.y[1]};
-   double z[2] = {vsdata -> bb.z[0], vsdata -> bb.z[1]};
+   double x[2] = {bb.x[0], bb.x[1]};
+   double y[2] = {bb.y[0], bb.y[1]};
+   double z[2] = {bb.z[0], bb.z[1]};
    bbox_diam = sqrt ( (x[1]-x[0])*(x[1]-x[0]) +
                       (y[1]-y[0])*(y[1]-y[0]) +
                       (z[1]-z[0])*(z[1]-z[0]) );
@@ -1926,6 +1993,7 @@ Plane::Plane(double A,double B,double C,double D)
    x0 = (x[0]+x[1])/2.0;
    y0 = (y[0]+y[1])/2.0;
    z0 = (z[0]+z[1])/2.0;
+   cx = x0; cy = y0; cz = z0;
 
    phi_step = M_PI / 36;
    theta_step = M_PI / 36;
@@ -1989,4 +2057,20 @@ void Plane::DecreaseDistance()
    z0 += eqn[2] * k;
    eqn[3] -= rho_step;
    CartesianToSpherical();
+}
+
+void Plane::SetPlane(double phi_, double theta_, double translation)
+{
+   phi = phi_;
+   theta = theta_;
+   rho = 1.0;
+
+   double nx = cos(phi) * cos(theta);
+   double ny = cos(phi) * sin(theta);
+   double nz = sin(phi);
+   x0 = cx + translation * nx;
+   y0 = cy + translation * ny;
+   z0 = cz + translation * nz;
+
+   SphericalToCartesian();
 }

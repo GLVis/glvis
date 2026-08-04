@@ -137,18 +137,12 @@ int FileReader::ReadParallel(int np, FileType ft, const char *mesh_file,
 
 bool FileReader::CheckStreamIsComplex(std::istream &solin, bool parallel)
 {
-   string buff;
-   auto pos = solin.tellg();
-   solin >> ws;
-   getline(solin, buff);
-   solin.seekg(pos);
-   if (!buff.empty() && *buff.rbegin() == '\r')
-   {
-      buff.resize(buff.size()-1);
-   }
    const char *header = (parallel)?("ParComplexGridFunction"):
                         ("ComplexGridFunction");
-   return (buff == header);
+   solin >> ws;
+   // Returning characters to ifgzstream is not reliable. The first character
+   // is enough to distinguish complex headers from FiniteElementSpace.
+   return (solin.peek() == header[0]);
 }
 
 int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
