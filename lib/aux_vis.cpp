@@ -1109,7 +1109,20 @@ int Screenshot(const char *fname, bool convert)
 
    int w, h;
    wnd->getGLDrawSize(w, h);
-   if (wnd->isSwapPending())
+   // Headless EGL/CGL windows render into an FBO.
+   // GL_BACK/GL_FRONT are not valid read buffers there and leave a
+   // sticky GL error that later asserts in EglWindow::getGLDrawSize.
+   GLint bound_fbo = 0;
+   glGetIntegerv(GL_FRAMEBUFFER_BINDING, &bound_fbo);
+   if (bound_fbo != 0)
+   {
+#ifdef GLVIS_DEBUG
+      cerr << "Screenshot: reading image data from color attachment 0..."
+           << endl;
+#endif
+      glReadBuffer(GL_COLOR_ATTACHMENT0);
+   }
+   else if (wnd->isSwapPending())
    {
 #ifdef GLVIS_DEBUG
       cerr << "Screenshot: reading image data from back buffer..." << endl;
