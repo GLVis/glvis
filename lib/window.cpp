@@ -229,6 +229,12 @@ bool Window::SetNewMeshAndSolution(DataState new_state)
          (new_state.grid_f->VectorDim() == data_state.grid_f->VectorDim()))
         ||(!new_state.grid_f && !data_state.grid_f)))
    {
+      // retain the point line overlay
+      if (new_state.point_coords.empty() && !data_state.point_coords.empty())
+      {
+         new_state.point_coords = data_state.point_coords;
+      }
+
       ResetMeshAndSolution(new_state);
 
       data_state = std::move(new_state);
