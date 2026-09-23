@@ -152,7 +152,7 @@ void MeshRenderer::render(const RenderQueue& queue)
       {
          std::cerr << "Unable to create multisampled renderbuffer." << std::flush;
          glDeleteFramebuffers(1, &fbo);
-         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+         glBindFramebuffer(GL_FRAMEBUFFER, target_fbo);
       }
       else
       {
@@ -271,7 +271,7 @@ void MeshRenderer::render(const RenderQueue& queue)
       if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
       {
          std::cerr << "Unable to create resolve renderbuffer." << std::endl;
-         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+         glBindFramebuffer(GL_FRAMEBUFFER, target_fbo);
       }
 
       // bind our draw framebuffer and blit the multisampled image
@@ -285,13 +285,14 @@ void MeshRenderer::render(const RenderQueue& queue)
 #ifndef __EMSCRIPTEN__
       glDisable(GL_MULTISAMPLE);
 #endif
-      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target_fbo);
       glBindFramebuffer(GL_READ_FRAMEBUFFER, resolveFb);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       glBlitFramebuffer(0, 0, width, height,
                         0, 0, width, height,
                         GL_COLOR_BUFFER_BIT,
                         GL_LINEAR);
+      glBindFramebuffer(GL_FRAMEBUFFER, target_fbo);
       device->disableBlend();
    }
 }

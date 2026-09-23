@@ -199,6 +199,8 @@ class MeshRenderer
    PaletteState* palette;
 
    bool feat_use_fbo_antialias;
+   // Framebuffer that render() draws into; 0 is the window framebuffer.
+   GLuint target_fbo{0};
    void init();
 public:
    MeshRenderer()
@@ -229,6 +231,10 @@ public:
    void setAlphaTexture(GLuint tex_h) { alpha_tex = tex_h; }
    // Sets the texture handle of the font atlas.
    void setFontTexture(GLuint tex_h) { font_tex = tex_h; }
+
+   /// Sets the framebuffer render() draws into (0 = window framebuffer).
+   void setTargetFramebuffer(GLuint fbo) { target_fbo = fbo; }
+   GLuint getTargetFramebuffer() const { return target_fbo; }
 
    void setAntialiasing(bool aa_status);
    bool getAntialiasing() { return msaa_enable; }

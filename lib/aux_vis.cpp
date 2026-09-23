@@ -1070,6 +1070,77 @@ int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi, bool with_alpha,
 }
 #endif // GLVIS_USE_LIBPNG
 
+#ifndef __EMSCRIPTEN__
+namespace
+{
+
+/** Off-screen render target for screenshots. Pixels of a window framebuffer
+    that are not visible fail the pixel ownership test, so glReadPixels returns
+    undefined (in practice black) data whenever the window is unmapped or
+    obscured - e.g. while another virtual desktop is shown. Renderbuffers
+    attached to an FBO belong to the GL context, not to the window system, and
+    stay readable in that situation. */
+class OffscreenTarget
+{
+   GLuint fbo{0}, color_buf{0}, depth_buf{0};
+   GLint prev_fbo{0};
+   bool active{false};
+
+   void destroy()
+   {
+      if (fbo) { glDeleteFramebuffers(1, &fbo); fbo = 0; }
+      if (color_buf) { glDeleteRenderbuffers(1, &color_buf); color_buf = 0; }
+      if (depth_buf) { glDeleteRenderbuffers(1, &depth_buf); depth_buf = 0; }
+   }
+
+public:
+   /// Binds the buffer for reading; rendering may have changed the binding.
+   void bindForReading() const { glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo); }
+
+   bool activate(int w, int h)
+   {
+      if (!GLEW_VERSION_3_0 && !GLEW_ARB_framebuffer_object) { return false; }
+
+      glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prev_fbo);
+      glGenFramebuffers(1, &fbo);
+      glGenRenderbuffers(1, &color_buf);
+      glGenRenderbuffers(1, &depth_buf);
+      glBindRenderbuffer(GL_RENDERBUFFER, color_buf);
+      glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, w, h);
+      glBindRenderbuffer(GL_RENDERBUFFER, depth_buf);
+      glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
+      glBindRenderbuffer(GL_RENDERBUFFER, 0);
+      glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                GL_RENDERBUFFER, color_buf);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                GL_RENDERBUFFER, depth_buf);
+      if (glGetError() != GL_NO_ERROR ||
+          glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+      {
+         glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo);
+         destroy();
+         return false;
+      }
+      wnd->getRenderer().setTargetFramebuffer(fbo);
+      active = true;
+      return true;
+   }
+
+   ~OffscreenTarget()
+   {
+      if (active)
+      {
+         wnd->getRenderer().setTargetFramebuffer(prev_fbo);
+         glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo);
+      }
+      destroy();
+   }
+};
+
+} // anonymous namespace
+#endif // __EMSCRIPTEN__
+
 int Screenshot(const char *fname, bool convert)
 {
 #ifdef GLVIS_DEBUG
@@ -1106,7 +1177,19 @@ int Screenshot(const char *fname, bool convert)
 
    int w, h;
    wnd->getGLDrawSize(w, h);
-   if (wnd->isSwapPending())
+
+   // Render the scene once more into an off-screen buffer and grab the image
+   // from there: the window framebuffer is only guaranteed to hold valid
+   // pixels while the window is actually visible.
+   OffscreenTarget offscreen;
+   if (offscreen.activate(w, h))
+   {
+      MyExpose(w, h);
+      glFinish();
+      offscreen.bindForReading();
+      glReadBuffer(GL_COLOR_ATTACHMENT0);
+   }
+   else if (wnd->isSwapPending())
    {
 #ifdef GLVIS_DEBUG
       cerr << "Screenshot: reading image data from back buffer..." << endl;
