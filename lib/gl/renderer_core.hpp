@@ -31,6 +31,9 @@ public:
       ATTR_NORMAL,
       ATTR_COLOR,
       ATTR_TEXCOORD0,
+      ATTR_LINE_ORIENT,
+      ATTR_LINE_PREV,
+      ATTR_LINE_NEXT,
       NUM_ATTRS
    };
 
@@ -40,6 +43,9 @@ public:
       float color[4];
       float clipCoord;
    };
+
+   struct LineVertex;
+   struct LineColorVertex;
 
 private:
    ShaderProgram default_prgm;

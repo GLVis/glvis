@@ -11,6 +11,16 @@
 
 Version 4.5.1 (development)
 ===========================
+- Added configurable line width for mesh edges and element boundaries when MSAA
+  is enabled. Line width can be adjusted at runtime using ';' (decrease) and '''
+  (increase) keys in 0.25 pixel increments (minimum 0.25, no maximum). Default
+  line width is platform-dependent (1.5 pixels on macOS, 1.4 pixels elsewhere).
+
+- Without antialiasing, the original GL_LINES rendering is still used. With
+  antialiasing, lines are rendered using shader-expanded triangles and hardware
+  MSAA with fragment shader techniques. The line rendering format switches
+  automatically when toggling MSAA with the 'A' key.
+
 - Added a 'cutting_plane' script command to set the cutting plane orientation
   (phi, theta in degrees), translation, kind, and algorithm in a single
   command: 'cutting_plane <phi> <theta> <translation> [<kind> [<alg>]]'.
