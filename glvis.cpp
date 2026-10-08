@@ -66,8 +66,6 @@ enum InputOptions
 };
 int input = INPUT_SERVER_MODE;
 
-thread_local GeometryRefiner GLVisGeometryRefiner;
-
 void PrintSampleUsage(ostream &out);
 
 class Session
@@ -77,19 +75,6 @@ class Session
    std::thread handler;
 
 public:
-   Session(bool fix_elem_orient,
-           bool save_coloring,
-           bool keep_attr,
-           string plot_caption,
-           bool headless)
-   {
-      win.data_state.fix_elem_orient = fix_elem_orient;
-      win.data_state.save_coloring = save_coloring;
-      win.data_state.keep_attr = keep_attr;
-      win.plot_caption = plot_caption;
-      win.headless = headless;
-   }
-
    Session(Window other_win)
       : win(std::move(other_win))
    { }
@@ -159,10 +144,7 @@ public:
 
 };
 
-void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
-                 bool save_coloring, bool keep_attr, string plot_caption,
-                 bool secure, std::vector<std::array<double,3>> point_coords,
-                 bool headless = false)
+void GLVisServer(int portnum, bool save_stream, bool secure, Window win)
 {
    std::vector<Session> current_sessions;
    string data_type;
@@ -314,9 +296,7 @@ void GLVisServer(int portnum, bool save_stream, bool fix_elem_orient,
          while (1);
       }
 
-      Session new_session(fix_elem_orient, save_coloring, keep_attr,
-                          plot_caption, headless);
-      if (!point_coords.empty()) { new_session.GetState().point_coords = point_coords; }
+      Session new_session(win.CloneEmpty());
 
       constexpr int tmp_filename_size = 50;
       char tmp_file[tmp_filename_size];
@@ -398,7 +378,6 @@ int main (int argc, char *argv[])
    int         multisample   = GetMultisample();
    double      line_width    = GetLineWidth();
    double      ms_line_width = GetLineWidthMS();
-   int         geom_ref_type = Quadrature1D::ClosedUniform;
    bool        legacy_gl_ctx = false;
    bool        enable_hidpi  = true;
 
@@ -457,7 +436,7 @@ int main (int argc, char *argv[])
                   "-ap", "--processor-attributes",
                   "When opening a parallel mesh, use the real mesh attributes"
                   " or replace them with the processor rank.");
-   args.AddOption(&geom_ref_type, "-grt", "--geometry-refiner-type",
+   args.AddOption(&win.data_state.geom_ref_type, "-grt", "--geometry-refiner-type",
                   "Set of points to use when refining geometry:"
                   " 3 = uniform, 1 = Gauss-Lobatto, (see mfem::Quadrature1D).");
    args.AddOption(&win.data_state.save_coloring, "-sc", "--save-coloring",
@@ -622,8 +601,6 @@ int main (int argc, char *argv[])
       BasePalettes.SetDefault(palette_name);
    }
 
-   GLVisGeometryRefiner.SetType(geom_ref_type);
-
    // Load points file if specified (Ctrl+l to toggle)
    if (points_file != string_none)
    {
@@ -712,21 +689,19 @@ int main (int argc, char *argv[])
    // server mode, read the mesh and the solution from a socket
    if (input == INPUT_SERVER_MODE)
    {
+      // backup the headless flag as the window is moved
+      const bool headless = win.headless;
+
       // Make sure the singleton object returned by GetMainThread() is
       // initialized from the main thread.
-      GetMainThread(win.headless);
+      GetMainThread(headless);
 
       // Run server in new thread
       std::thread serverThread{GLVisServer, portnum, save_stream,
-                               win.data_state.fix_elem_orient,
-                               win.data_state.save_coloring,
-                               win.data_state.keep_attr,
-                               win.plot_caption, secure,
-                               std::move(win.data_state.point_coords),
-                               win.headless};
+                               secure, std::move(win)};
 
       // Start message loop in main thread
-      MainThreadLoop(win.headless, persistent);
+      MainThreadLoop(headless, persistent);
       serverThread.detach();
    }
    else  // input != 1, non-server mode

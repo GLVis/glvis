@@ -1377,7 +1377,9 @@ void VisualizationSceneScalarData::SetAutoscale(Autoscale _autoscale,
 }
 
 VisualizationSceneScalarData::VisualizationSceneScalarData(
-   Window &win_, bool init) : VisualizationScene(*win_.wnd), win(win_)
+   Window &win_, bool init)
+   : VisualizationScene(*win_.wnd), win(win_),
+     geom_refiner(win.data_state.geom_ref_type)
 {
    mesh = win.data_state.mesh.get();
    mesh_coarse = win.data_state.mesh_quad.get();

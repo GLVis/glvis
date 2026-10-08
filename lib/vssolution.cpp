@@ -19,7 +19,6 @@ using namespace std;
 using namespace mfem;
 
 thread_local VisualizationSceneSolution *VisualizationSceneSolution::vssol;
-extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 #ifdef GLVIS_ISFINITE
 /* This test for INFs or NaNs is the same as the one used in hypre's PCG and
@@ -1135,8 +1134,8 @@ void VisualizationSceneSolution::FindNewBox(double rx[], double ry[],
       rx[1] = ry[1] = rval[1] = -rx[0];
       for (i = 0; i < ne; i++)
       {
-         RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                            TimesToRefine, EdgeRefineFactor);
+         RefG = geom_refiner.Refine(mesh->GetElementBaseGeometry(i),
+                                    TimesToRefine, EdgeRefineFactor);
          GetRefinedValues(i, RefG->RefPts, values, pointmat);
          for (j = 0; j < values.Size(); j++)
          {
@@ -1396,8 +1395,8 @@ void VisualizationSceneSolution::PrepareFlat2()
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
 
-      RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                         TimesToRefine, EdgeRefineFactor);
+      RefG = geom_refiner.Refine(mesh->GetElementBaseGeometry(i),
+                                 TimesToRefine, EdgeRefineFactor);
       j = GetRefinedValuesAndNormals(i, RefG->RefPts, values, pointmat,
                                      normals);
       Array<int> &RG = RefG->RefGeoms;
@@ -1733,8 +1732,8 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
    gl3::GlBuilder build = lcurve_buf.createBuilder();
    for (i = 0; i < ne; i++)
    {
-      RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                         TimesToRefine, EdgeRefineFactor);
+      RefG = geom_refiner.Refine(mesh->GetElementBaseGeometry(i),
+                                 TimesToRefine, EdgeRefineFactor);
       GetRefinedValues (i, RefG->RefPts, values, pointmat);
       Array<int> &RG = RefG->RefGeoms;
       int sides = mesh->GetElement(i)->GetNVertices();
@@ -2092,7 +2091,7 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
             std::cerr  << "Only TRIANGLE and SQUARE geometries are supported." << std::endl;
             return;
          }
-         const auto *RefG = GLVisGeometryRefiner.Refine(geom, 2, 2);
+         const auto *RefG = geom_refiner.Refine(geom, 2, 2);
          GetRefinedValues(e, RefG->RefPts, vals, p);
          const int ij3[3] = { 1, 4, 3 }, ie3[3] = { 0, 1, 2 };
          const int ij4[4] = { 1, 3, 5, 7 }, ie4[4] = { 0, 3, 1, 2 };
@@ -2337,8 +2336,8 @@ void VisualizationSceneSolution::PrepareLines2()
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
 
-      RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                         TimesToRefine, EdgeRefineFactor);
+      RefG = geom_refiner.Refine(mesh->GetElementBaseGeometry(i),
+                                 TimesToRefine, EdgeRefineFactor);
       GetRefinedValues (i, RefG->RefPts, values, pointmat);
       Array<int> &RG = RefG->RefGeoms;
       int sides = mesh->GetElement(i)->GetNVertices();
@@ -2370,8 +2369,8 @@ void VisualizationSceneSolution::PrepareLines3()
    for (i = 0; i < ne; i++)
    {
       if (!el_attr_to_show[mesh->GetAttribute(i)-1]) { continue; }
-      RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                         TimesToRefine, EdgeRefineFactor);
+      RefG = geom_refiner.Refine(mesh->GetElementBaseGeometry(i),
+                                 TimesToRefine, EdgeRefineFactor);
       GetRefinedValues (i, RefG->RefPts, values, pointmat);
       Array<int> &RE = RefG->RefEdges;
 
@@ -2485,8 +2484,8 @@ void VisualizationSceneSolution::PrepareBoundary()
       int en;
       FaceElementTransformations *T;
       RefinedGeometry *RefG =
-         GLVisGeometryRefiner.Refine(Geometry::SEGMENT, TimesToRefine,
-                                     EdgeRefineFactor);
+         geom_refiner.Refine(Geometry::SEGMENT, TimesToRefine,
+                             EdgeRefineFactor);
       IntegrationRule &ir = RefG->RefPts;
       IntegrationRule eir(ir.GetNPoints());
       Vector vals;
@@ -2606,8 +2605,8 @@ void VisualizationSceneSolution::PrepareCP()
 
       for (int i = 0; i < mesh->GetNE(); i++)
       {
-         RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                            TimesToRefine, EdgeRefineFactor);
+         RefG = geom_refiner.Refine(mesh->GetElementBaseGeometry(i),
+                                    TimesToRefine, EdgeRefineFactor);
          GetRefinedValues (i, RefG->RefPts, values, pointmat);
          Array<int> &RG = RefG->RefGeoms;
          int sides = mesh->GetElement(i)->GetNVertices();
