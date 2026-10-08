@@ -16,6 +16,7 @@
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 
+#include <cstdint>
 #include <string>
 #include <iostream>
 
