@@ -61,7 +61,8 @@ jobs:
       if: matrix.os == 'ubuntu-latest' && matrix.mpi == 'par'
       run: |
         sudo apt-get update
-        sudo apt-get install mpich libmpich-dev
+        sudo apt-get install openmpi-bin libopenmpi-dev
+        export OMPI_MCA_rmaps_base_oversubscribe=1
         export MAKE_CXX_FLAG="MPICXX=mpic++"
 
     # Keep the following section in case we need it again in the future,
