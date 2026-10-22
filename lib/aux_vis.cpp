@@ -431,6 +431,7 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
 
 void RunVisualization()
 {
+   if (!wnd) { return; }
    visualize = 1;
 #ifndef __EMSCRIPTEN__
    wnd->mainLoop();
@@ -442,12 +443,13 @@ void RunVisualization()
 
 void SendExposeEvent()
 {
-   if (disableSendExposeEvent) { return; }
+   if (!wnd || disableSendExposeEvent) { return; }
    wnd->signalExpose();
 }
 
 void MyReshape(GLsizei w, GLsizei h)
 {
+   if (!wnd || !locscene) { return; }
    wnd->getRenderer().setViewport(w, h);
 
    gl3::GlMatrix projmtx;
@@ -485,6 +487,7 @@ void MyReshape(GLsizei w, GLsizei h)
 
 void MyExpose(GLsizei w, GLsizei h)
 {
+   if (!wnd || !locscene) { return; }
    MyReshape (w, h);
    GLuint color_tex = locscene->palette.GetColorTexture();
    GLuint alpha_tex = locscene->palette.GetAlphaTexture();
@@ -500,6 +503,7 @@ void MyExpose(GLsizei w, GLsizei h)
 
 void MyExpose()
 {
+   if (!wnd || !locscene) { return; }
    int w, h;
    wnd->getGLDrawSize(w, h);
    MyExpose(w, h);
@@ -517,7 +521,7 @@ void InitIdleFuncs()
 {
    IdleFuncs.SetSize(0);
    LastIdleFunc = 0;
-   if (glvis_command)
+   if (glvis_command && wnd)
    {
       wnd->setOnIdle(MainIdleFunc);
    }
@@ -529,7 +533,7 @@ bool CommunicationIdleFunc()
    if (status < 0)
    {
       cout << "GLVisCommand signalled exit" << endl;
-      wnd->signalQuit();
+      if (wnd) { wnd->signalQuit(); }
    }
    else if (status == 1)
    {
@@ -571,6 +575,7 @@ bool MainIdleFunc()
 
 void AddIdleFunc(void (*Func)(void))
 {
+   if (!wnd) { return; }
    IdleFuncs.Union(Func);
    wnd->setOnIdle(MainIdleFunc);
 }
@@ -578,7 +583,7 @@ void AddIdleFunc(void (*Func)(void))
 void RemoveIdleFunc(void (*Func)(void))
 {
    IdleFuncs.DeleteFirst(Func);
-   if (IdleFuncs.Size() == 0 && glvis_command == nullptr)
+   if (IdleFuncs.Size() == 0 && !glvis_command && wnd)
    {
       wnd->setOnIdle(NULL);
    }
@@ -599,6 +604,7 @@ const double phase_step = 0.001;
 
 void CheckMainIdleFunc()
 {
+   if (!locscene) { return; }
    if (locscene->spinning || phase_anim)
    {
       AddIdleFunc(MainLoop);
@@ -611,6 +617,7 @@ void CheckMainIdleFunc()
 
 void MainLoop()
 {
+   if (!locscene) { return; }
    static int p = 1;
    if (locscene->spinning)
    {
@@ -672,6 +679,7 @@ inline void ComputeSphereAngles(int &newx, int &newy,
 
 void LeftButtonDown(GLWindow::MouseEventInfo *event)
 {
+   if (!locscene) { return; }
    locscene -> spinning = 0;
    CheckMainIdleFunc();
 
@@ -690,6 +698,7 @@ void LeftButtonDown(GLWindow::MouseEventInfo *event)
 
 void LeftButtonLoc(GLWindow::MouseEventInfo *event)
 {
+   if (!locscene) { return; }
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
    int sendexpose = 1;
@@ -748,6 +757,7 @@ void LeftButtonLoc(GLWindow::MouseEventInfo *event)
 
 void LeftButtonUp(GLWindow::MouseEventInfo *event)
 {
+   if (!locscene) { return; }
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
 
@@ -780,6 +790,7 @@ void MiddleButtonDown(GLWindow::MouseEventInfo *event)
 
 void MiddleButtonLoc(GLWindow::MouseEventInfo *event)
 {
+   if (!locscene) { return; }
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
 
@@ -857,6 +868,7 @@ void RightButtonDown(GLWindow::MouseEventInfo *event)
 
 void RightButtonLoc(GLWindow::MouseEventInfo *event)
 {
+   if (!locscene) { return; }
    GLint newx = event->mouse_x;
    GLint newy = event->mouse_y;
 
@@ -908,6 +920,7 @@ void RightButtonUp(GLWindow::MouseEventInfo*)
 
 void TouchPinch(SDL_MultiGestureEvent & e)
 {
+   if (!locscene) { return; }
    // Scale or Zoom?
    locscene->Zoom(exp(e.dDist*10));
    SendExposeEvent();
@@ -1072,6 +1085,7 @@ int SaveAsPNG(const char *fname, int w, int h, bool is_hidpi, bool with_alpha,
 
 int Screenshot(const char *fname, bool convert)
 {
+   if (!wnd) { return 1; }
 #ifdef GLVIS_DEBUG
    cout << "Screenshot: glFinish() ... " << flush;
 #endif
@@ -1221,6 +1235,7 @@ int Screenshot(const char *fname, bool convert)
 
 void KeyS()
 {
+   if (!locscene) { return; }
    static int p = 1;
 
    if (locscene -> spinning)
@@ -1294,6 +1309,7 @@ void PrintCaptureBuffer(gl3::CaptureBuffer& cbuf)
 
 void KeyCtrlP()
 {
+   if (!locscene) { return; }
 #ifdef __EMSCRIPTEN__
    cerr << "Printing in WebGL is not supported at this time." << endl;
 #else
@@ -1384,6 +1400,7 @@ void ThreadsRun()
 
 void CheckSpin()
 {
+   if (!locscene) { return; }
    if (fabs(xang) < 1.e-2)
    {
       xang = 0.;
@@ -1406,6 +1423,7 @@ void CheckPhaseAnim()
 
 void Key0Pressed(SDL_Keymod mod)
 {
+   if (!locscene) { return; }
    if (mod & KMOD_ALT)
    {
       if (!phase_anim)
@@ -1428,6 +1446,7 @@ void Key0Pressed(SDL_Keymod mod)
 
 void KeyDeletePressed(SDL_Keymod mod)
 {
+   if (!locscene) { return; }
    if (mod & KMOD_ALT)
    {
       if (phase_anim)
@@ -1460,6 +1479,7 @@ void KeyDeletePressed(SDL_Keymod mod)
 
 void KeyEnterPressed(SDL_Keymod mod)
 {
+   if (!locscene) { return; }
    if (mod & KMOD_ALT)
    {
       if (!phase_anim)
@@ -1482,30 +1502,35 @@ void KeyEnterPressed(SDL_Keymod mod)
 
 void Key7Pressed()
 {
+   if (!locscene) { return; }
    locscene->PreRotate(1.0, 0.0, -1.0, 0.0);
    SendExposeEvent();
 }
 
 void Key8Pressed()
 {
+   if (!locscene) { return; }
    locscene->Rotate(0.0, -1.0);
    SendExposeEvent();
 }
 
 void Key9Pressed()
 {
+   if (!locscene) { return; }
    locscene->PreRotate(-1.0, 1.0, 0.0, 0.0);
    SendExposeEvent();
 }
 
 void Key4Pressed()
 {
+   if (!locscene) { return; }
    locscene->PreRotate(-1.0, 0.0, 0.0, 1.0);
    SendExposeEvent();
 }
 
 void Key5Pressed()
 {
+   if (!locscene) { return; }
    if (locscene->view == 2)
    {
       locscene->CenterObject2D();
@@ -1519,30 +1544,35 @@ void Key5Pressed()
 
 void Key6Pressed()
 {
+   if (!locscene) { return; }
    locscene->PreRotate(1.0, 0.0, 0.0, 1.0);
    SendExposeEvent();
 }
 
 void Key1Pressed()
 {
+   if (!locscene) { return; }
    locscene->PreRotate(1.0, 1.0, 0.0, 0.0);
    SendExposeEvent();
 }
 
 void Key2Pressed()
 {
+   if (!locscene) { return; }
    locscene->Rotate(1.0, 1.0, 0.0, 0.0);
    SendExposeEvent();
 }
 
 void Key3Pressed()
 {
+   if (!locscene) { return; }
    locscene->PreRotate(1.0, 0.0, 1.0, 0.0);
    SendExposeEvent();
 }
 
 void ShiftView(double dx, double dy)
 {
+   if (!locscene) { return; }
    double scale;
    if (locscene->OrthogonalProjection)
    {
@@ -1558,6 +1588,7 @@ void ShiftView(double dx, double dy)
 
 void KeyLeftPressed(SDL_Keymod state)
 {
+   if (!locscene) { return; }
    if (state & KMOD_CTRL)
    {
       ShiftView(0.05, 0.);
@@ -1571,6 +1602,7 @@ void KeyLeftPressed(SDL_Keymod state)
 
 void KeyRightPressed(SDL_Keymod state)
 {
+   if (!locscene) { return; }
    if (state & KMOD_CTRL)
    {
       ShiftView(-0.05, 0.);
@@ -1584,6 +1616,7 @@ void KeyRightPressed(SDL_Keymod state)
 
 void KeyUpPressed(SDL_Keymod state)
 {
+   if (!locscene) { return; }
    if (state & KMOD_CTRL)
    {
       ShiftView(0., -0.05);
@@ -1597,6 +1630,7 @@ void KeyUpPressed(SDL_Keymod state)
 
 void KeyDownPressed(SDL_Keymod state)
 {
+   if (!locscene) { return; }
    if (state & KMOD_CTRL)
    {
       ShiftView(0., 0.05);
@@ -1610,48 +1644,56 @@ void KeyDownPressed(SDL_Keymod state)
 
 void KeyJPressed()
 {
+   if (!locscene) { return; }
    locscene->OrthogonalProjection = !(locscene->OrthogonalProjection);
    SendExposeEvent();
 }
 
 void KeyMinusPressed()
 {
+   if (!locscene) { return; }
    locscene -> Scale(1., 1., 1./1.1);
    SendExposeEvent();
 }
 
 void KeyPlusPressed()
 {
+   if (!locscene) { return; }
    locscene -> Scale(1., 1., 1.1);
    SendExposeEvent();
 }
 
 void ZoomIn()
 {
+   if (!locscene) { return; }
    locscene->Zoom(exp (0.05));
    SendExposeEvent();
 }
 
 void ZoomOut()
 {
+   if (!locscene) { return; }
    locscene->Zoom(exp (-0.05));
    SendExposeEvent();
 }
 
 void ScaleUp()
 {
+   if (!locscene) { return; }
    locscene->Scale(1.025);
    SendExposeEvent();
 }
 
 void ScaleDown()
 {
+   if (!locscene) { return; }
    locscene->Scale(1.0/1.025);
    SendExposeEvent();
 }
 
 void LookAt()
 {
+   if (!locscene) { return; }
    cout << "ViewCenter = (" << locscene->ViewCenterX << ','
         << locscene->ViewCenterY << ")\nNew x = " << flush;
    cin >> locscene->ViewCenterX;
@@ -1688,27 +1730,32 @@ void EnlargeWindow()
 
 void MoveResizeWindow(int x, int y, int w, int h)
 {
+   if (!wnd) { return; }
    wnd->setWindowSize(w, h);
    wnd->setWindowPos(x, y);
 }
 
 void ResizeWindow(int w, int h)
 {
+   if (!wnd) { return; }
    wnd->setWindowSize(w, h);
 }
 
 void SetWindowTitle(const char *title)
 {
+   if (!wnd) { return; }
    wnd->setWindowTitle(title);
 }
 
 int GetUseTexture()
 {
+   if (!locscene) { return 0; }
    return locscene->palette.GetSmoothSetting();
 }
 
 void SetUseTexture(int ut)
 {
+   if (!locscene) { return; }
    if (ut == 0)
    {
       locscene->palette.UseDiscrete();
@@ -1798,6 +1845,7 @@ std::string priority_font;
 
 void InitFont()
 {
+   if (!wnd) { return; }
    // This function is called after the window is created.
    GLenum alphaChannel =
       gl3::GLDevice::useLegacyTextureFmts() ? GL_ALPHA : GL_RED;
