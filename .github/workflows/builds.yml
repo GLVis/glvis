@@ -25,6 +25,7 @@ env:
   METIS_TOP_DIR: metis-4.0.3
   MFEM_TOP_DIR: mfem
   MFEM_BRANCH: master
+  MFEM_ACTIONS_VERSION: v2.9
 
 jobs:
   builds-and-tests:
@@ -86,11 +87,11 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ env.HYPRE_TOP_DIR }}
-        key: ${{ runner.os }}-build-${{ env.HYPRE_TOP_DIR }}-v2.4
+        key: ${{ runner.os }}-build-${{ env.HYPRE_TOP_DIR }}-${{ env.MFEM_ACTIONS_VERSION }}
 
     - name: build hypre
       if: steps.hypre-cache.outputs.cache-hit != 'true' && matrix.mpi == 'par'
-      uses: mfem/github-actions/build-hypre@v2.4
+      uses: mfem/github-actions/build-hypre@v2.9
       with:
         archive: ${{ env.HYPRE_ARCHIVE }}
         dir: ${{ env.HYPRE_TOP_DIR }}
@@ -104,11 +105,11 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ env.METIS_TOP_DIR }}
-        key: ${{ runner.os }}-build-${{ env.METIS_TOP_DIR }}-v2.4
+        key: ${{ runner.os }}-build-${{ env.METIS_TOP_DIR }}-${{ env.MFEM_ACTIONS_VERSION }}
 
     - name: build metis
       if: steps.metis-cache.outputs.cache-hit != 'true' && matrix.mpi == 'par'
-      uses: mfem/github-actions/build-metis@v2.4
+      uses: mfem/github-actions/build-metis@v2.9
       with:
         archive: ${{ env.METIS_ARCHIVE }}
         dir: ${{ env.METIS_TOP_DIR }}
@@ -134,7 +135,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ env.MFEM_TOP_DIR }}
-        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.build-system }}-${{ matrix.target }}-${{ matrix.mpi }}-v2.4
+        key: ${{ runner.os }}-build-${{ env.MFEM_TOP_DIR }}-${{ env.MFEM_COMMIT }}-${{ matrix.build-system }}-${{ matrix.target }}-${{ matrix.mpi }}-${{ env.MFEM_ACTIONS_VERSION }}
 
     # We are using the defaults of the MFEM action here, which is to use master
     # branch. There is an implicit assumption here that mfem master hasn't
@@ -143,7 +144,7 @@ jobs:
     # superfluous.
     - name: build mfem
       if: steps.cache-mfem.outputs.cache-hit != 'true'
-      uses: mfem/github-actions/build-mfem@v2.4
+      uses: mfem/github-actions/build-mfem@v2.9
       with:
         os: ${{ matrix.os }}
         target: ${{ matrix.target }}
