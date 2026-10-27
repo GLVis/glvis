@@ -24,16 +24,6 @@ using namespace mfem;
 
 thread_local VisualizationSceneSolution3d
 *VisualizationSceneSolution3d::vssol3d;
-extern thread_local GeometryRefiner GLVisGeometryRefiner;
-
-// Reference geometries with a cut in the middle, based on subdivision of
-// GLVisGeometryRefiner in 3-4 quads. Updated when cut_lambda is updated, see
-// keys Ctrl+F3/F4. We need these variables because the GLVisGeometryRefiner
-// caches its RefinedGeometry objects.
-thread_local IntegrationRule cut_QuadPts;
-thread_local Array<int> cut_QuadGeoms;
-thread_local IntegrationRule cut_TriPts;
-thread_local Array<int> cut_TriGeoms;
 
 // Definitions of some more keys
 
@@ -1049,8 +1039,8 @@ void VisualizationSceneSolution3d::FindNewBox(bool prepare)
          if (dim == 3)
          {
             mesh->GetBdrElementFace(i, &fn, &fo);
-            RefG = GLVisGeometryRefiner.Refine(mesh->GetFaceGeometry(fn),
-                                               TimesToRefine);
+            RefG = geom_refiner.Refine(mesh->GetFaceGeometry(fn),
+                                       TimesToRefine);
             Tr = mesh->GetFaceElementTransformations(fn, 5);
             eir.SetSize(RefG->RefPts.GetNPoints());
             Tr->Loc1.Transform(RefG->RefPts, eir);
@@ -1059,8 +1049,8 @@ void VisualizationSceneSolution3d::FindNewBox(bool prepare)
          else
          {
             T = mesh->GetElementTransformation(i);
-            RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                               TimesToRefine);
+            RefG = geom_refiner.Refine(mesh->GetElementBaseGeometry(i),
+                                       TimesToRefine);
             T->Transform(RefG->RefPts, pointmat);
          }
          for (int j = 0; j < pointmat.Width(); j++)
@@ -1305,11 +1295,11 @@ void VisualizationSceneSolution3d::DrawRefinedSurf(
    switch (n)
    {
       case 3:
-         RefG = GLVisGeometryRefiner.Refine(Geometry::TRIANGLE, TimesToRefine);
+         RefG = geom_refiner.Refine(Geometry::TRIANGLE, TimesToRefine);
          ip_transf.Transf.SetFE (&TriangleFE);
          break;
       case 4:
-         RefG = GLVisGeometryRefiner.Refine(Geometry::SQUARE, TimesToRefine);
+         RefG = geom_refiner.Refine(Geometry::SQUARE, TimesToRefine);
          ip_transf.Transf.SetFE (&QuadrilateralFE);
          break;
       case 5:
@@ -1733,8 +1723,9 @@ void VisualizationSceneSolution3d::PrepareFlat()
 // square removed: (fl,fl)-(fr,fl)-(fr,fr)-(fl,fr). The input RefG corresponds
 // to the reference square. The value of lambda controls the cut: 0 = no cut, 1
 // = full cut. See keys Ctrl+F3/F4.
-static void CutReferenceSquare(RefinedGeometry *RefG, double lambda,
-                               IntegrationRule &RefPts, Array<int> &RefGeoms)
+void VisualizationSceneSolution3d::CutReferenceSquare(
+   RefinedGeometry *RefG, double lambda, IntegrationRule &RefPts,
+   Array<int> &RefGeoms)
 {
    // lambda * vertex + (1-lambda) * center
    double fl = (1.0-lambda)/2.0; // left corner of the cut frame
@@ -1788,8 +1779,9 @@ static void CutReferenceSquare(RefinedGeometry *RefG, double lambda,
 // triangle removed: (fl,fl)-(fr,fl)-(fl,fr). Note that the input RefG
 // corresponds to a reference square, not reference triangle. The value of
 // lambda controls the cut: 0 = no cut, 1 = full cut. See keys Ctrl+F3/F4.
-static void CutReferenceTriangle(RefinedGeometry *RefG, double lambda,
-                                 IntegrationRule &RefPts, Array<int> &RefGeoms)
+void VisualizationSceneSolution3d::CutReferenceTriangle(
+   RefinedGeometry *RefG, double lambda, IntegrationRule &RefPts,
+   Array<int> &RefGeoms)
 {
    // lambda * vertex + (1-lambda) * center
    double fl = (1.0-lambda)/3.0;     // left corner of the cut frame
@@ -1835,10 +1827,11 @@ static void CutReferenceTriangle(RefinedGeometry *RefG, double lambda,
 
 // Call CutReferenceTriangle and CutReferenceSquare to update the global
 // variables cut_TriPts, cut_TriGeoms, cut_QuadPts, cut_QuadGeoms.
-void CutReferenceElements(int TimesToRefine, double lambda)
+void VisualizationSceneSolution3d::CutReferenceElements(
+   int TimesToRefine_, double lambda)
 {
    RefinedGeometry *RefG =
-      GLVisGeometryRefiner.Refine(Geometry::SQUARE, TimesToRefine);
+      geom_refiner.Refine(Geometry::SQUARE, TimesToRefine_);
    CutReferenceTriangle(RefG, lambda, cut_TriPts, cut_TriGeoms);
    CutReferenceSquare(RefG, lambda, cut_QuadPts, cut_QuadGeoms);
 }
@@ -1913,8 +1906,8 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       if (dim == 3)
       {
          mesh -> GetBdrElementFace (i, &fn, &fo);
-         RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceGeometry (fn),
-                                            TimesToRefine);
+         RefG = geom_refiner.Refine(mesh -> GetFaceGeometry (fn),
+                                    TimesToRefine);
          if (!cut_updated)
          {
             // Update the cut version of the reference geometries
@@ -1940,8 +1933,8 @@ void VisualizationSceneSolution3d::PrepareFlat2()
       }
       else
       {
-         RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                            TimesToRefine);
+         RefG = geom_refiner.Refine(mesh->GetElementBaseGeometry(i),
+                                    TimesToRefine);
          if (!cut_updated)
          {
             // Update the cut version of the reference geometries
@@ -2360,8 +2353,8 @@ void VisualizationSceneSolution3d::PrepareLines2()
       if (dim == 3)
       {
          mesh -> GetBdrElementFace (i, &fn, &fo);
-         RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceGeometry (fn),
-                                            TimesToRefine);
+         RefG = geom_refiner.Refine(mesh -> GetFaceGeometry (fn),
+                                    TimesToRefine);
          // di = GridF -> GetFaceValues (fn, 2, RefG->RefPts, values, pointmat);
          di = fo % 2;
          if (di == 1 && !mesh->FaceIsInterior(fn))
@@ -2373,8 +2366,8 @@ void VisualizationSceneSolution3d::PrepareLines2()
       }
       else
       {
-         RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                            TimesToRefine);
+         RefG = geom_refiner.Refine(mesh->GetElementBaseGeometry(i),
+                                    TimesToRefine);
          GridF->GetValues(i, RefG->RefPts, values, pointmat);
          ShrinkPoints(pointmat, i, 0, 0);
       }
@@ -3104,7 +3097,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane()
          {
             const Geometry::Type geom = mesh->GetElementBaseGeometry(i);
             RefinedGeometry *RefG =
-               GLVisGeometryRefiner.Refine(geom, TimesToRefine);
+               geom_refiner.Refine(geom, TimesToRefine);
             GridF->GetValues(i, RefG->RefPts, vals, pointmat);
             vert_dist.SetSize(pointmat.Width());
             for (int j = 0; j < pointmat.Width(); j++)
@@ -3173,8 +3166,8 @@ void VisualizationSceneSolution3d::PrepareCuttingPlane2()
          }
          else // shading == 2
          {
-            RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceGeometry (i),
-                                               TimesToRefine);
+            RefG = geom_refiner.Refine(mesh -> GetFaceGeometry (i),
+                                       TimesToRefine);
             // partition[e1] is 0 if e1 is behind the cutting plane
             // and 1 otherwise
             int dir = partition[e1];
@@ -3230,7 +3223,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines()
             {
                const Geometry::Type geom = mesh->GetFaceGeometry(i);
                RefinedGeometry *RefG =
-                  GLVisGeometryRefiner.Refine(geom, TimesToRefine);
+                  geom_refiner.Refine(geom, TimesToRefine);
                if (FaceShiftScale == 0.0)
                {
                   ElementTransformation *T = mesh->GetFaceTransformation(i);
@@ -3265,7 +3258,7 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines()
             {
                const Geometry::Type geom = mesh->GetElementBaseGeometry(i);
                RefinedGeometry *RefG =
-                  GLVisGeometryRefiner.Refine(geom, TimesToRefine);
+                  geom_refiner.Refine(geom, TimesToRefine);
                GridF->GetValues(i, RefG->RefPts, vals, pointmat);
                vert_dist.SetSize(pointmat.Width());
                for (int j = 0; j < pointmat.Width(); j++)
@@ -3352,8 +3345,8 @@ void VisualizationSceneSolution3d::PrepareCuttingPlaneLines2()
          }
          else // shading == 2
          {
-            RefG = GLVisGeometryRefiner.Refine(mesh -> GetFaceGeometry (i),
-                                               TimesToRefine);
+            RefG = geom_refiner.Refine(mesh -> GetFaceGeometry (i),
+                                       TimesToRefine);
             // partition[e1] is 0 if e1 is behind the cutting plane
             // and 1 otherwise
             int di = partition[e1];
@@ -4174,7 +4167,7 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
       {
          const Geometry::Type geom = mesh->GetElementBaseGeometry(ie);
 
-         RefG = GLVisGeometryRefiner.Refine(geom, TimesToRefine);
+         RefG = geom_refiner.Refine(geom, TimesToRefine);
          GridF->GetValues(ie, RefG->RefPts, vals, pointmat);
 #ifdef GLVIS_SMOOTH_LEVELSURF_NORMALS
          const int map_type = GridF->FESpace()->GetFE(ie)->GetMapType();

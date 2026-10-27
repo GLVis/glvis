@@ -84,6 +84,7 @@ protected:
    const DataState::Offsets *offsets{};
 
    Window &win;
+   mfem::GeometryRefiner geom_refiner;
 
    double minv, maxv;
 

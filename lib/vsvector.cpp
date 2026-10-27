@@ -117,7 +117,6 @@ std::string VisualizationSceneVector::GetHelpString() const
 }
 
 thread_local VisualizationSceneVector  *VisualizationSceneVector::vsvector;
-extern thread_local GeometryRefiner GLVisGeometryRefiner;
 
 void VisualizationSceneVector::KeyDPressed()
 {
@@ -724,8 +723,8 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
       for (int i = 0; i < ne; i++)
       {
          RefinedGeometry *RefG =
-            GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                        TimesToRefine, EdgeRefineFactor);
+            geom_refiner.Refine(mesh->GetElementBaseGeometry(i),
+                                TimesToRefine, EdgeRefineFactor);
          VecGridF->GetVectorValues(i, RefG->RefPts, vvals, pm);
 
          Array<int> &RE = RefG->RefEdges;
@@ -757,8 +756,8 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
       for (int i = 0; i < ne; i++)
       {
          RefinedGeometry *RefG =
-            GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                        TimesToRefine, EdgeRefineFactor);
+            geom_refiner.Refine(mesh->GetElementBaseGeometry(i),
+                                TimesToRefine, EdgeRefineFactor);
          VecGridF->GetVectorValues(i, RefG->RefPts, vvals, pm);
 
          vvals += pm;
@@ -828,8 +827,8 @@ void VisualizationSceneVector::PrepareDisplacedMesh()
       for (int i = 0; i < ne; i++)
       {
          RefinedGeometry *RefG =
-            GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
-                                        TimesToRefine, EdgeRefineFactor);
+            geom_refiner.Refine(mesh->GetElementBaseGeometry(i),
+                                TimesToRefine, EdgeRefineFactor);
          VecGridF->GetVectorValues(i, RefG->RefPts, vvals, pm);
 
          {
@@ -996,7 +995,7 @@ void VisualizationSceneVector::PrepareVectorField()
             for (i = 0; i < mesh->GetNE(); i++)
             {
                const IntegrationRule *ir =
-                  GLVisGeometryRefiner.RefineInterior(
+                  geom_refiner.RefineInterior(
                      mesh->GetElementBaseGeometry(i), RefineFactor);
                if (ir == NULL)
                {
@@ -1012,7 +1011,7 @@ void VisualizationSceneVector::PrepareVectorField()
             for (i = 0; i < mesh->GetNEdges(); i++)
             {
                const IntegrationRule *ir =
-                  GLVisGeometryRefiner.RefineInterior(
+                  geom_refiner.RefineInterior(
                      mesh->GetFaceGeometry(i), RefineFactor);
                if (ir == NULL)
                {
