@@ -139,12 +139,14 @@ public:
    bool fix_elem_orient{false};
    bool save_coloring{false};
    bool keep_attr{false};
+   int geom_ref_type{mfem::Quadrature1D::ClosedUniform}; // geometry refiner type
    double cmplx_phase{0.};
    std::vector<std::array<double,3>> point_coords; // point line (from -pts)
 
    DataState() = default;
-   DataState(DataState &&ss) { *this = std::move(ss); }
-   DataState& operator=(DataState &&ss);
+   DataState(DataState &&ds) { *this = std::move(ds); }
+   DataState& operator=(DataState &&ds);
+   DataState CloneEmpty() const;
 
    /// Get type of the contained data
    inline FieldType GetType() const { return type; }
