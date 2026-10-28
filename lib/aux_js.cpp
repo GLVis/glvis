@@ -173,11 +173,12 @@ int updateParallelStreams(const StringArray & streams)
 
 void iterVisualization()
 {
-   win.wnd->mainIter();
+   if (win.wnd) { win.wnd->mainIter(); }
 }
 
 void setCanvasId(const std::string & id)
 {
+   if (!win.wnd) { return; }
    std::cout << "glvis: setting canvas id to " << id << std::endl;
    win.wnd->setCanvasId(id);
 }
