@@ -104,6 +104,8 @@ void ScaleDown();
 void LookAt();
 void ShrinkWindow();
 void EnlargeWindow();
+void IncreaseLineWidth();
+void DecreaseLineWidth();
 void MoveResizeWindow(int x, int y, int w, int h);
 void ResizeWindow(int w, int h);
 void SetWindowTitle(const char *title);
