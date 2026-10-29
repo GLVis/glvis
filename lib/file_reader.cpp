@@ -29,9 +29,9 @@ int FileReader::ReadSerial(FileReader::FileType ft, const char *mesh_file,
 
    data.SetMesh(new Mesh(meshin, 1, 0, data.fix_elem_orient));
 
-   if (ft == FileType::MESH)
+   if (ft == FileType::MESH || ft == FileType::MESH_ONLY)
    {
-      data.SetMeshSolution();
+      if (ft == FileType::MESH) { data.SetMeshSolution(); }
    }
    else
    {
@@ -114,7 +114,9 @@ int FileReader::ReadParallel(int np, FileType ft, const char *mesh_file,
    switch (ft)
    {
       case FileType::MESH:
-         read_err = ReadParMeshAndGridFunction(np, mesh_file, NULL);
+      case FileType::MESH_ONLY:
+         read_err = ReadParMeshAndGridFunction(np, mesh_file, NULL, component,
+                                               ft == FileType::MESH);
          break;
       case FileType::GRID_FUNC:
          read_err = ReadParMeshAndGridFunction(np, mesh_file, sol_file, component);
@@ -146,7 +148,9 @@ bool FileReader::CheckStreamIsComplex(std::istream &solin, bool parallel)
 }
 
 int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
-                                           const char *sol_prefix, int component)
+                                           const char *sol_prefix,
+                                           int component,
+                                           bool generate_mesh_solution)
 {
    data.SetMesh(NULL);
 
@@ -263,7 +267,7 @@ int FileReader::ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
             data.SetGridFunction(gf_array, np, component);
          }
       }
-      else
+      else if (generate_mesh_solution)
       {
          data.SetMeshSolution();
       }
