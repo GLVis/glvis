@@ -453,7 +453,7 @@ bool ScriptController::ExecuteScriptCommand()
          case Command::DataCollField:
          case Command::DataCollQuad:
          {
-            DataState new_state;
+            DataState new_state = win.data_state.CloneEmpty();
 
             switch (cmd)
             {
