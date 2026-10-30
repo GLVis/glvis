@@ -29,6 +29,7 @@ using namespace mfem;
 enum class Command
 {
    Mesh,
+   ParMesh,
    Solution,
    ParSolution,
    Quadrature,
@@ -95,6 +96,7 @@ static const ScriptCommands commands;
 ScriptCommands::ScriptCommands()
 {
    (*this)[Command::Mesh]                 = {"mesh", "<file>", "Visualize the mesh."};
+   (*this)[Command::ParMesh]              = {"pmesh", "<np> <mesh prefix>", "Visualize the distributed mesh."};
    (*this)[Command::Solution]             = {"solution", "<mesh> <solution>", "Visualize the solution."};
    (*this)[Command::ParSolution]          = {"psolution", "<np> <mesh prefix> <keep attributes> <solution prefix>", "Visualize the distributed solution."};
    (*this)[Command::Quadrature]           = {"quadrature", "<mesh> <quadrature>", "Visualize the quadrature."};
@@ -256,24 +258,46 @@ int ScriptController::ScriptReadParQuadrature(istream &scr, DataState &state)
    return err_read;
 }
 
-int ScriptController::ScriptReadDisplMesh(istream &scr, DataState &state)
+int ScriptController::ScriptReadDisplMesh(istream &scr, DataState &state,
+                                          bool parallel)
 {
    DataState meshstate;
    string word;
+   int np = 1;
 
-   cout << "Script: mesh: " << flush;
-   scr >> ws >> word;
+   cout << "Script: " << (parallel ? "pmesh" : "mesh") << ": " << flush;
+   if (parallel)
    {
-      named_ifgzstream imesh(word.c_str());
-      if (!imesh)
+      if (!(scr >> np))
       {
-         cout << "Can not open mesh file: " << word << endl;
+         cout << "Error reading the number of processors." << endl;
          return 1;
       }
-      cout << word << endl;
-      meshstate.SetMesh(new Mesh(imesh, 1, 0, state.fix_elem_orient));
+      if (np <= 0)
+      {
+         cout << "Invalid number of processors: " << np << endl;
+         return 1;
+      }
+      cout << "# processors: " << np << "; " << flush;
    }
-   meshstate.ExtrudeMeshAndSolution();
+   if (!(scr >> ws >> word))
+   {
+      cout << "Error reading the mesh " << (parallel ? "prefix" : "filename")
+           << endl;
+      return 1;
+   }
+   cout << word << endl;
+
+   meshstate.keep_attr = state.keep_attr;
+   meshstate.fix_elem_orient = state.fix_elem_orient;
+   FileReader reader(meshstate);
+   int read_err = parallel ?
+                  reader.ReadParallel(np, FileReader::FileType::MESH_ONLY,
+                                      word.c_str(), NULL) :
+                  reader.ReadSerial(FileReader::FileType::MESH_ONLY,
+                                    word.c_str(), NULL);
+   if (read_err) { return read_err; }
+
    Mesh* const m = meshstate.mesh.get();
    if (init_nodes == NULL)
    {
@@ -420,6 +444,7 @@ bool ScriptController::ExecuteScriptCommand()
       switch (cmd)
       {
          case Command::Mesh:
+         case Command::ParMesh:
          case Command::Solution:
          case Command::ParSolution:
          case Command::Quadrature:
@@ -428,7 +453,7 @@ bool ScriptController::ExecuteScriptCommand()
          case Command::DataCollField:
          case Command::DataCollQuad:
          {
-            DataState new_state;
+            DataState new_state = win.data_state.CloneEmpty();
 
             switch (cmd)
             {
@@ -447,14 +472,17 @@ bool ScriptController::ExecuteScriptCommand()
                   }
                   break;
                case Command::Mesh:
-                  if (ScriptReadDisplMesh(scr, new_state))
+               case Command::ParMesh:
+                  if (ScriptReadDisplMesh(scr, new_state,
+                                          cmd == Command::ParMesh))
                   {
                      done_one_command = 1;
                      continue;
                   }
                   if (new_state.mesh == NULL)
                   {
-                     cout << "Script: unexpected 'mesh' command!" << endl;
+                     cout << "Script: unexpected '" << word << "' command!"
+                          << endl;
                      done_one_command = 1;
                      continue;
                   }
@@ -1019,7 +1047,9 @@ void ScriptController::PlayScript(Window win, istream &scr)
             done = true; // start the visualization
             break;
          case Command::Mesh:
-            if (script.ScriptReadDisplMesh(scr, script.win.data_state))
+         case Command::ParMesh:
+            if (script.ScriptReadDisplMesh(scr, script.win.data_state,
+                                           cmd == Command::ParMesh))
             {
                return;
             }

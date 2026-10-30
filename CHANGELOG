@@ -11,6 +11,7 @@
 
 Version 4.5.1 (development)
 ===========================
+
 - Added a 'cutting_plane' script command to set the cutting plane orientation
   (phi, theta in degrees), translation, kind, and algorithm in a single
   command: 'cutting_plane <phi> <theta> <translation> [<kind> [<alg>]]'.
@@ -26,6 +27,11 @@ Version 4.5.1 (development)
   These commands must be sent before the 'solution' command to take effect.
   They can only be issued after parallel streams have been initialized with
   the 'parallel' command (if used).
+
+- Added a script command 'pmesh <np> <mesh-prefix>' that loads a parallel mesh
+  without a solution. Like 'mesh', it captures reference nodes on the first load
+  and visualizes displacement on subsequent 'pmesh' loads.
+
 
 Version 4.5 released on Feb 6, 2026
 ===================================

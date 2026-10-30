@@ -37,7 +37,8 @@ class ScriptController
    static int ScriptReadQuadrature(std::istream &scr, DataState &state);
    static int ScriptReadParSolution(std::istream &scr, DataState &state);
    static int ScriptReadParQuadrature(std::istream &scr, DataState &state);
-   int ScriptReadDisplMesh(std::istream &scr, DataState &state);
+   int ScriptReadDisplMesh(std::istream &scr, DataState &state,
+                           bool parallel = false);
    int ScriptReadDataColl(std::istream &scr, DataState &state,
                           bool mesh_only = true, bool quad = false);
 
