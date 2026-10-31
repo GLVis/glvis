@@ -1045,8 +1045,7 @@ bool communication_thread::execute_one(std::string ident)
    // new solution handled by StreamReader
    if (StreamReader::SupportsDataType(ident))
    {
-      DataState tmp;
-      tmp.fix_elem_orient = glvis_command->FixElementOrientations();
+      DataState tmp = glvis_command->CurrentDataState().CloneEmpty();
       StreamReader reader(tmp);
       reader.ReadStream(*is[0], ident);
 
@@ -1115,9 +1114,7 @@ bool communication_thread::execute_one(std::string ident)
          }
          while (1);
 
-         DataState tmp;
-         tmp.fix_elem_orient = glvis_command->FixElementOrientations();
-         tmp.keep_attr = glvis_command->KeepAttrib();
+         DataState tmp = glvis_command->CurrentDataState().CloneEmpty();
          StreamReader reader(tmp);
          reader.ReadStreams(is);
 

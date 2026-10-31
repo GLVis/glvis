@@ -113,8 +113,7 @@ public:
    GLVisCommand(Window &win);
 
    // to be used by worker threads
-   bool KeepAttrib() { return win.data_state.keep_attr; } // may need to sync this
-   bool FixElementOrientations() { return win.data_state.fix_elem_orient; }
+   const DataState& CurrentDataState() const { return win.data_state; }
 
    // called by worker threads
    int NewMeshAndSolution(DataState &&ss);
