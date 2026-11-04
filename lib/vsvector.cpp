@@ -60,6 +60,11 @@ std::string VisualizationSceneVector::GetHelpString() const
    {
       os << "| Q -  Cycle complex data mode       |" << endl;
    }
+   if (mesh->NURBSext && mesh->Dimension() == 2)
+   {
+      os << "|      Includes NURBS knot spans,    |" << endl
+         << "|      edge spans, and patch indices |" << endl;
+   }
    os << "| r -  Reset the plot to 3D view     |" << endl
       << "| R -  Reset the plot to 2D view     |" << endl
       << "| s -  Turn on/off unit cube scaling |" << endl
@@ -1108,6 +1113,18 @@ gl3::SceneInfo VisualizationSceneVector::GetSceneObjs()
    else if (drawnums == Numbering::DOFS)
    {
       scene.queue.emplace_back(params, &d_nums_buf);
+   }
+   else if (drawnums == Numbering::FACE_KNOT_SPANS)
+   {
+      scene.queue.emplace_back(params, &spans_buf);
+   }
+   else if (drawnums == Numbering::EDGE_KNOT_SPANS)
+   {
+      scene.queue.emplace_back(params, &edge_spans_buf);
+   }
+   else if (drawnums == Numbering::PATCHES)
+   {
+      scene.queue.emplace_back(params, &patches_buf);
    }
    else { /* Numbering::NONE */ }
 

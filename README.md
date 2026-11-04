@@ -134,6 +134,7 @@ Key commands
   - show surface elements (corresponding to the function)
   - show no surface elements
   - (2D only) show element attributes
+  - (2D NURBS scalar plots only) show NURBS patch indices
   - (2D only) show element `det(J)`
   - (2D only) show element `1/det(J)`
   - (2D only) show element `\kappa`
@@ -180,7 +181,7 @@ Key commands
 - <kbd>Alt</kbd> + <kbd>c</kbd> – Set colorbar number format
 - <kbd>Ctrl</kbd> + <kbd>←</kbd>, <kbd>→</kbd>, <kbd>↑</kbd>, <kbd>↓</kbd> – Translate the viewpoint
 - <kbd>Ctrl</kbd> + <kbd>o</kbd> – Toggle an element ordering curve
-- <kbd>n</kbd> / <kbd>N</kbd> – Cycle through numbering: `None` → `Elements` → `Edges` → `Vertices` → `DOFs`
+- <kbd>n</kbd> / <kbd>N</kbd> (2D scalar plots; <kbd>N</kbd> in 2D vector plots) – Cycle through mesh entity labels: `None` → `Elements` → `Edges` → `Vertices` → `DOFs`. On 2D NURBS meshes, the cycle then includes element knot-span pairs `(i,j)`, edge knot-span indices, and patch indices before returning to `None`.
 - <kbd>Alt</kbd> + <kbd>n</kbd> – Toggle parallel numbering: `local` to each MPI rank (default) or `global`
 - <kbd>`</kbd> – Toggle a ruler, with initial origin at the center of the bounding box. The origin can be later moved with <kbd>~</kbd>. The options are:
   - none
@@ -267,6 +268,7 @@ Key commands
   - assuming displacement field show deformation using Cartesian lines
   - assuming displacement field show deformation using polar lines
 - <kbd>n</kbd> – Increase the displacement amount in 10% steps, wraps around from 100% to 0%
+- <kbd>N</kbd> – Cycle mesh entity labels, including the NURBS labels listed under Advanced when the mesh is a 2D NURBS mesh
 - <kbd>b</kbd> – Decrease the displacement amount in 10% steps, wraps around from 0% to 100%
 - <kbd>B</kbd> – Toggle the boundary in 2D vector mode
 - <kbd>e</kbd> – Toggle the *elements* state (vector data version). The options are:

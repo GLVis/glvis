@@ -26,7 +26,12 @@ protected:
    mfem::GridFunction *rsol{};
 
    int drawmesh, drawelems, draworder;
-   enum class Numbering { NONE, ELEMENTS, EDGES, VERTICES, DOFS, MAX };
+   static constexpr int patch_color_mode = 7;
+   enum class Numbering
+   {
+      NONE, ELEMENTS, EDGES, VERTICES, DOFS,
+      FACE_KNOT_SPANS, EDGE_KNOT_SPANS, PATCHES, MAX
+   };
    Numbering drawnums;
    int drawbdr, draw_cp;
 
@@ -43,7 +48,11 @@ protected:
    bool v_nums_buf_ready = false;
    bool f_nums_buf_ready = false;
    bool d_nums_buf_ready = false;
+   bool spans_buf_ready = false;
+   bool edge_spans_buf_ready = false;
+   bool patches_buf_ready = false;
    gl3::GlDrawable e_nums_buf, v_nums_buf, f_nums_buf, d_nums_buf;
+   gl3::GlDrawable spans_buf, edge_spans_buf, patches_buf;
 
    gl3::GlDrawable lcurve_buf;
    gl3::GlDrawable line_buf;
@@ -156,9 +165,9 @@ public:
    void PrepareOrderingCurve1(gl3::GlDrawable& buf, bool arrows, bool color);
 
    void PrepareNumbering(bool invalidate = true);
-   void PrepareElementNumbering();
+   void PrepareElementNumbering(Numbering mode);
    void PrepareVertexNumbering();
-   void PrepareEdgeNumbering();
+   void PrepareEdgeNumbering(Numbering mode);
    void PrepareDofNumbering();
 
    void PrepareCP();
@@ -180,10 +189,15 @@ public:
    //           3 - no arrows (black), 4 - with arrows (black)
    void ToggleDrawOrdering() { draworder = (draworder+1)%5; }
 
-   // 0 - none, 1 - elements, 2 - edges, 3 - vertices, 4 - DOFs
+   // Cycle through entity numbers and, for 2D NURBS, knot spans and patches.
    void ToggleDrawNumberings()
    {
-      drawnums = (Numbering) (((int)drawnums + 1) % (int)Numbering::MAX);
+      do
+      {
+         drawnums = (Numbering) (((int)drawnums + 1) % (int)Numbering::MAX);
+      }
+      while (drawnums >= Numbering::FACE_KNOT_SPANS &&
+             (!mesh->NURBSext || mesh->Dimension() != 2));
       PrepareNumbering(false);
    }
 
