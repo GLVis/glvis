@@ -15,6 +15,9 @@
 #include "palettes.hpp"
 #include "gltf.hpp"
 
+#include <array>
+#include <vector>
+
 using namespace std;
 using namespace mfem;
 
@@ -51,7 +54,7 @@ std::string VisualizationSceneSolution::GetHelpString() const
       << "| b/B  Toggle 2D boundary            |" << endl
       << "| c -  Toggle colorbar and caption   |" << endl
       << "| C -  Change the main plot caption  |" << endl
-      << "| e -  Displays/Hides the elements   |" << endl
+      << "| e -  Cycle element color modes     |" << endl
       << "| f -  Smooth/Nonconf/Flat shading   |" << endl
       << "| g -  Toggle background             |" << endl
       << "| h -  Displays help menu            |" << endl
@@ -555,12 +558,24 @@ void VisualizationSceneSolution::ToggleDrawElems()
    const char *modes[] =
    {
       "none", "solution", "kappa + 1/kappa", "kappa", "1/det(J)", "det(J)",
-      "attribute"
+      "attribute", "NURBS patch"
    };
 
    if (drawbdr == 2) { return; }
 
-   drawelems = (drawelems + 6) % 7;
+   const bool was_patch_mode = drawelems == patch_color_mode;
+   if (mesh->NURBSext && mesh->Dimension() == 2 && drawelems == 6)
+   {
+      drawelems = patch_color_mode;
+   }
+   else if (was_patch_mode)
+   {
+      drawelems = 5;
+   }
+   else
+   {
+      drawelems = (drawelems + 6) % 7;
+   }
 
    const int dim = mesh->Dimension();
    if (dim == 1)
@@ -587,9 +602,16 @@ void VisualizationSceneSolution::ToggleDrawElems()
       maxv_sol = maxv;
       have_sol_range = true;
    }
-   else if (shading == Shading::Noncomforming)
+   else if (shading == Shading::Noncomforming ||
+            drawelems == patch_color_mode || was_patch_mode)
    {
-      if (drawelems == 1 && have_sol_range)
+      if (drawelems == patch_color_mode)
+      {
+         minv = 0.0;
+         maxv = mesh->NURBSext->GetNP() > 1 ? mesh->NURBSext->GetNP()-1 : 1;
+         UpdateValueRange(false);
+      }
+      else if (drawelems == 1 && have_sol_range)
       {
          minv = minv_sol;
          maxv = maxv_sol;
@@ -629,6 +651,17 @@ void VisualizationSceneSolution::NewMeshAndSolution(
 {
    Mesh *old_m = mesh;
    mesh = new_m;
+   if (drawelems == patch_color_mode &&
+       (!mesh->NURBSext || mesh->Dimension() != 2))
+   {
+      drawelems = 1;
+      win.extra_caption.clear();
+   }
+   if ((!mesh->NURBSext || mesh->Dimension() != 2) &&
+       drawnums >= Numbering::FACE_KNOT_SPANS)
+   {
+      drawnums = Numbering::NONE;
+   }
    mesh_coarse = new_mc;
    sol = new_sol;
    rsol = new_u;
@@ -649,6 +682,12 @@ void VisualizationSceneSolution::NewMeshAndSolution(
 
    have_sol_range = false;
    DoAutoscale(false);
+   if (drawelems == patch_color_mode)
+   {
+      minv = 0.0;
+      maxv = mesh->NURBSext->GetNP() > 1 ? mesh->NURBSext->GetNP()-1 : 1;
+      UpdateValueRange(false);
+   }
 
    Prepare();
    PrepareLines();
@@ -664,6 +703,14 @@ void VisualizationSceneSolution::GetRefinedDetJ(
 {
    const int geom = mesh->GetElementBaseGeometry(i);
    ElementTransformation *T = mesh->GetElementTransformation(i);
+   if (drawelems == patch_color_mode)
+   {
+      MFEM_VERIFY(mesh->NURBSext, "Patch coloring requires a NURBS mesh");
+      T->Transform(ir, tr);
+      vals.SetSize(ir.GetNPoints());
+      vals = mesh->NURBSext->GetElementPatch(i);
+      return;
+   }
    const int dim = T->GetDimension();
    double Jd[4];
    DenseMatrix J(Jd, 2, 2);
@@ -968,7 +1015,8 @@ void VisualizationSceneSolution::ToggleRefinements()
          }
          break;
    }
-   if (update && shading == Shading::Noncomforming)
+   if (update && (shading == Shading::Noncomforming ||
+                  drawelems == patch_color_mode))
    {
       have_sol_range = false;
       DoAutoscale(false);
@@ -1019,7 +1067,7 @@ void VisualizationSceneSolution::SetRefineFactors(int tot, int bdr)
    TimesToRefine = tot;
    EdgeRefineFactor = bdr;
 
-   if (shading == Shading::Noncomforming)
+   if (shading == Shading::Noncomforming || drawelems == patch_color_mode)
    {
       have_sol_range = false;
       DoAutoscale(false);
@@ -1097,7 +1145,7 @@ void VisualizationSceneSolution::FindNewBox(double rx[], double ry[],
 {
    int i, j;
 
-   if (shading != Shading::Noncomforming)
+   if (shading != Shading::Noncomforming && drawelems != patch_color_mode)
    {
       int nv = mesh -> GetNV();
 
@@ -1167,6 +1215,12 @@ void VisualizationSceneSolution::FindNewBox(bool prepare)
    win.data_state.FindValueRange(minv, maxv,
    [this](double v) { return LogVal(v); });
 
+   if (drawelems == patch_color_mode)
+   {
+      minv = 0.0;
+      maxv = mesh->NURBSext->GetNP() > 1 ? mesh->NURBSext->GetNP()-1 : 1;
+   }
+
    if (minv == 0. && maxv == 0.)
    {
       minv = bb.z[0];
@@ -1186,6 +1240,12 @@ void VisualizationSceneSolution::FindNewValueRange(bool prepare)
 {
    win.data_state.FindValueRange(minv, maxv,
    [this](double v) { return LogVal(v); });
+
+   if (drawelems == patch_color_mode)
+   {
+      minv = 0.0;
+      maxv = mesh->NURBSext->GetNP() > 1 ? mesh->NURBSext->GetNP()-1 : 1;
+   }
 
    if (minv == 0. && maxv == 0.)
    {
@@ -1246,8 +1306,8 @@ void VisualizationSceneSolution::EventUpdateBackground()
    PrepareNumbering();
 }
 
-void DrawNumberedMarker(gl3::GlDrawable& buff, const double x[3], double dx,
-                        int n)
+static void DrawLabeledMarker(gl3::GlDrawable& buff, const double x[3],
+                              double dx, const std::string &label)
 {
    gl3::GlBuilder bld = buff.createBuilder();
    bld.glBegin(GL_LINES);
@@ -1258,7 +1318,13 @@ void DrawNumberedMarker(gl3::GlDrawable& buff, const double x[3], double dx,
    bld.glVertex3d(x[0]-dx, x[1]+dx, x[2]);
    bld.glEnd();
 
-   buff.addText(x[0], x[1], x[2], std::to_string(n));
+   buff.addText(x[0], x[1], x[2], label);
+}
+
+void DrawNumberedMarker(gl3::GlDrawable& buff, const double x[3], double dx,
+                        int n)
+{
+   DrawLabeledMarker(buff, x, dx, std::to_string(n));
 }
 
 void RemoveFPErrors(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
@@ -1489,6 +1555,12 @@ void VisualizationSceneSolution::Prepare()
 
    palette.SetUseLogscale(0);
 
+   if (drawelems == patch_color_mode)
+   {
+      PrepareFlat2();
+      return;
+   }
+
    switch (shading)
    {
       case Shading::Flat:
@@ -1607,7 +1679,7 @@ void VisualizationSceneSolution::Prepare()
 
 void VisualizationSceneSolution::PrepareLevelCurves()
 {
-   if (shading == Shading::Noncomforming)
+   if (shading == Shading::Noncomforming || drawelems == patch_color_mode)
    {
       PrepareLevelCurves2();
       return;
@@ -1745,7 +1817,7 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
 
 void VisualizationSceneSolution::PrepareLines()
 {
-   if (shading == Shading::Noncomforming &&
+   if ((shading == Shading::Noncomforming || drawelems == patch_color_mode) &&
        mesh->Dimension() > 1) // PrepareLines3 does not make sense for 1d meshes.
    {
       // PrepareLines2();
@@ -1876,8 +1948,66 @@ double VisualizationSceneSolution::GetElementLengthScale(int k)
    return ds;
 }
 
-void VisualizationSceneSolution::PrepareElementNumbering()
+// GetElementIJK stores positions in the knot vectors. Repeated knots leave
+// gaps in those positions, so build a map to consecutive nonempty spans.
+using KnotSpanOrdinals = std::vector<std::array<std::vector<int>, 2>>;
+
+static KnotSpanOrdinals BuildKnotSpanOrdinals(const NURBSExtension &nurbs)
 {
+   KnotSpanOrdinals ordinals(nurbs.GetNP());
+   Array<const KnotVector *> vectors;
+   for (int patch = 0; patch < nurbs.GetNP(); patch++)
+   {
+      nurbs.GetPatchKnotVectors(patch, vectors);
+      for (int direction = 0; direction < 2; direction++)
+      {
+         auto &spans = ordinals[patch][direction];
+         spans.resize(vectors[direction]->GetNKS());
+         int ordinal = 0;
+         for (int k = 0; k < (int)spans.size(); k++)
+         {
+            spans[k] = vectors[direction]->isElement(k) ? ordinal++ : -1;
+         }
+      }
+   }
+   return ordinals;
+}
+
+static std::array<int, 2> GetElementKnotSpanOrdinals(
+   NURBSExtension &nurbs, int element, const KnotSpanOrdinals &ordinals)
+{
+   Array<int> raw(2);
+   nurbs.GetElementIJK(element, raw);
+   const int patch = nurbs.GetElementPatch(element);
+   MFEM_VERIFY(patch >= 0 && patch < (int)ordinals.size(),
+               "Invalid NURBS patch index");
+   std::array<int, 2> spans;
+   for (int direction = 0; direction < 2; direction++)
+   {
+      const auto &map = ordinals[patch][direction];
+      MFEM_VERIFY(raw[direction] >= 0 && raw[direction] < (int)map.size() &&
+                  map[raw[direction]] >= 0,
+                  "Invalid NURBS knot span position");
+      spans[direction] = map[raw[direction]];
+   }
+   return spans;
+}
+
+void VisualizationSceneSolution::PrepareElementNumbering(Numbering mode)
+{
+   MFEM_VERIFY(mode == Numbering::ELEMENTS ||
+               mode == Numbering::FACE_KNOT_SPANS ||
+               mode == Numbering::PATCHES, "Invalid element numbering mode");
+   NURBSExtension *nurbs = mesh->NURBSext;
+   MFEM_VERIFY(mode == Numbering::ELEMENTS ||
+               (nurbs && mesh->Dimension() == 2),
+               "NURBS numbering requires a 2D NURBS mesh");
+   gl3::GlDrawable &target = mode == Numbering::ELEMENTS ? e_nums_buf :
+                             mode == Numbering::FACE_KNOT_SPANS ? spans_buf :
+                             patches_buf;
+   const KnotSpanOrdinals span_ordinals =
+      mode == Numbering::FACE_KNOT_SPANS ? BuildKnotSpanOrdinals(*nurbs) :
+      KnotSpanOrdinals{};
    auto offset = [&](const int e)
    {
       if (!offsets) { return e; }
@@ -1892,9 +2022,21 @@ void VisualizationSceneSolution::PrepareElementNumbering()
       return e - nelems;
    };
 
-   e_nums_buf.clear();
+   auto label = [&](const int e)
+   {
+      if (mode == Numbering::ELEMENTS) { return std::to_string(offset(e)); }
+      if (mode == Numbering::PATCHES)
+      {
+         return std::to_string(nurbs->GetElementPatch(e));
+      }
+      const auto spans = GetElementKnotSpanOrdinals(*nurbs, e, span_ordinals);
+      return "(" + std::to_string(spans[0]) + "," +
+             std::to_string(spans[1]) + ")";
+   };
 
-   if (shading == Shading::Noncomforming)
+   target.clear();
+
+   if (shading == Shading::Noncomforming || drawelems == patch_color_mode)
    {
       IntegrationRule center_ir(1);
       DenseMatrix pointmat;
@@ -1909,7 +2051,7 @@ void VisualizationSceneSolution::PrepareElementNumbering()
          const double xc = pointmat(0,0), yc = pointmat(1,0), uc = values(0);
          const double dx = 0.05 * GetElementLengthScale(e);
          const double xx[3] = {xc, yc, uc};
-         DrawNumberedMarker(e_nums_buf, xx, dx, offset(e));
+         DrawLabeledMarker(target, xx, dx, label(e));
 #ifdef GLVIS_DEBUG
          if (offsets && shrink == 1.0 && shrinkmat == 1.0)
          {
@@ -1960,10 +2102,10 @@ void VisualizationSceneSolution::PrepareElementNumbering()
 #endif // GLVIS_DEBUG
          const double dx = 0.05 * GetElementLengthScale(e);
          const double xx[3] = {xs, ys, us};
-         DrawNumberedMarker(e_nums_buf, xx, dx, offset(e));
+         DrawLabeledMarker(target, xx, dx, label(e));
       }
    }
-   updated_bufs.emplace_back(&e_nums_buf);
+   updated_bufs.emplace_back(&target);
 }
 
 void VisualizationSceneSolution::PrepareVertexNumbering()
@@ -1986,7 +2128,7 @@ void VisualizationSceneSolution::PrepareVertexNumbering()
    DenseMatrix pointmat;
    Array<int> vertices;
 
-   if (shading == Shading::Noncomforming)
+   if (shading == Shading::Noncomforming || drawelems == patch_color_mode)
    {
       Vector values;
       for (int i = 0; i < mesh->GetNE(); i++)
@@ -2031,16 +2173,27 @@ void VisualizationSceneSolution::PrepareVertexNumbering()
    updated_bufs.emplace_back(&v_nums_buf);
 }
 
-void VisualizationSceneSolution::PrepareEdgeNumbering()
+void VisualizationSceneSolution::PrepareEdgeNumbering(Numbering mode)
 {
+   MFEM_VERIFY(mode == Numbering::EDGES || mode == Numbering::EDGE_KNOT_SPANS,
+               "Invalid edge numbering mode");
+   NURBSExtension *nurbs = mesh->NURBSext;
+   MFEM_VERIFY(mode == Numbering::EDGES ||
+               (nurbs && mesh->Dimension() == 2),
+               "Edge knot spans require a 2D NURBS mesh");
    // 1D meshes do not have edges.
    if (mesh->Dimension() == 1) { return; }
 
-   f_nums_buf.clear();
+   gl3::GlDrawable &target = mode == Numbering::EDGES ? f_nums_buf :
+                             edge_spans_buf;
+   const KnotSpanOrdinals span_ordinals =
+      mode == Numbering::EDGE_KNOT_SPANS ? BuildKnotSpanOrdinals(*nurbs) :
+      KnotSpanOrdinals{};
+   target.clear();
 
    Vector vals;
    DenseMatrix p;
-   Array<int> vertices, edges, edges_ori;
+   Array<int> vertices, element_vertices, edges, edges_ori;
 
    auto offset = [&](const int e, const int i)
    {
@@ -2057,7 +2210,29 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
       return edge - nedges;
    };
 
-   if (shading == Shading::Flat || shading == Shading::Smooth)
+   auto label = [&](const int e, const int i)
+   {
+      if (mode == Numbering::EDGES) { return std::to_string(offset(e, i)); }
+
+      mesh->GetElementVertices(e, element_vertices);
+      mesh->GetEdgeVertices(edges[i], vertices);
+      int local[2] = {-1, -1};
+      for (int j = 0; j < element_vertices.Size(); j++)
+      {
+         if (element_vertices[j] == vertices[0]) { local[0] = j; }
+         if (element_vertices[j] == vertices[1]) { local[1] = j; }
+      }
+      MFEM_VERIFY(local[0] >= 0 && local[1] >= 0,
+                  "Edge vertices are not in the element");
+      const IntegrationRule &refverts = *Geometries.GetVertices(Geometry::SQUARE);
+      const int direction = refverts.IntPoint(local[0]).x !=
+                            refverts.IntPoint(local[1]).x ? 0 : 1;
+      const auto spans = GetElementKnotSpanOrdinals(*nurbs, e, span_ordinals);
+      return std::to_string(spans[direction]);
+   };
+
+   if ((shading == Shading::Flat || shading == Shading::Smooth) &&
+       drawelems != patch_color_mode)
    {
       for (int e = 0; e < mesh->GetNE(); e++)
       {
@@ -2074,11 +2249,11 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
             const double m[2] = {0.5 * (p(0,0) + p(0,1)), 0.5 * (p(1,0) + p(1,1))};
             const double u = LogVal(0.5 * ((*sol)(vertices[0]) + (*sol)(vertices[1])));
             const double xx[3] = {m[0], m[1], u};
-            DrawNumberedMarker(f_nums_buf, xx, dx, offset(e,i));
+            DrawLabeledMarker(target, xx, dx, label(e,i));
          }
       }
    }
-   else if (shading == Shading::Noncomforming)
+   else if (shading == Shading::Noncomforming || drawelems == patch_color_mode)
    {
       for (int e = 0; e < mesh->GetNE(); e++)
       {
@@ -2101,12 +2276,12 @@ void VisualizationSceneSolution::PrepareEdgeNumbering()
          {
             const int j = ij[i];
             const double xx[3] = { p(0,j), p(1,j), vals(j) };
-            DrawNumberedMarker(f_nums_buf, xx, dx, offset(e,ie[i]));
+            DrawLabeledMarker(target, xx, dx, label(e,ie[i]));
          }
       }
    }
    else { MFEM_ABORT("Shading not supported"); }
-   updated_bufs.emplace_back(&f_nums_buf);
+   updated_bufs.emplace_back(&target);
 }
 
 void VisualizationSceneSolution::PrepareDofNumbering()
@@ -2154,14 +2329,23 @@ void VisualizationSceneSolution::PrepareDofNumbering()
                pm(d, v) = vert[d];
             }
          }
-         Tr.SetFE(mesh->GetTransformationFEforElementType(el->GetType()));
-         Tr.Transform(ir, tr);
+         if (drawelems == patch_color_mode)
+         {
+            GetRefinedValues(e, ir, vals, tr, true);
+         }
+         else
+         {
+            Tr.SetFE(mesh->GetTransformationFEforElementType(el->GetType()));
+            Tr.Transform(ir, tr);
+         }
          fes->GetElementDofs(e, dofs);
          fes->AdjustVDofs(dofs);
 
          for (int q = 0; q < ir.GetNPoints(); q++)
          {
-            const real_t z = h1_sol.GetValue(e, ir.IntPoint(q));
+            const real_t z = drawelems == patch_color_mode ?
+                             vals[q] :
+                             h1_sol.GetValue(e, ir.IntPoint(q));
             const real_t x[3] = {tr(0,q), tr(1,q), z};
             DrawNumberedMarker(d_nums_buf, x, dx, offset(e,q));
          }
@@ -2292,22 +2476,26 @@ void VisualizationSceneSolution::PrepareNumbering(bool invalidate)
       v_nums_buf_ready = false;
       f_nums_buf_ready = false;
       d_nums_buf_ready = false;
+      spans_buf_ready = false;
+      edge_spans_buf_ready = false;
+      patches_buf_ready = false;
    }
    else
    {
       static const char *numbering[(int)Numbering::MAX] =
-      { "None", "Elements", "Edges", "Vertices", "DOFs" };
+      { "None", "Elements", "Edges", "Vertices", "DOFs",
+        "NURBS knot spans", "NURBS edge knot spans", "NURBS patches" };
       std::cout << "Numbering : " << numbering[(int)drawnums] << std::endl;
    }
 
    if (drawnums == Numbering::ELEMENTS && !e_nums_buf_ready)
    {
-      PrepareElementNumbering();
+      PrepareElementNumbering(Numbering::ELEMENTS);
       e_nums_buf_ready = true;
    }
    if (drawnums == Numbering::EDGES && !f_nums_buf_ready)
    {
-      PrepareEdgeNumbering();
+      PrepareEdgeNumbering(Numbering::EDGES);
       f_nums_buf_ready = true;
    }
    if (drawnums == Numbering::VERTICES && !v_nums_buf_ready)
@@ -2319,6 +2507,21 @@ void VisualizationSceneSolution::PrepareNumbering(bool invalidate)
    {
       PrepareDofNumbering();
       d_nums_buf_ready = true;
+   }
+   if (drawnums == Numbering::FACE_KNOT_SPANS && !spans_buf_ready)
+   {
+      PrepareElementNumbering(Numbering::FACE_KNOT_SPANS);
+      spans_buf_ready = true;
+   }
+   if (drawnums == Numbering::EDGE_KNOT_SPANS && !edge_spans_buf_ready)
+   {
+      PrepareEdgeNumbering(Numbering::EDGE_KNOT_SPANS);
+      edge_spans_buf_ready = true;
+   }
+   if (drawnums == Numbering::PATCHES && !patches_buf_ready)
+   {
+      PrepareElementNumbering(Numbering::PATCHES);
+      patches_buf_ready = true;
    }
 }
 
@@ -2465,7 +2668,7 @@ void VisualizationSceneSolution::PrepareBoundary()
 
    bdr_buf.clear();
    gl3::GlBuilder bl = bdr_buf.createBuilder();
-   if (shading != Shading::Noncomforming)
+   if (shading != Shading::Noncomforming && drawelems != patch_color_mode)
    {
       bl.glBegin(GL_LINES);
       for (i = 0; i < ne; i++)
@@ -2564,7 +2767,7 @@ void VisualizationSceneSolution::PrepareCP()
    gl3::GlBuilder bld = cp_buf.createBuilder();
    bld.glBegin(GL_LINES);
 
-   if (shading != Shading::Noncomforming)
+   if (shading != Shading::Noncomforming && drawelems != patch_color_mode)
    {
       Array<int> vertices;
 
@@ -2757,6 +2960,18 @@ gl3::SceneInfo VisualizationSceneSolution::GetSceneObjs()
    else if (drawnums == Numbering::DOFS)
    {
       scene.queue.emplace_back(params, &d_nums_buf);
+   }
+   else if (drawnums == Numbering::FACE_KNOT_SPANS)
+   {
+      scene.queue.emplace_back(params, &spans_buf);
+   }
+   else if (drawnums == Numbering::EDGE_KNOT_SPANS)
+   {
+      scene.queue.emplace_back(params, &edge_spans_buf);
+   }
+   else if (drawnums == Numbering::PATCHES)
+   {
+      scene.queue.emplace_back(params, &patches_buf);
    }
    else
    {

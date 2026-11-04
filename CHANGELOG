@@ -11,6 +11,11 @@
 
 Version 4.5.1 (development)
 ===========================
+- For 2D NURBS meshes, added visualization of some NURBS patch information in the
+  'n'/'N' key cycles: patch knot-span pairs (i,j) on elements, knot-span indices
+  on edges, and patch indices on elements. The element coloring cycle with key
+  'e' now includes NURBS patch indices.
+
 - Added a 'cutting_plane' script command to set the cutting plane orientation
   (phi, theta in degrees), translation, kind, and algorithm in a single
   command: 'cutting_plane <phi> <theta> <translation> [<kind> [<alg>]]'.
