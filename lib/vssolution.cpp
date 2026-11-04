@@ -79,12 +79,6 @@ std::string VisualizationSceneSolution::GetHelpString() const
    {
       os << "| Q -  Cycle complex data mode       |" << endl;
    }
-   if (mesh->NURBSext && mesh->Dimension() == 2)
-   {
-      os << "|      Includes NURBS knot spans,    |" << endl
-         << "|      edge spans, and patch indices |" << endl
-         << "| e -  Includes NURBS patch colors  |" << endl;
-   }
    os << "| r -  Reset the plot to 3D view     |" << endl
       << "| R -  Reset the plot to 2D view     |" << endl
       << "| s -  Turn on/off unit cube scaling |" << endl
