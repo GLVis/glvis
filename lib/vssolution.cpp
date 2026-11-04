@@ -2330,15 +2330,22 @@ void VisualizationSceneSolution::PrepareDofNumbering()
                pm(d, v) = vert[d];
             }
          }
-         Tr.SetFE(mesh->GetTransformationFEforElementType(el->GetType()));
-         Tr.Transform(ir, tr);
+         if (drawelems == patch_color_mode)
+         {
+            GetRefinedValues(e, ir, vals, tr, true);
+         }
+         else
+         {
+            Tr.SetFE(mesh->GetTransformationFEforElementType(el->GetType()));
+            Tr.Transform(ir, tr);
+         }
          fes->GetElementDofs(e, dofs);
          fes->AdjustVDofs(dofs);
 
          for (int q = 0; q < ir.GetNPoints(); q++)
          {
             const real_t z = drawelems == patch_color_mode ?
-                             mesh->NURBSext->GetElementPatch(e) :
+                             vals[q] :
                              h1_sol.GetValue(e, ir.IntPoint(q));
             const real_t x[3] = {tr(0,q), tr(1,q), z};
             DrawNumberedMarker(d_nums_buf, x, dx, offset(e,q));
