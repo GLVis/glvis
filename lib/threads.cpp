@@ -1051,13 +1051,14 @@ bool communication_thread::execute_one(std::string ident)
 
       // cout << "Stream: new solution" << endl;
 
+      auto tmp_keys = tmp.keys;
       if (glvis_command->NewMeshAndSolution(std::move(tmp)))
       {
          return false;
       }
-      if (!tmp.keys.empty())
+      if (!tmp_keys.empty())
       {
-         if (glvis_command->KeyCommands(tmp.keys.c_str()))
+         if (glvis_command->KeyCommands(tmp_keys.c_str()))
          {
             return false;
          }
