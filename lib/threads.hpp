@@ -30,7 +30,6 @@ private:
    GLWindow    *thread_wnd;
 
    std::mutex glvis_mutex;
-   mutable std::mutex data_state_mutex;
    std::condition_variable glvis_cond;
 
    int num_waiting;

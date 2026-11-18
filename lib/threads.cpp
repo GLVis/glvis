@@ -89,14 +89,14 @@ int GLVisCommand::CloneEmptyDataState(DataState &state)
 {
    // Wait for our turn in the queue, i.e. until all previous commands are
    // executed, and release it immediately without sending a command. There is
-   // no other sender, so nothing can be queued before the clone is made.
+   // no other sender, so nothing can be queued before the clone is made. This
+   // also synchronizes the access to win.data_state with the main thread.
    if (lock() < 0)
    {
       return -1;
    }
    unlock();
 
-   lock_guard<mutex> scope_lock(data_state_mutex);
    state = win.data_state.CloneEmpty();
    return 0;
 }
@@ -572,12 +572,7 @@ int GLVisCommand::Execute()
                cerr << "Unknown field type" << endl;
                break;
          }
-         bool set_ok;
-         {
-            lock_guard<mutex> scope_lock(data_state_mutex);
-            set_ok = win.SetNewMeshAndSolution(std::move(new_state));
-         }
-         if (set_ok)
+         if (win.SetNewMeshAndSolution(std::move(new_state)))
          {
             if (mesh_range > 0.0)
             {
@@ -880,10 +875,7 @@ int GLVisCommand::Execute()
       {
          cout << "Command: pointline: " << point_coords.size()
               << " points" << endl;
-         {
-            lock_guard<mutex> scope_lock(data_state_mutex);
-            win.data_state.point_coords = std::move(point_coords);
-         }
+         win.data_state.point_coords = std::move(point_coords);
          win.vs->SetPointLineVisible(true);
          win.vs->PreparePointLine();
          MyExpose();
