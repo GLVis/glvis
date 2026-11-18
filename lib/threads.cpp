@@ -85,6 +85,22 @@ void GLVisCommand::unlock()
    }
 }
 
+int GLVisCommand::CloneEmptyDataState(DataState &state)
+{
+   // Wait for our turn in the queue, i.e. until all previous commands are
+   // executed, and release it immediately without sending a command. There is
+   // no other sender, so nothing can be queued before the clone is made.
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   unlock();
+
+   lock_guard<mutex> scope_lock(data_state_mutex);
+   state = win.data_state.CloneEmpty();
+   return 0;
+}
+
 int GLVisCommand::NewMeshAndSolution(DataState &&ss)
 {
    if (lock() < 0)
@@ -1053,7 +1069,11 @@ bool communication_thread::execute_one(std::string ident)
    // new solution handled by StreamReader
    if (StreamReader::SupportsDataType(ident))
    {
-      DataState tmp = glvis_command->CloneEmptyDataState();
+      DataState tmp;
+      if (glvis_command->CloneEmptyDataState(tmp))
+      {
+         return false;
+      }
       StreamReader reader(tmp);
       reader.ReadStream(*is[0], ident);
 
@@ -1123,7 +1143,11 @@ bool communication_thread::execute_one(std::string ident)
          }
          while (1);
 
-         DataState tmp = glvis_command->CloneEmptyDataState();
+         DataState tmp;
+         if (glvis_command->CloneEmptyDataState(tmp))
+         {
+            return false;
+         }
          StreamReader reader(tmp);
          reader.ReadStreams(is);
 

@@ -114,11 +114,7 @@ public:
    GLVisCommand(Window &win);
 
    // to be used by worker threads
-   DataState CloneEmptyDataState() const
-   {
-      std::lock_guard<std::mutex> scope_lock(data_state_mutex);
-      return win.data_state.CloneEmpty();
-   }
+   int CloneEmptyDataState(DataState &state);
 
    // called by worker threads
    int NewMeshAndSolution(DataState &&ss);
