@@ -556,7 +556,12 @@ int GLVisCommand::Execute()
                cerr << "Unknown field type" << endl;
                break;
          }
-         if (win.SetNewMeshAndSolution(std::move(new_state)))
+         bool set_ok;
+         {
+            lock_guard<mutex> scope_lock(data_state_mutex);
+            set_ok = win.SetNewMeshAndSolution(std::move(new_state));
+         }
+         if (set_ok)
          {
             if (mesh_range > 0.0)
             {
@@ -859,7 +864,10 @@ int GLVisCommand::Execute()
       {
          cout << "Command: pointline: " << point_coords.size()
               << " points" << endl;
-         win.data_state.point_coords = std::move(point_coords);
+         {
+            lock_guard<mutex> scope_lock(data_state_mutex);
+            win.data_state.point_coords = std::move(point_coords);
+         }
          win.vs->SetPointLineVisible(true);
          win.vs->PreparePointLine();
          MyExpose();
@@ -1045,7 +1053,7 @@ bool communication_thread::execute_one(std::string ident)
    // new solution handled by StreamReader
    if (StreamReader::SupportsDataType(ident))
    {
-      DataState tmp = glvis_command->CurrentDataState().CloneEmpty();
+      DataState tmp = glvis_command->CloneEmptyDataState();
       StreamReader reader(tmp);
       reader.ReadStream(*is[0], ident);
 
@@ -1115,7 +1123,7 @@ bool communication_thread::execute_one(std::string ident)
          }
          while (1);
 
-         DataState tmp = glvis_command->CurrentDataState().CloneEmpty();
+         DataState tmp = glvis_command->CloneEmptyDataState();
          StreamReader reader(tmp);
          reader.ReadStreams(is);
 

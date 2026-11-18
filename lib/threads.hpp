@@ -30,6 +30,7 @@ private:
    GLWindow    *thread_wnd;
 
    std::mutex glvis_mutex;
+   mutable std::mutex data_state_mutex;
    std::condition_variable glvis_cond;
 
    int num_waiting;
@@ -113,7 +114,11 @@ public:
    GLVisCommand(Window &win);
 
    // to be used by worker threads
-   const DataState& CurrentDataState() const { return win.data_state; }
+   DataState CloneEmptyDataState() const
+   {
+      std::lock_guard<std::mutex> scope_lock(data_state_mutex);
+      return win.data_state.CloneEmpty();
+   }
 
    // called by worker threads
    int NewMeshAndSolution(DataState &&ss);
