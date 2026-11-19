@@ -85,6 +85,22 @@ void GLVisCommand::unlock()
    }
 }
 
+int GLVisCommand::CloneEmptyDataState(DataState &state)
+{
+   // Wait for our turn in the queue, i.e. until all previous commands are
+   // executed, and release it immediately without sending a command. There is
+   // no other sender, so nothing can be queued before the clone is made. This
+   // also synchronizes the access to win.data_state with the main thread.
+   if (lock() < 0)
+   {
+      return -1;
+   }
+   unlock();
+
+   state = win.data_state.CloneEmpty();
+   return 0;
+}
+
 int GLVisCommand::NewMeshAndSolution(DataState &&ss)
 {
    if (lock() < 0)
@@ -1046,19 +1062,23 @@ bool communication_thread::execute_one(std::string ident)
    if (StreamReader::SupportsDataType(ident))
    {
       DataState tmp;
-      tmp.fix_elem_orient = glvis_command->FixElementOrientations();
+      if (glvis_command->CloneEmptyDataState(tmp))
+      {
+         return false;
+      }
       StreamReader reader(tmp);
       reader.ReadStream(*is[0], ident);
 
       // cout << "Stream: new solution" << endl;
 
+      auto tmp_keys = tmp.keys;
       if (glvis_command->NewMeshAndSolution(std::move(tmp)))
       {
          return false;
       }
-      if (!tmp.keys.empty())
+      if (!tmp_keys.empty())
       {
-         if (glvis_command->KeyCommands(tmp.keys.c_str()))
+         if (glvis_command->KeyCommands(tmp_keys.c_str()))
          {
             return false;
          }
@@ -1116,8 +1136,10 @@ bool communication_thread::execute_one(std::string ident)
          while (1);
 
          DataState tmp;
-         tmp.fix_elem_orient = glvis_command->FixElementOrientations();
-         tmp.keep_attr = glvis_command->KeepAttrib();
+         if (glvis_command->CloneEmptyDataState(tmp))
+         {
+            return false;
+         }
          StreamReader reader(tmp);
          reader.ReadStreams(is);
 

@@ -258,7 +258,7 @@ int ScriptController::ScriptReadParQuadrature(istream &scr, DataState &state)
 
 int ScriptController::ScriptReadDisplMesh(istream &scr, DataState &state)
 {
-   DataState meshstate;
+   DataState meshstate = state.CloneEmpty();
    string word;
 
    cout << "Script: mesh: " << flush;
@@ -428,7 +428,7 @@ bool ScriptController::ExecuteScriptCommand()
          case Command::DataCollField:
          case Command::DataCollQuad:
          {
-            DataState new_state;
+            DataState new_state = win.data_state.CloneEmpty();
 
             switch (cmd)
             {
