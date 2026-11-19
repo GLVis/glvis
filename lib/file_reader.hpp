@@ -22,7 +22,8 @@ class FileReader
    static bool CheckStreamIsComplex(std::istream &sol, bool parallel = false);
 
    int ReadParMeshAndGridFunction(int np, const char *mesh_prefix,
-                                  const char *sol_prefix, int component = -1);
+                                  const char *sol_prefix, int component = -1,
+                                  bool generate_mesh_solution = true);
    int ReadParMeshAndQuadFunction(int np, const char *mesh_prefix,
                                   const char *sol_prefix, int component = -1);
 
@@ -30,6 +31,7 @@ public:
    enum class FileType
    {
       MESH,
+      MESH_ONLY, ///< Mesh geometry without a generated coloring grid function.
       SCALAR_SOL,
       VECTOR_SOL,
       GRID_FUNC,
